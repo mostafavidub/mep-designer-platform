@@ -1,1 +1,99 @@
-{% extends 'base.html' %}{% block body %}<main class="container"><div class="row" style="justify-content:space-between"><div><h1>پروژه‌های من</h1><p class="muted">از پلان معماری DXF تا نقشه‌های برق و مکانیک</p></div></div><div class="card"><h2>پروژه جدید</h2><form method="post" action="/projects"><label>نام پروژه</label><input name="name" placeholder="مثلاً ساختمان مسکونی گنبد" required><button style="margin-top:12px">ایجاد پروژه</button></form></div><div class="grid">{% for p in projects %}<a class="card" href="/projects/{{p.id}}" style="text-decoration:none;color:inherit"><h3>{{p.name}}</h3><span class="badge">{{p.status}}</span><p class="muted">Revision {{p.current_revision}}</p></a>{% else %}<div class="card">هنوز پروژه‌ای ثبت نشده.</div>{% endfor %}</div></main>{% endblock %}
+{% extends 'base.html' %}
+{% block body %}
+<main>
+  <section class="hero">
+    <div class="hero-grid container-wide">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot"></span> ابزار هوشمند برای مهندسان ساختمان</div>
+        <h1>از پلان معماری<br><span>تا طراحی تأسیسات</span></h1>
+        <p class="hero-lead">پلان معماری پروژه را بارگذاری کنید، اطلاعات طراحی را مرحله‌به‌مرحله وارد کنید و فرآیند آماده‌سازی نقشه‌های برق و مکانیک را در یک فضای کاری مهندسی مدیریت کنید.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#mep-service">شروع طراحی MEP</a>
+          <a class="btn ghost" href="#file-guide">مشخصات فایل ورودی</a>
+        </div>
+        <div class="engineering-meta"><span>DXF INGEST</span><span>MEP WORKFLOW</span><span>REVISION CONTROL</span></div>
+      </div>
+      <div class="blueprint-card" aria-hidden="true">
+        <div class="bp-top"><span>ARCH / MEP</span><span>01</span></div>
+        <div class="bp-plan">
+          <div class="room r1"></div><div class="room r2"></div><div class="room r3"></div><div class="room r4"></div>
+          <div class="route route1"></div><div class="route route2"></div><div class="node n1"></div><div class="node n2"></div><div class="node n3"></div>
+        </div>
+        <div class="bp-bottom"><span>PLAN ANALYSIS</span><span>RULE-DRIVEN</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="mep-service" class="section container-wide">
+    <div class="section-head">
+      <div><div class="kicker">SERVICE 01</div><h2>طراحی برق و مکانیک ساختمان</h2></div>
+      <p>بدون ثبت‌نام. فایل را بارگذاری کنید و مستقیماً وارد فرآیند پروژه شوید.</p>
+    </div>
+    <div class="upload-layout">
+      <div class="upload-panel">
+        <form method="post" action="/start-project" enctype="multipart/form-data" class="upload-form">
+          <label class="project-label" for="project_name">نام پروژه <span>اختیاری</span></label>
+          <input id="project_name" name="name" placeholder="مثلاً ساختمان مسکونی بلوار ناهارخوران">
+          <label class="dropzone" for="file">
+            <input id="file" type="file" name="file" accept=".zip" required>
+            <span class="upload-icon">↥</span>
+            <strong>فایل ZIP پلان‌های معماری را اینجا انتخاب کنید</strong>
+            <small>ZIP containing DXF files only</small>
+          </label>
+          <button class="btn primary wide" type="submit">آپلود، بررسی فایل و شروع پروژه</button>
+        </form>
+      </div>
+      <aside class="quick-spec">
+        <div class="spec-title"><span>INPUT SPEC</span><b>01</b></div>
+        <ul class="check-list">
+          <li><b>فرمت ارسال:</b> یک فایل ZIP</li>
+          <li><b>محتویات ZIP:</b> فقط فایل‌های DXF</li>
+          <li><b>حداقل:</b> یک فایل DXF معتبر</li>
+          <li><b>پیشنهاد:</b> هر طبقه یا پلان تیپ در فایل جداگانه</li>
+          <li><b>ضروری:</b> پلان‌ها خوانا، دارای مقیاس/واحد مشخص و بدون فایل غیرمرتبط باشند</li>
+        </ul>
+        <a href="#file-guide" class="text-link">مشاهده راهنمای کامل فایل ←</a>
+      </aside>
+    </div>
+  </section>
+
+  <section id="file-guide" class="section section-soft">
+    <div class="container-wide">
+      <div class="section-head">
+        <div><div class="kicker">FILE PREPARATION</div><h2>فایل معماری دقیقاً باید چگونه آماده شود؟</h2></div>
+        <p>هرچه فایل معماری ساختاریافته‌تر باشد، تحلیل پروژه و مراحل بعدی دقیق‌تر و سریع‌تر انجام می‌شود.</p>
+      </div>
+      <div class="spec-grid">
+        <article class="spec-card"><span>01</span><h3>فرمت و بسته‌بندی</h3><p>همه پلان‌های معماری موردنیاز را با فرمت <b>DXF</b> داخل <b>یک فایل ZIP</b> قرار دهید. در نسخه فعلی، وجود فایل‌هایی مثل PDF، DWG، JPG، DOCX یا پوشه‌های جانبی داخل ZIP مجاز نیست.</p></article>
+        <article class="spec-card"><span>02</span><h3>پلان‌های موردنیاز</h3><p>پلان‌هایی که تفاوت معماری دارند جداگانه ارائه شوند: زیرزمین/پارکینگ، همکف، طبقات تیپ، طبقات غیرتیپ و بام؛ فقط پلان‌هایی را بفرستید که برای طراحی تأسیسات لازم‌اند.</p></article>
+        <article class="spec-card"><span>03</span><h3>هندسه و واحد</h3><p>پلان باید در Model Space قابل خواندن باشد. دیوارها، بازشوها، فضاها، شفت‌ها، راه‌پله و عناصر اصلی معماری بهتر است در محل واقعی خود باشند. واحد ترسیم و مقیاس پروژه باید مشخص و سازگار باشد.</p></article>
+        <article class="spec-card"><span>04</span><h3>لایه‌ها و نام‌گذاری</h3><p>لایه‌بندی منظم برای دیوار، در، پنجره، متن، ستون، شفت و سایر اجزای معماری به تحلیل کمک می‌کند. از قرار دادن کل پلان روی یک Layer نامشخص تا حد امکان خودداری کنید.</p></article>
+        <article class="spec-card"><span>05</span><h3>متن و اطلاعات پلان</h3><p>نام فضاها، کد طبقه، ترازها و توضیحات اصلی معماری را حذف نکنید. سیستم می‌تواند TEXT و MTEXT را برای شناخت بهتر فایل بررسی کند.</p></article>
+        <article class="spec-card"><span>06</span><h3>پاک‌سازی قبل از ارسال</h3><p>فایل‌های خراب، Referenceهای غیرضروری، پلان‌های تکراری و اطلاعات خارج از محدوده پروژه را حذف کنید. اگر چند پلان در یک فایل وجود دارد، ساختار آن‌ها باید واضح و قابل تشخیص باشد.</p></article>
+      </div>
+      <div class="note-bar"><b>نکته:</b> بعد از آپلود، سیستم فایل‌ها را بررسی می‌کند و سپس سؤال‌های طراحی را یکی‌یکی از شما می‌پرسد. مقادیر مهندسی نامشخص به‌صورت خودکار به‌عنوان واقعیت قطعی فرض نمی‌شوند.</div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="section container-wide">
+    <div class="section-head"><div><div class="kicker">WORKFLOW</div><h2>فرآیند کار</h2></div></div>
+    <div class="steps">
+      <div class="step"><b>01</b><div><h3>آپلود پلان</h3><p>ZIP شامل DXFهای معماری را ارسال می‌کنید.</p></div></div>
+      <div class="step"><b>02</b><div><h3>تحلیل فایل</h3><p>ساختار DXF، لایه‌ها، متن‌ها و اطلاعات پایه بررسی می‌شود.</p></div></div>
+      <div class="step"><b>03</b><div><h3>پرسش‌های طراحی</h3><p>اطلاعات برق و مکانیک موردنیاز، مرحله‌ای از شما گرفته می‌شود.</p></div></div>
+      <div class="step"><b>04</b><div><h3>طراحی و Revision</h3><p>پروژه وارد موتور طراحی شده و اصلاحات بعدی مدیریت می‌شوند.</p></div></div>
+    </div>
+  </section>
+
+  <section id="services" class="section section-dark">
+    <div class="container-wide">
+      <div class="section-head light"><div><div class="kicker">ENGINEERING SERVICES</div><h2>یک پلتفرم، چندین ابزار مهندسی</h2></div><p>طراحی MEP اولین سرویس است. ساختار سایت برای اضافه شدن خدمات مهندسی جدید آماده شده است.</p></div>
+      <div class="service-grid">
+        <article class="service-card active"><span class="service-code">MEP-01</span><h3>طراحی تأسیسات برق و مکانیک</h3><p>تحلیل پلان، جمع‌آوری Design Input، مدیریت طراحی و Revision.</p><a href="#mep-service">استفاده از سرویس</a></article>
+        <article class="service-card future"><span class="service-code">NEXT</span><h3>ابزارهای مهندسی بعدی</h3><p>فضای آماده برای محاسبات، کنترل نقشه، متره، گزارش‌های فنی و سرویس‌های تخصصی آینده.</p><span>به‌زودی</span></article>
+        <article class="service-card future"><span class="service-code">API</span><h3>اتوماسیون پروژه</h3><p>سرویس‌های API و گردش‌کار برای تیم‌های مهندسی و دفاتر طراحی.</p><span>در برنامه توسعه</span></article>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}
