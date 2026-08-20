@@ -31,16 +31,21 @@
     </div>
     <div class="upload-layout">
       <div class="upload-panel">
-        <form method="post" action="/start-project" enctype="multipart/form-data" class="upload-form">
+        <form id="uploadForm" method="post" action="/start-project" enctype="multipart/form-data" class="upload-form">
           <label class="project-label" for="project_name">نام پروژه <span>اختیاری</span></label>
           <input id="project_name" name="name" placeholder="مثلاً ساختمان مسکونی بلوار ناهارخوران">
           <label class="dropzone" for="file">
             <input id="file" type="file" name="file" accept=".zip" required>
             <span class="upload-icon">↥</span>
-            <strong>فایل ZIP پلان‌های معماری را اینجا انتخاب کنید</strong>
-            <small>ZIP containing DXF files only</small>
+            <strong id="fileLabel">فایل ZIP پلان‌های معماری را اینجا انتخاب کنید</strong>
+            <small id="fileMeta">ZIP containing DXF files only</small>
           </label>
-          <button class="btn primary wide" type="submit">آپلود، بررسی فایل و شروع پروژه</button>
+          <div id="uploadProgressWrap" class="upload-progress-wrap" hidden>
+            <div class="upload-progress-head"><span id="uploadStatus">در حال آپلود فایل...</span><b id="uploadPercent">0%</b></div>
+            <div class="upload-progress"><span id="uploadBar" style="width:0%"></span></div>
+            <div class="upload-progress-note" id="uploadNote">لطفاً این صفحه را نبندید.</div>
+          </div>
+          <button id="uploadButton" class="btn primary wide" type="submit">آپلود، بررسی فایل و شروع پروژه</button>
         </form>
       </div>
       <aside class="quick-spec">
@@ -64,14 +69,14 @@
         <p>هرچه فایل معماری ساختاریافته‌تر باشد، تحلیل پروژه و مراحل بعدی دقیق‌تر و سریع‌تر انجام می‌شود.</p>
       </div>
       <div class="spec-grid">
-        <article class="spec-card"><span>01</span><h3>فرمت و بسته‌بندی</h3><p>همه پلان‌های معماری موردنیاز را با فرمت <b>DXF</b> داخل <b>یک فایل ZIP</b> قرار دهید. در نسخه فعلی، وجود فایل‌هایی مثل PDF، DWG، JPG، DOCX یا پوشه‌های جانبی داخل ZIP مجاز نیست.</p></article>
+        <article class="spec-card"><span>01</span><h3>فرمت و بسته‌بندی</h3><p>همه پلان‌های معماری موردنیاز را با فرمت <b>DXF</b> داخل <b>یک فایل ZIP</b> قرار دهید. در نسخه فعلی، وجود فایل‌هایی مثل PDF، DWG، JPG یا DOCX داخل ZIP مجاز نیست. فایل‌های سیستمی مخفی macOS مانند <b>__MACOSX</b> به‌صورت خودکار نادیده گرفته می‌شوند.</p></article>
         <article class="spec-card"><span>02</span><h3>پلان‌های موردنیاز</h3><p>پلان‌هایی که تفاوت معماری دارند جداگانه ارائه شوند: زیرزمین/پارکینگ، همکف، طبقات تیپ، طبقات غیرتیپ و بام؛ فقط پلان‌هایی را بفرستید که برای طراحی تأسیسات لازم‌اند.</p></article>
         <article class="spec-card"><span>03</span><h3>هندسه و واحد</h3><p>پلان باید در Model Space قابل خواندن باشد. دیوارها، بازشوها، فضاها، شفت‌ها، راه‌پله و عناصر اصلی معماری بهتر است در محل واقعی خود باشند. واحد ترسیم و مقیاس پروژه باید مشخص و سازگار باشد.</p></article>
         <article class="spec-card"><span>04</span><h3>لایه‌ها و نام‌گذاری</h3><p>لایه‌بندی منظم برای دیوار، در، پنجره، متن، ستون، شفت و سایر اجزای معماری به تحلیل کمک می‌کند. از قرار دادن کل پلان روی یک Layer نامشخص تا حد امکان خودداری کنید.</p></article>
         <article class="spec-card"><span>05</span><h3>متن و اطلاعات پلان</h3><p>نام فضاها، کد طبقه، ترازها و توضیحات اصلی معماری را حذف نکنید. سیستم می‌تواند TEXT و MTEXT را برای شناخت بهتر فایل بررسی کند.</p></article>
         <article class="spec-card"><span>06</span><h3>پاک‌سازی قبل از ارسال</h3><p>فایل‌های خراب، Referenceهای غیرضروری، پلان‌های تکراری و اطلاعات خارج از محدوده پروژه را حذف کنید. اگر چند پلان در یک فایل وجود دارد، ساختار آن‌ها باید واضح و قابل تشخیص باشد.</p></article>
       </div>
-      <div class="note-bar"><b>نکته:</b> بعد از آپلود، سیستم فایل‌ها را بررسی می‌کند و سپس سؤال‌های طراحی را یکی‌یکی از شما می‌پرسد. مقادیر مهندسی نامشخص به‌صورت خودکار به‌عنوان واقعیت قطعی فرض نمی‌شوند.</div>
+      <div class="note-bar"><b>نکته:</b> بعد از آپلود، فایل در پس‌زمینه تحلیل می‌شود. اگر DXF حجیم باشد، صفحه وضعیت تحلیل را نمایش می‌دهد و نیازی نیست اتصال آپلود تا پایان تحلیل باز بماند.</div>
     </div>
   </section>
 
@@ -96,4 +101,77 @@
     </div>
   </section>
 </main>
+<script>
+(() => {
+  const form = document.getElementById('uploadForm');
+  const fileInput = document.getElementById('file');
+  const fileLabel = document.getElementById('fileLabel');
+  const fileMeta = document.getElementById('fileMeta');
+  const wrap = document.getElementById('uploadProgressWrap');
+  const bar = document.getElementById('uploadBar');
+  const percent = document.getElementById('uploadPercent');
+  const status = document.getElementById('uploadStatus');
+  const note = document.getElementById('uploadNote');
+  const button = document.getElementById('uploadButton');
+
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    fileLabel.textContent = f.name;
+    fileMeta.textContent = `${(f.size / 1024 / 1024).toFixed(2)} MB · ZIP`;
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    const xhr = new XMLHttpRequest();
+    const data = new FormData(form);
+    wrap.hidden = false;
+    button.disabled = true;
+    button.textContent = 'در حال ارسال...';
+    status.textContent = 'در حال آپلود فایل...';
+    note.textContent = 'لطفاً این صفحه را نبندید.';
+
+    xhr.open('POST', form.action, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.upload.onprogress = (ev) => {
+      if (!ev.lengthComputable) return;
+      const p = Math.min(100, Math.round((ev.loaded / ev.total) * 100));
+      bar.style.width = p + '%';
+      percent.textContent = p + '%';
+      if (p === 100) {
+        status.textContent = 'آپلود کامل شد؛ در حال ثبت پروژه...';
+        note.textContent = 'تحلیل DXF در مرحله بعد، در پس‌زمینه انجام می‌شود.';
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const res = JSON.parse(xhr.responseText);
+          status.textContent = 'فایل دریافت شد؛ انتقال به صفحه تحلیل...';
+          percent.textContent = '100%';
+          bar.style.width = '100%';
+          window.location.href = res.redirect;
+        } catch (_) {
+          status.textContent = 'پاسخ سرور نامعتبر بود.';
+          button.disabled = false;
+        }
+      } else {
+        status.textContent = 'آپلود انجام نشد.';
+        note.textContent = 'لطفاً دوباره تلاش کنید.';
+        button.disabled = false;
+        button.textContent = 'آپلود، بررسی فایل و شروع پروژه';
+      }
+    };
+    xhr.onerror = () => {
+      status.textContent = 'ارتباط با سرور قطع شد.';
+      note.textContent = 'اتصال اینترنت را بررسی و دوباره تلاش کنید.';
+      button.disabled = false;
+      button.textContent = 'آپلود، بررسی فایل و شروع پروژه';
+    };
+    xhr.send(data);
+  });
+})();
+</script>
 {% endblock %}
