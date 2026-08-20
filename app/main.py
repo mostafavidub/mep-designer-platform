@@ -5,7 +5,7 @@ from collections import Counter
 
 import requests, ezdxf
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -126,6 +126,9 @@ def own_project(pid: int, uid: int):
         return None, None
     return db, p
 
+def is_real_dxf_path(path: Path) -> bool:
+    return path.suffix.lower() == '.dxf' and '__MACOSX' not in path.parts and not path.name.startswith('.') and not path.name.startswith('._')
+
 def analyze_dxf(path: Path):
     doc = ezdxf.readfile(path)
     msp = doc.modelspace()
@@ -153,36 +156,64 @@ def safe_extract(zip_path: Path, target: Path):
         members = [m for m in z.infolist() if not m.is_dir()]
         if not members:
             raise ValueError('ZIP خالی است.')
-        bad = [m.filename for m in members if Path(m.filename).suffix.lower() != '.dxf']
+        useful = []
+        bad = []
+        for m in members:
+            parts = Path(m.filename).parts
+            name = Path(m.filename).name
+            if '__MACOSX' in parts or name.startswith('.') or name.startswith('._'):
+                continue
+            if Path(m.filename).suffix.lower() != '.dxf':
+                bad.append(m.filename)
+            else:
+                useful.append(m)
         if bad:
             raise ValueError('داخل ZIP فقط فایل DXF مجاز است. فایل غیرمجاز: ' + ', '.join(bad[:5]))
-        for m in members:
+        if not useful:
+            raise ValueError('هیچ فایل DXF معتبر داخل ZIP پیدا نشد.')
+        for m in useful:
             dest = (target / m.filename).resolve()
             if not str(dest).startswith(str(target.resolve())):
                 raise ValueError('ساختار ZIP نامعتبر است.')
-        z.extractall(target)
+            z.extract(m, target)
 
-def ingest_project_file(p: Project, file: UploadFile, db):
+def save_project_zip(project_id: int, file: UploadFile):
     if not file.filename or not file.filename.lower().endswith('.zip'):
         raise ValueError('فایل ورودی باید ZIP باشد.')
-    pdir = DATA_DIR / 'projects' / str(p.id)
-    inp = pdir / 'input'
-    shutil.rmtree(inp, ignore_errors=True)
-    inp.mkdir(parents=True, exist_ok=True)
+    pdir = DATA_DIR / 'projects' / str(project_id)
+    pdir.mkdir(parents=True, exist_ok=True)
     zip_path = pdir / 'architecture.zip'
     with zip_path.open('wb') as f:
         shutil.copyfileobj(file.file, f)
-    safe_extract(zip_path, inp)
-    files = sorted(inp.rglob('*.dxf'))
-    if not files:
-        raise ValueError('هیچ فایل DXF داخل ZIP پیدا نشد.')
-    analysis = {'file_count': len(files), 'files': [analyze_dxf(x) for x in files]}
-    p.analysis = analysis
-    p.status = 'asking'
-    p.current_question = 0
-    p.answers = {}
-    p.last_error = ''
-    db.commit()
+    return zip_path
+
+def analyze_project_job(project_id: int):
+    db = Session()
+    p = db.get(Project, project_id)
+    if not p:
+        db.close()
+        return
+    try:
+        pdir = DATA_DIR / 'projects' / str(project_id)
+        inp = pdir / 'input'
+        shutil.rmtree(inp, ignore_errors=True)
+        inp.mkdir(parents=True, exist_ok=True)
+        safe_extract(pdir / 'architecture.zip', inp)
+        files = sorted(x for x in inp.rglob('*.dxf') if is_real_dxf_path(x))
+        if not files:
+            raise ValueError('هیچ فایل DXF معتبر داخل ZIP پیدا نشد.')
+        p.analysis = {'file_count': len(files), 'files': [analyze_dxf(x) for x in files]}
+        p.status = 'asking'
+        p.current_question = 0
+        p.answers = {}
+        p.last_error = ''
+        db.commit()
+    except Exception as e:
+        p.status = 'awaiting_upload'
+        p.last_error = str(e)
+        db.commit()
+    finally:
+        db.close()
 
 def run_design(project_id: int, revision_id: int):
     db = Session()
@@ -244,19 +275,27 @@ def start_project(request: Request, name: str = Form(''), file: UploadFile = Fil
     u = current_user(request)
     db = Session()
     project_name = (name or '').strip() or f'پروژه {datetime.now().strftime("%Y-%m-%d %H:%M")}'
-    p = Project(user_id=u.id, name=project_name, questions=QUESTION_LIST, status='awaiting_upload')
+    p = Project(user_id=u.id, name=project_name, questions=QUESTION_LIST, status='uploading')
     db.add(p)
     db.commit()
     db.refresh(p)
     try:
-        ingest_project_file(p, file, db)
+        save_project_zip(p.id, file)
+        p.status = 'analyzing'
+        p.last_error = ''
+        db.commit()
+        pid = p.id
+        threading.Thread(target=analyze_project_job, args=(pid,), daemon=True).start()
     except Exception as e:
         p.last_error = str(e)
         p.status = 'awaiting_upload'
         db.commit()
-    pid = p.id
+        pid = p.id
     db.close()
-    return RedirectResponse(f'/projects/{pid}', 303)
+    url = f'/projects/{pid}'
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JSONResponse({'ok': True, 'project_id': pid, 'redirect': url})
+    return RedirectResponse(url, 303)
 
 @app.post('/projects')
 def new_project(request: Request, name: str = Form(...)):
@@ -290,6 +329,16 @@ def project_page(pid: int, request: Request):
     db.close()
     return response
 
+@app.get('/projects/{pid}/status')
+def project_status(pid: int, request: Request):
+    u = current_user(request)
+    db, p = own_project(pid, u.id)
+    if not p:
+        raise HTTPException(404)
+    data = {'status': p.status, 'error': p.last_error or '', 'analysis_count': (p.analysis or {}).get('file_count', 0)}
+    db.close()
+    return data
+
 @app.post('/projects/{pid}/upload')
 def upload(pid: int, request: Request, file: UploadFile = File(...)):
     u = current_user(request)
@@ -297,11 +346,18 @@ def upload(pid: int, request: Request, file: UploadFile = File(...)):
     if not p:
         raise HTTPException(404)
     try:
-        ingest_project_file(p, file, db)
+        save_project_zip(p.id, file)
+        p.status = 'analyzing'
+        p.last_error = ''
+        db.commit()
+        threading.Thread(target=analyze_project_job, args=(pid,), daemon=True).start()
     except Exception as e:
         p.last_error = str(e)
+        p.status = 'awaiting_upload'
         db.commit()
     db.close()
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JSONResponse({'ok': True, 'redirect': f'/projects/{pid}'})
     return RedirectResponse(f'/projects/{pid}', 303)
 
 @app.post('/projects/{pid}/answer')
