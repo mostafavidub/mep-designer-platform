@@ -10,28 +10,21 @@
   {% if p.status in ['uploading','analyzing'] %}
   <div class="card analysis-card" id="analysisCard">
     <div class="analysis-loader"></div>
-    <div>
-      <h2>در حال تحلیل پلان معماری</h2>
-      <p class="muted">فایل با موفقیت روی سرور دریافت شده است. اکنون DXFها، Layerها، Textها و ساختار پایه پلان بررسی می‌شوند.</p>
-      <div class="processing-line"><span></span></div>
-      <small class="muted">برای فایل‌های حجیم ممکن است این مرحله کمی زمان ببرد. این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.</small>
-    </div>
+    <div><h2>در حال تحلیل پلان معماری</h2><p class="muted">فایل با موفقیت روی سرور دریافت شده است. اکنون DXFها، Layerها، Textها و ساختار پایه پلان بررسی می‌شوند.</p><div class="processing-line"><span></span></div><small class="muted">برای فایل‌های حجیم ممکن است این مرحله کمی زمان ببرد. این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.</small></div>
   </div>
-  <script>
-  (function poll(){fetch('/projects/{{p.id}}/status',{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d.status!=='analyzing'&&d.status!=='uploading'){location.reload();return;}setTimeout(poll,1800)}).catch(()=>setTimeout(poll,3000));})();
-  </script>
+  <script>(function poll(){fetch('/projects/{{p.id}}/status',{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d.status!=='analyzing'&&d.status!=='uploading'){location.reload();return;}setTimeout(poll,1800)}).catch(()=>setTimeout(poll,3000));})();</script>
   {% endif %}
 
   {% if p.status=='awaiting_upload' %}
   <div class="card">
     <h2>آپلود مجدد پلان‌های معماری</h2>
-    <p class="muted">یک فایل ZIP شامل DXFهای معماری انتخاب کنید. فایل‌های مخفی macOS مانند <b>__MACOSX</b> و <b>._filename</b> به‌صورت خودکار نادیده گرفته می‌شوند.</p>
+    <p class="muted">می‌توانید یک فایل <b>DXF</b> را مستقیم ارسال کنید، یا اگر چند پلان دارید یک فایل <b>ZIP شامل DXFها</b> آپلود کنید. فایل‌های مخفی macOS مانند <b>__MACOSX</b> و <b>._filename</b> در ZIP نادیده گرفته می‌شوند.</p>
     <form id="projectUploadForm" method="post" action="/projects/{{p.id}}/upload" enctype="multipart/form-data">
       <label class="dropzone" for="projectFile">
-        <input id="projectFile" type="file" name="file" accept=".zip" required>
+        <input id="projectFile" type="file" name="file" accept=".dxf,.zip" required>
         <span class="upload-icon">↥</span>
-        <strong id="projectFileLabel">فایل ZIP را انتخاب کنید</strong>
-        <small id="projectFileMeta">ZIP containing DXF files only</small>
+        <strong id="projectFileLabel">فایل DXF یا ZIP را انتخاب کنید</strong>
+        <small id="projectFileMeta">DXF directly · or ZIP containing DXF files</small>
       </label>
       <div id="projectUploadProgressWrap" class="upload-progress-wrap" hidden>
         <div class="upload-progress-head"><span id="projectUploadStatus">در حال آپلود فایل...</span><b id="projectUploadPercent">0%</b></div>
@@ -43,30 +36,9 @@
   </div>
   <script>
   (()=>{
-    const form=document.getElementById('projectUploadForm');
-    const input=document.getElementById('projectFile');
-    const label=document.getElementById('projectFileLabel');
-    const meta=document.getElementById('projectFileMeta');
-    const wrap=document.getElementById('projectUploadProgressWrap');
-    const bar=document.getElementById('projectUploadBar');
-    const pct=document.getElementById('projectUploadPercent');
-    const status=document.getElementById('projectUploadStatus');
-    const note=document.getElementById('projectUploadNote');
-    const btn=document.getElementById('projectUploadButton');
-    input.addEventListener('change',()=>{
-      const f=input.files&&input.files[0]; if(!f)return;
-      label.textContent=f.name; meta.textContent=`${(f.size/1024/1024).toFixed(2)} MB · ZIP`;
-    });
-    form.addEventListener('submit',e=>{
-      e.preventDefault(); const f=input.files&&input.files[0]; if(!f)return;
-      const xhr=new XMLHttpRequest(); const data=new FormData(form);
-      wrap.hidden=false; btn.disabled=true; btn.textContent='در حال ارسال...';
-      xhr.open('POST',form.action,true); xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
-      xhr.upload.onprogress=ev=>{if(ev.lengthComputable){const p=Math.round((ev.loaded/ev.total)*100);bar.style.width=p+'%';pct.textContent=p+'%';status.textContent=p<100?'در حال آپلود فایل...':'آپلود کامل شد';if(p===100)note.textContent='فایل روی سرور دریافت شد؛ در حال آماده‌سازی تحلیل...';}};
-      xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300){try{const d=JSON.parse(xhr.responseText);window.location.href=d.redirect||'/projects/{{p.id}}';}catch(_){window.location.reload();}}else{status.textContent='آپلود ناموفق بود';note.textContent='دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';}};
-      xhr.onerror=()=>{status.textContent='ارتباط با سرور قطع شد';note.textContent='اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';};
-      xhr.send(data);
-    });
+    const form=document.getElementById('projectUploadForm'),input=document.getElementById('projectFile'),label=document.getElementById('projectFileLabel'),meta=document.getElementById('projectFileMeta'),wrap=document.getElementById('projectUploadProgressWrap'),bar=document.getElementById('projectUploadBar'),pct=document.getElementById('projectUploadPercent'),status=document.getElementById('projectUploadStatus'),note=document.getElementById('projectUploadNote'),btn=document.getElementById('projectUploadButton');
+    input.addEventListener('change',()=>{const f=input.files&&input.files[0];if(!f)return;const ext=f.name.toLowerCase().endsWith('.dxf')?'DXF':'ZIP';label.textContent=f.name;meta.textContent=`${(f.size/1024/1024).toFixed(2)} MB · ${ext}`;});
+    form.addEventListener('submit',e=>{e.preventDefault();const f=input.files&&input.files[0];if(!f)return;const xhr=new XMLHttpRequest(),data=new FormData(form);wrap.hidden=false;btn.disabled=true;btn.textContent='در حال ارسال...';xhr.open('POST',form.action,true);xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');xhr.upload.onprogress=ev=>{if(ev.lengthComputable){const p=Math.round((ev.loaded/ev.total)*100);bar.style.width=p+'%';pct.textContent=p+'%';status.textContent=p<100?'در حال آپلود فایل...':'آپلود کامل شد';if(p===100)note.textContent='فایل روی سرور دریافت شد؛ در حال آماده‌سازی تحلیل...';}};xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300){try{const d=JSON.parse(xhr.responseText);window.location.href=d.redirect||'/projects/{{p.id}}';}catch(_){window.location.reload();}}else{status.textContent='آپلود ناموفق بود';note.textContent='دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';}};xhr.onerror=()=>{status.textContent='ارتباط با سرور قطع شد';note.textContent='اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';};xhr.send(data);});
   })();
   </script>
   {% endif %}
