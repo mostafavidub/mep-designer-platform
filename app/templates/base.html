@@ -1,1 +1,34 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}MEP Designer{% endblock %}</title><link rel="stylesheet" href="/static/style.css"></head><body><div class="nav"><div class="navin"><b>MEP Designer</b><div class="row">{% if user %}<span class="muted">{{ user.email }}</span><a href="/logout">خروج</a>{% endif %}</div></div></div>{% block body %}{% endblock %}</body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>{% block title %}EngiTools | ابزارهای هوشمند مهندسی{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="navin">
+    <a href="/" class="brand" aria-label="EngiTools home">
+      <span class="brand-mark"><span></span><span></span><span></span></span>
+      <span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span>
+    </a>
+    <nav class="top-nav">
+      <a href="/#mep-service">طراحی MEP</a>
+      <a href="/#services">خدمات</a>
+      <a href="/#how-it-works">نحوه کار</a>
+      <a href="/#file-guide">راهنمای فایل</a>
+    </nav>
+    <a class="nav-cta" href="/#mep-service">شروع پروژه</a>
+  </div>
+</header>
+{% block body %}{% endblock %}
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><strong>EngiTools</strong><p>فضای کاری دیجیتال برای ابزارها و خدمات مهندسی.</p></div>
+    <div class="footer-links"><a href="/#services">خدمات</a><a href="/#file-guide">راهنمای فایل</a><a href="/#mep-service">طراحی MEP</a></div>
+  </div>
+</footer>
+</body>
+</html>
