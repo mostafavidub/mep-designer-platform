@@ -1,14 +1,83 @@
-{% extends 'base.html' %}{% block body %}<main class="container"><div class="row" style="justify-content:space-between"><div><h1>{{p.name}}</h1><div class="row"><span class="badge">{{p.status}}</span><span class="badge">R{{p.current_revision}}</span></div></div><a class="btn secondary" href="/">بازگشت</a></div>
-{% if p.last_error %}<div class="card" style="border-color:#fca5a5"><b>پیام سیستم</b><p>{{p.last_error}}</p></div>{% endif %}
-{% if p.status in ['uploading','analyzing'] %}<div class="card analysis-card" id="analysisCard"><div class="analysis-loader"></div><div><h2>در حال تحلیل پلان معماری</h2><p class="muted">فایل با موفقیت روی سرور دریافت شده است. اکنون DXFها، Layerها، Textها و ساختار پایه پلان بررسی می‌شوند.</p><div class="processing-line"><span></span></div><small class="muted">برای فایل‌های حجیم ممکن است این مرحله کمی زمان ببرد. این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.</small></div></div>
-<script>
-(function poll(){fetch('/projects/{{p.id}}/status',{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d.status!=='analyzing'&&d.status!=='uploading'){location.reload();return;}setTimeout(poll,1800)}).catch(()=>setTimeout(poll,3000));})();
-</script>{% endif %}
-{% if p.status=='awaiting_upload' %}<div class="card"><h2>آپلود مجدد پلان‌های معماری</h2><p class="muted">همه پلان‌های معماری لازم را با فرمت DXF داخل یک ZIP قرار دهید. فایل‌های سیستمی مخفی macOS نادیده گرفته می‌شوند.</p><form method="post" action="/projects/{{p.id}}/upload" enctype="multipart/form-data"><input type="file" name="file" accept=".zip" required><button style="margin-top:12px">آپلود و تحلیل</button></form></div>{% endif %}
-{% if p.status=='asking' %}<div class="card"><h2>۲. اطلاعات طراحی</h2><div class="progress"><span style="width:{{ (p.current_question*100/question_count)|round if question_count else 0 }}%"></span></div><p class="muted">سؤال {{p.current_question+1}} از {{question_count}}</p><h3>{{current_question.question}}</h3><form method="post" action="/projects/{{p.id}}/answer"><textarea name="answer" rows="4" required></textarea><button style="margin-top:12px">ثبت پاسخ و سؤال بعدی</button></form></div>{% endif %}
-{% if p.status=='ready_to_design' %}<div class="card"><h2>۳. شروع طراحی</h2><p>پلان‌ها تحلیل شده و پاسخ‌های لازم ثبت شده‌اند.</p><form method="post" action="/projects/{{p.id}}/design"><button>شروع طراحی برق و مکانیک</button></form></div>{% endif %}
-{% if p.status in ['queued','designing'] %}<div class="card"><h2>در حال طراحی...</h2><p class="muted">Design Job در حال اجراست. چند دقیقه بعد صفحه را Refresh کنید.</p><button class="secondary" onclick="location.reload()">Refresh</button></div>{% endif %}
-{% if p.status=='failed' %}<div class="card"><h2>طراحی متوقف شد</h2><p class="muted">علت خطا بالا نمایش داده شده است.</p><form method="post" action="/projects/{{p.id}}/design"><button>تلاش مجدد</button></form></div>{% endif %}
-{% if p.status=='ready' %}<div class="grid"><div class="card"><h2>۴. خروجی نقشه‌ها</h2><p>آخرین Revision: R{{p.current_revision}}</p><a class="btn" href="/projects/{{p.id}}/pdf/{{p.current_revision}}">دانلود PDF</a></div><div class="card"><h2>۵. اصلاح نقشه</h2><p class="muted">اگر جایی نیاز به اصلاح دارد دقیق بنویسید.</p><form method="post" action="/projects/{{p.id}}/feedback"><textarea name="feedback" rows="5" required placeholder="مثلاً کادر توضیحات باید ۵ سانت از پلان فاصله داشته باشد"></textarea><button style="margin-top:12px">ارسال برای Revision</button></form></div></div>{% endif %}
-<div class="card"><h2>Revisionها</h2><table><thead><tr><th>Revision</th><th>وضعیت</th><th>Feedback</th><th>خطا</th></tr></thead><tbody>{% for r in revisions %}<tr><td>R{{r.revision_no}}</td><td>{{r.status}}</td><td>{{r.feedback or '-'}}</td><td>{{r.error or '-'}}</td></tr>{% else %}<tr><td colspan="4">هنوز Revision ساخته نشده.</td></tr>{% endfor %}</tbody></table></div>
-{% if p.analysis and p.analysis.file_count %}<div class="card"><h2>تحلیل DXF</h2><p>{{p.analysis.file_count}} فایل DXF شناسایی شده است.</p><ul>{% for f in p.analysis.files %}<li>{{f.file}} — {{f.version}} — {{f.layers|length}} Layer</li>{% endfor %}</ul></div>{% endif %}</main>{% endblock %}
+{% extends 'base.html' %}{% block body %}
+<main class="container">
+  <div class="row" style="justify-content:space-between">
+    <div><h1>{{p.name}}</h1><div class="row"><span class="badge">{{p.status}}</span><span class="badge">R{{p.current_revision}}</span></div></div>
+    <a class="btn secondary" href="/">بازگشت</a>
+  </div>
+
+  {% if p.last_error %}<div class="card" style="border-color:#fca5a5"><b>پیام سیستم</b><p>{{p.last_error}}</p></div>{% endif %}
+
+  {% if p.status in ['uploading','analyzing'] %}
+  <div class="card analysis-card" id="analysisCard">
+    <div class="analysis-loader"></div>
+    <div>
+      <h2>در حال تحلیل پلان معماری</h2>
+      <p class="muted">فایل با موفقیت روی سرور دریافت شده است. اکنون DXFها، Layerها، Textها و ساختار پایه پلان بررسی می‌شوند.</p>
+      <div class="processing-line"><span></span></div>
+      <small class="muted">برای فایل‌های حجیم ممکن است این مرحله کمی زمان ببرد. این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.</small>
+    </div>
+  </div>
+  <script>
+  (function poll(){fetch('/projects/{{p.id}}/status',{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d.status!=='analyzing'&&d.status!=='uploading'){location.reload();return;}setTimeout(poll,1800)}).catch(()=>setTimeout(poll,3000));})();
+  </script>
+  {% endif %}
+
+  {% if p.status=='awaiting_upload' %}
+  <div class="card">
+    <h2>آپلود مجدد پلان‌های معماری</h2>
+    <p class="muted">یک فایل ZIP شامل DXFهای معماری انتخاب کنید. فایل‌های مخفی macOS مانند <b>__MACOSX</b> و <b>._filename</b> به‌صورت خودکار نادیده گرفته می‌شوند.</p>
+    <form id="projectUploadForm" method="post" action="/projects/{{p.id}}/upload" enctype="multipart/form-data">
+      <label class="dropzone" for="projectFile">
+        <input id="projectFile" type="file" name="file" accept=".zip" required>
+        <span class="upload-icon">↥</span>
+        <strong id="projectFileLabel">فایل ZIP را انتخاب کنید</strong>
+        <small id="projectFileMeta">ZIP containing DXF files only</small>
+      </label>
+      <div id="projectUploadProgressWrap" class="upload-progress-wrap" hidden>
+        <div class="upload-progress-head"><span id="projectUploadStatus">در حال آپلود فایل...</span><b id="projectUploadPercent">0%</b></div>
+        <div class="upload-progress"><span id="projectUploadBar" style="width:0%"></span></div>
+        <div class="upload-progress-note" id="projectUploadNote">لطفاً این صفحه را نبندید.</div>
+      </div>
+      <button id="projectUploadButton" class="btn primary" type="submit">آپلود و تحلیل</button>
+    </form>
+  </div>
+  <script>
+  (()=>{
+    const form=document.getElementById('projectUploadForm');
+    const input=document.getElementById('projectFile');
+    const label=document.getElementById('projectFileLabel');
+    const meta=document.getElementById('projectFileMeta');
+    const wrap=document.getElementById('projectUploadProgressWrap');
+    const bar=document.getElementById('projectUploadBar');
+    const pct=document.getElementById('projectUploadPercent');
+    const status=document.getElementById('projectUploadStatus');
+    const note=document.getElementById('projectUploadNote');
+    const btn=document.getElementById('projectUploadButton');
+    input.addEventListener('change',()=>{
+      const f=input.files&&input.files[0]; if(!f)return;
+      label.textContent=f.name; meta.textContent=`${(f.size/1024/1024).toFixed(2)} MB · ZIP`;
+    });
+    form.addEventListener('submit',e=>{
+      e.preventDefault(); const f=input.files&&input.files[0]; if(!f)return;
+      const xhr=new XMLHttpRequest(); const data=new FormData(form);
+      wrap.hidden=false; btn.disabled=true; btn.textContent='در حال ارسال...';
+      xhr.open('POST',form.action,true); xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');
+      xhr.upload.onprogress=ev=>{if(ev.lengthComputable){const p=Math.round((ev.loaded/ev.total)*100);bar.style.width=p+'%';pct.textContent=p+'%';status.textContent=p<100?'در حال آپلود فایل...':'آپلود کامل شد';if(p===100)note.textContent='فایل روی سرور دریافت شد؛ در حال آماده‌سازی تحلیل...';}};
+      xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300){try{const d=JSON.parse(xhr.responseText);window.location.href=d.redirect||'/projects/{{p.id}}';}catch(_){window.location.reload();}}else{status.textContent='آپلود ناموفق بود';note.textContent='دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';}};
+      xhr.onerror=()=>{status.textContent='ارتباط با سرور قطع شد';note.textContent='اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';};
+      xhr.send(data);
+    });
+  })();
+  </script>
+  {% endif %}
+
+  {% if p.status=='asking' %}<div class="card"><h2>۲. اطلاعات طراحی</h2><div class="progress"><span style="width:{{ (p.current_question*100/question_count)|round if question_count else 0 }}%"></span></div><p class="muted">سؤال {{p.current_question+1}} از {{question_count}}</p><h3>{{current_question.question}}</h3><form method="post" action="/projects/{{p.id}}/answer"><textarea name="answer" rows="4" required></textarea><button style="margin-top:12px">ثبت پاسخ و سؤال بعدی</button></form></div>{% endif %}
+  {% if p.status=='ready_to_design' %}<div class="card"><h2>۳. شروع طراحی</h2><p>پلان‌ها تحلیل شده و پاسخ‌های لازم ثبت شده‌اند.</p><form method="post" action="/projects/{{p.id}}/design"><button>شروع طراحی برق و مکانیک</button></form></div>{% endif %}
+  {% if p.status in ['queued','designing'] %}<div class="card"><h2>در حال طراحی...</h2><p class="muted">Design Job در حال اجراست. چند دقیقه بعد صفحه را Refresh کنید.</p><button class="secondary" onclick="location.reload()">Refresh</button></div>{% endif %}
+  {% if p.status=='failed' %}<div class="card"><h2>طراحی متوقف شد</h2><p class="muted">علت خطا بالا نمایش داده شده است.</p><form method="post" action="/projects/{{p.id}}/design"><button>تلاش مجدد</button></form></div>{% endif %}
+  {% if p.status=='ready' %}<div class="grid"><div class="card"><h2>۴. خروجی نقشه‌ها</h2><p>آخرین Revision: R{{p.current_revision}}</p><a class="btn" href="/projects/{{p.id}}/pdf/{{p.current_revision}}">دانلود PDF</a></div><div class="card"><h2>۵. اصلاح نقشه</h2><p class="muted">اگر جایی نیاز به اصلاح دارد دقیق بنویسید.</p><form method="post" action="/projects/{{p.id}}/feedback"><textarea name="feedback" rows="5" required placeholder="مثلاً کادر توضیحات باید ۵ سانت از پلان فاصله داشته باشد"></textarea><button style="margin-top:12px">ارسال برای Revision</button></form></div></div>{% endif %}
+
+  <div class="card"><h2>Revisionها</h2><table><thead><tr><th>Revision</th><th>وضعیت</th><th>Feedback</th><th>خطا</th></tr></thead><tbody>{% for r in revisions %}<tr><td>R{{r.revision_no}}</td><td>{{r.status}}</td><td>{{r.feedback or '-'}}</td><td>{{r.error or '-'}}</td></tr>{% else %}<tr><td colspan="4">هنوز Revision ساخته نشده.</td></tr>{% endfor %}</tbody></table></div>
+  {% if p.analysis and p.analysis.file_count %}<div class="card"><h2>تحلیل DXF</h2><p>{{p.analysis.file_count}} فایل DXF شناسایی شده است.</p><ul>{% for f in p.analysis.files %}<li>{{f.file}} — {{f.version}} — {{f.layers|length}} Layer</li>{% endfor %}</ul></div>{% endif %}
+</main>
+{% endblock %}
