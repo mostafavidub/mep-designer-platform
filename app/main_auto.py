@@ -196,8 +196,10 @@ def system_health():
     return JSONResponse(result, status_code=200 if result['ok'] else 503)
 
 
+# Only canonical, indexable public pages belong in the XML sitemap.
+# /architect intentionally remains noindex until the service is live.
 PUBLIC_SEO_PATHS = [
-    '/', '/mechanical', '/electrical', '/architect', '/blog',
+    '/', '/mechanical', '/electrical', '/blog',
     '/blog/mep-input-guide', '/blog/electrical-plan-scope', '/blog/mechanical-plan-scope'
 ]
 
@@ -217,11 +219,12 @@ def robots(request: Request):
         'Disallow: /login',
         'Disallow: /register',
         'Disallow: /system-health',
+        'Disallow: /system_health',
         'Disallow: /health',
         f'Sitemap: {root}/sitemap.xml',
         ''
     ])
-    return Response(body, media_type='text/plain; charset=utf-8')
+    return Response(body, media_type='text/plain; charset=utf-8', headers={'Cache-Control': 'public, max-age=3600'})
 
 
 @app.get('/sitemap.xml', include_in_schema=False)
@@ -232,4 +235,4 @@ def sitemap(request: Request):
         for path in PUBLIC_SEO_PATHS
     )
     xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
-    return Response(xml, media_type='application/xml; charset=utf-8')
+    return Response(xml, media_type='application/xml; charset=utf-8', headers={'Cache-Control': 'public, max-age=3600'})
