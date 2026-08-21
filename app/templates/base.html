@@ -5,42 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0b1020">
   <meta name="google-site-verification" content="BTvevBqM2NGTer8b6XVxMYE9PdXmewNY7HcgJnmmCeQ" />
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VGJ540F9HC"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-VGJ540F9HC');
-  </script>
-  <title>{% block title %}EngiTools | ابزارهای هوشمند مهندسی{% endblock %}</title>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-VGJ540F9HC');</script>
+  <title>{% block title %}EngiTools | همراه هوشمند مهندسان{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=20260820-2155">
+  <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
 </head>
 <body>
-<header class="site-header">
-  <div class="navin">
-    <a href="/" class="brand" aria-label="EngiTools home">
-      <span class="brand-mark"><span></span><span></span><span></span></span>
-      <span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span>
-    </a>
-    <nav class="top-nav">
-      <a href="/#mep-service">طراحی MEP</a>
-      <a href="/#services">خدمات</a>
-      <a href="/#how-it-works">نحوه کار</a>
-      <a href="/#file-guide">راهنمای فایل</a>
-    </nav>
-    <a class="nav-cta" href="/#mep-service">شروع پروژه</a>
-  </div>
-</header>
+<header class="site-header"><div class="navin">
+  <a href="/" class="brand"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span></a>
+  <nav class="top-nav"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">بلاگ</a></nav>
+  <a class="nav-cta" href="/mechanical">شروع پروژه</a>
+</div></header>
 {% block body %}{% endblock %}
-<footer class="site-footer">
-  <div class="footer-inner">
-    <div><strong>EngiTools</strong><p>فضای کاری دیجیتال برای ابزارها و خدمات مهندسی.</p></div>
-    <div class="footer-links"><a href="/#services">خدمات</a><a href="/#file-guide">راهنمای فایل</a><a href="/#mep-service">طراحی MEP</a></div>
-  </div>
-</footer>
+<footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>همراه دیجیتال برای طراحی و ابزارهای مهندسی.</p></div><div class="footer-links"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">بلاگ</a></div></div></footer>
 </body>
 </html>
