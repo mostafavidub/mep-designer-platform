@@ -12,13 +12,13 @@ class LandingSmokeTests(unittest.TestCase):
     def _assert_common_discipline_contract(self, r, discipline_label, sample_title):
         self.assertEqual(r.status_code, 200)
         self.assertIn(discipline_label, r.text)
-        self.assertIn('محاسبات قابل استخراج', r.text)
+        self.assertIn('محاسبات اولیه', r.text)
         self.assertIn('سؤال', r.text)
         self.assertIn('چه چیزی تحویل می‌گیرید؟', r.text)
         self.assertIn('FAQPage', r.text)
-        self.assertIn('اصلاح خروجی چگونه انجام می‌شود؟', r.text)
-        self.assertIn('EngiTools در مقایسه با شروع دستی طراحی', r.text)
-        self.assertIn('چه چیزهایی را از پلان معماری حدس نمی‌زنیم؟', r.text)
+        self.assertIn('اصلاح خروجی', r.text)
+        self.assertIn('روش دستی در برابر EngiTools', r.text)
+        self.assertIn('چه چیزهایی را حدس نمی‌زنیم؟', r.text)
         self.assertIn(sample_title, r.text)
         self.assertTrue(r.text.count('project-') >= 4)
         self.assertIn('data-sample-carousel', r.text)
@@ -33,9 +33,9 @@ class LandingSmokeTests(unittest.TestCase):
         self._assert_common_discipline_contract(
             r,
             'همراه برق',
-            '۴ نمونه واقعی تبدیل پلان معماری به نقشه برق',
+            'نمونه‌های واقعی پلان معماری به نقشه برق',
         )
-        self.assertIn('پلان روشنایی', r.text)
+        self.assertIn('روشنایی', r.text)
         self.assertIn('SLD', r.text)
         self.assertIn('Panel Schedule', r.text)
 
@@ -44,7 +44,7 @@ class LandingSmokeTests(unittest.TestCase):
         self._assert_common_discipline_contract(
             r,
             'همراه مکانیک',
-            '۴ نمونه واقعی تبدیل پلان معماری به نقشه مکانیک',
+            'نمونه‌های واقعی پلان معماری به نقشه مکانیک',
         )
         self.assertIn('آب سرد و گرم', r.text)
         self.assertIn('فاضلاب', r.text)
@@ -53,9 +53,9 @@ class LandingSmokeTests(unittest.TestCase):
     def test_home_has_trust_comparison_limits_and_faq(self):
         r = self.client.get('/')
         self.assertEqual(r.status_code, 200)
-        self.assertIn('چرا می‌توان به فرآیند EngiTools اعتماد کرد؟', r.text)
+        self.assertIn('چرا فرآیند EngiTools قابل کنترل است؟', r.text)
         self.assertIn('FAQPage', r.text)
-        self.assertIn('شفافیت درباره محدودیت‌ها', r.text)
+        self.assertIn('محدودیت‌ها و اصلاح خروجی', r.text)
         self.assertIn('۴ نمونه واقعی از پروژه‌های تأییدشده', r.text)
         self.assertIn('project-1-electrical-before-after.svg', r.text)
         self.assertIn('project-8-mechanical-before-after.svg', r.text)
@@ -76,7 +76,7 @@ class LandingSmokeTests(unittest.TestCase):
     def test_architect_is_transparent_and_links_active_services(self):
         r = self.client.get('/architect')
         self.assertEqual(r.status_code, 200)
-        self.assertIn('این سرویس هنوز فعال نیست', r.text)
+        self.assertIn('این سرویس فعلاً فعال نیست', r.text)
         self.assertIn('/electrical', r.text)
         self.assertIn('/mechanical', r.text)
 
