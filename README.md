@@ -1,5 +1,13 @@
 # MEP Designer Platform
 
-Web application for uploading architectural DXF ZIP files, collecting MEP design inputs step-by-step, and managing MEP design revisions.
+Architecture-first MEP design web application. Users upload architectural DXF files; the platform extracts and computes every engineering input that can be derived reliably from the plan, then asks only unresolved project facts or owner decisions.
 
-> CAD drawing generation is provided by a separate CAD Designer service configured through `CAD_DESIGNER_URL`.
+Current runtime:
+- Dynamic unresolved-only questionnaire
+- Architecture-derived preliminary electrical/mechanical calculations
+- Discipline-isolated Electrical and Mechanical CAD outputs
+- Automated pre-deploy unit tests
+
+CAD generation runs through the internal CAD Designer service configured with `CAD_DESIGNER_URL`.
+
+All generated engineering calculations and drawings remain preliminary and require professional verification before construction use.
