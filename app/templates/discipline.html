@@ -1,15 +1,8 @@
 {% extends 'base.html' %}
-{% if discipline=='electrical' %}
-{% block title %}طراحی تأسیسات برقی ساختمان از روی پلان معماری | EngiTools{% endblock %}
-{% block meta_description %}طراحی هوشمند تأسیسات برقی ساختمان از فایل DXF معماری؛ روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، ارت و تابلو با تحلیل خودکار پلان.{% endblock %}
-{% block og_title %}طراحی تأسیسات برقی ساختمان | همراه برق EngiTools{% endblock %}
-{% block og_description %}فایل DXF معماری را بارگذاری کنید تا همراه برق اطلاعات قابل استخراج را تحلیل و طراحی مقدماتی نقشه‌های برق را شروع کند.{% endblock %}
-{% else %}
-{% block title %}طراحی تأسیسات مکانیکی ساختمان از روی پلان معماری | EngiTools{% endblock %}
-{% block meta_description %}طراحی هوشمند تأسیسات مکانیکی ساختمان از فایل DXF معماری؛ آب و فاضلاب، ونت، گاز، گرمایش، سرمایش و تهویه با تحلیل خودکار پلان.{% endblock %}
-{% block og_title %}طراحی تأسیسات مکانیکی ساختمان | همراه مکانیک EngiTools{% endblock %}
-{% block og_description %}فایل DXF معماری را بارگذاری کنید تا همراه مکانیک اطلاعات قابل استخراج را تحلیل و طراحی مقدماتی نقشه‌های مکانیکی را شروع کند.{% endblock %}
-{% endif %}
+{% block title %}{% if discipline=='electrical' %}طراحی تأسیسات برقی ساختمان از روی پلان معماری | EngiTools{% else %}طراحی تأسیسات مکانیکی ساختمان از روی پلان معماری | EngiTools{% endif %}{% endblock %}
+{% block meta_description %}{% if discipline=='electrical' %}طراحی هوشمند تأسیسات برقی ساختمان از فایل DXF معماری؛ روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، ارت و تابلو با تحلیل خودکار پلان.{% else %}طراحی هوشمند تأسیسات مکانیکی ساختمان از فایل DXF معماری؛ آب و فاضلاب، ونت، گاز، گرمایش، سرمایش و تهویه با تحلیل خودکار پلان.{% endif %}{% endblock %}
+{% block og_title %}{% if discipline=='electrical' %}طراحی تأسیسات برقی ساختمان | همراه برق EngiTools{% else %}طراحی تأسیسات مکانیکی ساختمان | همراه مکانیک EngiTools{% endif %}{% endblock %}
+{% block og_description %}{% if discipline=='electrical' %}فایل DXF معماری را بارگذاری کنید تا همراه برق اطلاعات قابل استخراج را تحلیل و طراحی مقدماتی نقشه‌های برق را شروع کند.{% else %}فایل DXF معماری را بارگذاری کنید تا همراه مکانیک اطلاعات قابل استخراج را تحلیل و طراحی مقدماتی نقشه‌های مکانیکی را شروع کند.{% endif %}{% endblock %}
 {% block structured_data %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"{% if discipline=='electrical' %}طراحی تأسیسات برقی ساختمان{% else %}طراحی تأسیسات مکانیکی ساختمان{% endif %}","provider":{"@type":"Organization","name":"EngiTools"},"areaServed":"IR","serviceType":"{% if discipline=='electrical' %}Electrical Building Services Design{% else %}Mechanical Building Services Design{% endif %}","description":"طراحی هوشمند مقدماتی تأسیسات ساختمان از روی پلان معماری DXF"}</script>{% endblock %}
 {% block body %}
 <main class="discipline-page {{cfg.accent}}">
