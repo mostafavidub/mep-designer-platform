@@ -2,8 +2,8 @@
 {% block body %}
 <main class="discipline-page {{cfg.accent}}">
 <section class="discipline-hero"><div class="container-wide discipline-hero-grid"><div><div class="eyebrow">{{cfg.icon}} {{cfg.title}}</div><h1>{{cfg.title}}</h1><h2>{{cfg.subtitle}}</h2><p>پلان معماری را بارگذاری کنید؛ تحلیل فایل، پرسش‌های طراحی و Workflow فقط برای همین رشته انجام می‌شود.</p><a class="btn primary" href="#start">شروع {{'طراحی برق' if discipline=='electrical' else 'طراحی مکانیک'}}</a></div><div class="discipline-visual"><div class="visual-symbol">{{cfg.icon}}</div><span>{{'LIGHTING · POWER · FIRE · ELV' if discipline=='electrical' else 'PLUMBING · HVAC · GAS · VENT'}}</span></div></div></section>
-<section class="section container-wide" id="start"><div class="section-head"><div><div class="kicker">START PROJECT</div><h2>شروع پروژه {{cfg.title}}</h2></div><p>فایل DXF مستقیم یا ZIP شامل DXFهای معماری پذیرفته می‌شود.</p></div><div class="upload-layout"><div class="upload-panel"><form id="uploadForm" method="post" action="/start-project/{{discipline}}" enctype="multipart/form-data" class="upload-form"><label class="project-label">نام پروژه <span>اختیاری</span></label><input name="name" placeholder="مثلاً ساختمان مسکونی"><label class="dropzone" for="file"><input id="file" type="file" name="file" accept=".dxf,.zip" required><span class="upload-icon">↥</span><strong id="fileLabel">فایل DXF یا ZIP پلان معماری را انتخاب کنید</strong><small id="fileMeta">DXF directly · or ZIP containing DXF files</small></label><div id="uploadProgressWrap" class="upload-progress-wrap" hidden><div class="upload-progress-head"><span id="uploadStatus">در حال آپلود...</span><b id="uploadPercent">0%</b></div><div class="upload-progress"><span id="uploadBar" style="width:0%"></span></div><div class="upload-progress-note" id="uploadNote">لطفاً این صفحه را نبندید.</div></div><button id="uploadButton" class="btn primary wide" type="submit">آپلود و شروع {{cfg.title}}</button></form></div><aside class="quick-spec"><div class="spec-title"><span>DISCIPLINE INPUT</span><b>{{'E' if discipline=='electrical' else 'M'}}</b></div><ul class="check-list"><li><b>رشته:</b> {{cfg.title}}</li><li><b>فایل:</b> DXF یا ZIP شامل DXF</li><li><b>تحلیل:</b> Levelها، Layerها و Textها</li><li><b>سوال‌ها:</b> فقط مرتبط با {{'برق' if discipline=='electrical' else 'مکانیک'}}</li><li><b>خروجی:</b> فقط نقشه‌های {{'برق' if discipline=='electrical' else 'مکانیک'}}؛ رشته دیگر وارد خروجی نمی‌شود</li></ul></aside></div></section>
-<section class="section section-soft"><div class="container-wide"><div class="section-head"><div><div class="kicker">SPECIALIST QUESTIONS</div><h2>چه سوال‌هایی پرسیده می‌شود؟</h2></div><p>سوال‌های عمومی پروژه + سوال‌های تخصصی همین رشته؛ خبری از سوال‌های رشته دیگر نیست.</p></div><div class="question-preview">{% for key,q in cfg.questions[-8:] %}<div class="question-chip"><span>{{loop.index}}</span><p>{{q}}</p></div>{% endfor %}</div></div></section>
+<section class="section container-wide" id="start"><div class="section-head"><div><div class="kicker">START PROJECT</div><h2>شروع پروژه {{cfg.title}}</h2></div><p>فایل DXF مستقیم یا ZIP شامل DXFهای معماری پذیرفته می‌شود.</p></div><div class="upload-layout"><div class="upload-panel"><form id="uploadForm" method="post" action="/start-project/{{discipline}}" enctype="multipart/form-data" class="upload-form"><label class="project-label">نام پروژه <span>اختیاری</span></label><input name="name" placeholder="مثلاً ساختمان مسکونی"><label class="dropzone" for="file"><input id="file" type="file" name="file" accept=".dxf,.zip" required><span class="upload-icon">↥</span><strong id="fileLabel">فایل DXF یا ZIP پلان معماری را انتخاب کنید</strong><small id="fileMeta">DXF directly · or ZIP containing DXF files</small></label><div id="uploadProgressWrap" class="upload-progress-wrap" hidden><div class="upload-progress-head"><span id="uploadStatus">در حال آپلود...</span><b id="uploadPercent">0%</b></div><div class="upload-progress"><span id="uploadBar" style="width:0%"></span></div><div class="upload-progress-note" id="uploadNote">لطفاً این صفحه را نبندید.</div></div><button id="uploadButton" class="btn primary wide" type="submit">آپلود و شروع {{cfg.title}}</button></form></div><aside class="quick-spec"><div class="spec-title"><span>DISCIPLINE INPUT</span><b>{{'E' if discipline=='electrical' else 'M'}}</b></div><ul class="check-list"><li><b>رشته:</b> {{cfg.title}}</li><li><b>فایل:</b> DXF یا ZIP شامل DXF</li><li><b>تحلیل:</b> Levelها، Layerها و Textها</li><li><b>سوال‌ها:</b> فقط مرتبط با {{'برق' if discipline=='electrical' else 'مکانیک'}}</li><li><b>ورودی محاسبات:</b> مقادیر عددی با واحد مشخص دریافت می‌شوند</li><li><b>خروجی:</b> فقط نقشه‌های {{'برق' if discipline=='electrical' else 'مکانیک'}}؛ رشته دیگر وارد خروجی نمی‌شود</li></ul></aside></div></section>
+<section class="section section-soft"><div class="container-wide"><div class="section-head"><div><div class="kicker">SPECIALIST QUESTIONS</div><h2>چه سوال‌هایی پرسیده می‌شود؟</h2></div><p>سوال‌های عمومی پروژه + سوال‌های تخصصی همین رشته؛ ورودی‌های محاسباتی به‌صورت عددی و با واحد مشخص دریافت می‌شوند.</p></div><div class="question-preview">{% for key,q in cfg.questions[-8:] %}<div class="question-chip"><span>{{loop.index}}</span><p>{{q}}</p></div>{% endfor %}</div></div></section>
 </main>
 
 <div id="projectModal" class="project-modal" hidden aria-hidden="true">
@@ -15,9 +15,7 @@
       <span class="modal-discipline-badge">{{cfg.icon}} {{'فقط برق' if discipline=='electrical' else 'فقط مکانیک'}}</span>
     </div>
     <div class="modal-progress"><span id="modalProgressBar" style="width:0%"></span></div>
-    <div id="modalBody" class="project-modal-body">
-      <div class="modal-processing"><div class="analysis-loader"></div><p>فایل دریافت شد؛ در حال تحلیل پلان معماری...</p></div>
-    </div>
+    <div id="modalBody" class="project-modal-body"><div class="modal-processing"><div class="analysis-loader"></div><p>فایل دریافت شد؛ در حال تحلیل پلان معماری...</p></div></div>
   </section>
 </div>
 
@@ -26,71 +24,49 @@
   const form=document.getElementById('uploadForm'),input=document.getElementById('file'),label=document.getElementById('fileLabel'),meta=document.getElementById('fileMeta'),wrap=document.getElementById('uploadProgressWrap'),bar=document.getElementById('uploadBar'),pct=document.getElementById('uploadPercent'),status=document.getElementById('uploadStatus'),note=document.getElementById('uploadNote'),btn=document.getElementById('uploadButton');
   const modal=document.getElementById('projectModal'),modalBody=document.getElementById('modalBody'),modalTitle=document.getElementById('projectModalTitle'),modalBar=document.getElementById('modalProgressBar'),modalClose=document.getElementById('modalClose');
   let projectId=null, flowUrl=null, pollTimer=null;
+  const num=(id,label,unit,step='any',placeholder='')=>`<label style="display:grid;gap:7px;font-weight:700">${label}<span style="display:flex;align-items:center;gap:8px"><input id="${id}" type="number" inputmode="decimal" step="${step}" min="0" placeholder="${placeholder}" style="flex:1"><small style="min-width:54px;text-align:left">${unit}</small></span></label>`;
+  const select=(id,label,options)=>`<label style="display:grid;gap:7px;font-weight:700">${label}<select id="${id}">${options.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label>`;
 
   function openModal(){modal.hidden=false;modal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open')}
   function closeModal(){modal.hidden=true;modal.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');if(pollTimer)clearTimeout(pollTimer)}
-  modalClose.addEventListener('click',closeModal);
-  modal.querySelector('.project-modal-backdrop').addEventListener('click',closeModal);
-
+  modalClose.addEventListener('click',closeModal); modal.querySelector('.project-modal-backdrop').addEventListener('click',closeModal);
   input.addEventListener('change',()=>{const x=input.files&&input.files[0];if(!x)return;label.textContent=x.name;meta.textContent=`${(x.size/1024/1024).toFixed(2)} MB · ${x.name.toLowerCase().endsWith('.dxf')?'DXF':'ZIP'}`});
+
+  function questionForm(q){
+    const key=q.key;
+    if(key==='supply') return `<div class="modal-question"><div class="modal-question-number">⚡</div><h3>${q.question}</h3><p>برای محاسبات جریان، ولتاژ و تعداد فاز را دقیق وارد کنید.</p><form id="modalAnswerForm"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">${select('calcPhase','تعداد فاز',[['1ph','تک‌فاز'],['3ph','سه‌فاز']])}${num('calcVoltage','ولتاژ نامی','V','1','230')}</div><button class="btn primary wide" type="submit">ثبت و ادامه</button></form></div>`;
+    if(key==='loads') return `<div class="modal-question"><div class="modal-question-number">Σ</div><h3>ورودی‌های محاسبات برق</h3><p>برای تخمین جریان، بریکر و افت ولتاژ، مقادیر عددی را وارد کنید. در صورت نامشخص بودن می‌توانید فیلد را خالی بگذارید.</p><form id="modalAnswerForm"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">${num('designLoadKw','بار طراحی کل','kW','0.01','20')}${num('cableLengthM','طول تقریبی مسیر کابل','m','0.1','30')}${num('powerFactor','ضریب توان','PF','0.01','0.90')}${num('voltageDrop','حداکثر افت ولتاژ','%','0.1','3')}</div><button class="btn primary wide" type="submit">ثبت ورودی‌های محاسباتی</button></form></div>`;
+    if(key==='water') return `<div class="modal-question"><div class="modal-question-number">Q</div><h3>ورودی‌های محاسبات آب‌رسانی</h3><p>دبی طراحی و سرعت هدف برای تخمین اولیه قطر هیدرولیکی استفاده می‌شوند.</p><form id="modalAnswerForm"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">${num('waterFlow','دبی طراحی آب','L/s','0.01','1.2')}${num('waterVelocity','سرعت هدف آب','m/s','0.1','1.5')}</div><button class="btn primary wide" type="submit">ثبت و ادامه</button></form></div>`;
+    if(key==='cooling') return `<div class="modal-question"><div class="modal-question-number">❄</div><h3>${q.question}</h3><p>اگر ظرفیت/بار سرمایش مشخص است، مقدار عددی را ثبت کنید.</p><form id="modalAnswerForm"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">${num('coolingKw','بار/ظرفیت سرمایش','kW','0.01','12')}</div><button class="btn primary wide" type="submit">ثبت و ادامه</button></form></div>`;
+    if(key==='heating') return `<div class="modal-question"><div class="modal-question-number">♨</div><h3>${q.question}</h3><p>اگر بار گرمایش مشخص است، مقدار را وارد کنید.</p><form id="modalAnswerForm"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">${num('heatingKw','بار گرمایش','kW','0.01','15')}</div><textarea id="modalAnswerExtra" rows="3" placeholder="نوع سیستم گرمایش، مثلاً رادیاتور یا گرمایش از کف"></textarea><button class="btn primary wide" type="submit">ثبت و ادامه</button></form></div>`;
+    return `<div class="modal-question"><div class="modal-question-number">${q._index||''}</div><h3>${q.question}</h3><form id="modalAnswerForm"><textarea id="modalAnswer" name="answer" rows="5" required autofocus placeholder="پاسخ خود را وارد کنید..."></textarea><button class="btn primary wide" type="submit">ثبت پاسخ و ادامه</button></form></div>`;
+  }
+
+  function serializedAnswer(q){
+    const v=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+    if(q.key==='supply'){const ph=v('calcPhase'),vol=v('calcVoltage');return `${ph}${vol?` ${vol} V`:''}`.trim()}
+    if(q.key==='loads'){const a=[];if(v('designLoadKw'))a.push(`${v('designLoadKw')} kW`);if(v('cableLengthM'))a.push(`${v('cableLengthM')} m`);if(v('powerFactor'))a.push(`PF=${v('powerFactor')}`);if(v('voltageDrop'))a.push(`VD=${v('voltageDrop')}%`);return a.join('; ')||'نامشخص'}
+    if(q.key==='water'){const a=[];if(v('waterFlow'))a.push(`${v('waterFlow')} L/s`);if(v('waterVelocity'))a.push(`VEL=${v('waterVelocity')} m/s`);return a.join('; ')||'نامشخص'}
+    if(q.key==='cooling')return v('coolingKw')?`${v('coolingKw')} kW`:'نامشخص';
+    if(q.key==='heating'){const a=[];if(v('heatingKw'))a.push(`${v('heatingKw')} kW`);if(v('modalAnswerExtra'))a.push(v('modalAnswerExtra'));return a.join('; ')||'نامشخص'}
+    const ta=document.getElementById('modalAnswer');return ta?ta.value.trim():'';
+  }
 
   function renderFlow(d){
     modalBar.style.width=(d.progress||0)+'%';
-    if(d.status==='uploading'||d.status==='analyzing'){
-      modalTitle.textContent='در حال تحلیل پلان معماری';
-      modalBody.innerHTML='<div class="modal-processing"><div class="analysis-loader"></div><div><b>تحلیل فایل در حال انجام است</b><p>Levelها، Layerها، Textها و ساختار پلان بررسی می‌شوند.</p></div></div>';
-      pollTimer=setTimeout(loadFlow,1400); return;
-    }
-    if(d.status==='asking' && d.question){
-      modalTitle.textContent=`سؤال ${d.current_index+1} از ${d.question_count}`;
-      modalBody.innerHTML=`<div class="modal-question"><div class="modal-question-number">${d.current_index+1}</div><h3>${d.question.question}</h3><form id="modalAnswerForm"><textarea id="modalAnswer" name="answer" rows="5" required autofocus placeholder="پاسخ خود را وارد کنید..."></textarea><button class="btn primary wide" type="submit">ثبت پاسخ و ادامه</button></form></div>`;
-      document.getElementById('modalAnswerForm').addEventListener('submit',submitAnswer); return;
-    }
-    if(d.status==='ready_to_design'){
-      modalBar.style.width='100%';
-      modalTitle.textContent='اطلاعات طراحی تکمیل شد';
-      modalBody.innerHTML=`<div class="modal-ready"><div class="modal-ready-icon">✓</div><h3>پروژه آماده شروع طراحی است</h3><p>خروجی این پروژه فقط مربوط به <b>${d.discipline_title}</b> خواهد بود و رشته دیگر وارد Scope خروجی نمی‌شود.</p><button id="modalDesignBtn" class="btn primary wide">شروع طراحی ${d.discipline==='electrical'?'برق':'مکانیک'}</button></div>`;
-      document.getElementById('modalDesignBtn').addEventListener('click',startDesign); return;
-    }
-    if(d.status==='queued'||d.status==='designing'){
-      modalTitle.textContent='در حال طراحی';
-      modalBody.innerHTML='<div class="modal-processing"><div class="analysis-loader"></div><div><b>Design Job در حال اجراست</b><p>خروجی با Scope همان رشته در حال تولید است.</p></div></div>';
-      pollTimer=setTimeout(loadFlow,1800); return;
-    }
-    if(d.status==='ready'){
-      modalBar.style.width='100%';modalTitle.textContent='خروجی آماده است';
-      modalBody.innerHTML=`<div class="modal-ready"><div class="modal-ready-icon">✓</div><h3>طراحی آماده شد</h3><p>فایل خروجی فقط برای ${d.discipline_title} است.</p>${d.pdf_url?`<a class="btn primary wide" href="${d.pdf_url}">دانلود PDF</a>`:''}</div>`; return;
-    }
-    if(d.status==='failed'||d.status==='awaiting_upload'){
-      modalTitle.textContent='فرآیند متوقف شد';
-      modalBody.innerHTML=`<div class="modal-error"><b>پیام سیستم</b><p>${d.error||'امکان ادامه فرآیند وجود ندارد.'}</p><a class="btn ghost" href="/projects/${d.project_id}">باز کردن صفحه پروژه</a></div>`; return;
-    }
+    if(d.status==='uploading'||d.status==='analyzing'){modalTitle.textContent='در حال تحلیل پلان معماری';modalBody.innerHTML='<div class="modal-processing"><div class="analysis-loader"></div><div><b>تحلیل فایل در حال انجام است</b><p>Levelها، Layerها، Textها و ساختار پلان بررسی می‌شوند.</p></div></div>';pollTimer=setTimeout(loadFlow,1400);return}
+    if(d.status==='asking'&&d.question){modalTitle.textContent=`سؤال ${d.current_index+1} از ${d.question_count}`;d.question._index=d.current_index+1;modalBody.innerHTML=questionForm(d.question);document.getElementById('modalAnswerForm').addEventListener('submit',e=>submitAnswer(e,d.question));return}
+    if(d.status==='ready_to_design'){modalBar.style.width='100%';modalTitle.textContent='اطلاعات طراحی تکمیل شد';modalBody.innerHTML=`<div class="modal-ready"><div class="modal-ready-icon">✓</div><h3>پروژه آماده شروع طراحی است</h3><p>خروجی این پروژه فقط مربوط به <b>${d.discipline_title}</b> خواهد بود. ورودی‌های محاسباتی استاندارد نیز همراه پروژه به موتور CAD ارسال می‌شوند.</p><button id="modalDesignBtn" class="btn primary wide">شروع طراحی ${d.discipline==='electrical'?'برق':'مکانیک'}</button></div>`;document.getElementById('modalDesignBtn').addEventListener('click',startDesign);return}
+    if(d.status==='queued'||d.status==='designing'){modalTitle.textContent='در حال طراحی و محاسبه';modalBody.innerHTML='<div class="modal-processing"><div class="analysis-loader"></div><div><b>Design + Calculation Job در حال اجراست</b><p>جانمایی و محاسبات مقدماتی رشته انتخاب‌شده در حال تولید است.</p></div></div>';pollTimer=setTimeout(loadFlow,1800);return}
+    if(d.status==='ready'){modalBar.style.width='100%';modalTitle.textContent='خروجی آماده است';modalBody.innerHTML=`<div class="modal-ready"><div class="modal-ready-icon">✓</div><h3>طراحی آماده شد</h3><p>فایل خروجی فقط برای ${d.discipline_title} است.</p>${d.pdf_url?`<a class="btn primary wide" href="${d.pdf_url}">دانلود PDF</a>`:''}</div>`;return}
+    if(d.status==='failed'||d.status==='awaiting_upload'){modalTitle.textContent='فرآیند متوقف شد';modalBody.innerHTML=`<div class="modal-error"><b>پیام سیستم</b><p>${d.error||'امکان ادامه فرآیند وجود ندارد.'}</p><a class="btn ghost" href="/projects/${d.project_id}">باز کردن صفحه پروژه</a></div>`;return}
     pollTimer=setTimeout(loadFlow,1500);
   }
 
-  async function loadFlow(){
-    if(!flowUrl)return;
-    try{const r=await fetch(flowUrl,{cache:'no-store'});const d=await r.json();renderFlow(d)}catch(e){pollTimer=setTimeout(loadFlow,2200)}
-  }
-
-  async function submitAnswer(e){
-    e.preventDefault();const ta=document.getElementById('modalAnswer');const value=ta.value.trim();if(!value)return;
-    const fd=new FormData();fd.append('answer',value);
-    const r=await fetch(`/projects/${projectId}/answer-json`,{method:'POST',body:fd});const d=await r.json();renderFlow(d);
-  }
-
-  async function startDesign(){
-    const b=document.getElementById('modalDesignBtn');if(b){b.disabled=true;b.textContent='در حال شروع طراحی...'}
-    const r=await fetch(`/projects/${projectId}/design-json`,{method:'POST'});const d=await r.json();renderFlow(d);if(d.status==='queued'||d.status==='designing')pollTimer=setTimeout(loadFlow,1200);
-  }
-
-  form.addEventListener('submit',e=>{
-    e.preventDefault();const x=input.files&&input.files[0];if(!x)return;
-    const r=new XMLHttpRequest(),d=new FormData(form);w.hidden=false;btn.disabled=true;r.open('POST',form.action,true);r.setRequestHeader('X-Requested-With','XMLHttpRequest');
-    r.upload.onprogress=e=>{if(e.lengthComputable){const q=Math.round(e.loaded/e.total*100);bar.style.width=q+'%';pct.textContent=q+'%';s=q<100?'در حال آپلود...':'آپلود کامل شد';status.textContent=s;if(q===100)note.textContent='فایل دریافت شد؛ سوالات در همین صفحه باز می‌شوند.'}};
-    r.onload=()=>{if(r.status>=200&&r.status<300){const z=JSON.parse(r.responseText);projectId=z.project_id;flowUrl=z.flow_url;openModal();modalTitle.textContent='در حال تحلیل پلان معماری';btn.disabled=false;btn.textContent='آپلود و شروع {{cfg.title}}';loadFlow()}else{btn.disabled=false;status.textContent='آپلود ناموفق بود'}};
-    r.onerror=()=>{btn.disabled=false;status.textContent='ارتباط با سرور قطع شد'};r.send(d)
-  });
+  async function loadFlow(){if(!flowUrl)return;try{const r=await fetch(flowUrl,{cache:'no-store'});const d=await r.json();renderFlow(d)}catch(e){pollTimer=setTimeout(loadFlow,2200)}}
+  async function submitAnswer(e,q){e.preventDefault();const value=serializedAnswer(q);if(!value)return;const fd=new FormData();fd.append('answer',value);const r=await fetch(`/projects/${projectId}/answer-json`,{method:'POST',body:fd});const d=await r.json();renderFlow(d)}
+  async function startDesign(){const b=document.getElementById('modalDesignBtn');if(b){b.disabled=true;b.textContent='در حال شروع طراحی...'}const r=await fetch(`/projects/${projectId}/design-json`,{method:'POST'});const d=await r.json();renderFlow(d);if(d.status==='queued'||d.status==='designing')pollTimer=setTimeout(loadFlow,1200)}
+  form.addEventListener('submit',e=>{e.preventDefault();const x=input.files&&input.files[0];if(!x)return;const r=new XMLHttpRequest(),d=new FormData(form);wrap.hidden=false;btn.disabled=true;r.open('POST',form.action,true);r.setRequestHeader('X-Requested-With','XMLHttpRequest');r.upload.onprogress=e=>{if(e.lengthComputable){const q=Math.round(e.loaded/e.total*100);bar.style.width=q+'%';pct.textContent=q+'%';const s=q<100?'در حال آپلود...':'آپلود کامل شد';status.textContent=s;if(q===100)note.textContent='فایل دریافت شد؛ سوالات در همین صفحه باز می‌شوند.'}};r.onload=()=>{if(r.status>=200&&r.status<300){const z=JSON.parse(r.responseText);projectId=z.project_id;flowUrl=z.flow_url;openModal();modalTitle.textContent='در حال تحلیل پلان معماری';btn.disabled=false;btn.textContent='آپلود و شروع {{cfg.title}}';loadFlow()}else{btn.disabled=false;status.textContent='آپلود ناموفق بود'}};r.onerror=()=>{btn.disabled=false;status.textContent='ارتباط با سرور قطع شد'};r.send(d)});
 })();
 </script>
 {% endblock %}
