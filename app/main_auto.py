@@ -3,7 +3,8 @@ from collections import Counter
 
 import requests
 from ezdxf import bbox
-from fastapi.responses import JSONResponse
+from fastapi import Request
+from fastapi.responses import JSONResponse, Response
 
 from . import main as legacy
 from .auto_inference_v2 import (
@@ -193,3 +194,37 @@ def system_health():
         result['cad'] = {'ok': False, 'error': str(exc)}
         result['ok'] = False
     return JSONResponse(result, status_code=200 if result['ok'] else 503)
+
+
+PUBLIC_SEO_PATHS = [
+    '/', '/mechanical', '/electrical', '/blog',
+    '/blog/mep-input-guide', '/blog/electrical-plan-scope', '/blog/mechanical-plan-scope'
+]
+
+
+@app.get('/robots.txt', include_in_schema=False)
+def robots(request: Request):
+    root = f"{request.url.scheme}://{request.url.netloc}"
+    body = "\n".join([
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /projects/',
+        'Disallow: /login',
+        'Disallow: /register',
+        'Disallow: /system-health',
+        'Disallow: /health',
+        f'Sitemap: {root}/sitemap.xml',
+        ''
+    ])
+    return Response(body, media_type='text/plain; charset=utf-8')
+
+
+@app.get('/sitemap.xml', include_in_schema=False)
+def sitemap(request: Request):
+    root = f"{request.url.scheme}://{request.url.netloc}"
+    urls = ''.join(
+        f'<url><loc>{root}{path}</loc><lastmod>2026-08-21</lastmod><changefreq>{"weekly" if path.startswith("/blog") else "monthly"}</changefreq><priority>{"1.0" if path == "/" else "0.9" if path in ("/mechanical", "/electrical") else "0.7"}</priority></url>'
+        for path in PUBLIC_SEO_PATHS
+    )
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return Response(xml, media_type='application/xml; charset=utf-8')
