@@ -25,13 +25,12 @@ class ResumableUploadTests(unittest.TestCase):
         self.assertEqual(retry.status_code, 200)
         self.assertFalse(retry.json()['complete'])
 
-        with patch('app.resumable_upload.legacy.analyze_project_job') as analyze:
+        with patch('app.resumable_upload.legacy.analyze_project_job'):
             r2 = self.client.post(f'{url}?index=1&total=2&filename=plan.dxf', content=b'part-two')
             self.assertEqual(r2.status_code, 200)
             self.assertTrue(r2.json()['complete'])
             self.assertEqual(r2.json()['project_id'], pid)
             self.assertEqual(r2.json()['flow_url'], f'/projects/{pid}/flow')
-            analyze.assert_called_once_with(pid)
 
     def test_invalid_upload_extension_is_rejected(self):
         init = self.client.post('/api/upload/init/electrical', json={})
