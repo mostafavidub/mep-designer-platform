@@ -17,7 +17,7 @@ from ezdxf import bbox
 from ezdxf.addons.drawing import Frontend, RenderContext
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
-app = FastAPI(title="EngiTools CAD Designer", version="0.1.0")
+app = FastAPI(title="EngiTools CAD Designer", version="0.1.1")
 
 SYSTEMS = {
     "electrical": [
@@ -32,25 +32,24 @@ SYSTEMS = {
         "mechanical_details_legend_notes",
     ],
 }
-
 PREFIX = {"electrical": "E", "mechanical": "M"}
-
+OUTPUT_ROOT = Path(os.getenv("CAD_OUTPUT_DIR", "/data/cad-engine"))
+OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
 
 class DesignRequest(BaseModel):
     project_id: str
     discipline: str
-    architecture_archive_b64: str
+    architecture_dir: str | None = None
+    architecture_archive_b64: str | None = None
     answers: dict = Field(default_factory=dict)
     plan_analysis: dict = Field(default_factory=dict)
     output_scope: dict
     revision: int = 1
     revision_instructions: str = ""
 
-
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "cad-designer", "version": "0.1.0"}
-
+    return {"ok": True, "service": "cad-designer", "version": "0.1.1"}
 
 def safe_extract_b64(payload: str, target: Path) -> list[Path]:
     try:
@@ -77,11 +76,22 @@ def safe_extract_b64(payload: str, target: Path) -> list[Path]:
         raise ValueError("no DXF files found in archive")
     return useful
 
+def source_files(req: DesignRequest, temp_input: Path) -> list[Path]:
+    if req.architecture_archive_b64:
+        return safe_extract_b64(req.architecture_archive_b64, temp_input)
+    if req.architecture_dir:
+        root = Path(req.architecture_dir).resolve()
+        if not root.exists() or not root.is_dir():
+            raise ValueError("architecture_dir does not exist")
+        files = [p for p in sorted(root.rglob("*.dxf")) if p.is_file() and "__MACOSX" not in p.parts and not p.name.startswith(".") and not p.name.startswith("._")]
+        if not files:
+            raise ValueError("no DXF files found in architecture_dir")
+        return files
+    raise ValueError("architecture_dir or architecture_archive_b64 is required")
 
 def ensure_layer(doc, name: str):
     if name not in doc.layers:
         doc.layers.add(name=name)
-
 
 def decorate_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revision: int):
     doc = ezdxf.readfile(src)
@@ -91,7 +101,6 @@ def decorate_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revi
     ensure_layer(doc, note_layer)
     for system in systems:
         ensure_layer(doc, f"ENGITOOLS-{prefix}-{system.upper()}")
-
     try:
         ext = bbox.extents(msp, fast=True)
         if ext.has_data:
@@ -100,17 +109,13 @@ def decorate_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revi
             width = max(maxx - minx, 1000.0)
             height = max(maxy - miny, 1000.0)
         else:
-            minx = miny = 0.0
             maxx = maxy = 1000.0
             width = height = 1000.0
     except Exception:
-        minx = miny = 0.0
         maxx = maxy = 1000.0
         width = height = 1000.0
-
     gap = max(width * 0.08, 500.0)
-    x0 = maxx + gap
-    y0 = maxy
+    x0, y0 = maxx + gap, maxy
     text_h = max(min(width, height) * 0.018, 60.0)
     title = f"ENGITOOLS {discipline.upper()} DRAFT - REV {revision}"
     warning = "PRELIMINARY AUTOMATED DRAFT - NOT FOR CONSTRUCTION"
@@ -121,17 +126,13 @@ def decorate_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revi
     for system in systems:
         msp.add_text(f"{prefix}-{system}", dxfattribs={"layer": note_layer, "height": text_h * 0.62}).set_placement((x0, yy))
         yy -= text_h * 1.1
-
-    # Lightweight legend strokes placed outside the architectural plan; no fabricated routing.
     legend_x2 = x0 + max(width * 0.12, 900.0)
     yline = yy - text_h
     for system in systems[:8]:
         layer = f"ENGITOOLS-{prefix}-{system.upper()}"
         msp.add_line((x0, yline), (legend_x2, yline), dxfattribs={"layer": layer})
         yline -= text_h * 0.9
-
     doc.saveas(dst)
-
 
 def render_pdf(dxf_path: Path, pdf_path: Path, discipline: str):
     doc = ezdxf.readfile(dxf_path)
@@ -146,10 +147,9 @@ def render_pdf(dxf_path: Path, pdf_path: Path, discipline: str):
         Frontend(ctx, out).draw_layout(msp, finalize=True)
     except Exception:
         ax.text(0.5, 0.5, "DXF preview rendering unavailable", ha="center", va="center", transform=ax.transAxes)
-    fig.suptitle(f"EngiTools {discipline.title()} — PRELIMINARY AUTOMATED DRAFT — NOT FOR CONSTRUCTION", fontsize=10)
+    fig.suptitle(f"EngiTools {discipline.title()} - PRELIMINARY AUTOMATED DRAFT - NOT FOR CONSTRUCTION", fontsize=10)
     fig.savefig(pdf_path, format="pdf", bbox_inches="tight")
     plt.close(fig)
-
 
 def merge_pdfs(paths: list[Path], out_path: Path):
     writer = PdfWriter()
@@ -160,14 +160,10 @@ def merge_pdfs(paths: list[Path], out_path: Path):
     with out_path.open("wb") as f:
         writer.write(f)
 
-
-def zip_outputs(paths: list[Path]) -> bytes:
-    bio = io.BytesIO()
-    with zipfile.ZipFile(bio, "w", zipfile.ZIP_DEFLATED) as zf:
+def zip_outputs(paths: list[Path], out_path: Path):
+    with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for p in paths:
             zf.write(p, arcname=p.name)
-    return bio.getvalue()
-
 
 @app.post("/design")
 def design(req: DesignRequest):
@@ -179,45 +175,45 @@ def design(req: DesignRequest):
         raise HTTPException(400, "output_scope discipline mismatch")
     if scope.get("only_this_discipline") is not True or scope.get("include_other_disciplines") is not False:
         raise HTTPException(400, "discipline isolation flags are required")
-
     requested = scope.get("systems") or []
     allowed = SYSTEMS[discipline]
     if any(s not in allowed for s in requested):
-        raise HTTPException(400, "output_scope contains systems from another or unsupported discipline")
+        raise HTTPException(400, "output_scope contains unsupported or cross-discipline systems")
     systems = requested or allowed
-
+    project_out = OUTPUT_ROOT / str(req.project_id) / f"R{req.revision:03d}" / discipline
+    shutil.rmtree(project_out, ignore_errors=True)
+    project_out.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="engitools-cad-") as td:
-        root = Path(td)
-        inp = root / "input"; inp.mkdir()
-        out = root / "output"; out.mkdir()
+        temp_input = Path(td) / "input"
+        temp_input.mkdir()
         try:
-            sources = safe_extract_b64(req.architecture_archive_b64, inp)
+            sources = source_files(req, temp_input)
         except Exception as exc:
             raise HTTPException(400, str(exc))
-
-        generated = []
-        page_pdfs = []
+        generated, page_pdfs = [], []
         for idx, src in enumerate(sources, start=1):
             safe_stem = "".join(c if c.isalnum() or c in "-_" else "_" for c in src.stem)[:80] or f"plan_{idx}"
-            dxf_out = out / f"{idx:02d}_{safe_stem}_{discipline}.dxf"
+            dxf_out = project_out / f"{idx:02d}_{safe_stem}_{discipline}.dxf"
             decorate_dxf(src, dxf_out, discipline, systems, req.revision)
             generated.append(dxf_out)
-            page = out / f"{idx:02d}_{discipline}.pdf"
+            page = project_out / f"{idx:02d}_{discipline}.pdf"
             render_pdf(dxf_out, page, discipline)
             page_pdfs.append(page)
-
-        merged = out / f"EngiTools_{req.project_id}_{discipline}_R{req.revision}.pdf"
+        merged = project_out / f"EngiTools_{req.project_id}_{discipline}_R{req.revision}.pdf"
         merge_pdfs(page_pdfs, merged)
-        package = zip_outputs(generated)
+        package = project_out / f"EngiTools_{req.project_id}_{discipline}_R{req.revision}_DXF.zip"
+        zip_outputs(generated, package)
         return {
             "ok": True,
             "project_id": req.project_id,
             "discipline": discipline,
-            "engine_version": "0.1.0",
+            "engine_version": "0.1.1",
             "preliminary": True,
             "not_for_construction": True,
             "systems": systems,
             "generated_files": [p.name for p in generated],
+            "pdf_path": str(merged),
+            "zip_path": str(package),
             "pdf_base64": base64.b64encode(merged.read_bytes()).decode("ascii"),
-            "zip_base64": base64.b64encode(package).decode("ascii"),
+            "zip_base64": base64.b64encode(package.read_bytes()).decode("ascii"),
         }
