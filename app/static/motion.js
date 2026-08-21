@@ -9,8 +9,10 @@
     if(progress) progress.style.transform=`scaleX(${Math.min(1,y/range)})`;
   };
   addEventListener('scroll',onScroll,{passive:true});onScroll();
-  menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));nav?.classList.toggle('is-open',open);body.classList.toggle('modal-open',open)});
-  nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{menu?.setAttribute('aria-expanded','false');nav.classList.remove('is-open');body.classList.remove('modal-open')}));
+  const setMenuOpen=open=>{menu?.setAttribute('aria-expanded',String(open));menu?.setAttribute('aria-label',open?'بستن منو':'باز کردن منو');nav?.classList.toggle('is-open',open);body.classList.toggle('modal-open',open)};
+  menu?.addEventListener('click',()=>setMenuOpen(menu.getAttribute('aria-expanded')!=='true'));
+  nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenuOpen(false)));
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&menu?.getAttribute('aria-expanded')==='true'){setMenuOpen(false);menu.focus()}});
 
   const hero=document.querySelector('.home-hero'),title=hero?.querySelector('h1');
   if(hero&&!reduce){
