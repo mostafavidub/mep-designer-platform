@@ -73,6 +73,7 @@ body:has(.home-hero) main>section:nth-of-type(3){background:var(--acid)}body:has
 
 /* MONOCHROME UI 2026 — restrained black, white and neutral gray */
 .orb,.companion-icon,.visual-symbol{filter:grayscale(1)}
+.service-code,.text-link{color:currentColor}.sample-lightbox p{color:rgba(255,255,255,.72)}.status-dot{background:currentColor}
 body{background:var(--paper)}
 ::selection{background:var(--ink);color:var(--white)}
 .scroll-progress span{background:var(--white);mix-blend-mode:difference}
