@@ -19,7 +19,8 @@
   <meta property="og:title" content="{% block og_title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
   <meta property="og:description" content="{% block og_description %}طراحی هوشمند نقشه‌های تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF.{% endblock %}">
   <meta property="og:url" content="{{ canonical_scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
-  <meta name="twitter:card" content="summary">
+  {% block social_image %}{% endblock %}
+  <meta name="twitter:card" content="{% block twitter_card %}summary{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
