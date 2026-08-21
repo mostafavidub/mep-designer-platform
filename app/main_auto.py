@@ -202,9 +202,14 @@ PUBLIC_SEO_PATHS = [
 ]
 
 
+def _public_root(request: Request):
+    scheme = request.headers.get('x-forwarded-proto', 'https').split(',')[0].strip()
+    return f"{scheme}://{request.url.netloc}"
+
+
 @app.get('/robots.txt', include_in_schema=False)
 def robots(request: Request):
-    root = f"{request.url.scheme}://{request.url.netloc}"
+    root = _public_root(request)
     body = "\n".join([
         'User-agent: *',
         'Allow: /',
@@ -221,7 +226,7 @@ def robots(request: Request):
 
 @app.get('/sitemap.xml', include_in_schema=False)
 def sitemap(request: Request):
-    root = f"{request.url.scheme}://{request.url.netloc}"
+    root = _public_root(request)
     urls = ''.join(
         f'<url><loc>{root}{path}</loc><lastmod>2026-08-21</lastmod><changefreq>{"weekly" if path.startswith("/blog") else "monthly"}</changefreq><priority>{"1.0" if path == "/" else "0.9" if path in ("/mechanical", "/electrical") else "0.7"}</priority></url>'
         for path in PUBLIC_SEO_PATHS
