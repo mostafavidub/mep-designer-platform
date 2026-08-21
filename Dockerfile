@@ -6,6 +6,7 @@ COPY cad_engine/requirements.txt ./requirements-cad.txt
 RUN pip install --no-cache-dir -r requirements-web.txt -r requirements-cad.txt
 COPY app ./app
 COPY cad_engine ./cad_engine
+COPY tests ./tests
 COPY data ./data
 COPY start_services.sh ./start_services.sh
 RUN chmod +x ./start_services.sh
