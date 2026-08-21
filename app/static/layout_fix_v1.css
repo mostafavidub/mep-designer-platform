@@ -51,7 +51,11 @@ html,body{max-width:100%;overflow-x:clip}
   color:var(--brand-ink)!important;
   overflow:hidden!important;
 }
-.service-cta:hover,.service-cta:focus-visible{color:#fff!important}
+/* Some legacy discipline-specific selectors forced the mechanical card descendants to white.
+   The resting state is intentionally identical for all three service cards; only interaction inverts it. */
+.service-cta,.service-cta *{color:var(--brand-ink)!important}
+.service-cta:hover,.service-cta:hover *,
+.service-cta:focus-visible,.service-cta:focus-visible *{color:#fff!important}
 .service-cta .cta-top,.service-cta .cta-body,.service-cta .cta-link{min-width:0!important;max-width:100%!important}
 .service-cta h3,.service-cta p{white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important}
 
