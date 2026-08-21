@@ -1,66 +1,13 @@
 {% extends 'base.html' %}{% block body %}
-<main class="container">
-  <div class="row" style="justify-content:space-between">
-    <div><h1>{{p.name}}</h1><div class="row"><span class="badge">{{p.status}}</span><span class="badge">R{{p.current_revision}}</span></div></div>
-    <a class="btn secondary" href="/">بازگشت</a>
-  </div>
-
-  {% if p.last_error %}<div class="card" style="border-color:#fca5a5"><b>پیام سیستم</b><p>{{p.last_error}}</p></div>{% endif %}
-
-  {% if p.status in ['uploading','analyzing'] %}
-  <div class="card analysis-card" id="analysisCard">
-    <div class="analysis-loader"></div>
-    <div><h2>در حال تحلیل پلان معماری</h2><p class="muted">فایل با موفقیت روی سرور دریافت شده است. اکنون DXFها، Layerها، Textها و ساختار پایه پلان بررسی می‌شوند.</p><div class="processing-line"><span></span></div><small class="muted">برای فایل‌های حجیم ممکن است این مرحله کمی زمان ببرد. این صفحه به‌صورت خودکار به‌روزرسانی می‌شود.</small></div>
-  </div>
-  <script>(function poll(){fetch('/projects/{{p.id}}/status',{cache:'no-store'}).then(r=>r.json()).then(d=>{if(d.status!=='analyzing'&&d.status!=='uploading'){location.reload();return;}setTimeout(poll,1800)}).catch(()=>setTimeout(poll,3000));})();</script>
-  {% endif %}
-
-  {% if p.status=='awaiting_upload' %}
-  <div class="card">
-    <h2>آپلود مجدد پلان‌های معماری</h2>
-    <p class="muted">می‌توانید یک فایل <b>DXF</b> را مستقیم ارسال کنید، یا اگر چند پلان دارید یک فایل <b>ZIP شامل DXFها</b> آپلود کنید. فایل‌های مخفی macOS مانند <b>__MACOSX</b> و <b>._filename</b> در ZIP نادیده گرفته می‌شوند.</p>
-    <form id="projectUploadForm" method="post" action="/projects/{{p.id}}/upload" enctype="multipart/form-data">
-      <label class="dropzone" for="projectFile">
-        <input id="projectFile" type="file" name="file" accept=".dxf,.zip" required>
-        <span class="upload-icon">↥</span>
-        <strong id="projectFileLabel">فایل DXF یا ZIP را انتخاب کنید</strong>
-        <small id="projectFileMeta">DXF directly · or ZIP containing DXF files</small>
-      </label>
-      <div id="projectUploadProgressWrap" class="upload-progress-wrap" hidden>
-        <div class="upload-progress-head"><span id="projectUploadStatus">در حال آپلود فایل...</span><b id="projectUploadPercent">0%</b></div>
-        <div class="upload-progress"><span id="projectUploadBar" style="width:0%"></span></div>
-        <div class="upload-progress-note" id="projectUploadNote">لطفاً این صفحه را نبندید.</div>
-      </div>
-      <button id="projectUploadButton" class="btn primary" type="submit">آپلود و تحلیل</button>
-    </form>
-  </div>
-  <script>
-  (()=>{
-    const form=document.getElementById('projectUploadForm'),input=document.getElementById('projectFile'),label=document.getElementById('projectFileLabel'),meta=document.getElementById('projectFileMeta'),wrap=document.getElementById('projectUploadProgressWrap'),bar=document.getElementById('projectUploadBar'),pct=document.getElementById('projectUploadPercent'),status=document.getElementById('projectUploadStatus'),note=document.getElementById('projectUploadNote'),btn=document.getElementById('projectUploadButton');
-    input.addEventListener('change',()=>{const f=input.files&&input.files[0];if(!f)return;const ext=f.name.toLowerCase().endsWith('.dxf')?'DXF':'ZIP';label.textContent=f.name;meta.textContent=`${(f.size/1024/1024).toFixed(2)} MB · ${ext}`;});
-    form.addEventListener('submit',e=>{e.preventDefault();const f=input.files&&input.files[0];if(!f)return;const xhr=new XMLHttpRequest(),data=new FormData(form);wrap.hidden=false;btn.disabled=true;btn.textContent='در حال ارسال...';xhr.open('POST',form.action,true);xhr.setRequestHeader('X-Requested-With','XMLHttpRequest');xhr.upload.onprogress=ev=>{if(ev.lengthComputable){const p=Math.round((ev.loaded/ev.total)*100);bar.style.width=p+'%';pct.textContent=p+'%';status.textContent=p<100?'در حال آپلود فایل...':'آپلود کامل شد';if(p===100)note.textContent='فایل روی سرور دریافت شد؛ در حال آماده‌سازی تحلیل...';}};xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300){try{const d=JSON.parse(xhr.responseText);window.location.href=d.redirect||'/projects/{{p.id}}';}catch(_){window.location.reload();}}else{status.textContent='آپلود ناموفق بود';note.textContent='دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';}};xhr.onerror=()=>{status.textContent='ارتباط با سرور قطع شد';note.textContent='اتصال اینترنت را بررسی کرده و دوباره تلاش کنید.';btn.disabled=false;btn.textContent='آپلود و تحلیل';};xhr.send(data);});
-  })();
-  </script>
-  {% endif %}
-
-  {% if p.status=='asking' %}<div class="card"><h2>۲. اطلاعات طراحی</h2><div class="progress"><span style="width:{{ (p.current_question*100/question_count)|round if question_count else 0 }}%"></span></div><p class="muted">سؤال {{p.current_question+1}} از {{question_count}}</p><h3>{{current_question.question}}</h3><form method="post" action="/projects/{{p.id}}/answer"><textarea name="answer" rows="4" required></textarea><button style="margin-top:12px">ثبت پاسخ و سؤال بعدی</button></form></div>{% endif %}
-
-  {% if p.status=='ready_to_design' %}
-  <div class="card">
-    <h2>۳. شروع طراحی</h2>
-    <p>پلان‌ها تحلیل شده و پاسخ‌های لازم ثبت شده‌اند.</p>
-    <div class="note-bar"><b>الگوی تولید نقشه:</b> تعداد پلان برق و مکانیک مستقل و Level-Based است. برای هر Level یا Typical Group دارای Scope، یک پلان پایه در همان رشته در نظر گرفته می‌شود. مثال: 8 Level با Scope کامل = <b>8 پلان برق + 8 پلان مکانیک</b>. رایزر، SLD، Panel Schedule، Details و Legend جدا از این تعداد هستند و اگر تراکم سیستم‌ها خوانایی را کم کند، همان Level به شیت‌های بیشتری تفکیک می‌شود.</div>
-    <form method="post" action="/projects/{{p.id}}/design"><button>شروع طراحی برق و مکانیک</button></form>
-  </div>
-  {% endif %}
-
-  {% if p.status in ['queued','designing'] %}<div class="card"><h2>در حال طراحی...</h2><p class="muted">Design Job در حال اجراست. خروجی بر اساس Levelهای معماری و Scope مستقل برق و مکانیک سازمان‌دهی می‌شود.</p><button class="secondary" onclick="location.reload()">Refresh</button></div>{% endif %}
-  {% if p.status=='failed' %}<div class="card"><h2>طراحی متوقف شد</h2><p class="muted">علت خطا بالا نمایش داده شده است.</p><form method="post" action="/projects/{{p.id}}/design"><button>تلاش مجدد</button></form></div>{% endif %}
-  {% if p.status=='ready' %}<div class="grid"><div class="card"><h2>۴. خروجی نقشه‌ها</h2><p>آخرین Revision: R{{p.current_revision}}</p><a class="btn" href="/projects/{{p.id}}/pdf/{{p.current_revision}}">دانلود PDF</a></div><div class="card"><h2>۵. اصلاح نقشه</h2><p class="muted">اگر جایی نیاز به اصلاح دارد دقیق بنویسید.</p><form method="post" action="/projects/{{p.id}}/feedback"><textarea name="feedback" rows="5" required placeholder="مثلاً کادر توضیحات باید ۵ سانت از پلان فاصله داشته باشد"></textarea><button style="margin-top:12px">ارسال برای Revision</button></form></div></div>{% endif %}
-
-  <div class="card"><h2>قاعده تعداد پلان</h2><p class="muted">Floor/Level Plan Count برای برق و مکانیک جداگانه محاسبه می‌شود. ترازهای ویژه و طبقات غیرتیپ مستقل هستند؛ طبقات کاملاً تیپ می‌توانند به یک Typical Floor Plan گروه‌بندی شوند. پلان خالی برای تراز بدون Scope تولید نمی‌شود.</p></div>
-
-  <div class="card"><h2>Revisionها</h2><table><thead><tr><th>Revision</th><th>وضعیت</th><th>Feedback</th><th>خطا</th></tr></thead><tbody>{% for r in revisions %}<tr><td>R{{r.revision_no}}</td><td>{{r.status}}</td><td>{{r.feedback or '-'}}</td><td>{{r.error or '-'}}</td></tr>{% else %}<tr><td colspan="4">هنوز Revision ساخته نشده.</td></tr>{% endfor %}</tbody></table></div>
-  {% if p.analysis and p.analysis.file_count %}<div class="card"><h2>تحلیل DXF</h2><p>{{p.analysis.file_count}} فایل DXF شناسایی شده است.</p><ul>{% for f in p.analysis.files %}<li>{{f.file}} — {{f.version}} — {{f.layers|length}} Layer</li>{% endfor %}</ul></div>{% endif %}
-</main>
-{% endblock %}
+<main class="container project-flow {{discipline}}"><div class="row" style="justify-content:space-between"><div><div class="eyebrow">{{cfg.icon}} {{cfg.title}}</div><h1>{{p.name}}</h1><div class="row"><span class="badge">{{p.status}}</span><span class="badge">R{{p.current_revision}}</span></div></div><a class="btn secondary" href="/{{discipline}}">بازگشت به {{cfg.title}}</a></div>
+{% if p.last_error %}<div class="card" style="border-color:#fca5a5"><b>پیام سیستم</b><p>{{p.last_error}}</p></div>{% endif %}
+{% if p.status in ['uploading','analyzing'] %}<div class="card analysis-card"><div class="analysis-loader"></div><div><h2>در حال تحلیل پلان معماری</h2><p class="muted">فایل دریافت شده و برای Workflow {{cfg.title}} تحلیل می‌شود.</p><div class="processing-line"><span></span></div><small class="muted">DXFها، Layerها، Textها و Levelهای معماری بررسی می‌شوند.</small></div></div><script>(function poll(){fetch('/projects/{{p.id}}/status',{cache:'no-store'}).then(r=>r.json()).then(d=>{if(!['analyzing','uploading'].includes(d.status)){location.reload();return}setTimeout(poll,1800)}).catch(()=>setTimeout(poll,3000))})();</script>{% endif %}
+{% if p.status=='awaiting_upload' %}<div class="card"><h2>آپلود مجدد پلان معماری</h2><form id="projectUploadForm" method="post" action="/projects/{{p.id}}/upload" enctype="multipart/form-data"><label class="dropzone" for="projectFile"><input id="projectFile" type="file" name="file" accept=".dxf,.zip" required><span class="upload-icon">↥</span><strong>DXF یا ZIP را انتخاب کنید</strong></label><button>آپلود و تحلیل</button></form></div>{% endif %}
+{% if p.status=='asking' %}<div class="card question-card"><div class="section-head compact"><div><div class="kicker">{{cfg.title}}</div><h2>اطلاعات طراحی تخصصی</h2></div><p>فقط سوال‌های مرتبط با همین رشته پرسیده می‌شوند.</p></div><div class="progress"><span style="width:{{ (p.current_question*100/question_count)|round if question_count else 0 }}%"></span></div><p class="muted">سؤال {{p.current_question+1}} از {{question_count}}</p><h3>{{current_question.question}}</h3><form method="post" action="/projects/{{p.id}}/answer"><textarea name="answer" rows="4" required></textarea><button style="margin-top:12px">ثبت پاسخ و سؤال بعدی</button></form></div>{% endif %}
+{% if p.status=='ready_to_design' %}<div class="card"><h2>شروع طراحی {{cfg.title}}</h2><p>پلان تحلیل شده و پاسخ‌های تخصصی همین رشته ثبت شده‌اند.</p><div class="note-bar"><b>قاعده خروجی:</b> تعداد Floor/Level Planهای {{'برق' if discipline=='electrical' else 'مکانیک'}} مستقل و بر اساس Levelهای معماری محاسبه می‌شود؛ رایزرها، Scheduleها، SLD/Details و Legend جدا از این شمارش‌اند.</div><form method="post" action="/projects/{{p.id}}/design"><button>شروع طراحی {{'برق' if discipline=='electrical' else 'مکانیک'}}</button></form></div>{% endif %}
+{% if p.status in ['queued','designing'] %}<div class="card"><h2>در حال طراحی {{cfg.title}}...</h2><p class="muted">Design Job فقط برای رشته {{'برق' if discipline=='electrical' else 'مکانیک'}} در حال اجراست.</p><button class="secondary" onclick="location.reload()">Refresh</button></div>{% endif %}
+{% if p.status=='failed' %}<div class="card"><h2>طراحی متوقف شد</h2><p class="muted">علت خطا بالا نمایش داده شده است.</p><form method="post" action="/projects/{{p.id}}/design"><button>تلاش مجدد</button></form></div>{% endif %}
+{% if p.status=='ready' %}<div class="grid"><div class="card"><h2>خروجی {{cfg.title}}</h2><p>آخرین Revision: R{{p.current_revision}}</p><a class="btn primary" href="/projects/{{p.id}}/pdf/{{p.current_revision}}">دانلود PDF</a></div><div class="card"><h2>اصلاح نقشه</h2><form method="post" action="/projects/{{p.id}}/feedback"><textarea name="feedback" rows="5" required placeholder="اصلاح موردنظر را دقیق بنویسید"></textarea><button style="margin-top:12px">ارسال برای Revision</button></form></div></div>{% endif %}
+<div class="card"><h2>Revisionها</h2><table><thead><tr><th>Revision</th><th>وضعیت</th><th>Feedback</th><th>خطا</th></tr></thead><tbody>{% for r in revisions %}<tr><td>R{{r.revision_no}}</td><td>{{r.status}}</td><td>{{r.feedback or '-'}}</td><td>{{r.error or '-'}}</td></tr>{% else %}<tr><td colspan="4">هنوز Revision ساخته نشده.</td></tr>{% endfor %}</tbody></table></div>
+{% if p.analysis and p.analysis.file_count %}<div class="card"><h2>تحلیل DXF</h2><p>{{p.analysis.file_count}} فایل DXF برای {{cfg.title}} شناسایی شده است.</p><ul>{% for f in p.analysis.files %}<li>{{f.file}} — {{f.version}} — {{f.layers|length}} Layer</li>{% endfor %}</ul></div>{% endif %}
+</main>{% endblock %}
