@@ -1,6 +1,6 @@
 :root{
-  --ink:#0a0a0a;--paper:#f6f4ef;--white:#fff;--acid:#d8ff3e;
-  --orange:#ff5b22;--violet:#7257ff;--blue:#1767ff;--line:#171717;
+  --ink:#080808;--paper:#f5f5f2;--white:#fff;--acid:#fff;
+  --orange:#dededb;--violet:#1a1a1a;--blue:#111;--line:#181818;
   --ease:cubic-bezier(.22,1,.36,1);--pad:clamp(18px,3.2vw,54px)
 }
 *{border-color:var(--line)}
@@ -69,3 +69,37 @@ body:has(.home-hero) main>section:nth-of-type(3){background:var(--acid)}body:has
   .site-header{height:68px}.brand-copy small{display:none}.nav-cta{display:none}.hero{padding-top:105px}.hero-copy{gap:20px}.hero h1{font-size:clamp(48px,15vw,72px);min-height:2.8em}.hero-actions .btn{width:auto;flex:1}.blueprint-card{width:82vw;height:82vw;opacity:.38;top:34%}.section-head{flex-direction:column}.section-head h2{font-size:clamp(38px,12vw,58px)}.companion-card:nth-child(n){grid-column:1/-1;min-height:330px}.steps{grid-template-columns:1fr}.step,.step:nth-child(n){border:0;border-bottom:1px solid var(--ink);min-height:230px}.seo-copy{grid-template-columns:1fr}.trust-grid,.deliverable-grid,.limit-grid{grid-template-columns:1fr}.trust-grid article,.deliverable-grid article,.limit-grid article{border:0;border-bottom:1px solid currentColor}.two-col-info{grid-template-columns:1fr}.two-col-info article{border:0;border-bottom:1px solid var(--ink)}.blog-grid{grid-template-columns:1fr}.blog-card{border:0;border-bottom:1px solid var(--ink)}.sample-stage{min-height:78vw}.sample-open{height:calc(100% - 112px)}.sample-card figcaption{height:112px;align-items:flex-start}.carousel-progress{display:none}.carousel-prev{right:var(--pad)}.carousel-next{left:var(--pad)}.discipline-hero{padding-top:110px}.discipline-visual{min-height:260px}.discipline-hero h1{font-size:clamp(46px,14vw,68px)}.question-preview{grid-template-columns:1fr}.question-chip{border:0;border-bottom:1px solid var(--ink)}.comparison-row span{padding:13px 9px}.footer-inner{align-items:flex-start}.footer-links{justify-content:flex-start}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}body.motion-ready main>section{opacity:1!important;transform:none!important}}
+
+
+/* MONOCHROME UI 2026 — restrained black, white and neutral gray */
+body{background:var(--paper)}
+::selection{background:var(--ink);color:var(--white)}
+.scroll-progress span{background:var(--white);mix-blend-mode:difference}
+.site-header.is-scrolled{background:rgba(245,245,242,.92);border-bottom-color:rgba(8,8,8,.16)}
+body:has(.home-hero) .site-header:not(.is-scrolled) .nav-cta,
+body:has(.discipline-hero) .site-header:not(.is-scrolled) .nav-cta{background:var(--white);border-color:var(--white);color:var(--ink)}
+.hero:before{background:radial-gradient(circle at calc(72% + var(--pointer-x,0px)) calc(38% + var(--pointer-y,0px)),rgba(255,255,255,.14),transparent 24%),radial-gradient(circle at 82% 68%,rgba(255,255,255,.07),transparent 22%),linear-gradient(120deg,transparent 0 56%,rgba(255,255,255,.12) 56% 56.2%,transparent 56.2%);opacity:1}
+.btn.primary,.discipline-hero .btn.primary{background:var(--white);color:var(--ink);border-color:var(--white)}
+.home-hero .electrical-btn{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,.7)}
+.home-hero .electrical-btn:hover{background:var(--white);color:var(--ink)}
+.orbit-core{background:var(--white);color:var(--ink);box-shadow:0 0 0 2vw rgba(255,255,255,.09)}
+.orb.mech{background:#202020;color:var(--white)}.orb.elec{background:#d9d9d6;color:var(--ink)}.orb.arch{background:#777;color:var(--white)}
+.section-soft{background:#ececea}
+.companion-card:nth-child(1){background:#111;color:var(--white)}
+.companion-card:nth-child(2){background:#dededb;color:var(--ink)}
+.companion-card:nth-child(3){background:var(--white);color:var(--ink)}
+body:has(.home-hero) main>section:nth-of-type(3){background:var(--white)}
+body:has(.home-hero) main>section:nth-of-type(6){background:#111;color:var(--white)}
+body:has(.home-hero) main>section:nth-of-type(8){background:#dededb;color:var(--ink)}
+.blog-card:hover{background:#dededb}
+.carousel-arrow:hover{background:var(--white)!important;color:var(--ink)!important;border-color:var(--white)!important}
+.carousel-progress span,.lightbox-close{background:var(--white)!important;color:var(--ink)!important}
+.discipline-visual{background:#161616;color:var(--white)}
+.electrical .discipline-visual{background:#e6e6e3;color:var(--ink)}
+.electrical .btn.primary,.electrical button,.mechanical .btn.primary,.mechanical button{background:var(--ink);color:var(--white)}
+.discipline-hero .btn.primary,.discipline-hero button{background:var(--white);color:var(--ink)}
+.dropzone:hover{background:#e5e5e2}
+.construction-badge{background:var(--white);color:var(--ink)}
+.architect-art{filter:grayscale(1) contrast(1.12)}
+.architect-info{background:#dededb;color:var(--ink)}
+@media(max-width:980px){.top-nav{background:var(--white);color:var(--ink)}}
