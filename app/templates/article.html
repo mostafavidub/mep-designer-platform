@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% block body %}
+<main><article class="article-wrap"><div class="blog-tag">{{post.tag}}</div><h1>{{post.title}}</h1><p class="article-lead">{{post.excerpt}}</p>{% for p in post.body %}<p>{{p}}</p>{% endfor %}<a class="text-link" href="/blog">← بازگشت به بلاگ</a></article></main>
+{% endblock %}
