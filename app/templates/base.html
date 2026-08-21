@@ -10,13 +10,14 @@
   <title>{% block title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}EngiTools ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF است؛ با تحلیل خودکار پلان و پرسش فقط درباره اطلاعات ضروری پروژه.{% endblock %}">
   <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1{% endblock %}">
-  <link rel="canonical" href="{{ request.url.scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
+  {% set canonical_scheme = request.headers.get('x-forwarded-proto', 'https').split(',')[0].strip() %}
+  <link rel="canonical" href="{{ canonical_scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
   <meta property="og:locale" content="fa_IR">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="EngiTools">
   <meta property="og:title" content="{% block og_title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
   <meta property="og:description" content="{% block og_description %}طراحی هوشمند نقشه‌های تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF.{% endblock %}">
-  <meta property="og:url" content="{{ request.url.scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
+  <meta property="og:url" content="{{ canonical_scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
   <meta name="twitter:card" content="summary">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +25,7 @@
   <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/v2.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/modal.css?v=20260821-1127">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"EngiTools","url":"{{ request.url.scheme }}://{{ request.url.netloc }}/","inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}</script>
   {% block structured_data %}{% endblock %}
 </head>
 <body>
