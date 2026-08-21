@@ -1,0 +1,73 @@
+/* EngiTools layout hotfix v1 — fixes RTL section-head overflow and desktop service-grid clipping */
+html,body{max-width:100%;overflow-x:clip}
+*{box-sizing:border-box}
+
+/* Keep every major content container inside the viewport. */
+.container-wide{width:100%!important;min-width:0!important;margin-inline:auto!important;padding-inline:18px!important}
+.container-wide>*{min-width:0}
+
+/* RTL section headings were inheriting an oversized/flex layout and could render outside the right edge. */
+.section-head{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(240px,360px)!important;
+  gap:clamp(24px,4vw,64px)!important;
+  align-items:end!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+.section-head>div,.section-head>p{min-width:0!important;max-width:100%!important}
+.section-head h2{
+  width:auto!important;
+  max-width:780px!important;
+  margin-inline:0!important;
+  white-space:normal!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+  font-size:clamp(30px,3.15vw,48px)!important;
+  line-height:1.2!important;
+  letter-spacing:-.028em!important;
+}
+.section-head>p{
+  width:auto!important;
+  justify-self:start!important;
+  white-space:normal!important;
+  line-height:1.85!important;
+}
+
+/* Service cards must always stay in three equal tracks without forcing the section wider. */
+.service-cta-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+.service-cta{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  color:var(--brand-ink)!important;
+  overflow:hidden!important;
+}
+.service-cta:hover,.service-cta:focus-visible{color:#fff!important}
+.service-cta .cta-top,.service-cta .cta-body,.service-cta .cta-link{min-width:0!important;max-width:100%!important}
+.service-cta h3,.service-cta p{white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important}
+
+/* Prevent wide decorative/pseudo elements from contributing to accidental horizontal overflow. */
+.section,.service-cta-grid,.process-infographic,.comparison-cards,.trust-grid,.two-col-info{max-width:100%!important;min-width:0!important}
+
+@media(max-width:980px){
+  .section-head{grid-template-columns:1fr!important;gap:18px!important;align-items:start!important}
+  .section-head h2{max-width:760px!important;font-size:clamp(28px,5.2vw,44px)!important}
+  .section-head>p{justify-self:stretch!important;max-width:680px!important}
+  .service-cta-grid{grid-template-columns:1fr!important}
+}
+
+@media(max-width:640px){
+  .container-wide{padding-inline:18px!important}
+  .section-head{gap:14px!important}
+  .section-head h2{font-size:clamp(27px,8.5vw,38px)!important;line-height:1.28!important;letter-spacing:-.018em!important}
+  .service-cta{min-height:220px!important}
+}
