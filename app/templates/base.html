@@ -7,21 +7,33 @@
   <meta name="google-site-verification" content="BTvevBqM2NGTer8b6XVxMYE9PdXmewNY7HcgJnmmCeQ" />
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VGJ540F9HC"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-VGJ540F9HC');</script>
-  <title>{% block title %}EngiTools | همراه هوشمند مهندسان{% endblock %}</title>
+  <title>{% block title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}EngiTools ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF است؛ با تحلیل خودکار پلان و پرسش فقط درباره اطلاعات ضروری پروژه.{% endblock %}">
+  <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1{% endblock %}">
+  <link rel="canonical" href="{{ request.url.scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
+  <meta property="og:locale" content="fa_IR">
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:site_name" content="EngiTools">
+  <meta property="og:title" content="{% block og_title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}طراحی هوشمند نقشه‌های تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF.{% endblock %}">
+  <meta property="og:url" content="{{ request.url.scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
+  <meta name="twitter:card" content="summary">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/v2.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/modal.css?v=20260821-1127">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"EngiTools","url":"{{ request.url.scheme }}://{{ request.url.netloc }}/","inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}</script>
+  {% block structured_data %}{% endblock %}
 </head>
 <body>
 <header class="site-header"><div class="navin">
-  <a href="/" class="brand"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span></a>
-  <nav class="top-nav"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">بلاگ</a></nav>
+  <a href="/" class="brand" aria-label="EngiTools - صفحه اصلی"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span></a>
+  <nav class="top-nav" aria-label="منوی اصلی"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">بلاگ مهندسی</a></nav>
   <a class="nav-cta" href="/mechanical">شروع پروژه</a>
 </div></header>
 {% block body %}{% endblock %}
-<footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>همراه دیجیتال برای طراحی و ابزارهای مهندسی.</p></div><div class="footer-links"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">بلاگ</a></div></div></footer>
+<footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>ابزار هوشمند طراحی و محاسبات مقدماتی تأسیسات ساختمان از روی پلان معماری.</p></div><div class="footer-links"><a href="/mechanical">طراحی تأسیسات مکانیکی</a><a href="/electrical">طراحی تأسیسات برقی</a><a href="/architect">همراه معمار</a><a href="/blog">آموزش و بلاگ</a></div></div></footer>
 </body>
 </html>
