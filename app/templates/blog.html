@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% block body %}
+<main><section class="blog-hero"><div class="container-wide"><div class="eyebrow">ENGITOOLS BLOG</div><h1>بلاگ مهندسی EngiTools</h1><p>یادداشت‌های فنی، راهنماهای طراحی و تجربه‌های اجرایی برای برق، مکانیک و معماری.</p></div></section><section class="section container-wide"><div class="blog-grid blog-grid-page">{% for post in posts %}<article class="blog-card"><span class="blog-tag">{{post.tag}}</span><h2>{{post.title}}</h2><p>{{post.excerpt}}</p><a href="/blog/{{post.slug}}">مطالعه مقاله ←</a></article>{% endfor %}</div></section></main>
+{% endblock %}
