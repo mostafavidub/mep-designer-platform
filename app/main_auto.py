@@ -1,13 +1,12 @@
 import shutil
 from collections import Counter
-from pathlib import Path
 
 import requests
 from ezdxf import bbox
 from fastapi.responses import JSONResponse
 
 from . import main as legacy
-from .auto_inference import (
+from .auto_inference_v2 import (
     INSUNITS_TO_M,
     infer_architecture_facts,
     canonical_auto_answers,
@@ -18,19 +17,40 @@ from .auto_inference import (
 app = legacy.app
 
 
+def _entity_text(e):
+    try:
+        if e.dxftype() == 'TEXT':
+            return (e.dxf.text or '').strip()
+        if e.dxftype() == 'MTEXT':
+            return (e.plain_text() or '').strip()
+    except Exception:
+        return ''
+    return ''
+
+
+def _entity_insert(e):
+    try:
+        p = e.dxf.insert
+        return float(p.x), float(p.y)
+    except Exception:
+        return None
+
+
 def analyze_dxf_enhanced(path):
     doc = legacy.ezdxf.readfile(path)
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
-    texts = []
+    texts, text_labels = [], []
     for e in msp:
-        try:
-            if e.dxftype() == 'TEXT' and e.dxf.text.strip():
-                texts.append(e.dxf.text.strip())
-            elif e.dxftype() == 'MTEXT' and e.plain_text().strip():
-                texts.append(e.plain_text().strip())
-        except Exception:
-            pass
+        if e.dxftype() not in ('TEXT', 'MTEXT'):
+            continue
+        text = _entity_text(e)
+        if not text:
+            continue
+        texts.append(text)
+        p = _entity_insert(e)
+        if p:
+            text_labels.append({'text': text, 'x': p[0], 'y': p[1]})
 
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     unit_to_m = INSUNITS_TO_M.get(insunits)
@@ -48,7 +68,6 @@ def analyze_dxf_enhanced(path):
     if unit_to_m and None not in (minx, miny, maxx, maxy):
         width_m = abs(maxx - minx) * unit_to_m
         height_m = abs(maxy - miny) * unit_to_m
-        # Bounding area is used only behind plausibility guards in auto_inference.
         area_m2 = width_m * height_m
 
     return {
@@ -57,7 +76,8 @@ def analyze_dxf_enhanced(path):
         'insunits': insunits,
         'layers': [l.dxf.name for l in doc.layers],
         'entities': dict(counts),
-        'texts': texts[:500],
+        'texts': texts[:1000],
+        'text_labels': text_labels[:1000],
         'geometry_bounds': [minx, miny, maxx, maxy] if minx is not None else None,
         'geometry_width_m': round(width_m, 3) if width_m is not None else None,
         'geometry_height_m': round(height_m, 3) if height_m is not None else None,
@@ -93,7 +113,7 @@ def analyze_project_job(project_id):
             'discipline': discipline,
             'file_count': len(files),
             'files': [analyze_dxf_enhanced(x) for x in files],
-            'inference_mode': 'architecture-first-v1',
+            'inference_mode': 'architecture-first-v2-spatial',
         }
         auto = infer_architecture_facts(analysis, discipline)
         analysis['architectural_auto'] = auto
@@ -138,19 +158,18 @@ def flow_payload(p):
     data['auto_summary'] = (p.analysis or {}).get('auto_summary') or []
     data['auto_inference'] = (p.analysis or {}).get('architectural_auto') or {}
     data['questionnaire_mode'] = 'dynamic-unresolved-only'
+    data['inference_mode'] = (p.analysis or {}).get('inference_mode', 'architecture-first-v2-spatial')
     return data
 
 
-# Monkey-patch globals referenced by the original route functions. This keeps all existing URLs/session logic intact.
 legacy._original_flow_payload = legacy.flow_payload
 legacy.analyze_dxf = analyze_dxf_enhanced
 legacy.analyze_project_job = analyze_project_job
 legacy.flow_payload = flow_payload
 
-# Remove engineering-computation prompts from static landing previews; actual project questions are generated after DXF analysis.
 legacy.DISCIPLINES['electrical']['questions'] = [
     ('location', 'محل پروژه، فقط اگر از نقشه قابل تشخیص نباشد'),
-    ('supply', 'نوع انشعاب برق، فقط اگر در مدارک معماری/پروژه مشخص نباشد'),
+    ('supply', 'نوع انشعاب برق، فقط اگر در مدارک پروژه مشخص نباشد'),
     ('emergency', 'نیاز به برق اضطراری، به‌عنوان تصمیم کارفرما'),
     ('special_loads', 'بارهای خاصی که از پلان معماری قابل تشخیص نیستند'),
 ]
@@ -165,7 +184,7 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
 
 @app.get('/system-health')
 def system_health():
-    result = {'ok': True, 'web': {'ok': True, 'mode': 'architecture-first-dynamic-questionnaire'}}
+    result = {'ok': True, 'web': {'ok': True, 'mode': 'architecture-first-v2-spatial'}}
     try:
         r = requests.get(legacy.CAD_DESIGNER_URL + '/engine-capabilities', timeout=5)
         result['cad'] = r.json() if r.ok else {'ok': False, 'status_code': r.status_code}
