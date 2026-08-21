@@ -18,6 +18,8 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('چه چیزی تحویل می‌گیرید؟', r.text)
         self.assertIn('FAQPage', r.text)
         self.assertIn('اصلاح خروجی چگونه انجام می‌شود؟', r.text)
+        self.assertEqual(r.text.count('project-') >= 4, True)
+        self.assertIn('۴ نمونه واقعی تبدیل پلان معماری به نقشه برق', r.text)
 
     def test_mechanical_landing_renders_architecture_first_flow(self):
         r = self.client.get('/mechanical')
@@ -28,6 +30,8 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('چه چیزی تحویل می‌گیرید؟', r.text)
         self.assertIn('FAQPage', r.text)
         self.assertIn('اصلاح خروجی چگونه انجام می‌شود؟', r.text)
+        self.assertEqual(r.text.count('project-') >= 4, True)
+        self.assertIn('۴ نمونه واقعی تبدیل پلان معماری به نقشه مکانیک', r.text)
 
     def test_home_has_trust_comparison_limits_and_faq(self):
         r = self.client.get('/')
@@ -35,6 +39,9 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('چرا می‌توان به فرآیند EngiTools اعتماد کرد؟', r.text)
         self.assertIn('FAQPage', r.text)
         self.assertIn('شفافیت درباره محدودیت‌ها', r.text)
+        self.assertIn('۴ نمونه واقعی از پروژه‌های تأییدشده', r.text)
+        self.assertIn('project-1-electrical-before-after.svg', r.text)
+        self.assertIn('project-8-mechanical-before-after.svg', r.text)
 
     def test_architect_is_transparent_and_links_active_services(self):
         r = self.client.get('/architect')
