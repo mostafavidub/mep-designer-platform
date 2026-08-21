@@ -9,8 +9,16 @@ class LandingSmokeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.client = TestClient(app)
 
-    def _assert_common_discipline_contract(self, r, discipline_label):
+    def _assert_brand_shell(self, r):
         self.assertEqual(r.status_code, 200)
+        self.assertIn('/static/brand_v4.css', r.text)
+        self.assertIn('/static/brand_v4.js', r.text)
+        self.assertIn('rel="canonical"', r.text)
+        self.assertEqual(r.text.count('<h1'), 1)
+        self.assertNotIn('target="_blank"', r.text)
+
+    def _assert_common_discipline_contract(self, r, discipline_label):
+        self._assert_brand_shell(r)
         self.assertIn(discipline_label, r.text)
         self.assertIn('ARCHITECTURE-FIRST', r.text)
         self.assertIn('START DESIGN', r.text)
@@ -26,10 +34,7 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertTrue(r.text.count('project-') >= 4)
         self.assertIn('data-sample-carousel', r.text)
         self.assertIn('sample-lightbox', r.text)
-        self.assertNotIn('target="_blank"', r.text)
-        self.assertEqual(r.text.count('<h1'), 1)
         self.assertIn('/static/landing_v3.css', r.text)
-        self.assertIn('rel="canonical"', r.text)
 
     def test_electrical_landing_renders_complete_contract(self):
         r = self.client.get('/electrical')
@@ -49,7 +54,7 @@ class LandingSmokeTests(unittest.TestCase):
 
     def test_home_has_trust_comparison_limits_and_faq(self):
         r = self.client.get('/')
-        self.assertEqual(r.status_code, 200)
+        self._assert_brand_shell(r)
         self.assertIn('ENGINEERING TRUST', r.text)
         self.assertIn('COMPARISON', r.text)
         self.assertIn('LIMITS & REVISION', r.text)
@@ -59,9 +64,16 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('project-8-mechanical-before-after.svg', r.text)
         self.assertIn('data-sample-carousel', r.text)
         self.assertIn('sample-lightbox', r.text)
-        self.assertNotIn('target="_blank"', r.text)
-        self.assertEqual(r.text.count('<h1'), 1)
-        self.assertIn('/static/landing_v3.css', r.text)
+
+    def test_blog_and_articles_use_editorial_brand_shell(self):
+        blog = self.client.get('/blog')
+        self._assert_brand_shell(blog)
+        self.assertIn('ENGITOOLS ENGINEERING BLOG', blog.text)
+        for slug in ('mep-input-guide', 'electrical-plan-scope', 'mechanical-plan-scope'):
+            article = self.client.get(f'/blog/{slug}')
+            self._assert_brand_shell(article)
+            self.assertIn('article-featured', article.text)
+            self.assertIn('BreadcrumbList', article.text)
 
     def test_field_specific_hero_assets_exist(self):
         electrical = self.client.get('/static/hero-electrical.svg')
@@ -73,7 +85,7 @@ class LandingSmokeTests(unittest.TestCase):
 
     def test_architect_is_transparent_and_links_active_services(self):
         r = self.client.get('/architect')
-        self.assertEqual(r.status_code, 200)
+        self._assert_brand_shell(r)
         self.assertIn('این سرویس فعلاً فعال نیست', r.text)
         self.assertIn('/electrical', r.text)
         self.assertIn('/mechanical', r.text)
