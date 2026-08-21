@@ -1,34 +1,30 @@
-from starlette.responses import Response
+from starlette.middleware.gzip import GZipMiddleware
 
 from . import main_auto
 
 app = main_auto.app
 
+# Compress HTML/CSS/JS/SVG/JSON responses without spending excessive CPU.
+app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+
 
 @app.middleware('http')
-async def landing_html_accessibility(request, call_next):
+async def performance_headers(request, call_next):
     response = await call_next(request)
-    if request.url.path not in {'/', '/electrical', '/mechanical'}:
-        return response
-    if 'text/html' not in response.headers.get('content-type', ''):
-        return response
+    path = request.url.path
 
-    body = b''
-    async for chunk in response.body_iterator:
-        body += chunk
-    text = body.decode('utf-8')
-    text = text.replace(
-        '<div class="lightbox-content"><img alt="">',
-        '<div class="lightbox-content"><img alt="نمایش بزرگ نمونه نقشه پروژه EngiTools">',
-    )
-    headers = dict(response.headers)
-    headers.pop('content-length', None)
-    return Response(
-        content=text,
-        status_code=response.status_code,
-        headers=headers,
-        media_type='text/html',
-    )
+    # Static assets with an explicit version query are immutable. Unversioned
+    # assets still get a useful cache window while remaining refreshable.
+    if path.startswith('/static/'):
+        if request.query_params.get('v'):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        else:
+            response.headers['Cache-Control'] = 'public, max-age=604800, stale-while-revalidate=86400'
+    elif 'text/html' in response.headers.get('content-type', ''):
+        response.headers['Cache-Control'] = 'no-cache'
+
+    response.headers.setdefault('Vary', 'Accept-Encoding')
+    return response
 
 
 @app.get('/system_health')
