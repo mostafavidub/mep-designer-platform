@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}{{post.title}} | EngiTools{% endblock %}
-{% block meta_description %}{{post.excerpt}}{% endblock %}
+{% block title %}{% if post.slug=='mep-input-guide' %}فایل DXF مناسب برای طراحی تأسیسات ساختمان | EngiTools{% elif post.slug=='electrical-plan-scope' %}انواع نقشه برق ساختمان؛ روشنایی، قدرت و حریق | EngiTools{% else %}انواع نقشه تأسیسات مکانیکی ساختمان | EngiTools{% endif %}{% endblock %}
+{% block meta_description %}{% if post.slug=='mep-input-guide' %}راهنمای آماده‌سازی فایل DXF معماری برای طراحی تأسیسات؛ واحد ترسیم، Levelها، نام فضاها، شفت‌ها، هندسه معتبر و چک‌لیست قبل از آپلود پلان.{% elif post.slug=='electrical-plan-scope' %}راهنمای انواع نقشه تأسیسات برقی ساختمان؛ پلان روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، ارت، رایزر، SLD و Panel Schedule.{% else %}راهنمای Scope نقشه‌های تأسیسات مکانیکی ساختمان؛ آبرسانی، فاضلاب و ونت، گاز، گرمایش، سرمایش، تهویه، رایزر و ارتباط با مباحث ۱۴ و ۱۶.{% endif %}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_title %}{{post.title}} | EngiTools{% endblock %}
 {% block og_description %}{{post.excerpt}}{% endblock %}
-{% block structured_data %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"{{post.title}}","description":"{{post.excerpt}}","author":{"@type":"Organization","name":"EngiTools"},"publisher":{"@type":"Organization","name":"EngiTools"},"inLanguage":"fa-IR","mainEntityOfPage":"{{ request.url.scheme }}://{{ request.url.netloc }}{{ request.url.path }}"}</script>{% endblock %}
+{% block structured_data %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"{{post.title}}","description":"{{post.excerpt}}","author":{"@type":"Organization","name":"EngiTools"},"publisher":{"@type":"Organization","name":"EngiTools"},"inLanguage":"fa-IR","mainEntityOfPage":"{{ request.headers.get('x-forwarded-proto', 'https').split(',')[0].strip() }}://{{ request.url.netloc }}{{ request.url.path }}"}</script>{% endblock %}
 {% block body %}
 <main><article class="article-wrap"><div class="blog-tag">{{post.tag}}</div><h1>{{post.title}}</h1><p class="article-lead">{{post.excerpt}}</p>
 {% if post.slug=='mep-input-guide' %}
