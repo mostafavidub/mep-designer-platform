@@ -44,10 +44,21 @@
   {% endif %}
 
   {% if p.status=='asking' %}<div class="card"><h2>۲. اطلاعات طراحی</h2><div class="progress"><span style="width:{{ (p.current_question*100/question_count)|round if question_count else 0 }}%"></span></div><p class="muted">سؤال {{p.current_question+1}} از {{question_count}}</p><h3>{{current_question.question}}</h3><form method="post" action="/projects/{{p.id}}/answer"><textarea name="answer" rows="4" required></textarea><button style="margin-top:12px">ثبت پاسخ و سؤال بعدی</button></form></div>{% endif %}
-  {% if p.status=='ready_to_design' %}<div class="card"><h2>۳. شروع طراحی</h2><p>پلان‌ها تحلیل شده و پاسخ‌های لازم ثبت شده‌اند.</p><form method="post" action="/projects/{{p.id}}/design"><button>شروع طراحی برق و مکانیک</button></form></div>{% endif %}
-  {% if p.status in ['queued','designing'] %}<div class="card"><h2>در حال طراحی...</h2><p class="muted">Design Job در حال اجراست. چند دقیقه بعد صفحه را Refresh کنید.</p><button class="secondary" onclick="location.reload()">Refresh</button></div>{% endif %}
+
+  {% if p.status=='ready_to_design' %}
+  <div class="card">
+    <h2>۳. شروع طراحی</h2>
+    <p>پلان‌ها تحلیل شده و پاسخ‌های لازم ثبت شده‌اند.</p>
+    <div class="note-bar"><b>الگوی تولید نقشه:</b> تعداد پلان برق و مکانیک مستقل و Level-Based است. برای هر Level یا Typical Group دارای Scope، یک پلان پایه در همان رشته در نظر گرفته می‌شود. مثال: 8 Level با Scope کامل = <b>8 پلان برق + 8 پلان مکانیک</b>. رایزر، SLD، Panel Schedule، Details و Legend جدا از این تعداد هستند و اگر تراکم سیستم‌ها خوانایی را کم کند، همان Level به شیت‌های بیشتری تفکیک می‌شود.</div>
+    <form method="post" action="/projects/{{p.id}}/design"><button>شروع طراحی برق و مکانیک</button></form>
+  </div>
+  {% endif %}
+
+  {% if p.status in ['queued','designing'] %}<div class="card"><h2>در حال طراحی...</h2><p class="muted">Design Job در حال اجراست. خروجی بر اساس Levelهای معماری و Scope مستقل برق و مکانیک سازمان‌دهی می‌شود.</p><button class="secondary" onclick="location.reload()">Refresh</button></div>{% endif %}
   {% if p.status=='failed' %}<div class="card"><h2>طراحی متوقف شد</h2><p class="muted">علت خطا بالا نمایش داده شده است.</p><form method="post" action="/projects/{{p.id}}/design"><button>تلاش مجدد</button></form></div>{% endif %}
   {% if p.status=='ready' %}<div class="grid"><div class="card"><h2>۴. خروجی نقشه‌ها</h2><p>آخرین Revision: R{{p.current_revision}}</p><a class="btn" href="/projects/{{p.id}}/pdf/{{p.current_revision}}">دانلود PDF</a></div><div class="card"><h2>۵. اصلاح نقشه</h2><p class="muted">اگر جایی نیاز به اصلاح دارد دقیق بنویسید.</p><form method="post" action="/projects/{{p.id}}/feedback"><textarea name="feedback" rows="5" required placeholder="مثلاً کادر توضیحات باید ۵ سانت از پلان فاصله داشته باشد"></textarea><button style="margin-top:12px">ارسال برای Revision</button></form></div></div>{% endif %}
+
+  <div class="card"><h2>قاعده تعداد پلان</h2><p class="muted">Floor/Level Plan Count برای برق و مکانیک جداگانه محاسبه می‌شود. ترازهای ویژه و طبقات غیرتیپ مستقل هستند؛ طبقات کاملاً تیپ می‌توانند به یک Typical Floor Plan گروه‌بندی شوند. پلان خالی برای تراز بدون Scope تولید نمی‌شود.</p></div>
 
   <div class="card"><h2>Revisionها</h2><table><thead><tr><th>Revision</th><th>وضعیت</th><th>Feedback</th><th>خطا</th></tr></thead><tbody>{% for r in revisions %}<tr><td>R{{r.revision_no}}</td><td>{{r.status}}</td><td>{{r.feedback or '-'}}</td><td>{{r.error or '-'}}</td></tr>{% else %}<tr><td colspan="4">هنوز Revision ساخته نشده.</td></tr>{% endfor %}</tbody></table></div>
   {% if p.analysis and p.analysis.file_count %}<div class="card"><h2>تحلیل DXF</h2><p>{{p.analysis.file_count}} فایل DXF شناسایی شده است.</p><ul>{% for f in p.analysis.files %}<li>{{f.file}} — {{f.version}} — {{f.layers|length}} Layer</li>{% endfor %}</ul></div>{% endif %}
