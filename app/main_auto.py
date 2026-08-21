@@ -197,7 +197,7 @@ def system_health():
 
 
 PUBLIC_SEO_PATHS = [
-    '/', '/mechanical', '/electrical', '/blog',
+    '/', '/mechanical', '/electrical', '/architect', '/blog',
     '/blog/mep-input-guide', '/blog/electrical-plan-scope', '/blog/mechanical-plan-scope'
 ]
 
