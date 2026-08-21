@@ -9,17 +9,20 @@ class LandingSmokeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.client = TestClient(app)
 
-    def _assert_common_discipline_contract(self, r, discipline_label, sample_title):
+    def _assert_common_discipline_contract(self, r, discipline_label):
         self.assertEqual(r.status_code, 200)
         self.assertIn(discipline_label, r.text)
-        self.assertIn('محاسبات اولیه', r.text)
-        self.assertIn('سؤال', r.text)
-        self.assertIn('چه چیزی تحویل می‌گیرید؟', r.text)
+        self.assertIn('ARCHITECTURE-FIRST', r.text)
+        self.assertIn('START DESIGN', r.text)
+        self.assertIn('DYNAMIC QUESTIONS', r.text)
+        self.assertIn('APPROVED PROJECTS', r.text)
+        self.assertIn('DELIVERABLES', r.text)
+        self.assertIn('COMPARISON', r.text)
+        self.assertIn('REVISION FLOW', r.text)
+        self.assertIn('TRANSPARENT LIMITS', r.text)
+        self.assertIn('RELATED GUIDES', r.text)
         self.assertIn('FAQPage', r.text)
-        self.assertIn('اصلاح خروجی', r.text)
-        self.assertIn('روش دستی در برابر EngiTools', r.text)
-        self.assertIn('چه چیزهایی را حدس نمی‌زنیم؟', r.text)
-        self.assertIn(sample_title, r.text)
+        self.assertIn('چه چیزی تحویل می‌گیرید؟', r.text)
         self.assertTrue(r.text.count('project-') >= 4)
         self.assertIn('data-sample-carousel', r.text)
         self.assertIn('sample-lightbox', r.text)
@@ -30,32 +33,27 @@ class LandingSmokeTests(unittest.TestCase):
 
     def test_electrical_landing_renders_complete_contract(self):
         r = self.client.get('/electrical')
-        self._assert_common_discipline_contract(
-            r,
-            'همراه برق',
-            'نمونه‌های واقعی پلان معماری به نقشه برق',
-        )
+        self._assert_common_discipline_contract(r, 'همراه برق')
         self.assertIn('روشنایی', r.text)
         self.assertIn('SLD', r.text)
         self.assertIn('Panel Schedule', r.text)
+        self.assertIn('project-1-electrical-before-after.svg', r.text)
 
     def test_mechanical_landing_renders_complete_contract(self):
         r = self.client.get('/mechanical')
-        self._assert_common_discipline_contract(
-            r,
-            'همراه مکانیک',
-            'نمونه‌های واقعی پلان معماری به نقشه مکانیک',
-        )
+        self._assert_common_discipline_contract(r, 'همراه مکانیک')
         self.assertIn('آب سرد و گرم', r.text)
         self.assertIn('فاضلاب', r.text)
         self.assertIn('HVAC', r.text)
+        self.assertIn('project-1-mechanical-before-after.svg', r.text)
 
     def test_home_has_trust_comparison_limits_and_faq(self):
         r = self.client.get('/')
         self.assertEqual(r.status_code, 200)
-        self.assertIn('چرا فرآیند EngiTools قابل کنترل است؟', r.text)
+        self.assertIn('ENGINEERING TRUST', r.text)
+        self.assertIn('COMPARISON', r.text)
+        self.assertIn('LIMITS & REVISION', r.text)
         self.assertIn('FAQPage', r.text)
-        self.assertIn('محدودیت‌ها و اصلاح خروجی', r.text)
         self.assertIn('۴ نمونه واقعی از پروژه‌های تأییدشده', r.text)
         self.assertIn('project-1-electrical-before-after.svg', r.text)
         self.assertIn('project-8-mechanical-before-after.svg', r.text)
