@@ -211,3 +211,12 @@ body:has(.home-hero) .two-col-info article:last-child{background:var(--ink);colo
   .comparison-cards{grid-template-columns:1fr}.comparison-card{min-height:260px;padding:22px;border-radius:16px}.comparison-pair{grid-template-columns:1fr}.comparison-pair>div{padding:15px}
   body:has(.home-hero) .trust-grid{grid-template-columns:1fr}
 }
+
+
+/* HOME MOBILE GUTTERS 2026 */
+@media(max-width:620px){
+  body:has(.home-hero) .section.container-wide:not(.real-samples){
+    padding-left:var(--pad);
+    padding-right:var(--pad);
+  }
+}
