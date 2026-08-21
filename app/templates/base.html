@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="/static/modal.css?v=20260821-1127">
   <link rel="stylesheet" href="/static/unstudio.css?v=20260821-2125">
   <link rel="stylesheet" href="/static/landing_v3.css?v=20260821-1927">
+  <link rel="stylesheet" href="/static/brand_v4.css?v=20260821-2030">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
 </head>
@@ -38,11 +39,12 @@
   <a href="/" class="brand" aria-label="EngiTools - صفحه اصلی"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span></a>
   <button type="button" class="nav-menu" aria-label="باز کردن منو" aria-expanded="false"><span></span></button>
   <nav class="top-nav" aria-label="منوی اصلی"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">وبلاگ مهندسان</a></nav>
-  <a class="nav-cta" href="/mechanical">شروع طراحی</a>
+  <a class="nav-cta" href="/mechanical#start">آپلود پلان</a>
 </div></header>
 {% block body %}{% endblock %}
 <footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>از پلان معماری تا طراحی مقدماتی تأسیسات.</p></div><div class="footer-links"><a href="/mechanical">طراحی مکانیک</a><a href="/electrical">طراحی برق</a><a href="/blog">وبلاگ مهندسان</a><a href="/blog/mep-input-guide">راهنمای DXF</a><a href="/blog/electrical-plan-scope">نقشه‌های برق</a><a href="/blog/mechanical-plan-scope">نقشه‌های مکانیک</a></div></div></footer>
 <script defer src="/static/sample-carousel.js?v=20260821-1810"></script>
 <script defer src="/static/motion.js?v=20260821-1810"></script>
+<script defer src="/static/brand_v4.js?v=20260821-2030"></script>
 </body>
 </html>
