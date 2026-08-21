@@ -12,24 +12,31 @@
   <meta name="description" content="{% block meta_description %}EngiTools ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF است؛ با تحلیل خودکار پلان و پرسش فقط درباره اطلاعات ضروری پروژه.{% endblock %}">
   <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1{% endblock %}">
   {% set canonical_scheme = request.headers.get('x-forwarded-proto', 'https').split(',')[0].strip() %}
-  <link rel="canonical" href="{{ canonical_scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
+  {% set page_path = request.url.path %}
+  {% set is_landing = page_path in ['/', '/electrical', '/mechanical'] %}
+  {% set is_discipline = page_path in ['/electrical', '/mechanical'] %}
+  <link rel="canonical" href="{{ canonical_scheme }}://{{ request.url.netloc }}{{ page_path }}">
   <meta property="og:locale" content="fa_IR">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="EngiTools">
   <meta property="og:title" content="{% block og_title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
   <meta property="og:description" content="{% block og_description %}طراحی هوشمند نقشه‌های تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF.{% endblock %}">
-  <meta property="og:url" content="{{ canonical_scheme }}://{{ request.url.netloc }}{{ request.url.path }}">
+  <meta property="og:url" content="{{ canonical_scheme }}://{{ request.url.netloc }}{{ page_path }}">
   {% block social_image %}{% endblock %}
   <meta name="twitter:card" content="{% block twitter_card %}summary{% endblock %}">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  {% if page_path == '/electrical' %}<link rel="preload" as="image" href="/static/hero-electrical.svg?v=20260821-1927" type="image/svg+xml">{% endif %}
+  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="/static/hero-mechanical.svg?v=20260821-1927" type="image/svg+xml">{% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/v2.css?v=20260821-1700">
-  <link rel="stylesheet" href="/static/modal.css?v=20260821-1127">
   <link rel="stylesheet" href="/static/unstudio.css?v=20260821-2125">
-  <link rel="stylesheet" href="/static/landing_v3.css?v=20260821-1927">
-  <link rel="stylesheet" href="/static/brand_v4.css?v=20260821-2030">
+  {% if is_landing %}<link rel="stylesheet" href="/static/landing_v3.css?v=20260821-1927">{% endif %}
+  {% if is_discipline %}<link rel="stylesheet" href="/static/modal.css?v=20260821-1127">{% endif %}
+  <link rel="stylesheet" href="/static/brand_v4.css?v=20260821-2040">
+
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
 </head>
@@ -43,8 +50,7 @@
 </div></header>
 {% block body %}{% endblock %}
 <footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>از پلان معماری تا طراحی مقدماتی تأسیسات.</p></div><div class="footer-links"><a href="/mechanical">طراحی مکانیک</a><a href="/electrical">طراحی برق</a><a href="/blog">وبلاگ مهندسان</a><a href="/blog/mep-input-guide">راهنمای DXF</a><a href="/blog/electrical-plan-scope">نقشه‌های برق</a><a href="/blog/mechanical-plan-scope">نقشه‌های مکانیک</a></div></div></footer>
-<script defer src="/static/sample-carousel.js?v=20260821-1810"></script>
-<script defer src="/static/motion.js?v=20260821-1810"></script>
-<script defer src="/static/brand_v4.js?v=20260821-2030"></script>
+{% if is_landing %}<script defer src="/static/sample-carousel.js?v=20260821-1810"></script>{% endif %}
+<script defer src="/static/brand_v4.js?v=20260821-2040"></script>
 </body>
 </html>
