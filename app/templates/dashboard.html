@@ -11,7 +11,7 @@
           <a class="btn primary" href="#mep-service">شروع طراحی MEP</a>
           <a class="btn ghost" href="#file-guide">مشخصات فایل ورودی</a>
         </div>
-        <div class="engineering-meta"><span>DXF INGEST</span><span>MEP WORKFLOW</span><span>REVISION CONTROL</span></div>
+        <div class="engineering-meta"><span>DXF INGEST</span><span>LEVEL-BASED MEP</span><span>REVISION CONTROL</span></div>
       </div>
       <div class="blueprint-card" aria-hidden="true">
         <div class="bp-top"><span>ARCH / MEP</span><span>01</span></div>
@@ -74,6 +74,7 @@
         <article class="spec-card"><span>06</span><h3>پاک‌سازی قبل از ارسال</h3><p>فایل‌های خراب، Referenceهای غیرضروری، پلان‌های تکراری و اطلاعات خارج از محدوده پروژه را حذف کنید. اگر چند پلان دارید، ZIP بهترین روش ارسال است.</p></article>
       </div>
       <div class="note-bar"><b>نکته:</b> بعد از آپلود، فایل یا فایل‌ها در پس‌زمینه تحلیل می‌شوند. برای DXFهای حجیم صفحه وضعیت تحلیل نمایش داده می‌شود و نیازی نیست اتصال آپلود تا پایان تحلیل باز بماند.</div>
+      <div class="note-bar"><b>قاعده تعداد پلان خروجی:</b> تعداد پلان‌های طبقه‌ای برق و مکانیک جداگانه و بر اساس Levelهای معماری محاسبه می‌شود. برای مثال اگر پروژه 8 تراز مستقل داشته باشد و هر دو رشته در همه ترازها Scope داشته باشند، مبنای خروجی <b>8 پلان برق + 8 پلان مکانیک</b> است. رایزر، SLD، Panel Schedule، Detail و Legend جدا از این شمارش هستند. طبقات کاملاً تیپ می‌توانند به یک Typical Floor Plan گروه‌بندی شوند.</div>
     </div>
   </section>
 
@@ -81,9 +82,9 @@
     <div class="section-head"><div><div class="kicker">WORKFLOW</div><h2>فرآیند کار</h2></div></div>
     <div class="steps">
       <div class="step"><b>01</b><div><h3>آپلود پلان</h3><p>یک DXF یا ZIP شامل چند DXF معماری را ارسال می‌کنید.</p></div></div>
-      <div class="step"><b>02</b><div><h3>تحلیل فایل</h3><p>ساختار DXF، لایه‌ها، متن‌ها و اطلاعات پایه بررسی می‌شود.</p></div></div>
+      <div class="step"><b>02</b><div><h3>تحلیل Levelها</h3><p>ساختار DXF، طبقات، پلان‌های تیپ/غیرتیپ، لایه‌ها و متن‌ها بررسی می‌شوند.</p></div></div>
       <div class="step"><b>03</b><div><h3>پرسش‌های طراحی</h3><p>اطلاعات برق و مکانیک موردنیاز، مرحله‌ای از شما گرفته می‌شود.</p></div></div>
-      <div class="step"><b>04</b><div><h3>طراحی و Revision</h3><p>پروژه وارد موتور طراحی شده و اصلاحات بعدی مدیریت می‌شوند.</p></div></div>
+      <div class="step"><b>04</b><div><h3>خروجی Level-Based</h3><p>برای برق و مکانیک، پلان هر تراز به‌صورت مستقل و بر اساس Scope همان رشته تولید می‌شود.</p></div></div>
     </div>
   </section>
 
@@ -91,7 +92,7 @@
     <div class="container-wide">
       <div class="section-head light"><div><div class="kicker">ENGINEERING SERVICES</div><h2>یک پلتفرم، چندین ابزار مهندسی</h2></div><p>طراحی MEP اولین سرویس است. ساختار سایت برای اضافه شدن خدمات مهندسی جدید آماده شده است.</p></div>
       <div class="service-grid">
-        <article class="service-card active"><span class="service-code">MEP-01</span><h3>طراحی تأسیسات برق و مکانیک</h3><p>تحلیل پلان، جمع‌آوری Design Input، مدیریت طراحی و Revision.</p><a href="#mep-service">استفاده از سرویس</a></article>
+        <article class="service-card active"><span class="service-code">MEP-01</span><h3>طراحی تأسیسات برق و مکانیک</h3><p>تحلیل پلان، تشخیص Level، جمع‌آوری Design Input، تولید Level-Based و مدیریت Revision.</p><a href="#mep-service">استفاده از سرویس</a></article>
         <article class="service-card future"><span class="service-code">NEXT</span><h3>ابزارهای مهندسی بعدی</h3><p>فضای آماده برای محاسبات، کنترل نقشه، متره، گزارش‌های فنی و سرویس‌های تخصصی آینده.</p><span>به‌زودی</span></article>
         <article class="service-card future"><span class="service-code">API</span><h3>اتوماسیون پروژه</h3><p>سرویس‌های API و گردش‌کار برای تیم‌های مهندسی و دفاتر طراحی.</p><span>در برنامه توسعه</span></article>
       </div>
