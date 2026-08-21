@@ -1,0 +1,54 @@
+/* EngiTools cinematic hero transition — inspired by architectural portfolio transitions, not a clone. */
+.hero-scroll-stage{
+  position:relative;
+  height:132svh;
+  background:var(--brand-ink,#0a0a0a);
+  isolation:isolate;
+  z-index:1;
+}
+.hero-scroll-stage>.home-hero{
+  position:sticky!important;
+  top:0;
+  height:100svh!important;
+  min-height:100svh!important;
+  width:100%;
+  transform-origin:50% 14%;
+  will-change:transform,filter,opacity,border-radius;
+  backface-visibility:hidden;
+  overflow:hidden;
+  z-index:1;
+}
+.hero-scroll-stage>.home-hero .hero-grid{
+  will-change:transform,opacity;
+}
+.hero-overlap-next{
+  position:relative!important;
+  z-index:4!important;
+  margin-top:-18svh!important;
+  background:var(--brand-paper,#f3f3ef)!important;
+  border-radius:22px 22px 0 0;
+  box-shadow:0 -1px 0 rgba(255,255,255,.18),0 -28px 80px rgba(0,0,0,.14);
+  overflow:clip;
+}
+.hero-overlap-next:after{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:1px;
+  background:rgba(10,10,10,.18);
+  pointer-events:none;
+}
+@media(max-width:980px){
+  .hero-scroll-stage{height:120svh}
+  .hero-overlap-next{margin-top:-12svh!important;border-radius:16px 16px 0 0}
+}
+@media(max-width:640px){
+  .hero-scroll-stage{height:112svh}
+  .hero-scroll-stage>.home-hero{height:100svh!important;min-height:100svh!important;padding-top:96px!important}
+  .hero-overlap-next{margin-top:-7svh!important;border-radius:12px 12px 0 0;box-shadow:0 -1px 0 rgba(255,255,255,.16),0 -18px 50px rgba(0,0,0,.12)}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-scroll-stage{height:auto!important;background:transparent!important}
+  .hero-scroll-stage>.home-hero{position:relative!important;height:auto!important;min-height:88svh!important;transform:none!important;filter:none!important;opacity:1!important;border-radius:0!important}
+  .hero-overlap-next{margin-top:0!important;border-radius:0!important;box-shadow:none!important}
+}
