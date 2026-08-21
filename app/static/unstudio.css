@@ -105,3 +105,36 @@ body:has(.home-hero) main>section:nth-of-type(8){background:#dededb;color:var(--
 .architect-art{filter:grayscale(1) contrast(1.12)}
 .architect-info{background:#dededb;color:var(--ink)}
 @media(max-width:980px){.top-nav{background:var(--white);color:var(--ink)}}
+
+
+/* INTEGRATED HERO VISUAL 2026 */
+.home-hero:before{
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(8,8,8,.08) 0%,rgba(8,8,8,.22) 45%,rgba(8,8,8,.94) 100%),
+    linear-gradient(0deg,rgba(8,8,8,.62) 0%,transparent 38%,rgba(8,8,8,.2) 100%),
+    url('/static/hero-integrated-mep-v1.jpg');
+  background-size:cover;
+  background-position:left center;
+  opacity:.92;
+  filter:none;
+  transition:transform .18s linear;
+}
+.home-hero .blueprint-card{display:none}
+.home-hero h1{width:min(100%,1080px);margin-right:0;margin-left:auto;text-shadow:0 2px 30px rgba(0,0,0,.45)}
+.home-hero .hero-lead{text-shadow:0 1px 18px rgba(0,0,0,.8)}
+@media(max-width:980px){
+  .home-hero:before{background-position:38% center;opacity:.8;background-size:auto 100%}
+  .home-hero h1{width:100%;text-shadow:0 2px 24px rgba(0,0,0,.8)}
+}
+@media(max-width:620px){
+  .home-hero:before{
+    background:
+      linear-gradient(0deg,rgba(8,8,8,.86) 0%,rgba(8,8,8,.42) 52%,rgba(8,8,8,.3) 100%),
+      linear-gradient(90deg,rgba(8,8,8,.18),rgba(8,8,8,.62)),
+      url('/static/hero-integrated-mep-v1.jpg');
+    background-size:auto 100%;
+    background-position:42% center;
+    opacity:.72;
+  }
+}
