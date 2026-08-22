@@ -12,8 +12,8 @@ class HeroPinRegressionTests(unittest.TestCase):
     def test_home_runs_service_reorder_before_hero_scene(self):
         home = self.client.get('/')
         self.assertEqual(home.status_code, 200)
-        service_pos = home.text.find('/static/service-stack.js?v=20260822-1048')
-        hero_pos = home.text.find('/static/hero-scroll-v1.js?v=20260822-1048')
+        service_pos = home.text.find('/static/service-stack.js')
+        hero_pos = home.text.find('/static/hero-scroll-v1.js')
         self.assertGreaterEqual(service_pos, 0)
         self.assertGreaterEqual(hero_pos, 0)
         self.assertLess(service_pos, hero_pos)
