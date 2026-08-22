@@ -22,27 +22,15 @@
     if(i===1)card.classList.add('service-card-dark');
     if(i===2)card.classList.add('service-card-muted');
 
-    const primaryLink=card.matches('a[href]')?card:card.querySelector('a[href]');
-    const targetHref=primaryLink&&primaryLink.getAttribute('href');
-    if(targetHref){
+    // The cards are native <a> elements. Keep their own hrefs untouched and
+    // let the browser handle navigation so each card always opens its own landing.
+    if(card.matches('a[href]')){
       card.classList.add('service-card-clickable');
-      if(!card.matches('a[href]')){
-        card.setAttribute('role','link');
-        card.tabIndex=0;
-        const title=card.querySelector('h3')?.textContent?.trim();
-        if(title)card.setAttribute('aria-label',title);
-        card.addEventListener('click',event=>{
-          if(event.target.closest('a,button,input,select,textarea,label'))return;
-          location.assign(targetHref);
-        });
-        card.addEventListener('keydown',event=>{
-          if(event.key==='Enter'||event.key===' '){
-            event.preventDefault();
-            location.assign(targetHref);
-          }
-        });
-      }
+      card.dataset.serviceHref=card.getAttribute('href')||'';
     }
+
+    // Explicit stacking avoids hit-testing ambiguity while cards overlap.
+    card.style.zIndex=String(30+i);
   });
 
   const scene=document.createElement('div');
@@ -88,7 +76,6 @@
       const scale=1-(ease(cover)*0.065);
       layer.style.setProperty('--stack-enter',`${enterY.toFixed(3)}%`);
       layer.style.setProperty('--stack-scale',scale.toFixed(4));
-      layer.style.pointerEvents=enter>.985?'auto':'none';
     });
     ticking=false;
   };
