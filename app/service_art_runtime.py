@@ -7,6 +7,7 @@ from fastapi.responses import Response
 
 _MARKER = 'data:image/jpeg;base64,'
 _BASE64_CHARS = re.compile(r'[^A-Za-z0-9+/=]')
+_FALLBACK_JPEG = Path('app/static/hero-integrated-mep-v1.jpg')
 
 
 def _embedded_jpeg(path: Path) -> bytes:
@@ -16,9 +17,6 @@ def _embedded_jpeg(path: Path) -> bytes:
         raise ValueError(f'No embedded JPEG marker found in {path}')
 
     payload = text[start + len(_MARKER):]
-    # Prefer the normal closing quote when present. Some generated SVG assets
-    # may be serialized as a single very long line, so do not depend on a
-    # fragile regex that requires a particular quote/layout shape.
     quote_positions = [p for p in (payload.find('"'), payload.find("'")) if p >= 0]
     if quote_positions:
         payload = payload[:min(quote_positions)]
@@ -27,18 +25,33 @@ def _embedded_jpeg(path: Path) -> bytes:
     if not payload:
         raise ValueError(f'Embedded JPEG payload is empty in {path}')
 
-    # base64.b64decode tolerates missing padding poorly; normalize it here.
     payload += '=' * ((4 - len(payload) % 4) % 4)
-    data = base64.b64decode(payload, validate=False)
+    try:
+        data = base64.b64decode(payload, validate=False)
+    except Exception as exc:
+        raise ValueError(f'Embedded JPEG payload is not decodable in {path}: {exc}') from exc
     if not data.startswith(b'\xff\xd8') or not data.endswith(b'\xff\xd9'):
         raise ValueError(f'Embedded JPEG is incomplete or invalid in {path}')
     return data
 
 
+def _mechanical_jpeg() -> bytes:
+    try:
+        return _embedded_jpeg(Path('app/static/service-art-mechanical.svg'))
+    except Exception as exc:
+        # Keep the site usable while an embedded artwork asset is being replaced.
+        # This is deliberately a valid existing high-resolution image, never a
+        # generated blank/placeholder response.
+        if _FALLBACK_JPEG.exists():
+            print(f'[service-art] embedded mechanical JPEG unavailable: {exc}; serving safe fallback', flush=True)
+            return _FALLBACK_JPEG.read_bytes()
+        raise
+
+
 def register_service_art_routes(app):
     @app.get('/service-art/mechanical.jpg', include_in_schema=False)
     def mechanical_service_art():
-        data = _embedded_jpeg(Path('app/static/service-art-mechanical.svg'))
+        data = _mechanical_jpeg()
         return Response(data, media_type='image/jpeg', headers={
             'Cache-Control': 'public, max-age=31536000, immutable',
             'X-Content-Type-Options': 'nosniff',
