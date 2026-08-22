@@ -1,9 +1,11 @@
 /* EngiTools cinematic hero transition — pinned hero + full-cover next section. */
 .hero-scroll-scene{
+  --hero-cover-gap:0px;
   position:relative;
   background:var(--brand-ink,#0a0a0a);
   isolation:isolate;
   z-index:1;
+  overflow:visible;
 }
 .hero-scroll-scene>.home-hero{
   position:sticky!important;
@@ -34,13 +36,14 @@
 .hero-scroll-scene>.home-hero .blueprint-card:after,
 .hero-scroll-scene>.home-hero .companion-orbit{display:none!important}
 
-/* This layer remains in normal flow inside the same scene. The sticky hero
-   therefore stays pinned while this entire section travels over it. */
+/* The workflow sheet remains in normal flow inside the same scene and crosses
+   over the sticky hero. The hero cannot scroll away until this sheet has
+   travelled over the viewport and the scene reaches its end. */
 .hero-scroll-scene>.hero-overlap-next{
   position:relative!important;
   z-index:5!important;
   min-height:100svh;
-  margin-top:0!important;
+  margin-top:var(--hero-cover-gap)!important;
   background:var(--brand-paper,#f3f3ef)!important;
   border-radius:24px 24px 0 0;
   box-shadow:0 -1px 0 rgba(255,255,255,.16),0 -30px 90px rgba(0,0,0,.16);
