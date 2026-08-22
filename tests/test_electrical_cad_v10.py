@@ -4,7 +4,8 @@ from pathlib import Path
 
 import ezdxf
 
-from cad_engine import main_v10 as v10
+from cad_engine import main_v10_fix as fixed
+v10 = fixed.v10
 
 
 class ElectricalCadV10Tests(unittest.TestCase):
@@ -12,15 +13,12 @@ class ElectricalCadV10Tests(unittest.TestCase):
         doc=ezdxf.new('R2013')
         doc.header['$INSUNITS']=4
         msp=doc.modelspace()
-        # Dimension values deliberately look like metres despite mm header.
         dim=msp.add_linear_dim(base=(0,1),p1=(0,0),p2=(3,0),angle=0); dim.render()
-        # Typical architectural floor.
         msp.add_text('پلان معماری تیپ طبقات اول تا پنجم').set_placement((100,0))
         for text,p in [
             ('آشپزخانه',(98,8)),('اتاق خواب',(96,12)),('هال و پذیرایی',(102,12)),
             ('حمام',(99,6)),('شفت',(100,16)),('آسانسور',(103,16)),
         ]: msp.add_text(text).set_placement(p)
-        # Parking special plan and roof plan.
         msp.add_text('پلان جانمایی پارکینگ').set_placement((125,0))
         msp.add_text('پلان معماری پشت بام').set_placement((70,0))
         msp.add_text('بام').set_placement((72,10))
@@ -42,8 +40,7 @@ class ElectricalCadV10Tests(unittest.TestCase):
             self.assertTrue(any(x.startswith('E-P-') for x in names))
             self.assertTrue(any(x.startswith('E-F-') for x in names))
             self.assertTrue(any(x.startswith('E-D-') for x in names))
-            msp=doc.modelspace()
-            layers={e.dxf.layer for e in msp}
+            msp=doc.modelspace(); layers={e.dxf.layer for e in msp}
             for layer in ('ENGITOOLS-E-LIGHTING','ENGITOOLS-E-POWER','ENGITOOLS-E-FIRE_ALARM','ENGITOOLS-E-ELV','ENGITOOLS-E-EARTHING_BONDING','ENGITOOLS-E-ELECTRICAL_RISERS'):
                 self.assertIn(layer,layers)
             self.assertTrue(any(e.dxftype()=='INSERT' and e.dxf.name=='ET_ELEVATOR_PANEL' for e in msp))
