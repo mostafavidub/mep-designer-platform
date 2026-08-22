@@ -48,9 +48,16 @@ class ConceptArtTests(unittest.TestCase):
 
         art = self.client.get('/service-art/mechanical.jpg?v=20260822-2015')
         self.assertEqual(art.status_code, 200)
-        self.assertGreater(len(art.content), 150_000)
-        self.assertIn(art.headers.get('content-type', ''), ('image/webp', 'image/jpeg'))
+        self.assertGreater(len(art.content), 50_000)
+        self.assertEqual(art.headers.get('content-type'), 'image/webp')
         self.assertEqual(art.headers.get('x-engitools-art'), 'mechanical-approved-1920x1080')
+        self.assertTrue(art.content.startswith(b'RIFF'))
+        self.assertEqual(art.content[8:12], b'WEBP')
+        sync = art.content.find(b'\x9d\x01\x2a')
+        self.assertGreaterEqual(sync, 0)
+        width = int.from_bytes(art.content[sync + 3:sync + 5], 'little') & 0x3FFF
+        height = int.from_bytes(art.content[sync + 5:sync + 7], 'little') & 0x3FFF
+        self.assertEqual((width, height), (1920, 1080))
 
     def test_mechanical_and_electrical_landings_reuse_service_art(self):
         css = self.client.get('/static/concept-art.css')
