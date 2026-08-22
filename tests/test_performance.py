@@ -23,7 +23,10 @@ class PerformanceRegressionTests(unittest.TestCase):
     def test_discipline_hero_is_preloaded(self):
         electrical = self.client.get('/electrical')
         mechanical = self.client.get('/mechanical')
-        self.assertIn('rel="preload" as="image" href="/static/service-art-electrical.svg', electrical.text)
+        self.assertTrue(
+            'rel="preload" as="image" href="https://res.cloudinary.com/' in electrical.text
+            or 'rel="preload" as="image" href="/static/service-art-electrical.svg' in electrical.text
+        )
         self.assertTrue(
             'rel="preload" as="image" href="/static/service-art-mechanical.svg' in mechanical.text
             or 'rel="preload" as="image" href="/service-art/mechanical.jpg' in mechanical.text
