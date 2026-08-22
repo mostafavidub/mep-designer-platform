@@ -17,9 +17,28 @@
   backface-visibility:hidden;
   overflow:hidden;
   z-index:1;
+  background-color:var(--brand-ink,#0a0a0a)!important;
+  background-image:
+    linear-gradient(90deg,rgba(5,7,9,.08) 0%,rgba(5,7,9,.16) 43%,rgba(5,7,9,.72) 72%,rgba(5,7,9,.94) 100%),
+    url('/static/hero-integrated-mep-v1.jpg?v=20260822-0942')!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
 }
 .hero-scroll-scene>.home-hero .hero-grid{
   will-change:transform,opacity;
+}
+/* The integrated MEP artwork is the primary visual. Keep the old geometric
+   placeholder only as layout space so the architectural model remains visible. */
+.hero-scroll-scene>.home-hero .blueprint-card{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+.hero-scroll-scene>.home-hero .blueprint-card:before,
+.hero-scroll-scene>.home-hero .blueprint-card:after,
+.hero-scroll-scene>.home-hero .companion-orbit{
+  display:none!important;
 }
 .hero-scroll-scene>.hero-overlap-next{
   position:relative!important;
@@ -47,6 +66,9 @@
 @media(max-width:980px){
   .hero-scroll-scene{--hero-cover-gap:22svh}
   .hero-scroll-scene>.hero-overlap-next{border-radius:18px 18px 0 0}
+  .hero-scroll-scene>.home-hero{
+    background-position:42% center!important;
+  }
 }
 @media(max-width:640px){
   .hero-scroll-scene{--hero-cover-gap:18svh}
@@ -54,6 +76,10 @@
     height:100svh!important;
     min-height:100svh!important;
     padding-top:96px!important;
+    background-image:
+      linear-gradient(180deg,rgba(5,7,9,.30) 0%,rgba(5,7,9,.62) 46%,rgba(5,7,9,.94) 100%),
+      url('/static/hero-integrated-mep-v1.jpg?v=20260822-0942')!important;
+    background-position:37% center!important;
   }
   .hero-scroll-scene>.hero-overlap-next{
     border-radius:14px 14px 0 0;
