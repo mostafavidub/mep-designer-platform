@@ -17,6 +17,12 @@
   const cards=[...grid.querySelectorAll('.service-cta')];
   if(!head||!cards.length)return;
 
+  const artSources=[
+    '/service-art/mechanical.jpg?v=20260822-1605',
+    '/static/service-art-electrical.svg?v=20260822-1535',
+    '/static/service-art-architect.svg?v=20260822-1405'
+  ];
+
   cards.forEach((card,i)=>{
     card.classList.add(`service-card-${i+1}`);
     if(i===1)card.classList.add('service-card-dark');
@@ -24,6 +30,20 @@
       card.classList.add('service-card-muted');
       const copy=card.querySelector('.cta-body p');
       if(copy)copy.textContent='نقشه زمین و مشخصات پروژه را می‌گیرد و مجموعه پلان‌های معماری را طراحی می‌کند.';
+    }
+
+    // Render artwork as a native <img>, not as a CSS pseudo-element background.
+    // This removes browser-specific background/SVG decoding issues and makes
+    // the image request independently testable in production.
+    if(!card.querySelector('.service-stack-art')){
+      const art=document.createElement('img');
+      art.className='service-stack-art';
+      art.src=artSources[i]||artSources[0];
+      art.alt='';
+      art.setAttribute('aria-hidden','true');
+      art.decoding='async';
+      art.loading=i===0?'eager':'lazy';
+      card.prepend(art);
     }
 
     // The cards are native <a> elements. Keep their own hrefs untouched and
