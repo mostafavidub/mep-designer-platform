@@ -29,8 +29,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   {% if is_home %}<link rel="preload" as="image" href="/static/hero-integrated-mep-v1.jpg?v=20260822-0942" type="image/jpeg">{% endif %}
-  {% if page_path == '/electrical' %}<link rel="preload" as="image" href="/static/service-art-electrical.svg?v=20260822-1147" type="image/svg+xml">{% endif %}
-  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="/static/service-art-mechanical.svg?v=20260822-1147" type="image/svg+xml">{% endif %}
+  {% if page_path == '/electrical' %}<link rel="preload" as="image" href="/static/service-art-electrical.svg?v=20260822-1345" type="image/svg+xml">{% endif %}
+  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="/static/service-art-mechanical.svg?v=20260822-1345" type="image/svg+xml">{% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/v2.css?v=20260821-1700">
@@ -39,8 +39,8 @@
   {% if is_discipline %}<link rel="stylesheet" href="/static/modal.css?v=20260822-1215">{% endif %}
   <link rel="stylesheet" href="/static/brand_v4.css?v=20260821-2040">
   <link rel="stylesheet" href="/static/layout_fix_v1.css?v=20260821-2057">
-  {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260822-0951"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260822-1147">{% endif %}
-  {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260822-1147">{% endif %}
+  {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260822-0951"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260822-1345">{% endif %}
+  {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260822-1345">{% endif %}
 
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
