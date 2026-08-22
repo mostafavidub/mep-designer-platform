@@ -183,7 +183,7 @@
   .workflow-stop-3 .workflow-stop-badge{width:90px;height:90px}
   .workflow-stop-3 .workflow-stop-copy{
     right:calc(100% + 22px);
-    width:min(300px,28vw);
+    width:min(270px,25vw);
   }
   .workflow-stop-4{left:1%;top:59%}
 }
