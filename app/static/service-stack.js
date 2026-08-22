@@ -15,53 +15,58 @@
   }
 
   const cards=[...grid.querySelectorAll('.service-cta')];
-  if(!cards.length)return;
-
-  cards.forEach((card,i)=>{
-    card.style.setProperty('--stack-index',String(i));
-    card.style.setProperty('--stack-enter',i===0?'0%':'110%');
-  });
+  if(!head||!cards.length)return;
 
   const scene=document.createElement('div');
   scene.className='service-stack-scene';
-  scene.style.setProperty('--service-count',String(cards.length));
   const viewport=document.createElement('div');
   viewport.className='service-stack-viewport';
-  grid.parentNode.insertBefore(scene,grid);
+  const stage=document.createElement('div');
+  stage.className='service-stack-stage';
+
+  section.insertBefore(scene,head);
   scene.appendChild(viewport);
-  viewport.appendChild(grid);
+  viewport.appendChild(stage);
+  stage.appendChild(head);
+  stage.appendChild(grid);
+
+  const layers=[head,...cards];
+  scene.style.setProperty('--service-layer-count',String(layers.length));
+  layers.forEach((layer,i)=>{
+    layer.style.setProperty('--stack-index',String(i));
+    layer.style.setProperty('--stack-enter',i===0?'0%':'108%');
+    layer.style.setProperty('--stack-scale','1');
+  });
 
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(reduced)return;
 
   let ticking=false;
+  let vh=innerHeight||document.documentElement.clientHeight;
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const ease=t=>1-Math.pow(1-t,3);
 
   const paint=()=>{
-    const vh=innerHeight||document.documentElement.clientHeight;
     const rect=scene.getBoundingClientRect();
     const travel=Math.max(1,scene.offsetHeight-vh);
     const overall=clamp((-rect.top)/travel,0,1);
-    const segment=overall*Math.max(1,cards.length-1);
+    const transitions=layers.length-1;
+    const segment=overall*transitions;
 
-    cards.forEach((card,i)=>{
+    layers.forEach((layer,i)=>{
       const enter=i===0?1:clamp(segment-(i-1),0,1);
-      const cover=i<cards.length-1?clamp(segment-i,0,1):0;
-      const enterY=(1-enter)*110;
-      const scale=1-cover*.075;
-      const opacity=1-cover*.16;
-      const brightness=1-cover*.12;
-
-      card.style.setProperty('--stack-enter',`${enterY.toFixed(3)}%`);
-      card.style.setProperty('--stack-scale',scale.toFixed(4));
-      card.style.setProperty('--stack-opacity',opacity.toFixed(4));
-      card.style.setProperty('--stack-brightness',brightness.toFixed(4));
+      const cover=i<layers.length-1?clamp(segment-i,0,1):0;
+      const enterY=(1-ease(enter))*108;
+      const scale=1-(ease(cover)*0.065);
+      layer.style.setProperty('--stack-enter',`${enterY.toFixed(3)}%`);
+      layer.style.setProperty('--stack-scale',scale.toFixed(4));
+      layer.style.pointerEvents=enter>.985?'auto':'none';
     });
     ticking=false;
   };
 
   const requestPaint=()=>{if(!ticking){ticking=true;requestAnimationFrame(paint)}};
   addEventListener('scroll',requestPaint,{passive:true});
-  addEventListener('resize',requestPaint,{passive:true});
+  addEventListener('resize',()=>{vh=innerHeight||document.documentElement.clientHeight;requestPaint()},{passive:true});
   requestPaint();
 })();
