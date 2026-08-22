@@ -20,7 +20,11 @@
   cards.forEach((card,i)=>{
     card.classList.add(`service-card-${i+1}`);
     if(i===1)card.classList.add('service-card-dark');
-    if(i===2)card.classList.add('service-card-muted');
+    if(i===2){
+      card.classList.add('service-card-muted');
+      const copy=card.querySelector('.cta-body p');
+      if(copy)copy.textContent='نقشه زمین و مشخصات پروژه را می‌گیرد و مجموعه پلان‌های معماری را طراحی می‌کند.';
+    }
 
     // The cards are native <a> elements. Keep their own hrefs untouched and
     // let the browser handle navigation so each card always opens its own landing.
