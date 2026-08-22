@@ -1,54 +1,67 @@
-/* EngiTools conceptual engineering art — UNStudio-style split service cards. */
+/* EngiTools service cards — approved clean split layout. */
 :root{
-  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1445');
-  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1445');
+  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1535');
+  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1535');
   --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
 }
 
-/* Home service stack: image panel on the LEFT, content panel on the RIGHT. */
+/* Desktop: exactly two clean panels, image LEFT / copy RIGHT. */
 .service-stack-section .service-cta{
   position:absolute!important;
   isolation:isolate!important;
   overflow:hidden!important;
   padding:0!important;
+  background:#f7f7f5!important;
+  color:#0a0a0a!important;
+  border:1px solid rgba(10,10,10,.14)!important;
+  border-radius:28px!important;
 }
+.service-stack-section .service-cta::before{display:none!important;content:none!important}
 .service-stack-section .service-cta::after{
-  content:"";
-  position:absolute;
-  left:0;
-  top:0;
-  bottom:0;
-  width:56%;
-  z-index:1;
-  pointer-events:none;
-  background-repeat:no-repeat;
-  background-position:center center;
-  background-size:cover;
-  opacity:1;
-  filter:grayscale(1) contrast(1.06);
-  -webkit-mask-image:none;
-  mask-image:none;
-  border-right:1px solid rgba(10,10,10,.16);
-  transform:translateZ(0);
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  right:auto!important;
+  top:0!important;
+  bottom:0!important;
+  width:56%!important;
+  height:100%!important;
+  z-index:1!important;
+  pointer-events:none!important;
+  background-repeat:no-repeat!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  opacity:1!important;
+  filter:grayscale(1) contrast(1.06)!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+  border:0!important;
+  border-right:1px solid rgba(10,10,10,.14)!important;
+  border-radius:27px 0 0 27px!important;
+  transform:none!important;
 }
-.service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)}
-.service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)}
-.service-stack-section .service-card-muted::after{background-image:var(--et-art-architect)}
-
-/* Remove the oversized decorative icon so the visual reads like the approved mockup. */
+.service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)!important}
+.service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)!important}
+.service-stack-section .service-card-muted::after{background-image:var(--et-art-architect)!important}
+.service-stack-section .service-card-1,
+.service-stack-section .service-card-dark{background:#f7f7f5!important;color:#0a0a0a!important}
+.service-stack-section .service-card-1 *,
+.service-stack-section .service-card-dark *{color:#0a0a0a!important}
 .service-stack-section .service-cta .companion-icon{display:none!important}
 
-/* Small discipline code in the top-right content panel. */
 .service-stack-section .service-cta .cta-top{
   position:absolute!important;
   z-index:4!important;
-  top:clamp(30px,4vw,54px)!important;
-  right:clamp(30px,4vw,58px)!important;
+  top:clamp(34px,4vw,58px)!important;
+  right:clamp(34px,4vw,64px)!important;
   left:auto!important;
-  width:36%!important;
+  width:35%!important;
   display:flex!important;
   justify-content:flex-start!important;
   align-items:center!important;
+  margin:0!important;
+  transform:none!important;
 }
 .service-stack-section .service-cta .service-code{
   display:inline-flex!important;
@@ -56,54 +69,60 @@
   padding:9px 15px!important;
   border:1px solid currentColor!important;
   border-radius:999px!important;
-  opacity:.68!important;
+  opacity:.62!important;
   letter-spacing:.16em!important;
   font-size:11px!important;
 }
-
-/* Main copy: fixed to the RIGHT side, vertically centered. */
 .service-stack-section .service-cta .cta-body{
   position:absolute!important;
   z-index:4!important;
-  right:clamp(30px,4vw,58px)!important;
+  right:clamp(34px,4vw,64px)!important;
   left:auto!important;
-  top:50%!important;
+  top:49%!important;
   transform:translateY(-50%)!important;
-  width:36%!important;
+  width:35%!important;
   max-width:520px!important;
   margin:0!important;
+  padding:0!important;
   text-align:right!important;
   direction:rtl!important;
 }
 .service-stack-section .service-cta .cta-body h3{
-  font-size:clamp(46px,5.4vw,86px)!important;
-  line-height:1.04!important;
-  margin:0 0 24px!important;
+  color:#050505!important;
+  font-size:clamp(48px,5vw,82px)!important;
+  font-weight:800!important;
+  line-height:1.08!important;
+  margin:0 0 26px!important;
 }
 .service-stack-section .service-cta .cta-body p{
+  color:#575757!important;
   max-width:100%!important;
-  font-size:clamp(15px,1.25vw,20px)!important;
+  font-size:clamp(15px,1.2vw,20px)!important;
   line-height:2!important;
+  margin:0!important;
 }
-
-/* CTA anchored under the copy in the right panel. */
 .service-stack-section .service-cta .cta-link{
   position:absolute!important;
   z-index:4!important;
-  right:clamp(30px,4vw,58px)!important;
+  right:clamp(34px,4vw,64px)!important;
   left:auto!important;
-  bottom:clamp(30px,4vw,54px)!important;
-  width:36%!important;
+  bottom:clamp(34px,4vw,58px)!important;
+  width:35%!important;
   min-width:0!important;
   margin:0!important;
+  padding-top:28px!important;
+  border-top:1px solid rgba(10,10,10,.35)!important;
   justify-self:auto!important;
   direction:rtl!important;
+  color:#0a0a0a!important;
+}
+.service-stack-section .service-cta .cta-link .arrow,
+.service-stack-section .service-cta .cta-link .cta-arrow{
+  background:#050505!important;
+  color:#fff!important;
 }
 
-/* Preserve dark electrical card readability while keeping the same split geometry. */
-.service-stack-section .service-card-dark::after{border-right-color:rgba(255,255,255,.16)}
-
-/* Discipline landing heroes reuse the same discipline art. */
+/* Discipline landing heroes reuse the same monochrome discipline art. */
 .discipline-page.mechanical .discipline-visual,
 .discipline-page.electrical .discipline-visual{
   position:relative;
@@ -119,51 +138,27 @@
 }
 .discipline-page.mechanical .discipline-visual{background-image:var(--et-art-mechanical)!important}
 .discipline-page.electrical .discipline-visual{background-image:var(--et-art-electrical)!important}
-.discipline-page .discipline-visual::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:linear-gradient(135deg,rgba(0,0,0,.03),rgba(0,0,0,.18));
-}
+.discipline-page .discipline-visual::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(0,0,0,.03),rgba(0,0,0,.18))}
 .discipline-page .discipline-visual .visual-symbol,
 .discipline-page .discipline-visual>span{display:none!important}
 
 @media(max-width:900px){
   .service-stack-section .service-cta::after{
-    left:0;
-    top:0;
-    bottom:auto;
-    width:100%;
-    height:48%;
-    background-position:center center;
-    border-right:0;
-    border-bottom:1px solid rgba(10,10,10,.14);
+    left:0!important;right:auto!important;top:0!important;bottom:auto!important;
+    width:100%!important;height:48%!important;
+    background-position:center center!important;
+    border-right:0!important;border-bottom:1px solid rgba(10,10,10,.14)!important;
+    border-radius:27px 27px 0 0!important;
   }
-  .service-stack-section .service-cta .cta-top{
-    top:calc(48% + 24px)!important;
-    right:24px!important;
-    width:calc(100% - 48px)!important;
-  }
-  .service-stack-section .service-cta .cta-body{
-    top:66%!important;
-    right:24px!important;
-    width:calc(100% - 48px)!important;
-    max-width:none!important;
-  }
-  .service-stack-section .service-cta .cta-link{
-    right:24px!important;
-    bottom:24px!important;
-    width:calc(100% - 48px)!important;
-  }
-  .discipline-page.mechanical .discipline-visual,
-  .discipline-page.electrical .discipline-visual{min-height:420px!important}
+  .service-stack-section .service-cta .cta-top{top:calc(48% + 22px)!important;right:24px!important;width:calc(100% - 48px)!important}
+  .service-stack-section .service-cta .cta-body{top:68%!important;right:24px!important;width:calc(100% - 48px)!important;max-width:none!important}
+  .service-stack-section .service-cta .cta-link{right:24px!important;bottom:24px!important;width:calc(100% - 48px)!important}
+  .discipline-page.mechanical .discipline-visual,.discipline-page.electrical .discipline-visual{min-height:420px!important}
 }
 @media(max-width:640px){
-  .service-stack-section .service-cta::after{height:42%;background-position:center center}
+  .service-stack-section .service-cta::after{height:42%!important}
   .service-stack-section .service-cta .cta-top{top:calc(42% + 18px)!important}
-  .service-stack-section .service-cta .cta-body{top:63%!important}
+  .service-stack-section .service-cta .cta-body{top:64%!important}
   .service-stack-section .service-cta .cta-body h3{font-size:clamp(40px,12vw,62px)!important}
-  .discipline-page.mechanical .discipline-visual,
-  .discipline-page.electrical .discipline-visual{min-height:330px!important}
+  .discipline-page.mechanical .discipline-visual,.discipline-page.electrical .discipline-visual{min-height:330px!important}
 }
