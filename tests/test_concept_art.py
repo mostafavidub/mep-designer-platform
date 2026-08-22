@@ -38,7 +38,7 @@ class ConceptArtTests(unittest.TestCase):
         self.assertEqual(js.status_code, 200)
         self.assertEqual(css.status_code, 200)
         self.assertIn("art.className='service-stack-art'", js.text)
-        self.assertIn("'/static/hero-mechanical.svg?v=20260822-1618'", js.text)
+        self.assertIn("'/static/service-art-mechanical.jpg?v=20260822-1630'", js.text)
         self.assertIn('.service-stack-section .service-stack-art{', css.text)
         self.assertIn('display:block!important', css.text)
         self.assertIn('width:56%!important', css.text)
