@@ -2,7 +2,6 @@ import base64
 import re
 from functools import lru_cache
 from pathlib import Path
-from urllib.request import Request, urlopen
 
 from fastapi.responses import Response
 
@@ -10,16 +9,7 @@ from fastapi.responses import Response
 _MARKER = 'data:image/jpeg;base64,'
 _BASE64_CHARS = re.compile(r'[^A-Za-z0-9+/=]')
 _FALLBACK_JPEG = Path('app/static/hero-integrated-mep-v1.jpg')
-
-# The approved 1920x1080 mechanical artwork is stored as five base64 text
-# chunks on a dedicated immutable Git branch. Keeping the binary out of the
-# normal source tree avoids GitHub connector binary-write limitations while
-# still giving production a deterministic, browser-safe asset.
-_APPROVED_BRANCH = 'service-mech-art-1080-v2'
-_APPROVED_PART_URLS = [
-    f'https://raw.githubusercontent.com/mostafavidub/mep-designer-platform/{_APPROVED_BRANCH}/app/static/service-art-mechanical-1080.b64/part-{i:02d}.txt'
-    for i in range(5)
-]
+_APPROVED_PART_DIR = Path('app/static/service-art-mechanical-1080.b64')
 
 
 def _embedded_jpeg(path: Path) -> bytes:
@@ -46,28 +36,30 @@ def _embedded_jpeg(path: Path) -> bytes:
 
 @lru_cache(maxsize=1)
 def _approved_mechanical_art() -> tuple[bytes, str]:
-    chunks = []
-    for url in _APPROVED_PART_URLS:
-        req = Request(url, headers={'User-Agent': 'EngiTools/1.0'})
-        with urlopen(req, timeout=12) as res:
-            chunks.append(res.read().decode('ascii').strip())
-    payload = ''.join(chunks)
+    parts = sorted(_APPROVED_PART_DIR.glob('part-*.txt'))
+    if len(parts) != 5:
+        raise ValueError(f'Expected 5 mechanical artwork chunks, found {len(parts)}')
+    payload = ''.join(p.read_text(encoding='ascii').strip() for p in parts)
     data = base64.b64decode(payload, validate=True)
-    if len(data) < 150_000:
+    if len(data) < 50_000:
         raise ValueError('Approved mechanical artwork is unexpectedly small')
     if data.startswith(b'RIFF') and data[8:12] == b'WEBP':
+        # VP8 frame header stores exact raster dimensions immediately after 9d012a.
+        sync = data.find(b'\x9d\x01\x2a')
+        if sync < 0 or len(data) < sync + 7:
+            raise ValueError('WEBP frame header is incomplete')
+        width = int.from_bytes(data[sync + 3:sync + 5], 'little') & 0x3FFF
+        height = int.from_bytes(data[sync + 5:sync + 7], 'little') & 0x3FFF
+        if (width, height) != (1920, 1080):
+            raise ValueError(f'Expected 1920x1080 approved artwork, got {width}x{height}')
         return data, 'image/webp'
-    if data.startswith(b'\xff\xd8'):
-        return data, 'image/jpeg'
-    raise ValueError('Approved mechanical artwork has an unsupported format')
+    raise ValueError('Approved mechanical artwork is not the expected WEBP asset')
 
 
 def _mechanical_art() -> tuple[bytes, str]:
     try:
         return _approved_mechanical_art()
     except Exception as exc:
-        # Last-resort compatibility path. Production should normally never hit
-        # this because the approved artwork branch is public and immutable.
         try:
             data = _embedded_jpeg(Path('app/static/service-art-mechanical.svg'))
             return data, 'image/jpeg'
