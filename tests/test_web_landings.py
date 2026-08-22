@@ -63,8 +63,8 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('grid-area:art', css.text)
         self.assertIn('grid-area:copy', css.text)
         self.assertIn('electrical-hero-final-20260822.webp', css.text)
-        self.assertIn('background:#050505', css.text)
-        self.assertIn('@media(max-width:860px)', css.text)
+        self.assertIn('background:#0a0a0a', css.text)
+        self.assertIn('@media(max-width:980px)', css.text)
         self.assertIn('@media(max-width:640px)', css.text)
         self.assertIn('prefers-reduced-motion:reduce', css.text)
 
