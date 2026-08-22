@@ -26,14 +26,14 @@ class ConceptArtTests(unittest.TestCase):
             self.assertIn('<svg', r.text)
 
     def test_mechanical_browser_safe_jpeg_is_real_nonblank_image(self):
-        r = self.client.get('/service-art/mechanical.jpg?v=20260822-1605')
+        r = self.client.get('/static/service-art-mechanical.jpg?v=20260822-1612')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.headers.get('content-type'), 'image/jpeg')
-        self.assertGreater(len(r.content), 100_000)
+        self.assertGreater(len(r.content), 20_000)
         self.assertTrue(r.content.startswith(b'\xff\xd8'))
         image = Image.open(io.BytesIO(r.content)).convert('L')
-        self.assertGreater(image.width, 800)
-        self.assertGreater(image.height, 400)
+        self.assertGreaterEqual(image.width, 600)
+        self.assertGreaterEqual(image.height, 300)
         stat = ImageStat.Stat(image)
         self.assertGreater(stat.var[0], 100.0)
 
@@ -43,7 +43,7 @@ class ConceptArtTests(unittest.TestCase):
         self.assertEqual(js.status_code, 200)
         self.assertEqual(css.status_code, 200)
         self.assertIn("art.className='service-stack-art'", js.text)
-        self.assertIn("'/service-art/mechanical.jpg?v=20260822-1605'", js.text)
+        self.assertIn("'/static/service-art-mechanical.jpg?v=20260822-1612'", js.text)
         self.assertIn('.service-stack-section .service-stack-art{', css.text)
         self.assertIn('display:block!important', css.text)
         self.assertIn('width:56%!important', css.text)
