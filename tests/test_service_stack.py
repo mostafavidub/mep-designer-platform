@@ -67,6 +67,15 @@ class ServiceStackRegressionTests(unittest.TestCase):
         self.assertIn('a.service-card-clickable', css.text)
         self.assertIn('pointer-events:auto!important', css.text)
 
+    def test_hover_cannot_freeze_scroll_driven_card_transform(self):
+        css = self.client.get('/static/service-stack-contrast-fix.css')
+        self.assertEqual(css.status_code, 200)
+        self.assertIn('.service-cta:hover', css.text)
+        self.assertIn('transform:translate3d(0,var(--stack-enter),0) scale(var(--stack-scale))!important', css.text)
+        self.assertIn('transition:none!important', css.text)
+        # The hover state may animate the arrow, but never the card transform itself.
+        self.assertIn('a.service-card-clickable:hover .cta-arrow', css.text)
+
     def test_all_three_service_routes_remain_present(self):
         r = self.client.get('/')
         self.assertIn('href="/mechanical"', r.text)
