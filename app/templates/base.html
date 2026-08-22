@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   {% if is_home %}<link rel="preload" as="image" href="/static/hero-integrated-mep-v1.jpg?v=20260822-0942" type="image/jpeg">{% endif %}
   {% if page_path == '/electrical' %}<link rel="preload" as="image" href="/static/service-art-electrical.svg?v=20260822-1535" type="image/svg+xml">{% endif %}
-  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="/service-art/mechanical.jpg?v=20260822-1548" type="image/jpeg">{% endif %}
+  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="/service-art/mechanical.jpg?v=20260822-1605" type="image/jpeg">{% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/v2.css?v=20260821-1700">
@@ -39,8 +39,8 @@
   {% if is_discipline %}<link rel="stylesheet" href="/static/modal.css?v=20260822-1215">{% endif %}
   <link rel="stylesheet" href="/static/brand_v4.css?v=20260821-2040">
   <link rel="stylesheet" href="/static/layout_fix_v1.css?v=20260821-2057">
-  {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260822-0951"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260822-1548">{% endif %}
-  {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260822-1548">{% endif %}
+  {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260822-0951"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260822-1605">{% endif %}
+  {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260822-1605">{% endif %}
 
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
@@ -57,7 +57,7 @@
 <footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>از پلان معماری تا طراحی مقدماتی تأسیسات.</p></div><div class="footer-links"><a href="/mechanical">طراحی مکانیک</a><a href="/electrical">طراحی برق</a><a href="/blog">وبلاگ مهندسان</a><a href="/blog/mep-input-guide">راهنمای DXF</a><a href="/blog/electrical-plan-scope">نقشه‌های برق</a><a href="/blog/mechanical-plan-scope">نقشه‌های مکانیک</a></div></div></footer>
 {% if is_landing %}<script defer src="/static/sample-carousel.js?v=20260821-1810"></script>{% endif %}
 {% if is_discipline %}<script src="/static/resumable-upload.js?v=20260821-2240"></script>{% endif %}
-{% if is_home %}<script defer src="/static/workflow-road.js?v=20260822-0959"></script><script defer src="/static/service-stack.js?v=20260822-1126"></script><script defer src="/static/hero-scroll-v1.js?v=20260822-1048"></script>{% endif %}
+{% if is_home %}<script defer src="/static/workflow-road.js?v=20260822-0959"></script><script defer src="/static/service-stack.js?v=20260822-1605"></script><script defer src="/static/hero-scroll-v1.js?v=20260822-1048"></script>{% endif %}
 <script defer src="/static/brand_v4.js?v=20260821-2040"></script>
 <script>
 (()=>{const fix=()=>document.querySelectorAll('a[href*="/projects/"][href*="/output/"]').forEach(a=>{if(a.textContent.includes('PDF'))a.textContent='دانلود DXF'});fix();new MutationObserver(fix).observe(document.body,{childList:true,subtree:true})})();
