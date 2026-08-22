@@ -1,15 +1,16 @@
-/* EngiTools conceptual engineering art — split editorial service cards. */
+/* EngiTools conceptual engineering art — UNStudio-style split service cards. */
 :root{
-  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1405');
-  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1405');
+  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1445');
+  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1445');
   --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
 }
 
-/* Home service stack: clean 50/50 editorial split inspired by UNStudio. */
+/* Home service stack: image panel on the LEFT, content panel on the RIGHT. */
 .service-stack-section .service-cta{
   position:absolute!important;
   isolation:isolate!important;
   overflow:hidden!important;
+  padding:0!important;
 }
 .service-stack-section .service-cta::after{
   content:"";
@@ -17,46 +18,92 @@
   left:0;
   top:0;
   bottom:0;
-  width:50%;
+  width:56%;
   z-index:1;
   pointer-events:none;
   background-repeat:no-repeat;
   background-position:center center;
   background-size:cover;
   opacity:1;
-  filter:grayscale(1) contrast(1.04);
+  filter:grayscale(1) contrast(1.06);
   -webkit-mask-image:none;
   mask-image:none;
-  border-right:1px solid rgba(255,255,255,.12);
+  border-right:1px solid rgba(10,10,10,.16);
   transform:translateZ(0);
 }
 .service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)}
 .service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)}
 .service-stack-section .service-card-muted::after{background-image:var(--et-art-architect)}
-.service-stack-section .service-cta .cta-top,
-.service-stack-section .service-cta .cta-body,
-.service-stack-section .service-cta .cta-link{
-  position:relative!important;
+
+/* Remove the oversized decorative icon so the visual reads like the approved mockup. */
+.service-stack-section .service-cta .companion-icon{display:none!important}
+
+/* Small discipline code in the top-right content panel. */
+.service-stack-section .service-cta .cta-top{
+  position:absolute!important;
   z-index:4!important;
+  top:clamp(30px,4vw,54px)!important;
+  right:clamp(30px,4vw,58px)!important;
+  left:auto!important;
+  width:36%!important;
+  display:flex!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
 }
-.service-stack-section .service-cta .cta-body{
-  grid-column:1/2!important;
-  width:44%!important;
-  max-width:44%!important;
-  margin-left:auto!important;
-  margin-right:3%!important;
-  justify-self:end!important;
-  align-self:center!important;
-  text-align:right!important;
-}
-.service-stack-section .service-cta .cta-link{
-  grid-column:1/2!important;
-  justify-self:end!important;
-  width:44%!important;
-  margin-right:3%!important;
+.service-stack-section .service-cta .service-code{
+  display:inline-flex!important;
+  align-items:center!important;
+  padding:9px 15px!important;
+  border:1px solid currentColor!important;
+  border-radius:999px!important;
+  opacity:.68!important;
+  letter-spacing:.16em!important;
+  font-size:11px!important;
 }
 
-/* Discipline landing heroes reuse the same monochrome discipline art. */
+/* Main copy: fixed to the RIGHT side, vertically centered. */
+.service-stack-section .service-cta .cta-body{
+  position:absolute!important;
+  z-index:4!important;
+  right:clamp(30px,4vw,58px)!important;
+  left:auto!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  width:36%!important;
+  max-width:520px!important;
+  margin:0!important;
+  text-align:right!important;
+  direction:rtl!important;
+}
+.service-stack-section .service-cta .cta-body h3{
+  font-size:clamp(46px,5.4vw,86px)!important;
+  line-height:1.04!important;
+  margin:0 0 24px!important;
+}
+.service-stack-section .service-cta .cta-body p{
+  max-width:100%!important;
+  font-size:clamp(15px,1.25vw,20px)!important;
+  line-height:2!important;
+}
+
+/* CTA anchored under the copy in the right panel. */
+.service-stack-section .service-cta .cta-link{
+  position:absolute!important;
+  z-index:4!important;
+  right:clamp(30px,4vw,58px)!important;
+  left:auto!important;
+  bottom:clamp(30px,4vw,54px)!important;
+  width:36%!important;
+  min-width:0!important;
+  margin:0!important;
+  justify-self:auto!important;
+  direction:rtl!important;
+}
+
+/* Preserve dark electrical card readability while keeping the same split geometry. */
+.service-stack-section .service-card-dark::after{border-right-color:rgba(255,255,255,.16)}
+
+/* Discipline landing heroes reuse the same discipline art. */
 .discipline-page.mechanical .discipline-visual,
 .discipline-page.electrical .discipline-visual{
   position:relative;
@@ -89,27 +136,34 @@
     bottom:auto;
     width:100%;
     height:48%;
-    opacity:1;
     background-position:center center;
     border-right:0;
-    border-bottom:1px solid rgba(255,255,255,.12);
+    border-bottom:1px solid rgba(10,10,10,.14);
+  }
+  .service-stack-section .service-cta .cta-top{
+    top:calc(48% + 24px)!important;
+    right:24px!important;
+    width:calc(100% - 48px)!important;
   }
   .service-stack-section .service-cta .cta-body{
-    width:100%!important;
-    max-width:100%!important;
-    margin:0!important;
-    justify-self:stretch!important;
+    top:66%!important;
+    right:24px!important;
+    width:calc(100% - 48px)!important;
+    max-width:none!important;
   }
   .service-stack-section .service-cta .cta-link{
-    width:100%!important;
-    margin:0!important;
-    justify-self:stretch!important;
+    right:24px!important;
+    bottom:24px!important;
+    width:calc(100% - 48px)!important;
   }
   .discipline-page.mechanical .discipline-visual,
   .discipline-page.electrical .discipline-visual{min-height:420px!important}
 }
 @media(max-width:640px){
   .service-stack-section .service-cta::after{height:42%;background-position:center center}
+  .service-stack-section .service-cta .cta-top{top:calc(42% + 18px)!important}
+  .service-stack-section .service-cta .cta-body{top:63%!important}
+  .service-stack-section .service-cta .cta-body h3{font-size:clamp(40px,12vw,62px)!important}
   .discipline-page.mechanical .discipline-visual,
   .discipline-page.electrical .discipline-visual{min-height:330px!important}
 }
