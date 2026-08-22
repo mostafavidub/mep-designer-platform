@@ -1,8 +1,6 @@
-import io
 import unittest
 
 from fastapi.testclient import TestClient
-from PIL import Image, ImageStat
 
 from app.main_health import app
 
@@ -25,19 +23,14 @@ class ConceptArtTests(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertIn('<svg', r.text)
 
-    def test_mechanical_browser_safe_jpeg_is_real_nonblank_image(self):
-        r = self.client.get('/static/service-art-mechanical.jpg?v=20260822-1612')
+    def test_mechanical_card_art_is_browser_safe_nonblank_svg(self):
+        r = self.client.get('/static/hero-mechanical.svg?v=20260822-1618')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.headers.get('content-type'), 'image/jpeg')
-        self.assertGreater(len(r.content), 5_000)
-        self.assertTrue(r.content.startswith(b'\xff\xd8'))
-        image = Image.open(io.BytesIO(r.content))
-        image.load()
-        image = image.convert('L')
-        self.assertGreaterEqual(image.width, 600)
-        self.assertGreaterEqual(image.height, 300)
-        stat = ImageStat.Stat(image)
-        self.assertGreater(stat.var[0], 100.0)
+        self.assertIn('image/svg+xml', r.headers.get('content-type', ''))
+        self.assertGreater(len(r.content), 1000)
+        self.assertIn('<svg', r.text)
+        self.assertIn('WATER / SANITARY / VENT / GAS', r.text)
+        self.assertIn('<path', r.text)
 
     def test_native_img_rendering_is_wired_and_visible(self):
         js = self.client.get('/static/service-stack.js')
@@ -45,7 +38,7 @@ class ConceptArtTests(unittest.TestCase):
         self.assertEqual(js.status_code, 200)
         self.assertEqual(css.status_code, 200)
         self.assertIn("art.className='service-stack-art'", js.text)
-        self.assertIn("'/static/service-art-mechanical.jpg?v=20260822-1612'", js.text)
+        self.assertIn("'/static/hero-mechanical.svg?v=20260822-1618'", js.text)
         self.assertIn('.service-stack-section .service-stack-art{', css.text)
         self.assertIn('display:block!important', css.text)
         self.assertIn('width:56%!important', css.text)
