@@ -1,6 +1,6 @@
 /* EngiTools service cards — approved clean split layout. */
 :root{
-  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1535');
+  --et-art-mechanical:url('/service-art/mechanical.jpg?v=20260822-1548');
   --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1535');
   --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
 }
