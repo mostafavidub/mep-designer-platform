@@ -1,6 +1,7 @@
 from starlette.middleware.gzip import GZipMiddleware
 
 from . import main_auto
+from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from .resumable_upload import register_resumable_upload_routes
 
 app = main_auto.app
