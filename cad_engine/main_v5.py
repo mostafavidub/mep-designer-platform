@@ -3,12 +3,18 @@ import shutil
 import tempfile
 from pathlib import Path
 
+import ezdxf
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from fastapi import FastAPI, HTTPException
+from ezdxf.addons.drawing import Frontend, RenderContext
+from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
 from . import main_v4  # installs structured-input normalization onto main_v3
 from . import main_v3 as engine
 
-app = FastAPI(title='EngiTools CAD Designer', version='0.5.0')
+app = FastAPI(title='EngiTools CAD Designer', version='0.5.1')
 
 _prev_electrical_calc = engine.electrical_calc
 _prev_mechanical_calc = engine.mechanical_calc
@@ -62,22 +68,75 @@ def mechanical_calc(a):
     return result
 
 
+def render_pdf_resilient(dxf_path, pdf_path, discipline):
+    """Render a DXF without allowing one unsupported entity to blank the whole sheet.
+
+    First use ezdxf's normal layout renderer. If any entity makes that pass fail,
+    retry entity-by-entity, skipping only the incompatible entities. A PDF is only
+    written when real geometry was rendered; the old placeholder-only PDF is never
+    emitted.
+    """
+    doc = ezdxf.readfile(dxf_path)
+    msp = doc.modelspace()
+    fig = plt.figure(figsize=(11.69, 8.27))
+    ax = fig.add_axes([.03, .06, .94, .88])
+    ax.set_aspect('equal', adjustable='datalim')
+    ax.axis('off')
+    skipped = []
+    rendered = 0
+    try:
+        ctx = RenderContext(doc)
+        out = MatplotlibBackend(ax)
+        try:
+            Frontend(ctx, out).draw_layout(msp, finalize=True)
+            rendered = len(msp)
+        except Exception as exc:
+            print(f'[cad-render] full-layout render failed for {dxf_path.name}: {type(exc).__name__}: {exc}; retrying entity-by-entity', flush=True)
+            ax.clear()
+            ax.set_aspect('equal', adjustable='datalim')
+            ax.axis('off')
+            ctx = RenderContext(doc)
+            out = MatplotlibBackend(ax)
+            frontend = Frontend(ctx, out)
+            for entity in msp:
+                try:
+                    frontend.draw_entities([entity])
+                    rendered += 1
+                except Exception as entity_exc:
+                    skipped.append((entity.dxftype(), str(entity_exc)[:180]))
+            out.finalize()
+            if skipped:
+                sample = '; '.join(f'{kind}: {msg}' for kind, msg in skipped[:8])
+                print(f'[cad-render] skipped {len(skipped)} of {len(msp)} entities in {dxf_path.name}: {sample}', flush=True)
+        if rendered <= 0:
+            raise RuntimeError(f'No renderable DXF entities found in {dxf_path.name}')
+        fig.suptitle(
+            f'EngiTools {discipline.title()} - PRELIMINARY DESIGN + CALCULATION ASSIST - ENGINEERING REVIEW REQUIRED',
+            fontsize=10,
+        )
+        fig.savefig(pdf_path, format='pdf', bbox_inches='tight')
+    finally:
+        plt.close(fig)
+
+
 engine.electrical_calc = electrical_calc
 engine.mechanical_calc = mechanical_calc
+engine.render_pdf = render_pdf_resilient
 
 
 @app.get('/health')
 def health():
-    return {'ok': True, 'service': 'cad-designer', 'version': '0.5.0', 'mode': 'architecture-first-auto-calculation'}
+    return {'ok': True, 'service': 'cad-designer', 'version': '0.5.1', 'mode': 'architecture-first-auto-calculation'}
 
 
 @app.get('/engine-capabilities')
 def capabilities():
     return {
         'ok': True,
-        'version': '0.5.0',
+        'version': '0.5.1',
         'questionnaire': 'dynamic-unresolved-only',
         'architecture_auto_calculation': True,
+        'resilient_dxf_pdf_rendering': True,
         'auto_inputs': [
             'room inventory', 'shaft/parking/roof/elevator detection', 'plausible geometry area',
             'representative route length', 'baseline electrical load', 'water-demand proxy',
@@ -136,7 +195,7 @@ def design(req: engine.DesignRequest):
         engine.zip_outputs(generated, package)
         return {
             'ok': True, 'project_id': req.project_id, 'discipline': discipline,
-            'engine_version': '0.5.0', 'mode': 'architecture-first-auto-calculation',
+            'engine_version': '0.5.1', 'mode': 'architecture-first-auto-calculation',
             'preliminary': True, 'requires_professional_review': True,
             'systems': systems, 'calculation_report': calc, 'design_reports': reports,
             'generated_files': [p.name for p in generated],
