@@ -27,6 +27,7 @@ class PerformanceRegressionTests(unittest.TestCase):
         self.assertTrue(
             'rel="preload" as="image" href="/static/service-art-mechanical.svg' in mechanical.text
             or 'rel="preload" as="image" href="/service-art/mechanical.jpg' in mechanical.text
+            or 'rel="preload" as="image" href="/static/service-art-mechanical.jpg' in mechanical.text
         )
 
     def test_non_landing_pages_do_not_load_landing_runtime(self):
