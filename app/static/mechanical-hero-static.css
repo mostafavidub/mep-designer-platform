@@ -1,33 +1,171 @@
-/* Mechanical hero — dedicated static artwork, no decorative/scroll animation */
-.mechanical .discipline-hero{background:#050505!important;color:#fff!important;overflow:hidden!important;scroll-behavior:auto!important}
+/* Mechanical hero — homepage composition, dedicated static mechanical artwork only. */
+.mechanical .discipline-hero{
+  min-height:calc(100svh - 76px)!important;
+  padding:0!important;
+  display:flex!important;
+  align-items:center!important;
+  position:relative!important;
+  overflow:hidden!important;
+  color:#fff!important;
+  background-color:#050709!important;
+  background-image:
+    linear-gradient(90deg,rgba(5,7,9,.06) 0%,rgba(5,7,9,.14) 43%,rgba(5,7,9,.74) 72%,rgba(5,7,9,.96) 100%),
+    url('/service-art/mechanical.jpg?v=20260822-2117')!important;
+  background-size:cover!important;
+  background-position:center center!important;
+  background-repeat:no-repeat!important;
+  scroll-behavior:auto!important;
+}
+
 .mechanical .discipline-hero,
 .mechanical .discipline-hero *,
 .mechanical .discipline-hero::before,
 .mechanical .discipline-hero::after,
 .mechanical .discipline-hero *::before,
-.mechanical .discipline-hero *::after{animation:none!important;animation-name:none!important;transition:none!important}
-.mechanical .discipline-visual{background-image:url('/service-art/mechanical.jpg?v=20260822-2036')!important;background-color:#050505!important;background-repeat:no-repeat!important;background-position:center!important;background-size:contain!important;filter:none!important;box-shadow:none!important;transform:none!important;transition:none!important;will-change:auto!important;-webkit-mask-image:none!important;mask-image:none!important;border:0!important;border-radius:0!important}
-.mechanical .discipline-visual::before,.mechanical .discipline-visual::after{content:none!important;display:none!important;animation:none!important;transition:none!important;transform:none!important}
-.mechanical .discipline-visual .visual-symbol,.mechanical .discipline-visual>span{display:none!important}
-@media(min-width:981px){
-  .mechanical .discipline-hero{min-height:calc(100svh - 82px)!important;padding:72px 0 92px!important;align-items:center!important}
-  .mechanical .discipline-hero:before{background:linear-gradient(90deg,rgba(5,5,5,.02) 0%,rgba(5,5,5,.05) 53%,rgba(5,5,5,.88) 76%,#050505 100%)!important;animation:none!important;transition:none!important}
-  .mechanical .discipline-hero-grid{display:grid!important;grid-template-columns:minmax(0,1.36fr) minmax(420px,.84fr)!important;gap:clamp(34px,4vw,68px)!important;align-items:center!important;direction:ltr!important;width:100%!important}
-  .mechanical .discipline-hero-grid>div:first-child{grid-column:2!important;grid-row:1!important;direction:rtl!important;max-width:620px!important;padding:0!important;justify-self:end!important}
-  .mechanical .discipline-visual{grid-column:1!important;grid-row:1!important;direction:rtl!important;width:100%!important;min-height:0!important;aspect-ratio:16/9!important}
-  .mechanical .discipline-hero .eyebrow{display:inline-flex!important;align-items:center!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:999px!important;padding:9px 15px!important;margin-bottom:22px!important;color:rgba(255,255,255,.72)!important;font-size:14px!important}
-  .mechanical .discipline-hero h1{font-size:clamp(42px,4.15vw,66px)!important;line-height:1.28!important;letter-spacing:-.035em!important;margin:0 0 22px!important;max-width:650px!important}
-  .mechanical .discipline-hero p{font-size:clamp(15px,1.05vw,18px)!important;line-height:2!important;color:rgba(255,255,255,.66)!important;max-width:590px!important}
-  .mechanical .discipline-hero .btn{display:inline-flex!important;margin-top:24px!important;background:#fff!important;color:#050505!important;border-color:#fff!important;min-width:190px!important;justify-content:center!important;transition:none!important}
+.mechanical .discipline-hero *::after{
+  animation:none!important;
+  animation-name:none!important;
+  transition:none!important;
 }
+
+/* Remove legacy discipline overlay and the boxed illustration on desktop.
+   The approved mechanical artwork is the hero background, exactly like Home. */
+.mechanical .discipline-hero::before,
+.mechanical .discipline-hero::after{content:none!important;display:none!important}
+.mechanical .discipline-hero-grid{
+  position:relative!important;
+  z-index:2!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  align-items:center!important;
+  width:100%!important;
+  min-height:calc(100svh - 76px)!important;
+  padding-top:clamp(56px,7vh,88px)!important;
+  padding-bottom:clamp(56px,7vh,88px)!important;
+}
+.mechanical .discipline-hero-grid>div:first-child{
+  width:min(47%,640px)!important;
+  max-width:640px!important;
+  margin:0 0 0 auto!important;
+  padding:0!important;
+  direction:rtl!important;
+  text-align:right!important;
+  align-self:center!important;
+  justify-self:end!important;
+}
+.mechanical .discipline-visual{display:none!important}
+
+.mechanical .discipline-hero .eyebrow{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  padding:7px 11px!important;
+  margin:0 0 20px!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  border-radius:7px!important;
+  background:rgba(8,10,12,.28)!important;
+  color:rgba(255,255,255,.82)!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  letter-spacing:1.2px!important;
+  backdrop-filter:none!important;
+}
+.mechanical .discipline-hero h1{
+  margin:0 0 20px!important;
+  max-width:640px!important;
+  color:#fff!important;
+  font-size:clamp(42px,5.2vw,78px)!important;
+  font-weight:800!important;
+  line-height:1.09!important;
+  letter-spacing:-.045em!important;
+  text-wrap:balance!important;
+}
+.mechanical .discipline-hero p{
+  margin:0!important;
+  max-width:590px!important;
+  color:rgba(255,255,255,.74)!important;
+  font-size:clamp(15px,1.18vw,18px)!important;
+  line-height:1.95!important;
+}
+.mechanical .discipline-hero .btn{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:190px!important;
+  margin-top:28px!important;
+  padding:12px 18px!important;
+  border:1px solid #fff!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  color:#080a0c!important;
+  box-shadow:none!important;
+  transform:none!important;
+}
+
+/* Tablet: preserve the same family, but separate copy and artwork so they never overlap. */
 @media(max-width:980px){
-  .mechanical .discipline-hero{background:#050505!important;padding-top:104px!important;padding-bottom:44px!important}
-  .mechanical .discipline-hero-grid{display:flex!important;flex-direction:column!important;direction:rtl!important;gap:28px!important}
-  .mechanical .discipline-hero-grid>div:first-child{order:1!important;max-width:none!important}
-  .mechanical .discipline-visual{order:2!important;width:100%!important;min-height:0!important;aspect-ratio:16/9!important}
-  .mechanical .discipline-hero .btn{display:inline-flex!important;margin-top:22px!important;background:#fff!important;color:#050505!important;border-color:#fff!important;transition:none!important}
+  .mechanical .discipline-hero{
+    min-height:auto!important;
+    padding:108px 0 44px!important;
+    background:#050709!important;
+  }
+  .mechanical .discipline-hero-grid{
+    min-height:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    gap:32px!important;
+    padding-top:0!important;
+    padding-bottom:0!important;
+    direction:rtl!important;
+  }
+  .mechanical .discipline-hero-grid>div:first-child{
+    order:1!important;
+    width:100%!important;
+    max-width:700px!important;
+    margin:0!important;
+    align-self:stretch!important;
+  }
+  .mechanical .discipline-visual{
+    order:2!important;
+    display:block!important;
+    width:100%!important;
+    min-height:0!important;
+    aspect-ratio:16/9!important;
+    border:0!important;
+    border-radius:0!important;
+    background-color:#050709!important;
+    background-image:url('/service-art/mechanical.jpg?v=20260822-2117')!important;
+    background-size:contain!important;
+    background-position:center!important;
+    background-repeat:no-repeat!important;
+    box-shadow:none!important;
+    filter:none!important;
+    transform:none!important;
+    will-change:auto!important;
+    -webkit-mask-image:none!important;
+    mask-image:none!important;
+  }
+  .mechanical .discipline-visual::before,
+  .mechanical .discipline-visual::after,
+  .mechanical .discipline-visual .visual-symbol,
+  .mechanical .discipline-visual>span{content:none!important;display:none!important}
+  .mechanical .discipline-hero h1{font-size:clamp(40px,7vw,64px)!important}
 }
+
 @media(max-width:640px){
-  .mechanical .discipline-hero h1{font-size:clamp(34px,10vw,46px)!important}
+  .mechanical .discipline-hero{padding:96px 0 34px!important}
+  .mechanical .discipline-hero-grid{gap:24px!important}
+  .mechanical .discipline-hero h1{
+    font-size:clamp(34px,10vw,46px)!important;
+    line-height:1.14!important;
+    letter-spacing:-.035em!important;
+  }
+  .mechanical .discipline-hero p{font-size:14px!important}
+  .mechanical .discipline-hero .btn{width:100%!important;margin-top:22px!important}
   .mechanical .discipline-visual{aspect-ratio:16/9!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .mechanical .discipline-hero,
+  .mechanical .discipline-hero *{animation:none!important;transition:none!important;transform:none!important}
 }
