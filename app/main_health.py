@@ -1,6 +1,7 @@
 from starlette.middleware.gzip import GZipMiddleware
 
 from . import main_auto
+from . import unit_sanity  # patches dimension-based CAD unit sanity before project analysis
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
