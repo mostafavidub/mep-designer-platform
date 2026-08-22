@@ -91,22 +91,19 @@
 .workflow-stop-1{right:1.5%;top:3%}
 .workflow-stop-2{right:25.5%;top:35%}
 .workflow-stop-3{
-  left:29%;
+  left:31%;
   top:9%;
-  width:min(430px,35vw);
-  display:grid;
-  grid-template-columns:minmax(220px,1fr) 96px;
-  grid-template-areas:"copy badge";
-  column-gap:24px;
-  align-items:start;
+  width:96px;
 }
-.workflow-stop-3 .workflow-stop-badge{grid-area:badge}
 .workflow-stop-3 .workflow-stop-copy{
-  grid-area:copy;
-  margin-top:10px;
+  position:absolute;
+  top:0;
+  right:calc(100% + 28px);
+  width:330px;
+  margin-top:0;
   padding-top:16px;
   text-align:right;
-  min-width:0;
+  direction:rtl;
 }
 .workflow-stop-4{left:1.5%;top:57%}
 .workflow-stop-badge{
@@ -182,14 +179,12 @@
   .workflow-stop{width:min(225px,23vw)}
   .workflow-stop-1{right:1%;top:5%}
   .workflow-stop-2{right:24%;top:38%}
-  .workflow-stop-3{
-    left:25%;
-    top:11%;
-    width:min(390px,39vw);
-    grid-template-columns:minmax(190px,1fr) 90px;
-    column-gap:18px;
-  }
+  .workflow-stop-3{left:30%;top:11%;width:90px}
   .workflow-stop-3 .workflow-stop-badge{width:90px;height:90px}
+  .workflow-stop-3 .workflow-stop-copy{
+    right:calc(100% + 22px);
+    width:min(300px,28vw);
+  }
   .workflow-stop-4{left:1%;top:59%}
 }
 
@@ -211,7 +206,13 @@
   .workflow-stop-3 .workflow-stop-badge{width:80px;height:80px;box-shadow:0 0 0 8px var(--brand-paper,#f3f3ef)}
   .workflow-stop-badge strong{font-size:24px}
   .workflow-stop-copy,
-  .workflow-stop-3 .workflow-stop-copy{margin-top:15px;padding-top:12px}
+  .workflow-stop-3 .workflow-stop-copy{
+    position:static;
+    width:auto;
+    margin-top:15px;
+    padding-top:12px;
+    direction:rtl;
+  }
   .workflow-stop-1{right:4%;top:1%}
   .workflow-stop-2{left:3%;right:auto;top:28%}
   .workflow-stop-3{right:4%;left:auto;top:54%}
