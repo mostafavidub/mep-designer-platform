@@ -90,7 +90,24 @@
 .workflow-stop.is-passed{opacity:.72}
 .workflow-stop-1{right:1.5%;top:3%}
 .workflow-stop-2{right:25.5%;top:35%}
-.workflow-stop-3{left:31%;top:9%}
+.workflow-stop-3{
+  left:29%;
+  top:9%;
+  width:min(430px,35vw);
+  display:grid;
+  grid-template-columns:minmax(220px,1fr) 96px;
+  grid-template-areas:"copy badge";
+  column-gap:24px;
+  align-items:start;
+}
+.workflow-stop-3 .workflow-stop-badge{grid-area:badge}
+.workflow-stop-3 .workflow-stop-copy{
+  grid-area:copy;
+  margin-top:10px;
+  padding-top:16px;
+  text-align:right;
+  min-width:0;
+}
 .workflow-stop-4{left:1.5%;top:57%}
 .workflow-stop-badge{
   width:96px;
@@ -165,7 +182,14 @@
   .workflow-stop{width:min(225px,23vw)}
   .workflow-stop-1{right:1%;top:5%}
   .workflow-stop-2{right:24%;top:38%}
-  .workflow-stop-3{left:29%;top:11%}
+  .workflow-stop-3{
+    left:25%;
+    top:11%;
+    width:min(390px,39vw);
+    grid-template-columns:minmax(190px,1fr) 90px;
+    column-gap:18px;
+  }
+  .workflow-stop-3 .workflow-stop-badge{width:90px;height:90px}
   .workflow-stop-4{left:1%;top:59%}
 }
 
@@ -177,13 +201,17 @@
   .workflow-road-svg-mobile{display:block}
   .workflow-road-track,.workflow-road-progress{stroke-width:16}
   .workflow-road-track-center{stroke-width:1.2;stroke-dasharray:7 10}
-  .workflow-stop{
+  .workflow-stop,
+  .workflow-stop-3{
     width:min(250px,68vw);
     text-align:right;
+    display:block;
   }
-  .workflow-stop-badge{width:80px;height:80px;box-shadow:0 0 0 8px var(--brand-paper,#f3f3ef)}
+  .workflow-stop-badge,
+  .workflow-stop-3 .workflow-stop-badge{width:80px;height:80px;box-shadow:0 0 0 8px var(--brand-paper,#f3f3ef)}
   .workflow-stop-badge strong{font-size:24px}
-  .workflow-stop-copy{margin-top:15px;padding-top:12px}
+  .workflow-stop-copy,
+  .workflow-stop-3 .workflow-stop-copy{margin-top:15px;padding-top:12px}
   .workflow-stop-1{right:4%;top:1%}
   .workflow-stop-2{left:3%;right:auto;top:28%}
   .workflow-stop-3{right:4%;left:auto;top:54%}
@@ -193,7 +221,7 @@
 
 @media(max-width:480px){
   .workflow-road-canvas{height:1040px}
-  .workflow-stop{width:68vw}
+  .workflow-stop,.workflow-stop-3{width:68vw}
   .workflow-stop-copy p{font-size:13px}
 }
 
