@@ -41,9 +41,9 @@
   border-radius:27px 0 0 27px!important;
   transform:none!important;
 }
-.service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)!important}
-.service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)!important}
-.service-stack-section .service-card-muted::after{background-image:var(--et-art-architect)!important}
+.service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)}
+.service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)}
+.service-stack-section .service-card-muted::after{background-image:var(--et-art-architect)}
 .service-stack-section .service-card-1,
 .service-stack-section .service-card-dark{background:#f7f7f5!important;color:#0a0a0a!important}
 .service-stack-section .service-card-1 *,
