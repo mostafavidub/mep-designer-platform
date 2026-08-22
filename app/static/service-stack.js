@@ -18,7 +18,7 @@
   if(!head||!cards.length)return;
 
   const artSources=[
-    '/service-art/mechanical.jpg?v=20260822-2015',
+    '/service-art/mechanical.jpg?v=20260822-2045',
     '/static/service-art-electrical.svg?v=20260822-1535',
     '/static/service-art-architect.svg?v=20260822-1405'
   ];
