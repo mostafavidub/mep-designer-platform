@@ -59,5 +59,8 @@
 {% if is_discipline %}<script src="/static/resumable-upload.js?v=20260821-2240"></script>{% endif %}
 {% if is_home %}<script defer src="/static/workflow-road.js?v=20260822-0959"></script><script defer src="/static/service-stack.js?v=20260822-1126"></script><script defer src="/static/hero-scroll-v1.js?v=20260822-1048"></script>{% endif %}
 <script defer src="/static/brand_v4.js?v=20260821-2040"></script>
+<script>
+(()=>{const fix=()=>document.querySelectorAll('a[href*="/projects/"][href*="/output/"]').forEach(a=>{if(a.textContent.includes('PDF'))a.textContent='دانلود DXF'});fix();new MutationObserver(fix).observe(document.body,{childList:true,subtree:true})})();
+</script>
 </body>
 </html>
