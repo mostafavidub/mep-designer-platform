@@ -11,9 +11,6 @@ _base_levels = v10._electrical_levels
 
 def electrical_levels_with_elevator(msp):
     levels = _base_levels(msp)
-    # Elevator is an explicit Rulebook special load. The legacy room classifier
-    # intentionally did not include it, so extract it directly from architecture
-    # text and assign it to the nearest non-parking architectural level.
     elevators = []
     for entity in msp:
         if entity.dxftype() not in ('TEXT', 'MTEXT'):
@@ -23,16 +20,14 @@ def electrical_levels_with_elevator(msp):
         if p and ('آسانسور' in text or 'elevator' in text or 'lift' in text):
             elevators.append({'room': 'elevator', 'point': p, 'text': text})
     candidates = [x for x in levels if x.get('special_type') != 'parking' and not v10.v8._is_roof(x)]
-    for item in elevators:
-        if not candidates:
-            break
-        level = min(candidates, key=lambda x: math.dist(item['point'], x['title']['point']))
-        # Only transfer labels spatially belonging to the selected plan cluster.
-        other_titles = [x['title']['point'] for x in candidates if x is not level]
-        limit = min([math.dist(level['title']['point'], p) for p in other_titles], default=25.0) * 1.25
-        if math.dist(item['point'], level['title']['point']) <= max(limit, 8.0):
-            if not any(r.get('room') == 'elevator' and math.dist(r['point'], item['point']) < .5 for r in level.get('rooms', [])):
-                level.setdefault('rooms', []).append(item)
+    for level in candidates:
+        # Architecture/furniture sheets in real projects can repeat elevator text.
+        # Keep only the elevator annotation spatially belonging to this primary
+        # architecture plan; do not copy elevator labels from adjacent furniture
+        # or lintel plans into the electrical level.
+        nearby = [x for x in elevators if math.dist(x['point'], level['title']['point']) <= 12.0]
+        if nearby and not any(r.get('room') == 'elevator' for r in level.get('rooms', [])):
+            level.setdefault('rooms', []).append(min(nearby, key=lambda x: math.dist(x['point'], level['title']['point'])))
     return levels
 
 
