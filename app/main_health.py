@@ -3,9 +3,11 @@ from starlette.middleware.gzip import GZipMiddleware
 from . import main_auto
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from .resumable_upload import register_resumable_upload_routes
+from .service_art_runtime import register_service_art_routes
 
 app = main_auto.app
 register_resumable_upload_routes(app)
+register_service_art_routes(app)
 
 # Compress HTML/CSS/JS/SVG/JSON responses without spending excessive CPU.
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
