@@ -44,6 +44,7 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('Panel Schedule', r.text)
         self.assertIn('project-1-electrical-before-after.svg', r.text)
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
+        self.assertNotIn('/static/workflow-road.js', r.text)
 
     def test_mechanical_landing_renders_complete_contract(self):
         r = self.client.get('/mechanical')
@@ -53,6 +54,7 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('HVAC', r.text)
         self.assertIn('project-1-mechanical-before-after.svg', r.text)
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
+        self.assertNotIn('/static/workflow-road.js', r.text)
 
     def test_home_has_trust_comparison_limits_and_faq(self):
         r = self.client.get('/')
@@ -67,6 +69,31 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('data-sample-carousel', r.text)
         self.assertIn('sample-lightbox', r.text)
 
+    def test_home_has_scroll_driven_curved_workflow_road(self):
+        home = self.client.get('/')
+        self.assertEqual(home.status_code, 200)
+        self.assertIn('data-workflow-road', home.text)
+        self.assertIn('workflow-road-svg-desktop', home.text)
+        self.assertIn('workflow-road-svg-mobile', home.text)
+        self.assertEqual(home.text.count('data-workflow-stop='), 4)
+        self.assertIn('ARCHITECTURE → READ → INFER → ENGINEERING OUTPUT', home.text)
+        self.assertIn('/static/workflow-road.css', home.text)
+        self.assertIn('/static/workflow-road.js', home.text)
+
+        css = self.client.get('/static/workflow-road.css')
+        js = self.client.get('/static/workflow-road.js')
+        self.assertEqual(css.status_code, 200)
+        self.assertEqual(js.status_code, 200)
+        self.assertIn('.workflow-road-progress', css.text)
+        self.assertIn('.workflow-stop.is-active', css.text)
+        self.assertIn('@media(max-width:760px)', css.text)
+        self.assertIn('prefers-reduced-motion:reduce', css.text)
+        self.assertIn('getTotalLength', js.text)
+        self.assertIn('strokeDashoffset', js.text)
+        self.assertIn('getPointAtLength', js.text)
+        self.assertIn('requestAnimationFrame', js.text)
+        self.assertIn("addEventListener('scroll'", js.text)
+
     def test_home_loads_layered_hero_scene_only_on_home(self):
         home = self.client.get('/')
         self.assertEqual(home.status_code, 200)
@@ -77,6 +104,8 @@ class LandingSmokeTests(unittest.TestCase):
             page = self.client.get(path)
             self.assertNotIn('/static/hero-scroll-v1.css', page.text)
             self.assertNotIn('/static/hero-scroll-v1.js', page.text)
+            self.assertNotIn('/static/workflow-road.css', page.text)
+            self.assertNotIn('/static/workflow-road.js', page.text)
 
     def test_layered_hero_assets_pin_until_full_cover(self):
         css = self.client.get('/static/hero-scroll-v1.css')
