@@ -1,6 +1,6 @@
 /* EngiTools service cards — approved clean split layout. */
 :root{
-  --et-art-mechanical:url('/service-art/mechanical.jpg?v=20260822-1548');
+  --et-art-mechanical:url('/service-art/mechanical.jpg?v=20260822-1605');
   --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1535');
   --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
 }
@@ -161,4 +161,40 @@
   .service-stack-section .service-cta .cta-body{top:64%!important}
   .service-stack-section .service-cta .cta-body h3{font-size:clamp(40px,12vw,62px)!important}
   .discipline-page.mechanical .discipline-visual,.discipline-page.electrical .discipline-visual{min-height:330px!important}
+}
+
+/* Native artwork layer: this is the canonical rendering path for service cards. */
+.service-stack-section .service-cta::after{display:none!important;content:none!important}
+.service-stack-section .service-stack-art{
+  display:block!important;
+  position:absolute!important;
+  left:0!important;
+  right:auto!important;
+  top:0!important;
+  bottom:0!important;
+  width:56%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  z-index:2!important;
+  pointer-events:none!important;
+  opacity:1!important;
+  filter:grayscale(1) contrast(1.06)!important;
+  border-right:1px solid rgba(10,10,10,.14)!important;
+  border-radius:27px 0 0 27px!important;
+  background:#dededb!important;
+}
+@media(max-width:900px){
+  .service-stack-section .service-stack-art{
+    width:100%!important;
+    height:48%!important;
+    top:0!important;
+    bottom:auto!important;
+    border-right:0!important;
+    border-bottom:1px solid rgba(10,10,10,.14)!important;
+    border-radius:27px 27px 0 0!important;
+  }
+}
+@media(max-width:640px){
+  .service-stack-section .service-stack-art{height:42%!important}
 }
