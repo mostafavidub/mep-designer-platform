@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   {% if is_home %}<link rel="preload" as="image" href="/static/hero-integrated-mep-v1.jpg?v=20260822-0942" type="image/jpeg">{% endif %}
   {% if page_path == '/electrical' %}<link rel="preload" as="image" href="/static/service-art-electrical.svg?v=20260822-1535" type="image/svg+xml">{% endif %}
-  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="https://res.cloudinary.com/pnuzoh4o/image/upload/v1787418152/engitools/mechanical-hero-final-20260822.webp" type="image/webp">{% endif %}
+  {% if page_path == '/mechanical' %}<link rel="preload" as="image" href="/service-art/mechanical.jpg?v=20260822-2036">{% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css?v=20260821-1100">
   <link rel="stylesheet" href="/static/v2.css?v=20260821-1700">
@@ -41,7 +41,7 @@
   <link rel="stylesheet" href="/static/layout_fix_v1.css?v=20260821-2057">
   {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260822-0951"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260822-2001">{% endif %}
   {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260822-2001">{% endif %}
-  {% if page_path == '/mechanical' %}<link rel="stylesheet" href="/static/mechanical-hero-static.css?v=20260822-2030">{% endif %}
+  {% if page_path == '/mechanical' %}<link rel="stylesheet" href="/static/mechanical-hero-static.css?v=20260822-2036">{% endif %}
 
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
