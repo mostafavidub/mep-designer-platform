@@ -38,7 +38,7 @@ class ConceptArtTests(unittest.TestCase):
         self.assertEqual(js.status_code, 200)
         self.assertEqual(css.status_code, 200)
         self.assertIn("art.className='service-stack-art'", js.text)
-        self.assertIn("'/service-art/mechanical.jpg?v=20260822-2015'", js.text)
+        self.assertIn("'/service-art/mechanical.jpg?v=20260822-2045'", js.text)
         self.assertIn('.service-stack-section .service-stack-art{', css.text)
         self.assertIn('display:block!important', css.text)
         self.assertIn('width:56%!important', css.text)
@@ -46,7 +46,7 @@ class ConceptArtTests(unittest.TestCase):
         self.assertIn('object-fit:contain!important', css.text)
         self.assertIn('.service-stack-section .service-cta::after{display:none!important;content:none!important}', css.text)
 
-        art = self.client.get('/service-art/mechanical.jpg?v=20260822-2015')
+        art = self.client.get('/service-art/mechanical.jpg?v=20260822-2045')
         self.assertEqual(art.status_code, 200)
         self.assertGreater(len(art.content), 30_000)
         self.assertEqual(art.headers.get('content-type'), 'image/webp')
