@@ -69,8 +69,8 @@ def run_design_dxf(project_id, revision_id):
             dst = out / f'{discipline}_design_DXF.zip'
             shutil.copy2(package_path, dst)
 
-        # Keep using the existing database field for backwards compatibility;
-        # the stored artifact is now DXF (or a ZIP of DXFs), not a PDF.
+        # Reuse the existing artifact-path column for compatibility with the
+        # current database schema; the file stored here is now DXF/ZIP, not PDF.
         r.pdf_path = str(dst)
         r.status = 'ready'
         r.error = ''
@@ -94,9 +94,27 @@ def flow_payload_dxf(p):
     output_url = f'/projects/{p.id}/output/{p.current_revision}' if ready else None
     data['output_url'] = output_url
     data['output_format'] = 'DXF'
-    # Keep the legacy key temporarily because the current modal JS reads it.
+    # Temporary compatibility for the existing modal JS.
     data['pdf_url'] = output_url
     return data
+
+
+def _resolve_existing_cad_artifact(pid, rev, discipline, stored_path):
+    path = Path(stored_path or '')
+    if path.exists() and path.suffix.lower() in ('.dxf', '.zip'):
+        return path
+
+    # Older revisions stored the PDF path even though the CAD engine also wrote
+    # the generated DXF package. Reuse that existing CAD artifact immediately.
+    engine_dir = Path('/data/cad-engine') / str(pid) / f'R{rev:03d}' / discipline
+    if engine_dir.exists():
+        dxfs = sorted(engine_dir.glob(f'*_{discipline}.dxf'))
+        if len(dxfs) == 1:
+            return dxfs[0]
+        package = engine_dir / f'EngiTools_{pid}_{discipline}_R{rev}_DXF.zip'
+        if package.exists():
+            return package
+    return None
 
 
 legacy.run_design = run_design_dxf
@@ -115,11 +133,11 @@ def get_cad_output(pid: int, rev: int, request: Request):
     ).first()
     discipline = (p.answers or {}).get('discipline', (p.analysis or {}).get('discipline', 'mechanical'))
     db.close()
-    if not r or r.status != 'ready' or not r.pdf_path:
+    if not r or r.status != 'ready':
         raise HTTPException(404)
 
-    path = Path(r.pdf_path)
-    if not path.exists() or path.suffix.lower() not in ('.dxf', '.zip'):
+    path = _resolve_existing_cad_artifact(pid, rev, discipline, r.pdf_path)
+    if not path:
         raise HTTPException(404, 'DXF output is not available for this revision; create a new revision.')
 
     if path.suffix.lower() == '.dxf':
