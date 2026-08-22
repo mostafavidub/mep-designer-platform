@@ -1,8 +1,14 @@
-/* Final service-card readability overrides. Loaded after brand/service styles. */
+/* Final service-card readability + interaction overrides. Loaded after brand/service styles. */
 .service-stack-section .service-cta,
-.service-stack-section .service-cta:hover{
+.service-stack-section .service-cta:hover,
+.service-stack-section .service-cta:focus-visible{
   text-decoration:none!important;
   mix-blend-mode:normal!important;
+  /* brand_v4 previously forced transform:none on :hover and animated transform.
+     That froze the card under the pointer while reverse-scrolling. Keep the
+     scroll-driven transform authoritative in every pointer/focus state. */
+  transform:translate3d(0,var(--stack-enter),0) scale(var(--stack-scale))!important;
+  transition:none!important;
 }
 .service-stack-section .service-card-1,
 .service-stack-section .service-card-1:hover{
@@ -52,25 +58,14 @@
   text-shadow:none!important;
   mix-blend-mode:normal!important;
 }
-.service-stack-section .service-card-dark .cta-body h3{
-  color:#ffffff!important;
-}
-.service-stack-section .service-card-dark .cta-body p{
-  color:#f0f0eb!important;
-}
-.service-stack-section .service-card-dark .service-code{
-  color:#deded8!important;
-}
-.service-stack-section .service-card-dark .cta-link{
-  color:#ffffff!important;
-  border-color:#a6a69f!important;
-}
+.service-stack-section .service-card-dark .cta-body h3{color:#ffffff!important}
+.service-stack-section .service-card-dark .cta-body p{color:#f0f0eb!important}
+.service-stack-section .service-card-dark .service-code{color:#deded8!important}
+.service-stack-section .service-card-dark .cta-link{color:#ffffff!important;border-color:#a6a69f!important}
 .service-stack-section .service-card-1 .service-code,
-.service-stack-section .service-card-muted .service-code{
-  color:#54544f!important;
-}
+.service-stack-section .service-card-muted .service-code{color:#54544f!important}
 
-/* Each card is already a native anchor; keep the entire transformed card clickable. */
+/* Each card is a native anchor; the whole transformed surface remains clickable. */
 .service-stack-section a.service-card-clickable{
   pointer-events:auto!important;
   cursor:pointer!important;
@@ -80,3 +75,5 @@
   outline:3px solid currentColor!important;
   outline-offset:-8px!important;
 }
+/* Only the arrow has a hover animation; the card itself must never alter its transform. */
+.service-stack-section a.service-card-clickable:hover .cta-arrow{transition:transform .22s ease;transform:rotate(45deg)}
