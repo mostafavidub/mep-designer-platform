@@ -50,7 +50,9 @@
     if(!active||reduced){ticking=false;return}
     const rect=section.getBoundingClientRect();
     const vh=innerHeight||document.documentElement.clientHeight;
-    const start=vh*.72;
+    // Start later so when the roadmap first becomes visually prominent the
+    // user has only just left step 01 and can still watch the road grow toward 02.
+    const start=vh*.56;
     const end=Math.max(1,rect.height-vh*.42);
     const p=clamp((start-rect.top)/end,0,1);
     const offset=active.length*(1-p);
