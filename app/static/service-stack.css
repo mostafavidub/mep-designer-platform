@@ -27,7 +27,7 @@
 .service-stack-title{margin:0!important;font-size:clamp(42px,6.5vw,106px)!important;line-height:1.04!important;letter-spacing:-.04em!important;font-weight:760!important;text-wrap:balance}
 .service-stack-subtitle{max-width:680px;margin:24px auto 0;font-size:clamp(15px,1.45vw,20px);line-height:1.95;color:rgba(10,10,10,.62)}
 
-/* The scene is taller than the viewport, while the viewport itself remains pinned. */
+/* The document scrolls through this tall scene while the viewport itself stays pinned. */
 .service-stack-scene{
   --service-count:3;
   position:relative;
@@ -35,7 +35,7 @@
   background:var(--service-paper);
 }
 .service-stack-viewport{
-  position:sticky;
+  position:sticky!important;
   top:0;
   height:100svh;
   display:grid;
@@ -43,6 +43,7 @@
   padding:clamp(86px,10vh,118px) 0 clamp(22px,3vh,38px);
   overflow:hidden;
   perspective:1400px;
+  isolation:isolate;
 }
 .service-stack-section .service-cta-grid{
   display:block!important;
@@ -122,7 +123,7 @@
   .service-stack-section .cta-body h3{font-size:clamp(44px,14vw,72px)!important}
   .service-stack-section .companion-icon{font-size:58px!important}
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion: reduce){
   .service-stack-scene{height:auto!important}
   .service-stack-viewport{position:relative!important;height:auto!important;padding:24px 0!important;overflow:visible!important}
   .service-stack-section .service-cta-grid{height:auto!important;max-height:none!important;min-height:0!important}
