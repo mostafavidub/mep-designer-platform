@@ -94,6 +94,17 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('requestAnimationFrame', js.text)
         self.assertIn("addEventListener('scroll'", js.text)
 
+    def test_workflow_step_three_copy_is_forced_left_of_marker_on_desktop(self):
+        css = self.client.get('/static/workflow-road.css')
+        self.assertEqual(css.status_code, 200)
+        self.assertIn('.workflow-stop-3 .workflow-stop-copy', css.text)
+        self.assertIn('position:absolute', css.text)
+        self.assertIn('right:calc(100% + 28px)', css.text)
+        self.assertIn('width:330px', css.text)
+        self.assertIn('right:calc(100% + 22px)', css.text)
+        self.assertIn('width:min(270px,25vw)', css.text)
+        self.assertIn('position:static', css.text)
+
     def test_home_loads_layered_hero_scene_only_on_home(self):
         home = self.client.get('/')
         self.assertEqual(home.status_code, 200)
