@@ -17,6 +17,34 @@
   const cards=[...grid.querySelectorAll('.service-cta')];
   if(!head||!cards.length)return;
 
+  cards.forEach((card,i)=>{
+    card.classList.add(`service-card-${i+1}`);
+    if(i===1)card.classList.add('service-card-dark');
+    if(i===2)card.classList.add('service-card-muted');
+
+    const primaryLink=card.matches('a[href]')?card:card.querySelector('a[href]');
+    const targetHref=primaryLink&&primaryLink.getAttribute('href');
+    if(targetHref){
+      card.classList.add('service-card-clickable');
+      if(!card.matches('a[href]')){
+        card.setAttribute('role','link');
+        card.tabIndex=0;
+        const title=card.querySelector('h3')?.textContent?.trim();
+        if(title)card.setAttribute('aria-label',title);
+        card.addEventListener('click',event=>{
+          if(event.target.closest('a,button,input,select,textarea,label'))return;
+          location.assign(targetHref);
+        });
+        card.addEventListener('keydown',event=>{
+          if(event.key==='Enter'||event.key===' '){
+            event.preventDefault();
+            location.assign(targetHref);
+          }
+        });
+      }
+    }
+  });
+
   const scene=document.createElement('div');
   scene.className='service-stack-scene';
   const viewport=document.createElement('div');
