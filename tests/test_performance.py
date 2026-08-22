@@ -21,8 +21,10 @@ class PerformanceRegressionTests(unittest.TestCase):
         self.assertEqual(r.headers.get('cache-control'), 'no-cache')
 
     def test_discipline_hero_is_preloaded(self):
-        r = self.client.get('/electrical')
-        self.assertIn('rel="preload" as="image" href="/static/hero-electrical.svg', r.text)
+        electrical = self.client.get('/electrical')
+        mechanical = self.client.get('/mechanical')
+        self.assertIn('rel="preload" as="image" href="/static/service-art-electrical.svg', electrical.text)
+        self.assertIn('rel="preload" as="image" href="/static/service-art-mechanical.svg', mechanical.text)
 
     def test_non_landing_pages_do_not_load_landing_runtime(self):
         r = self.client.get('/blog')
