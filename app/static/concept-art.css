@@ -1,4 +1,97 @@
 /* EngiTools conceptual engineering art — generated for the service stack and discipline heroes. */
 :root{
-  --et-art-mechanical:url("data:image/webp;base64,UklGRjZKAA...REDACTED_PLACEHOLDER...");
+  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1147');
+  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1147');
+  --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1147');
+}
+
+/* Home service stack */
+.service-stack-section .service-cta{
+  position:absolute!important;
+  isolation:isolate!important;
+}
+.service-stack-section .service-cta::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:58%;
+  z-index:1;
+  pointer-events:none;
+  background-repeat:no-repeat;
+  background-position:center;
+  background-size:cover;
+  opacity:.96;
+  -webkit-mask-image:linear-gradient(to right,#000 0%,#000 72%,transparent 100%);
+  mask-image:linear-gradient(to right,#000 0%,#000 72%,transparent 100%);
+}
+.service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)}
+.service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)}
+.service-stack-section .service-card-muted::after{background-image:var(--et-art-architect)}
+.service-stack-section .service-cta .cta-top,
+.service-stack-section .service-cta .cta-body,
+.service-stack-section .service-cta .cta-link{
+  position:relative!important;
+  z-index:4!important;
+}
+.service-stack-section .service-cta .cta-body{
+  grid-column:1/2!important;
+  max-width:48%!important;
+  justify-self:end!important;
+  text-align:right!important;
+}
+.service-stack-section .service-cta .cta-link{
+  grid-column:1/2!important;
+  justify-self:end!important;
+  width:min(360px,46%)!important;
+}
+
+/* Discipline landing heroes reuse the exact same conceptual discipline art. */
+.discipline-page.mechanical .discipline-visual,
+.discipline-page.electrical .discipline-visual{
+  position:relative;
+  min-height:clamp(420px,56vw,680px)!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  background-color:#090b0e!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:cover!important;
+  box-shadow:0 28px 70px rgba(0,0,0,.16)!important;
+}
+.discipline-page.mechanical .discipline-visual{background-image:var(--et-art-mechanical)!important}
+.discipline-page.electrical .discipline-visual{background-image:var(--et-art-electrical)!important}
+.discipline-page .discipline-visual::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(135deg,rgba(0,0,0,.03),rgba(0,0,0,.22));
+}
+.discipline-page .discipline-visual .visual-symbol,
+.discipline-page .discipline-visual>span{display:none!important}
+
+@media(max-width:900px){
+  .service-stack-section .service-cta::after{
+    width:100%;
+    opacity:.32;
+    -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 56%,transparent 88%);
+    mask-image:linear-gradient(to bottom,#000 0%,#000 56%,transparent 88%);
+  }
+  .service-stack-section .service-cta .cta-body{
+    max-width:100%!important;
+    justify-self:stretch!important;
+  }
+  .service-stack-section .service-cta .cta-link{
+    width:100%!important;
+    justify-self:stretch!important;
+  }
+  .discipline-page.mechanical .discipline-visual,
+  .discipline-page.electrical .discipline-visual{min-height:420px!important}
+}
+@media(max-width:640px){
+  .service-stack-section .service-cta::after{opacity:.26;background-position:center top}
+  .discipline-page.mechanical .discipline-visual,
+  .discipline-page.electrical .discipline-visual{min-height:330px!important}
 }
