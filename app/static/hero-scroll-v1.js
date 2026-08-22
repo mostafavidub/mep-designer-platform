@@ -3,12 +3,11 @@
   if(!hero)return;
 
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const next=hero.nextElementSibling;
+  // The workflow is intentionally the layer that covers the hero. Do not use
+  // nextElementSibling here: the services script reorders sections on home.
+  const next=document.querySelector('[data-workflow-road]');
   if(!next)return;
 
-  // One scene owns both layers. Keeping the overlay inside the same containing
-  // block is what lets the hero stay pinned until the next section has fully
-  // travelled over it instead of scrolling away after the initial overlap.
   const scene=document.createElement('div');
   scene.className='hero-scroll-scene';
   hero.parentNode.insertBefore(scene,hero);
@@ -24,17 +23,16 @@
 
   const paint=()=>{
     const rect=scene.getBoundingClientRect();
-    // Hero transformation completes before the second layer starts covering it.
-    // After this short opening phase the values clamp and the hero visually
-    // freezes in place while the content layer continues upwards.
-    const shrinkDistance=Math.max(180,innerHeight*.28);
+    // Short opening zoom-out. Once complete, the hero stays visually frozen
+    // while the workflow sheet keeps travelling over it.
+    const shrinkDistance=Math.max(180,innerHeight*.24);
     const p=clamp((-rect.top)/shrinkDistance,0,1);
     const eased=1-Math.pow(1-p,2.35);
 
-    const scale=1-(eased*.10);
-    const radius=eased*28;
-    const brightness=1-(eased*.17);
-    const opacity=1-(eased*.06);
+    const scale=1-(eased*.085);
+    const radius=eased*26;
+    const brightness=1-(eased*.16);
+    const opacity=1-(eased*.05);
 
     hero.style.transform=`translate3d(0,0,0) scale(${scale})`;
     hero.style.borderRadius=`${radius}px`;
@@ -42,8 +40,8 @@
     hero.style.opacity=String(opacity);
 
     if(grid){
-      grid.style.transform=`translate3d(0,${-(eased*8)}px,0) scale(${1-(eased*.016)})`;
-      grid.style.opacity=String(1-(eased*.12));
+      grid.style.transform=`translate3d(0,${-(eased*7)}px,0) scale(${1-(eased*.014)})`;
+      grid.style.opacity=String(1-(eased*.10));
     }
     ticking=false;
   };
