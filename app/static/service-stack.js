@@ -18,7 +18,7 @@
   if(!head||!cards.length)return;
 
   const artSources=[
-    '/static/service-art-mechanical.jpg?v=20260822-1630',
+    'https://res.cloudinary.com/pnuzoh4o/image/upload/c_fit,w_1920,h_1080,q_auto:best,f_auto/v1787404604/engitools/hero-integrated-check.jpg',
     '/static/service-art-electrical.svg?v=20260822-1535',
     '/static/service-art-architect.svg?v=20260822-1405'
   ];
