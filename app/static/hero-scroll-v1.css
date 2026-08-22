@@ -1,6 +1,5 @@
-/* EngiTools cinematic hero transition — pinned hero + layered next section. */
+/* EngiTools cinematic hero transition — pinned hero + full-cover next section. */
 .hero-scroll-scene{
-  --hero-cover-gap:28svh;
   position:relative;
   background:var(--brand-ink,#0a0a0a);
   isolation:isolate;
@@ -25,11 +24,7 @@
   background-position:center center!important;
   background-repeat:no-repeat!important;
 }
-.hero-scroll-scene>.home-hero .hero-grid{
-  will-change:transform,opacity;
-}
-/* The integrated MEP artwork is the primary visual. Keep the old geometric
-   placeholder only as layout space so the architectural model remains visible. */
+.hero-scroll-scene>.home-hero .hero-grid{will-change:transform,opacity}
 .hero-scroll-scene>.home-hero .blueprint-card{
   background:transparent!important;
   border-color:transparent!important;
@@ -37,14 +32,15 @@
 }
 .hero-scroll-scene>.home-hero .blueprint-card:before,
 .hero-scroll-scene>.home-hero .blueprint-card:after,
-.hero-scroll-scene>.home-hero .companion-orbit{
-  display:none!important;
-}
+.hero-scroll-scene>.home-hero .companion-orbit{display:none!important}
+
+/* This layer remains in normal flow inside the same scene. The sticky hero
+   therefore stays pinned while this entire section travels over it. */
 .hero-scroll-scene>.hero-overlap-next{
   position:relative!important;
   z-index:5!important;
   min-height:100svh;
-  margin-top:var(--hero-cover-gap)!important;
+  margin-top:0!important;
   background:var(--brand-paper,#f3f3ef)!important;
   border-radius:24px 24px 0 0;
   box-shadow:0 -1px 0 rgba(255,255,255,.16),0 -30px 90px rgba(0,0,0,.16);
@@ -60,18 +56,11 @@
   pointer-events:none;
 }
 
-/* The cover layer itself is deliberately at least one viewport tall. That
-   guarantees the sticky hero is still pinned until this section reaches the
-   top and has visually covered it completely. */
 @media(max-width:980px){
-  .hero-scroll-scene{--hero-cover-gap:22svh}
   .hero-scroll-scene>.hero-overlap-next{border-radius:18px 18px 0 0}
-  .hero-scroll-scene>.home-hero{
-    background-position:42% center!important;
-  }
+  .hero-scroll-scene>.home-hero{background-position:42% center!important}
 }
 @media(max-width:640px){
-  .hero-scroll-scene{--hero-cover-gap:18svh}
   .hero-scroll-scene>.home-hero{
     height:100svh!important;
     min-height:100svh!important;
