@@ -1,6 +1,6 @@
 /* EngiTools service cards — approved clean split layout. */
 :root{
-  --et-art-mechanical:url('/service-art/mechanical.jpg?v=20260822-1605');
+  --et-art-mechanical:url('https://res.cloudinary.com/pnuzoh4o/image/upload/c_fit,w_1920,h_1080,q_auto:best,f_auto/v1787404604/engitools/hero-integrated-check.jpg');
   --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1535');
   --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
 }
@@ -31,7 +31,8 @@
   pointer-events:none!important;
   background-repeat:no-repeat!important;
   background-position:center center!important;
-  background-size:cover!important;
+  background-size:contain!important;
+  background-color:#07090b!important;
   opacity:1!important;
   filter:grayscale(1) contrast(1.06)!important;
   -webkit-mask-image:none!important;
@@ -132,7 +133,7 @@
   background-color:#090b0e!important;
   background-repeat:no-repeat!important;
   background-position:center!important;
-  background-size:cover!important;
+  background-size:contain!important;
   box-shadow:0 28px 70px rgba(0,0,0,.16)!important;
   filter:grayscale(1);
 }
@@ -163,7 +164,7 @@
   .discipline-page.mechanical .discipline-visual,.discipline-page.electrical .discipline-visual{min-height:330px!important}
 }
 
-/* Native artwork layer: this is the canonical rendering path for service cards. */
+/* Native artwork layer: preserve the full 16:9 frame; never crop the approved artwork. */
 .service-stack-section .service-cta::after{display:none!important;content:none!important}
 .service-stack-section .service-stack-art{
   display:block!important;
@@ -174,15 +175,15 @@
   bottom:0!important;
   width:56%!important;
   height:100%!important;
-  object-fit:cover!important;
+  object-fit:contain!important;
   object-position:center center!important;
   z-index:2!important;
   pointer-events:none!important;
   opacity:1!important;
-  filter:grayscale(1) contrast(1.06)!important;
+  filter:grayscale(1) contrast(1.04)!important;
   border-right:1px solid rgba(10,10,10,.14)!important;
   border-radius:27px 0 0 27px!important;
-  background:#dededb!important;
+  background:#07090b!important;
 }
 @media(max-width:900px){
   .service-stack-section .service-stack-art{
@@ -190,9 +191,11 @@
     height:48%!important;
     top:0!important;
     bottom:auto!important;
+    object-fit:contain!important;
     border-right:0!important;
     border-bottom:1px solid rgba(10,10,10,.14)!important;
     border-radius:27px 27px 0 0!important;
+    background:#07090b!important;
   }
 }
 @media(max-width:640px){
