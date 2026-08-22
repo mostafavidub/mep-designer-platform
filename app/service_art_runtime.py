@@ -39,21 +39,21 @@ def _approved_mechanical_art() -> tuple[bytes, str]:
     parts = sorted(_APPROVED_PART_DIR.glob('part-*.txt'))
     if len(parts) != 5:
         raise ValueError(f'Expected 5 mechanical artwork chunks, found {len(parts)}')
-    payload = ''.join(p.read_text(encoding='ascii').strip() for p in parts)
-    data = base64.b64decode(payload, validate=True)
-    if len(data) < 50_000:
-        raise ValueError('Approved mechanical artwork is unexpectedly small')
-    if data.startswith(b'RIFF') and data[8:12] == b'WEBP':
-        # VP8 frame header stores exact raster dimensions immediately after 9d012a.
-        sync = data.find(b'\x9d\x01\x2a')
-        if sync < 0 or len(data) < sync + 7:
-            raise ValueError('WEBP frame header is incomplete')
-        width = int.from_bytes(data[sync + 3:sync + 5], 'little') & 0x3FFF
-        height = int.from_bytes(data[sync + 5:sync + 7], 'little') & 0x3FFF
-        if (width, height) != (1920, 1080):
-            raise ValueError(f'Expected 1920x1080 approved artwork, got {width}x{height}')
-        return data, 'image/webp'
-    raise ValueError('Approved mechanical artwork is not the expected WEBP asset')
+    payload = ''.join(p.read_text(encoding='ascii') for p in parts)
+    payload = _BASE64_CHARS.sub('', payload)
+    payload += '=' * ((4 - len(payload) % 4) % 4)
+    data = base64.b64decode(payload, validate=False)
+    if not data.startswith(b'RIFF') or data[8:12] != b'WEBP':
+        raise ValueError('Approved mechanical artwork is not the expected WEBP asset')
+    # VP8 frame header stores exact raster dimensions immediately after 9d012a.
+    sync = data.find(b'\x9d\x01\x2a')
+    if sync < 0 or len(data) < sync + 7:
+        raise ValueError('WEBP frame header is incomplete')
+    width = int.from_bytes(data[sync + 3:sync + 5], 'little') & 0x3FFF
+    height = int.from_bytes(data[sync + 5:sync + 7], 'little') & 0x3FFF
+    if (width, height) != (1920, 1080):
+        raise ValueError(f'Expected 1920x1080 approved artwork, got {width}x{height}')
+    return data, 'image/webp'
 
 
 def _mechanical_art() -> tuple[bytes, str]:
