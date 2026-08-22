@@ -1,3 +1,4 @@
+@import url('/static/mechanical-hero-v2.css?v=20260822-1948');
 /* EngiTools landing stabilization layer — monochrome design system */
 :root{--et-ink:#0a0a0a;--et-paper:#f4f4f1;--et-white:#fff;--et-gray:#deded8;--et-muted:#6b6b66;--et-border:rgba(10,10,10,.20);--et-radius:18px;--et-ease:cubic-bezier(.22,1,.36,1)}
 
