@@ -29,8 +29,9 @@ class CadRenderResilienceTests(unittest.TestCase):
             self.assertTrue(pdf_path.exists())
             self.assertGreater(pdf_path.stat().st_size, 1000)
             text = '\n'.join((page.extract_text() or '') for page in PdfReader(str(pdf_path)).pages)
-            self.assertNotIn('DXF preview rendering unavailable', text)
-            self.assertIn('EngiTools Mechanical', text)
+            normalized = ''.join(text.split())
+            self.assertNotIn('DXFpreviewrenderingunavailable', normalized)
+            self.assertIn('EngiToolsMechanical', normalized)
 
 
 if __name__ == '__main__':
