@@ -1,14 +1,15 @@
-/* EngiTools conceptual engineering art — generated for the service stack and discipline heroes. */
+/* EngiTools conceptual engineering art — split editorial service cards. */
 :root{
-  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1345');
-  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1345');
-  --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1345');
+  --et-art-mechanical:url('/static/service-art-mechanical.svg?v=20260822-1405');
+  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1405');
+  --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
 }
 
-/* Home service stack */
+/* Home service stack: clean 50/50 editorial split inspired by UNStudio. */
 .service-stack-section .service-cta{
   position:absolute!important;
   isolation:isolate!important;
+  overflow:hidden!important;
 }
 .service-stack-section .service-cta::after{
   content:"";
@@ -16,15 +17,18 @@
   left:0;
   top:0;
   bottom:0;
-  width:58%;
+  width:50%;
   z-index:1;
   pointer-events:none;
   background-repeat:no-repeat;
-  background-position:center;
+  background-position:center center;
   background-size:cover;
-  opacity:.96;
-  -webkit-mask-image:linear-gradient(to right,#000 0%,#000 72%,transparent 100%);
-  mask-image:linear-gradient(to right,#000 0%,#000 72%,transparent 100%);
+  opacity:1;
+  filter:grayscale(1) contrast(1.04);
+  -webkit-mask-image:none;
+  mask-image:none;
+  border-right:1px solid rgba(255,255,255,.12);
+  transform:translateZ(0);
 }
 .service-stack-section .service-card-1::after{background-image:var(--et-art-mechanical)}
 .service-stack-section .service-card-dark::after{background-image:var(--et-art-electrical)}
@@ -37,17 +41,22 @@
 }
 .service-stack-section .service-cta .cta-body{
   grid-column:1/2!important;
-  max-width:48%!important;
+  width:44%!important;
+  max-width:44%!important;
+  margin-left:auto!important;
+  margin-right:3%!important;
   justify-self:end!important;
+  align-self:center!important;
   text-align:right!important;
 }
 .service-stack-section .service-cta .cta-link{
   grid-column:1/2!important;
   justify-self:end!important;
-  width:min(360px,46%)!important;
+  width:44%!important;
+  margin-right:3%!important;
 }
 
-/* Discipline landing heroes reuse the exact same conceptual discipline art. */
+/* Discipline landing heroes reuse the same monochrome discipline art. */
 .discipline-page.mechanical .discipline-visual,
 .discipline-page.electrical .discipline-visual{
   position:relative;
@@ -59,6 +68,7 @@
   background-position:center!important;
   background-size:cover!important;
   box-shadow:0 28px 70px rgba(0,0,0,.16)!important;
+  filter:grayscale(1);
 }
 .discipline-page.mechanical .discipline-visual{background-image:var(--et-art-mechanical)!important}
 .discipline-page.electrical .discipline-visual{background-image:var(--et-art-electrical)!important}
@@ -67,31 +77,39 @@
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:linear-gradient(135deg,rgba(0,0,0,.03),rgba(0,0,0,.22));
+  background:linear-gradient(135deg,rgba(0,0,0,.03),rgba(0,0,0,.18));
 }
 .discipline-page .discipline-visual .visual-symbol,
 .discipline-page .discipline-visual>span{display:none!important}
 
 @media(max-width:900px){
   .service-stack-section .service-cta::after{
+    left:0;
+    top:0;
+    bottom:auto;
     width:100%;
-    opacity:.32;
-    -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 56%,transparent 88%);
-    mask-image:linear-gradient(to bottom,#000 0%,#000 56%,transparent 88%);
+    height:48%;
+    opacity:1;
+    background-position:center center;
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,.12);
   }
   .service-stack-section .service-cta .cta-body{
+    width:100%!important;
     max-width:100%!important;
+    margin:0!important;
     justify-self:stretch!important;
   }
   .service-stack-section .service-cta .cta-link{
     width:100%!important;
+    margin:0!important;
     justify-self:stretch!important;
   }
   .discipline-page.mechanical .discipline-visual,
   .discipline-page.electrical .discipline-visual{min-height:420px!important}
 }
 @media(max-width:640px){
-  .service-stack-section .service-cta::after{opacity:.26;background-position:center top}
+  .service-stack-section .service-cta::after{height:42%;background-position:center center}
   .discipline-page.mechanical .discipline-visual,
   .discipline-page.electrical .discipline-visual{min-height:330px!important}
 }
