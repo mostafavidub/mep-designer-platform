@@ -1,0 +1,82 @@
+/* Final service-card readability overrides. Loaded after brand/service styles. */
+.service-stack-section .service-cta,
+.service-stack-section .service-cta:hover{
+  text-decoration:none!important;
+  mix-blend-mode:normal!important;
+}
+.service-stack-section .service-card-1,
+.service-stack-section .service-card-1:hover{
+  background:#f3f3ef!important;
+  color:#0a0a0a!important;
+}
+.service-stack-section .service-card-dark,
+.service-stack-section .service-card-dark:hover{
+  background:#0a0a0a!important;
+  color:#ffffff!important;
+}
+.service-stack-section .service-card-muted,
+.service-stack-section .service-card-muted:hover{
+  background:#deded8!important;
+  color:#0a0a0a!important;
+}
+
+.service-stack-section .service-cta .cta-body{
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:flex-start!important;
+  min-width:0!important;
+  min-height:0!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.service-stack-section .service-cta .cta-body h3{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+  position:relative!important;
+  z-index:6!important;
+  margin:0 0 24px!important;
+  color:#0a0a0a!important;
+  text-shadow:none!important;
+  mix-blend-mode:normal!important;
+}
+.service-stack-section .service-cta .cta-body p{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+  position:relative!important;
+  z-index:6!important;
+  color:#30302c!important;
+  text-shadow:none!important;
+  mix-blend-mode:normal!important;
+}
+.service-stack-section .service-card-dark .cta-body h3{
+  color:#ffffff!important;
+}
+.service-stack-section .service-card-dark .cta-body p{
+  color:#f0f0eb!important;
+}
+.service-stack-section .service-card-dark .service-code{
+  color:#deded8!important;
+}
+.service-stack-section .service-card-dark .cta-link{
+  color:#ffffff!important;
+  border-color:#a6a69f!important;
+}
+.service-stack-section .service-card-1 .service-code,
+.service-stack-section .service-card-muted .service-code{
+  color:#54544f!important;
+}
+
+/* Each card is already a native anchor; keep the entire transformed card clickable. */
+.service-stack-section a.service-card-clickable{
+  pointer-events:auto!important;
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent;
+}
+.service-stack-section a.service-card-clickable:focus-visible{
+  outline:3px solid currentColor!important;
+  outline-offset:-8px!important;
+}
