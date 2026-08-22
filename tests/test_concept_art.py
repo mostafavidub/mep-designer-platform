@@ -38,13 +38,19 @@ class ConceptArtTests(unittest.TestCase):
         self.assertEqual(js.status_code, 200)
         self.assertEqual(css.status_code, 200)
         self.assertIn("art.className='service-stack-art'", js.text)
-        self.assertIn('c_fit,w_1920,h_1080,q_auto:best,f_auto', js.text)
+        self.assertIn("'/service-art/mechanical.jpg?v=20260822-2015'", js.text)
         self.assertIn('.service-stack-section .service-stack-art{', css.text)
         self.assertIn('display:block!important', css.text)
         self.assertIn('width:56%!important', css.text)
         self.assertIn('height:100%!important', css.text)
         self.assertIn('object-fit:contain!important', css.text)
         self.assertIn('.service-stack-section .service-cta::after{display:none!important;content:none!important}', css.text)
+
+        art = self.client.get('/service-art/mechanical.jpg?v=20260822-2015')
+        self.assertEqual(art.status_code, 200)
+        self.assertGreater(len(art.content), 150_000)
+        self.assertIn(art.headers.get('content-type', ''), ('image/webp', 'image/jpeg'))
+        self.assertEqual(art.headers.get('x-engitools-art'), 'mechanical-approved-1920x1080')
 
     def test_mechanical_and_electrical_landings_reuse_service_art(self):
         css = self.client.get('/static/concept-art.css')
