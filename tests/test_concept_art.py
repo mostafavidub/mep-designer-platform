@@ -1,6 +1,10 @@
+import io
 import unittest
+
 from fastapi.testclient import TestClient
-from app.main_auto import app
+from PIL import Image, ImageStat
+
+from app.main_health import app
 
 
 class ConceptArtTests(unittest.TestCase):
@@ -20,6 +24,32 @@ class ConceptArtTests(unittest.TestCase):
             r = self.client.get(asset)
             self.assertEqual(r.status_code, 200)
             self.assertIn('<svg', r.text)
+
+    def test_mechanical_browser_safe_jpeg_is_real_nonblank_image(self):
+        r = self.client.get('/service-art/mechanical.jpg?v=20260822-1605')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.headers.get('content-type'), 'image/jpeg')
+        self.assertGreater(len(r.content), 100_000)
+        self.assertTrue(r.content.startswith(b'\xff\xd8'))
+        image = Image.open(io.BytesIO(r.content)).convert('L')
+        self.assertGreater(image.width, 800)
+        self.assertGreater(image.height, 400)
+        stat = ImageStat.Stat(image)
+        self.assertGreater(stat.var[0], 100.0)
+
+    def test_native_img_rendering_is_wired_and_visible(self):
+        js = self.client.get('/static/service-stack.js')
+        css = self.client.get('/static/concept-art.css')
+        self.assertEqual(js.status_code, 200)
+        self.assertEqual(css.status_code, 200)
+        self.assertIn("art.className='service-stack-art'", js.text)
+        self.assertIn("'/service-art/mechanical.jpg?v=20260822-1605'", js.text)
+        self.assertIn('.service-stack-section .service-stack-art{', css.text)
+        self.assertIn('display:block!important', css.text)
+        self.assertIn('width:56%!important', css.text)
+        self.assertIn('height:100%!important', css.text)
+        self.assertIn('object-fit:cover!important', css.text)
+        self.assertIn('.service-stack-section .service-cta::after{display:none!important;content:none!important}', css.text)
 
     def test_mechanical_and_electrical_landings_reuse_service_art(self):
         css = self.client.get('/static/concept-art.css')
