@@ -42,6 +42,24 @@ class ServiceStackRegressionTests(unittest.TestCase):
         self.assertIn("addEventListener('scroll'", js.text)
         self.assertIn('prefers-reduced-motion: reduce', css.text)
 
+    def test_service_cards_have_accessible_contrast_and_full_card_navigation(self):
+        js = self.client.get('/static/service-stack.js')
+        css = self.client.get('/static/service-stack.css')
+        self.assertEqual(js.status_code, 200)
+        self.assertEqual(css.status_code, 200)
+        self.assertIn("card.classList.add('service-card-dark')", js.text)
+        self.assertIn("card.classList.add('service-card-clickable')", js.text)
+        self.assertIn("card.addEventListener('click'", js.text)
+        self.assertIn("card.addEventListener('keydown'", js.text)
+        self.assertIn('location.assign(targetHref)', js.text)
+        self.assertIn("card.setAttribute('role','link')", js.text)
+        self.assertIn('card.tabIndex=0', js.text)
+        self.assertIn('.service-card-dark', css.text)
+        self.assertIn('color:#fff!important', css.text)
+        self.assertIn('.service-card-dark .cta-body p{color:#e2e2dc!important}', css.text)
+        self.assertIn('.service-card-clickable{cursor:pointer!important}', css.text)
+        self.assertIn('.service-card-clickable:focus-visible', css.text)
+
     def test_all_three_service_routes_remain_present(self):
         r = self.client.get('/')
         self.assertIn('href="/mechanical"', r.text)
