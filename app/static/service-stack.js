@@ -18,7 +18,7 @@
   if(!head||!cards.length)return;
 
   const artSources=[
-    '/service-art/mechanical.jpg?v=20260822-1605',
+    '/static/service-art-mechanical.jpg?v=20260822-1612',
     '/static/service-art-electrical.svg?v=20260822-1535',
     '/static/service-art-architect.svg?v=20260822-1405'
   ];
@@ -32,9 +32,6 @@
       if(copy)copy.textContent='نقشه زمین و مشخصات پروژه را می‌گیرد و مجموعه پلان‌های معماری را طراحی می‌کند.';
     }
 
-    // Render artwork as a native <img>, not as a CSS pseudo-element background.
-    // This removes browser-specific background/SVG decoding issues and makes
-    // the image request independently testable in production.
     if(!card.querySelector('.service-stack-art')){
       const art=document.createElement('img');
       art.className='service-stack-art';
@@ -46,14 +43,11 @@
       card.prepend(art);
     }
 
-    // The cards are native <a> elements. Keep their own hrefs untouched and
-    // let the browser handle navigation so each card always opens its own landing.
     if(card.matches('a[href]')){
       card.classList.add('service-card-clickable');
       card.dataset.serviceHref=card.getAttribute('href')||'';
     }
 
-    // Explicit stacking avoids hit-testing ambiguity while cards overlap.
     card.style.zIndex=String(30+i);
   });
 
