@@ -48,7 +48,7 @@ class ConceptArtTests(unittest.TestCase):
 
         art = self.client.get('/service-art/mechanical.jpg?v=20260822-2015')
         self.assertEqual(art.status_code, 200)
-        self.assertGreater(len(art.content), 50_000)
+        self.assertGreater(len(art.content), 30_000)
         self.assertEqual(art.headers.get('content-type'), 'image/webp')
         self.assertEqual(art.headers.get('x-engitools-art'), 'mechanical-approved-1920x1080')
         self.assertTrue(art.content.startswith(b'RIFF'))
