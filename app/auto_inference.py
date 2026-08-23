@@ -2,6 +2,8 @@ import math
 import re
 from collections import Counter
 
+from .mechanical_rulebook import WATER, automatic_answers
+
 ROOM_RULES = {
     'kitchen': ['kitchen', 'آشپزخانه', 'اشپزخانه'],
     'bath': ['bath', 'bathroom', 'حمام'],
@@ -29,7 +31,40 @@ INSUNITS_TO_M = {
 DEFAULT_OUTPUT_LANGUAGE = 'fa-with-latin-technical-tags'
 DEFAULT_VOLTAGE_DROP_PCT = 3.0
 DEFAULT_POWER_FACTOR = 0.90
-DEFAULT_WATER_VELOCITY_MPS = 1.5
+DEFAULT_WATER_VELOCITY_MPS = WATER['target_velocity_mps']
+
+
+def _project_text(files):
+    return ' '.join(str(t) for f in (files or []) for t in (f.get('texts') or []))
+
+
+def _detected_location(files):
+    text = _project_text(files)
+    for city in ('مشهد', 'تهران', 'شیراز', 'تبریز', 'اصفهان', 'Mashhad', 'Tehran', 'Shiraz', 'Tabriz', 'Isfahan'):
+        if city.lower() in text.lower():
+            return city
+    return None
+
+
+def _detected_height(files):
+    text = _project_text(files)
+    match = re.search(r'(?:ارتفاع|height|floor.?to.?floor)[^\d]{0,20}(\d+(?:[\.,]\d+)?)\s*(m|متر|cm|سانتی.?متر)', text, re.I)
+    return f'{match.group(1).replace(",", ".")} {match.group(2)}' if match else None
+
+
+def _detected_pressure(files):
+    text = _project_text(files)
+    match = re.search(r'(\d+(?:[\.,]\d+)?)\s*(bar|بار)', text, re.I)
+    return f'{match.group(1).replace(",", ".")} bar' if match else None
+
+
+def _detected_sanitary_outlet(files):
+    text = _project_text(files).lower()
+    if re.search(r'فاضلاب شهری|municipal sewer|public sewer', text, re.I):
+        return 'municipal sewer'
+    if re.search(r'چاه|سپتیک|septic', text, re.I):
+        return 'septic / well'
+    return None
 
 
 def normalize_text(value):
@@ -169,6 +204,11 @@ def infer_architecture_facts(analysis, discipline):
         'detected_roof': rooms.get('roof', 0),
         'detected_elevator': rooms.get('elevator', 0),
         'output_language': DEFAULT_OUTPUT_LANGUAGE,
+        'location_inferred': _detected_location(files),
+        'floor_height_inferred': _detected_height(files),
+        'water_inlet_pressure_inferred': _detected_pressure(files),
+        'sanitary_outlet_inferred': _detected_sanitary_outlet(files),
+        'gas_absence_inferred': bool(re.search(r'بدون\s*گاز|گاز\s*ندارد|no\s+gas', _project_text(files), re.I)),
         'assumptions': [],
     }
     if discipline == 'electrical':
@@ -202,6 +242,10 @@ def canonical_auto_answers(auto, discipline):
     occupancy = auto.get('occupancy_inferred')
     if occupancy:
         a['occupancy'] = occupancy
+    if auto.get('location_inferred'):
+        a['location'] = auto['location_inferred']
+    if auto.get('floor_height_inferred'):
+        a['heights'] = auto['floor_height_inferred']
     if discipline == 'electrical':
         if auto.get('estimated_electrical_load_kw') is not None:
             a['design_load_kw'] = str(auto['estimated_electrical_load_kw'])
@@ -217,6 +261,17 @@ def canonical_auto_answers(auto, discipline):
             a['cooling_load_kw'] = str(auto['estimated_cooling_load_kw'])
         if auto.get('estimated_heating_load_kw') is not None:
             a['heating_load_kw'] = str(auto['estimated_heating_load_kw'])
+        a.update(automatic_answers(auto))
+        if auto.get('water_inlet_pressure_inferred'):
+            a['water_inlet_pressure'] = auto['water_inlet_pressure_inferred']
+        if auto.get('sanitary_outlet_inferred'):
+            a['sanitary_outlet'] = auto['sanitary_outlet_inferred']
+        if auto.get('gas_absence_inferred'):
+            a['gas'] = 'ندارد — inferred from architecture text'
+        if auto.get('roof_area_m2') and auto.get('roof_drain_count'):
+            a['roof_drainage_geometry'] = (
+                f"{auto['roof_area_m2']} m2 roof; {int(auto['roof_drain_count'])} drains at architecture low points"
+            )
     return a
 
 
@@ -245,31 +300,23 @@ def dynamic_questions(analysis, discipline, auto):
             q.append(('elevator', 'آسانسور در پلان تشخیص داده شد. توان/نوع برق آسانسور یا مشخصات سازنده را در صورت موجود بودن بفرمایید.'))
         q.append(('special_loads', 'آیا بار الکتریکی خاصی خارج از آنچه از پلان قابل تشخیص است دارید؟ مثل جکوزی، سونا، پمپ خاص، شارژر خودرو یا تجهیزات صنعتی. اگر ندارید بنویسید «ندارد».'))
     else:
-        if not re.search(r'پکیج|رادیاتور|گرمایش از کف|boiler|radiator|floor heating', text):
-            q.append(('heating', 'سیستم گرمایش موردنظر کارفرما چیست؟ اگر انتخابی ندارید بنویسید «پیشنهاد سیستم».'))
-        if not re.search(r'اسپلیت|چیلر|فن.?کویل|vrf|split|chiller|fan.?coil', text):
-            q.append(('cooling', 'سیستم سرمایش موردنظر کارفرما چیست؟ اگر انتخابی ندارید بنویسید «پیشنهاد سیستم».'))
-        if not re.search(r'گاز|gas', text):
-            q.append(('gas', 'آیا ساختمان انشعاب گاز دارد و تجهیزات گازسوز در نظر گرفته شده است؟'))
-        if not re.search(r'مخزن|پمپ|tank|pump|water meter|کنتور آب', text):
-            q.append(('water_source', 'اگر محل ورود آب، مخزن یا پمپ از قبل قطعی است بفرمایید؛ در غیر این صورت بنویسید «پیشنهاد شود».'))
+        if not auto.get('gas_absence_inferred'):
+            q.append(('gas', 'آیا ساختمان گاز دارد؟ اگر ندارد بنویسید «ندارد». اگر دارد، تجهیزات گازسوز و ظرفیت هرکدام، فشار انشعاب و محل کنتور/رگلاتور را اعلام کنید.'))
+        if not re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار|kpa|کیلو.?پاسکال|متر ستون آب)', text, re.I):
+            q.append(('water_inlet_pressure', 'فشار واقعی آب در محل ورود به ساختمان چقدر است؟ مقدار را با bar اعلام کنید؛ اگر اندازه‌گیری نشده بنویسید «نمی‌دانم».'))
         if not re.search(r'فاضلاب شهری|چاه|sewer|septic', text):
-            q.append(('sanitary_outlet', 'مقصد فاضلاب پروژه شبکه شهری است یا چاه/سپتیک؟'))
+            q.append(('sanitary_outlet', 'خروجی فاضلاب به شبکه شهری است یا چاه/سپتیک؟ اگر تراز اتصال مشخص است همان را هم اعلام کنید.'))
         if auto.get('detected_parking'):
             q.append(('parking_enclosure', 'پارکینگ شناسایی شد. پارکینگ باز است یا بسته/محصور؟'))
 
         # Authority-ready mechanical documents cannot be completed from room
         # labels alone. Collect the project-specific engineering inputs that
         # control pipe sizing, slopes, equipment schedules and safe discharge.
-        q.append(('fixture_schedule', 'اگر سمبل تجهیزات بهداشتی در معماری قابل تشخیص نیست، تعداد دقیق هر تجهیز را اعلام کنید؛ مثال: روشویی ۳، توالت ۳، دوش ۳، سینک ۱.'))
-        q.append(('water_design_basis', 'فشار استاتیک آب ورودی بر حسب bar، جنس لوله، ضریب Hazen-Williams به‌صورت C=… و محدودیت افت فشار را اعلام کنید.'))
-        q.append(('sanitary_design_basis', 'جنس لوله فاضلاب، تراز اتصال به شبکه/چاه و شیب مجاز اجرایی را اعلام کنید.'))
-        if not re.search(r'بدون گاز|گاز ندارد|no gas', text):
-            q.append(('gas_appliances', 'فهرست تجهیزات گازسوز، ظرفیت هر دستگاه بر حسب kW، فشار ورودی بر حسب mbar و محل کنتور/رگلاتور را اعلام کنید.'))
-        q.append(('equipment_schedule', 'نوع، ظرفیت و محل قطعی تجهیزات گرمایش و سرمایش را برای هر فضا اعلام کنید؛ ظرفیت‌ها باید با kW یا BTU/h و محل یونیت داخلی/بیرونی مشخص باشند.'))
-        q.append(('ventilation_design_basis', 'دبی طراحی سرویس‌ها و پارکینگ را بر حسب m³/h اعلام کنید و مسیر قطعی تخلیه و هوای جبرانی را نیز مشخص کنید؛ ACH بدون حجم فضا برای طراحی نهایی کافی نیست.'))
+        if not auto.get('fixture_blocks_detected'):
+            q.append(('fixture_schedule', 'سمبل تجهیزات بهداشتی با اطمینان کافی پیدا نشد. تعداد دقیق هر تجهیز را اعلام کنید؛ مثال: روشویی ۳، توالت ۳، دوش ۳، سینک ۱.'))
         if any('بام' in str(x.get('name') or '') or 'roof' in str(x.get('name') or '').lower() for x in (auto.get('levels') or [])):
-            q.append(('roof_drainage_basis', 'مساحت مؤثر بام بر حسب m²، تعداد عددی و محل کف‌خواب‌ها و شدت بارندگی طراحی بر حسب mm/h را اعلام کنید.'))
+            if not auto.get('roof_drain_count') or not auto.get('roof_area_m2'):
+                q.append(('roof_drainage_geometry', 'اگر در پلان بام قابل تشخیص نیست، مساحت مؤثر بام، تعداد کف‌خواب‌ها و محل نقاط کم‌ارتفاع را اعلام کنید. شدت بارندگی را Rule Book از شهر پروژه تعیین می‌کند.'))
 
     return q
 
@@ -284,4 +331,8 @@ def auto_summary(auto, discipline):
         items.append(f"بار پایه معماری به‌صورت خودکار ≈ {auto['estimated_electrical_load_kw']} kW")
     if discipline == 'mechanical' and auto.get('estimated_water_flow_lps') is not None:
         items.append(f"دبی اولیه آب از Fixtureهای تشخیص‌داده‌شده ≈ {auto['estimated_water_flow_lps']} L/s")
+    if discipline == 'mechanical':
+        items.append('جنس لوله، ضرایب هیدرولیکی، شیب‌ها، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v1.4 تعیین می‌شود')
+        if auto.get('fixture_blocks_detected'):
+            items.append(f"{auto['fixture_blocks_detected']} سمبل واقعی تجهیزات مکانیکی/بهداشتی از DXF تشخیص داده شد")
     return items
