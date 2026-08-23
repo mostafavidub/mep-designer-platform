@@ -153,7 +153,14 @@ def run_design(project_id,revision_id):
         pdir=DATA_DIR/'projects'/str(p.id); discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical'))
         if discipline not in OUTPUT_SCOPES: raise RuntimeError('رشته پروژه معتبر نیست.')
         scope=OUTPUT_SCOPES[discipline]
-        payload={'project_id':str(p.id),'discipline':discipline,'architecture_dir':str(pdir/'input'),'answers':p.answers,'plan_analysis':p.analysis,'rulebook_path':RULEBOOK_PATH,'revision':r.revision_no,'revision_instructions':r.feedback,'output_scope':{'discipline':discipline,'label':scope['label'],'systems':scope['systems'],'only_this_discipline':True,'include_other_disciplines':False}}
+        design_answers = dict(p.answers or {})
+        if discipline == 'mechanical':
+            drawing_set = (p.analysis or {}).get('drawing_set') or {}
+            approved_manifest = drawing_set.get('approved_manifest')
+            if not approved_manifest:
+                raise RuntimeError('Approved mechanical drawing manifest is missing from the project workflow.')
+            design_answers['_approved_drawing_manifest'] = approved_manifest
+        payload={'project_id':str(p.id),'discipline':discipline,'architecture_dir':str(pdir/'input'),'answers':design_answers,'plan_analysis':p.analysis,'rulebook_path':RULEBOOK_PATH,'revision':r.revision_no,'revision_instructions':r.feedback,'output_scope':{'discipline':discipline,'label':scope['label'],'systems':scope['systems'],'only_this_discipline':True,'include_other_disciplines':False}}
         resp=requests.post(CAD_DESIGNER_URL+'/design',json=payload,timeout=3600); resp.raise_for_status(); data=resp.json()
         returned_discipline=data.get('discipline')
         if returned_discipline and returned_discipline!=discipline: raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
