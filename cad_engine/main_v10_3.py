@@ -32,6 +32,64 @@ def _negative(value):
     return any(x in s for x in ('ندارد', 'خیر', 'نیست', 'بدون', 'none', 'no '))
 
 
+def _resolved_authority_value(value):
+    text = str(value or '').strip().lower()
+    if not text:
+        return False
+    unresolved = (
+        'پیشنهاد شود', 'پیشنهاد سیستم', 'نامشخص', 'بعداً', 'بعدا',
+        'unresolved', 'unknown', 'tbd', 'verify',
+    )
+    return not any(marker in text for marker in unresolved)
+
+
+def _authority_input_gaps(calc):
+    """Return missing project decisions that make an approval set unsafe.
+
+    Sheet-count and CAD-structure checks are not engineering completeness.
+    Values controlling hydraulic sizing, drainage slopes, combustion safety,
+    equipment selection and ventilation must be resolved before issuance.
+    """
+    manifest = calc.get('_approved_drawing_manifest') or {}
+    families = {str(x.get('family') or '') for x in (manifest.get('sheets') or [])}
+    inputs = calc.get('_design_inputs') or {}
+    requirements = {
+        'project location/climate': ('location',),
+        'floor heights / false-ceiling constraints': ('heights',),
+    }
+    if 'water_supply' in families:
+        requirements.update({
+            'water source / tank / pump decision': ('water_source', 'water'),
+            'water pressure, material and pressure-loss basis': ('water_design_basis',),
+        })
+    if 'sanitary_vent' in families:
+        requirements.update({
+            'sanitary outlet': ('sanitary_outlet',),
+            'sanitary material, connection elevation and slope basis': ('sanitary_design_basis',),
+        })
+    if 'heating' in families or 'cooling' in families:
+        requirements['resolved heating/cooling equipment schedule'] = ('equipment_schedule',)
+    if 'heating' in families:
+        requirements['heating system'] = ('heating',)
+    if 'cooling' in families:
+        requirements['cooling system'] = ('cooling',)
+    if 'gas' in families and not _negative(inputs.get('gas')):
+        requirements.update({
+            'gas service decision': ('gas',),
+            'gas appliance loads, inlet pressure and meter/regulator location': ('gas_appliances',),
+        })
+    if 'ventilation_exhaust' in families:
+        requirements['ventilation airflow and discharge/make-up-air basis'] = ('ventilation_design_basis',)
+    if 'roof_rainwater' in families:
+        requirements['roof area, drain locations and rainfall design basis'] = ('roof_drainage_basis',)
+
+    gaps = []
+    for label, keys in requirements.items():
+        if not any(_resolved_authority_value(inputs.get(key)) for key in keys):
+            gaps.append(label)
+    return gaps
+
+
 def _rooms(level, kinds):
     return [r for r in level.get('rooms', []) if r.get('room') in kinds]
 
@@ -243,6 +301,13 @@ def _compose_authority_layouts(doc, levels, project_id, systems, calc):
 def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
     if discipline == 'mechanical' and not (calc.get('_approved_drawing_manifest') or {}).get('sheets'):
         raise RuntimeError('Approved mechanical drawing manifest is required before CAD generation.')
+    if discipline == 'mechanical':
+        gaps = _authority_input_gaps(calc)
+        if gaps:
+            raise RuntimeError(
+                'Authority-ready mechanical generation blocked: unresolved engineering inputs: '
+                + '; '.join(gaps)
+            )
     effective_systems = list(systems or [])
     if discipline == 'mechanical' and 'rainwater' not in effective_systems:
         effective_systems.append('rainwater')
