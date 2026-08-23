@@ -70,7 +70,11 @@ def _selected_architecture_titles(labels):
             p = (float(item.get('x')), float(item.get('y')))
         except (TypeError, ValueError):
             continue
-        titles.append({'type': parsed[0], 'level': parsed[1], 'point': p})
+        titles.append({
+            'type': parsed[0], 'level': parsed[1], 'point': p,
+            'source_type': item.get('source_type'),
+            'source_name': item.get('source_name'),
+        })
     arch = [x for x in titles if x['type'] == 'architecture']
     if not arch:
         return titles, []
@@ -106,6 +110,20 @@ def _room_items(labels):
     return out
 
 
+def _room_items_with_source(labels):
+    out = []
+    for item in labels:
+        room = base.classify_room(item.get('text') or '')
+        if not room:
+            continue
+        try:
+            point = (float(item.get('x')), float(item.get('y')))
+        except (TypeError, ValueError):
+            continue
+        out.append((room, point, item.get('source_type'), item.get('source_name')))
+    return out
+
+
 def _adaptive_spatial_count(items):
     points = [p for _, p in items if p]
     nearest = _nearest_distances(points)
@@ -132,10 +150,12 @@ def _level_aware_room_count(labels):
     selected_keys = {(x['type'], x['level'], x['point']) for x in selected}
     counts = Counter()
     seen = []
-    for room, p in _room_items(labels):
-        if not p:
-            continue
-        title = min(titles, key=lambda x: math.dist(p, x['point']))
+    for room, p, source_type, source_name in _room_items_with_source(labels):
+        same_source = [
+            x for x in titles
+            if x.get('source_type') == source_type and x.get('source_name') == source_name
+        ]
+        title = min(same_source or titles, key=lambda x: math.dist(p, x['point']))
         if math.dist(p, title['point']) > title_spacing * 1.65:
             continue
         key = (title['type'], title['level'], title['point'])
@@ -227,6 +247,9 @@ def _level_profiles_from_file(f):
             confidence = 'high'
         profile = {
             'name': title['level'],
+            'title_point': [float(title['point'][0]), float(title['point'][1])],
+            'source_type': title.get('source_type'),
+            'source_name': title.get('source_name'),
             'room_counts': dict(counts),
             'recognized_room_labels': len(accepted),
             'wet_fixture_candidate': wet > 0,
