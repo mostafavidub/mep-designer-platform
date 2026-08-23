@@ -10,7 +10,7 @@
     <div class="container-wide mechanical-hero-v3-grid">
       <div class="mechanical-hero-v3-art">
         <img
-          src="/service-art/mechanical.jpg?v=20260823-0915"
+          src="/service-art/mechanical.jpg?v=20260823-0928"
           width="1920"
           height="1080"
           alt="مدل سه‌بعدی سیستم‌های مکانیکی ساختمان شامل تجهیزات HVAC، کانال‌ها و لوله‌کشی روی نقشه مهندسی"
@@ -44,4 +44,18 @@
         <div><b>کنترل مهندسی</b><span>خروجی قابل بررسی</span></div>
       </div>
     </div>`;
+
+  const art = hero.querySelector('.mechanical-hero-v3-art img');
+  if (art) {
+    const fallback = '/static/hero-mechanical.svg?v=20260823-0928';
+    const useFallback = () => {
+      if (art.dataset.fallbackApplied === '1') return;
+      art.dataset.fallbackApplied = '1';
+      art.src = fallback;
+    };
+    art.addEventListener('error', useFallback, { once: true });
+    art.addEventListener('load', () => {
+      if (!art.naturalWidth || !art.naturalHeight) useFallback();
+    }, { once: true });
+  }
 })();
