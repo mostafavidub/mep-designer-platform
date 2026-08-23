@@ -575,7 +575,8 @@ def design_dxf_v8(src, dst, discipline, systems, revision, calc):
     _add_exhaust_discharge_traceability(doc, levels, qa_notes)
 
     try:
-        project_id = 'ET-' + hashlib.sha1(open(src, 'rb').read(1024 * 1024)).hexdigest()[:8].upper()
+        with open(src, 'rb') as source_file:
+            project_id = 'ET-' + hashlib.sha1(source_file.read(1024 * 1024)).hexdigest()[:8].upper()
     except Exception:
         project_id = 'ET-UNRESOLVED'
 
