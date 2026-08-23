@@ -1,5 +1,5 @@
 #!/bin/sh
-# EngiTools mechanical Rule Book v1.6 / compact authority-output release.
+# EngiTools mechanical Rule Book v1.6 / compact authority-output + friendly 422 release.
 set -eu
 uvicorn cad_engine.main_v10_4:app --host 127.0.0.1 --port 8081 &
 CAD_PID=$!
