@@ -258,6 +258,18 @@ def dynamic_questions(analysis, discipline, auto):
         if auto.get('detected_parking'):
             q.append(('parking_enclosure', 'پارکینگ شناسایی شد. پارکینگ باز است یا بسته/محصور؟'))
 
+        # Authority-ready mechanical documents cannot be completed from room
+        # labels alone. Collect the project-specific engineering inputs that
+        # control pipe sizing, slopes, equipment schedules and safe discharge.
+        q.append(('water_design_basis', 'فشار آب ورودی، جنس لوله آب و محدودیت افت فشار را اعلام کنید. اگر اندازه‌گیری نشده است، فشار استاتیک محل کنتور را بر حسب bar ثبت کنید.'))
+        q.append(('sanitary_design_basis', 'جنس لوله فاضلاب، تراز اتصال به شبکه/چاه و شیب مجاز اجرایی را اعلام کنید.'))
+        if not re.search(r'بدون گاز|گاز ندارد|no gas', text):
+            q.append(('gas_appliances', 'فهرست تجهیزات گازسوز، ظرفیت هر دستگاه، فشار گاز ورودی و محل کنتور/رگلاتور را اعلام کنید.'))
+        q.append(('equipment_schedule', 'ظرفیت و محل قطعی تجهیزات گرمایش و سرمایش را اعلام کنید؛ برای هر دستگاه نوع، ظرفیت و محل یونیت بیرونی/داخلی لازم است.'))
+        q.append(('ventilation_design_basis', 'دبی یا نرخ تعویض هوای موردنیاز سرویس‌ها و پارکینگ و محل قطعی تخلیه/هوای جبرانی را اعلام کنید.'))
+        if any('بام' in str(x.get('name') or '') or 'roof' in str(x.get('name') or '').lower() for x in (auto.get('levels') or [])):
+            q.append(('roof_drainage_basis', 'مساحت مؤثر بام، تعداد و محل کف‌خواب‌ها و مبنای شدت بارندگی طراحی را اعلام کنید.'))
+
     return q
 
 
