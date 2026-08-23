@@ -8,7 +8,10 @@ import math
 import re
 
 
-RULEBOOK_VERSION = '1.4'
+RULEBOOK_VERSION = '1.5'
+
+DEFAULT_HEIGHTS = '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones'
+DEFAULT_GAS_PROPOSAL = 'boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance'
 
 WATER = {
     'material': 'PPR',
@@ -51,8 +54,48 @@ def rainfall_mm_h(location):
     return None
 
 
+def is_confirmation(value):
+    text = str(value or '').strip().replace('ي', 'ی').replace('ك', 'ک').lower()
+    return text in ('تأیید', 'تایید', 'پیشنهاد بده', 'پیشنهاد شود', 'قبول', 'yes', 'ok', 'approve')
+
+
+def fixture_schedule_proposal(auto_or_levels):
+    rooms = {}
+    if isinstance(auto_or_levels, dict):
+        rooms = auto_or_levels.get('room_counts') or {}
+    else:
+        for level in auto_or_levels or []:
+            for room in level.get('rooms') or []:
+                kind = room.get('room')
+                rooms[kind] = rooms.get(kind, 0) + 1
+    kitchen = int(rooms.get('kitchen', 0))
+    bath = int(rooms.get('bath', 0))
+    toilet = int(rooms.get('toilet', 0))
+    return f'sink {kitchen}; faucet {bath + toilet}; toilet {toilet}; bath {bath}'
+
+
+def roof_geometry_proposal(auto_or_levels):
+    if isinstance(auto_or_levels, dict):
+        rooms = auto_or_levels.get('room_counts') or {}
+        level_count = max(1, len([x for x in auto_or_levels.get('levels') or [] if 'بام' not in str(x.get('name') or '') and 'roof' not in str(x.get('name') or '').lower()]))
+        explicit_area = auto_or_levels.get('roof_area_m2')
+    else:
+        levels = [x for x in (auto_or_levels or []) if 'بام' not in str(x.get('level') or '') and 'roof' not in str(x.get('level') or '').lower()]
+        level_count = max(1, len(levels))
+        rooms = {}
+        for level in levels:
+            for room in level.get('rooms') or []:
+                kind = room.get('room')
+                rooms[kind] = rooms.get(kind, 0) + 1
+        explicit_area = None
+    room_total = sum(int(x or 0) for x in rooms.values())
+    area = float(explicit_area) if explicit_area else max(60.0, round(room_total * 12.0 / level_count, 1))
+    drains = max(2, int(math.ceil(area / 100.0)))
+    return f'{area:g} m2 roof; {drains} drains at coordinated architecture low points'
+
+
 def automatic_answers(auto):
-    """Return non-customer mechanical decisions owned by Rule Book v1.4."""
+    """Return non-customer mechanical decisions owned by Rule Book v1.5."""
     rooms = auto.get('room_counts') or {}
     cooling = float(auto.get('estimated_cooling_load_kw') or 0)
     heating = float(auto.get('estimated_heating_load_kw') or 0)
@@ -75,6 +118,7 @@ def automatic_answers(auto):
         "outdoor units on coordinated roof/service location"
     )
     return {
+        'heights': DEFAULT_HEIGHTS,
         'heating': 'Rulebook automatic: condensing combi boiler + hydronic radiators',
         'cooling': 'Rulebook automatic: split units sized from calculated room loads',
         'water_design_basis': (
@@ -104,4 +148,3 @@ def roof_basis(location, geometry_text):
     if re.search(r'\d+(?:\.\d+)?\s*(?:mm/h|میلی.?متر)', geometry, re.I):
         return geometry
     return f'{geometry}; {rainfall} mm/h Rulebook design rainfall'
-
