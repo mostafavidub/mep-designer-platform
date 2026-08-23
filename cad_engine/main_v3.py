@@ -276,6 +276,7 @@ def design(req:DesignRequest):
     if any(s not in allowed for s in requested):raise HTTPException(400,"output_scope contains unsupported or cross-discipline systems")
     systems=requested or allowed;calc=calc_for(discipline,req.answers or {})
     calc["_design_inputs"] = dict(req.answers or {})
+    calc["_plan_analysis"] = dict(req.plan_analysis or {})
     if discipline == "mechanical":
         drawing_set = (req.plan_analysis or {}).get("drawing_set") or {}
         manifest = drawing_set.get("approved_manifest")
