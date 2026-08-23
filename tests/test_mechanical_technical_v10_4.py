@@ -1,8 +1,12 @@
+import base64
+import io
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 import ezdxf
+from fastapi.testclient import TestClient
 
 from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 from cad_engine import main_v10_4 as technical
@@ -90,6 +94,53 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             calc['_design_inputs']['ventilation_design_basis'] = '10 ACH; discharge above roof; make-up air'
             with self.assertRaisesRegex(RuntimeError, r'9(?:\.0)?/10.*ventilation_design'):
                 technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+
+    def test_real_http_design_preserves_manifest_inputs_and_plan_analysis(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / 'block-source.dxf'
+            self.architecture(source)
+            # Put every plan in an unreferenced named block to reproduce the
+            # production failure mode that previously collapsed level geometry.
+            original = ezdxf.readfile(source)
+            blocked = ezdxf.new('R2013')
+            blocked.header['$INSUNITS'] = 6
+            block = blocked.blocks.new('HTTP_ARCH_LEVELS')
+            for entity in original.modelspace():
+                try:
+                    block.add_entity(entity.copy())
+                except Exception:
+                    pass
+            blocked.saveas(source)
+            archive = io.BytesIO()
+            with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.write(source, arcname='architecture.dxf')
+            manifest = self.manifest()
+            payload = {
+                'project_id': 'http-v104', 'discipline': 'mechanical',
+                'architecture_archive_b64': base64.b64encode(archive.getvalue()).decode('ascii'),
+                'answers': self.calc()['_design_inputs'],
+                'plan_analysis': {
+                    'drawing_set': {'approved': True, 'approved_manifest': manifest},
+                    'architectural_auto': {'level_profiles': [
+                        {'name': name, 'source_type': 'block', 'source_name': 'HTTP_ARCH_LEVELS'}
+                        for name in ('همکف', 'طبقه اول', 'طبقه دوم', 'پشت بام')
+                    ]},
+                },
+                'revision': 1,
+                'output_scope': {
+                    'discipline': 'mechanical', 'systems': self.systems(),
+                    'only_this_discipline': True, 'include_other_disciplines': False,
+                },
+            }
+            response = TestClient(technical.app).post('/design', json=payload)
+            self.assertEqual(response.status_code, 200, response.text[:1000])
+            body = response.json()
+            self.assertEqual(body['engine_version'], '1.0.4')
+            report = body['design_reports'][0]
+            self.assertEqual(report['technical_quality']['score_10'], 10.0)
+            self.assertEqual(report['authority_submission']['expected_sheet_count'], 21)
+            self.assertEqual(report['authority_submission']['generated_sheet_count'], 21)
+            self.assertEqual(report['authority_submission']['materialized_analyzer_blocks'], ['HTTP_ARCH_LEVELS'])
 
 
 if __name__ == '__main__':
