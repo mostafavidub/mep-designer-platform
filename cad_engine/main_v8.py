@@ -148,6 +148,8 @@ def mechanical_calc_v8(a):
     for key in (
         'location', 'heating', 'cooling', 'gas', 'water_source', 'water',
         'sanitary_outlet', 'parking_enclosure', 'occupancy', 'heights',
+        'water_design_basis', 'sanitary_design_basis', 'gas_appliances',
+        'equipment_schedule', 'ventilation_design_basis', 'roof_drainage_basis',
     ):
         if a.get(key) not in (None, ''):
             inputs[key] = a.get(key)
