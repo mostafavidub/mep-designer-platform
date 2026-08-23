@@ -1,6 +1,6 @@
 """Tests for the authority-separated Mechanical Drawing Set Standard."""
 
-from app.mechanical_drawing_set import predict_drawing_set, requires_approval
+from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set, requires_approval
 
 
 def _three_level_scope(**overrides):
@@ -36,6 +36,32 @@ def test_reference_authority_profile_is_21_deliverable_sheets():
     assert result["sheet_families"]["roof_rainwater"]["count"] == 1
 
 
+def test_duplex_benchmark_manifest_is_exactly_21():
+    result = approve_drawing_set(predict_drawing_set(_three_level_scope()))
+    manifest = result["approved_manifest"]
+    assert manifest["total_sheets"] == 21
+    assert len(manifest["sheets"]) == 21
+    assert len({x["code"] for x in manifest["sheets"]}) == 21
+    assert manifest["manifest_id"] == result["drawing_manifest"]["manifest_id"]
+
+
+def test_afsari_benchmark_manifest_is_exactly_13():
+    levels = ["Ground", "First", "Second"]
+    result = approve_drawing_set(predict_drawing_set(_three_level_scope(
+        all_levels=levels,
+        roof_exists=False,
+        conditioned_levels=levels,
+        heated_levels=levels,
+        wet_fixture_levels=levels,
+        sanitary_fixture_levels=levels,
+        ventilation_required_levels=levels,
+        gas_consumer_levels=levels,
+        typical_groups=[{"name": "Typical Floors", "levels": ["First", "Second"]}],
+    )))
+    assert result["approved_manifest"]["total_sheets"] == 13
+    assert len(result["approved_manifest"]["sheets"]) == 13
+
+
 def test_no_cross_system_combination_in_authority_profile():
     result = predict_drawing_set(_three_level_scope())
     for key in ("water_supply", "sanitary_vent", "heating", "cooling", "gas", "ventilation_exhaust"):
@@ -66,6 +92,24 @@ def test_gas_scope_off_removes_only_gas_deliverables():
     assert result["systems"]["gas"]["count"] == 0
     assert result["sheet_families"]["gas"]["count"] == 0
     assert result["deliverable_sheet_count"] == 18
+
+
+def test_five_identical_floors_become_one_plan_per_family():
+    levels = ["L1", "L2", "L3", "L4", "L5"]
+    result = predict_drawing_set(_three_level_scope(
+        all_levels=levels,
+        roof_exists=False,
+        conditioned_levels=levels,
+        heated_levels=levels,
+        wet_fixture_levels=levels,
+        sanitary_fixture_levels=levels,
+        ventilation_required_levels=levels,
+        gas_consumer_levels=levels,
+        typical_groups=[{"name": "Typical L1-L5", "levels": levels}],
+    ))
+    for key in ("sanitary_vent", "heating", "cooling", "gas", "ventilation_exhaust"):
+        assert result["sheet_families"][key]["count"] == 1
+    assert result["sheet_families"]["water_supply"]["count"] == 2
 
 
 def test_approval_gate():
