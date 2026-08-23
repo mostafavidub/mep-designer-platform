@@ -5,6 +5,13 @@ will be issued. Different approval disciplines are never merged just to reduce
 sheet count. Typical-floor consolidation is system-specific only.
 """
 
+import copy
+import hashlib
+import json
+
+
+MANIFEST_SCHEMA_VERSION = "1.0"
+
 AUTHORITY_FAMILIES = {
     "water_supply": {"code": "M-W", "label": "آب سرد و گرم", "system": "water_supply"},
     "sanitary_vent": {"code": "M-S", "label": "فاضلاب و ونت", "system": "sanitary"},
@@ -116,6 +123,37 @@ def _append_special(family, code, label, levels, reason):
     return sheet
 
 
+def _build_manifest(deliverables):
+    sheets = copy.deepcopy(deliverables)
+    payload = {
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "discipline": "mechanical",
+        "total_sheets": len(sheets),
+        "sheets": sheets,
+    }
+    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    payload["manifest_id"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return payload
+
+
+def approve_drawing_set(proposal):
+    """Freeze the exact customer-approved sheet manifest for CAD generation."""
+    proposal = copy.deepcopy(proposal or {})
+    manifest = proposal.get("drawing_manifest")
+    if not manifest:
+        raise ValueError("Drawing manifest is missing.")
+    sheets = manifest.get("sheets") or []
+    if int(manifest.get("total_sheets") or -1) != len(sheets):
+        raise ValueError("Drawing manifest count is internally inconsistent.")
+    codes = [str(x.get("code") or "") for x in sheets]
+    if not codes or any(not x for x in codes) or len(codes) != len(set(codes)):
+        raise ValueError("Drawing manifest sheet codes must be present and unique.")
+    proposal["approved_manifest"] = copy.deepcopy(manifest)
+    proposal["approved"] = True
+    proposal["approval_required"] = False
+    return proposal
+
+
 def predict_drawing_set(scope):
     systems = _system_scopes(scope)
     typical_groups = scope.get("typical_groups") or []
@@ -166,12 +204,15 @@ def predict_drawing_set(scope):
     }
 
     total = len(deliverables)
+    manifest = _build_manifest(deliverables)
     return {
         "approved": False,
         "approval_required": True,
         "systems": systems,
         "sheet_families": families,
         "deliverable_sheets": deliverables,
+        "drawing_manifest": manifest,
+        "approved_manifest": None,
         "total_plans": total,
         "deliverable_sheet_count": total,
         "system_scope_count": sum(item["count"] for item in systems.values()),
