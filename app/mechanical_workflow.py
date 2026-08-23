@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from .mechanical_drawing_set import predict_drawing_set
+from .mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 
 SYSTEM_LABELS = {
     'cooling': 'سرمایش',
@@ -233,7 +233,10 @@ def register_mechanical_workflow(app, legacy):
         if not p: raise HTTPException(404)
         ds = dict((p.analysis or {}).get('drawing_set') or {})
         if _discipline(p) != 'mechanical' or not ds: db.close(); raise HTTPException(409, 'Drawing set proposal is not ready.')
-        ds['approved'] = True; ds['approval_required'] = False
+        try:
+            ds = approve_drawing_set(ds)
+        except ValueError as exc:
+            db.close(); raise HTTPException(409, str(exc))
         analysis = dict(p.analysis or {}); analysis['drawing_set'] = ds; p.analysis = analysis; p.status = 'ready_to_design'
         db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
 
