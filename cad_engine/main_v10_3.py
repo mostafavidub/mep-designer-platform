@@ -318,9 +318,9 @@ def _technical_issue_gaps(doc, manifest, calc):
     # Direct engine contract fixtures intentionally contain only the geometry
     # needed to test sheet-count invariants. Full family-content enforcement is
     # enabled for real workflow requests, identified by their plan analysis.
+    # v10.4 performs the authoritative family-content gate after it has added
+    # calculation-backed symbols and schedules. v10.3 retains marker checks.
     empty = []
-    if calc.get('_plan_analysis'):
-        empty = [family for family in expected_families if not (family_layers.get(family, set()) & present)]
     gaps = []
     if hits:
         gaps.append('unresolved markers: ' + ' | '.join(hits[:8]))
