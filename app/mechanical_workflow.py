@@ -56,6 +56,42 @@ def _level_names(p):
     return levels or ['پلان معماری']
 
 
+def _typical_groups(p, levels):
+    """Collect architecture-derived typical-floor groups without inventing them."""
+    analysis = p.analysis or {}
+    auto = analysis.get('architectural_auto') or {}
+    candidates = None
+    for key in ('typical_groups', 'typical_floors', 'level_groups', 'floor_groups'):
+        value = auto.get(key)
+        if value:
+            candidates = value
+            break
+    if not candidates:
+        value = analysis.get('typical_groups')
+        if value:
+            candidates = value
+    if not candidates:
+        return []
+
+    allowed = set(levels)
+    out = []
+    if isinstance(candidates, dict):
+        candidates = [{'name': k, 'levels': v} for k, v in candidates.items()]
+    for index, item in enumerate(candidates or [], 1):
+        if isinstance(item, dict):
+            members = item.get('levels') or item.get('floors') or item.get('members') or []
+            name = item.get('name') or item.get('label') or item.get('pattern') or f'Typical {index}'
+        elif isinstance(item, (list, tuple, set)):
+            members = list(item); name = f'Typical {index}'
+        else:
+            continue
+        members = [str(x) for x in members if str(x) in allowed]
+        members = list(dict.fromkeys(members))
+        if len(members) >= 2:
+            out.append({'name': str(name), 'levels': members})
+    return out
+
+
 def build_scope(p):
     answers = p.answers or {}
     levels = _level_names(p)
@@ -66,6 +102,7 @@ def build_scope(p):
     roof_text = answers.get('roof')
     roof_exists = (not _negative(roof_text)) if roof_text is not None else any('بام' in x or 'roof' in x.lower() for x in levels)
     return {
+        'all_levels': list(levels),
         'conditioned_levels': cooling,
         'heated_levels': heating,
         'wet_fixture_levels': list(levels),
@@ -73,7 +110,9 @@ def build_scope(p):
         'ventilation_required_levels': ventilation,
         'gas_consumer_levels': gas,
         'roof_exists': bool(roof_exists),
+        'roof_requires_dedicated_plan': False,
         'vertical_systems': len(levels) > 1,
+        'typical_groups': _typical_groups(p, levels),
     }
 
 
