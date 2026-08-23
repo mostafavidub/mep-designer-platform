@@ -58,6 +58,7 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
                 'location': 'Tehran, Iran', 'heights': '3.20 m floor-to-floor',
                 'fixture_schedule': 'sink 3; faucet 3; toilet 3; bath 3',
                 'water_source': 'municipal meter, 500 L tank and booster pump',
+                'water_inlet_pressure': '3.0 bar at meter',
                 'water_design_basis': '3.0 bar at meter; PPR; Hazen-Williams C=150; maximum loss 20 kPa/100 m',
                 'sanitary_outlet': 'municipal sewer at project boundary',
                 'sanitary_design_basis': 'uPVC; invert +0.00 at boundary; 2 percent branches and 1 percent mains',
@@ -151,7 +152,7 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             response = TestClient(technical.app).post('/design', json=payload)
             self.assertEqual(response.status_code, 200, response.text[:1000])
             body = response.json()
-            self.assertEqual(body['engine_version'], '1.0.4')
+            self.assertEqual(body['engine_version'], '1.0.5')
             report = body['design_reports'][0]
             self.assertEqual(report['technical_quality']['score_10'], 10.0)
             self.assertEqual(report['authority_submission']['expected_sheet_count'], 21)
