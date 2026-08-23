@@ -161,7 +161,20 @@ def run_design(project_id,revision_id):
                 raise RuntimeError('Approved mechanical drawing manifest is missing from the project workflow.')
             design_answers['_approved_drawing_manifest'] = approved_manifest
         payload={'project_id':str(p.id),'discipline':discipline,'architecture_dir':str(pdir/'input'),'answers':design_answers,'plan_analysis':p.analysis,'rulebook_path':RULEBOOK_PATH,'revision':r.revision_no,'revision_instructions':r.feedback,'output_scope':{'discipline':discipline,'label':scope['label'],'systems':scope['systems'],'only_this_discipline':True,'include_other_disciplines':False}}
-        resp=requests.post(CAD_DESIGNER_URL+'/design',json=payload,timeout=3600); resp.raise_for_status(); data=resp.json()
+        resp=requests.post(CAD_DESIGNER_URL+'/design',json=payload,timeout=3600)
+        if not resp.ok:
+            try: detail=resp.json().get('detail')
+            except Exception: detail=''
+            translations={
+                'floor heights / false-ceiling constraints':'ارتفاع طبقات یا سقف کاذب',
+                'water inlet pressure':'فشار واقعی آب ورودی',
+                'fixture_and_symbol_traceability':'تأیید تعداد تجهیزات بهداشتی',
+                'roof_drainage_design':'تأیید مشخصات بام و کف‌خواب‌ها',
+            }
+            message=str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
+            for source,target in translations.items(): message=message.replace(source,target)
+            raise RuntimeError('طراحی متوقف شد: '+message)
+        data=resp.json()
         returned_discipline=data.get('discipline')
         if returned_discipline and returned_discipline!=discipline: raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
         src=Path(data['pdf_path']); out=pdir/'output'/f'rev_{r.revision_no:03d}'; out.mkdir(parents=True,exist_ok=True); dst=out/f'{discipline}_design.pdf'; shutil.copy2(src,dst)
