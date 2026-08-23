@@ -1,5 +1,5 @@
 #!/bin/sh
-# EngiTools mechanical Rule Book v1.4 / minimal-input questionnaire release.
+# EngiTools mechanical Rule Book v1.5 / short-answer questionnaire release.
 set -eu
 uvicorn cad_engine.main_v10_4:app --host 127.0.0.1 --port 8081 &
 CAD_PID=$!
