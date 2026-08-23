@@ -3,6 +3,8 @@ from html import escape
 from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
+from .mechanical_drawing_set import approve_drawing_set
+
 
 FAMILY_ORDER = (
     'water_supply',
@@ -57,18 +59,17 @@ def review_question_html(drawing_set):
     items = ''.join(rows) or '<li>شیت‌های مکانیکی موردنیاز بر اساس تحلیل پروژه تعیین شد.</li>'
     return (
         '<div style="text-align:right;font-size:16px;line-height:2">'
-        '<div style="font-size:20px;font-weight:800;margin-bottom:8px">لیست شیت‌های نهایی قابل تحویل مکانیک</div>'
+        '<div style="font-size:20px;font-weight:800;margin-bottom:8px">پیشنهاد نقشه‌های مکانیکی پروژه</div>'
         '<p style="font-size:14px;color:#667085;margin:0 0 10px">'
-        'این تعداد دقیقاً تعداد نقشه‌های مجزایی است که برای تحویل و تأیید نظام مهندسی تولید خواهد شد. '
-        'سیستم‌های تأییدی متفاوت در شمارش مشتری با هم ادغام نمی‌شوند.</p>'
+        'بر اساس تحلیل معماری، تعداد نقشه‌های مکانیکی موردنیاز و قابل تحویل به شرح زیر است.</p>'
         f'<ul style="margin:8px 0 14px;padding-right:22px">{items}</ul>'
-        f'<div style="font-size:18px;font-weight:800">مجموع قابل تحویل: {total} شیت</div>'
+        f'<div style="font-size:18px;font-weight:800">تعداد نقشه‌های مکانیکی موردنیاز: {total} پلان</div>'
         '<p style="font-size:14px;font-weight:400;color:#667085;margin:10px 0 14px">'
         'Effective Level و طبقات تیپ فقط داخل همان سیستم اعمال می‌شوند. طراحی CAD تا تأیید این لیست شروع نمی‌شود.</p>'
         '<style>#answerForm textarea,#answerForm>button{display:none!important}</style>'
         '<button type="button" class="btn primary wide" '
         'onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">'
-        'تأیید لیست و ادامه</button>'
+        'تأیید و شروع طراحی</button>'
         '</div>'
     )
 
@@ -88,8 +89,10 @@ def _approve_project(legacy, p):
     ds = dict((p.analysis or {}).get('drawing_set') or {})
     if not ds:
         raise HTTPException(409, 'Drawing set proposal is not ready.')
-    ds['approved'] = True
-    ds['approval_required'] = False
+    try:
+        ds = approve_drawing_set(ds)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc))
     analysis = dict(p.analysis or {})
     analysis['drawing_set'] = ds
     p.analysis = analysis
