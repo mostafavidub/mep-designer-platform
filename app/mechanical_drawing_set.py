@@ -1,17 +1,9 @@
 """Mechanical Drawing Set Planning Engine.
 
-The customer-facing proposal MUST count deliverable CAD sheets, not internal
-system scopes. The sheet families here mirror the current mechanical CAD
-output convention:
-
-- M-P: cold/hot water + gas
-- M-S: sanitary + vent + rainwater
-- M-H: heating + cooling + condensate
-- M-V: ventilation + exhaust
-- M-RISER-CALC: risers + calculations/legend
-
-Effective levels are consolidated through typical-floor groups before the
-customer-facing count is calculated.
+Customer-facing counts follow the local authority submission profile: systems
+that are submitted as separate mechanical drawings stay separate. Typical-floor
+consolidation is allowed only inside the same system family and only when the
+architecture analysis has verified equivalence.
 """
 
 SYSTEM_RULES = {
@@ -25,27 +17,13 @@ SYSTEM_RULES = {
     "riser": "vertical_systems",
 }
 
-SHEET_FAMILIES = {
-    "plumbing_gas": {
-        "code": "M-P",
-        "label": "آب سرد و گرم + گاز",
-        "systems": ("water_supply", "gas"),
-    },
-    "sanitary_vent_rain": {
-        "code": "M-S",
-        "label": "فاضلاب + ونت + آب باران",
-        "systems": ("sanitary", "roof_drainage"),
-    },
-    "heating_cooling_condensate": {
-        "code": "M-H",
-        "label": "گرمایش + سرمایش + درین کندانس",
-        "systems": ("heating", "cooling"),
-    },
-    "ventilation_exhaust": {
-        "code": "M-V",
-        "label": "تهویه + اگزاست",
-        "systems": ("ventilation",),
-    },
+AUTHORITY_FAMILIES = {
+    "water_supply": {"code": "M-W", "label": "آب سرد و گرم", "system": "water_supply"},
+    "sanitary_vent": {"code": "M-S", "label": "فاضلاب و ونت", "system": "sanitary"},
+    "heating": {"code": "M-H", "label": "گرمایش", "system": "heating"},
+    "cooling": {"code": "M-C", "label": "سرمایش / HVAC", "system": "cooling"},
+    "gas": {"code": "M-G", "label": "گاز", "system": "gas"},
+    "ventilation_exhaust": {"code": "M-V", "label": "تهویه و اگزاست", "system": "ventilation"},
 }
 
 
@@ -68,17 +46,16 @@ def _system_scopes(scope):
         systems[system] = {"count": len(levels), "levels": levels}
     systems["roof_drainage"] = {
         "count": 1 if scope.get("roof_exists") else 0,
-        "levels": ["Roof"] if scope.get("roof_exists") else [],
+        "levels": [scope.get("roof_level_name") or "Roof"] if scope.get("roof_exists") else [],
     }
     systems["riser"] = {
         "count": 1 if scope.get("vertical_systems") else 0,
-        "levels": ["Riser Diagram"] if scope.get("vertical_systems") else [],
+        "levels": ["Vertical systems"] if scope.get("vertical_systems") else [],
     }
     return systems
 
 
 def _normalize_typical_groups(raw_groups):
-    """Return [{name, levels}] from several architecture-analysis shapes."""
     out = []
     if isinstance(raw_groups, dict):
         raw_groups = [{"name": name, "levels": levels} for name, levels in raw_groups.items()]
@@ -98,12 +75,7 @@ def _normalize_typical_groups(raw_groups):
 
 
 def consolidate_effective_levels(levels, typical_groups=None):
-    """Collapse effective levels into actual deliverable level patterns.
-
-    A typical group becomes one sheet only when at least two effective levels of
-    that system/family belong to the group. Uncovered levels remain singleton
-    sheets. No floor is silently dropped.
-    """
+    """Collapse only verified equivalent levels inside one system family."""
     levels = _unique_levels(levels)
     if not levels:
         return []
@@ -121,109 +93,115 @@ def consolidate_effective_levels(levels, typical_groups=None):
     return patterns
 
 
-def _union_levels(*groups):
-    values = []
-    for group in groups:
-        for level in group or []:
-            if level not in values:
-                values.append(level)
-    return values
+def _add_family_sheets(deliverables, families, key, definition, levels, typical_groups):
+    patterns = consolidate_effective_levels(levels, typical_groups)
+    sheets = []
+    for index, pattern in enumerate(patterns, 1):
+        sheet = {
+            "family": key,
+            "code": f"{definition['code']}-{index:02d}",
+            "label": definition["label"],
+            "pattern": pattern["name"],
+            "levels": pattern["levels"],
+            "typical": pattern["typical"],
+            "special": False,
+        }
+        sheets.append(sheet)
+        deliverables.append(sheet)
+    families[key] = {
+        "code": definition["code"],
+        "label": definition["label"],
+        "systems": [definition["system"]],
+        "effective_levels": _unique_levels(levels),
+        "count": len(sheets),
+        "sheets": sheets,
+    }
 
 
-def _family_levels(family, systems, scope):
-    if family == "plumbing_gas":
-        return _union_levels(systems["water_supply"]["levels"], systems["gas"]["levels"])
-    if family == "sanitary_vent_rain":
-        # Rainwater is carried on the sanitary/vent family in the current CAD
-        # deliverable. It does not create a second customer-counted roof sheet
-        # unless the CAD engine explicitly requests a dedicated roof sheet.
-        levels = list(systems["sanitary"]["levels"])
-        if scope.get("roof_requires_dedicated_plan"):
-            levels = _union_levels(levels, [scope.get("roof_level_name") or "Roof"])
-        return levels
-    if family == "heating_cooling_condensate":
-        return _union_levels(systems["heating"]["levels"], systems["cooling"]["levels"])
-    if family == "ventilation_exhaust":
-        return list(systems["ventilation"]["levels"])
-    return []
+def _append_special(deliverables, families, family_key, code, label, levels, reason):
+    sheet = {
+        "family": family_key,
+        "code": code,
+        "label": label,
+        "pattern": "System special",
+        "levels": _unique_levels(levels),
+        "typical": False,
+        "special": True,
+        "reason": reason,
+    }
+    families[family_key]["sheets"].append(sheet)
+    families[family_key]["count"] += 1
+    deliverables.append(sheet)
 
 
 def predict_drawing_set(scope):
-    """Create the approval proposal before mechanical generation.
-
-    `total_plans` is the number of sheets the customer is expected to receive.
-    `system_scope_count` remains available only for engineering traceability and
-    must not be presented as the deliverable sheet count.
-    """
+    """Return the exact authority-submission drawing list shown to the customer."""
     systems = _system_scopes(scope)
     typical_groups = scope.get("typical_groups") or []
-    sheet_families = {}
-    deliverable_sheets = []
+    families = {}
+    deliverables = []
 
-    for key, definition in SHEET_FAMILIES.items():
-        effective = _family_levels(key, systems, scope)
-        patterns = consolidate_effective_levels(effective, typical_groups)
-        sheets = []
-        for index, pattern in enumerate(patterns, 1):
-            sheet = {
-                "family": key,
-                "code": f"{definition['code']}-{index:02d}",
-                "label": definition["label"],
-                "pattern": pattern["name"],
-                "levels": pattern["levels"],
-                "typical": pattern["typical"],
-            }
-            sheets.append(sheet)
-            deliverable_sheets.append(sheet)
-        sheet_families[key] = {
-            "code": definition["code"],
-            "label": definition["label"],
-            "systems": list(definition["systems"]),
-            "effective_levels": effective,
-            "count": len(sheets),
-            "sheets": sheets,
-        }
+    for key, definition in AUTHORITY_FAMILIES.items():
+        levels = systems[definition["system"]]["levels"]
+        _add_family_sheets(deliverables, families, key, definition, levels, typical_groups)
 
-    if scope.get("vertical_systems"):
-        riser_sheet = {
-            "family": "riser_calc",
-            "code": "M-RISER-CALC",
-            "label": "رایزر + محاسبات + Legend",
-            "pattern": "Building",
-            "levels": _unique_levels(scope.get("all_levels") or []),
+    # In multi-level approval sets, water supply normally needs one additional
+    # riser/equipment/schematic deliverable. It belongs to the water family and
+    # is not counted as a generic extra mechanical sheet.
+    if scope.get("water_supply_special_sheet") and systems["water_supply"]["levels"]:
+        _append_special(
+            deliverables, families, "water_supply", "M-W-SPECIAL",
+            "آبرسانی — رایزر / تجهیزات / شماتیک",
+            scope.get("all_levels") or systems["water_supply"]["levels"],
+            "authority water-supply system special",
+        )
+
+    # Cooling systems with outdoor/roof equipment receive their own equipment
+    # sheet when the resolved project scope requires it.
+    if scope.get("cooling_special_sheet") and systems["cooling"]["levels"]:
+        _append_special(
+            deliverables, families, "cooling", "M-C-EQUIP",
+            "سرمایش — تجهیزات / بام",
+            [scope.get("roof_level_name") or "Roof"],
+            "authority cooling equipment/roof special",
+        )
+
+    roof_sheets = []
+    if scope.get("roof_exists"):
+        roof = {
+            "family": "roof_rainwater",
+            "code": "M-R-01",
+            "label": "بام / آب باران",
+            "pattern": scope.get("roof_level_name") or "Roof",
+            "levels": [scope.get("roof_level_name") or "Roof"],
             "typical": False,
+            "special": True,
+            "reason": "dedicated authority roof/rainwater plan",
         }
-        sheet_families["riser_calc"] = {
-            "code": "M-RISER-CALC",
-            "label": "رایزر + محاسبات + Legend",
-            "systems": ["riser"],
-            "effective_levels": riser_sheet["levels"],
-            "count": 1,
-            "sheets": [riser_sheet],
-        }
-        deliverable_sheets.append(riser_sheet)
-    else:
-        sheet_families["riser_calc"] = {
-            "code": "M-RISER-CALC",
-            "label": "رایزر + محاسبات + Legend",
-            "systems": ["riser"],
-            "effective_levels": [],
-            "count": 0,
-            "sheets": [],
-        }
+        roof_sheets.append(roof)
+        deliverables.append(roof)
+    families["roof_rainwater"] = {
+        "code": "M-R",
+        "label": "بام / آب باران",
+        "systems": ["roof_drainage"],
+        "effective_levels": systems["roof_drainage"]["levels"],
+        "count": len(roof_sheets),
+        "sheets": roof_sheets,
+    }
 
+    total = len(deliverables)
     system_scope_count = sum(item["count"] for item in systems.values())
-    total = len(deliverable_sheets)
     return {
         "approved": False,
         "approval_required": True,
         "systems": systems,
-        "sheet_families": sheet_families,
-        "deliverable_sheets": deliverable_sheets,
+        "sheet_families": families,
+        "deliverable_sheets": deliverables,
         "total_plans": total,
         "deliverable_sheet_count": total,
         "system_scope_count": system_scope_count,
-        "count_semantics": "customer_deliverable_sheets",
+        "count_semantics": "authority_separated_customer_deliverables",
+        "submission_profile": "local_engineering_organization",
         "typical_groups_applied": _normalize_typical_groups(typical_groups),
     }
 
