@@ -56,6 +56,7 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             '_design_inputs': {
                 'gas': 'yes', 'cooling': 'split', 'heating': 'radiator',
                 'location': 'Tehran, Iran', 'heights': '3.20 m floor-to-floor',
+                'fixture_schedule': 'sink 3; faucet 3; toilet 3; bath 3',
                 'water_source': 'municipal meter, 500 L tank and booster pump',
                 'water_design_basis': '3.0 bar at meter; PPR; Hazen-Williams C=150; maximum loss 20 kPa/100 m',
                 'sanitary_outlet': 'municipal sewer at project boundary',
@@ -93,6 +94,15 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             calc = self.calc()
             calc['_design_inputs']['ventilation_design_basis'] = '10 ACH; discharge above roof; make-up air'
             with self.assertRaisesRegex(RuntimeError, r'9(?:\.0)?/10.*ventilation_design'):
+                technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+
+    def test_room_name_proxies_cannot_claim_fixture_traceability(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            calc['_design_inputs'].pop('fixture_schedule')
+            with self.assertRaisesRegex(RuntimeError, r'9(?:\.0)?/10.*fixture_and_symbol_traceability'):
                 technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
 
     def test_real_http_design_preserves_manifest_inputs_and_plan_analysis(self):
