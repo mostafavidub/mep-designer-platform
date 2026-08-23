@@ -123,7 +123,7 @@ def register_mechanical_review_fix(app, legacy):
         has_source = (pdir / 'architecture.zip').exists() or (pdir / 'architecture.dxf').exists()
         analyzer_stale = (
             _discipline(p) == 'mechanical'
-            and analysis.get('architecture_analyzer_version') != '3.1-minimal-input-rulebook'
+            and analysis.get('architecture_analyzer_version') != '3.2-short-answer-rulebook'
             and has_source
         )
         if analyzer_stale:
