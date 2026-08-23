@@ -10,9 +10,11 @@ import re
 from collections import Counter
 
 import ezdxf
+from ezdxf import bbox
 
 from app.mechanical_rulebook import (
     DEFAULT_GAS_PROPOSAL,
+    DEFAULT_WATER_INLET_PRESSURE,
     RULEBOOK_VERSION,
     SANITARY,
     WATER,
@@ -20,6 +22,7 @@ from app.mechanical_rulebook import (
     is_confirmation,
     roof_basis,
     roof_geometry_proposal,
+    water_inlet_pressure_basis,
 )
 
 from . import main_v10_3 as base
@@ -417,7 +420,164 @@ def _quality_report(doc, levels, calc, model, symbol_count, schedule_count):
     }
 
 
+def _boxes_intersect(a, b):
+    return not (a[2] < b[0] or a[0] > b[2] or a[3] < b[1] or a[1] > b[3])
+
+
+def _entity_box(entity):
+    try:
+        extents = bbox.extents([entity], fast=True)
+        if extents.has_data:
+            return (
+                float(extents.extmin.x), float(extents.extmin.y),
+                float(extents.extmax.x), float(extents.extmax.y),
+            )
+    except Exception:
+        pass
+    point = v8._entity_anchor(entity)
+    if point:
+        return point[0], point[1], point[0], point[1]
+    return None
+
+
+def _issued_level_bounds(levels, calc):
+    """Return only architecture envelopes actually used by approved sheets.
+
+    Typical-floor sheets use one representative geometry; repeated copies and
+    unrelated architecture plans must not remain in the issued mechanical DXF.
+    """
+    manifest = calc.get('_approved_drawing_manifest') or {}
+    selected = []
+    seen = set()
+    roofs = [level for level in levels if v8._is_roof(level)]
+    for sheet in manifest.get('sheets') or []:
+        code = str(sheet.get('code') or '')
+        if code == 'M-W-SPECIAL':
+            continue
+        if code == 'M-C-EQUIP':
+            level = roofs[0] if roofs else None
+        else:
+            try:
+                level = base._manifest_level(sheet, levels)
+            except RuntimeError:
+                level = None
+        if not level:
+            continue
+        key = (str(level.get('level') or ''), tuple(level.get('title', {}).get('point') or ()))
+        if key in seen:
+            continue
+        seen.add(key)
+        selected.append(level)
+    return [v8._level_bounds(level, [x['point'] for x in level.get('roof_drains', [])]) for level in selected]
+
+
+def _prune_mechanical_deliverable(doc, levels, calc):
+    """Strip raw architecture baggage from the authority issue file.
+
+    The approved layouts remain intact. Modelspace keeps mechanical entities
+    and only a faded architecture underlay inside the representative plan
+    envelopes referenced by those layouts. Source title sheets, duplicate
+    typical floors, remote details, images, leaders and unrelated blocks are
+    removed, then unreferenced block definitions are purged.
+    """
+    msp = doc.modelspace()
+    bounds = _issued_level_bounds(levels, calc)
+    if not bounds:
+        raise RuntimeError('Compact mechanical output blocked: approved sheet view bounds are unavailable.')
+
+    forbidden_source_types = {
+        'IMAGE', 'PDFUNDERLAY', 'DGNUNDERLAY', 'DWFUNDERLAY',
+        'LEADER', 'MLEADER', 'TABLE', 'ACAD_PROXY_ENTITY',
+    }
+    max_w = max(box[2] - box[0] for box in bounds)
+    max_h = max(box[3] - box[1] for box in bounds)
+    before = len(msp)
+    mechanical = architecture = removed = 0
+    removed_by_type = Counter()
+
+    for entity in list(msp):
+        layer = str(getattr(entity.dxf, 'layer', '') or '')
+        if layer.startswith('ENGITOOLS-M-'):
+            mechanical += 1
+            continue
+        entity_type = entity.dxftype()
+        box = _entity_box(entity)
+        keep = bool(box and any(_boxes_intersect(box, allowed) for allowed in bounds))
+        if box and ((box[2] - box[0]) > max_w * 5 or (box[3] - box[1]) > max_h * 5):
+            keep = False
+        if entity_type in forbidden_source_types or entity_type == 'DIMENSION':
+            keep = False
+        if keep:
+            architecture += 1
+            continue
+        msp.delete_entity(entity)
+        removed += 1
+        removed_by_type[entity_type] += 1
+
+    # Remove only demonstrably unused, substantial source blocks.  A blanket
+    # block purge can invalidate custom DIMSTYLE arrow references in consultant
+    # DXFs, so referenced INSERT/DIMSTYLE blocks and small CAD support blocks
+    # are preserved deliberately.
+    referenced_blocks = set()
+    for layout in doc.layouts:
+        for insert in layout.query('INSERT'):
+            referenced_blocks.add(str(insert.dxf.name).lower())
+        for dimension in layout.query('DIMENSION'):
+            name = str(getattr(dimension.dxf, 'geometry', '') or '')
+            if name:
+                referenced_blocks.add(name.lower())
+    for dimstyle in doc.dimstyles:
+        for value in dimstyle.dxfattribs().values():
+            if isinstance(value, str) and value in doc.blocks:
+                referenced_blocks.add(value.lower())
+    analyzer_blocks = {
+        str(profile.get('source_name') or '').lower()
+        for profile in ((calc.get('_plan_analysis') or {}).get('architectural_auto') or {}).get('level_profiles') or []
+        if profile.get('source_type') == 'block'
+    }
+    removed_blocks = []
+    for block in list(doc.blocks):
+        name = str(block.name or '')
+        low = name.lower()
+        if low.startswith('*') or low in referenced_blocks:
+            continue
+        if low not in analyzer_blocks and len(block) < 50:
+            continue
+        try:
+            doc.blocks.delete_block(name, safe=False)
+            removed_blocks.append(name)
+        except Exception:
+            continue
+    issued = [layout.name for layout in doc.layouts if layout.name.startswith('M-')]
+    expected = [str(sheet.get('code') or '') for sheet in (calc.get('_approved_drawing_manifest') or {}).get('sheets') or []]
+    report = {
+        'status': 'PASS' if issued == expected and mechanical > 0 and architecture > 0 else 'FAIL',
+        'raw_modelspace_entities': before,
+        'retained_mechanical_entities': mechanical,
+        'retained_architecture_underlay_entities': architecture,
+        'removed_unneeded_entities': removed,
+        'removed_by_type': dict(removed_by_type),
+        'removed_unused_block_definitions': len(removed_blocks),
+        'retained_plan_envelopes': len(bounds),
+        'only_approved_mechanical_layouts': issued == expected,
+        'architecture_source_files_packaged': 0,
+        'issued_layouts': issued,
+    }
+    if report['status'] != 'PASS':
+        raise RuntimeError('Compact mechanical output QA failed: ' + str(report))
+    return report
+
+
 def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
+    if discipline == 'mechanical':
+        inputs = dict(calc.get('_design_inputs') or {})
+        inputs['water_inlet_pressure'] = water_inlet_pressure_basis(inputs.get('water_inlet_pressure'))
+        if not inputs.get('water_source'):
+            inputs['water_source'] = (
+                'Rulebook automatic: municipal meter + storage tank + booster pump '
+                'sized from calculated demand'
+            )
+        calc['_design_inputs'] = inputs
     meta = _base_design(src, dst, discipline, systems, revision, calc)
     if discipline != 'mechanical':
         return meta
@@ -432,15 +592,18 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
             f"Mechanical technical design QA failed ({report['score_10']}/10): "
             + ', '.join(report['failed'])
         )
+    cleanup = _prune_mechanical_deliverable(doc, levels, calc)
     audit = doc.audit()
     if audit.errors:
         raise RuntimeError(f'Mechanical v10.4 DXF audit failed with {len(audit.errors)} error(s).')
     doc.saveas(dst)
+    cleanup['output_bytes'] = dst.stat().st_size
     meta['technical_design'] = model
     meta['technical_quality'] = report
     meta['technical_symbol_blocks'] = symbol_count
     meta['technical_schedule_annotations'] = schedule_count
-    meta['design_standard'] = f'Rulebook v{RULEBOOK_VERSION} short-answer evidence-gated mechanical technical design v10.6'
+    meta['compact_output'] = cleanup
+    meta['design_standard'] = f'Rulebook v{RULEBOOK_VERSION} short-answer evidence-gated mechanical technical design v10.7'
     return meta
 
 
@@ -450,7 +613,7 @@ engine.design_dxf = design_dxf_v10_4
 @app.get('/v10-4-capabilities')
 def capabilities():
     return {
-        'ok': True, 'version': '1.0.6-technical-mechanical',
+        'ok': True, 'version': '1.0.7-technical-mechanical',
         'evidence_gated_score_10': True,
         'water_hydraulic_calculation': True, 'sanitary_fixture_unit_schedule': True,
         'gas_load_and_flow_schedule': True, 'room_load_distribution': True,
@@ -458,5 +621,8 @@ def capabilities():
         'standard_mechanical_symbol_blocks': True, 'per_sheet_technical_schedules': True,
         'rulebook_owned_defaults_not_customer_questions': True,
         'short_answer_rulebook_confirmation': True,
+        'unknown_pressure_rulebook_fallback': DEFAULT_WATER_INLET_PRESSURE,
+        'compact_mechanical_output': True,
+        'raw_architecture_files_packaged': False,
         'construction_ready': False, 'professional_verification_required': True,
     }
