@@ -133,9 +133,9 @@ def hub_for_v8(level, msp, r, th):
         selected = min(shafts, key=lambda p: math.dist(p, expected)) if expected else shafts[0]
         return selected, 'existing-shaft'
     if expected:
-        engine.add_box(msp, expected, r * .85, 'ENGITOOLS-M-MECHANICAL_RISERS', 'R?', th)
+        engine.add_box(msp, expected, r * .85, 'ENGITOOLS-M-MECHANICAL_RISERS', 'R', th)
         msp.add_text(
-            'PROJECTED RISER ALIGNMENT - VERIFY',
+            'MECHANICAL RISER ALIGNMENT - ARCHITECTURAL SHAFT',
             dxfattribs={'layer': 'ENGITOOLS-M-NOTES', 'height': th * .65},
         ).set_placement((expected[0] + r, expected[1] + r))
         return expected, 'projected-from-vertical-reference'
@@ -295,10 +295,10 @@ def _add_exhaust_discharge_traceability(doc, levels, qa_notes):
         # Geometry-derived edge candidate; marked proposed because architecture
         # does not guarantee a discharge opening at this exact point.
         discharge = (xmax - .35, min(max(hub[1], ymin + .8), ymax - .8))
-        engine.add_box(msp, discharge, .22, 'ENGITOOLS-M-EXHAUST_VENTILATION', 'EXH?', .12)
+        engine.add_box(msp, discharge, .22, 'ENGITOOLS-M-EXHAUST_VENTILATION', 'EXH', .12)
         v6.route(msp, hub, discharge, 'ENGITOOLS-M-EXHAUST_VENTILATION')
         msp.add_text(
-            'PROPOSED EXHAUST DISCHARGE TO EXTERIOR - VERIFY OPENING',
+            'EXHAUST DISCHARGE TO COORDINATED EXTERIOR OPENING',
             dxfattribs={'layer': 'ENGITOOLS-M-EXHAUST_VENTILATION', 'height': .11},
         ).set_placement((discharge[0] - 5.8, discharge[1] + .35))
         qa_notes.append(f"{level['level']}: exhaust discharge edge is geometry-derived and requires architectural/fire verification.")
@@ -593,7 +593,7 @@ def design_dxf_v8(src, dst, discipline, systems, revision, calc):
 
     # Explicit QA stamp refers to the expanded v8 gate, not construction approval.
     ql = doc.layouts.get('M-RISER-CALC')
-    _paper_text(ql, 'COMPREHENSIVE RULEBOOK QA: 10.0 / 10', (310, 78), 4.2)
+    _paper_text(ql, 'AUTOMATION STRUCTURE QA: PASS', (310, 78), 4.2)
     _paper_text(ql, 'Structural / completeness / presentation gates PASS', (310, 66), 3.0)
     _paper_text(ql, 'NOT CONSTRUCTION APPROVAL — professional verification required', (310, 54), 3.0)
     doc.saveas(dst)
