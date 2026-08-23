@@ -36,18 +36,19 @@ def _has_content(msp, level, system_layers):
 
 
 def _remove_old_issue_layouts(doc):
+    # The issued DXF must contain only the authority deliverables plus Model.
+    # Source/helper/title-block layouts are not customer deliverables and must
+    # not leak into the count.
     for layout in list(doc.layouts):
         if layout.name == 'Model':
             continue
-        if layout.name.startswith(('M-P-', 'M-S-', 'M-H-', 'M-V-', 'M-W-', 'M-C-', 'M-G-', 'M-R-')) or layout.name == 'M-RISER-CALC':
-            try:
-                doc.layouts.delete(layout.name)
-            except Exception:
-                pass
+        try:
+            doc.layouts.delete(layout.name)
+        except Exception:
+            pass
 
 
 def _plan_view(doc, level, project_id, code, title, system_layers):
-    msp = doc.modelspace()
     extra = [x['point'] for x in level.get('roof_drains', [])]
     xmin, ymin, xmax, ymax = v8._level_bounds(level, extra)
     width, height = xmax - xmin, ymax - ymin
@@ -113,8 +114,6 @@ def _compose_authority_layouts(doc, levels, project_id):
     for group, title, layers in AUTHORITY_GROUPS:
         index = 0
         for level in levels:
-            # Rainwater is a dedicated roof/roof-drainage family; other systems
-            # are emitted only where their actual generated layer has content.
             if not _has_content(msp, level, layers):
                 continue
             index += 1
