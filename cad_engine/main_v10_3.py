@@ -24,6 +24,7 @@ AUTHORITY_GROUPS = [
     ('V', 'تهویه و اگزاست', {'ENGITOOLS-M-EXHAUST_VENTILATION'}),
     ('R', 'بام و آب باران', {'ENGITOOLS-M-RAINWATER'}),
 ]
+TEMP_LAYOUT = '__AUTH_TMP__'
 
 
 def _negative(value):
@@ -36,7 +37,6 @@ def _rooms(level, kinds):
 
 
 def _effective_for_group(level, group, systems, calc):
-    """Authority sheet scope follows engineering need, not fragile viewport bounds."""
     roof = v8._is_roof(level)
     wet = bool(_rooms(level, {'kitchen', 'bath', 'toilet'}))
     hab = bool(_rooms(level, {'bedroom', 'living', 'office', 'shop'}))
@@ -62,19 +62,29 @@ def _effective_for_group(level, group, systems, calc):
 
 
 def _remove_old_issue_layouts(doc):
-    # The active paper layout cannot be deleted in ezdxf. Activate Model first,
-    # then remove every helper/legacy paper layout so the issued set is exact.
-    try:
-        doc.layouts.set_active_layout('Model')
-    except Exception:
-        pass
-    for layout in list(doc.layouts):
-        if layout.name == 'Model':
-            continue
+    # ezdxf cannot delete the active paper-space layout. Create and activate a
+    # temporary paper layout, then remove every legacy/helper sheet including
+    # M-RISER-CALC. The temporary layout is removed once a new authority sheet
+    # can safely become active.
+    existing = [x.name for x in doc.layouts]
+    if TEMP_LAYOUT in existing:
         try:
-            doc.layouts.delete(layout.name)
+            doc.layouts.delete(TEMP_LAYOUT)
         except Exception:
             pass
+    doc.layouts.new(TEMP_LAYOUT)
+    doc.layouts.set_active_layout(TEMP_LAYOUT)
+    for layout in list(doc.layouts):
+        if layout.name in ('Model', TEMP_LAYOUT):
+            continue
+        doc.layouts.delete(layout.name)
+
+
+def _finish_layout_reset(doc, first_authority_layout):
+    if first_authority_layout:
+        doc.layouts.set_active_layout(first_authority_layout)
+    if TEMP_LAYOUT in [x.name for x in doc.layouts]:
+        doc.layouts.delete(TEMP_LAYOUT)
 
 
 def _plan_view(doc, level, project_id, code, title, system_layers):
@@ -138,9 +148,6 @@ def _compose_authority_layouts(doc, levels, project_id, systems, calc):
     _remove_old_issue_layouts(doc)
     created = []
     counts = {key: 0 for key, _, _ in AUTHORITY_GROUPS}
-
-    # Recover roof-drain points on the rebuilt Level objects so roof view bounds
-    # include the actual drainage annotations/geometry.
     msp = doc.modelspace()
     for level in levels:
         if v8._is_roof(level):
@@ -166,12 +173,11 @@ def _compose_authority_layouts(doc, levels, project_id, systems, calc):
     if counts['C'] >= 1 and roofs:
         created.append(_cooling_special(doc, roofs[0], project_id)); counts['C'] += 1
 
+    _finish_layout_reset(doc, created[0]['layout'] if created else None)
     return created, counts
 
 
 def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
-    # rainwater is an authority deliverable whenever a roof drainage level is
-    # detected, so make the layer available to the geometry engine.
     effective_systems = list(systems or [])
     if discipline == 'mechanical' and 'rainwater' not in effective_systems:
         effective_systems.append('rainwater')
@@ -192,10 +198,9 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
 
     issued_names = [x.name for x in doc.layouts if x.name.startswith('M-')]
     if len(issued_names) != len(created):
-        expected_names = [x['layout'] for x in created]
         raise RuntimeError(
             'Authority deliverable count does not match issued CAD layout count: '
-            f'created={len(created)} {expected_names}; issued={len(issued_names)} {issued_names}; counts={counts}'
+            f'created={len(created)} {[x["layout"] for x in created]}; issued={len(issued_names)} {issued_names}; counts={counts}'
         )
 
     doc.saveas(dst)
