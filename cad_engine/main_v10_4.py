@@ -11,6 +11,8 @@ from collections import Counter
 
 import ezdxf
 
+from app.mechanical_rulebook import RULEBOOK_VERSION, SANITARY, WATER, roof_basis
+
 from . import main_v10_3 as base
 from . import main_v8 as v8
 from . import main_v6 as v6
@@ -126,12 +128,20 @@ def _technical_model(doc, levels, calc):
     fixture_schedule = _norm(inputs.get('fixture_schedule'))
     detected, scheduled, fixtures, rooms, proxies = _fixture_summary(levels, fixture_schedule)
     unit_to_m = _drawing_unit_to_m(doc)
-    water_basis = _norm(inputs.get('water_design_basis'))
-    sanitary_basis = _norm(inputs.get('sanitary_design_basis'))
-    gas_basis = _norm(inputs.get('gas_appliances'))
+    water_basis = _norm(inputs.get('water_design_basis')) or (
+        f"{WATER['material']}; Hazen-Williams C={WATER['hazen_williams_c']}; "
+        f"maximum loss {WATER['maximum_friction_loss_kpa_per_100m']} kPa/100 m"
+    )
+    sanitary_basis = _norm(inputs.get('sanitary_design_basis')) or (
+        f"{SANITARY['material']}; {SANITARY['branch_slope_pct']} percent branches; "
+        f"{SANITARY['main_slope_pct']} percent mains"
+    )
+    gas_basis = _norm(inputs.get('gas_appliances') or inputs.get('gas'))
     equipment = _norm(inputs.get('equipment_schedule'))
     ventilation = _norm(inputs.get('ventilation_design_basis'))
-    roof_basis = _norm(inputs.get('roof_drainage_basis'))
+    roof_design_basis = _norm(inputs.get('roof_drainage_basis'))
+    roof_geometry = _norm(inputs.get('roof_drainage_geometry'))
+    roof_design_basis = roof_basis(inputs.get('location'), roof_design_basis or roof_geometry)
 
     water_fu = (
         fixtures['sink'] * 1.5 + fixtures['faucet'] * 1.0
@@ -147,7 +157,8 @@ def _technical_model(doc, levels, calc):
     if flow_lps:
         hydraulic_d = math.sqrt(4.0 * flow_lps / 1000.0 / (math.pi * max(velocity, .1))) * 1000.0
         water_dn = _next_pipe(hydraulic_d)
-    inlet_bar = _number(water_basis, r'bar|بار')
+    pressure_input = _norm(inputs.get('water_inlet_pressure'))
+    inlet_bar = _number(pressure_input, r'bar|بار') or _number(water_basis, r'bar|بار')
     match = re.search(r'c\s*=\s*(\d+(?:\.\d+)?)', water_basis, re.I)
     hazen_c = float(match.group(1)) if match else None
     water_material = _material(water_basis, (
@@ -194,9 +205,9 @@ def _technical_model(doc, levels, calc):
     discharge_resolved = bool(re.search(r'discharge|تخلیه|تخليه|بام|roof|exterior|خارج', ventilation, re.I))
     makeup_resolved = bool(re.search(r'make.?up|جبرانی|جبراني', ventilation, re.I))
 
-    roof_area = _number(roof_basis, r'm2|m²|متر\s*مربع')
-    rainfall = _number(roof_basis, r'mm/h|میلی.?متر\s*بر\s*ساعت|ميلي.?متر\s*بر\s*ساعت')
-    drain_match = re.search(r'(\d+)\s*(?:drain|rd|کف.?خواب|ناودان)', roof_basis, re.I)
+    roof_area = _number(roof_design_basis, r'm2|m²|متر\s*مربع')
+    rainfall = _number(roof_design_basis, r'mm/h|میلی.?متر\s*بر\s*ساعت|ميلي.?متر\s*بر\s*ساعت')
+    drain_match = re.search(r'(\d+)\s*(?:drain|rd|کف.?خواب|ناودان)', roof_design_basis, re.I)
     drain_count = int(drain_match.group(1)) if drain_match else None
     roof_flow_lps = roof_area * rainfall / 3600.0 if roof_area and rainfall else None
     roof_flow_each = roof_flow_lps / drain_count if roof_flow_lps and drain_count else None
@@ -214,6 +225,7 @@ def _technical_model(doc, levels, calc):
         'water_fixture_units': round(water_fu, 2), 'design_water_flow_lps': round(flow_lps, 3) if flow_lps else None,
         'water_velocity_mps': velocity, 'water_hydraulic_diameter_mm': round(hydraulic_d, 1) if hydraulic_d else None,
         'water_main_dn_mm': water_dn, 'water_material': water_material, 'water_inlet_pressure_bar': inlet_bar,
+        'water_design_basis_source': f'Rulebook v{RULEBOOK_VERSION}',
         'hazen_williams_c': hazen_c, 'water_route_length_m': round(water_length_m, 2) if water_length_m else None,
         'water_head_loss_m': round(head_loss_m, 2) if head_loss_m is not None else None,
         'drainage_fixture_units': drainage_fu, 'sanitary_main_dn_mm': sanitary_dn,
@@ -230,6 +242,7 @@ def _technical_model(doc, levels, calc):
         'roof_flow_lps': round(roof_flow_lps, 2) if roof_flow_lps else None,
         'roof_flow_per_drain_lps': round(roof_flow_each, 2) if roof_flow_each else None,
         'roof_drain_dn_mm': roof_dn,
+        'mechanical_rulebook_version': RULEBOOK_VERSION,
     }
     return model
 
@@ -410,7 +423,7 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     meta['technical_quality'] = report
     meta['technical_symbol_blocks'] = symbol_count
     meta['technical_schedule_annotations'] = schedule_count
-    meta['design_standard'] = 'Rulebook v1.3 evidence-gated mechanical technical design v10.4'
+    meta['design_standard'] = f'Rulebook v{RULEBOOK_VERSION} minimal-input evidence-gated mechanical technical design v10.5'
     return meta
 
 
@@ -420,11 +433,12 @@ engine.design_dxf = design_dxf_v10_4
 @app.get('/v10-4-capabilities')
 def capabilities():
     return {
-        'ok': True, 'version': '1.0.4-technical-mechanical',
+        'ok': True, 'version': '1.0.5-technical-mechanical',
         'evidence_gated_score_10': True,
         'water_hydraulic_calculation': True, 'sanitary_fixture_unit_schedule': True,
         'gas_load_and_flow_schedule': True, 'room_load_distribution': True,
         'ventilation_airflow_gate': True, 'roof_rainfall_calculation': True,
         'standard_mechanical_symbol_blocks': True, 'per_sheet_technical_schedules': True,
+        'rulebook_owned_defaults_not_customer_questions': True,
         'construction_ready': False, 'professional_verification_required': True,
     }
