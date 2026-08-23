@@ -261,6 +261,7 @@ def dynamic_questions(analysis, discipline, auto):
         # Authority-ready mechanical documents cannot be completed from room
         # labels alone. Collect the project-specific engineering inputs that
         # control pipe sizing, slopes, equipment schedules and safe discharge.
+        q.append(('fixture_schedule', 'اگر سمبل تجهیزات بهداشتی در معماری قابل تشخیص نیست، تعداد دقیق هر تجهیز را اعلام کنید؛ مثال: روشویی ۳، توالت ۳، دوش ۳، سینک ۱.'))
         q.append(('water_design_basis', 'فشار استاتیک آب ورودی بر حسب bar، جنس لوله، ضریب Hazen-Williams به‌صورت C=… و محدودیت افت فشار را اعلام کنید.'))
         q.append(('sanitary_design_basis', 'جنس لوله فاضلاب، تراز اتصال به شبکه/چاه و شیب مجاز اجرایی را اعلام کنید.'))
         if not re.search(r'بدون گاز|گاز ندارد|no gas', text):
