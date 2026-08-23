@@ -369,4 +369,12 @@ def infer_architecture_facts(analysis, discipline):
         auto['level_profiles'] = []
         auto['typical_groups'] = []
         auto['effective_level_inference'] = 'fallback-no-level-profile'
+    files = (analysis or {}).get('files') or []
+    fixture_counts = Counter()
+    for file_info in files:
+        fixture_counts.update(file_info.get('fixture_counts') or {})
+    auto['fixture_counts'] = dict(fixture_counts)
+    auto['fixture_blocks_detected'] = sum(fixture_counts.values())
+    auto['roof_drain_count'] = sum(int(x.get('roof_drain_count') or 0) for x in files)
+    auto['roof_area_m2'] = auto.get('geometry_area_m2') if any(p.get('roof') for p in profiles) else None
     return auto
