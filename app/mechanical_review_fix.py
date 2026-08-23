@@ -4,7 +4,7 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from .mechanical_drawing_set import approve_drawing_set
-from .mechanical_workflow import create_proposal, proposal_is_current
+from .mechanical_workflow import _discipline, create_proposal, proposal_is_current
 
 
 FAMILY_ORDER = (
