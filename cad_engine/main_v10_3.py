@@ -144,7 +144,37 @@ def _cooling_special(doc, roof, project_id):
     return {'layout': name, 'group': 'C', 'special': True}
 
 
+def _norm_level(value):
+    return ''.join(str(value or '').strip().lower().replace('ي', 'ی').replace('ك', 'ک').split())
+
+
+def _manifest_level(sheet, levels):
+    wanted = [_norm_level(x) for x in (sheet.get('levels') or [])]
+    for level in levels:
+        actual = _norm_level(level.get('level'))
+        if actual in wanted:
+            return level
+    for level in levels:
+        actual = _norm_level(level.get('level'))
+        if any(actual and (actual in x or x in actual) for x in wanted):
+            return level
+    raise RuntimeError(
+        f"Approved sheet {sheet.get('code')} references levels not found in CAD: "
+        f"{sheet.get('levels')}; detected={[x.get('level') for x in levels]}"
+    )
+
+
 def _compose_authority_layouts(doc, levels, project_id, systems, calc):
+    manifest = calc.get('_approved_drawing_manifest') or {}
+    sheets = manifest.get('sheets') or []
+    expected = int(manifest.get('total_sheets') or -1)
+    if expected < 1 or expected != len(sheets):
+        raise RuntimeError('Approved mechanical drawing manifest is missing or invalid.')
+
+    expected_codes = [str(x.get('code') or '') for x in sheets]
+    if any(not x for x in expected_codes) or len(expected_codes) != len(set(expected_codes)):
+        raise RuntimeError('Approved mechanical drawing manifest has missing or duplicate sheet codes.')
+
     _remove_old_issue_layouts(doc)
     created = []
     counts = {key: 0 for key, _, _ in AUTHORITY_GROUPS}
@@ -153,27 +183,51 @@ def _compose_authority_layouts(doc, levels, project_id, systems, calc):
         if v8._is_roof(level):
             level['roof_drains'] = v8._roof_drain_points(msp, level, levels)
 
-    for group, title, layers in AUTHORITY_GROUPS:
-        index = 0
-        for level in levels:
-            if not _effective_for_group(level, group, systems, calc):
-                continue
-            index += 1
-            code = f'M-{group}-{index:02d}'
-            row = _plan_view(doc, level, project_id, code, title, layers)
-            row['group'] = group
-            created.append(row)
-        counts[group] = index
-
-    water_levels = [x for x in levels if _effective_for_group(x, 'W', systems, calc)]
-    if len(water_levels) >= 2:
-        created.append(_water_special(doc, water_levels, project_id)); counts['W'] += 1
-
+    group_defs = {key: (title, layers) for key, title, layers in AUTHORITY_GROUPS}
+    family_groups = {
+        'water_supply': 'W', 'sanitary_vent': 'S', 'heating': 'H',
+        'cooling': 'C', 'gas': 'G', 'ventilation_exhaust': 'V',
+        'roof_rainwater': 'R',
+    }
     roofs = [x for x in levels if v8._is_roof(x)]
-    if counts['C'] >= 1 and roofs:
-        created.append(_cooling_special(doc, roofs[0], project_id)); counts['C'] += 1
+
+    for sheet in sheets:
+        code = str(sheet['code'])
+        family = str(sheet.get('family') or '')
+        group = family_groups.get(family)
+        if not group:
+            raise RuntimeError(f'Unsupported approved mechanical sheet family: {family}')
+        title, layers = group_defs[group]
+        special = bool(sheet.get('special'))
+
+        if code == 'M-W-SPECIAL':
+            water_levels = [
+                x for x in levels
+                if _effective_for_group(x, 'W', systems, calc)
+            ]
+            row = _water_special(doc, water_levels, project_id)
+        elif code == 'M-C-EQUIP':
+            row = _cooling_special(doc, roofs[0] if roofs else None, project_id)
+        else:
+            level = _manifest_level(sheet, levels)
+            row = _plan_view(
+                doc, level, project_id, code,
+                str(sheet.get('label') or title), layers,
+            )
+            row['special'] = special
+        row['layout'] = code
+        row['group'] = group
+        row['manifest_pattern'] = sheet.get('pattern')
+        row['manifest_levels'] = list(sheet.get('levels') or [])
+        created.append(row)
+        counts[group] += 1
 
     _finish_layout_reset(doc, created[0]['layout'] if created else None)
+    actual_codes = [x['layout'] for x in created]
+    if actual_codes != expected_codes:
+        raise RuntimeError(
+            f'Generated sheet manifest mismatch: expected={expected_codes}; generated={actual_codes}'
+        )
     return created, counts
 
 
@@ -196,17 +250,23 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
     if not created:
         raise RuntimeError('Authority sheet compositor produced no mechanical deliverables.')
 
+    manifest = calc.get('_approved_drawing_manifest') or {}
+    expected_names = [str(x.get('code') or '') for x in (manifest.get('sheets') or [])]
     issued_names = [x.name for x in doc.layouts if x.name.startswith('M-')]
-    if len(issued_names) != len(created):
+    if issued_names != expected_names:
         raise RuntimeError(
-            'Authority deliverable count does not match issued CAD layout count: '
-            f'created={len(created)} {[x["layout"] for x in created]}; issued={len(issued_names)} {issued_names}; counts={counts}'
+            'Approved manifest does not match issued CAD layouts: '
+            f'expected={expected_names}; issued={issued_names}; counts={counts}'
         )
 
     doc.saveas(dst)
     meta['authority_submission'] = {
         'profile': 'local_engineering_organization',
         'system_separated': True,
+        'expected_sheet_count': len(expected_names),
+        'generated_sheet_count': len(issued_names),
+        'validation_status': 'PASS',
+        'manifest_id': manifest.get('manifest_id'),
         'layout_count': len(created),
         'counts': counts,
         'layouts': [x['layout'] for x in created],
