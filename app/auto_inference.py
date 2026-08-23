@@ -2,7 +2,13 @@ import math
 import re
 from collections import Counter
 
-from .mechanical_rulebook import WATER, automatic_answers
+from .mechanical_rulebook import (
+    DEFAULT_GAS_PROPOSAL,
+    WATER,
+    automatic_answers,
+    fixture_schedule_proposal,
+    roof_geometry_proposal,
+)
 
 ROOM_RULES = {
     'kitchen': ['kitchen', 'آشپزخانه', 'اشپزخانه'],
@@ -262,6 +268,8 @@ def canonical_auto_answers(auto, discipline):
         if auto.get('estimated_heating_load_kw') is not None:
             a['heating_load_kw'] = str(auto['estimated_heating_load_kw'])
         a.update(automatic_answers(auto))
+        if auto.get('floor_height_inferred'):
+            a['heights'] = auto['floor_height_inferred']
         if auto.get('water_inlet_pressure_inferred'):
             a['water_inlet_pressure'] = auto['water_inlet_pressure_inferred']
         if auto.get('sanitary_outlet_inferred'):
@@ -288,7 +296,7 @@ def dynamic_questions(analysis, discipline, auto):
         q.append(('location', 'شهر و محل پروژه کجاست؟ این مورد برای شرایط اقلیمی و الزامات محلی لازم است.'))
     if not auto.get('occupancy_inferred'):
         q.append(('occupancy', 'کاربری دقیق ساختمان چیست؟ این مورد از پلان با اطمینان کافی تشخیص داده نشد.'))
-    if not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
+    if discipline == 'electrical' and not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
         q.append(('heights', 'ارتفاع طبقات و وضعیت سقف کاذب را بفرمایید؛ این اطلاعات در پلان دوبعدی پیدا نشد.'))
 
     if discipline == 'electrical':
@@ -301,11 +309,11 @@ def dynamic_questions(analysis, discipline, auto):
         q.append(('special_loads', 'آیا بار الکتریکی خاصی خارج از آنچه از پلان قابل تشخیص است دارید؟ مثل جکوزی، سونا، پمپ خاص، شارژر خودرو یا تجهیزات صنعتی. اگر ندارید بنویسید «ندارد».'))
     else:
         if not auto.get('gas_absence_inferred'):
-            q.append(('gas', 'آیا ساختمان گاز دارد؟ اگر ندارد بنویسید «ندارد». اگر دارد، تجهیزات گازسوز و ظرفیت هرکدام، فشار انشعاب و محل کنتور/رگلاتور را اعلام کنید.'))
+            q.append(('gas', f'پیشنهاد Rule Book برای پروژه گازدار: پکیج ۲۴ kW، اجاق ۱۰ kW، فشار ۲۱ mbar و کنتور/رگلاتور در ورودی. پاسخ کوتاه: «تأیید»، «بدون گاز» یا اصلاح مورد خاص.'))
         if not re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار|kpa|کیلو.?پاسکال|متر ستون آب)', text, re.I):
             q.append(('water_inlet_pressure', 'فشار واقعی آب در محل ورود به ساختمان چقدر است؟ مقدار را با bar اعلام کنید؛ اگر اندازه‌گیری نشده بنویسید «نمی‌دانم».'))
         if not re.search(r'فاضلاب شهری|چاه|sewer|septic', text):
-            q.append(('sanitary_outlet', 'خروجی فاضلاب به شبکه شهری است یا چاه/سپتیک؟ اگر تراز اتصال مشخص است همان را هم اعلام کنید.'))
+            q.append(('sanitary_outlet', 'پیشنهاد: اتصال به شبکه فاضلاب شهری در مرز پروژه. پاسخ کوتاه: «تأیید»، «چاه/سپتیک» یا تراز متفاوت.'))
         if auto.get('detected_parking'):
             q.append(('parking_enclosure', 'پارکینگ شناسایی شد. پارکینگ باز است یا بسته/محصور؟'))
 
@@ -313,10 +321,12 @@ def dynamic_questions(analysis, discipline, auto):
         # labels alone. Collect the project-specific engineering inputs that
         # control pipe sizing, slopes, equipment schedules and safe discharge.
         if not auto.get('fixture_blocks_detected'):
-            q.append(('fixture_schedule', 'سمبل تجهیزات بهداشتی با اطمینان کافی پیدا نشد. تعداد دقیق هر تجهیز را اعلام کنید؛ مثال: روشویی ۳، توالت ۳، دوش ۳، سینک ۱.'))
+            proposal = fixture_schedule_proposal(auto)
+            q.append(('fixture_schedule', f'پیشنهاد خودکار تجهیزات بر اساس فضاهای معماری: {proposal}. پاسخ کوتاه: «تأیید» یا فقط اصلاح تعدادهای متفاوت.'))
         if any('بام' in str(x.get('name') or '') or 'roof' in str(x.get('name') or '').lower() for x in (auto.get('levels') or [])):
             if not auto.get('roof_drain_count') or not auto.get('roof_area_m2'):
-                q.append(('roof_drainage_geometry', 'اگر در پلان بام قابل تشخیص نیست، مساحت مؤثر بام، تعداد کف‌خواب‌ها و محل نقاط کم‌ارتفاع را اعلام کنید. شدت بارندگی را Rule Book از شهر پروژه تعیین می‌کند.'))
+                proposal = roof_geometry_proposal(auto)
+                q.append(('roof_drainage_geometry', f'پیشنهاد خودکار بام: {proposal}. شدت بارندگی از شهر پروژه تعیین می‌شود. پاسخ کوتاه: «تأیید» یا فقط عدد متفاوت مساحت/کف‌خواب.'))
 
     return q
 
@@ -332,7 +342,7 @@ def auto_summary(auto, discipline):
     if discipline == 'mechanical' and auto.get('estimated_water_flow_lps') is not None:
         items.append(f"دبی اولیه آب از Fixtureهای تشخیص‌داده‌شده ≈ {auto['estimated_water_flow_lps']} L/s")
     if discipline == 'mechanical':
-        items.append('جنس لوله، ضرایب هیدرولیکی، شیب‌ها، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v1.4 تعیین می‌شود')
+        items.append('جنس لوله، ضرایب هیدرولیکی، شیب‌ها، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v1.5 تعیین می‌شود')
         if auto.get('fixture_blocks_detected'):
             items.append(f"{auto['fixture_blocks_detected']} سمبل واقعی تجهیزات مکانیکی/بهداشتی از DXF تشخیص داده شد")
     return items
