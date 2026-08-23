@@ -13,6 +13,7 @@ from .auto_inference_v2 import (
     canonical_auto_answers,
     dynamic_questions,
     auto_summary,
+    classify_room,
 )
 
 app = legacy.app
@@ -71,14 +72,27 @@ def analyze_dxf_enhanced(path):
         height_m = abs(maxy - miny) * unit_to_m
         area_m2 = width_m * height_m
 
+    # Do not truncate before semantic analysis. Large authority drawings often
+    # put the actual architectural plans after title blocks, details, and
+    # repeated annotation entities. Keep every room/plan label, regardless of
+    # entity order, while bounding unrelated text stored in the project record.
+    def is_architecture_label(value):
+        normalized = str(value or '').replace('ي', 'ی').replace('ك', 'ک').replace('\u200c', ' ').lower()
+        plan_markers = ('پلان معماری', 'architectural plan', 'architecture plan')
+        return any(marker in normalized for marker in plan_markers) or classify_room(normalized) is not None
+
+    semantic_labels = [item for item in text_labels if is_architecture_label(item.get('text'))]
+    semantic_texts = [item['text'] for item in semantic_labels]
+    retained_texts = list(dict.fromkeys(texts[:1000] + semantic_texts))
+
     return {
         'file': path.name,
         'version': doc.dxfversion,
         'insunits': insunits,
         'layers': [l.dxf.name for l in doc.layers],
         'entities': dict(counts),
-        'texts': texts[:1000],
-        'text_labels': text_labels[:1000],
+        'texts': retained_texts[:20000],
+        'text_labels': semantic_labels[:20000],
         'geometry_bounds': [minx, miny, maxx, maxy] if minx is not None else None,
         'geometry_width_m': round(width_m, 3) if width_m is not None else None,
         'geometry_height_m': round(height_m, 3) if height_m is not None else None,
