@@ -64,7 +64,7 @@ class EffectiveTypicalInferenceTests(unittest.TestCase):
         self.assertEqual(scope['ventilation_required_levels'], ['Ground'])
         self.assertTrue(scope['roof_exists'])
 
-    def test_typical_group_reduces_actual_deliverable_count(self):
+    def test_typical_group_reduces_within_each_system_not_across_systems(self):
         levels = ['L1', 'L2', 'L3']
         result = predict_drawing_set({
             'all_levels': levels,
@@ -78,8 +78,11 @@ class EffectiveTypicalInferenceTests(unittest.TestCase):
             'vertical_systems': True,
             'typical_groups': [{'name': 'Typical L1-L3', 'levels': levels, 'confidence': 'high'}],
         })
-        self.assertEqual(result['deliverable_sheet_count'], 5)
-        self.assertEqual(len(result['deliverable_sheets']), 5)
+        # Six separated system-family typical sheets + one water special sheet.
+        self.assertEqual(result['deliverable_sheet_count'], 7)
+        self.assertEqual(len(result['deliverable_sheets']), 7)
+        self.assertEqual(result['sheet_families']['water_supply']['count'], 2)
+        self.assertEqual(result['sheet_families']['cooling']['count'], 1)
 
 
 if __name__ == '__main__':
