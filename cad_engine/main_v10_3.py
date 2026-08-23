@@ -41,7 +41,7 @@ def _resolved_authority_value(value):
         return False
     unresolved = (
         'پیشنهاد شود', 'پیشنهاد سیستم', 'نامشخص', 'بعداً', 'بعدا',
-        'unresolved', 'unknown', 'tbd', 'verify',
+        'نمی‌دانم', 'نمیدانم', 'unresolved', 'unknown', 'tbd', 'verify',
     )
     return not any(marker in text for marker in unresolved)
 
@@ -62,8 +62,8 @@ def _authority_input_gaps(calc):
     }
     if 'water_supply' in families:
         requirements.update({
-            'water source / tank / pump decision': ('water_source', 'water'),
-            'water pressure, material and pressure-loss basis': ('water_design_basis',),
+            'water inlet pressure': ('water_inlet_pressure',),
+            'Rulebook water material and pressure-loss basis': ('water_design_basis',),
         })
     if 'sanitary_vent' in families:
         requirements.update({
@@ -79,12 +79,12 @@ def _authority_input_gaps(calc):
     if 'gas' in families and not _negative(inputs.get('gas')):
         requirements.update({
             'gas service decision': ('gas',),
-            'gas appliance loads, inlet pressure and meter/regulator location': ('gas_appliances',),
+            'gas appliance loads, inlet pressure and meter/regulator location': ('gas_appliances', 'gas'),
         })
     if 'ventilation_exhaust' in families:
         requirements['ventilation airflow and discharge/make-up-air basis'] = ('ventilation_design_basis',)
     if 'roof_rainwater' in families:
-        requirements['roof area, drain locations and rainfall design basis'] = ('roof_drainage_basis',)
+        requirements['roof area, drain locations and rainfall design basis'] = ('roof_drainage_basis', 'roof_drainage_geometry')
 
     gaps = []
     for label, keys in requirements.items():
