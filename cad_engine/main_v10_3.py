@@ -5,6 +5,9 @@ packages that geometry into the system-separated drawing set used by the local
 Engineering Organization submission profile.
 """
 
+import tempfile
+from pathlib import Path
+
 import ezdxf
 
 from . import main_v10_2 as base
@@ -216,19 +219,109 @@ def _manifest_level(sheet, levels):
         actual = _norm_level(level.get('level'))
         if any(actual and (actual in x or x in actual) for x in wanted):
             return level
-    # The approved manifest is the single source of truth for sheet creation.
-    # Legacy CAD level parsing can miss plans stored in nested/unreferenced blocks;
-    # it must never reduce or reject the customer-approved deliverable count.
-    # Reuse detected geometry as a viewport fallback while retaining the approved
-    # level identity on the issued sheet.
-    if levels:
-        fallback = dict(levels[0])
-        fallback['level'] = (sheet.get('levels') or [sheet.get('pattern') or 'Approved level'])[0]
-        fallback['manifest_geometry_fallback'] = True
-        return fallback
     raise RuntimeError(
-        f"Approved sheet {sheet.get('code')} cannot be composed because CAD detected no plan geometry."
+        f"Approved sheet {sheet.get('code')} cannot be composed because its exact level geometry "
+        f"was not detected: {sheet.get('levels') or sheet.get('pattern')}."
     )
+
+
+def _analysis_level_profiles(calc):
+    analysis = calc.get('_plan_analysis') or {}
+    auto = analysis.get('architectural_auto') or {}
+    return auto.get('level_profiles') or []
+
+
+def _materialize_analyzer_blocks(src, output_path, calc):
+    """Expose analyzer-approved named-block plans to the legacy CAD detector.
+
+    Architecture Analyzer can legitimately select plans stored in unreferenced
+    named blocks.  The CAD engine historically inspected modelspace only.  This
+    function uses the analyzer provenance to explode just those source blocks
+    into a temporary modelspace; unrelated blocks are never guessed or merged.
+    """
+    names = []
+    for profile in _analysis_level_profiles(calc):
+        if profile.get('source_type') != 'block':
+            continue
+        name = str(profile.get('source_name') or '')
+        if name and name not in names:
+            names.append(name)
+    if not names:
+        return Path(src), []
+
+    doc = ezdxf.readfile(src)
+    msp = doc.modelspace()
+    existing = {str(x.dxf.name) for x in msp.query('INSERT')}
+    materialized = []
+    for name in names:
+        if name in existing:
+            continue
+        try:
+            ref = msp.add_blockref(name, (0, 0))
+        except Exception as exc:
+            raise RuntimeError(f'Analyzer source block is unavailable in CAD: {name}: {exc}')
+        pending = list(ref.explode(target_layout=msp))
+        # explode() resolves one nesting level. Resolve only descendants created
+        # from this analyzer-selected source, leaving original modelspace INSERTs.
+        while True:
+            nested = [entity for entity in pending if entity.dxftype() == 'INSERT']
+            if not nested:
+                break
+            next_pending = [entity for entity in pending if entity.dxftype() != 'INSERT']
+            for entity in nested:
+                try:
+                    next_pending.extend(list(entity.explode(target_layout=msp)))
+                except Exception as exc:
+                    raise RuntimeError(f'Cannot expand nested architecture block {name}: {exc}')
+            pending = next_pending
+        materialized.append(name)
+    if not materialized:
+        return Path(src), []
+    doc.saveas(output_path)
+    return Path(output_path), materialized
+
+
+def _entity_text(entity):
+    try:
+        if entity.dxftype() == 'TEXT':
+            return str(entity.dxf.text or '')
+        if entity.dxftype() == 'MTEXT':
+            return str(entity.plain_text() or '')
+    except Exception:
+        pass
+    return ''
+
+
+def _technical_issue_gaps(doc, manifest):
+    """Fail closed on visibly unresolved mechanical issue content."""
+    forbidden = ('R?', 'EXH?', 'UNRESOLVED', 'VERIFY', 'TBD', 'UNKNOWN')
+    hits = []
+    for layout in doc.layouts:
+        for entity in layout:
+            layer = str(getattr(entity.dxf, 'layer', '') or '')
+            if layout.name == 'Model' and not layer.startswith('ENGITOOLS-M-'):
+                continue
+            value = _entity_text(entity).upper()
+            if value and any(token in value for token in forbidden):
+                hits.append(f'{layout.name}:{value[:80]}')
+    expected_families = {str(x.get('family') or '') for x in (manifest.get('sheets') or [])}
+    family_layers = {
+        'water_supply': {'ENGITOOLS-M-COLD_WATER', 'ENGITOOLS-M-HOT_WATER'},
+        'sanitary_vent': {'ENGITOOLS-M-SANITARY', 'ENGITOOLS-M-VENT'},
+        'heating': {'ENGITOOLS-M-HEATING_SUPPLY', 'ENGITOOLS-M-HEATING_RETURN'},
+        'cooling': {'ENGITOOLS-M-COOLING', 'ENGITOOLS-M-CONDENSATE'},
+        'gas': {'ENGITOOLS-M-GAS'},
+        'ventilation_exhaust': {'ENGITOOLS-M-EXHAUST_VENTILATION'},
+        'roof_rainwater': {'ENGITOOLS-M-RAINWATER'},
+    }
+    present = {str(getattr(entity.dxf, 'layer', '') or '') for entity in doc.modelspace()}
+    empty = [family for family in expected_families if not (family_layers.get(family, set()) & present)]
+    gaps = []
+    if hits:
+        gaps.append('unresolved markers: ' + ' | '.join(hits[:8]))
+    if empty:
+        gaps.append('empty required system families: ' + ', '.join(sorted(empty)))
+    return gaps
 
 
 def _compose_authority_layouts(doc, levels, project_id, systems, calc):
@@ -311,7 +404,15 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
     effective_systems = list(systems or [])
     if discipline == 'mechanical' and 'rainwater' not in effective_systems:
         effective_systems.append('rainwater')
-    meta = _base_design(src, dst, discipline, effective_systems, revision, calc)
+    materialized = []
+    if discipline == 'mechanical':
+        with tempfile.TemporaryDirectory(prefix='engitools-level-source-') as td:
+            source, materialized = _materialize_analyzer_blocks(
+                src, Path(td) / 'architecture_levels.dxf', calc,
+            )
+            meta = _base_design(source, dst, discipline, effective_systems, revision, calc)
+    else:
+        meta = _base_design(src, dst, discipline, effective_systems, revision, calc)
     if discipline != 'mechanical':
         return meta
 
@@ -335,6 +436,13 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
             f'expected={expected_names}; issued={issued_names}; counts={counts}'
         )
 
+    technical_gaps = _technical_issue_gaps(doc, manifest)
+    if technical_gaps:
+        raise RuntimeError(
+            'Authority-ready mechanical generation blocked by technical content QA: '
+            + '; '.join(technical_gaps)
+        )
+
     doc.saveas(dst)
     meta['authority_submission'] = {
         'profile': 'local_engineering_organization',
@@ -348,6 +456,8 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
         'layouts': [x['layout'] for x in created],
         'combined_approval_families': False,
         'generic_riser_calc_extra_sheet': False,
+        'materialized_analyzer_blocks': materialized,
+        'technical_content_validation': 'PASS',
     }
     meta['design_standard'] = 'Rulebook authority-separated mechanical submission'
     return meta
