@@ -489,7 +489,10 @@ def _relative_riser_vectors(doc, levels):
     msp = doc.modelspace()
     vectors = []
     for level in levels:
-        p = _find_level_riser(msp, level)
+        # hub_for_v8 always routes the generated stack through forced_hub.
+        # Using that committed datum prevents overlapping plan extents from
+        # making the QA scanner select a neighbouring level's riser symbol.
+        p = level.get('forced_hub') or _find_level_riser(msp, level)
         if p:
             t = level['title']['point']
             vectors.append((p[0] - t[0], p[1] - t[1]))
