@@ -5,11 +5,13 @@ from fastapi.responses import JSONResponse
 
 
 FAMILY_ORDER = (
-    'plumbing_gas',
-    'sanitary_vent_rain',
-    'heating_cooling_condensate',
+    'water_supply',
+    'sanitary_vent',
+    'heating',
+    'cooling',
+    'gas',
     'ventilation_exhaust',
-    'riser_calc',
+    'roof_rainwater',
 )
 
 
@@ -43,6 +45,8 @@ def review_question_html(drawing_set):
         pattern_names = []
         for sheet in sheets:
             name = sheet.get('pattern') or ', '.join(str(x) for x in (sheet.get('levels') or []))
+            if sheet.get('special') and sheet.get('label'):
+                name = sheet.get('label')
             if name:
                 pattern_names.append(escape(str(name)))
         detail = f" — {', '.join(pattern_names)}" if pattern_names else ''
@@ -55,11 +59,12 @@ def review_question_html(drawing_set):
         '<div style="text-align:right;font-size:16px;line-height:2">'
         '<div style="font-size:20px;font-weight:800;margin-bottom:8px">لیست شیت‌های نهایی قابل تحویل مکانیک</div>'
         '<p style="font-size:14px;color:#667085;margin:0 0 10px">'
-        'این تعداد دقیقاً تعداد شیت‌هایی است که موتور CAD برای تحویل تولید خواهد کرد؛ سیستم‌های ترکیبی دوباره شمرده نمی‌شوند.</p>'
+        'این تعداد دقیقاً تعداد نقشه‌های مجزایی است که برای تحویل و تأیید نظام مهندسی تولید خواهد شد. '
+        'سیستم‌های تأییدی متفاوت در شمارش مشتری با هم ادغام نمی‌شوند.</p>'
         f'<ul style="margin:8px 0 14px;padding-right:22px">{items}</ul>'
         f'<div style="font-size:18px;font-weight:800">مجموع قابل تحویل: {total} شیت</div>'
         '<p style="font-size:14px;font-weight:400;color:#667085;margin:10px 0 14px">'
-        'طبقات تیپ قبل از محاسبه نهایی ادغام شده‌اند. طراحی CAD تا تأیید این لیست شروع نمی‌شود.</p>'
+        'Effective Level و طبقات تیپ فقط داخل همان سیستم اعمال می‌شوند. طراحی CAD تا تأیید این لیست شروع نمی‌شود.</p>'
         '<style>#answerForm textarea,#answerForm>button{display:none!important}</style>'
         '<button type="button" class="btn primary wide" '
         'onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">'
@@ -75,10 +80,7 @@ def decorate_review_payload(data, drawing_set):
     data['current_index'] = 0
     data['progress'] = 100
     data['drawing_set'] = drawing_set or {}
-    data['question'] = {
-        'key': '_drawing_set_approval',
-        'question': review_question_html(drawing_set),
-    }
+    data['question'] = {'key': '_drawing_set_approval', 'question': review_question_html(drawing_set)}
     return data
 
 
