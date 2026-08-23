@@ -129,16 +129,23 @@ def _apply_vertical_reference(levels):
 def hub_for_v8(level, msp, r, th):
     expected = level.get('forced_hub')
     shafts = [x['point'] for x in level.get('rooms', []) if x['room'] == 'shaft']
-    if shafts:
-        selected = min(shafts, key=lambda p: math.dist(p, expected)) if expected else shafts[0]
-        return selected, 'existing-shaft'
     if expected:
+        # The authority set requires one vertically aligned riser datum.  An
+        # architectural shaft on another floor may be offset; snapping each
+        # floor independently to that shaft produces a broken riser.  Use the
+        # common projected datum and surface any shaft offset as a coordination
+        # note rather than silently bending the vertical stack.
+        nearest = min(shafts, key=lambda p: math.dist(p, expected)) if shafts else None
+        if nearest is not None and math.dist(nearest, expected) <= .75:
+            return expected, 'existing-shaft-aligned'
         engine.add_box(msp, expected, r * .85, 'ENGITOOLS-M-MECHANICAL_RISERS', 'R', th)
         msp.add_text(
-            'MECHANICAL RISER ALIGNMENT - ARCHITECTURAL SHAFT',
+            'MECHANICAL RISER ALIGNMENT - VERIFY SHAFT COORDINATION',
             dxfattribs={'layer': 'ENGITOOLS-M-NOTES', 'height': th * .65},
         ).set_placement((expected[0] + r, expected[1] + r))
         return expected, 'projected-from-vertical-reference'
+    if shafts:
+        return shafts[0], 'existing-shaft'
     return _base_hub_for(level, msp, r, th)
 
 
