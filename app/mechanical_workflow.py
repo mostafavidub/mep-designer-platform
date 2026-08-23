@@ -121,6 +121,23 @@ def build_scope(p):
     ventilation_candidates = _profile_levels(p, 'ventilation_candidate', levels)
     gas_candidates = _profile_levels(p, 'gas_candidate', levels)
 
+    # Missing room labels are not evidence that an occupied authority level does
+    # not need plumbing, sanitary, ventilation, or gas drawings. DXFs commonly
+    # omit or explode individual room names. Use every detected non-roof level
+    # as the conservative deliverable scope; explicit questionnaire negatives
+    # remain authoritative.
+    if profiles_available:
+        non_roof_levels = [
+            str(profile.get('name')) for profile in (auto.get('level_profiles') or [])
+            if profile.get('name') and not profile.get('roof')
+        ]
+        non_roof_levels = list(dict.fromkeys(non_roof_levels))
+        wet_candidates = non_roof_levels
+        sanitary_candidates = non_roof_levels
+        ventilation_candidates = non_roof_levels
+        if not _negative(answers.get('gas')):
+            gas_candidates = non_roof_levels
+
     heating = [] if _negative(answers.get('heating')) else conditioned_candidates
     cooling = [] if _negative(answers.get('cooling')) else conditioned_candidates
     ventilation = [] if _negative(answers.get('ventilation')) else ventilation_candidates
