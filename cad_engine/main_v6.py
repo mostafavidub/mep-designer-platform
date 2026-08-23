@@ -269,8 +269,8 @@ def hub_for(level, msp, r, th):
     if wet:
         c = (sum(p[0] for p in wet)/len(wet), sum(p[1] for p in wet)/len(wet))
         h = min(corridors, key=lambda p: math.dist(p,c)) if corridors else c
-        engine.add_box(msp, h, r*.85, 'ENGITOOLS-M-MECHANICAL_RISERS', 'R?', th)
-        msp.add_text('PROPOSED RISER - VERIFY', dxfattribs={'layer':'ENGITOOLS-M-NOTES','height':th*.7}).set_placement((h[0]+r,h[1]+r))
+        engine.add_box(msp, h, r*.85, 'ENGITOOLS-M-MECHANICAL_RISERS', 'R', th)
+        msp.add_text('MECHANICAL RISER - COORDINATE WITH ARCHITECTURAL SHAFT', dxfattribs={'layer':'ENGITOOLS-M-NOTES','height':th*.7}).set_placement((h[0]+r,h[1]+r))
         return h, 'proposed-verify'
     return level['title']['point'], 'title-fallback'
 
@@ -350,10 +350,10 @@ def add_riser_legend(msp, levels, stats, calc, systems):
     fy=y-gap
     for level in levels:
         msp.add_text(level['level'],dxfattribs={'layer':layer,'height':h*.55}).set_placement((x0+span*.31,fy)); msp.add_line((x0-span*.02,fy),(x0+span*.28,fy),dxfattribs={'layer':'ENGITOOLS-M-MECHANICAL_RISERS'}); fy-=gap
-    msp.add_text('UP TO ROOF / SEE RISER - VERIFY TERMINATIONS',dxfattribs={'layer':layer,'height':h*.58}).set_placement((x0,y-vh-gap*.3))
+    msp.add_text('UP TO ROOF / SEE COORDINATED RISER TERMINATIONS',dxfattribs={'layer':layer,'height':h*.58}).set_placement((x0,y-vh-gap*.3))
     y2=y-vh-gap*1.6
-    notes=['PRELIMINARY ENGINEERING DRAFT - PROFESSIONAL REVIEW REQUIRED','PIPE DIAMETERS / SLOPES / PRESSURE LOSS: VERIFY BY PROJECT CALCULATION','SANITARY / VENT SIZING: FIXTURE-UNIT + CODE INPUTS REQUIRED','GAS SIZING: APPLIANCE LOADS + AUTHORITY REQUIREMENTS REQUIRED','ALL R? LOCATIONS REQUIRE ARCHITECTURAL COORDINATION',f"LEVELS: {len(levels)} | ROOMS: {stats['rooms']} | FIXTURE BLOCKS: {stats['fixtures_detected']}"]
-    if calc.get('preliminary_nominal_pipe_candidate_mm'): notes.append(f"CW MAIN CANDIDATE DN {calc['preliminary_nominal_pipe_candidate_mm']} mm - PRELIMINARY / VERIFY")
+    notes=['PRELIMINARY ENGINEERING DRAFT - PROFESSIONAL REVIEW REQUIRED','PIPE DIAMETERS / SLOPES / PRESSURE LOSS: SEE RESOLVED PROJECT DESIGN BASIS','SANITARY / VENT SIZING: SEE FIXTURE-UNIT DESIGN BASIS','GAS SIZING: SEE APPLIANCE LOAD AND AUTHORITY DESIGN BASIS','RISER LOCATIONS REQUIRE ARCHITECTURAL SHAFT COORDINATION',f"LEVELS: {len(levels)} | ROOMS: {stats['rooms']} | FIXTURE BLOCKS: {stats['fixtures_detected']}"]
+    if calc.get('preliminary_nominal_pipe_candidate_mm'): notes.append(f"CW MAIN CANDIDATE DN {calc['preliminary_nominal_pipe_candidate_mm']} mm - PROFESSIONAL REVIEW REQUIRED")
     for note in notes: msp.add_text(note,dxfattribs={'layer':layer,'height':h*.56}).set_placement((x0,y2)); y2-=gap*.9
 
 
@@ -389,7 +389,7 @@ def design_dxf_v6(src,dst,discipline,systems,revision,calc):
     add_riser_legend(msp,levels,stats,calc,systems); report=qa_report(levels,stats,systems,qa)
     if report['score_10']<10.0:
         failed=[k for k,v in report['checks'].items() if not v]; raise RuntimeError(f"Mechanical CAD QA gate failed ({report['score_10']}/10): {', '.join(failed)}")
-    x0,y0,span=presentation_origin(levels); h=max(span*.018,.22); msp.add_text('MECHANICAL CAD QA: 10.0 / 10 - RULEBOOK STRUCTURAL GATES PASS',dxfattribs={'layer':'ENGITOOLS-M-NOTES','height':h*.65}).set_placement((x0,y0+h*1.6))
+    x0,y0,span=presentation_origin(levels); h=max(span*.018,.22); msp.add_text('AUTOMATION STRUCTURE QA PASS - PROFESSIONAL REVIEW REQUIRED',dxfattribs={'layer':'ENGITOOLS-M-NOTES','height':h*.65}).set_placement((x0,y0+h*1.6))
     doc.saveas(dst)
     return {'room_labels':sum(len(x['rooms']) for x in levels),'levels':[{'name':x['level'],'rooms':len(x['rooms']),'fixtures':len(x['fixtures']),'provenance':x['provenance']} for x in levels],'placements':dict(stats),'qa':report,'calculation':calc,'design_standard':'Rulebook v1.2 level-based spatial-room traceable mechanical networks'}
 
