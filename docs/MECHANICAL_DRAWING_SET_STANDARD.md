@@ -6,119 +6,105 @@ Mechanical CAD generation must not start before Drawing Set Planning and explici
 
 Flow:
 
-Architecture Upload -> Architecture Analysis -> Mechanical Questions -> Effective-Level Analysis -> Typical-Floor Consolidation -> Deliverable Sheet Composition -> Drawing Set Proposal -> User Approval -> CAD Generation
+Architecture Upload -> Architecture Analysis -> Mechanical Questions -> Effective-Level Analysis -> Typical-Floor Analysis -> Authority Submission Sheet Planning -> Drawing Set Proposal -> User Approval -> CAD Generation
 
-## Customer-facing count semantics
+## Governing customer-facing count
 
-The number displayed to the customer MUST equal the number of CAD sheets expected to be delivered.
+The number displayed to the customer MUST equal the number of separate mechanical drawings/sheets that will actually be issued for approval and delivery.
 
-Internal system scopes MUST NOT be summed as if every system were a separate deliverable sheet. When multiple systems are intentionally composed on one CAD sheet, they count as one deliverable sheet.
+For the local Engineering Organization submission profile, different mechanical disciplines MUST NOT be merged merely to reduce sheet count. A combined internal CAD view is not the same thing as an approval deliverable.
 
-The proposal therefore keeps two concepts separate:
+Therefore the previous composition rule that merged water+gas, heating+cooling, or sanitary+rainwater into one customer-counted sheet is retired for the authority-submission profile.
 
-- System Scope Count: engineering traceability only; not customer-facing.
-- Deliverable Sheet Count: the exact count shown to the customer and used for approval.
+## Authority-separated deliverable families
+
+The default mechanical approval set is separated into these deliverable families:
+
+1. Water supply — cold/hot water and associated water-supply equipment/schematic.
+2. Sanitary + vent — sanitary drainage and vent.
+3. Heating — heating distribution only.
+4. Cooling/HVAC — cooling distribution, condensate and required equipment/roof sheet.
+5. Gas — gas piping only.
+6. Ventilation/exhaust — mechanical ventilation and exhaust only.
+7. Roof/rainwater — dedicated roof drainage plan.
+
+Riser, equipment, calculation and legend information must be placed inside the relevant system family unless a project/authority rule explicitly requires an additional dedicated sheet. A generic extra M-RISER-CALC sheet must not be added by default because it changes the approved deliverable count.
 
 ## Effective Levels
 
-A system is active only on levels where that system has a real design requirement. The planner must determine Effective Levels per system from architecture and resolved project inputs.
+A system is active only on levels where that system has a real design requirement. Effective Levels must be determined per system from architecture and resolved project inputs.
 
-Examples:
-
-- Cooling: conditioned levels only.
+- Cooling: conditioned levels. Required outdoor/equipment level is counted as a special cooling sheet when applicable.
 - Heating: heated levels only.
-- Water Supply: levels with plumbing consumers.
+- Water Supply: levels with plumbing consumers. Multi-level projects also receive the required water-supply riser/equipment/schematic sheet.
 - Sanitary/Vent: levels with sanitary fixtures/drainage scope.
-- Ventilation: levels requiring mechanical ventilation/exhaust.
+- Ventilation/Exhaust: levels requiring mechanical ventilation/exhaust.
 - Gas: levels with gas consumers when gas is enabled.
-- Roof Drainage: required only where roof drainage scope exists.
-- Riser: required when vertical systems span multiple levels.
+- Roof/Rainwater: one dedicated roof drainage sheet where roof drainage is required.
 
-No level may be counted merely because it exists architecturally if the relevant system has no scope on that level.
+A level must never be included just because it exists architecturally, except for a required system-specific special sheet (for example roof cooling equipment or a water riser/equipment sheet).
 
-## Typical Floor Consolidation
+## Typical Floor rule
 
-Before counting deliverable sheets, Effective Levels must be grouped by unique mechanical pattern.
+Typical-floor detection remains mandatory, but it is system-specific and must never be used to combine different systems.
 
-Floors may be consolidated into one Typical Floor sheet only when the architecture/mechanical analysis identifies them as the same relevant pattern. The grouping must consider, as available:
+Two or more levels may share one Typical Floor sheet for a given system only when all relevant characteristics match:
 
-- architectural geometry and room arrangement;
-- wet-core positions;
-- shafts and vertical references;
+- architecture geometry and room arrangement;
+- wet-core location where relevant;
+- shaft/vertical reference positions;
 - fixture/consumer distribution;
 - equipment/load positions;
-- system-specific scope.
+- the system-specific routing pattern.
 
-A Typical Floor group produces one deliverable sheet for that sheet family. Levels not belonging to a verified typical group remain separate sheets. The planner must never silently drop uncovered levels.
+If any of these materially differs, separate sheets are required. The authority-submission profile is conservative: when Typical equivalence is uncertain, keep separate sheets.
 
-## Deliverable sheet composition
+## Reference authority-approved drawing set
 
-The customer-facing proposal must mirror the current CAD Designer composition rules.
+The supplied approved mechanical reference contains exactly 21 title-block drawing frames (`kadrr56`) in Model Space. The 21 sheets are organized by drawing-code families as follows:
 
-### M-P — Plumbing + Gas
+- Mech-04: 1 roof/rainwater sheet.
+- Mech-05_1..3: 3 sanitary + vent sheets.
+- Mech-06_1..4: 4 water-supply sheets, including the system special/riser/equipment sheet.
+- Mech-07_1..3: 3 heating sheets.
+- Mech-08_1..3: 3 gas sheets.
+- Mech-12_1..4: 4 cooling/HVAC sheets, including the required equipment/roof sheet.
+- Mech-13_1..3: 3 ventilation/exhaust sheets.
 
-One sheet per unique effective level pattern containing:
+Reference total:
 
-- cold water;
-- hot water;
-- gas, when enabled.
+1 + 3 + 4 + 3 + 3 + 4 + 3 = 21 deliverable sheets.
 
-### M-S — Sanitary + Vent + Rainwater
-
-One sheet per unique effective sanitary level pattern containing:
-
-- sanitary drainage;
-- vent;
-- rainwater information when applicable.
-
-Rainwater does not create a second customer-counted sheet unless the CAD Designer explicitly requires a dedicated roof sheet.
-
-### M-H — Heating + Cooling + Condensate
-
-One sheet per unique effective HVAC level pattern containing:
-
-- heating;
-- cooling;
-- condensate drainage where applicable.
-
-### M-V — Ventilation + Exhaust
-
-One sheet per unique effective ventilation level pattern containing ventilation/exhaust scope.
-
-### M-RISER-CALC — Riser + Calculations + Legend
-
-When vertical systems exist, the current deliverable uses one combined riser/calculation/legend sheet unless a future CAD rule explicitly splits it.
+This reference is the regression benchmark for the authority-submission profile. It demonstrates why the old 13-sheet combined-family interpretation was incorrect: that interpretation merged approval disciplines and also added a generic combined riser/calculation sheet that is not how this approved set is organized.
 
 ## Calculation principle
 
-For each deliverable family:
+For each system family:
 
-1. determine active systems;
-2. determine that family's union of Effective Levels;
-3. consolidate verified Typical Floor groups;
-4. count one sheet per remaining unique mechanical level pattern;
-5. add required combined riser/calculation sheet;
-6. add only those special sheets that the CAD Designer will actually generate.
+1. determine its Effective Levels;
+2. apply verified system-specific Typical Floor consolidation only when allowed;
+3. count one separate deliverable sheet per remaining system-level pattern;
+4. add required system-specific special sheets;
+5. add the dedicated roof/rainwater sheet where required;
+6. do not add a generic combined riser/calculation sheet unless explicitly required.
 
-Customer Deliverable Sheet Count = number of composed family sheets + required combined special sheets.
+Customer Deliverable Sheet Count = sum of all authority-separated system-family sheets and required system-specific special sheets.
 
-This value MUST be the same semantic quantity as the final delivered CAD layout count, excluding non-deliverable Model/paper helper layouts.
+The customer-visible count and the final CAD deliverable count MUST be the same semantic quantity.
 
 ## Proposal contract
 
-The proposal must expose:
+The proposal must show:
 
-- deliverable sheet families;
-- sheet code/family;
-- level or Typical Floor pattern represented by each sheet;
-- exact deliverable sheet count;
-- internal system scope separately for traceability;
+- each deliverable system family;
+- exact sheet count per family;
+- level or Typical Floor represented by each sheet;
+- any system-specific special sheet;
+- exact total deliverable sheet count;
 - approval state.
 
-The UI must display the Deliverable Sheet Count, never the raw sum of system scopes.
+The UI must never present an internal combined-family count as the customer deliverable count.
 
 ## Approval Gate
 
-The customer must review and approve the exact deliverable drawing list before mechanical CAD generation can start.
-
-If the proposed deliverable list changes, approval must be obtained again before generation.
+The customer must approve the exact authority-submission drawing list before mechanical CAD generation starts. If the list changes, approval is invalidated and must be obtained again.
