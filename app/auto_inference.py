@@ -4,6 +4,7 @@ from collections import Counter
 
 from .mechanical_rulebook import (
     DEFAULT_GAS_PROPOSAL,
+    DEFAULT_WATER_INLET_PRESSURE,
     WATER,
     automatic_answers,
     fixture_schedule_proposal,
@@ -310,8 +311,10 @@ def dynamic_questions(analysis, discipline, auto):
     else:
         if not auto.get('gas_absence_inferred'):
             q.append(('gas', f'پیشنهاد Rule Book برای پروژه گازدار: پکیج ۲۴ kW، اجاق ۱۰ kW، فشار ۲۱ mbar و کنتور/رگلاتور در ورودی. پاسخ کوتاه: «تأیید»، «بدون گاز» یا اصلاح مورد خاص.'))
-        if not re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار|kpa|کیلو.?پاسکال|متر ستون آب)', text, re.I):
-            q.append(('water_inlet_pressure', 'فشار واقعی آب در محل ورود به ساختمان چقدر است؟ مقدار را با bar اعلام کنید؛ اگر اندازه‌گیری نشده بنویسید «نمی‌دانم».'))
+        # Pressure is a utility fact, but it no longer blocks the customer
+        # flow.  When no measured value exists, Rule Book v1.6 owns a
+        # conservative 2.5 bar + storage/booster design basis.  A numeric value
+        # found in the architecture still overrides this default.
         if not re.search(r'فاضلاب شهری|چاه|sewer|septic', text):
             q.append(('sanitary_outlet', 'پیشنهاد: اتصال به شبکه فاضلاب شهری در مرز پروژه. پاسخ کوتاه: «تأیید»، «چاه/سپتیک» یا تراز متفاوت.'))
         if auto.get('detected_parking'):
@@ -342,7 +345,7 @@ def auto_summary(auto, discipline):
     if discipline == 'mechanical' and auto.get('estimated_water_flow_lps') is not None:
         items.append(f"دبی اولیه آب از Fixtureهای تشخیص‌داده‌شده ≈ {auto['estimated_water_flow_lps']} L/s")
     if discipline == 'mechanical':
-        items.append('جنس لوله، ضرایب هیدرولیکی، شیب‌ها، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v1.5 تعیین می‌شود')
+        items.append('جنس لوله، ضرایب هیدرولیکی، شیب‌ها، فشار مبنای محافظه‌کارانه، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v1.6 تعیین می‌شود')
         if auto.get('fixture_blocks_detected'):
             items.append(f"{auto['fixture_blocks_detected']} سمبل واقعی تجهیزات مکانیکی/بهداشتی از DXF تشخیص داده شد")
     return items
