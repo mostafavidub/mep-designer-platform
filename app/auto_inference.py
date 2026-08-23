@@ -261,14 +261,14 @@ def dynamic_questions(analysis, discipline, auto):
         # Authority-ready mechanical documents cannot be completed from room
         # labels alone. Collect the project-specific engineering inputs that
         # control pipe sizing, slopes, equipment schedules and safe discharge.
-        q.append(('water_design_basis', 'فشار آب ورودی، جنس لوله آب و محدودیت افت فشار را اعلام کنید. اگر اندازه‌گیری نشده است، فشار استاتیک محل کنتور را بر حسب bar ثبت کنید.'))
+        q.append(('water_design_basis', 'فشار استاتیک آب ورودی بر حسب bar، جنس لوله، ضریب Hazen-Williams به‌صورت C=… و محدودیت افت فشار را اعلام کنید.'))
         q.append(('sanitary_design_basis', 'جنس لوله فاضلاب، تراز اتصال به شبکه/چاه و شیب مجاز اجرایی را اعلام کنید.'))
         if not re.search(r'بدون گاز|گاز ندارد|no gas', text):
-            q.append(('gas_appliances', 'فهرست تجهیزات گازسوز، ظرفیت هر دستگاه، فشار گاز ورودی و محل کنتور/رگلاتور را اعلام کنید.'))
-        q.append(('equipment_schedule', 'ظرفیت و محل قطعی تجهیزات گرمایش و سرمایش را اعلام کنید؛ برای هر دستگاه نوع، ظرفیت و محل یونیت بیرونی/داخلی لازم است.'))
-        q.append(('ventilation_design_basis', 'دبی یا نرخ تعویض هوای موردنیاز سرویس‌ها و پارکینگ و محل قطعی تخلیه/هوای جبرانی را اعلام کنید.'))
+            q.append(('gas_appliances', 'فهرست تجهیزات گازسوز، ظرفیت هر دستگاه بر حسب kW، فشار ورودی بر حسب mbar و محل کنتور/رگلاتور را اعلام کنید.'))
+        q.append(('equipment_schedule', 'نوع، ظرفیت و محل قطعی تجهیزات گرمایش و سرمایش را برای هر فضا اعلام کنید؛ ظرفیت‌ها باید با kW یا BTU/h و محل یونیت داخلی/بیرونی مشخص باشند.'))
+        q.append(('ventilation_design_basis', 'دبی طراحی سرویس‌ها و پارکینگ را بر حسب m³/h اعلام کنید و مسیر قطعی تخلیه و هوای جبرانی را نیز مشخص کنید؛ ACH بدون حجم فضا برای طراحی نهایی کافی نیست.'))
         if any('بام' in str(x.get('name') or '') or 'roof' in str(x.get('name') or '').lower() for x in (auto.get('levels') or [])):
-            q.append(('roof_drainage_basis', 'مساحت مؤثر بام، تعداد و محل کف‌خواب‌ها و مبنای شدت بارندگی طراحی را اعلام کنید.'))
+            q.append(('roof_drainage_basis', 'مساحت مؤثر بام بر حسب m²، تعداد عددی و محل کف‌خواب‌ها و شدت بارندگی طراحی بر حسب mm/h را اعلام کنید.'))
 
     return q
 
