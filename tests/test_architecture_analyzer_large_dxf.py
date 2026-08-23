@@ -54,12 +54,17 @@ class LargeDxfArchitectureAnalyzerTests(unittest.TestCase):
             self.assertIn("پلان معماری طبقه همکف", labels)
             self.assertIn("پلان معماری طبقه اول و دوم", labels)
             self.assertIn("پلان معماری بام", labels)
+            self.assertTrue(file_analysis["text_labels"])
+            self.assertTrue(all(x.get("source_type") == "block" for x in file_analysis["text_labels"]))
+            self.assertTrue(all(x.get("source_name") == "ARCH_PLANS" for x in file_analysis["text_labels"]))
 
             analysis = {"files": [file_analysis], "discipline": "mechanical"}
             auto = infer_architecture_facts(analysis, "mechanical")
             analysis["architectural_auto"] = auto
             names = [x["name"] for x in auto["level_profiles"]]
             self.assertEqual(names, ["طبقه همکف", "طبقه اول", "طبقه دوم", "بام"])
+            self.assertTrue(all(x["source_type"] == "block" for x in auto["level_profiles"]))
+            self.assertTrue(all(x["source_name"] == "ARCH_PLANS" for x in auto["level_profiles"]))
             self.assertEqual(auto["typical_groups"][0]["levels"], ["طبقه اول", "طبقه دوم"])
 
             project = SimpleNamespace(
