@@ -5,7 +5,7 @@ from collections import Counter
 
 import requests, ezdxf
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -122,6 +122,7 @@ def qlist(items):
     return [{'key':k,'question':q} for k,q in items]
 
 BLOG = [
+    {'slug':'electrical-building-plan','title':'نقشه برق ساختمان؛ راهنمای طراحی تأسیسات برقی از پلان تا رایزر','excerpt':'راهنمای کاربردی طراحی پلان روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، رایزر، تابلو برق و کنترل نهایی نقشه.','tag':'برق','body':[]},
     {'slug':'mep-input-guide','title':'فایل معماری مناسب برای طراحی تأسیسات چه ویژگی‌هایی دارد؟','excerpt':'چک‌لیست آماده‌سازی DXF برای تحلیل دقیق‌تر لایه‌ها، ترازها و شفت‌ها.','tag':'راهنما','body':['برای شروع طراحی، فایل معماری باید خوانا، مقیاس‌پذیر و فاقد فایل‌های نامرتبط باشد.','پلان‌های ترازهای متفاوت را جدا نگه دارید و نام فضاها، شفت‌ها، بازشوها و اطلاعات اصلی را حذف نکنید.','اگر چند DXF دارید، آن‌ها را در یک ZIP قرار دهید؛ فایل‌های مخفی سیستم به‌صورت خودکار نادیده گرفته می‌شوند.']},
     {'slug':'electrical-plan-scope','title':'تفاوت پلان روشنایی، قدرت، اعلام حریق و جریان ضعیف','excerpt':'چرا یک نقشه برق ممکن است به چند شیت تخصصی تقسیم شود؟','tag':'برق','body':['نقشه برق فقط یک پلان واحد نیست؛ Scope می‌تواند شامل روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، ارت و تابلوها باشد.','اگر تراکم اطلاعات خوانایی را کاهش دهد، هر Level باید به چند شیت سیستمی تفکیک شود.','تعداد پلان‌های پایه از Levelهای معماری می‌آید و رایزر، SLD و Panel Schedule جدا از آن محاسبه می‌شوند.']},
     {'slug':'mechanical-plan-scope','title':'از آب و فاضلاب تا HVAC؛ Scope نقشه‌های مکانیکی','excerpt':'مرور سیستم‌های اصلی مکانیک و نحوه تفکیک خروجی‌ها.','tag':'مکانیک','body':['در طراحی مکانیک، آب سرد و گرم، فاضلاب و ونت، گاز، گرمایش، سرمایش و تهویه هرکدام Scope مستقل دارند.','تعداد پلان‌های طبقه‌ای بر اساس Levelهای معماری تعیین می‌شود و در صورت نیاز رایزرها و دیتیل‌ها به آن اضافه می‌شوند.','هدف نهایی حفظ خوانایی، قابلیت اجرا و تطابق با اطلاعات واقعی پروژه است.']}
@@ -264,6 +265,27 @@ def flow_payload(p):
 @app.get('/health')
 def health(): return {'ok':True}
 
+@app.get('/system_health')
+def system_health():
+    cad={'configured':bool(CAD_DESIGNER_URL),'reachable':False}
+    if CAD_DESIGNER_URL:
+        try: cad['reachable']=requests.get(CAD_DESIGNER_URL+'/health',timeout=3).ok
+        except Exception: pass
+    return {'status':'ok','cad_designer':cad,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
+
+@app.get('/sitemap.xml')
+def sitemap(request:Request):
+    scheme=request.headers.get('x-forwarded-proto','https').split(',')[0].strip(); base=f'{scheme}://{request.url.netloc}'
+    paths=['/','/electrical','/mechanical','/blog']+[f"/blog/{p['slug']}" for p in BLOG]
+    rows=''.join(f'<url><loc>{base}{path}</loc><changefreq>{"weekly" if path.startswith("/blog/") else "daily"}</changefreq><priority>{"0.8" if path.startswith("/blog/") else "0.9"}</priority></url>' for path in paths)
+    xml='<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+rows+'</urlset>'
+    return Response(content=xml,media_type='application/xml')
+
+@app.get('/robots.txt')
+def robots(request:Request):
+    scheme=request.headers.get('x-forwarded-proto','https').split(',')[0].strip(); base=f'{scheme}://{request.url.netloc}'
+    return Response(content=f'User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n',media_type='text/plain')
+
 @app.get('/',response_class=HTMLResponse)
 def home(request:Request): return templates.TemplateResponse('dashboard.html',{'request':request,'blog':BLOG})
 
@@ -283,6 +305,8 @@ def blog(request:Request): return templates.TemplateResponse('blog.html',{'reque
 def article(slug:str,request:Request):
     post=next((x for x in BLOG if x['slug']==slug),None)
     if not post: raise HTTPException(404)
+    if slug=='electrical-building-plan':
+        return templates.TemplateResponse('electrical_building_plan.html',{'request':request,'post':post})
     return templates.TemplateResponse('article.html',{'request':request,'post':post})
 
 @app.post('/start-project/{discipline}')
