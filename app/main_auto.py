@@ -61,7 +61,8 @@ def analyze_dxf_enhanced(path):
 
     def is_plan_title(value):
         value = normalized(value)
-        return any(marker in value for marker in ('پلان معماری', 'architectural plan', 'architecture plan'))
+        markers = ('پلان معماری', 'architectural plan', 'architecture plan', 'roof plan', 'floor plan', 'پلان شیب', 'پلان شيب')
+        return any(marker in value for marker in markers)
 
     def is_architecture_label(value):
         return is_plan_title(value) or classify_room(normalized(value)) is not None
