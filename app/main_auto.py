@@ -178,6 +178,7 @@ def analyze_project_job(project_id):
         discipline = (p.answers or {}).get('discipline', 'mechanical')
         analysis = {
             'discipline': discipline,
+            'architecture_analyzer_version': '3.0-level-source',
             'file_count': len(files),
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',

@@ -10,7 +10,7 @@ import hashlib
 import json
 
 
-MANIFEST_SCHEMA_VERSION = "1.0"
+MANIFEST_SCHEMA_VERSION = "2.0"
 
 AUTHORITY_FAMILIES = {
     "water_supply": {"code": "M-W", "label": "آب سرد و گرم", "system": "water_supply"},
@@ -136,12 +136,33 @@ def _build_manifest(deliverables):
     return payload
 
 
+def is_current_manifest(manifest):
+    """Return True only for a structurally valid manifest from this planner."""
+    manifest = manifest or {}
+    sheets = manifest.get("sheets") or []
+    try:
+        total = int(manifest.get("total_sheets") or -1)
+    except (TypeError, ValueError):
+        return False
+    codes = [str(x.get("code") or "") for x in sheets]
+    return (
+        manifest.get("schema_version") == MANIFEST_SCHEMA_VERSION
+        and total > 0
+        and total == len(sheets)
+        and bool(codes)
+        and all(codes)
+        and len(codes) == len(set(codes))
+    )
+
+
 def approve_drawing_set(proposal):
     """Freeze the exact customer-approved sheet manifest for CAD generation."""
     proposal = copy.deepcopy(proposal or {})
     manifest = proposal.get("drawing_manifest")
     if not manifest:
         raise ValueError("Drawing manifest is missing.")
+    if not is_current_manifest(manifest):
+        raise ValueError("Drawing manifest is stale or structurally invalid; recalculate the proposal.")
     sheets = manifest.get("sheets") or []
     if int(manifest.get("total_sheets") or -1) != len(sheets):
         raise ValueError("Drawing manifest count is internally inconsistent.")

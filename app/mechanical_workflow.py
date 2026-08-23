@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from .mechanical_drawing_set import approve_drawing_set, predict_drawing_set
+from .mechanical_drawing_set import approve_drawing_set, is_current_manifest, predict_drawing_set
 
 SYSTEM_LABELS = {
     'cooling': 'سرمایش',
@@ -183,9 +183,25 @@ def create_proposal(p):
     return proposal
 
 
+def proposal_is_current(p):
+    ds = (p.analysis or {}).get('drawing_set') or {}
+    return is_current_manifest(ds.get('drawing_manifest'))
+
+
+def refresh_stale_proposal(p):
+    """Invalidate old counts instead of reusing a proposal from an older planner."""
+    if _discipline(p) != 'mechanical':
+        return False
+    ds = (p.analysis or {}).get('drawing_set') or {}
+    if ds and not proposal_is_current(p):
+        create_proposal(p)
+        return True
+    return False
+
+
 def is_approved(p):
     ds = (p.analysis or {}).get('drawing_set') or {}
-    return bool(ds.get('approved'))
+    return bool(ds.get('approved')) and proposal_is_current(p)
 
 
 def _replace_route(app, path, method, endpoint):
@@ -241,6 +257,8 @@ def register_mechanical_workflow(app, legacy):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
         if _discipline(p) != 'mechanical': db.close(); raise HTTPException(404)
+        if refresh_stale_proposal(p):
+            db.commit(); db.refresh(p)
         data = (p.analysis or {}).get('drawing_set'); db.close()
         if not data: raise HTTPException(409, 'Drawing set proposal is not ready.')
         return JSONResponse(data)
@@ -248,6 +266,8 @@ def register_mechanical_workflow(app, legacy):
     def approve(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
+        if refresh_stale_proposal(p):
+            db.commit(); db.refresh(p)
         ds = dict((p.analysis or {}).get('drawing_set') or {})
         if _discipline(p) != 'mechanical' or not ds: db.close(); raise HTTPException(409, 'Drawing set proposal is not ready.')
         try:
@@ -260,6 +280,8 @@ def register_mechanical_workflow(app, legacy):
     def design(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
+        if refresh_stale_proposal(p):
+            db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
         if _discipline(p) == 'mechanical' and not is_approved(p):
             p.status = 'drawing_set_review'; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
         rev_no = (p.current_revision or 0) + 1; r = legacy.Revision(project_id=p.id, revision_no=rev_no, status='queued')
@@ -269,6 +291,10 @@ def register_mechanical_workflow(app, legacy):
     def design_json(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
+        if refresh_stale_proposal(p):
+            db.commit(); db.refresh(p)
+            data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close()
+            return JSONResponse(data, status_code=409)
         if _discipline(p) == 'mechanical' and not is_approved(p):
             p.status = 'drawing_set_review'; db.commit(); data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data, status_code=409)
         if p.status != 'ready_to_design':

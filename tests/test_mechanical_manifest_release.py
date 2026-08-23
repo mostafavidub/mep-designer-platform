@@ -47,7 +47,21 @@ class MechanicalManifestReleaseTests(unittest.TestCase):
     def calc(self, manifest):
         return {
             "_approved_drawing_manifest": manifest,
-            "_design_inputs": {"gas": "yes", "cooling": "split", "heating": "radiator"},
+            "_design_inputs": {
+            "gas": "yes",
+            "cooling": "split",
+            "heating": "radiator",
+            "location": "Tehran, Iran",
+            "heights": "3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones",
+            "water_source": "municipal meter, 500 L tank and booster pump",
+            "water_design_basis": "3.0 bar at meter; PPR; Hazen-Williams C=150; maximum design loss 20 kPa/100 m",
+            "sanitary_outlet": "municipal sewer at project boundary",
+            "sanitary_design_basis": "uPVC; invert +0.00 at boundary; 2 percent branches and 1 percent mains",
+            "gas_appliances": "boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance",
+            "equipment_schedule": "radiators per room load; split units 9k/18k BTU; outdoor units on roof",
+            "ventilation_design_basis": "toilets 10 ACH; enclosed parking 6 ACH; discharge above roof with make-up air",
+            "roof_drainage_basis": "120 m2 roof; two coordinated drains; 110 mm/h design rainfall"
+        },
             "design_water_flow_lps": 0.7,
             "preliminary_nominal_pipe_candidate_mm": 25,
             "cooling_load_kw": 15.0,

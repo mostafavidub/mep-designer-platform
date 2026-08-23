@@ -4,6 +4,7 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from .mechanical_drawing_set import approve_drawing_set
+from .mechanical_workflow import create_proposal, proposal_is_current
 
 
 FAMILY_ORDER = (
@@ -113,6 +114,29 @@ def register_mechanical_review_fix(app, legacy):
         db, p = legacy.own_project(pid, u.id)
         if not p:
             raise HTTPException(404)
+
+        # Existing projects may contain a proposal produced by the old two-level
+        # analyzer. Re-run once from the persisted architecture source so the
+        # customer never approves a stale 2/13-sheet contract.
+        analysis = p.analysis or {}
+        pdir = legacy.DATA_DIR / 'projects' / str(p.id)
+        has_source = (pdir / 'architecture.zip').exists() or (pdir / 'architecture.dxf').exists()
+        analyzer_stale = (
+            _discipline(p) == 'mechanical'
+            and analysis.get('architecture_analyzer_version') != '3.0-level-source'
+            and has_source
+        )
+        if analyzer_stale:
+            db.close()
+            legacy.analyze_project_job(pid)
+            db, p = legacy.own_project(pid, u.id)
+            if not p:
+                raise HTTPException(404)
+
+        if _discipline(p) == 'mechanical' and (p.analysis or {}).get('drawing_set') and not proposal_is_current(p):
+            create_proposal(p)
+            db.commit(); db.refresh(p)
+
         if p.status == 'drawing_set_review':
             ds = (p.analysis or {}).get('drawing_set') or {}
             data = decorate_review_payload(legacy.flow_payload(p), ds)
