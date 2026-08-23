@@ -2,7 +2,7 @@ import unittest
 from fastapi.testclient import TestClient
 from app.main_health import app
 
-FULL_RES_MECHANICAL_ART = 'https://res.cloudinary.com/pnuzoh4o/image/upload/v1787404604/engitools/hero-integrated-check.jpg'
+FULL_RES_MECHANICAL_ART = 'https://res.cloudinary.com/pnuzoh4o/image/upload/v1787475602/engitools/mechanical-hero-20260823-final.webp'
 
 class MechanicalHeroV3Tests(unittest.TestCase):
     @classmethod
@@ -11,7 +11,7 @@ class MechanicalHeroV3Tests(unittest.TestCase):
     def test_mechanical_page_loads_isolated_static_hero(self):
         r=self.client.get('/mechanical'); self.assertEqual(r.status_code,200)
         self.assertIn('/static/mechanical-hero-v3.css?v=20260823-1103',r.text)
-        self.assertIn('/static/mechanical-hero-v3.js?v=20260823-1135',r.text)
+        self.assertIn('/static/mechanical-hero-v3.js?v=20260823-1200',r.text)
         self.assertIn(FULL_RES_MECHANICAL_ART,r.text)
         self.assertNotIn('/static/mechanical-hero-static.css',r.text)
         self.assertNotIn('/static/hero-scroll-v1.js',r.text)
