@@ -348,19 +348,24 @@ engine.render_pdf = render_pdf_resilient
 
 @app.get('/health')
 def health():
-    return {'ok': True, 'service': 'cad-designer', 'version': '0.5.2', 'mode': 'architecture-first-readable-plan-rendering'}
+    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.4', 'mode': 'evidence-gated-mechanical-technical-design'}
 
 
 @app.get('/engine-capabilities')
 def capabilities():
     return {
         'ok': True,
-        'version': '0.5.2',
+        'version': '1.0.4',
         'questionnaire': 'dynamic-unresolved-only',
         'architecture_auto_calculation': True,
         'resilient_dxf_pdf_rendering': True,
         'plan_cluster_viewports': True,
         'adaptive_mechanical_symbol_scale': True,
+        'approved_manifest_exact_generation': True,
+        'named_block_level_provenance': True,
+        'evidence_gated_technical_score': True,
+        'water_sanitary_gas_hvac_ventilation_roof_calculations': True,
+        'per_sheet_technical_schedules': True,
         'auto_inputs': [
             'room inventory', 'shaft/parking/roof/elevator detection', 'plausible geometry area',
             'representative route length', 'baseline electrical load', 'water-demand proxy',
@@ -392,10 +397,18 @@ def design(req: engine.DesignRequest):
     systems = requested or allowed
     answers = _enrich_from_architecture(req.answers or {}, discipline)
     calc = engine.calc_for(discipline, answers)
+    calc['_design_inputs'] = dict(answers)
+    calc['_plan_analysis'] = dict(req.plan_analysis or {})
     # Calculation normalization intentionally keeps only engineering values;
     # preserve the approved workflow contract explicitly for the sheet compositor.
-    if discipline == 'mechanical' and answers.get('_approved_drawing_manifest'):
-        calc['_approved_drawing_manifest'] = answers['_approved_drawing_manifest']
+    if discipline == 'mechanical':
+        drawing_set = (req.plan_analysis or {}).get('drawing_set') or {}
+        manifest = answers.get('_approved_drawing_manifest') or drawing_set.get('approved_manifest')
+        if not drawing_set.get('approved') and not answers.get('_approved_drawing_manifest'):
+            raise HTTPException(409, 'Approved mechanical drawing manifest is required.')
+        if not manifest:
+            raise HTTPException(409, 'Approved mechanical drawing manifest is required.')
+        calc['_approved_drawing_manifest'] = manifest
 
     project_out = engine.OUTPUT_ROOT / str(req.project_id) / f'R{req.revision:03d}' / discipline
     shutil.rmtree(project_out, ignore_errors=True)
@@ -425,7 +438,7 @@ def design(req: engine.DesignRequest):
         engine.zip_outputs(generated, package)
         return {
             'ok': True, 'project_id': req.project_id, 'discipline': discipline,
-            'engine_version': '0.5.2', 'mode': 'architecture-first-readable-plan-rendering',
+            'engine_version': '1.0.4', 'mode': 'evidence-gated-mechanical-technical-design',
             'preliminary': True, 'requires_professional_review': True,
             'systems': systems, 'calculation_report': calc, 'design_reports': reports,
             'generated_files': [p.name for p in generated],
