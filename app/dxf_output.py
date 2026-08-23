@@ -44,6 +44,37 @@ def validate_generated_manifest(drawing_set, design_reports):
     }
 
 
+def _cad_error_message(response):
+    try:
+        payload = response.json()
+        detail = payload.get('detail') if isinstance(payload, dict) else None
+    except Exception:
+        detail = None
+    message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
+    translations = {
+        'Authority-ready mechanical generation blocked: unresolved engineering inputs:':
+            'اطلاعات فنی لازم برای طراحی کامل نشده است:',
+        'water inlet pressure': 'فشار مبنای آب ورودی',
+        'project location/climate': 'شهر و شرایط اقلیمی پروژه',
+        'floor heights / false-ceiling constraints': 'ارتفاع طبقات و سقف کاذب',
+        'sanitary outlet': 'نوع خروجی فاضلاب',
+        'resolved heating/cooling equipment schedule': 'انتخاب تجهیزات گرمایش و سرمایش',
+        'gas appliance loads, inlet pressure and meter/regulator location':
+            'ظرفیت تجهیزات گازسوز و محل کنتور/رگلاتور',
+        'Mechanical technical design QA failed': 'کنترل فنی نقشه مکانیک کامل نشد',
+        'fixture_and_symbol_traceability': 'تعداد و جانمایی تجهیزات بهداشتی',
+        'water_hydraulic_design': 'محاسبات هیدرولیکی آب',
+        'sanitary_vent_design': 'محاسبات فاضلاب و ونت',
+        'heating_cooling_equipment_design': 'طراحی تجهیزات گرمایش و سرمایش',
+        'ventilation_design': 'محاسبات تهویه',
+        'roof_drainage_design': 'محاسبات آب باران بام',
+        'Compact mechanical output': 'پاک‌سازی خروجی مکانیک',
+    }
+    for source, target in translations.items():
+        message = message.replace(source, target)
+    return f'طراحی متوقف شد: {message}'
+
+
 def run_design_dxf(project_id, revision_id):
     db = legacy.Session()
     p = db.get(legacy.Project, project_id)
@@ -87,7 +118,10 @@ def run_design_dxf(project_id, revision_id):
             },
         }
         resp = requests.post(legacy.CAD_DESIGNER_URL + '/design', json=payload, timeout=3600)
-        resp.raise_for_status()
+        if not resp.ok:
+            message = _cad_error_message(resp)
+            print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}', flush=True)
+            raise RuntimeError(message)
         data = resp.json()
         if data.get('discipline') and data['discipline'] != discipline:
             raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
@@ -100,6 +134,17 @@ def run_design_dxf(project_id, revision_id):
             analysis = dict(p.analysis or {})
             analysis['last_generation_validation'] = validation
             p.analysis = analysis
+
+            reports = data.get('design_reports') or []
+            cleanup_states = [report.get('compact_output') or {} for report in reports]
+            if len(data.get('generated_files') or []) != 1:
+                raise RuntimeError(
+                    'پاک‌سازی خروجی ناموفق بود: خروجی مکانیک باید دقیقاً یک DXF تجمیعی داشته باشد.'
+                )
+            if not cleanup_states or any(item.get('status') != 'PASS' for item in cleanup_states):
+                raise RuntimeError('پاک‌سازی خروجی مکانیک توسط کنترل نهایی تأیید نشد.')
+            if any(int(item.get('architecture_source_files_packaged') or 0) != 0 for item in cleanup_states):
+                raise RuntimeError('فایل معماری خام نباید داخل بسته خروجی مکانیک قرار گیرد.')
 
         generated = data.get('generated_files') or []
         package_path = Path(data.get('zip_path') or '')
@@ -132,7 +177,10 @@ def run_design_dxf(project_id, revision_id):
     except Exception as exc:
         r.status = 'failed'
         r.error = str(exc)
-        p.status = 'failed'
+        # Preserve a retryable approved project instead of trapping the user in
+        # a terminal failed state after a recoverable CAD validation error.
+        approved = bool(((p.analysis or {}).get('drawing_set') or {}).get('approved_manifest'))
+        p.status = 'ready_to_design' if approved else 'failed'
         p.last_error = str(exc)
         db.commit()
     finally:
