@@ -232,6 +232,8 @@ def _compose_authority_layouts(doc, levels, project_id, systems, calc):
 
 
 def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
+    if discipline == 'mechanical' and not (calc.get('_approved_drawing_manifest') or {}).get('sheets'):
+        raise RuntimeError('Approved mechanical drawing manifest is required before CAD generation.')
     effective_systems = list(systems or [])
     if discipline == 'mechanical' and 'rainwater' not in effective_systems:
         effective_systems.append('rainwater')
