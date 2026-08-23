@@ -213,6 +213,9 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             out = ezdxf.readfile(dst)
             self.assertFalse(any(entity.dxf.layer == 'ARCH-JUNK' for entity in out.modelspace()))
             self.assertNotIn('UNUSED_ARCHITECTURE_LIBRARY', out.blocks)
+            self.assertEqual(len(out.dimstyles), 1)
+            self.assertFalse(any(len(layout.query('DIMENSION')) for layout in out.layouts))
+            self.assertLess(cleanup['retained_block_definitions'], 50)
 
 
 if __name__ == '__main__':

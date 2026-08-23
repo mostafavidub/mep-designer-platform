@@ -514,34 +514,49 @@ def _prune_mechanical_deliverable(doc, levels, calc):
         removed += 1
         removed_by_type[entity_type] += 1
 
-    # Remove only demonstrably unused, substantial source blocks.  A blanket
-    # block purge can invalidate custom DIMSTYLE arrow references in consultant
-    # DXFs, so referenced INSERT/DIMSTYLE blocks and small CAD support blocks
-    # are preserved deliberately.
+    # Source dimensions are intentionally excluded from the mechanical issue
+    # file. Remove their unused styles first so custom arrow references cannot
+    # pin hundreds of anonymous consultant blocks in the final DXF.
+    if not any(len(layout.query('DIMENSION')) for layout in doc.layouts):
+        for dimstyle in list(doc.dimstyles):
+            if str(dimstyle.dxf.name or '').upper() == 'STANDARD':
+                continue
+            try:
+                doc.dimstyles.remove(dimstyle.dxf.name)
+            except Exception:
+                continue
+
+    # Keep only blocks reachable from an INSERT in Model/Paper space, including
+    # nested INSERT chains. All unreferenced title blocks, details, anonymous
+    # dimension geometry and architecture libraries are removed. This produces
+    # a genuinely compact authority deliverable instead of hiding source CAD
+    # baggage outside the plotted sheets.
     referenced_blocks = set()
+
+    def collect_inserts(entities):
+        for insert in entities.query('INSERT'):
+            referenced_blocks.add(str(insert.dxf.name))
+
     for layout in doc.layouts:
-        for insert in layout.query('INSERT'):
-            referenced_blocks.add(str(insert.dxf.name).lower())
-        for dimension in layout.query('DIMENSION'):
-            name = str(getattr(dimension.dxf, 'geometry', '') or '')
-            if name:
-                referenced_blocks.add(name.lower())
-    for dimstyle in doc.dimstyles:
-        for value in dimstyle.dxfattribs().values():
-            if isinstance(value, str) and value in doc.blocks:
-                referenced_blocks.add(value.lower())
-    analyzer_blocks = {
-        str(profile.get('source_name') or '').lower()
-        for profile in ((calc.get('_plan_analysis') or {}).get('architectural_auto') or {}).get('level_profiles') or []
-        if profile.get('source_type') == 'block'
-    }
+        collect_inserts(layout)
+    changed = True
+    while changed:
+        changed = False
+        for name in list(referenced_blocks):
+            try:
+                block = doc.blocks.get(name)
+            except Exception:
+                continue
+            before_refs = len(referenced_blocks)
+            collect_inserts(block)
+            if len(referenced_blocks) != before_refs:
+                changed = True
+
+    layout_blocks = {str(layout.block_record_name) for layout in doc.layouts}
     removed_blocks = []
     for block in list(doc.blocks):
         name = str(block.name or '')
-        low = name.lower()
-        if low.startswith('*') or low in referenced_blocks:
-            continue
-        if low not in analyzer_blocks and len(block) < 50:
+        if name in layout_blocks or name in referenced_blocks:
             continue
         try:
             doc.blocks.delete_block(name, safe=False)
@@ -558,6 +573,8 @@ def _prune_mechanical_deliverable(doc, levels, calc):
         'removed_unneeded_entities': removed,
         'removed_by_type': dict(removed_by_type),
         'removed_unused_block_definitions': len(removed_blocks),
+        'retained_block_definitions': len(doc.blocks),
+        'retained_dimstyles': len(doc.dimstyles),
         'retained_plan_envelopes': len(bounds),
         'only_approved_mechanical_layouts': issued == expected,
         'architecture_source_files_packaged': 0,
