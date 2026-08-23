@@ -13,9 +13,9 @@ class MechanicalHeroV3Tests(unittest.TestCase):
     def test_mechanical_page_loads_isolated_static_hero(self):
         r = self.client.get('/mechanical')
         self.assertEqual(r.status_code, 200)
-        self.assertIn('/static/mechanical-hero-v3.css?v=20260823-0915', r.text)
-        self.assertIn('/static/mechanical-hero-v3.js?v=20260823-0915', r.text)
-        self.assertIn('rel="preload" as="image" href="/service-art/mechanical.jpg?v=20260823-0915"', r.text)
+        self.assertIn('/static/mechanical-hero-v3.css?v=20260823-0928', r.text)
+        self.assertIn('/static/mechanical-hero-v3.js?v=20260823-0928', r.text)
+        self.assertIn('rel="preload" as="image" href="/service-art/mechanical.jpg?v=20260823-0928"', r.text)
         self.assertNotIn('/static/mechanical-hero-static.css', r.text)
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
         self.assertNotIn('/static/workflow-road.js', r.text)
@@ -37,11 +37,14 @@ class MechanicalHeroV3Tests(unittest.TestCase):
         self.assertNotIn('hero-integrated-mep-v1.jpg', css.text)
         self.assertNotIn('hero-electrical', css.text)
 
-    def test_mechanical_hero_script_uses_only_mechanical_asset(self):
+    def test_mechanical_hero_script_uses_mechanical_asset_and_visible_fallback(self):
         js = self.client.get('/static/mechanical-hero-v3.js')
         self.assertEqual(js.status_code, 200)
         self.assertIn("document.querySelector('.discipline-page.mechanical')", js.text)
-        self.assertIn('/service-art/mechanical.jpg?v=20260823-0915', js.text)
+        self.assertIn('/service-art/mechanical.jpg?v=20260823-0928', js.text)
+        self.assertIn('/static/hero-mechanical.svg?v=20260823-0928', js.text)
+        self.assertIn("addEventListener('error'", js.text)
+        self.assertIn('naturalWidth', js.text)
         self.assertIn('mechanical-hero-v3-art', js.text)
         self.assertNotIn('hero-integrated-mep-v1', js.text)
         self.assertNotIn('hero-electrical', js.text)
@@ -49,7 +52,7 @@ class MechanicalHeroV3Tests(unittest.TestCase):
         self.assertNotIn("addEventListener('scroll'", js.text)
 
     def test_mechanical_asset_route_is_real_webp(self):
-        art = self.client.get('/service-art/mechanical.jpg?v=20260823-0915')
+        art = self.client.get('/service-art/mechanical.jpg?v=20260823-0928')
         self.assertEqual(art.status_code, 200)
         self.assertEqual(art.headers.get('content-type'), 'image/webp')
         self.assertEqual(art.headers.get('x-engitools-art'), 'mechanical-approved-1920x1080')
