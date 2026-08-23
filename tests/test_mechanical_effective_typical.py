@@ -42,7 +42,7 @@ class EffectiveTypicalInferenceTests(unittest.TestCase):
         profiles = level_profiles_from_files([{'text_labels': labels}])
         self.assertEqual(typical_groups_from_profiles(profiles), [])
 
-    def test_effective_levels_exclude_roof_and_non_wet_levels(self):
+    def test_authority_scope_keeps_non_roof_levels_when_labels_are_missing(self):
         p = SimpleNamespace(
             answers={'discipline': 'mechanical', 'heating': 'رادیاتور', 'cooling': 'اسپلیت', 'gas': 'بله'},
             analysis={'architectural_auto': {
@@ -56,12 +56,12 @@ class EffectiveTypicalInferenceTests(unittest.TestCase):
             }},
         )
         scope = build_scope(p)
-        self.assertEqual(scope['wet_fixture_levels'], ['Ground'])
-        self.assertEqual(scope['sanitary_fixture_levels'], ['Ground'])
+        self.assertEqual(scope['wet_fixture_levels'], ['Ground', 'Office'])
+        self.assertEqual(scope['sanitary_fixture_levels'], ['Ground', 'Office'])
         self.assertEqual(scope['conditioned_levels'], ['Ground', 'Office'])
         self.assertEqual(scope['heated_levels'], ['Ground', 'Office'])
-        self.assertEqual(scope['gas_consumer_levels'], ['Ground'])
-        self.assertEqual(scope['ventilation_required_levels'], ['Ground'])
+        self.assertEqual(scope['gas_consumer_levels'], ['Ground', 'Office'])
+        self.assertEqual(scope['ventilation_required_levels'], ['Ground', 'Office'])
         self.assertTrue(scope['roof_exists'])
 
     def test_typical_group_reduces_within_each_system_not_across_systems(self):
