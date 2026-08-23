@@ -74,7 +74,29 @@ def _drawing_unit_to_m(doc):
     return {4: .001, 5: .01, 6: 1.0}.get(int(doc.header.get('$INSUNITS', 0) or 0))
 
 
-def _fixture_summary(levels):
+def _fixture_schedule_counts(text):
+    """Read explicit fixture quantities; never infer them from room names."""
+    value = _norm(text).lower()
+    aliases = {
+        'sink': ('sink', 'basin', 'سینک', 'روشویی', 'روشويی'),
+        'faucet': ('faucet', 'tap', 'شیر آب', 'شير آب'),
+        'toilet': ('toilet', 'wc', 'توالت', 'توالت فرنگی'),
+        'bath': ('bath', 'shower', 'دوش', 'وان'),
+    }
+    result = Counter()
+    for kind, names in aliases.items():
+        for name in names:
+            escaped = re.escape(name)
+            match = re.search(rf'(?:{escaped})\s*[:=x×-]?\s*(\d+)', value, re.I)
+            if not match:
+                match = re.search(rf'(\d+)\s*(?:عدد|x|×)?\s*(?:{escaped})', value, re.I)
+            if match:
+                result[kind] = int(match.group(1))
+                break
+    return result
+
+
+def _fixture_summary(levels, fixture_schedule=''):
     detected = Counter()
     rooms = Counter()
     for level in levels:
@@ -82,21 +104,27 @@ def _fixture_summary(levels):
             rooms[room.get('room')] += 1
         for fixture in level.get('fixtures', []):
             detected[fixture.get('kind')] += 1
-    # A room proxy is allowed for design quantity only when the architecture has
-    # no usable fixture block. It remains explicitly reported in the QA record.
+    # Room proxies may keep a preliminary drawing legible, but can never satisfy
+    # the traceability gate. Only architecture blocks or an explicit quantified
+    # fixture schedule are accepted as final-design evidence.
     effective = Counter(detected)
+    scheduled = _fixture_schedule_counts(fixture_schedule)
     proxy_count = 0
     if not sum(detected.values()):
-        effective['sink'] = rooms['kitchen'] + rooms['bath']
-        effective['toilet'] = rooms['toilet']
-        effective['bath'] = rooms['bath']
-        proxy_count = sum(effective.values())
-    return detected, effective, rooms, proxy_count
+        if sum(scheduled.values()):
+            effective.update(scheduled)
+        else:
+            effective['sink'] = rooms['kitchen'] + rooms['bath']
+            effective['toilet'] = rooms['toilet']
+            effective['bath'] = rooms['bath']
+            proxy_count = sum(effective.values())
+    return detected, scheduled, effective, rooms, proxy_count
 
 
 def _technical_model(doc, levels, calc):
     inputs = calc.get('_design_inputs') or {}
-    detected, fixtures, rooms, proxies = _fixture_summary(levels)
+    fixture_schedule = _norm(inputs.get('fixture_schedule'))
+    detected, scheduled, fixtures, rooms, proxies = _fixture_summary(levels, fixture_schedule)
     unit_to_m = _drawing_unit_to_m(doc)
     water_basis = _norm(inputs.get('water_design_basis'))
     sanitary_basis = _norm(inputs.get('sanitary_design_basis'))
@@ -175,7 +203,14 @@ def _technical_model(doc, levels, calc):
     roof_dn = _next_pipe(max(75.0, 45.0 * math.sqrt(roof_flow_each))) if roof_flow_each else None
 
     model = {
-        'fixture_blocks_detected': sum(detected.values()), 'fixture_proxies': proxies,
+        'fixture_blocks_detected': sum(detected.values()),
+        'fixture_schedule_count': sum(scheduled.values()),
+        'fixture_traceability_basis': (
+            'architecture_blocks' if sum(detected.values()) else
+            'explicit_fixture_schedule' if sum(scheduled.values()) else
+            'room_proxy_preliminary_only'
+        ),
+        'fixture_proxies': proxies,
         'water_fixture_units': round(water_fu, 2), 'design_water_flow_lps': round(flow_lps, 3) if flow_lps else None,
         'water_velocity_mps': velocity, 'water_hydraulic_diameter_mm': round(hydraulic_d, 1) if hydraulic_d else None,
         'water_main_dn_mm': water_dn, 'water_material': water_material, 'water_inlet_pressure_bar': inlet_bar,
@@ -321,7 +356,7 @@ def _quality_report(doc, levels, calc, model, symbol_count, schedule_count):
     gas_required = 'gas' in families and not base._negative((calc.get('_design_inputs') or {}).get('gas'))
     roof_required = 'roof_rainwater' in families
     ventilation_required = 'ventilation_exhaust' in families
-    fixture_traceable = model['fixture_blocks_detected'] > 0 or model['fixture_proxies'] > 0
+    fixture_traceable = model['fixture_blocks_detected'] > 0 or model['fixture_schedule_count'] > 0
     checks = {
         'approved_manifest_exact': expected > 0 and expected == len(issued),
         'exact_level_geometry': bool(levels) and not any(x.get('manifest_geometry_fallback') for x in levels),
