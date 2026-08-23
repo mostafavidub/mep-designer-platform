@@ -5,6 +5,7 @@ from pathlib import Path
 import ezdxf
 
 from cad_engine import main_v10_3 as authority
+from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 
 
 class MechanicalAuthorityV103Tests(unittest.TestCase):
@@ -37,7 +38,22 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
                 'heating_supply', 'heating_return', 'cooling', 'condensate',
                 'exhaust_ventilation', 'mechanical_risers',
             ]
+            scope = {
+                'all_levels': ['همکف', 'طبقه اول', 'طبقه دوم', 'پشت بام'],
+                'conditioned_levels': ['همکف', 'طبقه اول', 'طبقه دوم'],
+                'heated_levels': ['همکف', 'طبقه اول', 'طبقه دوم'],
+                'wet_fixture_levels': ['همکف', 'طبقه اول', 'طبقه دوم'],
+                'sanitary_fixture_levels': ['همکف', 'طبقه اول', 'طبقه دوم'],
+                'ventilation_required_levels': ['همکف', 'طبقه اول', 'طبقه دوم'],
+                'gas_consumer_levels': ['همکف', 'طبقه اول', 'طبقه دوم'],
+                'roof_exists': True,
+                'roof_level_name': 'پشت بام',
+                'vertical_systems': True,
+                'typical_groups': [],
+            }
+            manifest = approve_drawing_set(predict_drawing_set(scope))['approved_manifest']
             calc = {
+                '_approved_drawing_manifest': manifest,
                 '_design_inputs': {'gas': 'بله', 'cooling': 'split', 'heating': 'radiator'},
                 'design_water_flow_lps': 0.7,
                 'preliminary_nominal_pipe_candidate_mm': 25,
@@ -53,10 +69,24 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
                 'W': 4, 'S': 3, 'H': 3, 'C': 4, 'G': 3, 'V': 3, 'R': 1,
             })
             self.assertEqual(len(out.audit().errors), 0)
+            self.assertEqual(meta['authority_submission']['validation_status'], 'PASS')
+            self.assertEqual(meta['authority_submission']['expected_sheet_count'], 21)
+            self.assertEqual(meta['authority_submission']['generated_sheet_count'], 21)
             self.assertNotIn('M-RISER-CALC', names)
             self.assertFalse(any(x.startswith('M-P-') for x in names))
             for prefix in ('M-W-', 'M-S-', 'M-H-', 'M-C-', 'M-G-', 'M-V-', 'M-R-'):
                 self.assertTrue(any(x.startswith(prefix) for x in names), prefix)
+
+    def test_generation_without_approved_manifest_fails(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'architecture.dxf'
+            dst = Path(td) / 'mechanical.dxf'
+            self._build_reference_architecture(src)
+            with self.assertRaisesRegex(RuntimeError, 'manifest'):
+                authority.design_dxf_v10_3(
+                    src, dst, 'mechanical', ['cold_water'], 1,
+                    {'_design_inputs': {}},
+                )
 
 
 if __name__ == '__main__':
