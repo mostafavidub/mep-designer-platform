@@ -257,6 +257,31 @@ def level_profiles_from_files(files):
     return profiles
 
 
+def explicit_typical_groups_from_files(files):
+    """Honor one architectural plan title explicitly shared by multiple floors."""
+    groups = []
+    seen = set()
+    for file_info in files or []:
+        for item in file_info.get('text_labels') or []:
+            parsed = _plan_title(item.get('text') or '')
+            if not parsed or parsed[0] != 'architecture':
+                continue
+            members = _expand_combined_levels(parsed[1])
+            if len(members) < 2:
+                continue
+            key = tuple(members)
+            if key in seen:
+                continue
+            seen.add(key)
+            groups.append({
+                'name': 'Typical: ' + ' / '.join(members),
+                'levels': members,
+                'confidence': 'high',
+                'basis': 'explicit shared architectural plan title',
+            })
+    return groups
+
+
 def typical_groups_from_profiles(profiles):
     """Group only high-confidence identical architectural floor patterns."""
     buckets = defaultdict(list)
@@ -310,7 +335,12 @@ def infer_architecture_facts(analysis, discipline):
     if profiles:
         auto['levels'] = [{'name': p['name']} for p in profiles]
         auto['level_profiles'] = profiles
-        auto['typical_groups'] = typical_groups_from_profiles(profiles)
+        inferred_groups = typical_groups_from_profiles(profiles)
+        explicit_groups = explicit_typical_groups_from_files((analysis or {}).get('files') or [])
+        explicit_members = {tuple(group['levels']) for group in explicit_groups}
+        auto['typical_groups'] = explicit_groups + [
+            group for group in inferred_groups if tuple(group['levels']) not in explicit_members
+        ]
         auto['effective_level_inference'] = 'per-level-room-pattern-v3'
     else:
         auto['level_profiles'] = []
