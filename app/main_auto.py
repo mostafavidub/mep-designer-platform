@@ -15,6 +15,7 @@ from .auto_inference_v2 import (
     auto_summary,
     classify_room,
 )
+from .mechanical_rulebook import RULEBOOK_VERSION
 
 app = legacy.app
 
@@ -44,6 +45,7 @@ def _expanded_entities(entities, depth=0):
         return
     for entity in entities:
         if entity.dxftype() == 'INSERT':
+            yield entity
             try:
                 yield from _expanded_entities(entity.virtual_entities(), depth + 1)
             except Exception:
@@ -67,9 +69,30 @@ def analyze_dxf_enhanced(path):
     def is_architecture_label(value):
         return is_plan_title(value) or classify_room(normalized(value)) is not None
 
+    fixture_keys = {
+        'faucet': ('faucet', 'tap', 'water point'),
+        'sink': ('sink', 'basin', 'lav'),
+        'toilet': ('toalet', 'toilet', 'farangi', 'wc'),
+        'bath': ('bath', 'shower', 'bat'),
+        'gas': ('k_gaz', 'gaz', 'gas', 'stove'),
+    }
+
+    def fixture_kind(name):
+        low = normalized(name)
+        for kind, keys in fixture_keys.items():
+            if any(key in low for key in keys):
+                return kind
+        return None
+
     def collect(container, source_type, source_name):
-        raw_texts, labels = [], []
+        raw_texts, labels, fixtures = [], [], []
         for entity in _expanded_entities(container):
+            if entity.dxftype() == 'INSERT':
+                kind = fixture_kind(getattr(entity.dxf, 'name', ''))
+                point = _entity_insert(entity)
+                if kind and point:
+                    fixtures.append({'kind': kind, 'name': str(entity.dxf.name), 'x': point[0], 'y': point[1]})
+                continue
             if entity.dxftype() not in ('TEXT', 'MTEXT'):
                 continue
             value = _entity_text(entity)
@@ -84,7 +107,7 @@ def analyze_dxf_enhanced(path):
                 })
         title_count = sum(1 for item in labels if is_plan_title(item['text']))
         room_count = sum(1 for item in labels if classify_room(normalized(item['text'])) is not None)
-        return raw_texts, labels, (title_count, room_count)
+        return raw_texts, labels, fixtures, (title_count, room_count)
 
     # Evaluate layouts and named block definitions independently. Some exported
     # authority DXFs keep the usable architectural sheet in an unreferenced
@@ -98,15 +121,17 @@ def analyze_dxf_enhanced(path):
         if name.lower().startswith(('*model_space', '*paper_space')):
             continue
         candidates.append(collect(block, 'block', name))
-    usable = [item for item in candidates if item[2][0] > 0]
+    usable = [item for item in candidates if item[3][0] > 0]
     if usable:
         # Exported consultant files may split one project across several named
         # blocks. Merge their semantic labels in the shared drawing coordinate
         # system, removing exact duplicate block copies.
         texts = []
         text_labels = []
+        fixture_blocks = []
         seen_labels = set()
-        for raw_texts, labels, _score in usable:
+        seen_fixtures = set()
+        for raw_texts, labels, fixtures, _score in usable:
             texts.extend(raw_texts)
             for item in labels:
                 key = (normalized(item['text']), round(item['x'], 4), round(item['y'], 4))
@@ -114,10 +139,16 @@ def analyze_dxf_enhanced(path):
                     continue
                 seen_labels.add(key)
                 text_labels.append(item)
+            for item in fixtures:
+                key = (item['kind'], round(item['x'], 4), round(item['y'], 4))
+                if key in seen_fixtures:
+                    continue
+                seen_fixtures.add(key)
+                fixture_blocks.append(item)
     elif candidates:
-        texts, text_labels, _ = max(candidates, key=lambda item: (item[2][1], item[2][0]))
+        texts, text_labels, fixture_blocks, _ = max(candidates, key=lambda item: (item[3][1], item[3][0]))
     else:
-        texts, text_labels = [], []
+        texts, text_labels, fixture_blocks = [], [], []
 
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     unit_to_m = INSUNITS_TO_M.get(insunits)
@@ -142,6 +173,8 @@ def analyze_dxf_enhanced(path):
     semantic_labels = text_labels
     semantic_texts = [item['text'] for item in semantic_labels]
     retained_texts = list(dict.fromkeys(texts[:1000] + semantic_texts))
+    fixture_counts = Counter(item['kind'] for item in fixture_blocks)
+    roof_drain_count = sum(1 for value in retained_texts if re.search(r'\b(?:RD|R\.D)\b|کف.?خواب|ناودان', str(value), re.I))
 
     return {
         'file': path.name,
@@ -151,6 +184,9 @@ def analyze_dxf_enhanced(path):
         'entities': dict(counts),
         'texts': retained_texts[:20000],
         'text_labels': semantic_labels[:20000],
+        'fixture_blocks': fixture_blocks[:20000],
+        'fixture_counts': dict(fixture_counts),
+        'roof_drain_count': roof_drain_count,
         'geometry_bounds': [minx, miny, maxx, maxy] if minx is not None else None,
         'geometry_width_m': round(width_m, 3) if width_m is not None else None,
         'geometry_height_m': round(height_m, 3) if height_m is not None else None,
@@ -184,7 +220,7 @@ def analyze_project_job(project_id):
         discipline = (p.answers or {}).get('discipline', 'mechanical')
         analysis = {
             'discipline': discipline,
-            'architecture_analyzer_version': '3.0-level-source',
+            'architecture_analyzer_version': '3.1-minimal-input-rulebook',
             'file_count': len(files),
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',
@@ -258,7 +294,12 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
 
 @app.get('/system-health')
 def system_health():
-    result = {'ok': True, 'web': {'ok': True, 'mode': 'architecture-first-v2-spatial'}}
+    result = {'ok': True, 'web': {
+        'ok': True,
+        'mode': 'architecture-first-v3-minimal-questions',
+        'mechanical_rulebook_version': RULEBOOK_VERSION,
+        'questionnaire': 'external-project-facts-only',
+    }}
     try:
         r = requests.get(legacy.CAD_DESIGNER_URL + '/engine-capabilities', timeout=5)
         result['cad'] = r.json() if r.ok else {'ok': False, 'status_code': r.status_code}
