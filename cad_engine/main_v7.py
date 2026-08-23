@@ -107,6 +107,32 @@ def design_level_v7(msp, level, systems, calc, stats, qa):
     cooling_tag, heating_tag = equipment_tag(answers.get('cooling'), 'COOL'), equipment_tag(answers.get('heating'), 'HEAT')
     wet = _wet_rooms(level); habitable = [x for x in rooms if x['room'] in ('bedroom','living')]
     assigned, unassigned = _assign_fixtures(level)
+    # A fixture block can legitimately sit just outside the room-label search
+    # radius (inside a wall block, cabinet or imported nested block).  Dropping
+    # it is never acceptable.  Preserve every detected fixture by assigning it
+    # to the nearest wet-room anchor and record the spatial fallback for review.
+    # If a level has no wet room at all the fixture remains unresolved and the
+    # QA gate still blocks issuance.
+    if wet and unassigned:
+        remaining = []
+        for fixture in unassigned:
+            try:
+                fx, fy = map(float, fixture['point'][:2])
+                nearest = min(
+                    wet,
+                    key=lambda room: (float(room['point'][0]) - fx) ** 2
+                    + (float(room['point'][1]) - fy) ** 2,
+                )
+            except (KeyError, TypeError, ValueError):
+                remaining.append(fixture)
+                continue
+            assigned.setdefault(id(nearest), []).append(fixture)
+            qa['assumptions'].append(
+                f"{level['level']} / {nearest['room']}: detected fixture "
+                f"{fixture.get('block', fixture.get('kind', 'unknown'))} "
+                "was linked to the nearest wet-room anchor; verify room boundary."
+            )
+        unassigned = remaining
     qa.setdefault('fixtures_expected', 0); qa.setdefault('fixtures_connected', 0); qa.setdefault('wet_expected', 0); qa.setdefault('wet_connected', 0)
     if 'checks' in qa:
         qa['checks'].setdefault('wet_rooms_expected', 0); qa['checks'].setdefault('wet_rooms_connected', 0)
