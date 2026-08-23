@@ -56,22 +56,43 @@ def analyze_dxf_enhanced(path):
     doc = legacy.ezdxf.readfile(path)
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
-    texts, text_labels = [], []
-    # Architectural sheets may live in paperspace layouts instead of Model.
-    # Scan every layout and recursively resolve its inserts.
-    layout_entities = []
-    for layout in doc.layouts:
-        layout_entities.extend(_expanded_entities(layout))
-    for e in layout_entities:
-        if e.dxftype() not in ('TEXT', 'MTEXT'):
+    def normalized(value):
+        return str(value or '').replace('ي', 'ی').replace('ك', 'ک').replace('\u200c', ' ').lower()
+
+    def is_plan_title(value):
+        value = normalized(value)
+        return any(marker in value for marker in ('پلان معماری', 'architectural plan', 'architecture plan'))
+
+    def is_architecture_label(value):
+        return is_plan_title(value) or classify_room(normalized(value)) is not None
+
+    def collect(container):
+        raw_texts, labels = [], []
+        for entity in _expanded_entities(container):
+            if entity.dxftype() not in ('TEXT', 'MTEXT'):
+                continue
+            value = _entity_text(entity)
+            if not value:
+                continue
+            raw_texts.append(value)
+            point = _entity_insert(entity)
+            if point and is_architecture_label(value):
+                labels.append({'text': value, 'x': point[0], 'y': point[1]})
+        title_count = sum(1 for item in labels if is_plan_title(item['text']))
+        room_count = sum(1 for item in labels if classify_room(normalized(item['text'])) is not None)
+        return raw_texts, labels, (title_count, room_count)
+
+    # Evaluate layouts and named block definitions independently. Some exported
+    # authority DXFs keep the usable architectural sheet in an unreferenced
+    # named block; mixing unrelated blocks would corrupt spatial assignment.
+    candidates = [collect(layout) for layout in doc.layouts]
+    for block in doc.blocks:
+        name = str(getattr(block, 'name', '') or '')
+        if name.lower().startswith(('*model_space', '*paper_space')):
             continue
-        text = _entity_text(e)
-        if not text:
-            continue
-        texts.append(text)
-        p = _entity_insert(e)
-        if p:
-            text_labels.append({'text': text, 'x': p[0], 'y': p[1]})
+        candidates.append(collect(block))
+    usable = [item for item in candidates if item[2][0] > 0]
+    texts, text_labels, _ = max(usable or candidates, key=lambda item: item[2]) if candidates else ([], [], (0, 0))
 
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     unit_to_m = INSUNITS_TO_M.get(insunits)
@@ -91,16 +112,9 @@ def analyze_dxf_enhanced(path):
         height_m = abs(maxy - miny) * unit_to_m
         area_m2 = width_m * height_m
 
-    # Do not truncate before semantic analysis. Large authority drawings often
-    # put the actual architectural plans after title blocks, details, and
-    # repeated annotation entities. Keep every room/plan label, regardless of
-    # entity order, while bounding unrelated text stored in the project record.
-    def is_architecture_label(value):
-        normalized = str(value or '').replace('ي', 'ی').replace('ك', 'ک').replace('\u200c', ' ').lower()
-        plan_markers = ('پلان معماری', 'architectural plan', 'architecture plan')
-        return any(marker in normalized for marker in plan_markers) or classify_room(normalized) is not None
-
-    semantic_labels = [item for item in text_labels if is_architecture_label(item.get('text'))]
+    # The selected candidate has already been semantically filtered across
+    # its complete entity stream; only unrelated raw text is bounded here.
+    semantic_labels = text_labels
     semantic_texts = [item['text'] for item in semantic_labels]
     retained_texts = list(dict.fromkeys(texts[:1000] + semantic_texts))
 
