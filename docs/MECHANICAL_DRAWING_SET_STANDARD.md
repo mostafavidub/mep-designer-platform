@@ -1,5 +1,7 @@
 # Mechanical Drawing Set Planning Standard
 
+Rule Book version: 2.0 — Approved Drawing Manifest
+
 ## Mandatory pre-generation stage
 
 Mechanical CAD generation must not start before Drawing Set Planning and explicit user approval.
@@ -10,7 +12,11 @@ Architecture Upload -> Architecture Analysis -> Mechanical Questions -> Effectiv
 
 ## Governing customer-facing count
 
-The number displayed to the customer MUST equal the number of separate mechanical drawings/sheets that will actually be issued for approval and delivery.
+Formal definition:
+
+Deliverable Mechanical Drawing Count = Number of Approved Mechanical Drawing Sheets.
+
+It is not the sum of systems, levels, or scope items. The number displayed to the customer MUST equal the number of separate mechanical drawings/sheets actually issued for approval and delivery.
 
 For the local Engineering Organization submission profile, different mechanical disciplines MUST NOT be merged merely to reduce sheet count. A combined internal CAD view is not the same thing as an approval deliverable.
 
@@ -59,23 +65,44 @@ Two or more levels may share one Typical Floor sheet for a given system only whe
 
 If any of these materially differs, separate sheets are required. The authority-submission profile is conservative: when Typical equivalence is uncertain, keep separate sheets.
 
-## Reference authority-approved drawing set
+## Benchmark projects
 
-The supplied approved mechanical reference contains exactly 21 title-block drawing frames (`kadrr56`) in Model Space. The 21 sheets are organized by drawing-code families as follows:
+### Duplex reference — 21 sheets
 
-- Mech-04: 1 roof/rainwater sheet.
-- Mech-05_1..3: 3 sanitary + vent sheets.
-- Mech-06_1..4: 4 water-supply sheets, including the system special/riser/equipment sheet.
-- Mech-07_1..3: 3 heating sheets.
-- Mech-08_1..3: 3 gas sheets.
-- Mech-12_1..4: 4 cooling/HVAC sheets, including the required equipment/roof sheet.
-- Mech-13_1..3: 3 ventilation/exhaust sheets.
+Three independent non-typical occupied levels, separated system families, the
+water special sheet, the cooling equipment/roof sheet, and the dedicated roof
+sheet must produce exactly 21 approved mechanical sheets.
 
-Reference total:
+### Afsari reference — 13 sheets
 
-1 + 3 + 4 + 3 + 3 + 4 + 3 = 21 deliverable sheets.
+Ground plus two verified identical typical floors, all six occupied-level
+families, no dedicated roof sheet, and one water riser/equipment special sheet
+must produce exactly 13 approved mechanical sheets. Repeated typical floors
+must be represented by one sheet per applicable family.
 
-This reference is the regression benchmark for the authority-submission profile. It demonstrates why the old 13-sheet combined-family interpretation was incorrect: that interpretation merged approval disciplines and also added a generic combined riser/calculation sheet that is not how this approved set is organized.
+Both benchmarks are release-blocking regressions. They validate different
+architectural conditions; 13 is not a generic replacement for 21.
+
+## Approved Drawing Manifest contract
+
+The Planner is the only component allowed to determine sheet composition. It
+must emit a versioned manifest containing a unique manifest ID, exact
+`total_sheets`, and the ordered list of sheet codes, families, effective
+levels, Typical pattern, and special-sheet status.
+
+Approval freezes that manifest as `approved_manifest`. The Proposal reads its
+count from this manifest. CAD must iterate the approved manifest, never the raw
+level list:
+
+```python
+for sheet in approved_manifest["sheets"]:
+    create_sheet(sheet)
+```
+
+After DXF generation, expected codes and count must equal issued layout codes
+and count. Any missing manifest, duplicate code, changed count, or Proposal/CAD
+mismatch is a hard Generation Failed result; the revision must not be marked
+ready.
 
 ## Calculation principle
 
@@ -88,7 +115,7 @@ For each system family:
 5. add the dedicated roof/rainwater sheet where required;
 6. do not add a generic combined riser/calculation sheet unless explicitly required.
 
-Customer Deliverable Sheet Count = sum of all authority-separated system-family sheets and required system-specific special sheets.
+Customer Deliverable Sheet Count = length of the ordered Approved Drawing Manifest.
 
 The customer-visible count and the final CAD deliverable count MUST be the same semantic quantity.
 
