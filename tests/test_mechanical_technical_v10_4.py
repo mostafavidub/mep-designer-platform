@@ -152,12 +152,30 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             response = TestClient(technical.app).post('/design', json=payload)
             self.assertEqual(response.status_code, 200, response.text[:1000])
             body = response.json()
-            self.assertEqual(body['engine_version'], '1.0.5')
+            self.assertEqual(body['engine_version'], '1.0.6')
             report = body['design_reports'][0]
             self.assertEqual(report['technical_quality']['score_10'], 10.0)
             self.assertEqual(report['authority_submission']['expected_sheet_count'], 21)
             self.assertEqual(report['authority_submission']['generated_sheet_count'], 21)
             self.assertEqual(report['authority_submission']['materialized_analyzer_blocks'], ['HTTP_ARCH_LEVELS'])
+
+    def test_short_rulebook_confirmations_generate_10_of_10(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            inputs = calc['_design_inputs']
+            inputs['gas'] = 'تأیید'
+            inputs.pop('gas_appliances')
+            inputs['fixture_schedule'] = 'پیشنهاد بده'
+            inputs['sanitary_outlet'] = 'تأیید'
+            inputs.pop('roof_drainage_basis')
+            inputs['roof_drainage_geometry'] = 'تأیید'
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+            self.assertEqual(meta['technical_quality']['score_10'], 10.0)
+            self.assertEqual(meta['technical_design']['gas_load_kw'], 34.0)
+            self.assertGreater(meta['technical_design']['fixture_schedule_count'], 0)
+            self.assertGreater(meta['technical_design']['roof_area_m2'], 0)
 
 
 if __name__ == '__main__':
