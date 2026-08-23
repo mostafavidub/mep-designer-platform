@@ -7,7 +7,7 @@
   hero.innerHTML = `
     <div class="container-wide mechanical-hero-v3-grid">
       <div class="mechanical-hero-v3-art">
-        <img src="/service-art/mechanical.jpg?v=20260823-1103" width="320" height="180" alt="مدل سه‌بعدی سیستم‌های مکانیکی ساختمان شامل تجهیزات HVAC، کانال‌ها و لوله‌کشی روی نقشه مهندسی" decoding="sync" fetchpriority="high">
+        <img src="https://res.cloudinary.com/pnuzoh4o/image/upload/v1787404604/engitools/hero-integrated-check.jpg" width="1672" height="941" alt="مدل سه‌بعدی سیستم‌های مکانیکی ساختمان شامل تجهیزات HVAC، کانال‌ها و لوله‌کشی روی نقشه مهندسی" decoding="async" fetchpriority="high">
       </div>
       <div class="mechanical-hero-v3-copy">
         <div class="mechanical-hero-v3-eyebrow">همراه مکانیک</div>
