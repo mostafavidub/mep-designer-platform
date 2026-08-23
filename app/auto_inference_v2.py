@@ -29,6 +29,19 @@ def _plan_title(text):
     return None
 
 
+def _expand_combined_levels(level):
+    """Expand a shared title such as 'طبقه اول و دوم' into real levels."""
+    value = _norm(level)
+    match = re.fullmatch(r'(?:طبقه\s*)?([^\s]+)\s*و\s*(?:طبقه\s*)?([^\s]+)', value)
+    if not match:
+        return [value]
+    first, second = match.groups()
+    ordinals = ('اول', 'دوم', 'سوم', 'چهارم', 'پنجم', 'ششم')
+    if first in ordinals and second in ordinals:
+        return [f'طبقه {first}', f'طبقه {second}']
+    return [value]
+
+
 def _nearest_distances(points):
     values = []
     for i, p in enumerate(points):
@@ -52,6 +65,8 @@ def _selected_architecture_titles(labels):
     arch = [x for x in titles if x['type'] == 'architecture']
     if not arch:
         return titles, []
+    # Assign rooms only against architectural titles; nearby furniture or lintel plans must not steal them.
+    titles = arch
     levels = list(dict.fromkeys(x['level'] for x in arch))
     selected = []
     for level in levels:
@@ -201,7 +216,7 @@ def _level_profiles_from_file(f):
                 bool(counts.get('shaft')),
             )
             confidence = 'high'
-        profiles.append({
+        profile = {
             'name': title['level'],
             'room_counts': dict(counts),
             'recognized_room_labels': len(accepted),
@@ -213,7 +228,11 @@ def _level_profiles_from_file(f):
             'roof': is_roof,
             'typical_signature': signature,
             'typical_confidence': confidence,
-        })
+        }
+        for expanded_name in _expand_combined_levels(title['level']):
+            expanded = dict(profile)
+            expanded['name'] = expanded_name
+            profiles.append(expanded)
     return profiles
 
 
