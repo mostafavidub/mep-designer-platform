@@ -27,7 +27,8 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         self.assertIn('uPVC', answers['sanitary_design_basis'])
         self.assertIn('per room load', answers['equipment_schedule'])
         self.assertIn('m3/h', answers['ventilation_design_basis'])
-        self.assertEqual(answers['mechanical_rulebook_version'], '1.4')
+        self.assertEqual(answers['mechanical_rulebook_version'], '1.5')
+        self.assertEqual(answers['heights'], '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones')
 
         analysis = {'files': [{'texts': ['پلان معماری همکف', 'مسکونی']}]}
         keys = [key for key, _ in dynamic_questions(analysis, 'mechanical', auto)]
@@ -38,6 +39,9 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
             self.assertNotIn(forbidden, keys)
         self.assertIn('water_inlet_pressure', keys)
         self.assertIn('fixture_schedule', keys)
+        prompts = dict(dynamic_questions(analysis, 'mechanical', auto))
+        self.assertIn('پاسخ کوتاه', prompts['gas'])
+        self.assertIn('پیشنهاد خودکار تجهیزات', prompts['fixture_schedule'])
 
     def test_fixture_question_is_skipped_when_architecture_has_real_blocks(self):
         auto = self.auto(fixture_blocks_detected=6, fixture_counts={'toilet': 2, 'sink': 2, 'bath': 2})
