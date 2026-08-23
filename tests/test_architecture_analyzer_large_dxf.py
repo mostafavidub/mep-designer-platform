@@ -21,24 +21,25 @@ class LargeDxfArchitectureAnalyzerTests(unittest.TestCase):
         for index in range(1205):
             msp.add_text(f"DETAIL NOTE {index}").set_placement((index, -100))
 
-        msp.add_text("پلان معماری طبقه همکف").set_placement((0, 0))
+        plan = doc.blocks.new(name="ARCH_PLANS")
+        plan.add_text("پلان معماری طبقه همکف").set_placement((0, 0))
         for text, point in [
             ("آشپزخانه", (3, 4)), ("حمام", (6, 5)), ("سرویس", (7, 8)),
             ("پذیرایی", (12, 5)), ("اتاق خواب", (14, 9)), ("اتاق خواب", (16, 11)),
         ]:
-            msp.add_text(text).set_placement(point)
+            plan.add_text(text).set_placement(point)
 
-        msp.add_text("پلان معماری طبقه اول و دوم").set_placement((100, 0))
+        plan.add_text("پلان معماری طبقه اول و دوم").set_placement((100, 0))
         for text, point in [
             ("آشپزخانه", (103, 4)), ("حمام", (106, 5)), ("سرویس", (107, 8)),
             ("پذیرایی", (112, 5)), ("اتاق خواب", (114, 9)),
         ]:
-            msp.add_text(text).set_placement(point)
+            plan.add_text(text).set_placement(point)
 
-        # A closer non-architectural title must not steal architectural rooms.
-        msp.add_text("پلان مبلمان طبقه اول و دوم").set_placement((101, 1))
-        msp.add_text("پلان معماری بام").set_placement((200, 0))
-        msp.add_text("بام").set_placement((203, 4))
+        plan.add_text("پلان مبلمان طبقه اول و دوم").set_placement((101, 1))
+        plan.add_text("پلان معماری بام").set_placement((200, 0))
+        plan.add_text("بام").set_placement((203, 4))
+        msp.add_blockref("ARCH_PLANS", (0, 0))
         doc.saveas(path)
 
     def test_large_file_detects_all_levels_and_issues_15_sheet_proposal(self):
