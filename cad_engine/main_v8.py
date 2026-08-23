@@ -150,6 +150,8 @@ def mechanical_calc_v8(a):
         'sanitary_outlet', 'parking_enclosure', 'occupancy', 'heights',
         'water_design_basis', 'sanitary_design_basis', 'gas_appliances',
         'equipment_schedule', 'ventilation_design_basis', 'roof_drainage_basis',
+        'water_inlet_pressure', 'fixture_schedule', 'roof_drainage_geometry',
+        'mechanical_rulebook_version',
     ):
         if a.get(key) not in (None, ''):
             inputs[key] = a.get(key)
