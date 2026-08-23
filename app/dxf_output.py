@@ -11,6 +11,39 @@ app = legacy.app
 _prev_flow_payload = legacy.flow_payload
 
 
+def validate_generated_manifest(drawing_set, design_reports):
+    """Fail closed unless CAD issued exactly the customer-approved sheets."""
+    if not (drawing_set or {}).get('approved'):
+        raise RuntimeError('مانیفست نقشه‌های مکانیکی هنوز تأیید نشده است.')
+    manifest = (drawing_set or {}).get('approved_manifest') or {}
+    expected_sheets = manifest.get('sheets') or []
+    expected_codes = [str(x.get('code') or '') for x in expected_sheets]
+    expected_count = int(manifest.get('total_sheets') or -1)
+    if expected_count < 1 or expected_count != len(expected_codes):
+        raise RuntimeError('مانیفست تأییدشده نامعتبر است.')
+
+    generated_codes = []
+    validation_states = []
+    for report in design_reports or []:
+        authority = report.get('authority_submission') or {}
+        generated_codes.extend(str(x) for x in (authority.get('layouts') or []))
+        validation_states.append(authority.get('validation_status'))
+    if generated_codes != expected_codes or len(generated_codes) != expected_count:
+        raise RuntimeError(
+            'Generation Failed: Proposal/CAD sheet mismatch. '
+            f'Expected={expected_count} {expected_codes}; '
+            f'Generated={len(generated_codes)} {generated_codes}'
+        )
+    if any(x != 'PASS' for x in validation_states):
+        raise RuntimeError('Generation Failed: CAD manifest validation did not PASS.')
+    return {
+        'expected_sheets': expected_count,
+        'generated_sheets': len(generated_codes),
+        'status': 'PASS',
+        'manifest_id': manifest.get('manifest_id'),
+    }
+
+
 def run_design_dxf(project_id, revision_id):
     db = legacy.Session()
     p = db.get(legacy.Project, project_id)
@@ -42,6 +75,7 @@ def run_design_dxf(project_id, revision_id):
                 'systems': scope['systems'],
                 'only_this_discipline': True,
                 'include_other_disciplines': False,
+                'approved_manifest': ((p.analysis or {}).get('drawing_set') or {}).get('approved_manifest'),
             },
         }
         resp = requests.post(legacy.CAD_DESIGNER_URL + '/design', json=payload, timeout=3600)
@@ -49,6 +83,15 @@ def run_design_dxf(project_id, revision_id):
         data = resp.json()
         if data.get('discipline') and data['discipline'] != discipline:
             raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
+
+        if discipline == 'mechanical':
+            validation = validate_generated_manifest(
+                (p.analysis or {}).get('drawing_set') or {},
+                data.get('design_reports') or [],
+            )
+            analysis = dict(p.analysis or {})
+            analysis['last_generation_validation'] = validation
+            p.analysis = analysis
 
         generated = data.get('generated_files') or []
         package_path = Path(data.get('zip_path') or '')
