@@ -24,7 +24,7 @@ class LargeDxfArchitectureAnalyzerTests(unittest.TestCase):
         msp.add_text("پلان معماری طبقه همکف").set_placement((0, 0))
         for text, point in [
             ("آشپزخانه", (3, 4)), ("حمام", (6, 5)), ("سرویس", (7, 8)),
-            ("پذیرایی", (12, 5)), ("اتاق خواب", (14, 9)),
+            ("پذیرایی", (12, 5)), ("اتاق خواب", (14, 9)), ("اتاق خواب", (16, 11)),
         ]:
             msp.add_text(text).set_placement(point)
 
