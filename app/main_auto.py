@@ -67,7 +67,7 @@ def analyze_dxf_enhanced(path):
     def is_architecture_label(value):
         return is_plan_title(value) or classify_room(normalized(value)) is not None
 
-    def collect(container):
+    def collect(container, source_type, source_name):
         raw_texts, labels = [], []
         for entity in _expanded_entities(container):
             if entity.dxftype() not in ('TEXT', 'MTEXT'):
@@ -78,7 +78,10 @@ def analyze_dxf_enhanced(path):
             raw_texts.append(value)
             point = _entity_insert(entity)
             if point and is_architecture_label(value):
-                labels.append({'text': value, 'x': point[0], 'y': point[1]})
+                labels.append({
+                    'text': value, 'x': point[0], 'y': point[1],
+                    'source_type': source_type, 'source_name': source_name,
+                })
         title_count = sum(1 for item in labels if is_plan_title(item['text']))
         room_count = sum(1 for item in labels if classify_room(normalized(item['text'])) is not None)
         return raw_texts, labels, (title_count, room_count)
@@ -86,12 +89,15 @@ def analyze_dxf_enhanced(path):
     # Evaluate layouts and named block definitions independently. Some exported
     # authority DXFs keep the usable architectural sheet in an unreferenced
     # named block; mixing unrelated blocks would corrupt spatial assignment.
-    candidates = [collect(layout) for layout in doc.layouts]
+    candidates = [
+        collect(layout, 'layout', str(getattr(layout, 'name', '') or ''))
+        for layout in doc.layouts
+    ]
     for block in doc.blocks:
         name = str(getattr(block, 'name', '') or '')
         if name.lower().startswith(('*model_space', '*paper_space')):
             continue
-        candidates.append(collect(block))
+        candidates.append(collect(block, 'block', name))
     usable = [item for item in candidates if item[2][0] > 0]
     if usable:
         # Exported consultant files may split one project across several named
