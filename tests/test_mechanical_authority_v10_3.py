@@ -14,9 +14,6 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
         msp = doc.modelspace()
         dim = msp.add_linear_dim(base=(0, -2), p1=(0, 0), p2=(3, 0), angle=0)
         dim.render()
-
-        # Three independent occupied mechanical levels. Each has wet/habitable
-        # rooms and a shaft so all authority system families have real scope.
         for name, ox in [('همکف', 0), ('طبقه اول', 40), ('طبقه دوم', 80)]:
             msp.add_text(f'{name} پلان معماری').set_placement((ox, 0))
             msp.add_text('آشپزخانه').set_placement((ox + 3, 6))
@@ -25,8 +22,6 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
             msp.add_text('اتاق خواب').set_placement((ox + 12, 6))
             msp.add_text('پذیرایی').set_placement((ox + 11, 12))
             msp.add_text('شفت').set_placement((ox + 6, 13))
-
-        # Dedicated roof/rainwater source.
         msp.add_text('پشت بام پلان معماری').set_placement((120, 0))
         msp.add_text('بام').set_placement((125, 8))
         msp.add_text('P.V.C 110 RD').set_placement((124, 11))
@@ -51,18 +46,17 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
             }
             meta = authority.design_dxf_v10_3(src, dst, 'mechanical', systems, 1, calc)
             out = ezdxf.readfile(dst)
-            names = [x.name for x in out.layouts if x.name != 'Model']
+            names = [x.name for x in out.layouts if x.name.startswith('M-')]
             self.assertEqual(len(names), meta['authority_submission']['layout_count'])
+            self.assertEqual(len(names), 21)
+            self.assertEqual(meta['authority_submission']['counts'], {
+                'W': 4, 'S': 3, 'H': 3, 'C': 4, 'G': 3, 'V': 3, 'R': 1,
+            })
             self.assertEqual(len(out.audit().errors), 0)
             self.assertNotIn('M-RISER-CALC', names)
             self.assertFalse(any(x.startswith('M-P-') for x in names))
-            self.assertTrue(any(x.startswith('M-W-') for x in names))
-            self.assertTrue(any(x.startswith('M-S-') for x in names))
-            self.assertTrue(any(x.startswith('M-H-') for x in names))
-            self.assertTrue(any(x.startswith('M-C-') for x in names))
-            self.assertTrue(any(x.startswith('M-G-') for x in names))
-            self.assertTrue(any(x.startswith('M-V-') for x in names))
-            self.assertTrue(any(x.startswith('M-R-') for x in names))
+            for prefix in ('M-W-', 'M-S-', 'M-H-', 'M-C-', 'M-G-', 'M-V-', 'M-R-'):
+                self.assertTrue(any(x.startswith(prefix) for x in names), prefix)
 
 
 if __name__ == '__main__':
