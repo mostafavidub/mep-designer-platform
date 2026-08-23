@@ -152,7 +152,7 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             response = TestClient(technical.app).post('/design', json=payload)
             self.assertEqual(response.status_code, 200, response.text[:1000])
             body = response.json()
-            self.assertEqual(body['engine_version'], '1.0.6')
+            self.assertEqual(body['engine_version'], '1.0.7')
             report = body['design_reports'][0]
             self.assertEqual(report['technical_quality']['score_10'], 10.0)
             self.assertEqual(report['authority_submission']['expected_sheet_count'], 21)
@@ -176,6 +176,43 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             self.assertEqual(meta['technical_design']['gas_load_kw'], 34.0)
             self.assertGreater(meta['technical_design']['fixture_schedule_count'], 0)
             self.assertGreater(meta['technical_design']['roof_area_m2'], 0)
+
+    def test_unknown_water_pressure_uses_conservative_rulebook_basis(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            calc['_design_inputs']['water_inlet_pressure'] = 'نمی‌دانم'
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+            self.assertEqual(meta['technical_quality']['score_10'], 10.0)
+            self.assertEqual(meta['technical_design']['water_inlet_pressure_bar'], 2.5)
+
+    def test_compact_output_removes_remote_architecture_and_unused_blocks(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'large-architecture.dxf'; dst = Path(td) / 'mechanical.dxf'
+            self.architecture(src)
+            source = ezdxf.readfile(src)
+            msp = source.modelspace()
+            if 'ARCH-JUNK' not in source.layers:
+                source.layers.add('ARCH-JUNK')
+            for index in range(500):
+                x = 5000 + index * 2
+                msp.add_line((x, 5000), (x + 1, 5001), dxfattribs={'layer': 'ARCH-JUNK'})
+            unused = source.blocks.new('UNUSED_ARCHITECTURE_LIBRARY')
+            for index in range(10000):
+                unused.add_line((index, 0), (index, 100))
+            source.saveas(src)
+            source_bytes = src.stat().st_size
+
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, self.calc())
+            cleanup = meta['compact_output']
+            self.assertEqual(cleanup['status'], 'PASS')
+            self.assertEqual(cleanup['architecture_source_files_packaged'], 0)
+            self.assertGreaterEqual(cleanup['removed_unneeded_entities'], 500)
+            self.assertLess(dst.stat().st_size, source_bytes)
+            out = ezdxf.readfile(dst)
+            self.assertFalse(any(entity.dxf.layer == 'ARCH-JUNK' for entity in out.modelspace()))
+            self.assertNotIn('UNUSED_ARCHITECTURE_LIBRARY', out.blocks)
 
 
 if __name__ == '__main__':
