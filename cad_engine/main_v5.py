@@ -348,7 +348,7 @@ engine.render_pdf = render_pdf_resilient
 
 @app.get('/health')
 def health():
-    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.6', 'mode': 'evidence-gated-mechanical-technical-design'}
+    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.7', 'mode': 'evidence-gated-mechanical-technical-design'}
 
 
 @app.get('/engine-capabilities')
@@ -421,6 +421,20 @@ def design(req: engine.DesignRequest):
             sources = engine.source_files(req, ti)
         except Exception as exc:
             raise HTTPException(400, str(exc))
+        if discipline == 'mechanical' and len(sources) > 1:
+            # Deliver one compact authority DXF, never one duplicated drawing
+            # set per uploaded architecture file. Prefer the analyzer source
+            # with the richest reliable plan/fixture evidence.
+            file_scores = {}
+            for item in (req.plan_analysis or {}).get('files') or []:
+                name = Path(str(item.get('file') or '')).name
+                score = (
+                    len(item.get('text_labels') or []) * 5
+                    + len(item.get('fixture_blocks') or []) * 10
+                    + sum(int(value or 0) for value in (item.get('entities') or {}).values())
+                )
+                file_scores[name] = score
+            sources = [max(sources, key=lambda path: (file_scores.get(path.name, 0), path.stat().st_size))]
         generated, pages, reports = [], [], []
         for idx, src in enumerate(sources, start=1):
             stem = ''.join(c if c.isalnum() or c in '-_' else '_' for c in src.stem)[:80] or f'plan_{idx}'
@@ -428,6 +442,7 @@ def design(req: engine.DesignRequest):
             try:
                 design_meta = engine.design_dxf(src, dxf, discipline, systems, req.revision, calc)
             except RuntimeError as exc:
+                print(f'[cad-design] {discipline} generation blocked: {exc}', flush=True)
                 raise HTTPException(422, str(exc))
             report = {'source': src.name, **design_meta}
             report['detected_plan_clusters'] = len(_cluster_rooms(engine.detect_room_labels(ezdxf.readfile(dxf).modelspace())))
@@ -442,7 +457,7 @@ def design(req: engine.DesignRequest):
         engine.zip_outputs(generated, package)
         return {
             'ok': True, 'project_id': req.project_id, 'discipline': discipline,
-            'engine_version': '1.0.6', 'mode': 'evidence-gated-mechanical-technical-design',
+            'engine_version': '1.0.7', 'mode': 'evidence-gated-mechanical-technical-design',
             'preliminary': True, 'requires_professional_review': True,
             'systems': systems, 'calculation_report': calc, 'design_reports': reports,
             'generated_files': [p.name for p in generated],
