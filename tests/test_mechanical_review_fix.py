@@ -5,29 +5,46 @@ from app.mechanical_review_fix import decorate_review_payload, review_question_h
 
 class MechanicalReviewFixTests(unittest.TestCase):
     def drawing_set(self):
+        levels = ['همکف', 'اول', 'دوم']
         return {
             'approved': False,
             'approval_required': True,
-            'total_plans': 21,
-            'labels': {
-                'cooling': 'سرمایش',
-                'heating': 'گرمایش',
-                'water_supply': 'آب سرد و گرم',
-                'sanitary': 'فاضلاب و ونت',
-                'ventilation': 'تهویه',
-                'gas': 'گاز',
-                'roof_drainage': 'بام / آب باران',
-                'riser': 'رایزر',
-            },
-            'systems': {
-                'cooling': {'count': 3, 'levels': ['همکف', 'اول', 'دوم']},
-                'heating': {'count': 3, 'levels': ['همکف', 'اول', 'دوم']},
-                'water_supply': {'count': 4, 'levels': ['همکف', 'اول', 'دوم', 'سوم']},
-                'sanitary': {'count': 3, 'levels': ['همکف', 'اول', 'دوم']},
-                'ventilation': {'count': 3, 'levels': ['همکف', 'اول', 'دوم']},
-                'gas': {'count': 3, 'levels': ['همکف', 'اول', 'دوم']},
-                'roof_drainage': {'count': 1, 'levels': ['Roof']},
-                'riser': {'count': 1, 'levels': ['Riser Diagram']},
+            'total_plans': 13,
+            'deliverable_sheet_count': 13,
+            'count_semantics': 'customer_deliverable_sheets',
+            'sheet_families': {
+                'plumbing_gas': {
+                    'code': 'M-P', 'label': 'آب سرد و گرم + گاز', 'count': 3,
+                    'sheets': [
+                        {'pattern': level, 'levels': [level], 'typical': False}
+                        for level in levels
+                    ],
+                },
+                'sanitary_vent_rain': {
+                    'code': 'M-S', 'label': 'فاضلاب + ونت + آب باران', 'count': 3,
+                    'sheets': [
+                        {'pattern': level, 'levels': [level], 'typical': False}
+                        for level in levels
+                    ],
+                },
+                'heating_cooling_condensate': {
+                    'code': 'M-H', 'label': 'گرمایش + سرمایش + درین کندانس', 'count': 3,
+                    'sheets': [
+                        {'pattern': level, 'levels': [level], 'typical': False}
+                        for level in levels
+                    ],
+                },
+                'ventilation_exhaust': {
+                    'code': 'M-V', 'label': 'تهویه + اگزاست', 'count': 3,
+                    'sheets': [
+                        {'pattern': level, 'levels': [level], 'typical': False}
+                        for level in levels
+                    ],
+                },
+                'riser_calc': {
+                    'code': 'M-RISER-CALC', 'label': 'رایزر + محاسبات + Legend', 'count': 1,
+                    'sheets': [{'pattern': 'Building', 'levels': levels, 'typical': False}],
+                },
             },
         }
 
@@ -37,18 +54,20 @@ class MechanicalReviewFixTests(unittest.TestCase):
         self.assertEqual(payload['question_count'], 1)
         self.assertEqual(payload['question']['key'], '_drawing_set_approval')
         self.assertIn('تأیید لیست و ادامه', payload['question']['question'])
-        self.assertIn('مجموع: 21 پلان', payload['question']['question'])
+        self.assertIn('مجموع قابل تحویل: 13 شیت', payload['question']['question'])
 
-    def test_review_html_contains_system_breakdown_and_hides_old_textarea(self):
+    def test_review_html_contains_deliverable_family_breakdown_and_hides_old_textarea(self):
         html = review_question_html(self.drawing_set())
-        self.assertIn('سرمایش', html)
-        self.assertIn('آب سرد و گرم', html)
+        self.assertIn('گرمایش + سرمایش + درین کندانس', html)
+        self.assertIn('آب سرد و گرم + گاز', html)
+        self.assertIn('M-P', html)
+        self.assertIn('M-RISER-CALC', html)
         self.assertIn('#answerForm textarea', html)
-        self.assertIn("requestSubmit()", html)
+        self.assertIn('requestSubmit()', html)
 
     def test_architecture_labels_are_escaped_before_modal_html(self):
         ds = self.drawing_set()
-        ds['systems']['cooling']['levels'] = ['<script>alert(1)</script>']
+        ds['sheet_families']['plumbing_gas']['sheets'][0]['pattern'] = '<script>alert(1)</script>'
         html = review_question_html(ds)
         self.assertNotIn('<script>alert(1)</script>', html)
         self.assertIn('&lt;script&gt;', html)
