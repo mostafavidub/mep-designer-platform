@@ -11,7 +11,16 @@ from collections import Counter
 
 import ezdxf
 
-from app.mechanical_rulebook import RULEBOOK_VERSION, SANITARY, WATER, roof_basis
+from app.mechanical_rulebook import (
+    DEFAULT_GAS_PROPOSAL,
+    RULEBOOK_VERSION,
+    SANITARY,
+    WATER,
+    fixture_schedule_proposal,
+    is_confirmation,
+    roof_basis,
+    roof_geometry_proposal,
+)
 
 from . import main_v10_3 as base
 from . import main_v8 as v8
@@ -126,6 +135,8 @@ def _fixture_summary(levels, fixture_schedule=''):
 def _technical_model(doc, levels, calc):
     inputs = calc.get('_design_inputs') or {}
     fixture_schedule = _norm(inputs.get('fixture_schedule'))
+    if is_confirmation(fixture_schedule):
+        fixture_schedule = fixture_schedule_proposal(levels)
     detected, scheduled, fixtures, rooms, proxies = _fixture_summary(levels, fixture_schedule)
     unit_to_m = _drawing_unit_to_m(doc)
     water_basis = _norm(inputs.get('water_design_basis')) or (
@@ -137,10 +148,14 @@ def _technical_model(doc, levels, calc):
         f"{SANITARY['main_slope_pct']} percent mains"
     )
     gas_basis = _norm(inputs.get('gas_appliances') or inputs.get('gas'))
+    if is_confirmation(gas_basis):
+        gas_basis = DEFAULT_GAS_PROPOSAL
     equipment = _norm(inputs.get('equipment_schedule'))
     ventilation = _norm(inputs.get('ventilation_design_basis'))
     roof_design_basis = _norm(inputs.get('roof_drainage_basis'))
     roof_geometry = _norm(inputs.get('roof_drainage_geometry'))
+    if is_confirmation(roof_geometry):
+        roof_geometry = roof_geometry_proposal(levels)
     roof_design_basis = roof_basis(inputs.get('location'), roof_design_basis or roof_geometry)
 
     water_fu = (
@@ -181,6 +196,8 @@ def _technical_model(doc, levels, calc):
         ('Cast iron', ('cast iron', 'چدن')),
     ))
     sanitary_outlet = _norm(inputs.get('sanitary_outlet'))
+    if is_confirmation(sanitary_outlet):
+        sanitary_outlet = 'municipal sewer at project boundary - user confirmed Rulebook proposal'
 
     gas_values_kw = _all_numbers(gas_basis, r'kw|کیلووات|كيلووات')
     gas_load_kw = sum(gas_values_kw) if gas_values_kw else None
@@ -423,7 +440,7 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     meta['technical_quality'] = report
     meta['technical_symbol_blocks'] = symbol_count
     meta['technical_schedule_annotations'] = schedule_count
-    meta['design_standard'] = f'Rulebook v{RULEBOOK_VERSION} minimal-input evidence-gated mechanical technical design v10.5'
+    meta['design_standard'] = f'Rulebook v{RULEBOOK_VERSION} short-answer evidence-gated mechanical technical design v10.6'
     return meta
 
 
@@ -433,12 +450,13 @@ engine.design_dxf = design_dxf_v10_4
 @app.get('/v10-4-capabilities')
 def capabilities():
     return {
-        'ok': True, 'version': '1.0.5-technical-mechanical',
+        'ok': True, 'version': '1.0.6-technical-mechanical',
         'evidence_gated_score_10': True,
         'water_hydraulic_calculation': True, 'sanitary_fixture_unit_schedule': True,
         'gas_load_and_flow_schedule': True, 'room_load_distribution': True,
         'ventilation_airflow_gate': True, 'roof_rainfall_calculation': True,
         'standard_mechanical_symbol_blocks': True, 'per_sheet_technical_schedules': True,
         'rulebook_owned_defaults_not_customer_questions': True,
+        'short_answer_rulebook_confirmation': True,
         'construction_ready': False, 'professional_verification_required': True,
     }
