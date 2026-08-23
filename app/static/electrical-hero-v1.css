@@ -3,12 +3,12 @@
   min-height:100svh!important;
   padding:96px 0 74px!important;
   display:flex!important;align-items:center!important;overflow:hidden!important;position:relative!important;isolation:isolate;
-  background:#050505!important;color:#fff!important;border:0!important;
+  background-color:#050505!important;background-image:linear-gradient(90deg,rgba(5,7,9,.08) 0%,rgba(5,7,9,.18) 42%,rgba(5,7,9,.74) 72%,rgba(5,7,9,.96) 100%),url('https://res.cloudinary.com/pnuzoh4o/image/upload/v1787417193/engitools/electrical-hero-final-20260822.webp')!important;background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important;color:#fff!important;border:0!important;
   animation:none!important;transition:none!important;transform:none!important;
 }
 .electrical .electrical-landing-hero:before{display:none!important}
-.electrical .electrical-hero-grid{width:100%;position:relative;z-index:2;display:grid!important;grid-template-columns:1.06fr .94fr!important;grid-template-areas:'art copy';gap:72px!important;align-items:center!important;direction:ltr}
-.electrical .electrical-hero-art{grid-area:art;width:100%;min-width:0;aspect-ratio:16/9;max-height:620px;position:relative;pointer-events:none;background-color:#050505;background-image:url('https://res.cloudinary.com/pnuzoh4o/image/upload/v1787417193/engitools/electrical-hero-final-20260822.webp');background-size:cover;background-position:center;background-repeat:no-repeat;border:1px solid rgba(255,255,255,.16);border-radius:18px;overflow:hidden;animation:none!important;transition:none!important;transform:none!important;filter:none!important;will-change:auto!important}
+.electrical .electrical-hero-grid{width:100%;position:relative;z-index:2;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(520px,.92fr)!important;grid-template-areas:'. copy';gap:72px!important;align-items:center!important;direction:ltr}
+.electrical .electrical-hero-art{display:none!important;grid-area:art;width:100%;min-width:0;aspect-ratio:16/9;max-height:620px;position:relative;pointer-events:none;background-color:#050505;background-image:url('https://res.cloudinary.com/pnuzoh4o/image/upload/v1787417193/engitools/electrical-hero-final-20260822.webp');background-size:cover;background-position:center;background-repeat:no-repeat;border:1px solid rgba(255,255,255,.16);border-radius:18px;overflow:hidden;animation:none!important;transition:none!important;transform:none!important;filter:none!important;will-change:auto!important}
 .electrical .electrical-hero-art:before,.electrical .electrical-hero-art:after{display:none!important;content:none!important}
 .electrical .electrical-hero-copy{grid-area:copy;direction:rtl;text-align:right;max-width:720px;justify-self:end;padding:0}
 .electrical .electrical-hero-eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);padding:6px 9px;border-radius:6px;color:rgba(255,255,255,.78);font-size:11px;letter-spacing:1.7px;font-weight:700;margin:0}
