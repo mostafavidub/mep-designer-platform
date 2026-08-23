@@ -8,10 +8,14 @@ import math
 import re
 
 
-RULEBOOK_VERSION = '1.5'
+RULEBOOK_VERSION = '1.6'
 
 DEFAULT_HEIGHTS = '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones'
 DEFAULT_GAS_PROPOSAL = 'boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance'
+DEFAULT_WATER_INLET_PRESSURE = (
+    '2.5 bar conservative design basis at property inlet; storage tank and booster pump '
+    'maintain calculated residual pressure'
+)
 
 WATER = {
     'material': 'PPR',
@@ -59,6 +63,26 @@ def is_confirmation(value):
     return text in ('تأیید', 'تایید', 'پیشنهاد بده', 'پیشنهاد شود', 'قبول', 'yes', 'ok', 'approve')
 
 
+def water_inlet_pressure_basis(value):
+    """Resolve missing/unknown pressure without blocking the design workflow.
+
+    Utility pressure is an external fact, but an unknown reading does not have
+    to make the drawing engine fail.  The Rule Book uses a conservative inlet
+    basis and explicitly includes storage/booster protection in that case.
+    A real numeric project value always wins.
+    """
+    text = str(value or '').strip().replace('ي', 'ی').replace('ك', 'ک').lower()
+    unresolved = (
+        not text
+        or is_confirmation(text)
+        or any(marker in text for marker in (
+            'نمی‌دانم', 'نمیدانم', 'نامشخص', 'اندازه‌گیری نشده',
+            'unknown', 'unresolved', 'tbd', 'not measured',
+        ))
+    )
+    return DEFAULT_WATER_INLET_PRESSURE if unresolved else str(value).strip()
+
+
 def fixture_schedule_proposal(auto_or_levels):
     rooms = {}
     if isinstance(auto_or_levels, dict):
@@ -95,7 +119,7 @@ def roof_geometry_proposal(auto_or_levels):
 
 
 def automatic_answers(auto):
-    """Return non-customer mechanical decisions owned by Rule Book v1.5."""
+    """Return non-customer mechanical decisions owned by Rule Book v1.6."""
     rooms = auto.get('room_counts') or {}
     cooling = float(auto.get('estimated_cooling_load_kw') or 0)
     heating = float(auto.get('estimated_heating_load_kw') or 0)
@@ -119,6 +143,7 @@ def automatic_answers(auto):
     )
     return {
         'heights': DEFAULT_HEIGHTS,
+        'water_inlet_pressure': DEFAULT_WATER_INLET_PRESSURE,
         'heating': 'Rulebook automatic: condensing combi boiler + hydronic radiators',
         'cooling': 'Rulebook automatic: split units sized from calculated room loads',
         'water_design_basis': (
@@ -134,7 +159,7 @@ def automatic_answers(auto):
             f"Rulebook calculated airflow {airflow} m3/h; discharge above roof/exterior; "
             "make-up air from facade/openings"
         ),
-        'water_source': 'Rulebook automatic selection after inlet pressure and building elevation check',
+        'water_source': 'Rulebook automatic: municipal meter + storage tank + booster pump sized from calculated demand',
         'mechanical_rulebook_version': RULEBOOK_VERSION,
     }
 
