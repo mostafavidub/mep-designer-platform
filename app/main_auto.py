@@ -57,7 +57,12 @@ def analyze_dxf_enhanced(path):
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
     texts, text_labels = [], []
-    for e in _expanded_entities(msp):
+    # Architectural sheets may live in paperspace layouts instead of Model.
+    # Scan every layout and recursively resolve its inserts.
+    layout_entities = []
+    for layout in doc.layouts:
+        layout_entities.extend(_expanded_entities(layout))
+    for e in layout_entities:
         if e.dxftype() not in ('TEXT', 'MTEXT'):
             continue
         text = _entity_text(e)
