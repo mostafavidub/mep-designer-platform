@@ -221,7 +221,7 @@ def analyze_project_job(project_id):
         discipline = (p.answers or {}).get('discipline', 'mechanical')
         analysis = {
             'discipline': discipline,
-            'architecture_analyzer_version': '3.1-minimal-input-rulebook',
+            'architecture_analyzer_version': '3.2-short-answer-rulebook',
             'file_count': len(files),
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',
@@ -297,9 +297,9 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
 def system_health():
     result = {'ok': True, 'web': {
         'ok': True,
-        'mode': 'architecture-first-v3-minimal-questions',
+        'mode': 'architecture-first-v3.2-short-answers',
         'mechanical_rulebook_version': RULEBOOK_VERSION,
-        'questionnaire': 'external-project-facts-only',
+        'questionnaire': 'short-answer-rulebook-proposals',
     }}
     try:
         r = requests.get(legacy.CAD_DESIGNER_URL + '/engine-capabilities', timeout=5)
