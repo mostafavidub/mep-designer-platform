@@ -1,4 +1,4 @@
-"""Tests for Mechanical Drawing Set Planning Standard."""
+"""Tests for the authority-separated Mechanical Drawing Set Standard."""
 
 from app.mechanical_drawing_set import predict_drawing_set, requires_approval
 
@@ -6,7 +6,7 @@ from app.mechanical_drawing_set import predict_drawing_set, requires_approval
 def _three_level_scope(**overrides):
     levels = ["Ground", "First Duplex", "Second Duplex"]
     scope = {
-        "all_levels": levels,
+        "all_levels": levels + ["Roof"],
         "conditioned_levels": levels,
         "heated_levels": levels,
         "wet_fixture_levels": levels,
@@ -14,7 +14,7 @@ def _three_level_scope(**overrides):
         "ventilation_required_levels": levels,
         "gas_consumer_levels": levels,
         "roof_exists": True,
-        "roof_requires_dedicated_plan": False,
+        "roof_level_name": "Roof",
         "vertical_systems": True,
         "typical_groups": [],
     }
@@ -22,57 +22,50 @@ def _three_level_scope(**overrides):
     return scope
 
 
-def test_three_level_deliverable_matches_13_sheet_cad_composition():
+def test_reference_authority_profile_is_21_deliverable_sheets():
     result = predict_drawing_set(_three_level_scope())
-    assert result["total_plans"] == 13
-    assert result["deliverable_sheet_count"] == 13
-    assert result["count_semantics"] == "customer_deliverable_sheets"
-    assert result["sheet_families"]["plumbing_gas"]["count"] == 3
-    assert result["sheet_families"]["sanitary_vent_rain"]["count"] == 3
-    assert result["sheet_families"]["heating_cooling_condensate"]["count"] == 3
+    assert result["total_plans"] == 21
+    assert result["deliverable_sheet_count"] == 21
+    assert result["count_semantics"] == "authority_separated_customer_deliverables"
+    assert result["sheet_families"]["water_supply"]["count"] == 4
+    assert result["sheet_families"]["sanitary_vent"]["count"] == 3
+    assert result["sheet_families"]["heating"]["count"] == 3
+    assert result["sheet_families"]["cooling"]["count"] == 4
+    assert result["sheet_families"]["gas"]["count"] == 3
     assert result["sheet_families"]["ventilation_exhaust"]["count"] == 3
-    assert result["sheet_families"]["riser_calc"]["count"] == 1
+    assert result["sheet_families"]["roof_rainwater"]["count"] == 1
 
 
-def test_internal_system_scope_is_not_customer_sheet_count():
-    result = predict_drawing_set({
-        "all_levels": ["B", "G", "1", "2", "3"],
-        "conditioned_levels": ["G", "1", "2", "3"],
-        "heated_levels": ["G", "1", "2"],
-        "wet_fixture_levels": ["B", "G", "1", "2"],
-        "sanitary_fixture_levels": ["G", "1", "2"],
-        "ventilation_required_levels": ["B", "G", "1"],
-        "gas_consumer_levels": ["G", "1", "2"],
-        "roof_exists": True,
-        "vertical_systems": False,
-    })
-    assert result["system_scope_count"] == 21
-    assert result["deliverable_sheet_count"] == 14
-    assert result["total_plans"] == 14
+def test_no_cross_system_combination_in_authority_profile():
+    result = predict_drawing_set(_three_level_scope())
+    for key in ("water_supply", "sanitary_vent", "heating", "cooling", "gas", "ventilation_exhaust"):
+        assert len(result["sheet_families"][key]["systems"]) == 1
+    assert "plumbing_gas" not in result["sheet_families"]
+    assert "heating_cooling_condensate" not in result["sheet_families"]
+    assert "riser_calc" not in result["sheet_families"]
 
 
-def test_typical_floors_are_consolidated_before_customer_count():
+def test_typical_floors_consolidate_only_inside_each_system():
+    levels = ["Ground", "First Duplex", "Second Duplex"]
     result = predict_drawing_set(_three_level_scope(
-        typical_groups=[{"name": "Typical Duplex Floors", "levels": ["Ground", "First Duplex", "Second Duplex"]}]
+        typical_groups=[{"name": "Typical Floors", "levels": levels}]
     ))
-    # Four combined plan families collapse to one Typical sheet each, plus one
-    # combined riser/calculation sheet.
-    assert result["deliverable_sheet_count"] == 5
-    for key in (
-        "plumbing_gas", "sanitary_vent_rain",
-        "heating_cooling_condensate", "ventilation_exhaust",
-    ):
-        family = result["sheet_families"][key]
-        assert family["count"] == 1
-        assert family["sheets"][0]["typical"] is True
-        assert len(family["sheets"][0]["levels"]) == 3
+    # Six system families collapse to one level-pattern sheet each. Water and
+    # cooling keep their authority special sheets, plus one roof/rainwater sheet.
+    assert result["deliverable_sheet_count"] == 9
+    assert result["sheet_families"]["water_supply"]["count"] == 2
+    assert result["sheet_families"]["cooling"]["count"] == 2
+    for key in ("sanitary_vent", "heating", "gas", "ventilation_exhaust"):
+        assert result["sheet_families"][key]["count"] == 1
+        assert result["sheet_families"][key]["sheets"][0]["typical"] is True
+    assert result["sheet_families"]["roof_rainwater"]["count"] == 1
 
 
-def test_gas_scope_can_be_off_without_removing_plumbing_sheet():
+def test_gas_scope_off_removes_only_gas_deliverables():
     result = predict_drawing_set(_three_level_scope(gas_consumer_levels=[]))
     assert result["systems"]["gas"]["count"] == 0
-    assert result["sheet_families"]["plumbing_gas"]["count"] == 3
-    assert result["deliverable_sheet_count"] == 13
+    assert result["sheet_families"]["gas"]["count"] == 0
+    assert result["deliverable_sheet_count"] == 18
 
 
 def test_approval_gate():
