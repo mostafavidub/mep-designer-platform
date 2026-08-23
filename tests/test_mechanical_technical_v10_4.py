@@ -118,7 +118,13 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             payload = {
                 'project_id': 'http-v104', 'discipline': 'mechanical',
                 'architecture_archive_b64': base64.b64encode(archive.getvalue()).decode('ascii'),
-                'answers': self.calc()['_design_inputs'],
+                'answers': {
+                    **self.calc()['_design_inputs'],
+                    'design_water_flow_lps': '.7',
+                    'target_water_velocity_mps': '1.5',
+                    'cooling_load_kw': '15',
+                    'heating_load_kw': '12',
+                },
                 'plan_analysis': {
                     'drawing_set': {'approved': True, 'approved_manifest': manifest},
                     'architectural_auto': {'level_profiles': [
