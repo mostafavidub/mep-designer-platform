@@ -92,7 +92,7 @@ def analyze_dxf_enhanced(path):
             continue
         candidates.append(collect(block))
     usable = [item for item in candidates if item[2][0] > 0]
-    texts, text_labels, _ = max(usable or candidates, key=lambda item: item[2]) if candidates else ([], [], (0, 0))
+    texts, text_labels, _ = max(usable or candidates, key=lambda item: (item[2][1], item[2][0])) if candidates else ([], [], (0, 0))
 
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     unit_to_m = INSUNITS_TO_M.get(insunits)
