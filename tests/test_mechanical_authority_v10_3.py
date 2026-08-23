@@ -122,6 +122,39 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
                     {'_design_inputs': {}},
                 )
 
+    def test_analyzer_named_block_is_materialized_for_cad_level_detection(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'architecture-block.dxf'
+            expanded = Path(td) / 'architecture-expanded.dxf'
+            doc = ezdxf.new('R2013')
+            block = doc.blocks.new('APPROVED_ARCH_LEVELS')
+            block.add_text('طبقه همکف پلان معماری').set_placement((0, 0))
+            block.add_text('آشپزخانه').set_placement((3, 5))
+            block.add_text('حمام').set_placement((7, 7))
+            doc.saveas(src)
+            calc = {
+                '_plan_analysis': {
+                    'architectural_auto': {
+                        'level_profiles': [{
+                            'name': 'طبقه همکف', 'source_type': 'block',
+                            'source_name': 'APPROVED_ARCH_LEVELS',
+                        }]
+                    }
+                }
+            }
+            source, names = authority._materialize_analyzer_blocks(src, expanded, calc)
+            out = ezdxf.readfile(source)
+            texts = [x.dxf.text for x in out.modelspace().query('TEXT')]
+            self.assertEqual(names, ['APPROVED_ARCH_LEVELS'])
+            self.assertIn('طبقه همکف پلان معماری', texts)
+            self.assertIn('آشپزخانه', texts)
+
+    def test_missing_manifest_level_never_reuses_another_floor_geometry(self):
+        levels = [{'level': 'طبقه همکف', 'rooms': [], 'fixtures': []}]
+        sheet = {'code': 'M-W-02', 'levels': ['طبقه اول']}
+        with self.assertRaisesRegex(RuntimeError, 'exact level geometry'):
+            authority._manifest_level(sheet, levels)
+
 
 if __name__ == '__main__':
     unittest.main()
