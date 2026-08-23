@@ -348,14 +348,14 @@ engine.render_pdf = render_pdf_resilient
 
 @app.get('/health')
 def health():
-    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.4', 'mode': 'evidence-gated-mechanical-technical-design'}
+    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.5', 'mode': 'evidence-gated-mechanical-technical-design'}
 
 
 @app.get('/engine-capabilities')
 def capabilities():
     return {
         'ok': True,
-        'version': '1.0.4',
+        'version': '1.0.5',
         'questionnaire': 'dynamic-unresolved-only',
         'architecture_auto_calculation': True,
         'resilient_dxf_pdf_rendering': True,
@@ -438,7 +438,7 @@ def design(req: engine.DesignRequest):
         engine.zip_outputs(generated, package)
         return {
             'ok': True, 'project_id': req.project_id, 'discipline': discipline,
-            'engine_version': '1.0.4', 'mode': 'evidence-gated-mechanical-technical-design',
+            'engine_version': '1.0.5', 'mode': 'evidence-gated-mechanical-technical-design',
             'preliminary': True, 'requires_professional_review': True,
             'systems': systems, 'calculation_report': calc, 'design_reports': reports,
             'generated_files': [p.name for p in generated],
