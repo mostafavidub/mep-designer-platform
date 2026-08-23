@@ -20,6 +20,15 @@ def _norm(value):
 def _plan_title(text):
     s = _norm(text)
     low = s.lower()
+    # Common authority-drawing titles that do not literally say
+    # "architectural plan" still define real levels.
+    if 'roof plan' in low or 'پلان شیب' in s or 'پلان شيب' in s:
+        return 'architecture', 'بام'
+    generic = re.search(r'\b(ground|first|second|third|fourth|fifth)\s+floor\s+plan\b', low)
+    if generic:
+        names = {'ground': 'طبقه همکف', 'first': 'طبقه اول', 'second': 'طبقه دوم',
+                 'third': 'طبقه سوم', 'fourth': 'طبقه چهارم', 'fifth': 'طبقه پنجم'}
+        return 'architecture', names[generic.group(1)]
     for kind, prefixes in _PLAN_PREFIXES:
         for prefix in prefixes:
             pos = low.find(prefix.lower())
