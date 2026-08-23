@@ -60,11 +60,19 @@ def run_design_dxf(project_id, revision_id):
         if discipline not in legacy.OUTPUT_SCOPES:
             raise RuntimeError('رشته پروژه معتبر نیست.')
         scope = legacy.OUTPUT_SCOPES[discipline]
+        design_answers = dict(p.answers or {})
+        approved_manifest = ((p.analysis or {}).get('drawing_set') or {}).get('approved_manifest')
+        if discipline == 'mechanical':
+            if not approved_manifest:
+                raise RuntimeError('Approved mechanical drawing manifest is missing from the project workflow.')
+            # The CAD engine reads the approved contract from answers. Keeping it
+            # only in output_scope made the compositor reject every approved job.
+            design_answers['_approved_drawing_manifest'] = approved_manifest
         payload = {
             'project_id': str(p.id),
             'discipline': discipline,
             'architecture_dir': str(pdir / 'input'),
-            'answers': p.answers,
+            'answers': design_answers,
             'plan_analysis': p.analysis,
             'rulebook_path': legacy.RULEBOOK_PATH,
             'revision': r.revision_no,
@@ -75,7 +83,7 @@ def run_design_dxf(project_id, revision_id):
                 'systems': scope['systems'],
                 'only_this_discipline': True,
                 'include_other_disciplines': False,
-                'approved_manifest': ((p.analysis or {}).get('drawing_set') or {}).get('approved_manifest'),
+                'approved_manifest': approved_manifest,
             },
         }
         resp = requests.post(legacy.CAD_DESIGNER_URL + '/design', json=payload, timeout=3600)
