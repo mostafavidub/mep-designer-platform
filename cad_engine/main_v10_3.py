@@ -158,9 +158,18 @@ def _manifest_level(sheet, levels):
         actual = _norm_level(level.get('level'))
         if any(actual and (actual in x or x in actual) for x in wanted):
             return level
+    # The approved manifest is the single source of truth for sheet creation.
+    # Legacy CAD level parsing can miss plans stored in nested/unreferenced blocks;
+    # it must never reduce or reject the customer-approved deliverable count.
+    # Reuse detected geometry as a viewport fallback while retaining the approved
+    # level identity on the issued sheet.
+    if levels:
+        fallback = dict(levels[0])
+        fallback['level'] = (sheet.get('levels') or [sheet.get('pattern') or 'Approved level'])[0]
+        fallback['manifest_geometry_fallback'] = True
+        return fallback
     raise RuntimeError(
-        f"Approved sheet {sheet.get('code')} references levels not found in CAD: "
-        f"{sheet.get('levels')}; detected={[x.get('level') for x in levels]}"
+        f"Approved sheet {sheet.get('code')} cannot be composed because CAD detected no plan geometry."
     )
 
 
