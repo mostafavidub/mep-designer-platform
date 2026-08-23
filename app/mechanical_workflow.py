@@ -144,7 +144,10 @@ def build_scope(p):
     gas = [] if _negative(answers.get('gas')) else gas_candidates
 
     if profiles_available:
-        roof_exists = any(bool(x.get('roof')) for x in (auto.get('level_profiles') or []))
+        roof_exists = (
+            any(bool(x.get('roof')) for x in (auto.get('level_profiles') or []))
+            and bool(auto.get('roof_scope_reliable', True))
+        )
     else:
         roof_exists = any('بام' in x or 'roof' in x.lower() for x in levels)
     roof_text = answers.get('roof')

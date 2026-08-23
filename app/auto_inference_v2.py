@@ -377,4 +377,23 @@ def infer_architecture_facts(analysis, discipline):
     auto['fixture_blocks_detected'] = sum(fixture_counts.values())
     auto['roof_drain_count'] = sum(int(x.get('roof_drain_count') or 0) for x in files)
     auto['roof_area_m2'] = auto.get('geometry_area_m2') if any(p.get('roof') for p in profiles) else None
+    roof_profiles = [p for p in profiles if p.get('roof')]
+    occupied_keys = ('kitchen', 'bedroom', 'living', 'office', 'shop')
+    dedicated_roof_profile = any(
+        not any(int((p.get('room_counts') or {}).get(key) or 0) for key in occupied_keys)
+        for p in roof_profiles
+    )
+    # A title containing "roof" is not sufficient evidence for a dedicated
+    # roof deliverable. Consultant DXFs often reuse one named block for all
+    # titles; in that case rooms from an occupied floor can be assigned to the
+    # roof title and incorrectly add two sheets. A real roof drain marker or a
+    # roof-only profile is required before the planner creates roof scope.
+    auto['roof_scope_reliable'] = bool(roof_profiles) and bool(
+        auto['roof_drain_count'] or dedicated_roof_profile
+    )
+    if roof_profiles and not auto['roof_scope_reliable']:
+        auto['roof_area_m2'] = None
+        auto.setdefault('assumptions', []).append(
+            'Roof title was rejected as a dedicated mechanical level because it reused occupied-floor content and had no roof-drain evidence.'
+        )
     return auto

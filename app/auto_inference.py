@@ -326,7 +326,7 @@ def dynamic_questions(analysis, discipline, auto):
         if not auto.get('fixture_blocks_detected'):
             proposal = fixture_schedule_proposal(auto)
             q.append(('fixture_schedule', f'پیشنهاد خودکار تجهیزات بر اساس فضاهای معماری: {proposal}. پاسخ کوتاه: «تأیید» یا فقط اصلاح تعدادهای متفاوت.'))
-        if any('بام' in str(x.get('name') or '') or 'roof' in str(x.get('name') or '').lower() for x in (auto.get('levels') or [])):
+        if auto.get('roof_scope_reliable'):
             if not auto.get('roof_drain_count') or not auto.get('roof_area_m2'):
                 proposal = roof_geometry_proposal(auto)
                 q.append(('roof_drainage_geometry', f'پیشنهاد خودکار بام: {proposal}. شدت بارندگی از شهر پروژه تعیین می‌شود. پاسخ کوتاه: «تأیید» یا فقط عدد متفاوت مساحت/کف‌خواب.'))

@@ -221,7 +221,7 @@ def analyze_project_job(project_id):
         discipline = (p.answers or {}).get('discipline', 'mechanical')
         analysis = {
             'discipline': discipline,
-            'architecture_analyzer_version': '3.3-compact-mechanical-output',
+            'architecture_analyzer_version': '3.4-authority-roof-scope',
             'file_count': len(files),
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',
@@ -297,7 +297,7 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
 def system_health():
     result = {'ok': True, 'web': {
         'ok': True,
-        'mode': 'architecture-first-v3.3-compact-output',
+        'mode': 'architecture-first-v3.4-authority-roof-scope',
         'mechanical_rulebook_version': RULEBOOK_VERSION,
         'questionnaire': 'short-answer-rulebook-proposals',
     }}
