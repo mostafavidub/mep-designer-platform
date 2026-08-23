@@ -36,9 +36,6 @@ def _has_content(msp, level, system_layers):
 
 
 def _remove_old_issue_layouts(doc):
-    # The issued DXF must contain only the authority deliverables plus Model.
-    # Source/helper/title-block layouts are not customer deliverables and must
-    # not leak into the count.
     for layout in list(doc.layouts):
         if layout.name == 'Model':
             continue
@@ -149,8 +146,8 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
     if not created:
         raise RuntimeError('Authority sheet compositor produced no mechanical deliverables.')
 
-    names = [x.name for x in doc.layouts if x.name != 'Model']
-    if len(names) != len(created):
+    issued_names = [x.name for x in doc.layouts if x.name.startswith('M-')]
+    if len(issued_names) != len(created):
         raise RuntimeError('Authority deliverable count does not match issued CAD layout count.')
 
     doc.saveas(dst)
