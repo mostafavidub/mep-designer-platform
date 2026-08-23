@@ -4,9 +4,12 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 
-SYSTEM_ORDER = (
-    'cooling', 'heating', 'water_supply', 'sanitary',
-    'ventilation', 'gas', 'roof_drainage', 'riser',
+FAMILY_ORDER = (
+    'plumbing_gas',
+    'sanitary_vent_rain',
+    'heating_cooling_condensate',
+    'ventilation_exhaust',
+    'riser_calc',
 )
 
 
@@ -27,27 +30,36 @@ def _replace_route(app, path, method, endpoint):
 
 def review_question_html(drawing_set):
     drawing_set = drawing_set or {}
-    systems = drawing_set.get('systems') or {}
-    labels = drawing_set.get('labels') or {}
+    families = drawing_set.get('sheet_families') or {}
     rows = []
-    for key in SYSTEM_ORDER:
-        item = systems.get(key) or {}
+    for key in FAMILY_ORDER:
+        item = families.get(key) or {}
         count = int(item.get('count') or 0)
         if count <= 0:
             continue
-        label = escape(str(labels.get(key) or key))
-        levels = [escape(str(x)) for x in (item.get('levels') or [])]
-        level_text = f" — {', '.join(levels)}" if levels else ''
-        rows.append(f'<li><b>{label}:</b> {count} پلان{level_text}</li>')
-    total = int(drawing_set.get('total_plans') or sum(int((systems.get(k) or {}).get('count') or 0) for k in systems))
-    items = ''.join(rows) or '<li>پلان مکانیکی موردنیاز بر اساس تحلیل پروژه تعیین شد.</li>'
+        label = escape(str(item.get('label') or key))
+        code = escape(str(item.get('code') or ''))
+        sheets = item.get('sheets') or []
+        pattern_names = []
+        for sheet in sheets:
+            name = sheet.get('pattern') or ', '.join(str(x) for x in (sheet.get('levels') or []))
+            if name:
+                pattern_names.append(escape(str(name)))
+        detail = f" — {', '.join(pattern_names)}" if pattern_names else ''
+        code_text = f' <span style="color:#667085">({code})</span>' if code else ''
+        rows.append(f'<li><b>{label}</b>{code_text}: {count} شیت{detail}</li>')
+
+    total = int(drawing_set.get('deliverable_sheet_count') or drawing_set.get('total_plans') or 0)
+    items = ''.join(rows) or '<li>شیت‌های مکانیکی موردنیاز بر اساس تحلیل پروژه تعیین شد.</li>'
     return (
         '<div style="text-align:right;font-size:16px;line-height:2">'
-        '<div style="font-size:20px;font-weight:800;margin-bottom:8px">لیست پلان‌های پیشنهادی مکانیک</div>'
+        '<div style="font-size:20px;font-weight:800;margin-bottom:8px">لیست شیت‌های نهایی قابل تحویل مکانیک</div>'
+        '<p style="font-size:14px;color:#667085;margin:0 0 10px">'
+        'این تعداد دقیقاً تعداد شیت‌هایی است که موتور CAD برای تحویل تولید خواهد کرد؛ سیستم‌های ترکیبی دوباره شمرده نمی‌شوند.</p>'
         f'<ul style="margin:8px 0 14px;padding-right:22px">{items}</ul>'
-        f'<div style="font-size:18px;font-weight:800">مجموع: {total} پلان</div>'
+        f'<div style="font-size:18px;font-weight:800">مجموع قابل تحویل: {total} شیت</div>'
         '<p style="font-size:14px;font-weight:400;color:#667085;margin:10px 0 14px">'
-        'طراحی CAD تا تأیید این لیست شروع نمی‌شود.</p>'
+        'طبقات تیپ قبل از محاسبه نهایی ادغام شده‌اند. طراحی CAD تا تأیید این لیست شروع نمی‌شود.</p>'
         '<style>#answerForm textarea,#answerForm>button{display:none!important}</style>'
         '<button type="button" class="btn primary wide" '
         'onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">'
@@ -84,13 +96,6 @@ def _approve_project(legacy, p):
 
 
 def register_mechanical_review_fix(app, legacy):
-    """Make drawing-set review compatible with the landing-page modal.
-
-    The modal only knows the existing `asking` state. The mechanical workflow
-    introduced `drawing_set_review`, so after the last answer the UI had no
-    render branch and appeared frozen. This adapter presents the review as a
-    final confirmation step and converts its explicit button click into approval.
-    """
     old_flow_route = _find_route(app, '/projects/{pid}/flow', 'GET')
     old_answer_route = _find_route(app, '/projects/{pid}/answer-json', 'POST')
     if old_flow_route is None or old_answer_route is None:
