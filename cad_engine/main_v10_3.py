@@ -148,7 +148,11 @@ def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
 
     issued_names = [x.name for x in doc.layouts if x.name.startswith('M-')]
     if len(issued_names) != len(created):
-        raise RuntimeError('Authority deliverable count does not match issued CAD layout count.')
+        expected_names = [x['layout'] for x in created]
+        raise RuntimeError(
+            'Authority deliverable count does not match issued CAD layout count: '
+            f'created={len(created)} {expected_names}; issued={len(issued_names)} {issued_names}; counts={counts}'
+        )
 
     doc.saveas(dst)
     meta['authority_submission'] = {
