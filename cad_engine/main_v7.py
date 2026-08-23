@@ -172,7 +172,34 @@ def design_level_v7(msp, level, systems, calc, stats, qa):
             qa['checks']['wet_rooms_expected'] += 1; qa['checks']['wet_rooms_connected'] += 1
 
     for fixture in unassigned:
-        qa['unresolved'].append(f"{level['level']}: detected fixture {fixture.get('block', fixture['kind'])} could not be assigned to a wet room.")
+        # Some imported CADs place fixture blocks on a dedicated furniture or
+        # symbol plan where room labels are absent.  The point is still real
+        # evidence and must be preserved.  Connect it directly to the level
+        # hub, flagging the missing room boundary for review instead of
+        # silently deleting the fixture and failing the whole deliverable.
+        kind = fixture.get('kind', 'fixture')
+        point = tuple(fixture['point'])
+        qa['fixtures_expected'] += 1
+        if kind == 'gas':
+            if gas_state == 'on' and 'gas' in systems:
+                engine.add_box(msp, point, r*.40, 'ENGITOOLS-M-GAS', 'G', text_h*.65)
+                route(msp, point, hub, 'ENGITOOLS-M-GAS', True)
+                stats['gas'] += 1
+                stats['actual_fixture_connections'] += 1
+                qa['fixtures_connected'] += 1
+            else:
+                qa['unresolved'].append(
+                    f"{level['level']}: detected gas fixture requires an enabled gas system."
+                )
+        else:
+            _add_branch(msp, point, _requirements(kind, ''), hub, r, text_h, systems, stats)
+            stats['actual_fixture_connections'] += 1
+            qa['fixtures_connected'] += 1
+        qa['assumptions'].append(
+            f"{level['level']}: detected fixture "
+            f"{fixture.get('block', kind)} retained from a fixture-only source; "
+            "verify its architectural room boundary."
+        )
 
     for room in habitable:
         x,y=room['point']
