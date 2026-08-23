@@ -93,7 +93,25 @@ def analyze_dxf_enhanced(path):
             continue
         candidates.append(collect(block))
     usable = [item for item in candidates if item[2][0] > 0]
-    texts, text_labels, _ = max(usable or candidates, key=lambda item: (item[2][1], item[2][0])) if candidates else ([], [], (0, 0))
+    if usable:
+        # Exported consultant files may split one project across several named
+        # blocks. Merge their semantic labels in the shared drawing coordinate
+        # system, removing exact duplicate block copies.
+        texts = []
+        text_labels = []
+        seen_labels = set()
+        for raw_texts, labels, _score in usable:
+            texts.extend(raw_texts)
+            for item in labels:
+                key = (normalized(item['text']), round(item['x'], 4), round(item['y'], 4))
+                if key in seen_labels:
+                    continue
+                seen_labels.add(key)
+                text_labels.append(item)
+    elif candidates:
+        texts, text_labels, _ = max(candidates, key=lambda item: (item[2][1], item[2][0]))
+    else:
+        texts, text_labels = [], []
 
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     unit_to_m = INSUNITS_TO_M.get(insunits)
