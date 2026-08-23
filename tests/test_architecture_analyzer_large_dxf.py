@@ -39,7 +39,8 @@ class LargeDxfArchitectureAnalyzerTests(unittest.TestCase):
         plan.add_text("پلان مبلمان طبقه اول و دوم").set_placement((101, 1))
         plan.add_text("پلان معماری بام").set_placement((200, 0))
         plan.add_text("بام").set_placement((203, 4))
-        msp.add_blockref("ARCH_PLANS", (0, 0))
+        sheet = doc.layouts.new("A-ARCH")
+        sheet.add_blockref("ARCH_PLANS", (0, 0))
         doc.saveas(path)
 
     def test_large_file_detects_all_levels_and_issues_15_sheet_proposal(self):
