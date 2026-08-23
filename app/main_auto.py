@@ -38,12 +38,26 @@ def _entity_insert(e):
         return None
 
 
+def _expanded_entities(entities, depth=0):
+    """Yield modelspace entities plus recursively transformed block contents."""
+    if depth > 12:
+        return
+    for entity in entities:
+        if entity.dxftype() == 'INSERT':
+            try:
+                yield from _expanded_entities(entity.virtual_entities(), depth + 1)
+            except Exception:
+                continue
+        else:
+            yield entity
+
+
 def analyze_dxf_enhanced(path):
     doc = legacy.ezdxf.readfile(path)
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
     texts, text_labels = [], []
-    for e in msp:
+    for e in _expanded_entities(msp):
         if e.dxftype() not in ('TEXT', 'MTEXT'):
             continue
         text = _entity_text(e)
