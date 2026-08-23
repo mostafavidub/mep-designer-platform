@@ -27,8 +27,10 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         self.assertIn('uPVC', answers['sanitary_design_basis'])
         self.assertIn('per room load', answers['equipment_schedule'])
         self.assertIn('m3/h', answers['ventilation_design_basis'])
-        self.assertEqual(answers['mechanical_rulebook_version'], '1.5')
+        self.assertEqual(answers['mechanical_rulebook_version'], '1.6')
         self.assertEqual(answers['heights'], '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones')
+        self.assertIn('2.5 bar', answers['water_inlet_pressure'])
+        self.assertIn('booster pump', answers['water_source'])
 
         analysis = {'files': [{'texts': ['پلان معماری همکف', 'مسکونی']}]}
         keys = [key for key, _ in dynamic_questions(analysis, 'mechanical', auto)]
@@ -37,7 +39,7 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
             'ventilation_design_basis', 'heating', 'cooling', 'water_source',
         ):
             self.assertNotIn(forbidden, keys)
-        self.assertIn('water_inlet_pressure', keys)
+        self.assertNotIn('water_inlet_pressure', keys)
         self.assertIn('fixture_schedule', keys)
         prompts = dict(dynamic_questions(analysis, 'mechanical', auto))
         self.assertIn('پاسخ کوتاه', prompts['gas'])
