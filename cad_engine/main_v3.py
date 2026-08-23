@@ -274,7 +274,20 @@ def design(req:DesignRequest):
     if scope.get("only_this_discipline") is not True or scope.get("include_other_disciplines") is not False:raise HTTPException(400,"discipline isolation flags are required")
     requested=scope.get("systems") or [];allowed=SYSTEMS[discipline]
     if any(s not in allowed for s in requested):raise HTTPException(400,"output_scope contains unsupported or cross-discipline systems")
-    systems=requested or allowed;calc=calc_for(discipline,req.answers or {});project_out=OUTPUT_ROOT/str(req.project_id)/f"R{req.revision:03d}"/discipline;shutil.rmtree(project_out,ignore_errors=True);project_out.mkdir(parents=True,exist_ok=True)
+    systems=requested or allowed;calc=calc_for(discipline,req.answers or {})
+    calc["_design_inputs"] = dict(req.answers or {})
+    if discipline == "mechanical":
+        drawing_set = (req.plan_analysis or {}).get("drawing_set") or {}
+        manifest = drawing_set.get("approved_manifest")
+        if not drawing_set.get("approved") or not manifest:
+            raise HTTPException(409, "Approved mechanical drawing manifest is required.")
+        sheets = manifest.get("sheets") or []
+        expected = int(manifest.get("total_sheets") or -1)
+        codes = [str(x.get("code") or "") for x in sheets]
+        if expected != len(sheets) or expected < 1 or any(not x for x in codes) or len(codes) != len(set(codes)):
+            raise HTTPException(409, "Approved mechanical drawing manifest is invalid.")
+        calc["_approved_drawing_manifest"] = manifest
+    project_out=OUTPUT_ROOT/str(req.project_id)/f"R{req.revision:03d}"/discipline;shutil.rmtree(project_out,ignore_errors=True);project_out.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="engitools-cad-") as td:
         ti=Path(td)/"input";ti.mkdir()
         try:sources=source_files(req,ti)
