@@ -1,0 +1,75 @@
+import unittest
+
+from fastapi.testclient import TestClient
+
+from app.main_health import app
+from app import main as legacy
+
+
+class MechanicalFlowE2ETests(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+
+    def test_answers_reach_drawing_set_proposal_over_real_http_routes(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'mechanical-flow-e2e'})
+        self.assertEqual(init.status_code, 200)
+        payload = init.json()
+        pid = payload['project_id']
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertIsNotNone(project)
+            project.status = 'asking'
+            project.questions = [
+                {'key': 'location', 'question': 'محل پروژه کجاست؟'},
+                {'key': 'gas', 'question': 'ساختمان گاز دارد؟'},
+            ]
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            project.analysis = {
+                'discipline': 'mechanical',
+                'files': [
+                    {
+                        'file': 'architecture.dxf',
+                        'texts': ['همکف پلان معماری', 'طبقه اول پلان معماری', 'بام پلان معماری'],
+                    }
+                ],
+                'auto_summary': ['سه تراز معماری برای تست شناسایی شد'],
+            }
+            db.commit()
+        finally:
+            db.close()
+
+        flow = self.client.get(payload['flow_url'])
+        self.assertEqual(flow.status_code, 200)
+        self.assertEqual(flow.json()['status'], 'asking')
+        self.assertEqual(flow.json()['current_index'], 0)
+
+        first = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'مشهد'})
+        self.assertEqual(first.status_code, 200)
+        first_data = first.json()
+        self.assertEqual(first_data['status'], 'asking')
+        self.assertEqual(first_data['current_index'], 1)
+
+        final = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'خیر، ساختمان گاز ندارد'})
+        self.assertEqual(final.status_code, 200)
+        final_data = final.json()
+        self.assertEqual(final_data['status'], 'drawing_set_review')
+        self.assertIn('drawing_set', final_data)
+        self.assertTrue(final_data['drawing_set'])
+        self.assertGreater(final_data['drawing_set']['total_plans'], 0)
+        self.assertIn('systems', final_data['drawing_set'])
+
+        proposal = self.client.get(f'/projects/{pid}/drawing-set')
+        self.assertEqual(proposal.status_code, 200)
+        proposal_data = proposal.json()
+        self.assertGreater(proposal_data['total_plans'], 0)
+        self.assertIn('water_supply', proposal_data['systems'])
+        self.assertEqual(proposal_data['systems']['gas']['count'], 0)
+        self.assertFalse(proposal_data['approved'])
+        self.assertTrue(proposal_data['approval_required'])
+
+
+if __name__ == '__main__':
+    unittest.main()
