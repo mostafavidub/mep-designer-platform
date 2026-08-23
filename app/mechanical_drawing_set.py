@@ -60,3 +60,8 @@ def predict_drawing_set(scope):
         "total_plans": total,
         "approval_required": True
     }
+
+
+def requires_approval(proposal):
+    """Return True until a drawing-set proposal has explicit user approval."""
+    return not bool((proposal or {}).get("approved"))

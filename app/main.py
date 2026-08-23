@@ -166,140 +166,228 @@ def safe_extract(zip_path, target):
             if '__MACOSX' in parts or name.startswith('.') or name.startswith('._'): continue
             (useful if Path(m.filename).suffix.lower()=='.dxf' else bad).append(m)
         if bad: raise ValueError('داخل ZIP فقط فایل DXF مجاز است.')
-        if not useful: raise ValueError('هیچ فایل DXF معتبری در ZIP پیدا نشد.')
+        if not useful: raise ValueError('هیچ فایل DXF معتبر داخل ZIP پیدا نشد.')
         for m in useful:
             dest=(target/m.filename).resolve()
-            if not str(dest).startswith(str(target.resolve())): raise ValueError('مسیر فایل ZIP نامعتبر است.')
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            with z.open(m) as src, open(dest,'wb') as dst: shutil.copyfileobj(src,dst)
+            if not str(dest).startswith(str(target.resolve())): raise ValueError('ساختار ZIP نامعتبر است.')
+            z.extract(m,target)
 
-def persist_uploads(project_id, uploads):
-    root=DATA_DIR/'projects'/str(project_id)/'input'; root.mkdir(parents=True,exist_ok=True); saved=[]
-    for up in uploads:
-        if not up or not up.filename: continue
-        suffix=Path(up.filename).suffix.lower()
-        if suffix not in {'.dxf','.zip'}: raise ValueError('فرمت مجاز DXF یا ZIP است.')
-        dst=root/Path(up.filename).name
-        with open(dst,'wb') as f: shutil.copyfileobj(up.file,f)
-        if suffix=='.zip':
-            ext=root/(dst.stem+'_unzipped'); ext.mkdir(exist_ok=True); safe_extract(dst,ext); saved += [p for p in ext.rglob('*') if p.is_file() and is_real_dxf_path(p)]
-        else: saved.append(dst)
-    if not saved: raise ValueError('حداقل یک DXF لازم است.')
-    return saved
+def save_project_input(project_id, file):
+    if not file.filename: raise ValueError('فایل ورودی انتخاب نشده است.')
+    ext=Path(file.filename).suffix.lower()
+    if ext not in ('.zip','.dxf'): raise ValueError('فایل ورودی باید DXF یا ZIP شامل DXF باشد.')
+    pdir=DATA_DIR/'projects'/str(project_id); pdir.mkdir(parents=True,exist_ok=True)
+    for old in (pdir/'architecture.zip',pdir/'architecture.dxf'):
+        if old.exists(): old.unlink()
+    target=pdir/('architecture.zip' if ext=='.zip' else 'architecture.dxf')
+    with target.open('wb') as f: shutil.copyfileobj(file.file,f)
+    return target
 
-def build_questions(discipline):
-    return qlist(DISCIPLINES[discipline]['questions'])
-
-def generate_revision(project_id, revision_no):
-    db=Session(); p=db.get(Project,project_id); r=db.query(Revision).filter_by(project_id=project_id,revision_no=revision_no).first()
+def analyze_project_job(project_id):
+    db=Session(); p=db.get(Project,project_id)
+    if not p: db.close(); return
     try:
-        r.status='processing'; db.commit()
-        if not CAD_DESIGNER_URL: raise RuntimeError('CAD_DESIGNER_URL تنظیم نشده است.')
-        payload={'project_id':p.id,'revision_no':revision_no,'analysis':p.analysis,'answers':p.answers,'discipline':p.answers.get('_discipline'),'feedback':r.feedback,'rulebook_path':RULEBOOK_PATH,'output_scope':p.answers.get('_output_scope',{})}
-        res=requests.post(f'{CAD_DESIGNER_URL}/generate',json=payload,timeout=180); res.raise_for_status(); data=res.json()
-        pdf=data.get('pdf_path')
-        if not pdf: raise RuntimeError('سرویس CAD مسیر PDF برنگرداند.')
-        r.pdf_path=pdf; r.status='ready'; p.status='ready'; p.current_revision=revision_no
+        pdir=DATA_DIR/'projects'/str(project_id); inp=pdir/'input'; shutil.rmtree(inp,ignore_errors=True); inp.mkdir(parents=True,exist_ok=True)
+        z,d=pdir/'architecture.zip',pdir/'architecture.dxf'
+        if z.exists(): safe_extract(z,inp)
+        elif d.exists(): shutil.copy2(d,inp/d.name)
+        else: raise ValueError('فایل ورودی پروژه پیدا نشد.')
+        files=sorted(x for x in inp.rglob('*.dxf') if is_real_dxf_path(x))
+        if not files: raise ValueError('هیچ فایل DXF معتبر پیدا نشد.')
+        discipline=(p.answers or {}).get('discipline','mechanical')
+        p.analysis={'discipline':discipline,'file_count':len(files),'files':[analyze_dxf(x) for x in files]}
+        p.status='asking'; p.current_question=0; p.answers={'discipline':discipline}; p.last_error=''; db.commit()
     except Exception as e:
-        r.status='failed'; r.error=str(e); p.status='failed'; p.last_error=str(e)
-    db.commit(); db.close()
+        p.status='awaiting_upload'; p.last_error=str(e); db.commit()
+    finally:
+        db.close()
 
-def queue_revision(p, feedback=''):
-    db=Session(); rev_no=p.current_revision+1; r=Revision(project_id=p.id,revision_no=rev_no,feedback=feedback,status='queued'); db.add(r); p.status='generating'; db.commit(); db.close(); threading.Thread(target=generate_revision,args=(p.id,rev_no),daemon=True).start()
+def run_design(project_id, revision_id):
+    db=Session(); p=db.get(Project,project_id); r=db.get(Revision,revision_id)
+    try:
+        p.status='designing'; r.status='processing'; db.commit()
+        if not CAD_DESIGNER_URL: raise RuntimeError('موتور CAD Designer هنوز به این سرویس متصل نشده است.')
+        pdir=DATA_DIR/'projects'/str(p.id)
+        discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical'))
+        if discipline not in OUTPUT_SCOPES: raise RuntimeError('رشته پروژه معتبر نیست.')
+        scope=OUTPUT_SCOPES[discipline]
+        payload={
+            'project_id':str(p.id),
+            'discipline':discipline,
+            'architecture_dir':str(pdir/'input'),
+            'answers':p.answers,
+            'plan_analysis':p.analysis,
+            'rulebook_path':RULEBOOK_PATH,
+            'revision':r.revision_no,
+            'revision_instructions':r.feedback,
+            'output_scope':{
+                'discipline':discipline,
+                'label':scope['label'],
+                'systems':scope['systems'],
+                'only_this_discipline':True,
+                'include_other_disciplines':False
+            }
+        }
+        resp=requests.post(CAD_DESIGNER_URL+'/design',json=payload,timeout=3600); resp.raise_for_status(); data=resp.json()
+        returned_discipline=data.get('discipline')
+        if returned_discipline and returned_discipline != discipline:
+            raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
+        src=Path(data['pdf_path']); out=pdir/'output'/f'rev_{r.revision_no:03d}'; out.mkdir(parents=True,exist_ok=True)
+        dst=out/f'{discipline}_design.pdf'; shutil.copy2(src,dst)
+        r.pdf_path=str(dst); r.status='ready'; p.status='ready'; p.current_revision=r.revision_no; p.last_error=''; db.commit()
+    except Exception as e:
+        r.status='failed'; r.error=str(e); p.status='failed'; p.last_error=str(e); db.commit()
+    finally:
+        db.close()
 
-@app.get('/system_health')
-def health():
-    cad={'configured':bool(CAD_DESIGNER_URL),'reachable':False}
-    if CAD_DESIGNER_URL:
-        try: cad['reachable']=requests.get(f'{CAD_DESIGNER_URL}/health',timeout=3).ok
-        except Exception: pass
-    return {'status':'ok','cad_designer':cad,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
+def flow_payload(p):
+    questions=p.questions or []; idx=p.current_question or 0
+    discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical'))
+    cfg=DISCIPLINES.get(discipline,DISCIPLINES['mechanical'])
+    current=questions[idx] if idx < len(questions) else None
+    return {
+        'project_id':p.id,
+        'name':p.name,
+        'status':p.status,
+        'discipline':discipline,
+        'discipline_title':cfg['title'],
+        'error':p.last_error or '',
+        'question_count':len(questions),
+        'current_index':idx,
+        'progress':round((idx*100/len(questions)),1) if questions else 100,
+        'question':current,
+        'ready_to_design':p.status=='ready_to_design',
+        'current_revision':p.current_revision or 0,
+        'pdf_url':f'/projects/{p.id}/pdf/{p.current_revision}' if p.status=='ready' and p.current_revision else None
+    }
 
-@app.get('/', response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse('home.html', {'request':request,'blog':BLOG})
+@app.get('/health')
+def health(): return {'ok':True}
 
-@app.get('/blog', response_class=HTMLResponse)
-def blog(request: Request): return templates.TemplateResponse('blog.html',{'request':request,'posts':BLOG})
+@app.get('/',response_class=HTMLResponse)
+def home(request:Request): return templates.TemplateResponse('dashboard.html',{'request':request,'blog':BLOG})
 
-@app.get('/blog/{slug}', response_class=HTMLResponse)
-def blog_post(request: Request, slug: str):
+@app.get('/mechanical',response_class=HTMLResponse)
+def mechanical(request:Request): return templates.TemplateResponse('discipline.html',{'request':request,'discipline':'mechanical','cfg':DISCIPLINES['mechanical']})
+
+@app.get('/electrical',response_class=HTMLResponse)
+def electrical(request:Request): return templates.TemplateResponse('discipline.html',{'request':request,'discipline':'electrical','cfg':DISCIPLINES['electrical']})
+
+@app.get('/architect',response_class=HTMLResponse)
+def architect(request:Request): return templates.TemplateResponse('architect.html',{'request':request})
+
+@app.get('/blog',response_class=HTMLResponse)
+def blog(request:Request): return templates.TemplateResponse('blog.html',{'request':request,'posts':BLOG})
+
+@app.get('/blog/{slug}',response_class=HTMLResponse)
+def article(slug:str,request:Request):
     post=next((x for x in BLOG if x['slug']==slug),None)
     if not post: raise HTTPException(404)
-    return templates.TemplateResponse('blog_post.html',{'request':request,'post':post})
+    return templates.TemplateResponse('article.html',{'request':request,'post':post})
 
-@app.get('/{discipline}', response_class=HTMLResponse)
-def landing(request: Request, discipline: str):
+@app.post('/start-project/{discipline}')
+def start_project_discipline(discipline:str,request:Request,name:str=Form(''),file:UploadFile=File(...)):
     if discipline not in DISCIPLINES: raise HTTPException(404)
-    return templates.TemplateResponse('landing.html',{'request':request,'discipline':discipline,'d':DISCIPLINES[discipline]})
+    u=current_user(request); db=Session()
+    project_name=(name or '').strip() or f"{DISCIPLINES[discipline]['title']} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    p=Project(user_id=u.id,name=project_name,questions=qlist(DISCIPLINES[discipline]['questions']),answers={'discipline':discipline},status='uploading')
+    db.add(p); db.commit(); db.refresh(p)
+    try:
+        save_project_input(p.id,file); p.status='analyzing'; p.last_error=''; db.commit(); pid=p.id
+        threading.Thread(target=analyze_project_job,args=(pid,),daemon=True).start()
+    except Exception as e:
+        p.last_error=str(e); p.status='awaiting_upload'; db.commit(); pid=p.id
+    db.close(); url=f'/projects/{pid}'
+    if request.headers.get('x-requested-with')=='XMLHttpRequest':
+        return JSONResponse({'ok':True,'project_id':pid,'status_url':f'/projects/{pid}/status','flow_url':f'/projects/{pid}/flow','fallback_url':url})
+    return RedirectResponse(url,303)
 
-@app.post('/{discipline}/start')
-def start(request: Request, discipline: str, name: str=Form('پروژه جدید')):
-    if discipline not in DISCIPLINES: raise HTTPException(404)
-    u=current_user(request); db=Session(); answers={'_discipline':discipline,'_output_scope':OUTPUT_SCOPES[discipline]}; p=Project(user_id=u.id,name=name or 'پروژه جدید',questions=build_questions(discipline),answers=answers); db.add(p); db.commit(); db.refresh(p); pid=p.id; db.close(); return RedirectResponse(f'/project/{pid}/upload',303)
+@app.post('/start-project')
+def legacy_start(request:Request,name:str=Form(''),file:UploadFile=File(...),discipline:str=Form('mechanical')):
+    return start_project_discipline(discipline,request,name,file)
 
-@app.get('/project/{pid}/upload', response_class=HTMLResponse)
-def upload_page(request: Request,pid:int):
+@app.get('/projects/{pid}',response_class=HTMLResponse)
+def project_page(pid:int,request:Request):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    d=p.answers.get('_discipline'); db.close(); return templates.TemplateResponse('upload.html',{'request':request,'p':p,'d':DISCIPLINES[d]})
+    revisions=db.query(Revision).filter(Revision.project_id==p.id).order_by(Revision.revision_no.desc()).all(); q=p.questions or []
+    current_question=q[p.current_question] if p.current_question<len(q) else None
+    discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical')); cfg=DISCIPLINES.get(discipline,DISCIPLINES['mechanical'])
+    response=templates.TemplateResponse('project.html',{'request':request,'p':p,'revisions':revisions,'current_question':current_question,'question_count':len(q),'discipline':discipline,'cfg':cfg})
+    db.close(); return response
 
-@app.post('/project/{pid}/upload')
-def upload(request: Request,pid:int, files:list[UploadFile]=File(...)):
+@app.get('/projects/{pid}/status')
+def project_status(pid:int,request:Request):
+    u=current_user(request); db,p=own_project(pid,u.id)
+    if not p: raise HTTPException(404)
+    data={'status':p.status,'error':p.last_error or '','analysis_count':(p.analysis or {}).get('file_count',0)}; db.close(); return data
+
+@app.get('/projects/{pid}/flow')
+def project_flow(pid:int,request:Request):
+    u=current_user(request); db,p=own_project(pid,u.id)
+    if not p: raise HTTPException(404)
+    data=flow_payload(p); db.close(); return JSONResponse(data)
+
+@app.post('/projects/{pid}/upload')
+def upload(pid:int,request:Request,file:UploadFile=File(...)):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
     try:
-        paths=persist_uploads(pid,files); p.analysis={'files':[analyze_dxf(x) for x in paths]}; p.status='questionnaire'; db.commit()
+        save_project_input(p.id,file); p.status='analyzing'; p.last_error=''; db.commit(); threading.Thread(target=analyze_project_job,args=(pid,),daemon=True).start()
     except Exception as e:
-        db.close(); return RedirectResponse(f'/project/{pid}/upload?error={requests.utils.quote(str(e))}',303)
-    db.close(); return RedirectResponse(f'/project/{pid}/questions',303)
+        p.last_error=str(e); p.status='awaiting_upload'; db.commit()
+    db.close()
+    if request.headers.get('x-requested-with')=='XMLHttpRequest': return JSONResponse({'ok':True,'flow_url':f'/projects/{pid}/flow','fallback_url':f'/projects/{pid}'})
+    return RedirectResponse(f'/projects/{pid}',303)
 
-@app.get('/project/{pid}/questions', response_class=HTMLResponse)
-def questions(request: Request,pid:int):
+@app.post('/projects/{pid}/answer')
+def answer(pid:int,request:Request,answer:str=Form(...)):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    if p.current_question>=len(p.questions): db.close(); return RedirectResponse(f'/project/{pid}/review',303)
-    q=p.questions[p.current_question]; idx=p.current_question+1; total=len(p.questions); db.close(); return templates.TemplateResponse('questions.html',{'request':request,'p':p,'q':q,'idx':idx,'total':total})
+    qs=p.questions or []; idx=p.current_question
+    if idx<len(qs):
+        a=dict(p.answers or {}); a[qs[idx]['key']]=answer; p.answers=a; p.current_question=idx+1; p.status='ready_to_design' if p.current_question>=len(qs) else 'asking'; db.commit()
+    db.close(); return RedirectResponse(f'/projects/{pid}',303)
 
-@app.post('/project/{pid}/questions')
-def answer(request: Request,pid:int, answer: str=Form(...)):
+@app.post('/projects/{pid}/answer-json')
+def answer_json(pid:int,request:Request,answer:str=Form(...)):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    if p.current_question<len(p.questions):
-        q=p.questions[p.current_question]; a=dict(p.answers or {}); a[q['key']]=answer; p.answers=a; p.current_question+=1; db.commit()
-    done=p.current_question>=len(p.questions); db.close(); return RedirectResponse(f'/project/{pid}/review' if done else f'/project/{pid}/questions',303)
+    qs=p.questions or []; idx=p.current_question
+    if p.status!='asking' or idx>=len(qs):
+        data=flow_payload(p); db.close(); return JSONResponse(data)
+    a=dict(p.answers or {}); a[qs[idx]['key']]=answer.strip(); p.answers=a; p.current_question=idx+1
+    p.status='ready_to_design' if p.current_question>=len(qs) else 'asking'; db.commit(); db.refresh(p)
+    data=flow_payload(p); db.close(); return JSONResponse(data)
 
-@app.get('/project/{pid}/review', response_class=HTMLResponse)
-def review(request: Request,pid:int):
+@app.post('/projects/{pid}/design')
+def design(pid:int,request:Request):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    db.close(); return templates.TemplateResponse('review.html',{'request':request,'p':p})
+    rev_no=(p.current_revision or 0)+1; r=Revision(project_id=p.id,revision_no=rev_no,status='queued'); db.add(r); p.status='queued'; db.commit(); db.refresh(r); rid=r.id; db.close()
+    threading.Thread(target=run_design,args=(pid,rid),daemon=True).start(); return RedirectResponse(f'/projects/{pid}',303)
 
-@app.post('/project/{pid}/generate')
-def generate(request: Request,pid:int):
+@app.post('/projects/{pid}/design-json')
+def design_json(pid:int,request:Request):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    db.expunge(p); db.close(); queue_revision(p); return RedirectResponse(f'/project/{pid}/status',303)
+    if p.status!='ready_to_design':
+        data=flow_payload(p); db.close(); return JSONResponse(data,status_code=409)
+    rev_no=(p.current_revision or 0)+1; r=Revision(project_id=p.id,revision_no=rev_no,status='queued'); db.add(r); p.status='queued'; db.commit(); db.refresh(r); rid=r.id
+    data=flow_payload(p); db.close(); threading.Thread(target=run_design,args=(pid,rid),daemon=True).start(); return JSONResponse(data)
 
-@app.get('/project/{pid}/status', response_class=HTMLResponse)
-def status(request: Request,pid:int):
+@app.post('/projects/{pid}/feedback')
+def feedback(pid:int,request:Request,feedback:str=Form(...)):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    rev=db.query(Revision).filter_by(project_id=pid).order_by(Revision.revision_no.desc()).first(); db.close(); return templates.TemplateResponse('status.html',{'request':request,'p':p,'rev':rev})
+    if any(x in feedback for x in ['همه پروژه','همیشه','باید در تمام','رول بوک','Rulebook']): db.add(RuleCandidate(project_id=p.id,feedback=feedback,candidate_rule=feedback))
+    rev_no=(p.current_revision or 0)+1; r=Revision(project_id=p.id,revision_no=rev_no,status='queued',feedback=feedback); db.add(r); p.status='queued'; db.commit(); db.refresh(r); rid=r.id; db.close(); threading.Thread(target=run_design,args=(pid,rid),daemon=True).start(); return RedirectResponse(f'/projects/{pid}',303)
 
-@app.get('/project/{pid}/download')
-def download(request: Request,pid:int):
+@app.get('/projects/{pid}/pdf/{rev}')
+def get_pdf(pid:int,rev:int,request:Request):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    rev=db.query(Revision).filter_by(project_id=pid,revision_no=p.current_revision).first(); db.close()
-    if not rev or rev.status!='ready': raise HTTPException(404)
-    if rev.pdf_path.startswith('http://') or rev.pdf_path.startswith('https://'): return RedirectResponse(rev.pdf_path)
-    path=Path(rev.pdf_path)
-    if not path.exists(): raise HTTPException(404,'PDF در دسترس نیست.')
-    return FileResponse(path,media_type='application/pdf',filename=f'EngiTools_{pid}_R{rev.revision_no}.pdf')
-
-@app.post('/project/{pid}/revise')
-def revise(request: Request,pid:int, feedback: str=Form(...)):
-    u=current_user(request); db,p=own_project(pid,u.id)
-    if not p: raise HTTPException(404)
-    db.add(RuleCandidate(project_id=pid,feedback=feedback,candidate_rule='نیازمند بازبینی و تبدیل به قانون عمومی در Rulebook')); db.commit(); db.expunge(p); db.close(); queue_revision(p,feedback); return RedirectResponse(f'/project/{pid}/status',303)
+    r=db.query(Revision).filter(Revision.project_id==p.id,Revision.revision_no==rev).first(); db.close()
+    if not r or r.status!='ready' or not r.pdf_path: raise HTTPException(404)
+    discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical'))
+    return FileResponse(r.pdf_path,media_type='application/pdf',filename=f'EngiTools_{discipline}_{pid}_R{rev}.pdf')
