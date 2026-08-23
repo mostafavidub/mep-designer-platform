@@ -348,15 +348,15 @@ engine.render_pdf = render_pdf_resilient
 
 @app.get('/health')
 def health():
-    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.5', 'mode': 'evidence-gated-mechanical-technical-design'}
+    return {'ok': True, 'service': 'cad-designer', 'version': '1.0.6', 'mode': 'evidence-gated-mechanical-technical-design'}
 
 
 @app.get('/engine-capabilities')
 def capabilities():
     return {
         'ok': True,
-        'version': '1.0.5',
-        'questionnaire': 'dynamic-unresolved-only',
+        'version': '1.0.6',
+        'questionnaire': 'short-answer-rulebook-proposals',
         'architecture_auto_calculation': True,
         'resilient_dxf_pdf_rendering': True,
         'plan_cluster_viewports': True,
@@ -425,7 +425,11 @@ def design(req: engine.DesignRequest):
         for idx, src in enumerate(sources, start=1):
             stem = ''.join(c if c.isalnum() or c in '-_' else '_' for c in src.stem)[:80] or f'plan_{idx}'
             dxf = project_out / f'{idx:02d}_{stem}_{discipline}.dxf'
-            report = {'source': src.name, **engine.design_dxf(src, dxf, discipline, systems, req.revision, calc)}
+            try:
+                design_meta = engine.design_dxf(src, dxf, discipline, systems, req.revision, calc)
+            except RuntimeError as exc:
+                raise HTTPException(422, str(exc))
+            report = {'source': src.name, **design_meta}
             report['detected_plan_clusters'] = len(_cluster_rooms(engine.detect_room_labels(ezdxf.readfile(dxf).modelspace())))
             reports.append(report)
             generated.append(dxf)
@@ -438,7 +442,7 @@ def design(req: engine.DesignRequest):
         engine.zip_outputs(generated, package)
         return {
             'ok': True, 'project_id': req.project_id, 'discipline': discipline,
-            'engine_version': '1.0.5', 'mode': 'evidence-gated-mechanical-technical-design',
+            'engine_version': '1.0.6', 'mode': 'evidence-gated-mechanical-technical-design',
             'preliminary': True, 'requires_professional_review': True,
             'systems': systems, 'calculation_report': calc, 'design_reports': reports,
             'generated_files': [p.name for p in generated],
