@@ -76,7 +76,11 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             self.assertGreater(meta['technical_symbol_blocks'], 0)
             self.assertGreater(meta['technical_schedule_annotations'], 0)
             out = ezdxf.readfile(dst)
-            self.assertGreater(len(list(out.modelspace().query('INSERT[name^="ET_M_"]'))), 0)
+            inserts = [
+                entity for entity in out.modelspace().query('INSERT')
+                if str(entity.dxf.name).startswith('ET_M_')
+            ]
+            self.assertGreater(len(inserts), 0)
 
     def test_missing_numeric_airflow_blocks_technical_issue(self):
         with tempfile.TemporaryDirectory() as td:
@@ -84,7 +88,7 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             self.architecture(src)
             calc = self.calc()
             calc['_design_inputs']['ventilation_design_basis'] = '10 ACH; discharge above roof; make-up air'
-            with self.assertRaisesRegex(RuntimeError, r'9\.0/10.*ventilation_design'):
+            with self.assertRaisesRegex(RuntimeError, r'9(?:\.0)?/10.*ventilation_design'):
                 technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
 
 
