@@ -1,9 +1,8 @@
 """Mechanical authority-submission sheet compositor.
 
-The underlying v9 mechanical designer still creates all engineering geometry and
-passes its comprehensive QA. This final stage changes only the issued sheet set:
-separate approval disciplines are delivered separately, matching the accepted
-21-sheet reference convention instead of the earlier four combined families.
+The v9 mechanical engine creates engineering geometry first. This final stage
+packages that geometry into the system-separated drawing set used by the local
+Engineering Organization submission profile.
 """
 
 import ezdxf
@@ -27,15 +26,48 @@ AUTHORITY_GROUPS = [
 ]
 
 
-def _allowed(system_layers):
-    return {'ENGITOOLS-M-MECHANICAL_RISERS', 'ENGITOOLS-M-NOTES'} | set(system_layers)
+def _negative(value):
+    s = str(value or '').strip().lower()
+    return any(x in s for x in ('ندارد', 'خیر', 'نیست', 'بدون', 'none', 'no '))
 
 
-def _has_content(msp, level, system_layers):
-    return v8._group_has_content(msp, level, _allowed(system_layers))
+def _rooms(level, kinds):
+    return [r for r in level.get('rooms', []) if r.get('room') in kinds]
+
+
+def _effective_for_group(level, group, systems, calc):
+    """Authority sheet scope follows engineering need, not fragile viewport bounds."""
+    roof = v8._is_roof(level)
+    wet = bool(_rooms(level, {'kitchen', 'bath', 'toilet'}))
+    hab = bool(_rooms(level, {'bedroom', 'living', 'office', 'shop'}))
+    kitchen = bool(_rooms(level, {'kitchen'}))
+    parking = bool(_rooms(level, {'parking'})) or level.get('special_type') == 'parking'
+    inputs = calc.get('_design_inputs') or {}
+    active = set(systems or [])
+    if group == 'W':
+        return wet and bool(active & {'cold_water', 'hot_water'}) and not roof
+    if group == 'S':
+        return wet and bool(active & {'sanitary', 'vent'}) and not roof
+    if group == 'H':
+        return hab and bool(active & {'heating_supply', 'heating_return'}) and not _negative(inputs.get('heating')) and not roof
+    if group == 'C':
+        return hab and bool(active & {'cooling', 'condensate'}) and not _negative(inputs.get('cooling')) and not roof
+    if group == 'G':
+        return kitchen and 'gas' in active and not _negative(inputs.get('gas')) and not roof
+    if group == 'V':
+        return (wet or parking) and 'exhaust_ventilation' in active and not roof
+    if group == 'R':
+        return roof and 'rainwater' in active
+    return False
 
 
 def _remove_old_issue_layouts(doc):
+    # The active paper layout cannot be deleted in ezdxf. Activate Model first,
+    # then remove every helper/legacy paper layout so the issued set is exact.
+    try:
+        doc.layouts.set_active_layout('Model')
+    except Exception:
+        pass
     for layout in list(doc.layouts):
         if layout.name == 'Model':
             continue
@@ -57,7 +89,7 @@ def _plan_view(doc, level, project_id, code, title, system_layers):
         center=(200, 215), size=(380, 320), view_center_point=center,
         view_height=320.0 * scale / 1000.0, status=2,
     )
-    allowed = _allowed(system_layers)
+    allowed = {'ENGITOOLS-M-MECHANICAL_RISERS', 'ENGITOOLS-M-NOTES'} | set(system_layers)
     for layer in doc.layers:
         name = layer.dxf.name
         if name.startswith('ENGITOOLS-M-') and name not in allowed:
@@ -102,16 +134,22 @@ def _cooling_special(doc, roof, project_id):
     return {'layout': name, 'group': 'C', 'special': True}
 
 
-def _compose_authority_layouts(doc, levels, project_id):
+def _compose_authority_layouts(doc, levels, project_id, systems, calc):
     _remove_old_issue_layouts(doc)
-    msp = doc.modelspace()
     created = []
     counts = {key: 0 for key, _, _ in AUTHORITY_GROUPS}
+
+    # Recover roof-drain points on the rebuilt Level objects so roof view bounds
+    # include the actual drainage annotations/geometry.
+    msp = doc.modelspace()
+    for level in levels:
+        if v8._is_roof(level):
+            level['roof_drains'] = v8._roof_drain_points(msp, level, levels)
 
     for group, title, layers in AUTHORITY_GROUPS:
         index = 0
         for level in levels:
-            if not _has_content(msp, level, layers):
+            if not _effective_for_group(level, group, systems, calc):
                 continue
             index += 1
             code = f'M-{group}-{index:02d}'
@@ -120,8 +158,9 @@ def _compose_authority_layouts(doc, levels, project_id):
             created.append(row)
         counts[group] = index
 
-    if counts['W'] >= 2:
-        created.append(_water_special(doc, levels, project_id)); counts['W'] += 1
+    water_levels = [x for x in levels if _effective_for_group(x, 'W', systems, calc)]
+    if len(water_levels) >= 2:
+        created.append(_water_special(doc, water_levels, project_id)); counts['W'] += 1
 
     roofs = [x for x in levels if v8._is_roof(x)]
     if counts['C'] >= 1 and roofs:
@@ -131,14 +170,19 @@ def _compose_authority_layouts(doc, levels, project_id):
 
 
 def design_dxf_v10_3(src, dst, discipline, systems, revision, calc):
-    meta = _base_design(src, dst, discipline, systems, revision, calc)
+    # rainwater is an authority deliverable whenever a roof drainage level is
+    # detected, so make the layer available to the geometry engine.
+    effective_systems = list(systems or [])
+    if discipline == 'mechanical' and 'rainwater' not in effective_systems:
+        effective_systems.append('rainwater')
+    meta = _base_design(src, dst, discipline, effective_systems, revision, calc)
     if discipline != 'mechanical':
         return meta
 
     doc = ezdxf.readfile(dst)
     levels = v8.build_levels_v8(doc.modelspace())
     project_id = meta.get('v8_project_id') or 'ET-AUTHORITY'
-    created, counts = _compose_authority_layouts(doc, levels, project_id)
+    created, counts = _compose_authority_layouts(doc, levels, project_id, effective_systems, calc)
 
     audit = doc.audit()
     if audit.errors:
@@ -178,6 +222,7 @@ def capabilities():
         'version': '1.0.3-authority-mechanical',
         'authority_submission_profile': True,
         'system_separated_mechanical_sheets': True,
+        'effective_level_sheet_scope': True,
         'water_system_special_sheet': True,
         'cooling_roof_equipment_sheet': True,
         'dedicated_roof_rainwater_sheet': True,
