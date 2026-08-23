@@ -392,6 +392,10 @@ def design(req: engine.DesignRequest):
     systems = requested or allowed
     answers = _enrich_from_architecture(req.answers or {}, discipline)
     calc = engine.calc_for(discipline, answers)
+    # Calculation normalization intentionally keeps only engineering values;
+    # preserve the approved workflow contract explicitly for the sheet compositor.
+    if discipline == 'mechanical' and answers.get('_approved_drawing_manifest'):
+        calc['_approved_drawing_manifest'] = answers['_approved_drawing_manifest']
 
     project_out = engine.OUTPUT_ROOT / str(req.project_id) / f'R{req.revision:03d}' / discipline
     shutil.rmtree(project_out, ignore_errors=True)
