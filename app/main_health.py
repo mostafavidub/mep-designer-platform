@@ -6,11 +6,13 @@ from . import dxf_output  # patches design/download flow to deliver DXF artifact
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
 from .mechanical_workflow import register_mechanical_workflow
+from .mechanical_review_fix import register_mechanical_review_fix
 
 app = main_auto.app
 register_resumable_upload_routes(app)
 register_service_art_routes(app)
 register_mechanical_workflow(app, main_auto.legacy)
+register_mechanical_review_fix(app, main_auto.legacy)
 
 # Compress HTML/CSS/JS/SVG/JSON responses without spending excessive CPU.
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
