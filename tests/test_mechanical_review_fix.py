@@ -30,8 +30,8 @@ class MechanicalReviewFixTests(unittest.TestCase):
         self.assertEqual(payload['status'], 'asking')
         self.assertEqual(payload['question_count'], 1)
         self.assertEqual(payload['question']['key'], '_drawing_set_approval')
-        self.assertIn('تأیید لیست و ادامه', payload['question']['question'])
-        self.assertIn('مجموع قابل تحویل: 21 شیت', payload['question']['question'])
+        self.assertIn('تأیید و شروع طراحی', payload['question']['question'])
+        self.assertIn('تعداد نقشه‌های مکانیکی موردنیاز: 21 پلان', payload['question']['question'])
 
     def test_review_html_contains_authority_family_breakdown(self):
         html = review_question_html(self.drawing_set())
