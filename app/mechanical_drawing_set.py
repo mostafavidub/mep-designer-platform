@@ -204,7 +204,13 @@ def predict_drawing_set(scope):
     # into its representative sanitary plan.
     water_patterns = families['water_supply']['count']
     water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
-    if scope.get('central_water_equipment'):
+    # A single effective floor does not collapse the authority package to one
+    # drawing per system.  Across the approved one-level benchmark projects,
+    # water equipment/connection, sanitary detail, terminal-equipment and
+    # ventilation-detail roles remain separate deliverables.  This is a
+    # composition rule, not a project-name exception.
+    single_effective_level = water_patterns == 1
+    if scope.get('central_water_equipment') or single_effective_level:
         water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water equipment scope'))
     if scope.get('hot_water_return_required'):
         water_roles.append(('RETURN', 'آب گرم — برگشت و بالانس', 'approved hot-water return scope'))
@@ -216,14 +222,32 @@ def predict_drawing_set(scope):
         deliverables.extend(added)
 
     if families['sanitary_vent']['count'] and not _normalize_typical_groups(typical_groups):
+        sanitary_roles = [
+            ('RISER', 'فاضلاب و ونت — رایزر', 'authority sanitary riser'),
+            ('RAIN', 'فاضلاب و ونت — آب باران / دیتیل', 'authority rainwater and vent detail'),
+        ]
+        if families['sanitary_vent']['count'] == 1:
+            sanitary_roles.append(
+                ('DETAIL', 'فاضلاب و ونت — جزئیات اجرایی', 'authority single-level sanitary details')
+            )
         added = list(_append_family_roles(
             families['sanitary_vent'], 'sanitary_vent',
-            scope.get('all_levels') or systems['sanitary']['levels'], [
-                ('RISER', 'فاضلاب و ونت — رایزر', 'authority sanitary riser'),
-                ('RAIN', 'فاضلاب و ونت — آب باران / دیتیل', 'authority rainwater and vent detail'),
-            ],
+            scope.get('all_levels') or systems['sanitary']['levels'], sanitary_roles,
         ))
         deliverables.extend(added)
+
+    if single_effective_level:
+        for family_key, suffix, label, reason in (
+            ('heating', 'EQUIP', 'گرمایش — تجهیزات و جزئیات', 'authority single-level heating equipment'),
+            ('cooling', 'EQUIP', 'سرمایش — تجهیزات و درین', 'authority single-level cooling equipment'),
+            ('ventilation_exhaust', 'DETAIL', 'تهویه — جزئیات تخلیه و هوای جبران', 'authority single-level ventilation details'),
+        ):
+            family = families[family_key]
+            if family['count']:
+                added = list(_append_family_roles(
+                    family, family_key, family['effective_levels'], [(suffix, label, reason)],
+                ))
+                deliverables.extend(added)
 
     if scope.get('enclosed_parking') and families['ventilation_exhaust']['count']:
         added = list(_append_family_roles(
