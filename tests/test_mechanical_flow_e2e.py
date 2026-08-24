@@ -70,6 +70,40 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         self.assertFalse(proposal_data['approved'])
         self.assertTrue(proposal_data['approval_required'])
 
+    def test_flow_poll_does_not_regress_an_active_design(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'active-design-poll'})
+        self.assertEqual(init.status_code, 200)
+        pid = init.json()['project_id']
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'queued'
+            project.questions = []
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            project.analysis = {
+                'discipline': 'mechanical',
+                'architecture_analyzer_version': '3.5-project-evidence-gate',
+                'drawing_set': {
+                    'approved': True,
+                    'drawing_manifest': {'schema_version': 'legacy', 'sheets': []},
+                },
+            }
+            db.commit()
+        finally:
+            db.close()
+
+        flow = self.client.get(f'/projects/{pid}/flow')
+        self.assertEqual(flow.status_code, 200)
+        self.assertEqual(flow.json()['status'], 'queued')
+
+        db = legacy.Session()
+        try:
+            self.assertEqual(db.get(legacy.Project, pid).status, 'queued')
+        finally:
+            db.close()
+
 
 if __name__ == '__main__':
     unittest.main()
