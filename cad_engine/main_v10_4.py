@@ -136,6 +136,136 @@ def _fixture_summary(levels, fixture_schedule=''):
     return detected, scheduled, effective, rooms, proxy_count
 
 
+def _attach_analyzer_fixtures(levels, calc):
+    """Attach only analyzer-observed fixture blocks to their detected plan.
+
+    Some authority DXFs keep sanitary symbols in nested blocks. The analyzer
+    resolves those blocks, while the legacy CAD pass only sees modelspace.
+    Coordinates and kinds below therefore come exclusively from the submitted
+    architecture analysis; no fixture position is invented.
+    """
+    observed = []
+    for item in (calc.get('_plan_analysis') or {}).get('files') or []:
+        for fixture in item.get('fixture_blocks') or []:
+            try:
+                point = (float(fixture['x']), float(fixture['y']))
+            except (KeyError, TypeError, ValueError):
+                continue
+            kind = str(fixture.get('kind') or '').strip().lower()
+            if kind in {'sink', 'faucet', 'toilet', 'bath', 'gas'}:
+                observed.append({'kind': kind, 'point': point, 'source': 'architecture_analyzer'})
+    if not observed or not levels:
+        return 0
+
+    title_points = [level['title']['point'] for level in levels]
+    spacings = [math.dist(a, b) for i, a in enumerate(title_points) for b in title_points[i + 1:]]
+    title_spacing = min(spacings) if spacings else None
+    added = 0
+    seen = {
+        (fixture.get('kind'), round(fixture['point'][0], 4), round(fixture['point'][1], 4))
+        for level in levels for fixture in level.get('fixtures', [])
+    }
+    for fixture in observed:
+        key = (fixture['kind'], round(fixture['point'][0], 4), round(fixture['point'][1], 4))
+        if key in seen:
+            continue
+        level = min(levels, key=lambda x: math.dist(fixture['point'], x['title']['point']))
+        evidence = [x['point'] for x in level.get('rooms', [])] + [level['title']['point']]
+        if title_spacing is not None:
+            limit = title_spacing * 1.65
+        else:
+            xs = [p[0] for p in evidence]; ys = [p[1] for p in evidence]
+            limit = max(max(xs) - min(xs), max(ys) - min(ys), 1.0) * 1.35
+        if min(math.dist(fixture['point'], p) for p in evidence) > limit:
+            continue
+        level.setdefault('fixtures', []).append(fixture)
+        seen.add(key)
+        added += 1
+    return added
+
+
+def _add_evidence_fixture_branches(doc, levels, model):
+    """Draw traceable terminal branches from actual architecture fixtures."""
+    msp = doc.modelspace()
+    count = 0
+    for level in levels:
+        fixtures = [x for x in level.get('fixtures', []) if x.get('source') == 'architecture_analyzer']
+        if not fixtures:
+            continue
+        hub = v8._find_level_riser(msp, level)
+        if not hub:
+            continue
+        nn, span = v6.local_metric(level)
+        r = max(.08, min(nn * .12, span * .025))
+        for fixture in fixtures:
+            point = fixture['point']; kind = fixture['kind']
+            if kind == 'gas':
+                if model.get('gas_main_dn_mm'):
+                    v6.route(msp, point, hub, 'ENGITOOLS-M-GAS', True)
+                    _plan_text(msp, f"G DN{model['gas_main_dn_mm']}", point, 'ENGITOOLS-M-GAS')
+                    count += 1
+                continue
+            cw = (point[0] - r * .55, point[1])
+            san = (point[0] + r * .55, point[1])
+            v6.route(msp, cw, hub, 'ENGITOOLS-M-COLD_WATER')
+            v6.route(msp, san, hub, 'ENGITOOLS-M-SANITARY')
+            _plan_text(msp, f"CW DN{min(model.get('water_main_dn_mm') or 20, 25)}", cw, 'ENGITOOLS-M-COLD_WATER')
+            _plan_text(msp, f"SAN DN{110 if kind == 'toilet' else 50} S={model.get('sanitary_slope_pct')}%", san, 'ENGITOOLS-M-SANITARY', (.32, -.24))
+            count += 2
+            if kind in {'sink', 'faucet', 'bath'}:
+                hw = (point[0], point[1] + r * .55)
+                v6.route(msp, hw, hub, 'ENGITOOLS-M-HOT_WATER', True)
+                _plan_text(msp, 'HW DN20', hw, 'ENGITOOLS-M-HOT_WATER')
+                count += 1
+    return count
+
+
+def _add_semantic_room_networks(doc, levels, model, calc):
+    """Guarantee terminal branches for every analyzer-detected served room.
+
+    The legacy pass can miss rooms in consultant block/layout exports even
+    though the final level builder resolves them. This post-composition pass
+    uses those resolved semantic room points and never creates an unobserved
+    room. Exact equipment positioning remains documented as coordinated.
+    """
+    families = {
+        str(x.get('family') or '')
+        for x in (calc.get('_approved_drawing_manifest') or {}).get('sheets') or []
+    }
+    msp = doc.modelspace(); count = 0
+    for level in levels:
+        hub = v8._find_level_riser(msp, level)
+        if not hub:
+            continue
+        nn, span = v6.local_metric(level)
+        r = max(.08, min(nn * .12, span * .025))
+        for room in level.get('rooms', []):
+            kind = room.get('room'); x, y = room['point']
+            if kind in {'bedroom', 'living', 'office', 'shop'}:
+                if 'heating' in families:
+                    supply = (x - r * .85, y - r * 1.55)
+                    ret = (x + r * .85, y - r * 1.55)
+                    v6.route(msp, supply, hub, 'ENGITOOLS-M-HEATING_SUPPLY')
+                    v6.route(msp, ret, hub, 'ENGITOOLS-M-HEATING_RETURN', True)
+                    _plan_text(msp, 'HS DN20', supply, 'ENGITOOLS-M-HEATING_SUPPLY')
+                    _plan_text(msp, 'HR DN20', ret, 'ENGITOOLS-M-HEATING_RETURN')
+                    count += 2
+                if 'cooling' in families:
+                    terminal = (x, y + r * 1.55)
+                    condensate = (x + r * 1.1, y + r * 1.55)
+                    v6.route(msp, terminal, hub, 'ENGITOOLS-M-COOLING')
+                    v6.route(msp, condensate, hub, 'ENGITOOLS-M-CONDENSATE', True)
+                    _plan_text(msp, f"C {model.get('per_room_cooling_kw')}kW", terminal, 'ENGITOOLS-M-COOLING')
+                    _plan_text(msp, 'CD DN25 S=1%', condensate, 'ENGITOOLS-M-CONDENSATE')
+                    count += 2
+                if 'ventilation_exhaust' in families and kind in {'office', 'shop'}:
+                    terminal = (x - r * 1.1, y + r * 1.1)
+                    v6.route(msp, terminal, hub, 'ENGITOOLS-M-EXHAUST_VENTILATION')
+                    _plan_text(msp, f"SA/EA {model.get('ventilation_airflow_m3h')} m3/h", terminal, 'ENGITOOLS-M-EXHAUST_VENTILATION')
+                    count += 1
+    return count
+
+
 def _technical_model(doc, levels, calc):
     inputs = calc.get('_design_inputs') or {}
     fixture_schedule = _norm(inputs.get('fixture_schedule'))
@@ -275,6 +405,7 @@ def _ensure_symbol_blocks(doc):
         'ET_M_EXHAUST': ('box', 'EF'), 'ET_M_RISER': ('diamond', 'R'),
         'ET_M_ISOLATION_VALVE': ('circle', 'V'), 'ET_M_CLEANOUT': ('circle', 'CO'),
         'ET_M_VENT_TERMINAL': ('diamond', 'VT'), 'ET_M_ROOF_DRAIN': ('circle', 'RD'),
+        'ET_M_JUNCTION': ('circle', 'J'), 'ET_M_FLOW_ARROW': ('diamond', '>'),
     }
     for name, (kind, tag) in defs.items():
         if name in doc.blocks:
@@ -349,6 +480,49 @@ def _add_standard_symbols(doc, levels, model):
             msp.add_blockref('ET_M_ROOF_DRAIN', point, dxfattribs={'layer': 'ENGITOOLS-M-ROOF_RAINWATER'})
             _plan_text(msp, f"RD DN{model.get('roof_drain_dn_mm')}", point, 'ENGITOOLS-M-ROOF_RAINWATER')
             count += 1
+    return count
+
+
+def _annotate_network_topology(doc, model):
+    """Mark route-derived junctions and representative flow directions."""
+    _ensure_symbol_blocks(doc)
+    msp = doc.modelspace()
+    specs = {
+        'ENGITOOLS-M-COLD_WATER': f"CW DN{model.get('water_main_dn_mm')}",
+        'ENGITOOLS-M-HOT_WATER': 'HW DN20',
+        'ENGITOOLS-M-SANITARY': f"SAN DN{model.get('sanitary_main_dn_mm')} S={model.get('sanitary_slope_pct')}%",
+        'ENGITOOLS-M-VENT': f"VENT DN{SANITARY['vent_dn_mm']}",
+        'ENGITOOLS-M-HEATING_SUPPLY': 'HS FLOW',
+        'ENGITOOLS-M-HEATING_RETURN': 'HR RETURN',
+        'ENGITOOLS-M-COOLING': 'REFRIGERANT / SUPPLY',
+        'ENGITOOLS-M-CONDENSATE': 'CD S=1%',
+        'ENGITOOLS-M-EXHAUST_VENTILATION': f"EA {model.get('ventilation_airflow_m3h')} m3/h",
+    }
+    count = 0
+    for layer, label in specs.items():
+        lines = []
+        degree = Counter()
+        for entity in msp.query('LINE'):
+            if str(entity.dxf.layer) != layer:
+                continue
+            a = tuple(entity.dxf.start)[:2]; b = tuple(entity.dxf.end)[:2]
+            if math.dist(a, b) <= 1e-9:
+                continue
+            lines.append((math.dist(a, b), a, b))
+            degree[(round(a[0], 5), round(a[1], 5))] += 1
+            degree[(round(b[0], 5), round(b[1], 5))] += 1
+        for point, connections in degree.items():
+            if connections < 2:
+                continue
+            msp.add_blockref('ET_M_JUNCTION', point, dxfattribs={'layer': layer})
+            count += 1
+        for index, (_length, a, b) in enumerate(sorted(lines, reverse=True)[:12]):
+            mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+            msp.add_blockref('ET_M_FLOW_ARROW', mid, dxfattribs={'layer': layer})
+            count += 1
+            if index % 3 == 0:
+                _plan_text(msp, label, mid, layer, (.18, .14))
+                count += 1
     return count
 
 
@@ -650,8 +824,14 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
         return meta
     doc = ezdxf.readfile(dst)
     levels = v8.build_levels_v8(doc.modelspace())
+    analyzer_fixture_count = _attach_analyzer_fixtures(levels, calc)
     model = _technical_model(doc, levels, calc)
+    semantic_branch_count = _add_semantic_room_networks(doc, levels, model, calc)
     symbol_count = _add_standard_symbols(doc, levels, model)
+    symbol_count += _add_evidence_fixture_branches(doc, levels, model)
+    symbol_count += _annotate_network_topology(doc, model)
+    symbol_count += semantic_branch_count
+    model['analyzer_fixture_blocks_attached'] = analyzer_fixture_count
     schedule_count = _annotate_sheets(doc, model)
     report = _quality_report(doc, levels, calc, model, symbol_count, schedule_count)
     if report['score_10'] < 10.0:
