@@ -265,6 +265,15 @@ def _level_profiles_from_file(f):
             expanded = dict(profile)
             expanded['name'] = expanded_name
             profiles.append(expanded)
+    # A title alone is not a level. Exported CAD templates frequently retain
+    # orphan sample floor titles far from every architectural room. Once the
+    # file provides spatial room evidence for any level, discard zero-evidence
+    # non-roof titles instead of multiplying the proposal by phantom floors.
+    if any(p.get('recognized_room_labels', 0) > 0 for p in profiles):
+        profiles = [
+            p for p in profiles
+            if p.get('recognized_room_labels', 0) > 0 or p.get('roof')
+        ]
     return profiles
 
 
