@@ -86,6 +86,17 @@ def _authority_input_gaps(calc):
     if 'roof_rainwater' in families:
         requirements['roof area, drain locations and rainfall design basis'] = ('roof_drainage_basis', 'roof_drainage_geometry')
 
+    # Projects created by the evidence-gated questionnaire must carry the
+    # non-architectural routing decisions into CAD. Legacy/direct engine tests
+    # remain backward-compatible because they do not declare this contract.
+    if inputs.get('questionnaire_evidence_version'):
+        requirements['local authority override or explicit none'] = ('local_mechanical_code',)
+        if 'water_supply' in families:
+            requirements['water service entry location'] = ('water_service_connection',)
+            requirements['domestic hot-water / return arrangement'] = ('hot_water_system',)
+        if any(str(x.get('code') or '').endswith('RISER') for x in manifest.get('sheets') or []):
+            requirements['approved mechanical shaft / riser route'] = ('mechanical_shaft_route',)
+
     gaps = []
     for label, keys in requirements.items():
         if not any(_resolved_authority_value(inputs.get(key)) for key in keys):
