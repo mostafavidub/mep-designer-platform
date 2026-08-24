@@ -5,6 +5,7 @@ from collections import Counter
 from .mechanical_rulebook import (
     DEFAULT_GAS_PROPOSAL,
     DEFAULT_WATER_INLET_PRESSURE,
+    RULEBOOK_VERSION,
     WATER,
     automatic_answers,
     fixture_schedule_proposal,
@@ -374,7 +375,7 @@ def auto_summary(auto, discipline):
     if discipline == 'mechanical' and auto.get('estimated_water_flow_lps') is not None:
         items.append(f"دبی اولیه آب از Fixtureهای تشخیص‌داده‌شده ≈ {auto['estimated_water_flow_lps']} L/s")
     if discipline == 'mechanical':
-        items.append('جنس لوله، ضرایب هیدرولیکی، شیب‌ها، فشار مبنای محافظه‌کارانه، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v1.6 تعیین می‌شود')
+        items.append(f'جنس لوله، ضرایب هیدرولیکی، شیب‌ها، فشار مبنای محافظه‌کارانه، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط Rule Book v{RULEBOOK_VERSION} تعیین می‌شود')
         if auto.get('fixture_blocks_detected'):
             items.append(f"{auto['fixture_blocks_detected']} سمبل واقعی تجهیزات مکانیکی/بهداشتی از DXF تشخیص داده شد")
     return items
