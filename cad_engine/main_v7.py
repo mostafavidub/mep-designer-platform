@@ -179,19 +179,31 @@ def design_level_v7(msp, level, systems, calc, stats, qa):
         # silently deleting the fixture and failing the whole deliverable.
         kind = fixture.get('kind', 'fixture')
         point = tuple(fixture['point'])
-        qa['fixtures_expected'] += 1
         if kind == 'gas':
             if gas_state == 'on' and 'gas' in systems:
+                qa['fixtures_expected'] += 1
                 engine.add_box(msp, point, r*.40, 'ENGITOOLS-M-GAS', 'G', text_h*.65)
                 route(msp, point, hub, 'ENGITOOLS-M-GAS', True)
                 stats['gas'] += 1
                 stats['actual_fixture_connections'] += 1
                 qa['fixtures_connected'] += 1
+            elif gas_state == 'off' and 'gas' not in systems:
+                # A stove/appliance symbol in an architectural furniture plan
+                # is not evidence that the building has a fuel-gas service.
+                # When the approved scope explicitly says "no gas", exclude
+                # that symbol from the required mechanical connection count.
+                qa['assumptions'].append(
+                    f"{level['level']}: architectural gas-appliance symbol "
+                    "excluded because the approved project scope has no gas service."
+                )
+                continue
             else:
+                qa['fixtures_expected'] += 1
                 qa['unresolved'].append(
                     f"{level['level']}: detected gas fixture requires an enabled gas system."
                 )
         else:
+            qa['fixtures_expected'] += 1
             _add_branch(msp, point, _requirements(kind, ''), hub, r, text_h, systems, stats)
             stats['actual_fixture_connections'] += 1
             qa['fixtures_connected'] += 1
