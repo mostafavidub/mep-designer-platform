@@ -209,10 +209,11 @@ def predict_drawing_set(scope):
     # water equipment/connection, sanitary detail, terminal-equipment and
     # ventilation-detail roles remain separate deliverables.  This is a
     # composition rule, not a project-name exception.
-    single_effective_level = water_patterns == 1
-    if scope.get('central_water_equipment') or single_effective_level:
+    single_effective_level = water_patterns == 1 and not _normalize_typical_groups(typical_groups)
+    distinct_multi_level_equipment = water_patterns >= 3 and not _normalize_typical_groups(typical_groups)
+    if scope.get('central_water_equipment') or single_effective_level or distinct_multi_level_equipment:
         water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water equipment scope'))
-    if scope.get('hot_water_return_required'):
+    if scope.get('hot_water_return_required') or distinct_multi_level_equipment:
         water_roles.append(('RETURN', 'آب گرم — برگشت و بالانس', 'approved hot-water return scope'))
     if water_patterns:
         added = list(_append_family_roles(
@@ -249,6 +250,18 @@ def predict_drawing_set(scope):
                 ))
                 deliverables.extend(added)
 
+    # A dedicated roof level carries its own rainwater drawing.  When cooling
+    # equipment is explicitly coordinated on that roof, its equipment layout
+    # is also separate from the occupied-floor cooling plans.
+    if scope.get('roof_exists') and families['cooling']['count']:
+        added = list(_append_family_roles(
+            families['cooling'], 'cooling',
+            systems['roof_drainage']['levels'], [
+                ('EQUIP', 'سرمایش — جانمایی تجهیزات بام', 'authority roof cooling equipment'),
+            ],
+        ))
+        deliverables.extend(added)
+
     if scope.get('enclosed_parking') and families['ventilation_exhaust']['count']:
         added = list(_append_family_roles(
             families['ventilation_exhaust'], 'ventilation_exhaust',
@@ -259,6 +272,14 @@ def predict_drawing_set(scope):
         deliverables.extend(added)
 
     roof_sheets = []
+    if scope.get('roof_exists'):
+        roof_sheets.append({
+            'family': 'roof_rainwater', 'code': 'M-R-01',
+            'label': 'بام / آب باران', 'pattern': systems['roof_drainage']['levels'][0],
+            'levels': systems['roof_drainage']['levels'], 'typical': False,
+            'special': False,
+        })
+        deliverables.extend(roof_sheets)
     families["roof_rainwater"] = {
         "code": "M-R", "label": "بام / آب باران", "systems": ["roof_drainage"],
         "effective_levels": systems["roof_drainage"]["levels"],
