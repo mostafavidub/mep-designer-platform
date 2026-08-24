@@ -388,7 +388,17 @@ def design_dxf_v6(src,dst,discipline,systems,revision,calc):
     for level in levels: design_level(msp,level,systems,calc,stats,qa)
     add_riser_legend(msp,levels,stats,calc,systems); report=qa_report(levels,stats,systems,qa)
     if report['score_10']<10.0:
-        failed=[k for k,v in report['checks'].items() if not v]; raise RuntimeError(f"Mechanical CAD QA gate failed ({report['score_10']}/10): {', '.join(failed)}")
+        failed=[k for k,v in report['checks'].items() if not v]
+        evidence = ''
+        if 'fixture_block_traceability' in failed:
+            evidence = (
+                f" [fixtures expected={report.get('fixture_blocks_expected', 0)}, "
+                f"connected={report.get('fixture_blocks_connected', 0)}]"
+            )
+        raise RuntimeError(
+            f"Mechanical CAD QA gate failed ({report['score_10']}/10): "
+            f"{', '.join(failed)}{evidence}"
+        )
     x0,y0,span=presentation_origin(levels); h=max(span*.018,.22); msp.add_text('AUTOMATION STRUCTURE QA PASS - PROFESSIONAL REVIEW REQUIRED',dxfattribs={'layer':'ENGITOOLS-M-NOTES','height':h*.65}).set_placement((x0,y0+h*1.6))
     doc.saveas(dst)
     return {'room_labels':sum(len(x['rooms']) for x in levels),'levels':[{'name':x['level'],'rooms':len(x['rooms']),'fixtures':len(x['fixtures']),'provenance':x['provenance']} for x in levels],'placements':dict(stats),'qa':report,'calculation':calc,'design_standard':'Rulebook v1.2 level-based spatial-room traceable mechanical networks'}
