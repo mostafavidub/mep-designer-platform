@@ -968,7 +968,11 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
                 'split cooling units and hydronic radiators; outdoor units on coordinated roof/service location'
             )
         if is_confirmation(inputs.get('fixture_schedule')):
-            inputs['fixture_schedule'] = fixture_schedule_proposal(architectural_auto or [])
+            auto_rooms = architectural_auto.get('room_counts') or {}
+            if sum(int(value or 0) for value in auto_rooms.values()):
+                inputs['fixture_schedule'] = fixture_schedule_proposal(architectural_auto)
+            # Otherwise keep the confirmation token. _technical_model runs
+            # after Level Detection and resolves it from the actual DXF levels.
         inputs['water_inlet_pressure'] = water_inlet_pressure_basis(inputs.get('water_inlet_pressure'))
         if not inputs.get('water_source') or is_confirmation(inputs.get('water_source')):
             inputs['water_source'] = (
