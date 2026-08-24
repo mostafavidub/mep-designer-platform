@@ -8,7 +8,24 @@ import math
 import re
 
 
-RULEBOOK_VERSION = '1.9'
+RULEBOOK_VERSION = '2.0'
+
+# Network composition is a technical rule, not a sheet-count heuristic.  The
+# designer must build shared distribution graphs and preserve the evidence
+# status of every terminal instead of drawing untraceable radial spokes.
+NETWORK_COMPOSITION_STANDARD = {
+    'topology': 'shared trunk/branch split at every terminal junction',
+    'sizing': 'each segment sized from cumulative downstream load',
+    'routing': 'orthogonal coordinated route with forbidden-zone collision check',
+    'independent_systems': (
+        'cold_water', 'hot_water', 'hot_water_return', 'sanitary', 'vent',
+        'heating_supply', 'heating_return', 'cooling', 'condensate',
+        'gas', 'exhaust_ventilation', 'roof_rainwater',
+    ),
+    'required_provenance': (
+        'Detected', 'Calculated', 'Rule-based Proposed', 'User-confirmed',
+    ),
+}
 
 # Project facts that must come from reliable DXF evidence or a short customer
 # confirmation. They are not silent design defaults because each can change
@@ -57,8 +74,8 @@ VENTILATION = {
 # plan symbols and schedule entries, using calculated values rather than a
 # project-specific canned drawing.
 PLAN_DETAIL_STANDARD = {
-    'water_supply': ('fixture_connection', 'branch_diameter', 'isolation_valve', 'junction_tag', 'flow_direction', 'riser_tag'),
-    'sanitary_vent': ('fixture_connection', 'branch_diameter', 'slope_tag', 'cleanout', 'junction_tag', 'flow_direction', 'vent_tag', 'riser_tag'),
+    'water_supply': ('fixture_connection', 'shared_trunk', 'cumulative_segment_size', 'branch_diameter', 'isolation_valve', 'junction_tag', 'flow_direction', 'riser_tag', 'decision_provenance'),
+    'sanitary_vent': ('fixture_connection', 'shared_trunk', 'cumulative_segment_size', 'branch_diameter', 'slope_tag', 'cleanout', 'junction_tag', 'flow_direction', 'vent_tag', 'riser_tag', 'decision_provenance'),
     'heating': ('terminal_equipment', 'design_capacity', 'supply_return_tag', 'junction_tag', 'flow_direction', 'riser_tag'),
     'cooling': ('terminal_equipment', 'design_capacity', 'junction_tag', 'flow_direction', 'condensate_fall', 'outdoor_unit_location'),
     'ventilation_exhaust': ('exhaust_terminal', 'airflow_tag', 'junction_tag', 'flow_direction', 'discharge_path', 'makeup_air_path'),
