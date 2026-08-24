@@ -191,7 +191,9 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
         stats = v7.defaultdict(int)
         qa = {'assumptions': [], 'unresolved': [], 'checks': {}}
         v7.design_level_v7(
-            msp, level, {'cold_water', 'sanitary'},
+            # Legacy system scope may still contain ``gas`` while the approved
+            # answer/manifest explicitly disables it. The answer must win.
+            msp, level, {'cold_water', 'sanitary', 'gas'},
             {'_design_inputs': {'gas': 'بدون گاز'}}, stats, qa,
         )
         self.assertEqual(qa['fixtures_expected'], 0)
