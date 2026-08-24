@@ -177,10 +177,10 @@ def run_design_dxf(project_id, revision_id):
     except Exception as exc:
         r.status = 'failed'
         r.error = str(exc)
-        # Preserve a retryable approved project instead of trapping the user in
-        # a terminal failed state after a recoverable CAD validation error.
-        approved = bool(((p.analysis or {}).get('drawing_set') or {}).get('approved_manifest'))
-        p.status = 'ready_to_design' if approved else 'failed'
+        # A failed CAD run is never a completed analysis. Returning it to
+        # ready_to_design makes the UI ask for the same start action forever
+        # and hides the actual 422/500 reason from the customer.
+        p.status = 'failed'
         p.last_error = str(exc)
         db.commit()
     finally:
