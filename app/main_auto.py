@@ -249,7 +249,7 @@ def analyze_project_job(project_id):
         discipline = (p.answers or {}).get('discipline', 'mechanical')
         analysis = {
             'discipline': discipline,
-            'architecture_analyzer_version': '3.4-authority-roof-scope',
+            'architecture_analyzer_version': '3.5-project-evidence-gate',
             'file_count': len(files),
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',
@@ -296,7 +296,7 @@ def flow_payload(p):
         }
     data['auto_summary'] = (p.analysis or {}).get('auto_summary') or []
     data['auto_inference'] = (p.analysis or {}).get('architectural_auto') or {}
-    data['questionnaire_mode'] = 'dynamic-unresolved-only'
+    data['questionnaire_mode'] = 'dynamic-unresolved-project-evidence-only'
     data['inference_mode'] = (p.analysis or {}).get('inference_mode', 'architecture-first-v2-spatial')
     return data
 
@@ -325,7 +325,7 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
 def system_health():
     result = {'ok': True, 'web': {
         'ok': True,
-        'mode': 'architecture-first-v3.4-authority-roof-scope',
+        'mode': 'architecture-first-v3.5-project-evidence-gate',
         'mechanical_rulebook_version': RULEBOOK_VERSION,
         'questionnaire': 'short-answer-rulebook-proposals',
     }}
