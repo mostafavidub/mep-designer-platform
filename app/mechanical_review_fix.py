@@ -22,6 +22,11 @@ CURRENT_ANALYZER_VERSIONS = {
     '3.5-project-evidence-gate',
 }
 
+# Once CAD generation has started, status polling must be read-only. Re-running
+# analyzer/proposal migration here can regress an active project back to the
+# review or ready-to-design screens.
+DESIGN_LOCKED_STATUSES = {'queued', 'designing', 'ready', 'failed'}
+
 
 def analyzer_needs_refresh(analysis, has_source=True):
     return bool(
@@ -127,6 +132,12 @@ def register_mechanical_review_fix(app, legacy):
         if not p:
             raise HTTPException(404)
 
+        if p.status in DESIGN_LOCKED_STATUSES:
+            data = legacy.flow_payload(p)
+            data['drawing_set'] = (p.analysis or {}).get('drawing_set')
+            db.close()
+            return JSONResponse(data)
+
         # Existing projects may contain a proposal produced by the old two-level
         # analyzer. Re-run once from the persisted architecture source so the
         # customer never approves a stale 2/13-sheet contract.
@@ -153,8 +164,10 @@ def register_mechanical_review_fix(app, legacy):
             data = decorate_review_payload(legacy.flow_payload(p), ds)
             db.close()
             return JSONResponse(data)
+        data = legacy.flow_payload(p)
+        data['drawing_set'] = (p.analysis or {}).get('drawing_set')
         db.close()
-        return old_flow(pid, request)
+        return JSONResponse(data)
 
     def answer_json(pid: int, request: Request, answer: str = Form(...)):
         u = legacy.current_user(request)
