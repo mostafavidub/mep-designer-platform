@@ -149,11 +149,16 @@ def build_scope(p):
     gas = [] if _negative(answers.get('gas')) else gas_candidates
 
     if profiles_available:
+        detected_roof_names = [
+            str(x.get('name')) for x in (auto.get('level_profiles') or [])
+            if x.get('name') and x.get('roof')
+        ]
         roof_exists = (
-            any(bool(x.get('roof')) for x in (auto.get('level_profiles') or []))
+            bool(detected_roof_names)
             and bool(auto.get('roof_scope_reliable', True))
         )
     else:
+        detected_roof_names = [x for x in levels if 'بام' in x or 'roof' in x.lower()]
         roof_exists = any('بام' in x or 'roof' in x.lower() for x in levels)
     roof_text = answers.get('roof')
     if roof_text is not None:
@@ -174,6 +179,7 @@ def build_scope(p):
         'ventilation_required_levels': ventilation,
         'gas_consumer_levels': gas,
         'roof_exists': bool(roof_exists),
+        'roof_level_name': detected_roof_names[0] if detected_roof_names else 'Roof',
         'roof_requires_dedicated_plan': False,
         'vertical_systems': len(effective_union) > 1,
         'enclosed_parking': _enclosed_parking(answers.get('parking_enclosure')),
