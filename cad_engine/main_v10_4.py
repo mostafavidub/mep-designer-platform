@@ -387,10 +387,22 @@ def _add_shared_distribution_networks(doc, levels, model, calc):
 
 def _technical_model(doc, levels, calc):
     inputs = calc.get('_design_inputs') or {}
+    plan_analysis = calc.get('_plan_analysis') or {}
+    architectural_auto = plan_analysis.get('architectural_auto') or {}
+    analyzer_fixture_counts = Counter(architectural_auto.get('fixture_counts') or {})
+    if not sum(analyzer_fixture_counts.values()):
+        for file_info in plan_analysis.get('files') or []:
+            analyzer_fixture_counts.update(file_info.get('fixture_counts') or {})
+
     fixture_schedule = _norm(inputs.get('fixture_schedule'))
     if is_confirmation(fixture_schedule):
-        architectural_auto = (calc.get('_plan_analysis') or {}).get('architectural_auto') or {}
-        fixture_schedule = fixture_schedule_proposal(architectural_auto or levels)
+        if sum(analyzer_fixture_counts.values()):
+            fixture_schedule = '; '.join(
+                f'{kind} {int(analyzer_fixture_counts.get(kind) or 0)}'
+                for kind in ('sink', 'faucet', 'toilet', 'bath')
+            )
+        else:
+            fixture_schedule = fixture_schedule_proposal(architectural_auto or levels)
     detected, scheduled, fixtures, rooms, proxies = _fixture_summary(levels, fixture_schedule)
     unit_to_m = _drawing_unit_to_m(doc)
     water_basis = _norm(inputs.get('water_design_basis')) or (
@@ -421,7 +433,11 @@ def _technical_model(doc, levels, calc):
         fixtures['sink'] * 1.5 + fixtures['faucet'] * 1.0
         + fixtures['toilet'] * 2.5 + fixtures['bath'] * 2.0
     )
-    flow_lps = calc.get('design_water_flow_lps') or calc.get('estimated_water_flow_lps')
+    flow_lps = (
+        calc.get('design_water_flow_lps')
+        or calc.get('estimated_water_flow_lps')
+        or architectural_auto.get('estimated_water_flow_lps')
+    )
     if flow_lps is None and water_fu:
         flow_lps = max(.2, .16 * math.sqrt(water_fu))
     flow_lps = float(flow_lps) if flow_lps is not None else None
@@ -441,6 +457,11 @@ def _technical_model(doc, levels, calc):
     ))
     water_length_m = _layer_length(doc.modelspace(), 'ENGITOOLS-M-COLD_WATER')
     water_length_m = water_length_m * unit_to_m if unit_to_m else None
+    if not water_length_m:
+        try:
+            water_length_m = float(architectural_auto.get('estimated_route_length_m') or 0) or None
+        except (TypeError, ValueError):
+            water_length_m = None
     head_loss_m = None
     if flow_lps and water_dn and hazen_c and water_length_m:
         q = flow_lps / 1000.0
@@ -469,6 +490,18 @@ def _technical_model(doc, levels, calc):
 
     cooling_kw = calc.get('cooling_load_kw')
     heating_kw = calc.get('heating_load_kw')
+    if cooling_kw in (None, ''):
+        cooling_kw = architectural_auto.get('estimated_cooling_load_kw')
+    if heating_kw in (None, ''):
+        heating_kw = architectural_auto.get('estimated_heating_load_kw')
+    try:
+        cooling_kw = float(cooling_kw) if cooling_kw not in (None, '') else None
+    except (TypeError, ValueError):
+        cooling_kw = None
+    try:
+        heating_kw = float(heating_kw) if heating_kw not in (None, '') else None
+    except (TypeError, ValueError):
+        heating_kw = None
     capacities_btuh = _all_numbers(equipment, r'btu(?:/h|hr)?')
     capacities_kw = _all_numbers(equipment, r'kw|کیلووات|كيلووات')
     equipment_resolved = bool(equipment and (capacities_btuh or capacities_kw or re.search(r'per\s+room\s+load|بار\s+هر\s+فضا', equipment, re.I)))
