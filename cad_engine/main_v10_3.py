@@ -256,11 +256,27 @@ def _materialize_analyzer_blocks(src, output_path, calc):
     for name in names:
         if name in existing:
             continue
+        # Corrupt consultant exports can retain an INSERT name after its block
+        # definition has been purged.  Analyzer provenance must never turn that
+        # harmless orphan into an HTTP 500.  Ignore the unusable candidate and
+        # let exact manifest-level detection decide whether enough geometry
+        # remains to issue the drawing.
+        try:
+            doc.blocks.get(name)
+        except Exception:
+            continue
         try:
             ref = msp.add_blockref(name, (0, 0))
         except Exception as exc:
             raise RuntimeError(f'Analyzer source block is unavailable in CAD: {name}: {exc}')
-        pending = list(ref.explode(target_layout=msp))
+        try:
+            pending = list(ref.explode(target_layout=msp))
+        except Exception:
+            try:
+                msp.delete_entity(ref)
+            except Exception:
+                pass
+            continue
         # explode() resolves one nesting level. Resolve only descendants created
         # from this analyzer-selected source, leaving original modelspace INSERTs.
         while True:
@@ -271,8 +287,14 @@ def _materialize_analyzer_blocks(src, output_path, calc):
             for entity in nested:
                 try:
                     next_pending.extend(list(entity.explode(target_layout=msp)))
-                except Exception as exc:
-                    raise RuntimeError(f'Cannot expand nested architecture block {name}: {exc}')
+                except Exception:
+                    # A missing nested definition is an orphaned source symbol,
+                    # not architectural level geometry. Exclude only that
+                    # INSERT instead of failing the complete deliverable.
+                    try:
+                        msp.delete_entity(entity)
+                    except Exception:
+                        pass
             pending = next_pending
         materialized.append(name)
     if not materialized:
