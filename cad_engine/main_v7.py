@@ -187,11 +187,12 @@ def design_level_v7(msp, level, systems, calc, stats, qa):
                 stats['gas'] += 1
                 stats['actual_fixture_connections'] += 1
                 qa['fixtures_connected'] += 1
-            elif gas_state == 'off' and 'gas' not in systems:
+            elif 'gas' not in systems:
                 # A stove/appliance symbol in an architectural furniture plan
                 # is not evidence that the building has a fuel-gas service.
-                # When the approved scope explicitly says "no gas", exclude
-                # that symbol from the required mechanical connection count.
+                # The approved manifest is authoritative: when it contains no
+                # gas family, exclude that symbol from the required mechanical
+                # connection count even if a legacy free-text answer is absent.
                 qa['assumptions'].append(
                     f"{level['level']}: architectural gas-appliance symbol "
                     "excluded because the approved project scope has no gas service."
