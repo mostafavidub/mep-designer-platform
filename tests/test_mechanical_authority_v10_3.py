@@ -80,14 +80,16 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
             out = ezdxf.readfile(dst)
             names = [x.name for x in out.layouts if x.name.startswith('M-')]
             self.assertEqual(len(names), meta['authority_submission']['layout_count'])
-            self.assertEqual(len(names), 21)
+            # This synthetic scope explicitly includes gas and a dedicated
+            # roof in addition to the 21-sheet no-gas duplex benchmark.
+            self.assertEqual(len(names), 25)
             self.assertEqual(meta['authority_submission']['counts'], {
-                'W': 4, 'S': 3, 'H': 3, 'C': 4, 'G': 3, 'V': 3, 'R': 1,
+                'W': 6, 'S': 5, 'H': 3, 'C': 4, 'G': 3, 'V': 3, 'R': 1,
             })
             self.assertEqual(len(out.audit().errors), 0)
             self.assertEqual(meta['authority_submission']['validation_status'], 'PASS')
-            self.assertEqual(meta['authority_submission']['expected_sheet_count'], 21)
-            self.assertEqual(meta['authority_submission']['generated_sheet_count'], 21)
+            self.assertEqual(meta['authority_submission']['expected_sheet_count'], 25)
+            self.assertEqual(meta['authority_submission']['generated_sheet_count'], 25)
             self.assertNotIn('M-RISER-CALC', names)
             self.assertFalse(any(x.startswith('M-P-') for x in names))
             for prefix in ('M-W-', 'M-S-', 'M-H-', 'M-C-', 'M-G-', 'M-V-', 'M-R-'):
