@@ -17,6 +17,18 @@ FAMILY_ORDER = (
     'roof_rainwater',
 )
 
+CURRENT_ANALYZER_VERSIONS = {
+    '3.4-authority-roof-scope',
+    '3.5-project-evidence-gate',
+}
+
+
+def analyzer_needs_refresh(analysis, has_source=True):
+    return bool(
+        has_source
+        and (analysis or {}).get('architecture_analyzer_version') not in CURRENT_ANALYZER_VERSIONS
+    )
+
 
 def _find_route(app, path, method):
     method = method.upper()
@@ -123,8 +135,7 @@ def register_mechanical_review_fix(app, legacy):
         has_source = (pdir / 'architecture.zip').exists() or (pdir / 'architecture.dxf').exists()
         analyzer_stale = (
             _discipline(p) == 'mechanical'
-            and analysis.get('architecture_analyzer_version') != '3.4-authority-roof-scope'
-            and has_source
+            and analyzer_needs_refresh(analysis, has_source)
         )
         if analyzer_stale:
             db.close()
