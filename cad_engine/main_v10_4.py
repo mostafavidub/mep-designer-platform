@@ -266,6 +266,125 @@ def _add_semantic_room_networks(doc, levels, model, calc):
     return count
 
 
+def _dn_for_downstream(family, count, model):
+    """Select a traceable segment size from the downstream terminal count."""
+    count = max(int(count or 1), 1)
+    if family == 'sanitary':
+        return 110 if count <= 3 else (125 if count <= 6 else 160)
+    if family == 'condensate':
+        return 25 if count <= 3 else (32 if count <= 6 else 40)
+    calculated = int(model.get('water_main_dn_mm') or 20)
+    staged = 20 if count == 1 else (25 if count <= 3 else (32 if count <= 6 else 40))
+    return min(calculated, staged) if family == 'water' else staged
+
+
+def _unique_line(msp, start, end, layer, seen):
+    if math.dist(start, end) <= 1e-9:
+        return False
+    a = (round(start[0], 5), round(start[1], 5))
+    b = (round(end[0], 5), round(end[1], 5))
+    key = (layer, *sorted((a, b)))
+    if key in seen:
+        return False
+    seen.add(key)
+    msp.add_line(start, end, dxfattribs={'layer': layer})
+    return True
+
+
+def _shared_network(msp, terminals, hub, layer, family, model, seen):
+    """Draw a shared, auditable trunk/branch graph with cumulative sizing."""
+    if not terminals or not hub:
+        return {'segments': 0, 'junctions': 0, 'terminals': len(terminals)}
+    xs = [p[0] for p in terminals]; ys = [p[1] for p in terminals]
+    horizontal = (max(xs) - min(xs)) >= (max(ys) - min(ys))
+    ordered = sorted(terminals, key=lambda p: p[0] if horizontal else p[1])
+    junctions = [(p[0], hub[1]) if horizontal else (hub[0], p[1]) for p in ordered]
+    grouped = []
+    for terminal, junction in zip(ordered, junctions):
+        if grouped and math.dist(junction, grouped[-1]['junction']) <= 1e-6:
+            grouped[-1]['terminals'].append(terminal)
+        else:
+            grouped.append({'junction': junction, 'terminals': [terminal]})
+    segments = 0
+    for group in grouped:
+        for terminal in group['terminals']:
+            segments += int(_unique_line(msp, terminal, group['junction'], layer, seen))
+        msp.add_blockref('ET_M_JUNCTION', group['junction'], dxfattribs={'layer': layer})
+        if family in {'water', 'heating', 'cooling'}:
+            msp.add_blockref('ET_M_ISOLATION_VALVE', group['junction'], dxfattribs={'layer': layer})
+        if family == 'sanitary':
+            msp.add_blockref('ET_M_CLEANOUT', group['junction'], dxfattribs={'layer': layer})
+    nodes = [group['junction'] for group in grouped] + [hub]
+    nodes = sorted(set((round(p[0], 8), round(p[1], 8)) for p in nodes),
+                   key=lambda p: p[0] if horizontal else p[1])
+    hub_index = min(range(len(nodes)), key=lambda i: math.dist(nodes[i], hub))
+    for i, (a, b) in enumerate(zip(nodes, nodes[1:])):
+        if not _unique_line(msp, a, b, layer, seen):
+            continue
+        segments += 1
+        downstream = i + 1 if i < hub_index else len(nodes) - i - 1
+        dn = _dn_for_downstream(family, downstream, model)
+        suffix = f" S={model.get('sanitary_slope_pct')}%" if family == 'sanitary' else ''
+        mid = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+        _plan_text(msp, f"DN{dn}{suffix} [CALCULATED:{downstream}]", mid, layer, (.12, .12))
+        msp.add_blockref('ET_M_FLOW_ARROW', mid, dxfattribs={'layer': layer})
+    return {'segments': segments, 'junctions': len(grouped), 'terminals': len(terminals)}
+
+
+def _add_shared_distribution_networks(doc, levels, model, calc):
+    """Compose independent shared networks from observed project evidence."""
+    _ensure_symbol_blocks(doc)
+    msp = doc.modelspace(); seen = set(); report = Counter()
+    families = _families(calc)
+    for level in levels:
+        hub = v8._find_level_riser(msp, level)
+        if not hub:
+            continue
+        nn, span = v6.local_metric(level)
+        offset = max(.10, min(nn * .18, span * .03))
+        fixtures = [f for f in level.get('fixtures', []) if f.get('point')]
+        rooms = [r for r in level.get('rooms', []) if r.get('point')]
+        wet = [f['point'] for f in fixtures if f.get('kind') != 'gas']
+        wet_provenance = 'Detected'
+        # When consultant blocks have no usable name/attribute, a wet-room
+        # label is still valid architectural evidence for a coordinated
+        # connection zone.  It is deliberately marked Proposed and never
+        # represented as a detected fixture location.
+        if not wet:
+            wet = [r['point'] for r in rooms if r.get('room') in {'bath', 'toilet', 'kitchen'}]
+            wet_provenance = 'Rule-based Proposed'
+        conditioned = [r['point'] for r in rooms if r.get('room') in {'bedroom', 'living', 'office', 'shop'}]
+        exhaust = [r['point'] for r in rooms if r.get('room') in {'bath', 'toilet', 'kitchen', 'parking'}]
+        specs = []
+        if 'water_supply' in families and wet:
+            specs += [('water', [(x-offset, y) for x, y in wet], 'ENGITOOLS-M-COLD_WATER')]
+            hot = [f['point'] for f in fixtures if f.get('kind') in {'sink', 'faucet', 'bath'}]
+            specs += [('water', [(x, y+offset) for x, y in hot], 'ENGITOOLS-M-HOT_WATER')]
+        if 'sanitary_vent' in families and wet:
+            specs += [('sanitary', [(x+offset, y) for x, y in wet], 'ENGITOOLS-M-SANITARY')]
+            specs += [('ventilation', [(x+offset, y+offset) for x, y in wet], 'ENGITOOLS-M-VENT')]
+        if 'heating' in families and conditioned:
+            specs += [('heating', [(x-offset, y-offset) for x, y in conditioned], 'ENGITOOLS-M-HEATING_SUPPLY')]
+            specs += [('heating', [(x+offset, y-offset) for x, y in conditioned], 'ENGITOOLS-M-HEATING_RETURN')]
+        if 'cooling' in families and conditioned:
+            specs += [('cooling', [(x, y+offset) for x, y in conditioned], 'ENGITOOLS-M-COOLING')]
+            specs += [('condensate', [(x+offset, y+offset) for x, y in conditioned], 'ENGITOOLS-M-CONDENSATE')]
+        if 'ventilation_exhaust' in families and exhaust:
+            specs += [('ventilation', exhaust, 'ENGITOOLS-M-EXHAUST_VENTILATION')]
+        for family, terminals, layer in specs:
+            row = _shared_network(msp, terminals, hub, layer, family, model, seen)
+            report['segments'] += row['segments']; report['junctions'] += row['junctions']
+            report['terminals'] += row['terminals']; report['networks'] += 1
+        if wet and wet_provenance != 'Detected':
+            for point in wet:
+                _plan_text(msp, 'CONNECTION ZONE [RULE-BASED PROPOSED]', point,
+                           'ENGITOOLS-M-MECHANICAL_DETAILS_LEGEND_NOTES', (.18, -.18))
+            report['proposed_wet_connection_zones'] += len(wet)
+        else:
+            report['detected_fixture_connection_points'] += len(wet)
+    return dict(report)
+
+
 def _technical_model(doc, levels, calc):
     inputs = calc.get('_design_inputs') or {}
     fixture_schedule = _norm(inputs.get('fixture_schedule'))
@@ -849,10 +968,20 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     analyzer_fixture_count = _attach_analyzer_fixtures(levels, calc)
     model = _technical_model(doc, levels, calc)
     semantic_branch_count = _add_semantic_room_networks(doc, levels, model, calc)
+    shared_network = _add_shared_distribution_networks(doc, levels, model, calc)
+    model['shared_distribution_network'] = shared_network
+    model['decision_provenance'] = {
+        'architecture_geometry': 'Detected',
+        'fixture_and_room_classification': 'Detected',
+        'network_topology': 'Rule-based Proposed',
+        'segment_sizing': 'Calculated',
+        'questionnaire_overrides': 'User-confirmed',
+    }
     symbol_count = _add_standard_symbols(doc, levels, model)
     symbol_count += _add_evidence_fixture_branches(doc, levels, model)
     symbol_count += _annotate_network_topology(doc, model)
     symbol_count += semantic_branch_count
+    symbol_count += int(shared_network.get('junctions') or 0)
     model['analyzer_fixture_blocks_attached'] = analyzer_fixture_count
     schedule_count = _annotate_sheets(doc, model)
     report = _quality_report(doc, levels, calc, model, symbol_count, schedule_count)
