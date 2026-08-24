@@ -1,6 +1,7 @@
 import unittest
 
 from app.main_auto import unanswered_questions
+from app.mechanical_rulebook import automatic_answers
 from app.mechanical_review_fix import analyzer_needs_refresh
 
 
@@ -17,6 +18,13 @@ class MechanicalQuestionnairePersistenceTests(unittest.TestCase):
     def test_legacy_analyzer_refreshes_once_when_source_exists(self):
         self.assertTrue(analyzer_needs_refresh({'architecture_analyzer_version': '2.0'}, True))
         self.assertFalse(analyzer_needs_refresh({'architecture_analyzer_version': '2.0'}, False))
+
+    def test_rulebook_confirmation_keeps_calculation_ready_proposal(self):
+        auto = {'room_counts': {'bedroom': 2, 'living': 1}, 'estimated_cooling_load_kw': 9,
+                'estimated_heating_load_kw': 12}
+        proposal = automatic_answers(auto)['equipment_schedule']
+        self.assertIn('per room load', proposal)
+        self.assertNotEqual(proposal, 'تأیید')
 
 
 if __name__ == '__main__':
