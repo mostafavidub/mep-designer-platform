@@ -82,6 +82,26 @@ class LargeDxfArchitectureAnalyzerTests(unittest.TestCase):
             self.assertEqual(proposal["sheet_families"]["ventilation_exhaust"]["count"], 2)
             self.assertEqual(proposal["sheet_families"]["roof_rainwater"]["count"], 1)
 
+    def test_orphan_template_title_does_not_create_phantom_levels(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "architecture.dxf"
+            doc = ezdxf.new("R2013")
+            actual = doc.blocks.new(name="ACTUAL_ARCHITECTURE")
+            actual.add_text("پلان معماری طبقه همکف").set_placement((0, 0))
+            for text, point in [
+                ("آشپزخانه", (2, 2)), ("سرویس", (4, 2)),
+                ("پذیرایی", (6, 3)), ("اتاق خواب", (8, 4)),
+            ]:
+                actual.add_text(text).set_placement(point)
+            template = doc.blocks.new(name="ORPHAN_TEMPLATE")
+            template.add_text("پلان معماری طبقه اول و دوم").set_placement((500, 500))
+            doc.saveas(path)
+
+            file_analysis = analyze_dxf_enhanced(path)
+            analysis = {"files": [file_analysis], "discipline": "mechanical"}
+            auto = infer_architecture_facts(analysis, "mechanical")
+            self.assertEqual([x["name"] for x in auto["level_profiles"]], ["طبقه همکف"])
+
 
 if __name__ == "__main__":
     unittest.main()
