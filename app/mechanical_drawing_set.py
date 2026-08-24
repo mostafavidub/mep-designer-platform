@@ -10,7 +10,7 @@ import hashlib
 import json
 
 
-MANIFEST_SCHEMA_VERSION = "2.0"
+MANIFEST_SCHEMA_VERSION = "2.1"
 
 AUTHORITY_FAMILIES = {
     "water_supply": {"code": "M-W", "label": "آب سرد و گرم", "system": "water_supply"},
@@ -123,6 +123,16 @@ def _append_special(family, code, label, levels, reason):
     return sheet
 
 
+def _append_family_roles(family, family_key, levels, roles):
+    """Add authority-required non-floor drawing roles to one family."""
+    for suffix, label, reason in roles:
+        sheet = _append_special(
+            family, f"{family['code']}-{suffix}", label, levels, reason,
+        )
+        sheet['family'] = family_key
+        yield sheet
+
+
 def _build_manifest(deliverables):
     sheets = copy.deepcopy(deliverables)
     payload = {
@@ -185,39 +195,45 @@ def predict_drawing_set(scope):
         families[key] = family
         deliverables.extend(family["sheets"])
 
-    multi_level = bool(scope.get("vertical_systems"))
-    water_special = scope.get("water_supply_special_sheet")
-    if water_special is None:
-        water_special = multi_level and len(systems["water_supply"]["levels"]) >= 2
-    if water_special and families["water_supply"]["count"]:
-        sheet = _append_special(
-            families["water_supply"], "M-W-SPECIAL", "آبرسانی — رایزر / تجهیزات / شماتیک",
-            scope.get("all_levels") or systems["water_supply"]["levels"],
-            "authority water-supply system special",
-        )
-        sheet["family"] = "water_supply"; deliverables.append(sheet)
+    # Authority drawings are composed by drawing role, not by a bare
+    # "system × floor" multiplication. Water needs riser/equipment and, for
+    # three-or-more distinct plans, hot-water-return separation. Sanitary
+    # always carries its own riser and rainwater/vent role. An enclosed
+    # parking area has a dedicated exhaust plan.
+    water_patterns = families['water_supply']['count']
+    water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
+    if water_patterns >= 3:
+        water_roles += [
+            ('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'authority water equipment'),
+            ('RETURN', 'آب گرم — برگشت و بالانس', 'authority hot-water return'),
+        ]
+    if water_patterns:
+        added = list(_append_family_roles(
+            families['water_supply'], 'water_supply',
+            scope.get('all_levels') or systems['water_supply']['levels'], water_roles,
+        ))
+        deliverables.extend(added)
 
-    cooling_special = scope.get("cooling_special_sheet")
-    if cooling_special is None:
-        cooling_special = bool(scope.get("roof_exists")) and multi_level and bool(systems["cooling"]["levels"])
-    if cooling_special and families["cooling"]["count"]:
-        sheet = _append_special(
-            families["cooling"], "M-C-EQUIP", "سرمایش — تجهیزات / بام",
-            [scope.get("roof_level_name") or "Roof"],
-            "authority cooling equipment/roof special",
-        )
-        sheet["family"] = "cooling"; deliverables.append(sheet)
+    if families['sanitary_vent']['count']:
+        added = list(_append_family_roles(
+            families['sanitary_vent'], 'sanitary_vent',
+            scope.get('all_levels') or systems['sanitary']['levels'], [
+                ('RISER', 'فاضلاب و ونت — رایزر', 'authority sanitary riser'),
+                ('RAIN', 'فاضلاب و ونت — آب باران / دیتیل', 'authority rainwater and vent detail'),
+            ],
+        ))
+        deliverables.extend(added)
+
+    if scope.get('enclosed_parking') and families['ventilation_exhaust']['count']:
+        added = list(_append_family_roles(
+            families['ventilation_exhaust'], 'ventilation_exhaust',
+            systems['ventilation']['levels'], [
+                ('PARK', 'تهویه — اگزاست پارکینگ', 'authority enclosed parking exhaust'),
+            ],
+        ))
+        deliverables.extend(added)
 
     roof_sheets = []
-    if scope.get("roof_exists"):
-        roof = {
-            "family": "roof_rainwater", "code": "M-R-01", "label": "بام / آب باران",
-            "pattern": scope.get("roof_level_name") or "Roof",
-            "levels": [scope.get("roof_level_name") or "Roof"],
-            "typical": False, "special": True,
-            "reason": "dedicated authority roof/rainwater plan",
-        }
-        roof_sheets.append(roof); deliverables.append(roof)
     families["roof_rainwater"] = {
         "code": "M-R", "label": "بام / آب باران", "systems": ["roof_drainage"],
         "effective_levels": systems["roof_drainage"]["levels"],
