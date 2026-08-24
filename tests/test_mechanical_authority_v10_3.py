@@ -5,6 +5,7 @@ from pathlib import Path
 import ezdxf
 
 from cad_engine import main_v10_3 as authority
+from cad_engine import main_v7 as v7
 from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 
 
@@ -187,9 +188,9 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
             'rooms': [],
             'fixtures': [{'kind': 'gas', 'point': (2, 2), 'block': 'STOVE'}],
         }
-        stats = authority.v7.defaultdict(int)
+        stats = v7.defaultdict(int)
         qa = {'assumptions': [], 'unresolved': [], 'checks': {}}
-        authority.v7.design_level_v7(
+        v7.design_level_v7(
             msp, level, {'cold_water', 'sanitary'},
             {'_design_inputs': {'gas': 'بدون گاز'}}, stats, qa,
         )
