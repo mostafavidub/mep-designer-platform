@@ -309,27 +309,56 @@ def dynamic_questions(analysis, discipline, auto):
             q.append(('elevator', 'آسانسور در پلان تشخیص داده شد. توان/نوع برق آسانسور یا مشخصات سازنده را در صورت موجود بودن بفرمایید.'))
         q.append(('special_loads', 'آیا بار الکتریکی خاصی خارج از آنچه از پلان قابل تشخیص است دارید؟ مثل جکوزی، سونا، پمپ خاص، شارژر خودرو یا تجهیزات صنعتی. اگر ندارید بنویسید «ندارد».'))
     else:
+        # Project facts below materially change routing or sizing and cannot be
+        # safely replaced by a generic Rule Book value.  Every prompt accepts a
+        # short confirmation of a transparent conservative proposal.
+        if not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
+            q.append(('heights', 'ارتفاع طبقه و سقف کاذب مشخص نیست. پیشنهاد: «۳٫۲۰ متر؛ سقف کاذب فضاهای تر ۴۰ سانتی‌متر». پاسخ کوتاه: «تأیید» یا فقط مقدار متفاوت.'))
+        if not re.search(r'رادیاتور|گرمایش از کف|فن.?کویل|هواساز|پکیج|بویلر|radiator|underfloor|fan.?coil|boiler', text, re.I):
+            q.append(('heating', 'مدل قطعی گرمایش در معماری مشخص نیست. پیشنهاد: «پکیج چگالشی + رادیاتور». پاسخ کوتاه: «تأیید»، «گرمایش از کف»، «فن‌کویل» یا مدل دیگر.'))
+        if not re.search(r'اسپلیت|کولر گازی|فن.?کویل|چیلر|هواساز|evaporative|split|fan.?coil|chiller|ahu', text, re.I):
+            q.append(('cooling', 'مدل قطعی سرمایش در معماری مشخص نیست. پیشنهاد: «اسپلیت با یونیت بیرونی روی بام/محل سرویس». پاسخ کوتاه: «تأیید»، «کولر آبی»، «فن‌کویل/چیلر» یا مدل دیگر.'))
         if not auto.get('gas_absence_inferred'):
             q.append(('gas', f'پیشنهاد Rule Book برای پروژه گازدار: پکیج ۲۴ kW، اجاق ۱۰ kW، فشار ۲۱ mbar و کنتور/رگلاتور در ورودی. پاسخ کوتاه: «تأیید»، «بدون گاز» یا اصلاح مورد خاص.'))
-        # Pressure is a utility fact, but it no longer blocks the customer
-        # flow.  When no measured value exists, Rule Book v1.6 owns a
-        # conservative 2.5 bar + storage/booster design basis.  A numeric value
-        # found in the architecture still overrides this default.
+        if not auto.get('water_inlet_pressure_inferred') and not re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار)', text, re.I):
+            q.append(('water_inlet_pressure', 'فشار واقعی آب در کنتور چند bar است؟ پاسخ کوتاه عددی؛ اگر اندازه‌گیری نشده: «نامشخص» تا مبنای محافظه‌کارانه ۲٫۵ bar همراه مخزن/بوستر اعمال شود.'))
+        if not re.search(r'کنتور آب|مخزن|بوستر|پمپ آب|water meter|storage tank|booster', text, re.I):
+            q.append(('water_source', 'آرایش ورودی آب چیست؟ پیشنهاد: «کنتور شهری + مخزن + بوسترپمپ». پاسخ کوتاه: «تأیید» یا حذف/اصلاح اجزا.'))
+        if not re.search(r'محل انشعاب آب|نقطه ورود آب|water service|water entry|meter location', text, re.I):
+            q.append(('water_service_connection', 'محل ورود انشعاب/کنتور آب در کدام ضلع یا نقطه پروژه است؟ پاسخ کوتاه مثل «ضلع جنوبی کنار ورودی»؛ اگر قطعی نیست: «پیشنهاد نزدیک ورودی».'))
         if not re.search(r'فاضلاب شهری|چاه|sewer|septic', text):
-            q.append(('sanitary_outlet', 'پیشنهاد: اتصال به شبکه فاضلاب شهری در مرز پروژه. پاسخ کوتاه: «تأیید»، «چاه/سپتیک» یا تراز متفاوت.'))
+            q.append(('sanitary_outlet', 'نوع، محل و تراز خروج فاضلاب چیست؟ پیشنهاد: «شبکه شهری در مرز جنوبی، تراز مبنا ±۰٫۰۰». پاسخ کوتاه: «تأیید»، «چاه/سپتیک» یا فقط محل/تراز متفاوت.'))
         if auto.get('detected_parking'):
             q.append(('parking_enclosure', 'پارکینگ شناسایی شد. پارکینگ باز است یا بسته/محصور؟'))
+
+        if not re.search(r'شفت مکانیکی|رایزر مکانیکی|mechanical shaft|mechanical riser', text, re.I):
+            q.append(('mechanical_shaft_route', 'کدام شفت/مسیر عمودی برای تأسیسات مکانیکی مجاز است؟ پاسخ کوتاه مثل «شفت کنار راه‌پله»؛ اگر تصمیم نشده: «پیشنهاد نزدیک هسته فضاهای تر».'))
+
+        if not re.search(r'\b\d+(?:[\.,]\d+)?\s*(?:kw|btu(?:/h|hr)?|ton)\b|کیلووات|تن تبرید', text, re.I):
+            q.append(('equipment_schedule', 'ظرفیت یا مدل قطعی تجهیزات گرمایش/سرمایش موجود است؟ پاسخ کوتاه با ظرفیت هر دستگاه؛ اگر نیست: «محاسبه و پیشنهاد بر اساس بار هر فضا».'))
+
+        if not re.search(r'\b(?:ach|m3/h|m³/h)\b|تعویض هوا|دبی تهویه|محل تخلیه|هوای جبرانی', text, re.I):
+            q.append(('ventilation_design_basis', 'مسیر تخلیه هوا و هوای جبرانی مشخص است؟ پیشنهاد: «تخلیه بالای بام/نما و هوای جبرانی از بازشوهای نما؛ دبی طبق محاسبه». پاسخ کوتاه: «تأیید» یا فقط مسیر متفاوت.'))
+
+        if not re.search(r'برگشت آب گرم|hot water return|dhwr|آبگرمکن|منبع آب گرم', text, re.I):
+            q.append(('hot_water_system', 'تولید آب گرم و نیاز به خط برگشت چگونه است؟ پیشنهاد: «پکیج/منبع مرکزی؛ برگشت برای مسیرهای طولانی». پاسخ کوتاه: «تأیید»، «بدون برگشت» یا مدل دیگر.'))
 
         # Authority-ready mechanical documents cannot be completed from room
         # labels alone. Collect the project-specific engineering inputs that
         # control pipe sizing, slopes, equipment schedules and safe discharge.
         if not auto.get('fixture_blocks_detected'):
             proposal = fixture_schedule_proposal(auto)
-            q.append(('fixture_schedule', f'پیشنهاد خودکار تجهیزات بر اساس فضاهای معماری: {proposal}. پاسخ کوتاه: «تأیید» یا فقط اصلاح تعدادهای متفاوت.'))
+            if any(int((auto.get('room_counts') or {}).get(key) or 0) for key in ('kitchen', 'bath', 'toilet')):
+                q.append(('fixture_schedule', f'پیشنهاد خودکار تجهیزات بر اساس فضاهای معماری: {proposal}. پاسخ کوتاه: «تأیید» یا فقط اصلاح تعدادهای متفاوت.'))
+            else:
+                q.append(('fixture_schedule', 'سمبل تجهیزات بهداشتی با اطمینان تشخیص داده نشد. فقط تعدادها را کوتاه بنویسید؛ مثال: «سینک ۲، روشویی ۳، توالت ۳، دوش ۲».'))
         if auto.get('roof_scope_reliable'):
             if not auto.get('roof_drain_count') or not auto.get('roof_area_m2'):
                 proposal = roof_geometry_proposal(auto)
                 q.append(('roof_drainage_geometry', f'پیشنهاد خودکار بام: {proposal}. شدت بارندگی از شهر پروژه تعیین می‌شود. پاسخ کوتاه: «تأیید» یا فقط عدد متفاوت مساحت/کف‌خواب.'))
+
+        if not re.search(r'مبحث ۱۴|ضوابط شهرداری|نظام مهندسی|استاندارد محلی|municipal code|local code', text, re.I):
+            q.append(('local_mechanical_code', 'آیا شهرداری/نظام مهندسی ضابطه خاصی مثل شدت بارندگی، نوع سیستم یا محدودیت مسیر ابلاغ کرده است؟ پاسخ کوتاه: «ندارد» یا فقط همان الزام.'))
 
     return q
 
