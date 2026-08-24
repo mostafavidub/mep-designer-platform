@@ -26,6 +26,11 @@ def _negative(value):
     return any(x in s for x in ('ندارد', 'خیر', 'نیست', 'بدون', 'none', 'no '))
 
 
+def _enclosed_parking(value):
+    s = str(value or '').strip().lower()
+    return any(x in s for x in ('بسته', 'محصور', 'enclosed', 'closed')) and not _negative(value)
+
+
 def _level_names(p):
     analysis = p.analysis or {}
     levels = []
@@ -171,6 +176,7 @@ def build_scope(p):
         'roof_exists': bool(roof_exists),
         'roof_requires_dedicated_plan': False,
         'vertical_systems': len(effective_union) > 1,
+        'enclosed_parking': _enclosed_parking(answers.get('parking_enclosure')),
         'typical_groups': _typical_groups(p, levels),
         'effective_level_source': 'architecture-level-profiles' if profiles_available else 'fallback-all-detected-levels',
     }
