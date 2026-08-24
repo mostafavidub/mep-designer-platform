@@ -8,7 +8,7 @@ import math
 import re
 
 
-RULEBOOK_VERSION = '1.6'
+RULEBOOK_VERSION = '1.7'
 
 DEFAULT_HEIGHTS = '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones'
 DEFAULT_GAS_PROPOSAL = 'boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance'
@@ -40,6 +40,26 @@ VENTILATION = {
     'parking_ach': 6,
     'default_parking_m3h_when_geometry_missing': 500,
 }
+
+# Minimum *plan-visible* technical content.  This is deliberately separate
+# from a sheet-count rule: a drawing family is not complete merely because a
+# layout exists.  The Code Designer turns the applicable items into tagged
+# plan symbols and schedule entries, using calculated values rather than a
+# project-specific canned drawing.
+PLAN_DETAIL_STANDARD = {
+    'water_supply': ('fixture_connection', 'branch_diameter', 'isolation_valve', 'riser_tag'),
+    'sanitary_vent': ('fixture_connection', 'branch_diameter', 'slope_tag', 'cleanout', 'vent_tag', 'riser_tag'),
+    'heating': ('terminal_equipment', 'design_capacity', 'supply_return_tag', 'riser_tag'),
+    'cooling': ('terminal_equipment', 'design_capacity', 'condensate_fall', 'outdoor_unit_location'),
+    'ventilation_exhaust': ('exhaust_terminal', 'airflow_tag', 'discharge_path', 'makeup_air_path'),
+    'gas': ('appliance_connection', 'pipe_diameter', 'meter_regulator', 'riser_tag'),
+    'roof_rainwater': ('roof_drain', 'drain_diameter', 'rainfall_basis', 'downpipe_riser'),
+}
+
+
+def plan_detail_requirements(family):
+    """Return the non-negotiable plan-visible details for a sheet family."""
+    return PLAN_DETAIL_STANDARD.get(str(family or ''), ())
 
 RAIN_MM_H = {
     'تهران': 110, 'tehran': 110,
