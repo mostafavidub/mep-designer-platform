@@ -17,6 +17,7 @@ from .auto_inference_v2 import (
     classify_room,
 )
 from .mechanical_rulebook import RULEBOOK_VERSION
+from .mechanical_rulebook import is_confirmation
 
 app = legacy.app
 
@@ -277,7 +278,11 @@ def analyze_project_job(project_id):
         for key in question_keys:
             value = prior_answers.get(key)
             if value is not None and str(value).strip():
-                answers[key] = value
+                # A short confirmation accepts the full Rule Book proposal; it
+                # must not replace a calculation-ready canonical value with the
+                # literal word "تأیید".
+                if not (is_confirmation(value) and str(answers.get(key) or '').strip()):
+                    answers[key] = value
         qs = unanswered_questions(dynamic_questions(analysis, discipline, auto), answers)
 
         p.analysis = analysis
