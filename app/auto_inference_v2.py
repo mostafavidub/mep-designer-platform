@@ -76,6 +76,20 @@ def _selected_architecture_titles(labels):
             'source_name': item.get('source_name'),
         })
     arch = [x for x in titles if x['type'] == 'architecture']
+    # A generic combined title ("طبقه اول و دوم") is often retained in a
+    # title block next to more specific architectural panels. Keep it only
+    # when it contributes at least one otherwise-unrepresented floor; this
+    # prevents a duplex's named first/second plans from acquiring a phantom
+    # fourth effective plan.
+    specific_levels = {
+        x['level'] for x in arch
+        if len(_expand_combined_levels(x['level'])) == 1
+    }
+    arch = [
+        x for x in arch
+        if len(_expand_combined_levels(x['level'])) == 1
+        or any(member not in specific_levels for member in _expand_combined_levels(x['level']))
+    ]
     if not arch:
         return titles, []
     # Assign rooms only against architectural titles; nearby furniture or lintel plans must not steal them.
