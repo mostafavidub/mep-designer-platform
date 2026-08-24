@@ -328,7 +328,11 @@ def _add_standard_symbols(doc, levels, model):
             point = room['point']
             if room.get('room') == 'kitchen' and model.get('gas_main_dn_mm'):
                 msp.add_blockref('ET_M_GAS_POINT', point, dxfattribs={'layer': 'ENGITOOLS-M-GAS'}); count += 1
-            if room.get('room') in ('bedroom', 'living') and model.get('equipment_schedule_resolved'):
+            # Offices and shops are conditioned occupied spaces as well.  The
+            # analyzer already classifies them as conditioned candidates; not
+            # placing their terminal equipment made commercial/bank projects
+            # fail symbol traceability despite a resolved equipment schedule.
+            if room.get('room') in ('bedroom', 'living', 'office', 'shop') and model.get('equipment_schedule_resolved'):
                 msp.add_blockref('ET_M_EQUIPMENT', point, dxfattribs={'layer': 'ENGITOOLS-M-COOLING'})
                 _plan_text(msp, equipment_tag, point, 'ENGITOOLS-M-COOLING'); count += 1
             if room.get('room') in ('bath', 'toilet') and model.get('ventilation_airflow_m3h'):
@@ -653,7 +657,7 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     if report['score_10'] < 10.0:
         raise RuntimeError(
             f"Mechanical technical design QA failed ({report['score_10']}/10): "
-            + ', '.join(report['failed'])
+            + ', '.join(report['failed']) + f"; checks={report['checks']}"
         )
     cleanup = _prune_mechanical_deliverable(doc, levels, calc)
     audit = doc.audit()
