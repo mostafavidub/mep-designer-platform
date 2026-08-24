@@ -21,6 +21,15 @@ from .mechanical_rulebook import RULEBOOK_VERSION
 app = legacy.app
 
 
+def unanswered_questions(questions, answers):
+    """Return only unresolved keys; submitted non-empty answers are final."""
+    answers = answers or {}
+    return [
+        (key, prompt) for key, prompt in questions
+        if not str(answers.get(key) or '').strip()
+    ]
+
+
 def _entity_text(e):
     try:
         if e.dxftype() == 'TEXT':
@@ -258,9 +267,18 @@ def analyze_project_job(project_id):
         analysis['architectural_auto'] = auto
         analysis['auto_summary'] = auto_summary(auto, discipline)
 
+        # Analysis may be re-run for a migrated analyzer or a replacement DXF.
+        # Never discard already submitted project facts: doing so resets the
+        # questionnaire to question one every time /flow is polled.
+        prior_answers = dict(p.answers or {})
         answers = {'discipline': discipline}
         answers.update(canonical_auto_answers(auto, discipline))
-        qs = dynamic_questions(analysis, discipline, auto)
+        question_keys = {key for key, _prompt in dynamic_questions(analysis, discipline, auto)}
+        for key in question_keys:
+            value = prior_answers.get(key)
+            if value is not None and str(value).strip():
+                answers[key] = value
+        qs = unanswered_questions(dynamic_questions(analysis, discipline, auto), answers)
 
         p.analysis = analysis
         p.questions = legacy.qlist(qs)
