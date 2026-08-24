@@ -277,6 +277,11 @@ def _technical_model(doc, levels, calc):
         f"{WATER['material']}; Hazen-Williams C={WATER['hazen_williams_c']}; "
         f"maximum loss {WATER['maximum_friction_loss_kpa_per_100m']} kPa/100 m"
     )
+    water_source = _norm(inputs.get('water_source'))
+    water_service_connection = _norm(inputs.get('water_service_connection'))
+    mechanical_shaft_route = _norm(inputs.get('mechanical_shaft_route'))
+    hot_water_system = _norm(inputs.get('hot_water_system'))
+    local_mechanical_code = _norm(inputs.get('local_mechanical_code'))
     sanitary_basis = _norm(inputs.get('sanitary_design_basis')) or (
         f"{SANITARY['material']}; {SANITARY['branch_slope_pct']} percent branches; "
         f"{SANITARY['main_slope_pct']} percent mains"
@@ -376,6 +381,11 @@ def _technical_model(doc, levels, calc):
         'water_fixture_units': round(water_fu, 2), 'design_water_flow_lps': round(flow_lps, 3) if flow_lps else None,
         'water_velocity_mps': velocity, 'water_hydraulic_diameter_mm': round(hydraulic_d, 1) if hydraulic_d else None,
         'water_main_dn_mm': water_dn, 'water_material': water_material, 'water_inlet_pressure_bar': inlet_bar,
+        'water_source': water_source or None,
+        'water_service_connection': water_service_connection or None,
+        'mechanical_shaft_route': mechanical_shaft_route or None,
+        'hot_water_system': hot_water_system or None,
+        'local_mechanical_code': local_mechanical_code or None,
         'water_design_basis_source': f'Rulebook v{RULEBOOK_VERSION}',
         'hazen_williams_c': hazen_c, 'water_route_length_m': round(water_length_m, 2) if water_length_m else None,
         'water_head_loss_m': round(head_loss_m, 2) if head_loss_m is not None else None,
@@ -539,6 +549,8 @@ def _schedule_lines(code, model):
             f"MATERIAL={model.get('water_material')} | C={model.get('hazen_williams_c')}",
             f"ROUTE={model.get('water_route_length_m')} m | hf={model.get('water_head_loss_m')} m",
             f"INLET={model.get('water_inlet_pressure_bar')} bar",
+            f"SOURCE={model.get('water_source')} | ENTRY={model.get('water_service_connection')}",
+            f"HOT WATER={model.get('hot_water_system')} | SHAFT={model.get('mechanical_shaft_route')}",
         ]
     if group == 'S':
         return [
@@ -571,6 +583,7 @@ def _schedule_lines(code, model):
             f"ROOF AREA={model.get('roof_area_m2')} m2 | i={model.get('rainfall_mm_h')} mm/h",
             f"Q={model.get('roof_flow_lps')} L/s | DRAINS={model.get('roof_drain_count')}",
             f"EACH={model.get('roof_flow_per_drain_lps')} L/s | RD DN{model.get('roof_drain_dn_mm')}",
+            f"LOCAL AUTHORITY BASIS={model.get('local_mechanical_code')}",
         ]
     return []
 
@@ -813,11 +826,20 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     if discipline == 'mechanical':
         inputs = dict(calc.get('_design_inputs') or {})
         inputs['water_inlet_pressure'] = water_inlet_pressure_basis(inputs.get('water_inlet_pressure'))
-        if not inputs.get('water_source'):
+        if not inputs.get('water_source') or is_confirmation(inputs.get('water_source')):
             inputs['water_source'] = (
                 'Rulebook automatic: municipal meter + storage tank + booster pump '
                 'sized from calculated demand'
             )
+        confirmation_defaults = {
+            'water_service_connection': 'Rulebook proposal confirmed: property boundary beside the main service entrance',
+            'mechanical_shaft_route': 'Rulebook proposal confirmed: nearest coordinated architectural shaft / wet core',
+            'hot_water_system': 'Rulebook proposal confirmed: central combi/storage source; return loop where developed route length requires it',
+            'local_mechanical_code': 'No project-specific override declared; current Rulebook and city authority basis applies',
+        }
+        for key, proposal in confirmation_defaults.items():
+            if is_confirmation(inputs.get(key)):
+                inputs[key] = proposal
         calc['_design_inputs'] = inputs
     meta = _base_design(src, dst, discipline, systems, revision, calc)
     if discipline != 'mechanical':
