@@ -187,7 +187,7 @@ def design_level_v7(msp, level, systems, calc, stats, qa):
                 stats['gas'] += 1
                 stats['actual_fixture_connections'] += 1
                 qa['fixtures_connected'] += 1
-            elif 'gas' not in systems:
+            elif gas_state == 'off' or 'gas' not in systems:
                 # A stove/appliance symbol in an architectural furniture plan
                 # is not evidence that the building has a fuel-gas service.
                 # The approved manifest is authoritative: when it contains no
