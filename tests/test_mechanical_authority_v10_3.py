@@ -124,6 +124,28 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
                     {'_design_inputs': {}},
                 )
 
+    def test_evidence_questionnaire_requires_non_architectural_route_decisions(self):
+        manifest = {
+            'total_sheets': 2,
+            'sheets': [
+                {'code': 'M-W-01', 'family': 'water_supply'},
+                {'code': 'M-W-RISER', 'family': 'water_supply'},
+            ],
+        }
+        inputs = {
+            'questionnaire_evidence_version': '1.0',
+            'location': 'Tehran', 'heights': '3.2 m',
+            'water_inlet_pressure': '2.5 bar', 'water_design_basis': 'PPR C=150',
+            'water_source': 'municipal meter + tank + booster',
+        }
+        gaps = authority._authority_input_gaps({
+            '_approved_drawing_manifest': manifest, '_design_inputs': inputs,
+        })
+        self.assertIn('water service entry location', gaps)
+        self.assertIn('domestic hot-water / return arrangement', gaps)
+        self.assertIn('approved mechanical shaft / riser route', gaps)
+        self.assertIn('local authority override or explicit none', gaps)
+
     def test_analyzer_named_block_is_materialized_for_cad_level_detection(self):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / 'architecture-block.dxf'
