@@ -389,7 +389,8 @@ def _technical_model(doc, levels, calc):
     inputs = calc.get('_design_inputs') or {}
     fixture_schedule = _norm(inputs.get('fixture_schedule'))
     if is_confirmation(fixture_schedule):
-        fixture_schedule = fixture_schedule_proposal(levels)
+        architectural_auto = (calc.get('_plan_analysis') or {}).get('architectural_auto') or {}
+        fixture_schedule = fixture_schedule_proposal(architectural_auto or levels)
     detected, scheduled, fixtures, rooms, proxies = _fixture_summary(levels, fixture_schedule)
     unit_to_m = _drawing_unit_to_m(doc)
     water_basis = _norm(inputs.get('water_design_basis')) or (
@@ -524,6 +525,22 @@ def _technical_model(doc, levels, calc):
         'roof_drain_dn_mm': roof_dn,
         'mechanical_rulebook_version': RULEBOOK_VERSION,
     }
+    return model
+
+
+def _refresh_hydraulic_model(doc, model):
+    """Recalculate route-dependent hydraulics after shared networks exist."""
+    unit_to_m = _drawing_unit_to_m(doc) or 1.0
+    length_m = _layer_length(doc.modelspace(), 'ENGITOOLS-M-COLD_WATER') * unit_to_m
+    flow_lps = model.get('design_water_flow_lps')
+    dn = model.get('water_main_dn_mm')
+    hazen_c = model.get('hazen_williams_c')
+    model['water_route_length_m'] = round(length_m, 2) if length_m > 0 else None
+    if flow_lps and dn and hazen_c and length_m > 0:
+        q = float(flow_lps) / 1000.0
+        d = float(dn) / 1000.0
+        head_loss = 10.67 * length_m * (q ** 1.852) / ((float(hazen_c) ** 1.852) * (d ** 4.871))
+        model['water_head_loss_m'] = round(head_loss, 2)
     return model
 
 
@@ -944,6 +961,14 @@ def _prune_mechanical_deliverable(doc, levels, calc):
 def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     if discipline == 'mechanical':
         inputs = dict(calc.get('_design_inputs') or {})
+        architectural_auto = (calc.get('_plan_analysis') or {}).get('architectural_auto') or {}
+        if is_confirmation(inputs.get('equipment_schedule')):
+            inputs['equipment_schedule'] = (
+                'Rulebook automatic selection; per room load calculated from architecture; '
+                'split cooling units and hydronic radiators; outdoor units on coordinated roof/service location'
+            )
+        if is_confirmation(inputs.get('fixture_schedule')):
+            inputs['fixture_schedule'] = fixture_schedule_proposal(architectural_auto or [])
         inputs['water_inlet_pressure'] = water_inlet_pressure_basis(inputs.get('water_inlet_pressure'))
         if not inputs.get('water_source') or is_confirmation(inputs.get('water_source')):
             inputs['water_source'] = (
@@ -969,6 +994,7 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     model = _technical_model(doc, levels, calc)
     semantic_branch_count = _add_semantic_room_networks(doc, levels, model, calc)
     shared_network = _add_shared_distribution_networks(doc, levels, model, calc)
+    _refresh_hydraulic_model(doc, model)
     model['shared_distribution_network'] = shared_network
     model['decision_provenance'] = {
         'architecture_geometry': 'Detected',
