@@ -139,7 +139,22 @@ def analyze_dxf_enhanced(path):
         # Keep sources that carry a meaningful share of the detected room
         # evidence; if there are no room labels, retain only the strongest
         # title source as a conservative fallback.
+        # Prefer an actual drawing layout/modelspace whenever it carries
+        # substantial architectural evidence.  Named blocks in consultant
+        # files frequently contain reusable demo/title-library plans; merging
+        # one of those with the real model makes unrelated projects acquire
+        # the same rooms and levels.  Block sources remain supported for
+        # exports whose model/layout genuinely contains no usable plan.
+        layout_usable = [
+            item for item in usable
+            if item[1] and item[1][0].get('source_type') == 'layout'
+            and item[3][1] >= 3
+        ]
         max_rooms = max(score[1] for *_rest, score in usable)
+        strongest_layout_rooms = max((item[3][1] for item in layout_usable), default=0)
+        if layout_usable and strongest_layout_rooms >= max(3, int(max_rooms * .35)):
+            usable = layout_usable
+            max_rooms = strongest_layout_rooms
         if max_rooms:
             threshold = max(1, int(max_rooms * 0.12))
             coherent = [item for item in usable if item[3][1] >= threshold]
