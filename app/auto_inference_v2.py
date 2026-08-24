@@ -246,7 +246,12 @@ def _level_profiles_from_file(f):
         conditioned = sum(counts[x] for x in ('bedroom', 'living', 'office', 'shop'))
         ventilation = sum(counts[x] for x in ('kitchen', 'bath', 'toilet', 'parking'))
         gas_candidate = counts.get('kitchen', 0) > 0
-        is_roof = 'بام' in title['level'] or 'roof' in title['level'].lower() or counts.get('roof', 0) > 0
+        # Roof is a property of the level title, not of arbitrary annotations
+        # found inside the plan envelope.  Notes such as "roof drain", access
+        # to roof, or a reused roof label frequently occur on occupied floors;
+        # promoting the whole level to roof in that case removes it from every
+        # mechanical system scope and can leave the approved manifest empty.
+        is_roof = 'بام' in title['level'] or 'roof' in title['level'].lower()
 
         # Typical signature: room-type multiset plus relative arrangement. The
         # geometry is normalized to its own room-label envelope, making the
