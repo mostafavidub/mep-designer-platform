@@ -110,13 +110,22 @@ def _apply_vertical_reference(levels):
                 shaft = shafts[0]
             source = (level, shaft)
             break
-    if not source:
-        return
-    src_level, src_shaft = source
-    offset = (
-        src_shaft[0] - src_level['title']['point'][0],
-        src_shaft[1] - src_level['title']['point'][1],
-    )
+    if source:
+        src_level, src_shaft = source
+        offset = (
+            src_shaft[0] - src_level['title']['point'][0],
+            src_shaft[1] - src_level['title']['point'][1],
+        )
+    else:
+        # A project without a labelled shaft still requires one coherent riser
+        # datum. Use the same title-relative point on every detected plan
+        # instead of letting each floor independently choose a wet-room centre.
+        # This is a coordination datum, not a claim that an unobserved shaft
+        # exists; the issue notes continue to require architectural review.
+        src_level = next((x for x in levels if not _is_roof(x)), levels[0] if levels else None)
+        if src_level is None:
+            return
+        offset = (0.0, 0.0)
     for level in levels:
         level['vertical_reference_offset'] = offset
         level['forced_hub'] = (
