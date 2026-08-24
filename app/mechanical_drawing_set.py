@@ -196,17 +196,18 @@ def predict_drawing_set(scope):
         deliverables.extend(family["sheets"])
 
     # Authority drawings are composed by drawing role, not by a bare
-    # "system × floor" multiplication. Water needs riser/equipment and, for
-    # three-or-more distinct plans, hot-water-return separation. Sanitary
-    # always carries its own riser and rainwater/vent role. An enclosed
-    # parking area has a dedicated exhaust plan.
+    # "system × floor" multiplication.  A water riser is the default vertical
+    # role.  Plant-room and hot-water-return sheets are added only when the
+    # architecture/approved scope explicitly requires them; a floor count is
+    # not evidence that either exists.  Sanitary riser/rainwater roles are
+    # issued for distinct floors, while a declared typical group combines them
+    # into its representative sanitary plan.
     water_patterns = families['water_supply']['count']
     water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
-    if water_patterns >= 3:
-        water_roles += [
-            ('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'authority water equipment'),
-            ('RETURN', 'آب گرم — برگشت و بالانس', 'authority hot-water return'),
-        ]
+    if scope.get('central_water_equipment'):
+        water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water equipment scope'))
+    if scope.get('hot_water_return_required'):
+        water_roles.append(('RETURN', 'آب گرم — برگشت و بالانس', 'approved hot-water return scope'))
     if water_patterns:
         added = list(_append_family_roles(
             families['water_supply'], 'water_supply',
@@ -214,7 +215,7 @@ def predict_drawing_set(scope):
         ))
         deliverables.extend(added)
 
-    if families['sanitary_vent']['count']:
+    if families['sanitary_vent']['count'] and not _normalize_typical_groups(typical_groups):
         added = list(_append_family_roles(
             families['sanitary_vent'], 'sanitary_vent',
             scope.get('all_levels') or systems['sanitary']['levels'], [
