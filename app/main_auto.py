@@ -132,7 +132,20 @@ def analyze_dxf_enhanced(path):
         fixture_blocks = []
         seen_labels = set()
         seen_fixtures = set()
-        for raw_texts, labels, fixtures, _score in usable:
+        # Do not merge every title-bearing block indiscriminately. Consultant
+        # templates often contain an orphan sample/title block such as
+        # ``پلان معماری طبقه اول و دوم``. Treating that block as part of the
+        # submitted architecture creates phantom levels in every project.
+        # Keep sources that carry a meaningful share of the detected room
+        # evidence; if there are no room labels, retain only the strongest
+        # title source as a conservative fallback.
+        max_rooms = max(score[1] for *_rest, score in usable)
+        if max_rooms:
+            threshold = max(1, int(max_rooms * 0.12))
+            coherent = [item for item in usable if item[3][1] >= threshold]
+        else:
+            coherent = [max(usable, key=lambda item: item[3][0])]
+        for raw_texts, labels, fixtures, _score in coherent:
             texts.extend(raw_texts)
             for item in labels:
                 key = (normalized(item['text']), round(item['x'], 4), round(item['y'], 4))
