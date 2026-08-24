@@ -213,10 +213,18 @@ def _level_profiles_from_file(f):
     spacing = max(statistics.median(nearest) if nearest else 25.0, 1.0)
     selected_keys = {(x['type'], x['level'], x['point']) for x in selected}
     assigned = defaultdict(list)
-    for room, p in _room_items(labels):
+    for room, p, source_type, source_name in _room_items_with_source(labels):
         if not p:
             continue
-        title = min(titles, key=lambda x: math.dist(p, x['point']))
+        same_source = [
+            x for x in titles
+            if x.get('source_type') == source_type and x.get('source_name') == source_name
+        ]
+        # A room label may only define the level of a title from the same CAD
+        # container.  Cross-assigning a modelspace room to an orphan library
+        # block is the root cause of phantom levels and repeated project
+        # geometry.
+        title = min(same_source or titles, key=lambda x: math.dist(p, x['point']))
         key = (title['type'], title['level'], title['point'])
         if key not in selected_keys or math.dist(p, title['point']) > spacing * 1.65:
             continue
