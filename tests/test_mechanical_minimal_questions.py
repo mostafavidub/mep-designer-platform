@@ -27,7 +27,7 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         self.assertIn('uPVC', answers['sanitary_design_basis'])
         self.assertIn('per room load', answers['equipment_schedule'])
         self.assertIn('m3/h', answers['ventilation_design_basis'])
-        self.assertEqual(answers['mechanical_rulebook_version'], '1.7')
+        self.assertEqual(answers['mechanical_rulebook_version'], '1.8')
         self.assertEqual(answers['heights'], '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones')
         self.assertIn('2.5 bar', answers['water_inlet_pressure'])
         self.assertIn('booster pump', answers['water_source'])
