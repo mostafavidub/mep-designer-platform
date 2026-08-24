@@ -94,6 +94,8 @@ def detect_room_labels_spatial(msp):
 def parse_plan_title(value):
     s = norm(value)
     low = s.lower()
+    if 'roof plan' in low or 'پلان شیب' in s or 'پلان شيب' in s:
+        return 'architecture', 'بام'
     for kind, prefixes in PLAN_PREFIX.items():
         for prefix in prefixes:
             pos = low.find(prefix.lower())
@@ -229,7 +231,14 @@ def route(msp, start, end, layer, vertical=False):
         return
     x1, y1 = start; x2, y2 = end
     mid = (x1, y2) if vertical else (x2, y1)
-    msp.add_lwpolyline([start, mid, end], dxfattribs={'layer': layer})
+    # Keep orthogonal branches as explicit installation segments.  Approved
+    # authority drawings represent each run between a terminal, bend/junction
+    # and trunk separately; one three-vertex polyline hides that topology from
+    # schedules, quantity extraction and visual review.
+    if math.dist(start, mid) > 1e-9:
+        msp.add_line(start, mid, dxfattribs={'layer': layer})
+    if math.dist(mid, end) > 1e-9:
+        msp.add_line(mid, end, dxfattribs={'layer': layer})
 
 
 def state(value):
@@ -285,7 +294,7 @@ def design_level(msp, level, systems, calc, stats, qa):
     gas_state, cooling_state, heating_state = state(inputs.get('gas')), state(inputs.get('cooling')), state(inputs.get('heating'))
     cool_tag, heat_tag = equipment_tag(inputs.get('cooling'),'COOL'), equipment_tag(inputs.get('heating'),'HEAT')
     wet = [x for x in level['rooms'] if x['room'] in ('kitchen','bath','toilet')]
-    hab = [x for x in level['rooms'] if x['room'] in ('bedroom','living')]
+    hab = [x for x in level['rooms'] if x['room'] in ('bedroom','living','office','shop')]
     for item in wet:
         room = item['room']; base = item['point']; x,y = base
         f = nearest_fixture(level, base, {'faucet','sink','toilet','bath'}, max(span*.22, nn*2.8))
@@ -310,6 +319,13 @@ def design_level(msp, level, systems, calc, stats, qa):
             elif gas_state=='unknown': qa['unresolved'].append(f"{level['level']}: gas decision unresolved; no hidden route generated.")
     for item in hab:
         x,y=item['point']
+        if 'exhaust_ventilation' in systems and item['room'] in ('office', 'shop'):
+            # Commercial occupied rooms require a traceable terminal-to-
+            # discharge path when ventilation belongs to the approved scope.
+            ep=(x-r*1.15,y+r*1.45)
+            engine.add_box(msp,ep,r*.42,'ENGITOOLS-M-EXHAUST_VENTILATION','SA/EA',th*.58)
+            route(msp,ep,hub,'ENGITOOLS-M-EXHAUST_VENTILATION')
+            stats['exhaust_ventilation']+=1
         if 'cooling' in systems and cooling_state!='off':
             cp=(x,y+r*1.9); engine.add_box(msp,cp,r*.58,'ENGITOOLS-M-COOLING',cool_tag,th*.65); route(msp,cp,hub,'ENGITOOLS-M-COOLING'); stats['cooling']+=1
             if 'condensate' in systems:
