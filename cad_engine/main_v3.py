@@ -30,6 +30,7 @@ OUTPUT_ROOT = Path(os.getenv("CAD_OUTPUT_DIR", "/data/cad-engine")); OUTPUT_ROOT
 ROOM_RULES = {
     "kitchen":["kitchen","آشپزخانه","اشپزخانه"], "bath":["bath","bathroom","حمام"], "toilet":["toilet","wc","w.c","سرویس","توالت"],
     "bedroom":["bed","bedroom","خواب","اتاق خواب"], "living":["living","lounge","پذیرایی","نشیمن","هال"], "parking":["parking","پارکینگ"],
+    "office":["office","اداری","دفتر"], "shop":["shop","commercial","تجاری","فروشگاه","مغازه"],
     "corridor":["corridor","hall","راهرو","لابی"], "shaft":["shaft","duct","شفت","داکت"], "roof":["roof","بام"], "stair":["stair","staircase","پله","راه پله"],
 }
 STANDARD_BREAKERS_A=[6,10,13,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400]
