@@ -177,6 +177,33 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             self.assertGreater(meta['technical_design']['fixture_schedule_count'], 0)
             self.assertGreater(meta['technical_design']['roof_area_m2'], 0)
 
+    def test_resumed_project_uses_architectural_analysis_fallbacks(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            calc.pop('design_water_flow_lps')
+            calc.pop('cooling_load_kw')
+            calc.pop('heating_load_kw')
+            calc['_design_inputs']['fixture_schedule'] = 'تأیید'
+            calc['_plan_analysis'] = {
+                'architectural_auto': {
+                    'room_counts': {},
+                    'fixture_counts': {'sink': 3, 'faucet': 3, 'toilet': 3, 'bath': 3},
+                    'estimated_water_flow_lps': .8,
+                    'estimated_cooling_load_kw': 15.0,
+                    'estimated_heating_load_kw': 12.0,
+                    'estimated_route_length_m': 25.0,
+                },
+            }
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+            self.assertEqual(meta['technical_quality']['score_10'], 10.0)
+            model = meta['technical_design']
+            self.assertEqual(model['fixture_schedule_count'], 12)
+            self.assertEqual(model['design_water_flow_lps'], .8)
+            self.assertEqual(model['cooling_load_kw'], 15.0)
+            self.assertEqual(model['heating_load_kw'], 12.0)
+
     def test_unknown_water_pressure_uses_conservative_rulebook_basis(self):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
