@@ -8,7 +8,17 @@ import math
 import re
 
 
-RULEBOOK_VERSION = '1.8'
+RULEBOOK_VERSION = '1.9'
+
+# Project facts that must come from reliable DXF evidence or a short customer
+# confirmation. They are not silent design defaults because each can change
+# routing, sizing or authority-review notes.
+PROJECT_EVIDENCE_STANDARD = (
+    'location', 'heights', 'heating', 'cooling', 'water_inlet_pressure',
+    'water_source', 'water_service_connection', 'sanitary_outlet',
+    'mechanical_shaft_route', 'equipment_schedule',
+    'ventilation_design_basis', 'hot_water_system', 'local_mechanical_code',
+)
 
 DEFAULT_HEIGHTS = '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones'
 DEFAULT_GAS_PROPOSAL = 'boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance'
@@ -181,6 +191,7 @@ def automatic_answers(auto):
         ),
         'water_source': 'Rulebook automatic: municipal meter + storage tank + booster pump sized from calculated demand',
         'mechanical_rulebook_version': RULEBOOK_VERSION,
+        'questionnaire_evidence_version': '1.0',
     }
 
 
