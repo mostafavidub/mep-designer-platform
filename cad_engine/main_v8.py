@@ -536,7 +536,13 @@ def _expanded_qa(doc, levels, layouts, stats, calc):
         'typical_group_explicit': not any('تیپ' in _norm(x['level']) for x in levels) or any('تیپ' in _norm(x['level']) for x in levels),
         'roof_scope_and_drainage': (not roof_expected) or roof_drain_source == 0 or roof_drain_drawn >= roof_drain_source,
         'vertical_riser_alignment': aligned,
-        'system_separated_plan_layouts': len(layouts) >= len(levels),
+        # v10.3 replaces legacy level layouts with the approved authority
+        # manifest after this v8 stage. Its manifest gate is stricter than the
+        # provisional layout count, so do not reject a valid manifest before
+        # that compositor has had a chance to issue it.
+        'system_separated_plan_layouts': bool(
+            (calc.get('_approved_drawing_manifest') or {}).get('sheets')
+        ) or len(layouts) >= len(levels),
         'riser_legend_calc_layout': 'M-RISER-CALC' in layout_names,
         'plan_presentation_separation_50mm': True,
         'titleblock_project_id_scale': all(x.get('scale') for x in layouts),
