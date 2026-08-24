@@ -20,6 +20,7 @@ from app.mechanical_rulebook import (
     WATER,
     fixture_schedule_proposal,
     is_confirmation,
+    plan_detail_requirements,
     roof_basis,
     roof_geometry_proposal,
     water_inlet_pressure_basis,
@@ -272,6 +273,8 @@ def _ensure_symbol_blocks(doc):
         'ET_M_WATER_POINT': ('circle', 'WP'), 'ET_M_SAN_POINT': ('circle', 'S'),
         'ET_M_GAS_POINT': ('box', 'G'), 'ET_M_EQUIPMENT': ('box', 'EQ'),
         'ET_M_EXHAUST': ('box', 'EF'), 'ET_M_RISER': ('diamond', 'R'),
+        'ET_M_ISOLATION_VALVE': ('circle', 'V'), 'ET_M_CLEANOUT': ('circle', 'CO'),
+        'ET_M_VENT_TERMINAL': ('diamond', 'VT'), 'ET_M_ROOF_DRAIN': ('circle', 'RD'),
     }
     for name, (kind, tag) in defs.items():
         if name in doc.blocks:
@@ -286,10 +289,28 @@ def _ensure_symbol_blocks(doc):
         block.add_text(tag, dxfattribs={'height': .08}).set_placement((-.08, -.03))
 
 
+def _plan_text(msp, value, point, layer, offset=(.32, .18)):
+    """Attach a compact, plot-visible engineering tag beside a plan symbol."""
+    return msp.add_text(str(value), dxfattribs={'layer': layer, 'height': .12}).set_placement(
+        (point[0] + offset[0], point[1] + offset[1])
+    )
+
+
 def _add_standard_symbols(doc, levels, model):
+    """Materialize the Rule Book's minimum plan-visible detail standard.
+
+    These marks are intentionally placed only at detected fixtures/rooms and
+    known riser/roof points.  They do not pretend that unobserved project
+    geometry has been measured; numeric labels come from the resolved design
+    model and every family remains traceable in the issued plan.
+    """
     _ensure_symbol_blocks(doc)
     msp = doc.modelspace()
     count = 0
+    water_tag = f"CW/HW DN{model.get('water_main_dn_mm')} | V"
+    sanitary_tag = f"SAN DN{model.get('sanitary_main_dn_mm')} | S={model.get('sanitary_slope_pct')}% | CO"
+    equipment_tag = f"C={model.get('per_room_cooling_kw')}kW H={model.get('per_room_heating_kw')}kW"
+    exhaust_tag = f"EF {model.get('ventilation_airflow_m3h')} m3/h"
     for level in levels:
         fixtures = level.get('fixtures') or []
         wet_points = [x['point'] for x in fixtures if x.get('kind') != 'gas']
@@ -298,18 +319,32 @@ def _add_standard_symbols(doc, levels, model):
         for point in wet_points:
             msp.add_blockref('ET_M_WATER_POINT', point, dxfattribs={'layer': 'ENGITOOLS-M-COLD_WATER'})
             msp.add_blockref('ET_M_SAN_POINT', (point[0] + .22, point[1]), dxfattribs={'layer': 'ENGITOOLS-M-SANITARY'})
-            count += 2
+            msp.add_blockref('ET_M_ISOLATION_VALVE', (point[0] - .22, point[1]), dxfattribs={'layer': 'ENGITOOLS-M-COLD_WATER'})
+            msp.add_blockref('ET_M_CLEANOUT', (point[0] + .44, point[1]), dxfattribs={'layer': 'ENGITOOLS-M-SANITARY'})
+            _plan_text(msp, water_tag, point, 'ENGITOOLS-M-COLD_WATER')
+            _plan_text(msp, sanitary_tag, point, 'ENGITOOLS-M-SANITARY', (.32, -.24))
+            count += 4
         for room in level.get('rooms', []):
             point = room['point']
             if room.get('room') == 'kitchen' and model.get('gas_main_dn_mm'):
                 msp.add_blockref('ET_M_GAS_POINT', point, dxfattribs={'layer': 'ENGITOOLS-M-GAS'}); count += 1
             if room.get('room') in ('bedroom', 'living') and model.get('equipment_schedule_resolved'):
-                msp.add_blockref('ET_M_EQUIPMENT', point, dxfattribs={'layer': 'ENGITOOLS-M-COOLING'}); count += 1
+                msp.add_blockref('ET_M_EQUIPMENT', point, dxfattribs={'layer': 'ENGITOOLS-M-COOLING'})
+                _plan_text(msp, equipment_tag, point, 'ENGITOOLS-M-COOLING'); count += 1
             if room.get('room') in ('bath', 'toilet') and model.get('ventilation_airflow_m3h'):
-                msp.add_blockref('ET_M_EXHAUST', point, dxfattribs={'layer': 'ENGITOOLS-M-EXHAUST_VENTILATION'}); count += 1
+                msp.add_blockref('ET_M_EXHAUST', point, dxfattribs={'layer': 'ENGITOOLS-M-EXHAUST_VENTILATION'})
+                _plan_text(msp, exhaust_tag, point, 'ENGITOOLS-M-EXHAUST_VENTILATION'); count += 1
         hub = v8._find_level_riser(msp, level)
         if hub:
-            msp.add_blockref('ET_M_RISER', hub, dxfattribs={'layer': 'ENGITOOLS-M-MECHANICAL_RISERS'}); count += 1
+            msp.add_blockref('ET_M_RISER', hub, dxfattribs={'layer': 'ENGITOOLS-M-MECHANICAL_RISERS'})
+            msp.add_blockref('ET_M_VENT_TERMINAL', (hub[0] + .26, hub[1]), dxfattribs={'layer': 'ENGITOOLS-M-VENT'})
+            _plan_text(msp, f"RISER: W DN{model.get('water_main_dn_mm')} / S DN{model.get('sanitary_main_dn_mm')} / V DN{SANITARY['vent_dn_mm']}", hub, 'ENGITOOLS-M-MECHANICAL_RISERS')
+            count += 2
+        for drain in level.get('roof_drains') or []:
+            point = drain['point']
+            msp.add_blockref('ET_M_ROOF_DRAIN', point, dxfattribs={'layer': 'ENGITOOLS-M-ROOF_RAINWATER'})
+            _plan_text(msp, f"RD DN{model.get('roof_drain_dn_mm')}", point, 'ENGITOOLS-M-ROOF_RAINWATER')
+            count += 1
     return count
 
 
@@ -390,6 +425,12 @@ def _quality_report(doc, levels, calc, model, symbol_count, schedule_count):
     roof_required = 'roof_rainwater' in families
     ventilation_required = 'ventilation_exhaust' in families
     fixture_traceable = model['fixture_blocks_detected'] > 0 or model['fixture_schedule_count'] > 0
+    applicable_detail_families = {
+        'water_supply', 'sanitary_vent', 'heating', 'cooling', 'ventilation_exhaust',
+        'gas', 'roof_rainwater',
+    } & families
+    required_detail_tokens = sum(len(plan_detail_requirements(family)) for family in applicable_detail_families)
+    plan_visible_tags = sum(1 for entity in doc.modelspace() if entity.dxftype() == 'TEXT' and str(entity.dxf.layer).startswith('ENGITOOLS-M-'))
     checks = {
         'approved_manifest_exact': expected > 0 and expected == len(issued),
         'exact_level_geometry': bool(levels) and not any(x.get('manifest_geometry_fallback') for x in levels),
@@ -409,11 +450,16 @@ def _quality_report(doc, levels, calc, model, symbol_count, schedule_count):
             'ventilation_airflow_m3h', 'ventilation_discharge_resolved', 'makeup_air_resolved')),
         'roof_drainage_design': (not roof_required) or all(model.get(k) not in (None, '', False) for k in (
             'roof_area_m2', 'rainfall_mm_h', 'roof_drain_count', 'roof_flow_lps', 'roof_drain_dn_mm')),
-        'technical_documentation': schedule_count >= max(1, len(issued) * 3) and not base._technical_issue_gaps(doc, manifest, {}),
+        'technical_documentation': (
+            schedule_count >= max(1, len(issued) * 3)
+            and not base._technical_issue_gaps(doc, manifest, {})
+            and (required_detail_tokens == 0 or plan_visible_tags >= required_detail_tokens)
+        ),
     }
     passed = sum(bool(x) for x in checks.values())
     return {
-        'score_10': round(passed, 1), 'passed': passed, 'total': 10,
+        'score_10': round(passed, 1),
+        'passed': passed, 'total': len(checks),
         'checks': checks, 'failed': [key for key, value in checks.items() if not value],
         'professional_review_required': True,
         'statutory_approval_claimed': False,
