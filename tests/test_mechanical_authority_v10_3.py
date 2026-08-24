@@ -150,11 +150,53 @@ class MechanicalAuthorityV103Tests(unittest.TestCase):
             self.assertIn('طبقه همکف پلان معماری', texts)
             self.assertIn('آشپزخانه', texts)
 
+    def test_missing_analyzer_block_definition_is_ignored_without_http_500(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'orphan-source.dxf'
+            expanded = Path(td) / 'orphan-expanded.dxf'
+            doc = ezdxf.new('R2013')
+            doc.modelspace().add_text('پلان معماری طبقه همکف').set_placement((0, 0))
+            doc.saveas(src)
+            calc = {
+                '_plan_analysis': {
+                    'architectural_auto': {
+                        'level_profiles': [{
+                            'name': 'طبقه همکف', 'source_type': 'block',
+                            'source_name': 'PURGED_ORPHAN_BLOCK',
+                        }]
+                    }
+                }
+            }
+            source, names = authority._materialize_analyzer_blocks(src, expanded, calc)
+            self.assertEqual(source, src)
+            self.assertEqual(names, [])
+
     def test_missing_manifest_level_never_reuses_another_floor_geometry(self):
         levels = [{'level': 'طبقه همکف', 'rooms': [], 'fixtures': []}]
         sheet = {'code': 'M-W-02', 'levels': ['طبقه اول']}
         with self.assertRaisesRegex(RuntimeError, 'exact level geometry'):
             authority._manifest_level(sheet, levels)
+
+    def test_architectural_stove_does_not_fail_explicit_no_gas_scope(self):
+        """Furniture symbols must not force a gas deliverable into a no-gas project."""
+        doc = ezdxf.new('R2013')
+        msp = doc.modelspace()
+        level = {
+            'level': 'طبقه همکف',
+            'title': {'point': (0, 0)},
+            'rooms': [],
+            'fixtures': [{'kind': 'gas', 'point': (2, 2), 'block': 'STOVE'}],
+        }
+        stats = authority.v7.defaultdict(int)
+        qa = {'assumptions': [], 'unresolved': [], 'checks': {}}
+        authority.v7.design_level_v7(
+            msp, level, {'cold_water', 'sanitary'},
+            {'_design_inputs': {'gas': 'بدون گاز'}}, stats, qa,
+        )
+        self.assertEqual(qa['fixtures_expected'], 0)
+        self.assertEqual(qa['fixtures_connected'], 0)
+        self.assertFalse(qa['unresolved'])
+        self.assertTrue(any('no gas service' in value for value in qa['assumptions']))
 
 
 if __name__ == '__main__':
