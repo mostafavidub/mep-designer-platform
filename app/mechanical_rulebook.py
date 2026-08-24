@@ -8,7 +8,7 @@ import math
 import re
 
 
-RULEBOOK_VERSION = '1.7'
+RULEBOOK_VERSION = '1.8'
 
 DEFAULT_HEIGHTS = '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones'
 DEFAULT_GAS_PROPOSAL = 'boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance'
@@ -47,12 +47,12 @@ VENTILATION = {
 # plan symbols and schedule entries, using calculated values rather than a
 # project-specific canned drawing.
 PLAN_DETAIL_STANDARD = {
-    'water_supply': ('fixture_connection', 'branch_diameter', 'isolation_valve', 'riser_tag'),
-    'sanitary_vent': ('fixture_connection', 'branch_diameter', 'slope_tag', 'cleanout', 'vent_tag', 'riser_tag'),
-    'heating': ('terminal_equipment', 'design_capacity', 'supply_return_tag', 'riser_tag'),
-    'cooling': ('terminal_equipment', 'design_capacity', 'condensate_fall', 'outdoor_unit_location'),
-    'ventilation_exhaust': ('exhaust_terminal', 'airflow_tag', 'discharge_path', 'makeup_air_path'),
-    'gas': ('appliance_connection', 'pipe_diameter', 'meter_regulator', 'riser_tag'),
+    'water_supply': ('fixture_connection', 'branch_diameter', 'isolation_valve', 'junction_tag', 'flow_direction', 'riser_tag'),
+    'sanitary_vent': ('fixture_connection', 'branch_diameter', 'slope_tag', 'cleanout', 'junction_tag', 'flow_direction', 'vent_tag', 'riser_tag'),
+    'heating': ('terminal_equipment', 'design_capacity', 'supply_return_tag', 'junction_tag', 'flow_direction', 'riser_tag'),
+    'cooling': ('terminal_equipment', 'design_capacity', 'junction_tag', 'flow_direction', 'condensate_fall', 'outdoor_unit_location'),
+    'ventilation_exhaust': ('exhaust_terminal', 'airflow_tag', 'junction_tag', 'flow_direction', 'discharge_path', 'makeup_air_path'),
+    'gas': ('appliance_connection', 'pipe_diameter', 'junction_tag', 'flow_direction', 'meter_regulator', 'riser_tag'),
     'roof_rainwater': ('roof_drain', 'drain_diameter', 'rainfall_basis', 'downpipe_riser'),
 }
 
@@ -139,7 +139,7 @@ def roof_geometry_proposal(auto_or_levels):
 
 
 def automatic_answers(auto):
-    """Return non-customer mechanical decisions owned by Rule Book v1.6."""
+    """Return non-customer mechanical decisions owned by the current Rule Book."""
     rooms = auto.get('room_counts') or {}
     cooling = float(auto.get('estimated_cooling_load_kw') or 0)
     heating = float(auto.get('estimated_heating_load_kw') or 0)
