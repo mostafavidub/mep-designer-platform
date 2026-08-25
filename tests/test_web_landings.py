@@ -20,15 +20,9 @@ class LandingSmokeTests(unittest.TestCase):
     def _assert_common_discipline_contract(self, r, discipline_label):
         self._assert_brand_shell(r)
         self.assertIn(discipline_label, r.text)
-        self.assertIn('ARCHITECTURE-FIRST', r.text)
         self.assertIn('START DESIGN', r.text)
-        self.assertIn('DYNAMIC QUESTIONS', r.text)
         self.assertIn('APPROVED PROJECTS', r.text)
         self.assertIn('DELIVERABLES', r.text)
-        self.assertIn('COMPARISON', r.text)
-        self.assertIn('REVISION FLOW', r.text)
-        self.assertIn('TRANSPARENT LIMITS', r.text)
-        self.assertIn('RELATED GUIDES', r.text)
         self.assertIn('FAQPage', r.text)
         self.assertIn('چه چیزی تحویل می‌گیرید؟', r.text)
         self.assertTrue(r.text.count('project-') >= 4)
@@ -52,6 +46,8 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('شروع تحلیل پلان', r.text)
         self.assertIn('مشاهده نمونه خروجی‌ها', r.text)
         self.assertEqual(r.text.count('electrical-hero-feature'), 5)
+        for section in ('ARCHITECTURE-FIRST', 'DYNAMIC QUESTIONS', 'COMPARISON', 'REVISION FLOW', 'TRANSPARENT LIMITS', 'RELATED GUIDES'):
+            self.assertIn(section, r.text)
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
         self.assertNotIn('/static/workflow-road.js', r.text)
 
@@ -76,6 +72,9 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('فاضلاب', r.text)
         self.assertIn('HVAC', r.text)
         self.assertIn('project-1-mechanical-before-after.svg', r.text)
+        for removed_section in ('ARCHITECTURE-FIRST', 'DYNAMIC QUESTIONS', 'COMPARISON', 'REVISION FLOW', 'TRANSPARENT LIMITS', 'RELATED GUIDES'):
+            self.assertNotIn(removed_section, r.text)
+        self.assertLess(r.text.index('START DESIGN'), r.text.index('SCOPE'))
         self.assertNotIn('/static/electrical-hero-v1.css', r.text)
         self.assertNotIn('electrical-landing-hero', r.text)
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
@@ -129,6 +128,8 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('right:calc(100% + 22px)', css.text)
         self.assertIn('width:min(270px,25vw)', css.text)
         self.assertIn('position:static', css.text)
+        self.assertIn('background:var(--brand-paper,#f3f3ef)', css.text)
+        self.assertIn('box-shadow:0 0 0 8px var(--brand-paper,#f3f3ef)', css.text)
 
     def test_home_loads_layered_hero_scene_only_on_home(self):
         home = self.client.get('/')
