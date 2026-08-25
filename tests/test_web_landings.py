@@ -127,9 +127,22 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('width:330px', css.text)
         self.assertIn('right:calc(100% + 22px)', css.text)
         self.assertIn('width:min(270px,25vw)', css.text)
-        self.assertIn('position:static', css.text)
+        self.assertIn('width:112px', css.text)
+        self.assertIn('width:calc(100% - 126px)', css.text)
+        self.assertIn('position:absolute', css.text)
         self.assertIn('background:var(--brand-paper,#f3f3ef)', css.text)
-        self.assertIn('box-shadow:0 0 0 8px var(--brand-paper,#f3f3ef)', css.text)
+        self.assertIn('box-shadow:0 0 0 10px var(--brand-paper,#f3f3ef)', css.text)
+
+    def test_mobile_navigation_is_hamburger_only_until_opened(self):
+        home = self.client.get('/')
+        css = self.client.get('/static/brand_v4.css')
+        js = self.client.get('/static/brand_v4.js')
+        self.assertIn('class="nav-menu"', home.text)
+        self.assertIn('aria-expanded="false"', home.text)
+        self.assertIn('pointer-events:none', css.text)
+        self.assertIn('.site-header .top-nav.is-open', css.text)
+        self.assertIn('.site-header .nav-cta{display:none!important}', css.text)
+        self.assertIn("nav?.classList.toggle('is-open',open)", js.text)
 
     def test_home_loads_layered_hero_scene_only_on_home(self):
         home = self.client.get('/')
