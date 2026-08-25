@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -24,6 +25,17 @@ def _discipline(p):
 def _negative(value):
     s = str(value or '').strip().lower()
     return any(x in s for x in ('ندارد', 'خیر', 'نیست', 'بدون', 'none', 'no '))
+
+
+def _fixture_schedule_quantified(value):
+    text = str(value or '').strip().translate(
+        str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
+    )
+    aliases = (
+        'sink', 'faucet', 'toilet', 'bath', 'shower',
+        'سینک', 'روشویی', 'روشويی', 'توالت', 'دوش', 'وان',
+    )
+    return bool(re.search(r'\d+', text)) and any(alias in text.lower() for alias in aliases)
 
 
 def _enclosed_parking(value):
@@ -261,7 +273,18 @@ def register_mechanical_workflow(app, legacy):
         qs = p.questions or []; idx = p.current_question
         if p.status != 'asking' or idx >= len(qs):
             data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data)
-        a = dict(p.answers or {}); a[qs[idx]['key']] = answer.strip(); p.answers = a; p.current_question = idx + 1
+        current_question = qs[idx]
+        cleaned_answer = answer.strip()
+        if current_question.get('key') == 'fixture_schedule' and not _fixture_schedule_quantified(cleaned_answer):
+            data = legacy.flow_payload(p)
+            data['drawing_set'] = (p.analysis or {}).get('drawing_set')
+            data['answer_error'] = (
+                'برای این سؤال باید تعداد عددی تجهیزات را وارد کنید؛ '
+                'مثال: سینک ۲، روشویی ۲، توالت ۲، دوش ۰.'
+            )
+            db.close()
+            return JSONResponse(data)
+        a = dict(p.answers or {}); a[current_question['key']] = cleaned_answer; p.answers = a; p.current_question = idx + 1
         if p.current_question >= len(qs):
             if _discipline(p) == 'mechanical': create_proposal(p)
             else: p.status = 'ready_to_design'
