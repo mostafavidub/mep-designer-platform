@@ -179,7 +179,37 @@ def run_design(project_id,revision_id):
         if returned_discipline and returned_discipline!=discipline: raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
         src=Path(data['pdf_path']); out=pdir/'output'/f'rev_{r.revision_no:03d}'; out.mkdir(parents=True,exist_ok=True); dst=out/f'{discipline}_design.pdf'; shutil.copy2(src,dst)
         r.pdf_path=str(dst); r.status='ready'; p.status='ready'; p.current_revision=r.revision_no; p.last_error=''; db.commit()
-    except Exception as e: r.status='failed'; r.error=str(e); p.status='failed'; p.last_error=str(e); db.commit()
+    except Exception as e:
+        error = str(e)
+        r.status = 'failed'; r.error = error
+        fixture_answer = str((p.answers or {}).get('fixture_schedule') or '')
+        normalized_fixture_answer = fixture_answer.translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789'))
+        fixture_is_quantified = bool(re.search(r'\d+', normalized_fixture_answer)) and any(
+            token in normalized_fixture_answer.lower()
+            for token in ('sink', 'faucet', 'toilet', 'bath', 'shower', 'سینک', 'روشویی', 'روشويی', 'توالت', 'دوش', 'وان')
+        )
+        evidence_failure = (
+            discipline == 'mechanical'
+            and ('fixture_and_symbol_traceability' in error or 'تعداد و جانمایی تجهیزات بهداشتی' in error)
+            and not fixture_is_quantified
+        )
+        fixture_index = next(
+            (index for index, question in enumerate(p.questions or []) if question.get('key') == 'fixture_schedule'),
+            None,
+        )
+        if evidence_failure and fixture_index is not None:
+            # Do not strand the user at a terminal QA error when the only
+            # missing evidence is the quantitative answer we should have
+            # validated earlier. Return to that exact question in-place.
+            p.current_question = fixture_index
+            p.status = 'asking'
+            p.last_error = (
+                'تعداد تجهیزات بهداشتی باید به‌صورت عددی وارد شود؛ '
+                'مثال: سینک ۲، روشویی ۲، توالت ۲، دوش ۰.'
+            )
+        else:
+            p.status = 'failed'; p.last_error = error
+        db.commit()
     finally: db.close()
 
 def flow_payload(p):
