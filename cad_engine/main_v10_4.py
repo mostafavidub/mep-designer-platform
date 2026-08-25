@@ -18,6 +18,7 @@ from app.mechanical_rulebook import (
     RULEBOOK_VERSION,
     SANITARY,
     WATER,
+    automatic_answers,
     fixture_schedule_proposal,
     is_confirmation,
     plan_detail_requirements,
@@ -37,7 +38,7 @@ STANDARD_PIPE_MM = (16, 20, 25, 32, 40, 50, 63, 75, 90, 110, 125, 160, 200)
 
 
 def _norm(value):
-    return str(value or '').replace('ي', 'ی').replace('ك', 'ک').replace(',', '.').strip()
+    return str(value or '').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')).replace('ي', 'ی').replace('ك', 'ک').replace(',', '.').replace('٫', '.').strip()
 
 
 def _number(text, unit_pattern=None, default=None):
@@ -564,7 +565,12 @@ def _technical_model(doc, levels, calc):
 def _refresh_hydraulic_model(doc, model):
     """Recalculate route-dependent hydraulics after shared networks exist."""
     unit_to_m = _drawing_unit_to_m(doc) or 1.0
-    length_m = _layer_length(doc.modelspace(), 'ENGITOOLS-M-COLD_WATER') * unit_to_m
+    drawn_length_m = _layer_length(doc.modelspace(), 'ENGITOOLS-M-COLD_WATER') * unit_to_m
+    # A resumed project can carry a quantified fixture schedule while its
+    # consultant DXF has no trustworthy wet-point coordinates. In that case
+    # the shared-network pass correctly draws no invented route. Preserve the
+    # architecture-derived preliminary route instead of replacing it by None.
+    length_m = drawn_length_m or float(model.get('water_route_length_m') or 0)
     flow_lps = model.get('design_water_flow_lps')
     dn = model.get('water_main_dn_mm')
     hazen_c = model.get('hazen_williams_c')
@@ -995,6 +1001,16 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     if discipline == 'mechanical':
         inputs = dict(calc.get('_design_inputs') or {})
         architectural_auto = (calc.get('_plan_analysis') or {}).get('architectural_auto') or {}
+        # Hydrate Rule Book-owned calculation bases at the CAD boundary too.
+        # This keeps resumed/migrated projects deterministic and prevents a
+        # short confirmation from erasing the complete engineering basis.
+        rulebook_defaults = automatic_answers(architectural_auto)
+        for key in ('water_design_basis', 'sanitary_design_basis'):
+            if not str(inputs.get(key) or '').strip() or is_confirmation(inputs.get(key)):
+                inputs[key] = rulebook_defaults[key]
+        ventilation = _norm(inputs.get('ventilation_design_basis'))
+        if not ventilation or is_confirmation(ventilation):
+            inputs['ventilation_design_basis'] = rulebook_defaults['ventilation_design_basis']
         if is_confirmation(inputs.get('equipment_schedule')):
             inputs['equipment_schedule'] = (
                 'Rulebook automatic selection; per room load calculated from architecture; '
