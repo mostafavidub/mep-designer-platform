@@ -403,7 +403,18 @@ def _technical_model(doc, levels, calc):
                 for kind in ('sink', 'faucet', 'toilet', 'bath')
             )
         else:
-            fixture_schedule = fixture_schedule_proposal(architectural_auto or levels)
+            # A non-empty analyzer payload is not proof that its aggregate
+            # counters were populated. Consultant DXFs stored in named blocks
+            # can produce valid detected CAD levels while room_counts remains
+            # empty. Fall back to those detected levels so a confirmed
+            # Rulebook fixture proposal remains quantified and hydraulic-ready.
+            auto_rooms = architectural_auto.get('room_counts') or {}
+            wet_room_count = sum(
+                int(auto_rooms.get(kind) or 0)
+                for kind in ('kitchen', 'bath', 'toilet')
+            )
+            fixture_source = architectural_auto if wet_room_count else levels
+            fixture_schedule = fixture_schedule_proposal(fixture_source)
     detected, scheduled, fixtures, rooms, proxies = _fixture_summary(levels, fixture_schedule)
     unit_to_m = _drawing_unit_to_m(doc)
     water_basis = _norm(inputs.get('water_design_basis')) or (
