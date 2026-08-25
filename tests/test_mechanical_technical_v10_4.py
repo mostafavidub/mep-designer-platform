@@ -242,6 +242,19 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
         self.assertEqual(model['water_route_length_m'], 24.0)
         self.assertGreater(model['water_head_loss_m'], 0)
 
+    def test_room_inventory_supplies_preliminary_equipment_load_fallback(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            calc.pop('cooling_load_kw')
+            calc.pop('heating_load_kw')
+            calc['_plan_analysis'] = {'architectural_auto': {}}
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+            self.assertEqual(meta['technical_quality']['score_10'], 10.0)
+            self.assertGreater(meta['technical_design']['cooling_load_kw'], 0)
+            self.assertGreater(meta['technical_design']['heating_load_kw'], 0)
+
     def test_compact_output_removes_remote_architecture_and_unused_blocks(self):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / 'large-architecture.dxf'; dst = Path(td) / 'mechanical.dxf'
