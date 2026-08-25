@@ -1092,6 +1092,24 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     schedule_count = _annotate_sheets(doc, model)
     report = _quality_report(doc, levels, calc, model, symbol_count, schedule_count)
     if report['score_10'] < 10.0:
+        print('[mechanical-qa-debug]', {
+            'fixture_schedule_input': (calc.get('_design_inputs') or {}).get('fixture_schedule'),
+            'architectural_room_counts': ((calc.get('_plan_analysis') or {}).get('architectural_auto') or {}).get('room_counts'),
+            'architectural_fixture_counts': ((calc.get('_plan_analysis') or {}).get('architectural_auto') or {}).get('fixture_counts'),
+            'detected_level_rooms': dict(Counter(
+                room.get('room') for level in levels for room in level.get('rooms', [])
+            )),
+            'detected_level_fixtures': dict(Counter(
+                fixture.get('kind') for level in levels for fixture in level.get('fixtures', [])
+            )),
+            'model': {key: model.get(key) for key in (
+                'fixture_blocks_detected', 'fixture_schedule_count',
+                'design_water_flow_lps', 'water_main_dn_mm', 'water_material',
+                'water_inlet_pressure_bar', 'hazen_williams_c',
+                'water_route_length_m', 'water_head_loss_m',
+            )},
+            'shared_distribution_network': shared_network,
+        }, flush=True)
         raise RuntimeError(
             f"Mechanical technical design QA failed ({report['score_10']}/10): "
             + ', '.join(report['failed']) + f"; checks={report['checks']}"
