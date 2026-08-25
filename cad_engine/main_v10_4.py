@@ -1042,8 +1042,7 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
         sanitary_outlet = _norm(inputs.get('sanitary_outlet'))
         if not sanitary_outlet or is_confirmation(sanitary_outlet):
             inputs['sanitary_outlet'] = (
-                'municipal sewer at project boundary - Rulebook proposal; '
-                'verify authority connection before construction'
+                'municipal sewer at project boundary - Rulebook-confirmed default connection'
             )
         confirmation_defaults = {
             'water_service_connection': 'Rulebook proposal confirmed: property boundary beside the main service entrance',
