@@ -214,6 +214,34 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             self.assertEqual(meta['technical_quality']['score_10'], 10.0)
             self.assertEqual(meta['technical_design']['water_inlet_pressure_bar'], 2.5)
 
+    def test_resumed_short_answers_hydrate_rulebook_calculations(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            inputs = calc['_design_inputs']
+            inputs.pop('water_design_basis')
+            inputs.pop('sanitary_design_basis')
+            inputs['ventilation_design_basis'] = 'تأیید'
+            inputs['water_inlet_pressure'] = '۲٫۵ بار'
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+            self.assertEqual(meta['technical_quality']['score_10'], 10.0)
+            self.assertEqual(meta['technical_design']['water_inlet_pressure_bar'], 2.5)
+            self.assertEqual(meta['technical_design']['sanitary_material'], 'uPVC')
+            self.assertGreater(meta['technical_design']['ventilation_airflow_m3h'], 0)
+
+    def test_hydraulic_refresh_preserves_architecture_route_without_drawn_network(self):
+        model = {
+            'water_route_length_m': 24.0,
+            'design_water_flow_lps': .7,
+            'water_main_dn_mm': 25,
+            'hazen_williams_c': 150,
+        }
+        doc = ezdxf.new('R2013')
+        technical._refresh_hydraulic_model(doc, model)
+        self.assertEqual(model['water_route_length_m'], 24.0)
+        self.assertGreater(model['water_head_loss_m'], 0)
+
     def test_compact_output_removes_remote_architecture_and_unused_blocks(self):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / 'large-architecture.dxf'; dst = Path(td) / 'mechanical.dxf'
