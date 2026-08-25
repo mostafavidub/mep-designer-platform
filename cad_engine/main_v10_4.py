@@ -1021,11 +1021,12 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
         ventilation = _norm(inputs.get('ventilation_design_basis'))
         if not ventilation or is_confirmation(ventilation):
             inputs['ventilation_design_basis'] = rulebook_defaults['ventilation_design_basis']
-        if is_confirmation(inputs.get('equipment_schedule')):
-            inputs['equipment_schedule'] = (
-                'Rulebook automatic selection; per room load calculated from architecture; '
-                'split cooling units and hydronic radiators; outdoor units on coordinated roof/service location'
-            )
+        equipment_schedule = _norm(inputs.get('equipment_schedule'))
+        if not equipment_schedule or is_confirmation(equipment_schedule):
+            # Missing values occur on projects created before this questionnaire
+            # field was persisted. Rehydrate the Rulebook-owned proposal instead
+            # of allowing a resumed project to fail the equipment QA gate.
+            inputs['equipment_schedule'] = rulebook_defaults['equipment_schedule']
         if is_confirmation(inputs.get('fixture_schedule')):
             auto_rooms = architectural_auto.get('room_counts') or {}
             if sum(int(value or 0) for value in auto_rooms.values()):
@@ -1037,6 +1038,12 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
             inputs['water_source'] = (
                 'Rulebook automatic: municipal meter + storage tank + booster pump '
                 'sized from calculated demand'
+            )
+        sanitary_outlet = _norm(inputs.get('sanitary_outlet'))
+        if not sanitary_outlet or is_confirmation(sanitary_outlet):
+            inputs['sanitary_outlet'] = (
+                'municipal sewer at project boundary - Rulebook proposal; '
+                'verify authority connection before construction'
             )
         confirmation_defaults = {
             'water_service_connection': 'Rulebook proposal confirmed: property boundary beside the main service entrance',
