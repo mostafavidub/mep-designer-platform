@@ -204,6 +204,30 @@ class MechanicalTechnicalV104Tests(unittest.TestCase):
             self.assertEqual(model['cooling_load_kw'], 15.0)
             self.assertEqual(model['heating_load_kw'], 12.0)
 
+    def test_confirmation_uses_detected_level_rooms_when_analysis_counts_are_empty(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
+            self.architecture(src)
+            calc = self.calc()
+            calc.pop('design_water_flow_lps')
+            calc['_design_inputs']['fixture_schedule'] = 'تأیید'
+            # Real consultant DXFs can have a useful analysis object while its
+            # aggregate room/fixture counters are empty. The materialized CAD
+            # levels remain the authoritative fallback in that case.
+            calc['_plan_analysis'] = {
+                'architectural_auto': {
+                    'room_counts': {},
+                    'fixture_counts': {},
+                    'level_profiles': [],
+                },
+            }
+            meta = technical.design_dxf_v10_4(src, dst, 'mechanical', self.systems(), 1, calc)
+            model = meta['technical_design']
+            self.assertEqual(meta['technical_quality']['score_10'], 10.0)
+            self.assertGreater(model['fixture_schedule_count'], 0)
+            self.assertGreater(model['design_water_flow_lps'], 0)
+            self.assertGreater(model['water_route_length_m'], 0)
+
     def test_unknown_water_pressure_uses_conservative_rulebook_basis(self):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / 'a.dxf'; dst = Path(td) / 'm.dxf'
