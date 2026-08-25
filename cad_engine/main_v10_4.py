@@ -503,6 +503,16 @@ def _technical_model(doc, levels, calc):
         heating_kw = float(heating_kw) if heating_kw not in (None, '') else None
     except (TypeError, ValueError):
         heating_kw = None
+    # Reliable occupied-room classifications are sufficient for a transparent
+    # preliminary Rule Book load when area metadata is unavailable.
+    conditioned_equiv = (
+        rooms['bedroom'] * 1.6 + rooms['living'] * 3.0
+        + rooms['office'] * 2.0 + rooms['shop'] * 2.0
+    )
+    if cooling_kw in (None, '') and conditioned_equiv > 0:
+        cooling_kw = round(conditioned_equiv, 2)
+    if heating_kw in (None, '') and conditioned_equiv > 0:
+        heating_kw = round(conditioned_equiv * .75, 2)
     capacities_btuh = _all_numbers(equipment, r'btu(?:/h|hr)?')
     capacities_kw = _all_numbers(equipment, r'kw|کیلووات|كيلووات')
     equipment_resolved = bool(equipment and (capacities_btuh or capacities_kw or re.search(r'per\s+room\s+load|بار\s+هر\s+فضا', equipment, re.I)))
