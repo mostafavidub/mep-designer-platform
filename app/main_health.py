@@ -5,6 +5,7 @@ from . import unit_sanity  # patches dimension-based CAD unit sanity before proj
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from . import mechanical_workflow
 from .fixture_detection_v2 import install as install_fixture_detection_v2
+from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
 from .project_mechanical_model import install as install_project_mechanical_model
 from .resumable_upload import register_resumable_upload_routes
@@ -24,6 +25,10 @@ install_level_detection_v3(main_auto)
 # It is additive: weak evidence remains a candidate and legacy detections are
 # preserved, which prevents a detector upgrade from silently deleting scope.
 install_fixture_detection_v2(main_auto)
+# Unresolved wet-level evidence becomes an explicit questionnaire requirement;
+# mechanical design approval is not considered ready until high-confidence CAD
+# evidence or a quantified user-confirmed fixture schedule resolves it.
+install_fixture_gate_v1(main_auto, mechanical_workflow)
 # PMM v1 remains the canonical shadow snapshot and now records per-detection
 # confidence/evidence without changing CAD composition directly.
 install_project_mechanical_model(mechanical_workflow)
