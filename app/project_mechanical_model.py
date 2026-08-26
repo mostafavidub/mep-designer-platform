@@ -1,7 +1,7 @@
 """Project Mechanical Model (PMM) v1.
 
 This module adds a single, machine-readable snapshot of the mechanical design
-inputs without changing any existing planner or CAD decisions.  The snapshot is
+inputs without changing any existing planner or CAD decisions. The snapshot is
 stored in ``Project.analysis['project_mechanical_model']`` and is intentionally
 additive in v1 so existing production behaviour remains unchanged while later
 stages migrate to consume it as the contract.
@@ -44,14 +44,25 @@ def _level_rows(auto):
                 "typical_confidence": profile.get("typical_confidence"),
                 "source_type": profile.get("source_type"),
                 "source_name": profile.get("source_name"),
+                "level_confidence": profile.get("level_confidence"),
+                "level_evidence": deepcopy(profile.get("level_evidence") or []),
+                "level_detection_status": profile.get("level_detection_status"),
             })
         return rows
 
     rows = []
     for item in auto.get("levels") or []:
-        name = item.get("name") if isinstance(item, dict) else item
+        if isinstance(item, dict):
+            name = item.get("name")
+            confidence = item.get("confidence")
+        else:
+            name = item
+            confidence = None
         if name:
-            rows.append({"name": str(name), "roof": False, "room_counts": {}})
+            rows.append({
+                "name": str(name), "roof": False, "room_counts": {},
+                "level_confidence": confidence, "level_evidence": [],
+            })
     return rows
 
 
@@ -97,8 +108,8 @@ def _shaft_rows(levels):
 def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=None):
     """Build a deterministic, JSON-safe PMM snapshot from already-approved inputs.
 
-    v1 deliberately *does not* alter planner decisions.  It mirrors the inputs
-    and the generated drawing manifest so we can switch consumers to the PMM in
+    v1 deliberately *does not* alter planner decisions. It mirrors the inputs
+    and the generated drawing manifest so consumers can migrate to the PMM in
     later guarded steps without changing current production output.
     """
     analysis = analysis or {}
@@ -113,10 +124,12 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
 
     model = {
         "schema": PMM_SCHEMA,
-        "mode": "shadow",  # additive-only: consumers still use existing paths in this step
+        "mode": "shadow",
         "discipline": "mechanical",
         "levels": levels,
         "level_names": level_names,
+        "candidate_levels": deepcopy(auto.get("candidate_levels") or []),
+        "restored_explicit_levels": deepcopy(auto.get("restored_explicit_levels") or []),
         "spaces": _space_rows(levels),
         "fixtures": _fixture_rows(auto),
         "equipment": deepcopy(auto.get("equipment") or []),
@@ -138,21 +151,27 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "planner_total_plans": int(proposal.get("total_plans") or proposal.get("deliverable_sheet_count") or len(manifest)),
         "inputs": {
             "architectural_inference": auto.get("effective_level_inference"),
+            "level_detection_version": auto.get("level_detection_version"),
             "fixture_blocks_detected": int(auto.get("fixture_blocks_detected") or 0),
             "roof_drain_count": int(auto.get("roof_drain_count") or 0),
             "answers_present": sorted(str(key) for key in answers.keys()),
         },
     }
 
-    # Non-blocking integrity diagnostics.  PMM v1 must never break a project;
-    # later QA-gate steps can promote selected diagnostics to hard failures.
     diagnostics = []
     if model["planner_total_plans"] != model["drawing_manifest_count"]:
         diagnostics.append("planner_total_does_not_match_manifest_count")
     if not level_names:
         diagnostics.append("no_architecture_levels_in_pmm")
-    model["diagnostics"] = diagnostics
-    model["valid"] = not diagnostics
+    if model["candidate_levels"]:
+        diagnostics.append("unresolved_candidate_levels_present")
+    diagnostics.extend(auto.get("level_detection_diagnostics") or [])
+    model["diagnostics"] = list(dict.fromkeys(diagnostics))
+    # Candidate levels are intentionally diagnostic, not a PMM-invalidating
+    # condition in this release. Only structural integrity failures invalidate.
+    model["valid"] = not any(x in model["diagnostics"] for x in (
+        "planner_total_does_not_match_manifest_count", "no_architecture_levels_in_pmm"
+    ))
     return model
 
 
