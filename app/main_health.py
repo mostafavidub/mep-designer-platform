@@ -4,6 +4,7 @@ from . import main_auto
 from . import unit_sanity  # patches dimension-based CAD unit sanity before project analysis
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from . import mechanical_workflow
+from .fixture_detection_v2 import install as install_fixture_detection_v2
 from .level_detection_v3 import install as install_level_detection_v3
 from .project_mechanical_model import install as install_project_mechanical_model
 from .resumable_upload import register_resumable_upload_routes
@@ -18,8 +19,13 @@ register_service_art_routes(app)
 # levels such as mezzanines can no longer disappear merely because their room
 # labels are missing, while weak orphan block titles remain non-active candidates.
 install_level_detection_v3(main_auto)
-# PMM v1 remains the canonical shadow snapshot and records the upgraded level
-# evidence without changing CAD composition directly.
+# Fixture & Equipment Detection v2 wraps the upgraded analyzer/inference after
+# level detection so detections can be attached to the canonical level evidence.
+# It is additive: weak evidence remains a candidate and legacy detections are
+# preserved, which prevents a detector upgrade from silently deleting scope.
+install_fixture_detection_v2(main_auto)
+# PMM v1 remains the canonical shadow snapshot and now records per-detection
+# confidence/evidence without changing CAD composition directly.
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 register_mechanical_review_fix(app, main_auto.legacy)
