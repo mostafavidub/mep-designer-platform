@@ -213,11 +213,22 @@ def automatic_answers(auto):
 
 
 def roof_basis(location, geometry_text):
-    """Complete roof rainfall from location while preserving project geometry."""
+    """Complete roof rainfall while preserving geometry and provenance.
+
+    A missing/unsupported city must not silently erase the rainwater calculation.
+    Use the most conservative maintained Rulebook intensity and label that basis
+    explicitly so the engineer can replace it with the local authority value.
+    """
     geometry = str(geometry_text or '').strip()
-    rainfall = rainfall_mm_h(location)
-    if not geometry or rainfall is None:
+    if not geometry:
         return geometry
     if re.search(r'\d+(?:\.\d+)?\s*(?:mm/h|میلی.?متر)', geometry, re.I):
         return geometry
+    rainfall = rainfall_mm_h(location)
+    if rainfall is None:
+        rainfall = max(RAIN_MM_H.values())
+        return (
+            f'{geometry}; {rainfall} mm/h conservative Rulebook fallback '
+            '[VERIFY WITH LOCAL AUTHORITY]'
+        )
     return f'{geometry}; {rainfall} mm/h Rulebook design rainfall'
