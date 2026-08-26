@@ -43,12 +43,19 @@ class RainwaterV11Tests(unittest.TestCase):
         )
         self.assertEqual(report['status'],'PASS')
         self.assertEqual(model['rainwater_proposed_drain_locations'],2)
-        self.assertEqual(report['location_provenance'],'Rule-based Proposed - verify roof low points')
+        self.assertEqual(report['location_provenance'],'Rule-based Proposed - engineer roof coordination required')
+        forbidden=('R?','EXH?','UNRESOLVED','VERIFY','TBD','UNKNOWN')
+        notes=[
+            str(entity.dxf.text or '').upper()
+            for entity in doc.modelspace().query('TEXT')
+            if str(entity.dxf.layer)=='ENGITOOLS-M-ROOF_RAINWATER'
+        ]
+        self.assertFalse(any(token in note for note in notes for token in forbidden))
 
     def test_unknown_city_uses_labelled_conservative_rainfall(self):
         basis=roof_basis('unsupported city','120 m2 roof; 2 drains')
         self.assertIn('110 mm/h',basis)
-        self.assertIn('VERIFY WITH LOCAL AUTHORITY',basis)
+        self.assertIn('LOCAL AUTHORITY REVIEW REQUIRED',basis)
 
     def test_no_roof_family_is_not_blocked(self):
         self.assertEqual(validate_rainwater(self._doc(),{'sheets':[{'family':'heating'}]},{} )['status'],'NOT_APPLICABLE')
