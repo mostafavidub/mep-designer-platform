@@ -3,6 +3,7 @@ import ezdxf
 
 from cad_engine import main_v10_4 as v10_4
 from cad_engine.rainwater_v11 import install, validate_rainwater
+from app.mechanical_rulebook import roof_basis
 
 
 class RainwaterV11Tests(unittest.TestCase):
@@ -27,6 +28,27 @@ class RainwaterV11Tests(unittest.TestCase):
         msp=doc.modelspace()
         self.assertGreaterEqual(sum(1 for e in msp.query('LINE') if e.dxf.layer=='ENGITOOLS-M-ROOF_RAINWATER'),4)
         self.assertEqual(sum(1 for e in msp.query('INSERT') if e.dxf.name=='ET_M_ROOF_DRAIN'),2)
+
+    def test_missing_detected_drains_get_traceable_proposals(self):
+        doc=self._doc()
+        level={
+            'level':'Roof','title':{'point':(0.0,0.0)},
+            'rooms':[{'room':'roof','point':(4.0,4.0)}],
+            'fixtures':[],'roof_drains':[],
+        }
+        model={'roof_drain_dn_mm':90,'roof_flow_lps':2.2,'roof_drain_count':2}
+        v10_4._add_standard_symbols(doc,[level],model)
+        report=validate_rainwater(
+            doc,{'sheets':[{'family':'roof_rainwater','code':'M-R-01'}]},model
+        )
+        self.assertEqual(report['status'],'PASS')
+        self.assertEqual(model['rainwater_proposed_drain_locations'],2)
+        self.assertEqual(report['location_provenance'],'Rule-based Proposed - verify roof low points')
+
+    def test_unknown_city_uses_labelled_conservative_rainfall(self):
+        basis=roof_basis('unsupported city','120 m2 roof; 2 drains')
+        self.assertIn('110 mm/h',basis)
+        self.assertIn('VERIFY WITH LOCAL AUTHORITY',basis)
 
     def test_no_roof_family_is_not_blocked(self):
         self.assertEqual(validate_rainwater(self._doc(),{'sheets':[{'family':'heating'}]},{} )['status'],'NOT_APPLICABLE')
