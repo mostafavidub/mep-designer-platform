@@ -13,7 +13,7 @@ CANDIDATE_THRESHOLD = 0.60
 
 FIXTURE_ALIASES = {
     "toilet": (
-        "toilet", "wc", "water closet", "closet", "toalet", "klozet",
+        "toilet", "wc", "water closet", "closet", "toalet", "klozet", "farangi",
         "توالت", "فرنگی", "توالت فرنگی", "توالت ایرانی", "کاسه توالت",
     ),
     "basin": (
@@ -21,8 +21,9 @@ FIXTURE_ALIASES = {
         "روشویی", "روشويی", "دستشویی", "دستشويی",
     ),
     "sink": ("kitchen sink", "sink", "سینک", "سينک"),
+    "faucet": ("faucet", "tap", "water point", "شیر آب", "شير آب"),
     "shower": ("shower", "دوش"),
-    "bathtub": ("bathtub", "bath tub", "tub", "وان"),
+    "bathtub": ("bathtub", "bath tub", "tub", "bat", "وان"),
     "floor_drain": (
         "floor drain", "floordrain", "floor-drain", "kafshoor", "kaf shoor",
         "کفشور", "کف شور", "کفخواب", "کف خواب",
@@ -43,7 +44,7 @@ EQUIPMENT_ALIASES = {
     "chiller": ("chiller", "چیلر", "چيلر"),
     "pump": ("pump", "پمپ"),
     "tank": ("water tank", "storage tank", "tank", "مخزن"),
-    "gas_cooker": ("gas cooker", "cooker", "stove", "اجاق", "گاز رومیزی", "گاز روميزی"),
+    "gas_cooker": ("gas cooker", "cooker", "stove", "k gaz", "gaz", "اجاق", "گاز رومیزی", "گاز روميزی"),
     "kitchen_hood": ("kitchen hood", "hood", "هود"),
 }
 
@@ -53,6 +54,7 @@ FIXTURE_LAYER_HINTS = {
     "toilet": ("wc", "toilet", "closet", "toalet"),
     "basin": ("basin", "lav", "washbasin"),
     "sink": ("sink", "kitchen"),
+    "faucet": ("faucet", "tap"),
     "shower": ("shower",),
     "bathtub": ("bathtub", "tub"),
     "floor_drain": ("floor-drain", "floor_drain", "floordrain", "drain", "fd"),
@@ -73,7 +75,7 @@ EQUIPMENT_LAYER_HINTS = {
 }
 
 GENERIC_FIXTURE_LAYER_TOKENS = (
-    "fixture", "plumbing", "sanitary", "toilet", "bath", "kitchen", "لوازم", "بهداشتی",
+    "fixture", "plumbing", "sanitary", "toilet", "bath", "kitchen", "furniture", "fur", "لوازم", "بهداشتی",
 )
 GENERIC_EQUIPMENT_LAYER_TOKENS = (
     "equipment", "equip", "mechanical", "hvac", "تجهیزات", "مکانیک",
@@ -86,6 +88,7 @@ SIGNAL_SCORES = {
     "explicit_text": 0.82,
     "typed_layer": 0.80,
     "nearby_text": 0.76,
+    "nearby_text_plus_geometry": 0.70,
     "generic_layer_plus_geometry": 0.66,
 }
 CORROBORATION_BONUS = 0.06
