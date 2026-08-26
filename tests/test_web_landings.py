@@ -80,12 +80,13 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
         self.assertNotIn('/static/workflow-road.js', r.text)
 
-    def test_home_has_trust_comparison_limits_and_faq(self):
+    def test_home_omits_removed_marketing_sections_and_keeps_core_content(self):
         r = self.client.get('/')
         self._assert_brand_shell(r)
-        self.assertIn('ENGINEERING TRUST', r.text)
-        self.assertIn('COMPARISON', r.text)
-        self.assertIn('LIMITS & REVISION', r.text)
+        self.assertNotIn('ENGINEERING TRUST', r.text)
+        self.assertNotIn('فرآیندی قابل ردیابی، نه یک خروجی مبهم', r.text)
+        self.assertNotIn('شروع دستی یا EngiTools؟', r.text)
+        self.assertNotIn('محدودیت‌ها شفاف‌اند؛ اصلاح هم ممکن است', r.text)
         self.assertIn('FAQPage', r.text)
         self.assertIn('۴ نمونه واقعی از پروژه‌های تأییدشده', r.text)
         self.assertIn('project-1-electrical-before-after.svg', r.text)
