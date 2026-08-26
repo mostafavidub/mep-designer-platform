@@ -81,7 +81,7 @@ Detected fixtures/equipment must be assigned to the nearest compatible architect
 
 Level assignment must prefer the same CAD source/container when available.
 
-## Wet-room QA condition
+## Wet-room QA condition — hard pre-design gate
 
 If architecture confirms a wet level (kitchen, bath, toilet) but no high-confidence fixture is detected on that level, the system must record:
 
@@ -89,7 +89,14 @@ If architecture confirms a wet level (kitchen, bath, toilet) but no high-confide
 
 This is an unresolved evidence condition, not proof that no fixture exists.
 
-During the current guarded release this diagnostic is non-blocking. It is designed to become a hard pre-design QA gate once the fixture-detection benchmark suite is sufficiently broad.
+The condition is now a hard pre-design QA gate. Mechanical design approval is not considered ready until the uncertainty is resolved by either:
+
+1. high-confidence CAD fixture evidence on the affected level; or
+2. a quantified user-confirmed fixture schedule containing explicit fixture names and numeric counts.
+
+A bare confirmation such as `تأیید`, `yes`, or `fixtures exist` is insufficient. The questionnaire must explicitly request a numeric schedule whenever one or more wet levels remain unresolved. This prevents a project from silently reaching CAD generation with `fixture count = 0`.
+
+The gate affects mechanical design only. Electrical workflows and unrelated website behavior must remain unchanged.
 
 ## Backward compatibility
 
@@ -108,4 +115,8 @@ The release is blocked unless all of the following pass:
 5. unrelated compact blocks such as doors are not classified as fixtures;
 6. fixture/equipment detection carries confidence and evidence into the PMM;
 7. wet-level zero detection produces an explicit diagnostic;
-8. all pre-existing project, planner, CAD and website regression tests remain green.
+8. unresolved wet-level evidence adds a mandatory quantified fixture-schedule question;
+9. non-quantified confirmation does not satisfy the pre-design gate;
+10. quantified user-confirmed fixture schedule resolves the gate;
+11. electrical workflows remain unaffected;
+12. all pre-existing project, planner, CAD and website regression tests remain green.
