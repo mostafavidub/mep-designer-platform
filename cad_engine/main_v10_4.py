@@ -1044,6 +1044,13 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
                 inputs['fixture_schedule'] = fixture_schedule_proposal(architectural_auto)
             # Otherwise keep the confirmation token. _technical_model runs
             # after Level Detection and resolves it from the actual DXF levels.
+        roof_geometry = _norm(inputs.get('roof_drainage_geometry'))
+        if not roof_geometry or is_confirmation(roof_geometry):
+            # Resumed projects created before this field was persisted must use
+            # the same Rulebook proposal shown to new projects. The proposal is
+            # derived from analyzed architecture and remains explicitly
+            # coordinated/provisional rather than pretending to be surveyed.
+            inputs['roof_drainage_geometry'] = roof_geometry_proposal(architectural_auto)
         inputs['water_inlet_pressure'] = water_inlet_pressure_basis(inputs.get('water_inlet_pressure'))
         if not inputs.get('water_source') or is_confirmation(inputs.get('water_source')):
             inputs['water_source'] = (
