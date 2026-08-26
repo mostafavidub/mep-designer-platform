@@ -1,8 +1,8 @@
 /* EngiTools service cards — approved clean split layout. */
 :root{
   --et-art-mechanical:url('/service-art/mechanical.jpg?v=20260822-2015');
-  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260822-1535');
-  --et-art-architect:url('/static/service-art-architect.svg?v=20260822-1405');
+  --et-art-electrical:url('/static/electrical-hero-v2.webp?v=20260826-hero');
+  --et-art-architect:url('/static/architect-hero-v2.webp?v=20260826-hero');
 }
 
 /* Desktop: exactly two clean panels, image LEFT / copy RIGHT. */
@@ -116,6 +116,8 @@
   justify-self:auto!important;
   direction:rtl!important;
   color:#0a0a0a!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
 }
 .service-stack-section .service-cta .cta-link .arrow,
 .service-stack-section .service-cta .cta-link .cta-arrow{
