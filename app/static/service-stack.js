@@ -19,8 +19,8 @@
 
   const artSources=[
     '/service-art/mechanical.jpg?v=20260822-2045',
-    '/static/service-art-electrical.svg?v=20260822-1535',
-    '/static/service-art-architect.svg?v=20260822-1405'
+    '/static/electrical-hero-v2.webp?v=20260826-hero',
+    '/static/architect-hero-v2.webp?v=20260826-hero'
   ];
 
   cards.forEach((card,i)=>{
@@ -39,7 +39,10 @@
       art.alt='';
       art.setAttribute('aria-hidden','true');
       art.decoding='async';
-      art.loading=i===0?'eager':'lazy';
+      art.loading='eager';
+      art.fetchPriority=i<2?'high':'auto';
+      art.width=1672;
+      art.height=941;
       card.prepend(art);
     }
 
