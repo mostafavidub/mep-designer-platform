@@ -240,3 +240,48 @@ html body .service-stack-section .service-cta .cta-arrow{
 html body .service-stack-section .service-card-1 .service-code,
 html body .service-stack-section .service-card-dark .service-code,
 html body .service-stack-section .service-card-muted .service-code{color:#54544f!important;}
+
+
+/* Match every interactive state to the approved first service card. */
+html body .service-stack-section .service-cta:hover,
+html body .service-stack-section .service-cta:focus-visible{
+  background:#f7f7f5!important;
+  color:#0a0a0a!important;
+  border-color:rgba(10,10,10,.14)!important;
+  box-shadow:none!important;
+}
+html body .service-stack-section .service-cta:hover .cta-top,
+html body .service-stack-section .service-cta:focus-visible .cta-top,
+html body .service-stack-section .service-cta:hover .cta-body,
+html body .service-stack-section .service-cta:focus-visible .cta-body,
+html body .service-stack-section .service-cta:hover .cta-body h3,
+html body .service-stack-section .service-cta:focus-visible .cta-body h3,
+html body .service-stack-section .service-cta:hover .cta-link,
+html body .service-stack-section .service-cta:focus-visible .cta-link,
+html body .service-stack-section .service-cta:hover .cta-link span,
+html body .service-stack-section .service-cta:focus-visible .cta-link span{
+  color:#0a0a0a!important;
+}
+html body .service-stack-section .service-cta:hover .cta-body p,
+html body .service-stack-section .service-cta:focus-visible .cta-body p{
+  color:#575757!important;
+}
+html body .service-stack-section .service-cta:hover .service-code,
+html body .service-stack-section .service-cta:focus-visible .service-code{
+  color:#54544f!important;
+  border-color:rgba(10,10,10,.62)!important;
+}
+html body .service-stack-section .service-cta:hover .cta-link,
+html body .service-stack-section .service-cta:focus-visible .cta-link{
+  border-top-color:rgba(10,10,10,.35)!important;
+}
+html body .service-stack-section .service-cta:hover .cta-arrow,
+html body .service-stack-section .service-cta:focus-visible .cta-arrow{
+  background:#050505!important;
+  color:#fff!important;
+}
+html body .service-stack-section .service-cta:hover .service-stack-art,
+html body .service-stack-section .service-cta:focus-visible .service-stack-art{
+  opacity:1!important;
+  filter:grayscale(1) contrast(1.04)!important;
+}
