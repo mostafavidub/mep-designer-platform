@@ -1,172 +1,123 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 2.2 — Multi-Evidence Level Detection + Project Mechanical Model
+Rule Book version: 3.0 — Mechanical v11 / Final Engineering QA
 
-## Mandatory pre-generation stage
+## Governing principle
 
-Mechanical CAD generation must not start before Drawing Set Planning and explicit user approval.
+The customer-facing mechanical drawing count is the number of approved mechanical drawings actually issued. It is not the number of systems, architectural levels, model-space networks, or internal CAD views.
 
-Flow:
+The mandatory flow is:
 
-Architecture Upload -> Architecture Analysis -> Multi-Evidence Level Detection -> Mechanical Questions -> Project Mechanical Model -> Effective-Level Analysis -> Typical-Floor Analysis -> Authority Submission Sheet Planning -> Drawing Set Proposal -> User Approval -> CAD Generation
+Architecture Upload -> Multi-Evidence Analysis -> Project Mechanical Model -> Mechanical Questions -> System Effective Levels -> System-Specific Typical Analysis -> Drawing Manifest -> Proposal -> Approval -> Frozen Approved Manifest -> CAD Generation -> Final Engineering QA -> Issue.
 
-## Project Mechanical Model — single project snapshot
+## Project Mechanical Model (PMM)
 
-Before sheet planning, the system MUST build one canonical Project Mechanical Model (PMM) and store it with the project analysis. The PMM is the machine-readable mechanical snapshot shared by the Planner, QA and CAD Designer migration path.
+Before sheet planning, the project must have one canonical PMM shared by Planner, QA and the CAD migration path. It carries detected/candidate levels with evidence and confidence, rooms/spaces, fixtures, equipment, shaft candidates, system-specific scope, Typical groups and the ordered Drawing Manifest.
 
-The PMM must contain, at minimum:
+No downstream component may silently rediscover and replace PMM decisions.
 
-- detected architectural levels and their evidence/confidence;
-- unresolved candidate levels that are intentionally not activated;
-- per-level space/room counts;
-- detected fixtures and equipment;
-- detected shafts/vertical-service candidates;
-- system-specific effective-level scope;
-- verified Typical Floor groups;
-- the ordered Drawing Manifest produced by the Planner.
+## Multi-evidence Level Detection
 
-PMM v1 remains a compatibility layer while consumers are migrated in guarded releases. Architectural evidence is enriched by Level Detection v3 and carried into the PMM so downstream components do not need to rediscover floors independently.
+A real level must not disappear merely because room labels or fixture blocks are missing. Detection combines explicit Persian/English plan titles, basement/ground/mezzanine/roof/penthouse terminology, source/container identity, nearby architecture evidence, spatial separation and geometry/room-pattern evidence.
 
-A PMM integrity diagnostic must be recorded whenever the planner total differs from the manifest length or when no architectural level is available. Unresolved weak title candidates are recorded as diagnostics but remain non-blocking in this release.
+Explicit mezzanine/commercial-balcony plans are preserved even when their room labels are incomplete. Weak orphan reusable block titles remain `candidate_level` and are not activated without corroboration. A level restored from title evidence alone cannot become Typical automatically.
 
-## Level Detection — mandatory multi-evidence rule
+## Fixture & Equipment Detection
 
-A real architectural level MUST NOT be deleted merely because room labels or fixture blocks are missing. Level detection must combine multiple evidence channels and retain provenance for every floor.
+Detection is multi-signal: block name, typed layer, nearby text, compact geometry signature and spatial context. Text-only evidence remains candidate-level. Persian and English aliases are supported.
 
-Accepted evidence channels include explicit architectural plan titles in Persian or English, common level titles such as basement/ground/mezzanine/roof/penthouse, source container identity, nearby architectural room evidence from the same CAD source, spatial separation of title/plan groups when coordinates are available, and geometry/room-pattern evidence produced by the architecture analyzer.
+A confirmed wet level with zero high-confidence fixtures is a hard pre-design evidence condition. Design may continue only after valid CAD evidence or a quantified user-confirmed fixture schedule resolves it. A bare confirmation is not sufficient.
 
-Every active level must carry `level_confidence`, `level_evidence`, and `level_detection_status` into the PMM.
+## System-specific Typical Floor
 
-### Strong explicit levels
+Typical equivalence is evaluated separately for water, sanitary/vent, heating, cooling, gas and ventilation. Geometry similarity alone is insufficient; the relevant wet core, shaft, fixture/consumer distribution, equipment/load positions and routing topology must also match. When uncertain, keep separate sheets.
 
-An explicit architectural plan title in the submitted layout/model source is strong enough to preserve the level even when that individual plan contains no recognized room labels. This specifically includes mezzanines and commercial balcony/mezzanine plans. Such a restored level enters the active architectural level set, but it may not become a Typical Floor without independent high-confidence geometry/room evidence.
-
-### Weak/orphan titles
-
-A title found only in an isolated/reusable named block with no nearby architectural room evidence MUST NOT silently create an active floor. It must be retained as a `candidate_level` with lower confidence and its evidence. Candidate retention is mandatory so uncertain evidence is visible instead of silently discarded.
-
-### Typical-floor safety
-
-A level restored from title evidence alone has `typical_confidence = insufficient`. It can never be consolidated into a Typical Floor group solely from its title/name.
-
-### Required regression cases
-
-Release tests must cover at least:
-
-- Ground + explicit mezzanine where the mezzanine has no recognized room labels: mezzanine remains active.
-- A far-away orphan sample-title block: it remains non-active and does not increase deliverable count.
-- Persian and English mezzanine/basement title variants.
-- A title-only restored level cannot become Typical.
-- Existing Typical Floor, roof classification, Planner and CAD regressions remain green.
-
-## Governing customer-facing count
-
-Formal definition:
-
-Deliverable Mechanical Drawing Count = Number of Approved Mechanical Drawing Sheets.
-
-It is not the sum of systems, levels, or scope items. The number displayed to the customer MUST equal the number of separate mechanical drawings/sheets actually issued for approval and delivery.
-
-For the local Engineering Organization submission profile, different mechanical disciplines MUST NOT be merged merely to reduce sheet count. A combined internal CAD view is not the same thing as an approval deliverable.
-
-Therefore the previous composition rule that merged water+gas, heating+cooling, or sanitary+rainwater into one customer-counted sheet is retired for the authority-submission profile.
-
-## Authority-separated deliverable families
-
-The default mechanical approval set is separated into these deliverable families:
-
-1. Water supply — cold/hot water and associated water-supply equipment/schematic.
-2. Sanitary + vent — sanitary drainage and vent.
-3. Heating — heating distribution only.
-4. Cooling/HVAC — cooling distribution, condensate and required equipment/roof sheet.
-5. Gas — gas piping only.
-6. Ventilation/exhaust — mechanical ventilation and exhaust only.
-7. Roof/rainwater — dedicated roof drainage plan.
-
-Riser, equipment, calculation and legend information must be placed inside the relevant system family unless a project/authority rule explicitly requires an additional dedicated sheet. A generic extra M-RISER-CALC sheet must not be added by default because it changes the approved deliverable count.
-
-## Effective Levels
-
-A system is active only on levels where that system has a real design requirement. Effective Levels must be determined per system from architecture and resolved project inputs.
-
-- Cooling: conditioned levels. Required outdoor/equipment level is counted as a special cooling sheet when applicable.
-- Heating: heated levels only.
-- Water Supply: levels with plumbing consumers. Multi-level projects also receive the required water-supply riser/equipment/schematic sheet.
-- Sanitary/Vent: levels with sanitary fixtures/drainage scope.
-- Ventilation/Exhaust: levels requiring mechanical ventilation/exhaust.
-- Gas: levels with gas consumers when gas is enabled.
-- Roof/Rainwater: one dedicated roof drainage sheet where roof drainage is required.
-
-A level must never be included just because it exists architecturally, except for a required system-specific special sheet. Where room labels are incomplete, an explicitly confirmed non-roof architectural level remains available to the conservative authority scope rather than being silently deleted.
-
-## Typical Floor rule
-
-Typical-floor detection remains mandatory, but it is system-specific and must never be used to combine different systems.
-
-Two or more levels may share one Typical Floor sheet for a given system only when all relevant characteristics match:
-
-- architecture geometry and room arrangement;
-- wet-core location where relevant;
-- shaft/vertical reference positions;
-- fixture/consumer distribution;
-- equipment/load positions;
-- the system-specific routing pattern.
-
-If any of these materially differs, separate sheets are required. The authority-submission profile is conservative: when Typical equivalence is uncertain, keep separate sheets.
-
-## Benchmark projects
-
-### Duplex reference — 21 sheets
-
-Three independent non-typical occupied levels, separated system families, the water special sheet, the cooling equipment/roof sheet, and the dedicated roof sheet must produce exactly 21 approved mechanical sheets.
-
-### Afsari reference — 13 sheets
-
-Ground plus two verified identical typical floors, all six occupied-level families, no dedicated roof sheet, and one water riser/equipment special sheet must produce exactly 13 approved mechanical sheets. Repeated typical floors must be represented by one sheet per applicable family.
-
-Both benchmarks are release-blocking regressions. They validate different architectural conditions; 13 is not a generic replacement for 21.
+CAD must never expand members of an approved Typical group into extra layouts.
 
 ## Approved Drawing Manifest contract
 
-The Planner is the only component allowed to determine sheet composition. It must emit a versioned manifest containing a unique manifest ID, exact `total_sheets`, and the ordered list of sheet codes, families, effective levels, Typical pattern, and special-sheet status.
+The Planner is the only authority for sheet composition. It emits a versioned manifest with unique `manifest_id`, exact `total_sheets` and ordered sheet records containing code, family, represented levels, pattern, Typical status and Special status.
 
-Approval freezes that manifest as `approved_manifest`. The Proposal reads its count from this manifest. CAD must iterate the approved manifest, never the raw level list:
+Approval freezes that manifest. CAD iterates only the frozen approved manifest. Missing, extra, duplicate, reordered or renamed issued layouts are a hard failure. A generic `M-RISER-CALC` sheet must not be inserted unless explicitly present in the approved manifest.
 
-```python
-for sheet in approved_manifest["sheets"]:
-    create_sheet(sheet)
-```
+## Authority-separated families
 
-After DXF generation, expected codes and count must equal issued layout codes and count. Any missing manifest, duplicate code, changed count, or Proposal/CAD mismatch is a hard Generation Failed result; the revision must not be marked ready.
+Default approval families remain separated:
 
-## Calculation principle
+1. Water supply.
+2. Sanitary + vent.
+3. Heating.
+4. Cooling/HVAC + condensate.
+5. Gas.
+6. Ventilation/exhaust.
+7. Roof/rainwater.
 
-For each system family:
+Different families are not merged merely to reduce the customer-visible count.
 
-1. determine its Effective Levels;
-2. apply verified system-specific Typical Floor consolidation only when allowed;
-3. count one separate deliverable sheet per remaining system-level pattern;
-4. add required system-specific special sheets;
-5. add the dedicated roof/rainwater sheet where required;
-6. do not add a generic combined riser/calculation sheet unless explicitly required.
+## Special Sheet rule
 
-Customer Deliverable Sheet Count = length of the ordered Approved Drawing Manifest.
+A Special Sheet must contain a genuinely distinct drawing role. A renamed duplicate of a base-plan viewport is not acceptable.
 
-The customer-visible count and the final CAD deliverable count MUST be the same semantic quantity.
+- Water riser: vertical schematic, branch/level connections and isolation information.
+- Water equipment: service/meter/control/primary equipment/distribution arrangement.
+- Sanitary riser/detail: stack, cleanout, trap and vent information.
+- Cooling equipment: independent equipment/roof coordination when applicable.
+- Rainwater: roof drainage geometry and rainwater layer visible.
+- Parking ventilation: issued only for actual enclosed-parking scope.
 
-## Proposal contract
+## Water + Sanitary requirements
 
-The proposal must show:
+Water must contain connected cold/hot networks, branch/trunk geometry, sizing tags and isolation. Sanitary/vent must contain connected branches, stack/discharge logic, slope and pipe-size tags plus cleanouts. Room evidence may create explicitly labelled rule-based connection zones but may not be presented as detected fixtures.
 
-- each deliverable system family;
-- exact sheet count per family;
-- level or Typical Floor represented by each sheet;
-- any system-specific special sheet;
-- exact total deliverable sheet count;
-- approval state.
+The water/sanitary engine fails closed when its applicable network checks fail.
 
-The UI must never present an internal combined-family count as the customer deliverable count.
+## Gas requirements
 
-## Approval Gate
+Applicable gas scope requires resolved connected load, flow, inlet pressure and main DN, plus connected network, meter, regulator and terminal shutoff. Where architecture lacks a gas block but a resolved appliance schedule and observed kitchen exist, a terminal may be `RULE-BASED PROPOSED` with explicit provenance. A lone gas line is not an acceptable issued design.
 
-The customer must approve the exact authority-submission drawing list before mechanical CAD generation starts. If the list changes, approval is invalidated and must be obtained again.
+## Heating / Cooling / Ventilation requirements
+
+Heating supply and return must be connected networks. Cooling and condensate must be present with resolved cooling/heating load basis and per-conditioned-space allocation. Roof scope may carry explicit outdoor-equipment coordination.
+
+Ventilation requires an exhaust network, resolved airflow basis, make-up-air endpoints and safe discharge endpoints.
+
+## Roof / Rainwater requirements
+
+Roof drainage requires detected/coordinated roof drains, connected route to a rainwater stack, design basis for roof area/rainfall/drain count/flow/DN and canonical output on `ENGITOOLS-M-ROOF_RAINWATER`. Any rainwater sheet that hides the actual rainwater geometry fails QA.
+
+## Final Engineering QA — fail closed
+
+No mechanical revision may be issued unless all applicable checks pass:
+
+- approved manifest exact order and count;
+- base technical quality = 10/10;
+- compact-output QA = PASS;
+- DXF audit has zero errors;
+- required engineering content exists on every applicable family layer;
+- water/sanitary engine = PASS when applicable;
+- gas engine = PASS when applicable;
+- HVAC/ventilation engine = PASS when applicable;
+- rainwater engine = PASS when applicable;
+- every Special Sheet contains substantive independent paper-space content.
+
+The automated output still requires professional engineering review and does not claim statutory approval by itself.
+
+## Release-blocking benchmarks
+
+### 13-sheet authority-equivalent regression
+
+The maintained automated benchmark uses a synthetic authority-equivalent project containing one effective occupied level plus roof, all six occupied-level families and the required system-specific Special roles. Planner must freeze exactly 13 sheets and the production CAD wrapper must issue exactly those same 13 layouts with Final Engineering QA = PASS.
+
+This is explicitly a synthetic regression equivalent; it is not represented as a re-run of a customer binary file unless that binary is separately provided to the test environment.
+
+### 21-sheet reference-profile regression
+
+Three independent non-Typical occupied levels plus roof, six separated occupied-level families, water riser, cooling roof/equipment and dedicated roof/rainwater must freeze and issue exactly 21 layouts. `M-RISER-CALC` must not appear.
+
+### Typical-floor regression
+
+The system-specific Typical suite remains release-blocking and verifies that system evidence can keep one family separate while allowing another to consolidate, and that title-only restored levels never become Typical.
+
+## Production release gate
+
+Every Rule Book change must be paired with code implementation and automated regression coverage. Railway pre-deploy runs `compileall`, the full unittest suite and application import. A failed test blocks deployment. Production healthcheck is `/system_health` and must return HTTP 200.
