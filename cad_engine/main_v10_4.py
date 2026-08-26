@@ -1051,6 +1051,11 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
             # derived from analyzed architecture and remains explicitly
             # coordinated/provisional rather than pretending to be surveyed.
             inputs['roof_drainage_geometry'] = roof_geometry_proposal(architectural_auto)
+        roof_basis_input = _norm(inputs.get('roof_drainage_basis'))
+        if not roof_basis_input or is_confirmation(roof_basis_input):
+            # A short approval means “accept the shown Rulebook proposal”; it
+            # is not itself a calculable area/drain-count basis.
+            inputs['roof_drainage_basis'] = inputs['roof_drainage_geometry']
         inputs['water_inlet_pressure'] = water_inlet_pressure_basis(inputs.get('water_inlet_pressure'))
         if not inputs.get('water_source') or is_confirmation(inputs.get('water_source')):
             inputs['water_source'] = (
