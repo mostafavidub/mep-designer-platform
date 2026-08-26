@@ -4,9 +4,11 @@ from . import main_auto
 from . import unit_sanity  # patches dimension-based CAD unit sanity before project analysis
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from . import mechanical_workflow
+from . import mechanical_drawing_set
 from .fixture_detection_v2 import install as install_fixture_detection_v2
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
+from .system_typical_v1 import install as install_system_typical_v1
 from .project_mechanical_model import install as install_project_mechanical_model
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
@@ -29,8 +31,12 @@ install_fixture_detection_v2(main_auto)
 # mechanical design approval is not considered ready until high-confidence CAD
 # evidence or a quantified user-confirmed fixture schedule resolves it.
 install_fixture_gate_v1(main_auto, mechanical_workflow)
+# Typical Floor equivalence is now evaluated per mechanical system family.
+# Different fixture/equipment evidence keeps otherwise similar floors separate
+# for the affected system only.
+install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
 # PMM v1 remains the canonical shadow snapshot and now records per-detection
-# confidence/evidence without changing CAD composition directly.
+# confidence/evidence plus the planner's system-specific Typical decisions.
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 register_mechanical_review_fix(app, main_auto.legacy)
