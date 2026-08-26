@@ -1,0 +1,30 @@
+{
+  "updated_at": "2026-08-26",
+  "published": [
+    {
+      "slug": "mep-input-guide",
+      "topic": "فایل معماری مناسب برای طراحی تأسیسات"
+    },
+    {
+      "slug": "electrical-plan-scope",
+      "topic": "انواع نقشه برق ساختمان"
+    },
+    {
+      "slug": "mechanical-plan-scope",
+      "topic": "انواع نقشه تأسیسات مکانیکی ساختمان"
+    },
+    {
+      "slug": "electrical-building-plan",
+      "topic": "نقشه برق ساختمان؛ طراحی تأسیسات برقی از پلان تا رایزر"
+    }
+  ],
+  "ready_to_publish": [
+    {
+      "slug": "mechanical-building-plan",
+      "topic": "نقشه تأسیسات مکانیکی ساختمان؛ از آب و فاضلاب تا HVAC",
+      "template": "app/templates/mechanical_building_plan.html",
+      "status": "awaiting_successful_production_deploy"
+    }
+  ],
+  "note": "Move mechanical-building-plan from ready_to_publish to published only after a successful Railway production deployment and live URL verification."
+}
