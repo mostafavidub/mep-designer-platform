@@ -229,6 +229,6 @@ def roof_basis(location, geometry_text):
         rainfall = max(RAIN_MM_H.values())
         return (
             f'{geometry}; {rainfall} mm/h conservative Rulebook fallback '
-            '[VERIFY WITH LOCAL AUTHORITY]'
+            '[LOCAL AUTHORITY REVIEW REQUIRED]'
         )
     return f'{geometry}; {rainfall} mm/h Rulebook design rainfall'
