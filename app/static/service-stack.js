@@ -18,7 +18,7 @@
   if(!head||!cards.length)return;
 
   const artSources=[
-    '/service-art/mechanical.jpg?v=20260822-2045',
+    'https://res.cloudinary.com/pnuzoh4o/image/upload/v1787475602/engitools/mechanical-hero-20260823-final.webp',
     '/static/electrical-hero-v2.webp?v=20260826-hero',
     '/static/architect-hero-v2.webp?v=20260826-hero'
   ];
