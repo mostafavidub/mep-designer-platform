@@ -9,6 +9,7 @@ from .fixture_detection_v2 import install as install_fixture_detection_v2
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
 from .system_typical_v1 import install as install_system_typical_v1
+from .manifest_contract_v2 import install as install_manifest_contract_v2
 from .project_mechanical_model import install as install_project_mechanical_model
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
@@ -35,6 +36,9 @@ install_fixture_gate_v1(main_auto, mechanical_workflow)
 # Different fixture/equipment evidence keeps otherwise similar floors separate
 # for the affected system only.
 install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
+# Approval freezes an exact content-hashed drawing manifest. Any post-approval
+# change or Proposal/CAD mismatch fails closed at the generation boundary.
+install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_output)
 # PMM v1 remains the canonical shadow snapshot and now records per-detection
 # confidence/evidence plus the planner's system-specific Typical decisions.
 install_project_mechanical_model(mechanical_workflow)
