@@ -1,12 +1,14 @@
 """Production wrapper for guarded mechanical v11 upgrades."""
 from . import main_v10_3 as v10_3
 from . import main_v10_4 as v10_4
+from . import main_v8 as v8
 from . import main_v3 as engine
 from .mechanical_upgrade_v11 import install as install_sheet_composer
 from .water_sanitary_v11 import install as install_water_sanitary
 from .gas_v11 import install as install_gas
 from .hvac_v11 import install as install_hvac
 from .rainwater_v11 import install as install_rainwater
+from .level_geometry_v11 import install as install_level_geometry
 from .engineering_qa_v11 import validate_generated_mechanical_output
 
 install_sheet_composer(v10_3, v10_4)
@@ -14,6 +16,7 @@ install_water_sanitary(v10_4)
 install_gas(v10_4)
 install_hvac(v10_4)
 install_rainwater(v10_4)
+install_level_geometry(v10_3, v10_4, v8)
 app = v10_4.app
 
 
@@ -35,10 +38,11 @@ engine.design_dxf = design_dxf_v10_5
 def capabilities():
     return {
         'ok': True,
-        'version': '1.2.0-mechanical-final-qa',
+        'version': '1.2.1-mechanical-level-geometry-bridge',
         'nonduplicating_special_sheets': True,
         'approved_manifest_contract': True,
         'system_specific_typical_floors': True,
+        'analyzer_to_cad_level_geometry_bridge': True,
         'water_sanitary_connected_networks': True,
         'gas_connected_network': True,
         'hvac_ventilation_completed': True,
