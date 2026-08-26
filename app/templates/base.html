@@ -39,8 +39,8 @@
   {% if is_discipline %}<link rel="stylesheet" href="/static/modal.css?v=20260822-1215">{% endif %}
   <link rel="stylesheet" href="/static/brand_v4.css?v=20260826-0115">
   <link rel="stylesheet" href="/static/layout_fix_v1.css?v=20260821-2057">
-  {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260826-0115"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260826-hero2">{% endif %}
-  {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260826-hero2">{% endif %}
+  {% if is_home %}<link rel="stylesheet" href="/static/hero-scroll-v1.css?v=20260822-1048"><link rel="stylesheet" href="/static/workflow-road.css?v=20260826-0115"><link rel="stylesheet" href="/static/service-stack.css?v=20260822-1126"><link rel="stylesheet" href="/static/service-stack-contrast-fix.css?v=20260822-1138"><link rel="stylesheet" href="/static/concept-art.css?v=20260826-light-cards">{% endif %}
+  {% if is_discipline %}<link rel="stylesheet" href="/static/concept-art.css?v=20260826-light-cards">{% endif %}
   {% if is_discipline %}<link rel="stylesheet" href="/static/mechanical-hero-v3.css?v=20260826-hero2">{% endif %}
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
