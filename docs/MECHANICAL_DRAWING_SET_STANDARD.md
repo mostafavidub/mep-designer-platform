@@ -1,6 +1,6 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 2.0 — Approved Drawing Manifest
+Rule Book version: 2.1 — Project Mechanical Model + Approved Drawing Manifest
 
 ## Mandatory pre-generation stage
 
@@ -8,7 +8,25 @@ Mechanical CAD generation must not start before Drawing Set Planning and explici
 
 Flow:
 
-Architecture Upload -> Architecture Analysis -> Mechanical Questions -> Effective-Level Analysis -> Typical-Floor Analysis -> Authority Submission Sheet Planning -> Drawing Set Proposal -> User Approval -> CAD Generation
+Architecture Upload -> Architecture Analysis -> Mechanical Questions -> Project Mechanical Model -> Effective-Level Analysis -> Typical-Floor Analysis -> Authority Submission Sheet Planning -> Drawing Set Proposal -> User Approval -> CAD Generation
+
+## Project Mechanical Model — single project snapshot
+
+Before sheet planning, the system MUST build one canonical Project Mechanical Model (PMM) and store it with the project analysis. The PMM is the machine-readable mechanical snapshot shared by the Planner, QA and CAD Designer migration path.
+
+The PMM must contain, at minimum:
+
+- detected architectural levels and their evidence;
+- per-level space/room counts;
+- detected fixtures and equipment;
+- detected shafts/vertical-service candidates;
+- system-specific effective-level scope;
+- verified Typical Floor groups;
+- the ordered Drawing Manifest produced by the Planner.
+
+PMM v1 is introduced in shadow mode for production safety: it records and validates the canonical snapshot without changing existing Planner/CAD decisions. Consumers are migrated to the PMM only in subsequent guarded releases with regression coverage. This prevents an architectural-analysis refactor from silently changing unrelated design output.
+
+A PMM integrity diagnostic must be recorded whenever the planner total differs from the manifest length or when no architectural level is available. In shadow mode these diagnostics are non-blocking; later QA-gate releases may promote specific diagnostics to hard failures after benchmark validation.
 
 ## Governing customer-facing count
 
