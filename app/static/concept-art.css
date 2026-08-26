@@ -237,4 +237,6 @@ html body .service-stack-section .service-cta .cta-arrow{
   color:#fff!important;
 }
 
-html body .service-stack-section .service-card-dark .service-code{color:#54544f!important;}
+html body .service-stack-section .service-card-1 .service-code,
+html body .service-stack-section .service-card-dark .service-code,
+html body .service-stack-section .service-card-muted .service-code{color:#54544f!important;}
