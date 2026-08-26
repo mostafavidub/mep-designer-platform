@@ -113,7 +113,7 @@ def install(v10_4):
                 if drain.get('source') == 'rulebook_coordinated_proposal':
                     v10_4._plan_text(
                         msp,
-                        'RD LOCATION [RULE-BASED PROPOSED - VERIFY LOW POINT]',
+                        'RD LOCATION [RULE-BASED PROPOSED - ENGINEER COORDINATION REQUIRED]',
                         point, 'ENGITOOLS-M-ROOF_RAINWATER', (.18, -.24),
                     )
                 elbow = (hub[0], point[1])
@@ -140,7 +140,7 @@ def install(v10_4):
         model['rainwater_network_segments'] = routes
         model['rainwater_proposed_drain_locations'] = proposed
         model['rainwater_location_provenance'] = (
-            'Rule-based Proposed - verify roof low points' if proposed else 'Detected/Provided'
+            'Rule-based Proposed - engineer roof coordination required' if proposed else 'Detected/Provided'
         )
         return count + routes
 
