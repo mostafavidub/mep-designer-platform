@@ -1,7 +1,7 @@
-"""Stage 10 orchestration for the engineering-grade mechanical pipeline."""
+"""Engineering pipeline orchestration with strict print-plan isolation."""
 from __future__ import annotations
-
-from .engineering_pipeline_v13 import reconstruct_architecture, recognize_fixtures_equipment
+from .engineering_pipeline_v13 import reconstruct_architecture,recognize_fixtures_equipment
+from .plan_segmentation_v13 import apply_plan_scopes
 from .system_requirements_v13 import derive_system_requirements
 from .mechanical_calculations_v13 import calculate_mechanical_loads
 from .topology_v13 import build_system_topology
@@ -10,45 +10,34 @@ from .sizing_v13 import size_networks
 from .annotation_v13 import build_annotations
 from .detail_library_v13 import build_details_schedules
 
-
-def run_engineering_pipeline(src, design_basis=None, project_overrides=None):
-    architecture = reconstruct_architecture(src)
-    recognition = recognize_fixtures_equipment(architecture)
-    requirements = derive_system_requirements(architecture, recognition)
-    calculations = calculate_mechanical_loads(architecture, recognition, requirements, design_basis=design_basis)
-    topology = build_system_topology(architecture, recognition, requirements, calculations)
-    routing = route_topology(architecture, topology)
-    sizing = size_networks(topology, routing, recognition, calculations)
-    annotations = build_annotations(routing, sizing, recognition, calculations, topology)
-    details = build_details_schedules(requirements, recognition, calculations, sizing, topology, project_overrides=project_overrides)
-    return {
-        'version':'engineering-pipeline-v13.10',
-        'architecture':architecture,
-        'recognition':recognition,
-        'requirements':requirements,
-        'calculations':calculations,
-        'topology':topology,
-        'routing':routing,
-        'sizing':sizing,
-        'annotations':annotations,
-        'details':details,
-    }
-
+def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
+    architecture=reconstruct_architecture(src)
+    recognition=recognize_fixtures_equipment(architecture)
+    architecture,recognition=apply_plan_scopes(src,architecture,recognition)
+    requirements=derive_system_requirements(architecture,recognition)
+    calculations=calculate_mechanical_loads(architecture,recognition,requirements,design_basis=design_basis)
+    topology=build_system_topology(architecture,recognition,requirements,calculations)
+    routing=route_topology(architecture,topology)
+    sizing=size_networks(topology,routing,recognition,calculations)
+    annotations=build_annotations(routing,sizing,recognition,calculations,topology)
+    details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=project_overrides)
+    return {'version':'engineering-pipeline-v13.12','architecture':architecture,'recognition':recognition,'requirements':requirements,
+            'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details}
 
 def validate_pipeline(result):
-    errors=[]
-    arch=result.get('architecture') or {}; rec=result.get('recognition') or {}; req=result.get('requirements') or {}
-    routing=result.get('routing') or {}; sizing=result.get('sizing') or {}; annotations=result.get('annotations') or {}
-    if not arch.get('rooms'): errors.append('no_reconstructed_rooms')
-    if not rec.get('detections'): errors.append('no_installed_fixture_or_equipment_evidence')
-    if not req.get('project_systems'): errors.append('no_mechanical_system_requirements')
-    if len(routing.get('routes') or []) != len((result.get('topology') or {}).get('edges') or []): errors.append('unrouted_topology_edges')
-    sized_ids={x.get('route_id') for x in sizing.get('segments') or [] if x.get('size_mm') is not None}
-    route_ids={x.get('id') for x in routing.get('routes') or []}
-    if route_ids - sized_ids: errors.append('unsized_routes')
+    errors=[];arch=result.get('architecture') or {};rec=result.get('recognition') or {};req=result.get('requirements') or {}
+    topology=result.get('topology') or {};routing=result.get('routing') or {};sizing=result.get('sizing') or {};annotations=result.get('annotations') or {}
+    if not arch.get('rooms'):errors.append('no_reconstructed_rooms')
+    if not rec.get('detections'):errors.append('no_installed_fixture_or_equipment_evidence')
+    if not req.get('project_systems'):errors.append('no_mechanical_system_requirements')
+    if arch.get('plans') and (topology.get('quality') or {}).get('cross_plan_edges',0):errors.append('cross_plan_topology')
+    if (routing.get('quality') or {}).get('cross_plan_routes',0):errors.append('cross_plan_routes')
+    if routing.get('rejected'):errors.append('rejected_routes')
+    sized_ids={x.get('route_id') for x in sizing.get('segments') or [] if x.get('size_mm') is not None};route_ids={x.get('id') for x in routing.get('routes') or []}
+    if route_ids-sized_ids:errors.append('unsized_routes')
     annotated_ids={x.get('route_id') for x in annotations.get('annotations') or [] if x.get('route_id')}
-    if route_ids - annotated_ids: errors.append('unannotated_routes')
+    if route_ids-annotated_ids:errors.append('unannotated_routes')
     return {'status':'PASS' if not errors else 'FAIL','errors':errors,
-            'metrics':{'rooms':len(arch.get('rooms') or []),'detections':len(rec.get('detections') or []),
+            'metrics':{'plans':len(arch.get('plans') or []),'rooms':len(arch.get('rooms') or []),'detections':len(rec.get('detections') or []),
                        'systems':len(req.get('project_systems') or []),'routes':len(route_ids),'sized_routes':len(sized_ids),
-                       'annotated_routes':len(annotated_ids)}}
+                       'annotated_routes':len(annotated_ids),'unresolved_local_shafts':len(topology.get('unresolved') or [])}}
