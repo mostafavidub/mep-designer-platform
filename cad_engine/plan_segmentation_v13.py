@@ -28,7 +28,6 @@ def detect_print_plans(src):
         if len(pts)<4: continue
         xs=[x for x,y in pts]; ys=[y for x,y in pts]; w=max(xs)-min(xs); h=max(ys)-min(ys)
         layer=str(getattr(e.dxf,"layer","") or "").lower()
-        # Exact office A4 support frames used by the current architectural set.
         if layer=="suport" and 20<=w<=22 and 28<=h<=31:
             frames.append([min(xs),min(ys),max(xs),max(ys)])
     frames=sorted(frames,key=lambda b:(-b[1],b[0]))
@@ -37,13 +36,16 @@ def detect_print_plans(src):
 
 def apply_plan_scopes(src,architecture,recognition):
     plans=detect_print_plans(src)
+    # Legacy/single-plan drawings without office print frames remain valid.
+    if not plans:
+        bounds=architecture.get("bounds") or [0,0,0,0]
+        plans=[{"plan_id":"PLAN-01","bounds":list(bounds),"source":"single_plan_fallback"}]
     def owner(point):
         return next((p for p in plans if _inside(point,p["bounds"])),None)
     for room in architecture.get("rooms") or []:
-        p=owner(room.get("label_point")); room["plan_id"]=p["plan_id"] if p else None
+        p=owner(room.get("label_point")); room["plan_id"]=p["plan_id"] if p else plans[0]["plan_id"]
     for item in recognition.get("detections") or []:
-        p=owner(item.get("point")); item["plan_id"]=p["plan_id"] if p else None
-    # Persian shaft/duct evidence can be textual instead of a SHAFT layer.
+        p=owner(item.get("point")); item["plan_id"]=p["plan_id"] if p else plans[0]["plan_id"]
     doc=ezdxf.readfile(src); text_shafts=[]
     for e in doc.modelspace():
         if e.dxftype() not in {"TEXT","MTEXT"}: continue
@@ -56,7 +58,7 @@ def apply_plan_scopes(src,architecture,recognition):
         point=shaft.get("point")
         if point is None and shaft.get("polygon"):
             poly=shaft["polygon"]; point=(sum(x for x,y in poly)/len(poly),sum(y for x,y in poly)/len(poly))
-        p=owner(point); shaft["plan_id"]=p["plan_id"] if p else None; shaft["point"]=point
+        p=owner(point); shaft["plan_id"]=p["plan_id"] if p else plans[0]["plan_id"]; shaft["point"]=point
     architecture["shafts"]=(architecture.get("shafts") or [])+text_shafts
     architecture["plans"]=plans
     architecture.setdefault("quality",{})["plan_count"]=len(plans)
