@@ -10,6 +10,7 @@ from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 from app.mechanical_rulebook import plan_detail_requirements
 from cad_engine import main_v10_3 as authority
 from cad_engine.documentation_v12 import annotate_issued_sheets
+from cad_engine.drawing_content_qa_v12 import validate_independent_drawing_content
 from cad_engine.mechanical_upgrade_v11 import _system_special_sheet
 
 
@@ -88,6 +89,38 @@ class MechanicalTwelveStageContractTests(unittest.TestCase):
         sanitary = [s for s in result["drawing_manifest"]["sheets"] if s["family"] == "sanitary_vent" and not s.get("special")]
         self.assertEqual(len(water), 2); self.assertTrue(any(len(s.get("levels") or []) == 5 for s in water))
         self.assertEqual(len(sanitary), 2); self.assertFalse(any(len(s.get("levels") or []) > 1 for s in sanitary))
+
+    def test_stage_11_layout_count_alone_is_not_accepted_as_real_deliverables(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "stage11.dxf"
+            doc = ezdxf.new("R2013")
+            plan = doc.layouts.new("M-W-01")
+            plan.add_viewport(center=(100, 100), size=(100, 100), view_center_point=(0, 0), view_height=10)
+            special = doc.layouts.new("M-W-RISER")
+            special.add_line((10, 10), (10, 100))
+            doc.saveas(path)
+            calc = {
+                "_approved_drawing_manifest": {"total_sheets": 2, "sheets": [
+                    {"code": "M-W-01", "family": "water_supply", "levels": ["Ground"], "special": False},
+                    {"code": "M-W-RISER", "family": "water_supply", "levels": ["Ground", "First"], "special": True},
+                ]},
+                "_plan_analysis": {"architectural_auto": {"level_profiles": [
+                    {"name": "Ground"}, {"name": "First"}, {"name": "Second"}, {"name": "Roof"}
+                ]}},
+            }
+            annotate_issued_sheets(path, calc)
+            report = validate_independent_drawing_content(path, calc)
+            self.assertEqual(report["status"], "PASS")
+            self.assertEqual(report["base_architectural_view_count"], 4)
+            self.assertEqual(report["approved_deliverable_count"], 2)
+            self.assertEqual(report["independent_issued_drawing_content_count"], 2)
+            self.assertEqual(report["issued_layout_count"], 2)
+
+            bad = ezdxf.readfile(path)
+            bad.layouts.get("M-W-RISER").delete_all_entities()
+            bad.saveas(path)
+            with self.assertRaisesRegex(RuntimeError, "CAD output does not match approved drawing manifest"):
+                validate_independent_drawing_content(path, calc)
 
 
 if __name__ == "__main__": unittest.main()
