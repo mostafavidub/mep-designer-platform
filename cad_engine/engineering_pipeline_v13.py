@@ -1,7 +1,7 @@
 """Engineering-grade mechanical design pipeline v13.
 
 The pipeline intentionally separates architectural reconstruction from downstream
-mechanical reasoning.  Each stage returns explicit, testable data rather than
+mechanical reasoning. Each stage returns explicit, testable data rather than
 writing decorative CAD geometry directly.
 """
 from __future__ import annotations
@@ -24,6 +24,26 @@ ROOM_ALIASES = {
     "mechanical": ("mechanical", "موتورخانه"),
 }
 
+FIXTURE_ALIASES = {
+    "wc": ("wc", "toilet", "closet"),
+    "basin": ("basin", "lavatory", "rooshooee", "روشویی"),
+    "sink": ("sink", "kitchen sink", "سینک"),
+    "shower": ("shower", "دوش"),
+    "floor_drain": ("floor drain", "fd", "k کفشور", "کفشور"),
+}
+
+EQUIPMENT_ALIASES = {
+    "radiator": ("rad", "radiator", "رادیاتور"),
+    "fan_coil": ("fancoil", "fan coil", "fcu"),
+    "split_indoor": ("indoor split", "split indoor", "indoor unit"),
+    "exhaust_fan": ("exh fan", "exhaust fan", "fan"),
+    "hood": ("hood", "هود"),
+    "pump": ("pump", "پمپ"),
+    "tank": ("tank", "مخزن"),
+    "water_heater": ("water heater", "boiler", "آبگرمکن"),
+    "stove": ("stove", "range", "اجاق"),
+}
+
 
 def _norm(value):
     value = str(value or "").replace("ي", "ی").replace("ك", "ک").replace("\u200c", " ").lower()
@@ -42,14 +62,28 @@ def _entity_text(entity):
     return ""
 
 
-def _classify_room(text):
-    s = _norm(text)
+def _classify(value, mapping):
+    s = _norm(value)
     if not s:
         return None
-    for kind, terms in ROOM_ALIASES.items():
-        if any(_norm(term) in s for term in terms):
-            return kind
-    return None
+    best = None
+    best_len = 0
+    for kind, terms in mapping.items():
+        for term in terms:
+            token = _norm(term)
+            if not token:
+                continue
+            if len(token) <= 3 and token.isascii():
+                hit = re.search(rf"(?:^|\s){re.escape(token)}(?:$|\s|\d)", s)
+            else:
+                hit = token in s
+            if hit and len(token) > best_len:
+                best = kind; best_len = len(token)
+    return best
+
+
+def _classify_room(text):
+    return _classify(text, ROOM_ALIASES)
 
 
 def _point(entity):
@@ -93,8 +127,7 @@ def _inside(point, polygon):
     hit = False
     j = len(polygon) - 1
     for i in range(len(polygon)):
-        xi, yi = polygon[i]
-        xj, yj = polygon[j]
+        xi, yi = polygon[i]; xj, yj = polygon[j]
         if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / ((yj - yi) or 1e-12) + xi):
             hit = not hit
         j = i
@@ -106,20 +139,12 @@ def _polygon_area(poly):
 
 
 def reconstruct_architecture(path):
-    """Reconstruct a conservative architectural model from DXF.
-
-    The result is deliberately evidence-bearing: rooms are tied to real text and
-    enclosing polygons when available; shafts/walls/doors/columns are retained
-    as geometry or block evidence for routing and clash checks.
-    """
+    """Reconstruct a conservative architectural model from DXF."""
     doc = ezdxf.readfile(path)
     msp = doc.modelspace()
     layer_names = {str(layer.dxf.name): _norm(layer.dxf.name) for layer in doc.layers}
 
-    polygons = []
-    lines = []
-    inserts = []
-    texts = []
+    polygons, lines, inserts, texts = [], [], [], []
     for e in msp:
         layer = str(getattr(e.dxf, "layer", "0") or "0")
         kind = e.dxftype()
@@ -137,8 +162,7 @@ def reconstruct_architecture(path):
             if p:
                 inserts.append({"name": str(e.dxf.name or ""), "layer": layer, "point": p})
         elif kind in {"TEXT", "MTEXT"}:
-            p = _point(e)
-            value = _entity_text(e).strip()
+            p = _point(e); value = _entity_text(e).strip()
             if p and value:
                 texts.append({"text": value, "layer": layer, "point": p})
 
@@ -149,49 +173,71 @@ def reconstruct_architecture(path):
             continue
         containing = [p for p in polygons if _inside(t["point"], p["points"])]
         enclosure = min(containing, key=lambda p: p["area"]) if containing else None
-        rooms.append({
-            "id": f"ROOM-{len(rooms)+1:03d}",
-            "type": room_type,
-            "label": t["text"],
-            "label_point": t["point"],
-            "polygon": enclosure["points"] if enclosure else None,
-            "area": enclosure["area"] if enclosure else None,
-            "evidence": ["room_text"] + (["enclosing_closed_polyline"] if enclosure else []),
-        })
+        rooms.append({"id": f"ROOM-{len(rooms)+1:03d}", "type": room_type, "label": t["text"], "label_point": t["point"],
+                      "polygon": enclosure["points"] if enclosure else None, "area": enclosure["area"] if enclosure else None,
+                      "evidence": ["room_text"] + (["enclosing_closed_polyline"] if enclosure else [])})
 
     def layer_has(*tokens):
         return [name for name, normalized in layer_names.items() if any(token in normalized for token in tokens)]
 
-    wall_layers = set(layer_has("wall", "دیوار"))
-    door_layers = set(layer_has("door", "در "))
-    shaft_layers = set(layer_has("shaft", "شفت"))
-    column_layers = set(layer_has("column", "ستون"))
-
+    wall_layers = set(layer_has("wall", "دیوار")); door_layers = set(layer_has("door", "در "))
+    shaft_layers = set(layer_has("shaft", "شفت")); column_layers = set(layer_has("column", "ستون"))
     shafts = [p for p in polygons if p["layer"] in shaft_layers]
     doors = [i for i in inserts if i["layer"] in door_layers or "door" in _norm(i["name"])]
     columns = [i for i in inserts if i["layer"] in column_layers or "column" in _norm(i["name"])]
     walls = [line for line in lines if not wall_layers or line["layer"] in wall_layers]
 
-    ext = bbox.extents(msp, fast=True)
-    bounds = None
+    ext = bbox.extents(msp, fast=True); bounds = None
     if ext.has_data:
         bounds = [float(ext.extmin.x), float(ext.extmin.y), float(ext.extmax.x), float(ext.extmax.y)]
 
-    return {
-        "version": "architecture-reconstruction-v13.1",
-        "units": int(doc.header.get("$INSUNITS", 0) or 0),
-        "bounds": bounds,
-        "rooms": rooms,
-        "walls": walls,
-        "doors": doors,
-        "columns": columns,
-        "shafts": [{"layer": p["layer"], "polygon": p["points"], "area": p["area"]} for p in shafts],
-        "all_inserts": inserts,
-        "all_texts": texts,
-        "quality": {
-            "room_count": len(rooms),
-            "rooms_with_polygon": sum(1 for r in rooms if r["polygon"]),
-            "wall_segments": len(walls),
-            "shaft_count": len(shafts),
-        },
-    }
+    return {"version": "architecture-reconstruction-v13.1", "units": int(doc.header.get("$INSUNITS", 0) or 0), "bounds": bounds,
+            "rooms": rooms, "walls": walls, "doors": doors, "columns": columns,
+            "shafts": [{"layer": p["layer"], "polygon": p["points"], "area": p["area"]} for p in shafts],
+            "all_inserts": inserts, "all_texts": texts,
+            "quality": {"room_count": len(rooms), "rooms_with_polygon": sum(1 for r in rooms if r["polygon"]),
+                        "wall_segments": len(walls), "shaft_count": len(shafts)}}
+
+
+def recognize_fixtures_equipment(architecture):
+    """Recognize installed fixtures/equipment using block, layer and nearby-text evidence.
+
+    A detection is assigned to a room only when its insertion point lies inside a
+    reconstructed room polygon. This prevents legend blocks from becoming fake
+    installed fixtures.
+    """
+    rows = []
+    texts = architecture.get("all_texts") or []
+    rooms = [r for r in architecture.get("rooms") or [] if r.get("polygon")]
+    for item in architecture.get("all_inserts") or []:
+        signals = []
+        fixture = _classify(item.get("name"), FIXTURE_ALIASES) or _classify(item.get("layer"), FIXTURE_ALIASES)
+        equipment = _classify(item.get("name"), EQUIPMENT_ALIASES) or _classify(item.get("layer"), EQUIPMENT_ALIASES)
+        category = "fixture" if fixture else ("equipment" if equipment else None)
+        kind = fixture or equipment
+        if not category:
+            # nearby explicit text can identify a generic block
+            nearest = sorted(((math.dist(item["point"], t["point"]), t) for t in texts), key=lambda x: x[0])[:3]
+            for distance, t in nearest:
+                if distance > 1200:
+                    continue
+                kind = _classify(t["text"], FIXTURE_ALIASES); category = "fixture" if kind else None
+                if not kind:
+                    kind = _classify(t["text"], EQUIPMENT_ALIASES); category = "equipment" if kind else None
+                if kind:
+                    signals.append("nearby_text"); break
+        if not category:
+            continue
+        if _classify(item.get("name"), FIXTURE_ALIASES if category == "fixture" else EQUIPMENT_ALIASES):
+            signals.append("block_name")
+        if _classify(item.get("layer"), FIXTURE_ALIASES if category == "fixture" else EQUIPMENT_ALIASES):
+            signals.append("layer_name")
+        room = next((r for r in rooms if _inside(item["point"], r["polygon"])), None)
+        confidence = 0.93 if "block_name" in signals else (0.82 if "layer_name" in signals else 0.68)
+        rows.append({"id": f"MEP-{len(rows)+1:03d}", "category": category, "type": kind, "point": item["point"],
+                     "block": item.get("name"), "layer": item.get("layer"), "room_id": room.get("id") if room else None,
+                     "confidence": confidence, "evidence": signals or ["nearby_text"]})
+    return {"version": "fixture-equipment-recognition-v13.2", "detections": rows,
+            "fixtures": [r for r in rows if r["category"] == "fixture"],
+            "equipment": [r for r in rows if r["category"] == "equipment"],
+            "quality": {"detected": len(rows), "room_assigned": sum(1 for r in rows if r.get("room_id"))}}
