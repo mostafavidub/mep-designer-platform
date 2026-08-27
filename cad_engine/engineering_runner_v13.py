@@ -9,6 +9,7 @@ from .routing_v13 import route_topology
 from .sizing_v13 import size_networks
 from .annotation_v13 import build_annotations
 from .detail_library_v13 import build_details_schedules
+from .project_hvac_v13 import design_project_hvac
 
 def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     architecture=reconstruct_architecture(src)
@@ -21,23 +22,28 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     sizing=size_networks(topology,routing,recognition,calculations)
     annotations=build_annotations(routing,sizing,recognition,calculations,topology)
     details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=project_overrides)
-    return {'version':'engineering-pipeline-v13.12','architecture':architecture,'recognition':recognition,'requirements':requirements,
-            'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details}
+    hvac=design_project_hvac(architecture,project_overrides=project_overrides)
+    return {'version':'engineering-pipeline-v13.13','architecture':architecture,'recognition':recognition,'requirements':requirements,
+            'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac}
 
 def validate_pipeline(result):
     errors=[];arch=result.get('architecture') or {};rec=result.get('recognition') or {};req=result.get('requirements') or {}
-    topology=result.get('topology') or {};routing=result.get('routing') or {};sizing=result.get('sizing') or {};annotations=result.get('annotations') or {}
+    topology=result.get('topology') or {};routing=result.get('routing') or {};sizing=result.get('sizing') or {};annotations=result.get('annotations') or {};hvac=result.get('hvac') or {}
     if not arch.get('rooms'):errors.append('no_reconstructed_rooms')
-    if not rec.get('detections'):errors.append('no_installed_fixture_or_equipment_evidence')
     if not req.get('project_systems'):errors.append('no_mechanical_system_requirements')
+    if arch.get('plans') and not arch.get('primary_floor_plan_ids'):errors.append('no_primary_mechanical_floor_plans')
     if arch.get('plans') and (topology.get('quality') or {}).get('cross_plan_edges',0):errors.append('cross_plan_topology')
     if (routing.get('quality') or {}).get('cross_plan_routes',0):errors.append('cross_plan_routes')
-    if routing.get('rejected'):errors.append('rejected_routes')
+    if hvac.get('status')=='FAIL':errors.append('project_hvac_geometry_invalid')
+    if (hvac.get('quality') or {}).get('cross_plan_routes',0):errors.append('cross_plan_hvac_routes')
+    if (hvac.get('quality') or {}).get('out_of_bounds',0):errors.append('hvac_route_out_of_plan')
     sized_ids={x.get('route_id') for x in sizing.get('segments') or [] if x.get('size_mm') is not None};route_ids={x.get('id') for x in routing.get('routes') or []}
     if route_ids-sized_ids:errors.append('unsized_routes')
     annotated_ids={x.get('route_id') for x in annotations.get('annotations') or [] if x.get('route_id')}
     if route_ids-annotated_ids:errors.append('unannotated_routes')
     return {'status':'PASS' if not errors else 'FAIL','errors':errors,
-            'metrics':{'plans':len(arch.get('plans') or []),'rooms':len(arch.get('rooms') or []),'detections':len(rec.get('detections') or []),
+            'metrics':{'plans':len(arch.get('plans') or []),'primary_floor_plans':len(arch.get('primary_floor_plan_ids') or []),
+                       'rooms':len(arch.get('rooms') or []),'detections':len(rec.get('detections') or []),
                        'systems':len(req.get('project_systems') or []),'routes':len(route_ids),'sized_routes':len(sized_ids),
-                       'annotated_routes':len(annotated_ids),'unresolved_local_shafts':len(topology.get('unresolved') or [])}}
+                       'annotated_routes':len(annotated_ids),'unresolved_local_shafts':len(topology.get('unresolved') or []),
+                       'hvac_equipment':len(hvac.get('equipment') or []),'hvac_routes':len(hvac.get('routes') or [])}}
