@@ -9,6 +9,7 @@ import ezdxf
 from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 from app.mechanical_rulebook import plan_detail_requirements
 from cad_engine import main_v10_3 as authority
+from cad_engine.documentation_v12 import annotate_issued_sheets
 from cad_engine.mechanical_upgrade_v11 import _system_special_sheet
 
 
@@ -71,11 +72,19 @@ class MechanicalTwelveStageContractTests(unittest.TestCase):
         requirements = {family: set(plan_detail_requirements(family)) for family in (
             "water_supply", "sanitary_vent", "heating", "cooling", "gas", "ventilation_exhaust", "roof_rainwater")}
         for family, tokens in requirements.items(): self.assertTrue(tokens, family)
-        self.assertIn("isolation_valve", requirements["water_supply"])
-        self.assertIn("cleanout", requirements["sanitary_vent"])
-        self.assertIn("outdoor_unit_location", requirements["cooling"])
-        self.assertIn("meter_regulator", requirements["gas"])
+        self.assertIn("isolation_valve", requirements["water_supply"]); self.assertIn("cleanout", requirements["sanitary_vent"])
+        self.assertIn("outdoor_unit_location", requirements["cooling"]); self.assertIn("meter_regulator", requirements["gas"])
         self.assertIn("roof_drain", requirements["roof_rainwater"])
+
+    def test_stage_08_annotation_engine_generates_owned_dimension_leader_and_callout(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "issued.dxf"; doc = ezdxf.new("R2013"); doc.layouts.new("M-W-01"); doc.saveas(path)
+            calc = {"_approved_drawing_manifest": {"total_sheets": 1, "sheets": [{"code": "M-W-01", "family": "water_supply"}]}}
+            report = annotate_issued_sheets(path, calc); self.assertEqual(report["status"], "PASS")
+            out = ezdxf.readfile(path); layout = out.layouts.get("M-W-01")
+            self.assertEqual(len(layout.query("DIMENSION")), 1); self.assertEqual(len(layout.query("LEADER")), 1)
+            text = " ".join(str(x.dxf.text) for x in layout.query("TEXT"))
+            self.assertIn("WATER:", text)
 
 
 if __name__ == "__main__": unittest.main()
