@@ -1,6 +1,8 @@
 """Stage 10 - compose engineering and project-HVAC content inside owning print plans."""
 from __future__ import annotations
 import ezdxf
+from .output_sanitizer_v13 import sanitize_to_selected_plans, validate_sanitized_output
+
 LAYER_STYLE={
  'cold_water':('ENGITOOLS-M-COLD_WATER',5,'DASHDOT',30),'hot_water':('ENGITOOLS-M-HOT_WATER',1,'DIVIDE',30),
  'sanitary':('ENGITOOLS-M-SANITARY',3,'CONTINUOUS',60),'vent':('ENGITOOLS-M-VENT',4,'HIDDEN',30),
@@ -34,8 +36,9 @@ def _ensure_layers(doc):
 def compose_engineering_content(dst,pipeline):
     doc=ezdxf.readfile(dst);msp=doc.modelspace();_ensure_layers(doc)
     plans=(pipeline.get('architecture') or {}).get('plans') or []
+    selected=[p for p in plans if p.get('mechanical_role') in {'PRIMARY_FLOOR','ROOF_SUPPORT'}]
     plan_bounds={p['plan_id']:p['bounds'] for p in plans}
-    allowed={p['plan_id'] for p in plans if p.get('mechanical_role') in {'PRIMARY_FLOOR','ROOF_SUPPORT'}}
+    allowed={p['plan_id'] for p in selected}
     drawn=[];rejected=[]
     for route in (pipeline.get('routing') or {}).get('routes') or []:
         points=route.get('points') or [];pid=route.get('plan_id');style=LAYER_STYLE.get(route.get('system'))
@@ -46,8 +49,6 @@ def compose_engineering_content(dst,pipeline):
             rejected.append({'id':route['id'],'reason':'CROSS_PLAN_GEOMETRY'});continue
         ent=msp.add_lwpolyline(points,dxfattribs={'layer':style[0],'lineweight':style[3]});ent.set_xdata('ENGITOOLS',[('1000',pid or ''),('1000',route.get('system') or '')]);drawn.append(route['id'])
 
-    # Explicit project HVAC: split AC + package/radiator routes are independent of
-    # pre-existing equipment blocks and obey the same plan-boundary contract.
     hvac_drawn=[]
     for route in (pipeline.get('hvac') or {}).get('routes') or []:
         points=route.get('points') or [];pid=route.get('plan_id');style=LAYER_STYLE.get(route.get('system'))
@@ -72,15 +73,22 @@ def compose_engineering_content(dst,pipeline):
         if pid and not _inside(anchor,plan_bounds.get(pid),0.5):
             rejected.append({'id':ann.get('id'),'reason':'ANNOTATION_OUTSIDE_PLAN'});continue
         entity=msp.add_mtext(text,dxfattribs={'layer':'ENGITOOLS-M-ANNOTATION','char_height':0.12});entity.dxf.insert=anchor;entity.set_xdata('ENGITOOLS',[('1000',pid or ''),('1000','annotation')]);texts.append(ann['id'])
+
+    sanitization=sanitize_to_selected_plans(doc,selected) if selected else {'version':'output-sanitizer-v13.14','removed_entities':0}
     doc.saveas(dst)
-    return {'version':'sheet-composer-v13.13','drawn_routes':drawn,'drawn_hvac_routes':hvac_drawn,'drawn_hvac_equipment':equipment_drawn,
-            'drawn_annotations':texts,'drawn_details':[],'incomplete_details':[],'rejected_cross_plan':rejected}
+    return {'version':'sheet-composer-v13.14','drawn_routes':drawn,'drawn_hvac_routes':hvac_drawn,'drawn_hvac_equipment':equipment_drawn,
+            'drawn_annotations':texts,'drawn_details':[],'incomplete_details':[],'rejected_cross_plan':rejected,
+            'sanitization':sanitization}
 
 def validate_composed_dxf(dst,pipeline,composition):
     doc=ezdxf.readfile(dst);msp=doc.modelspace();errors=[]
     if composition.get('rejected_cross_plan'):errors.append('plan_scope_geometry_rejected')
     if (pipeline.get('hvac') or {}).get('status')=='PASS' and len(composition.get('drawn_hvac_routes') or [])!=len((pipeline.get('hvac') or {}).get('routes') or []):errors.append('missing_hvac_route_geometry')
+    selected=[p for p in (pipeline.get('architecture') or {}).get('plans') or [] if p.get('mechanical_role') in {'PRIMARY_FLOOR','ROOF_SUPPORT'}]
+    sanitizer_qa=validate_sanitized_output(doc,selected) if selected else {'status':'PASS','errors':[],'metrics':{'non_selected_sheet_entities':0}}
+    if sanitizer_qa['status']!='PASS':errors.extend(sanitizer_qa['errors'])
     mech=[e for e in msp if str(getattr(e.dxf,'layer','')).startswith('ENGITOOLS-M-')]
     return {'status':'PASS' if not errors else 'FAIL','errors':errors,'metrics':{'mechanical_entities':len(mech),
             'hvac_routes':len(composition.get('drawn_hvac_routes') or []),'hvac_equipment':len(composition.get('drawn_hvac_equipment') or []),
-            'scope_rejections':len(composition.get('rejected_cross_plan') or [])}}
+            'scope_rejections':len(composition.get('rejected_cross_plan') or []),
+            'non_selected_sheet_entities':sanitizer_qa['metrics']['non_selected_sheet_entities']}}
