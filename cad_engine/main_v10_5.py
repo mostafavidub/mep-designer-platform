@@ -11,6 +11,7 @@ from .rainwater_v11 import install as install_rainwater
 from .level_geometry_v11 import install as install_level_geometry
 from .engineering_qa_v11 import validate_generated_mechanical_output
 from .documentation_v12 import annotate_issued_sheets
+from .drawing_content_qa_v12 import validate_independent_drawing_content
 
 install_sheet_composer(v10_3, v10_4)
 install_water_sanitary(v10_4)
@@ -27,8 +28,9 @@ def design_dxf_v10_5(src, dst, discipline, systems, revision, calc):
         meta['issued_documentation'] = annotate_issued_sheets(dst, calc)
         if meta['issued_documentation'].get('status') != 'PASS':
             raise RuntimeError('Mechanical issued-sheet annotation QA failed.')
+        meta['drawing_content_qa'] = validate_independent_drawing_content(dst, calc)
         meta['final_engineering_qa'] = validate_generated_mechanical_output(dst, calc, meta)
-        meta['design_standard'] = str(meta.get('design_standard') or '') + ' + issued documentation v12 + final engineering QA v11'
+        meta['design_standard'] = str(meta.get('design_standard') or '') + ' + issued documentation v12 + independent drawing-content QA v12 + final engineering QA v11'
     return meta
 
 
@@ -39,7 +41,7 @@ engine.design_dxf = design_dxf_v10_5
 def capabilities():
     return {
         'ok': True,
-        'version': '1.3.0-mechanical-issued-documentation',
+        'version': '1.4.0-mechanical-independent-drawing-content',
         'nonduplicating_special_sheets': True,
         'approved_manifest_contract': True,
         'system_specific_typical_floors': True,
@@ -49,6 +51,8 @@ def capabilities():
         'hvac_ventilation_completed': True,
         'rainwater_connected_network': True,
         'issued_sheet_dimensions_leaders_callouts': True,
+        'independent_issued_drawing_content_parity': True,
+        'layout_count_alone_is_not_deliverable_proof': True,
         'final_engineering_qa_fail_closed': True,
         'professional_verification_required': True,
     }
