@@ -1,4 +1,4 @@
-"""Production wrapper for guarded mechanical v11 upgrades."""
+"""Production wrapper for guarded mechanical v12 upgrades."""
 from . import main_v10_3 as v10_3
 from . import main_v10_4 as v10_4
 from . import main_v8 as v8
@@ -10,6 +10,7 @@ from .hvac_v11 import install as install_hvac
 from .rainwater_v11 import install as install_rainwater
 from .level_geometry_v11 import install as install_level_geometry
 from .engineering_qa_v11 import validate_generated_mechanical_output
+from .documentation_v12 import annotate_issued_sheets
 
 install_sheet_composer(v10_3, v10_4)
 install_water_sanitary(v10_4)
@@ -23,14 +24,14 @@ app = v10_4.app
 def design_dxf_v10_5(src, dst, discipline, systems, revision, calc):
     meta = v10_4.design_dxf_v10_4(src, dst, discipline, systems, revision, calc)
     if discipline == 'mechanical':
+        meta['issued_documentation'] = annotate_issued_sheets(dst, calc)
+        if meta['issued_documentation'].get('status') != 'PASS':
+            raise RuntimeError('Mechanical issued-sheet annotation QA failed.')
         meta['final_engineering_qa'] = validate_generated_mechanical_output(dst, calc, meta)
-        meta['design_standard'] = str(meta.get('design_standard') or '') + ' + final engineering QA v11'
+        meta['design_standard'] = str(meta.get('design_standard') or '') + ' + issued documentation v12 + final engineering QA v11'
     return meta
 
 
-# All CAD API routes resolve the engine function at request time, so production
-# mechanical issuance passes through the final QA gate without replacing the
-# proven v10.4 application or unrelated disciplines.
 engine.design_dxf = design_dxf_v10_5
 
 
@@ -38,7 +39,7 @@ engine.design_dxf = design_dxf_v10_5
 def capabilities():
     return {
         'ok': True,
-        'version': '1.2.1-mechanical-level-geometry-bridge',
+        'version': '1.3.0-mechanical-issued-documentation',
         'nonduplicating_special_sheets': True,
         'approved_manifest_contract': True,
         'system_specific_typical_floors': True,
@@ -47,6 +48,7 @@ def capabilities():
         'gas_connected_network': True,
         'hvac_ventilation_completed': True,
         'rainwater_connected_network': True,
+        'issued_sheet_dimensions_leaders_callouts': True,
         'final_engineering_qa_fail_closed': True,
         'professional_verification_required': True,
     }
