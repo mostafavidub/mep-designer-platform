@@ -1,6 +1,6 @@
 """Regression contract for the 12-stage mechanical drawing-set upgrade."""
 
-from app.mechanical_drawing_set import predict_drawing_set
+from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 
 
 def _reference_scope(**overrides):
@@ -48,3 +48,15 @@ def test_stage_03_non_floor_deliverables_are_first_class_manifest_items():
     special_codes = {sheet["code"] for sheet in sheets if sheet.get("special")}
     assert "M-W-RISER" in special_codes
     assert "M-C-EQUIP" in special_codes
+
+
+def test_stage_04_approval_freezes_exact_manifest_before_cad():
+    proposal = predict_drawing_set(_reference_scope())
+    expected_id = proposal["drawing_manifest"]["manifest_id"]
+    approved = approve_drawing_set(proposal)
+    frozen = approved["approved_manifest"]
+    assert approved["approved"] is True
+    assert frozen["manifest_id"] == expected_id
+    assert frozen == approved["drawing_manifest"]
+    approved["drawing_manifest"]["sheets"][0]["label"] = "MUTATED AFTER APPROVAL"
+    assert frozen["sheets"][0]["label"] != "MUTATED AFTER APPROVAL"
