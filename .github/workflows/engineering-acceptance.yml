@@ -1,0 +1,21 @@
+name: Engineering Acceptance Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [real-project-acceptance-v13-11]
+
+jobs:
+  mechanical-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install focused CAD dependency
+        run: pip install ezdxf==1.4.2
+      - name: Run authority-style mechanical acceptance
+        run: python -m unittest discover -s tests -p 'test_real_project_acceptance_v13.py' -v
