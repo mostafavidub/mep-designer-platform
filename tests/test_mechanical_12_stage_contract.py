@@ -28,3 +28,13 @@ def test_stage_01_base_levels_are_not_the_deliverable_count():
     assert len(_reference_scope()["all_levels"]) == 4
     assert result["deliverable_sheet_count"] > len(_reference_scope()["all_levels"])
     assert result["count_semantics"] == "authority_separated_customer_deliverables"
+
+
+def test_stage_02_system_families_are_authority_separated():
+    result = predict_drawing_set(_reference_scope())
+    expected = {"water_supply", "sanitary_vent", "heating", "cooling", "gas", "ventilation_exhaust", "roof_rainwater"}
+    assert expected.issubset(result["sheet_families"])
+    for key in expected - {"roof_rainwater"}:
+        assert len(result["sheet_families"][key]["systems"]) == 1
+    assert "plumbing_gas" not in result["sheet_families"]
+    assert "heating_cooling_condensate" not in result["sheet_families"]
