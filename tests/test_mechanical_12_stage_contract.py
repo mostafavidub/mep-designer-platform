@@ -38,3 +38,13 @@ def test_stage_02_system_families_are_authority_separated():
         assert len(result["sheet_families"][key]["systems"]) == 1
     assert "plumbing_gas" not in result["sheet_families"]
     assert "heating_cooling_condensate" not in result["sheet_families"]
+
+
+def test_stage_03_non_floor_deliverables_are_first_class_manifest_items():
+    result = predict_drawing_set(_reference_scope())
+    sheets = result["drawing_manifest"]["sheets"]
+    assert any(not sheet.get("special") for sheet in sheets)
+    assert any(sheet.get("special") for sheet in sheets)
+    special_codes = {sheet["code"] for sheet in sheets if sheet.get("special")}
+    assert "M-W-RISER" in special_codes
+    assert "M-C-EQUIP" in special_codes
