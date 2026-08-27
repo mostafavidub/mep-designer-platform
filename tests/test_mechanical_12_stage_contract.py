@@ -8,6 +8,7 @@ import ezdxf
 
 from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 from cad_engine import main_v10_3 as authority
+from cad_engine.mechanical_upgrade_v11 import _system_special_sheet
 
 
 class MechanicalTwelveStageContractTests(unittest.TestCase):
@@ -64,6 +65,25 @@ class MechanicalTwelveStageContractTests(unittest.TestCase):
             doc.saveas(src)
             with self.assertRaisesRegex(RuntimeError, "Approved mechanical drawing manifest"):
                 authority.design_dxf_v10_3(src, dst, "mechanical", ["cold_water"], 1, {"_design_inputs": {}})
+
+    def test_stage_06_special_sheet_has_independent_riser_content_not_floor_viewport(self):
+        doc = ezdxf.new("R2013")
+        levels = [
+            {"level": "Ground", "rooms": [], "fixtures": []},
+            {"level": "First", "rooms": [], "fixtures": []},
+            {"level": "Second", "rooms": [], "fixtures": []},
+        ]
+        row = _system_special_sheet(
+            doc, authority, levels, "TEST-PROJECT",
+            {"code": "M-W-RISER", "family": "water_supply", "special": True,
+             "levels": ["Ground", "First", "Second"], "label": "Water Riser"},
+            "W", {"ENGITOOLS-M-COLD_WATER", "ENGITOOLS-M-HOT_WATER"},
+        )
+        layout = doc.layouts.get("M-W-RISER")
+        self.assertEqual(row["drawing_role"], "riser")
+        self.assertEqual(len(layout.query("VIEWPORT")), 0)
+        self.assertGreaterEqual(len(layout.query("LINE")), 5)
+        self.assertGreater(len(layout.query("TEXT")) + len(layout.query("MTEXT")), 3)
 
 
 if __name__ == "__main__":
