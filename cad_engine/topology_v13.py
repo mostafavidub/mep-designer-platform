@@ -1,56 +1,47 @@
-"""Stage 5 — build mechanical network topology before geometric routing."""
+"""Stage 5 — build mechanical topology with strict per-plan isolation."""
 from __future__ import annotations
-
 import math
 
-SYSTEM_TARGETS = {
-    'cold_water': {'wc','basin','sink','shower'},
-    'hot_water': {'basin','sink','shower'},
-    'sanitary': {'wc','basin','sink','shower','floor_drain'},
-    'vent': {'wc','basin','sink','shower','floor_drain'},
-    'heating': {'radiator','fan_coil'},
-    'cooling': {'fan_coil','split_indoor'},
-    'condensate': {'fan_coil','split_indoor'},
-    'exhaust': {'exhaust_fan','hood'},
-    'gas': {'stove','water_heater'},
+SYSTEM_TARGETS={
+ 'cold_water':{'wc','basin','sink','shower'},'hot_water':{'basin','sink','shower'},
+ 'sanitary':{'wc','basin','sink','shower','floor_drain'},'vent':{'wc','basin','sink','shower','floor_drain'},
+ 'heating':{'radiator','fan_coil'},'cooling':{'fan_coil','split_indoor'},'condensate':{'fan_coil','split_indoor'},
+ 'exhaust':{'exhaust_fan','hood'},'gas':{'stove','water_heater'},
 }
 
-
 def _centroid(poly):
-    if not poly: return None
-    return (sum(p[0] for p in poly)/len(poly), sum(p[1] for p in poly)/len(poly))
+    if not poly:return None
+    return (sum(p[0] for p in poly)/len(poly),sum(p[1] for p in poly)/len(poly))
 
-
-def build_system_topology(architecture, recognition, requirements, calculations):
-    nodes = []
+def build_system_topology(architecture,recognition,requirements,calculations):
+    nodes=[]
     for item in recognition.get('detections') or []:
-        nodes.append({'id':item['id'],'kind':item.get('type'),'category':item.get('category'),'point':item.get('point'),'room_id':item.get('room_id')})
-    shafts = []
-    for index, shaft in enumerate(architecture.get('shafts') or [],1):
-        point = _centroid(shaft.get('polygon'))
-        if point:
-            sid = f'SHAFT-{index:02d}'; shafts.append({'id':sid,'kind':'shaft','category':'vertical','point':point}); nodes.append(shafts[-1])
-    if not shafts:
-        # Fail-safe topology anchor is explicit and flagged; it may not be silently issued as a real shaft.
-        bounds = architecture.get('bounds') or [0,0,0,0]
-        point = ((bounds[0]+bounds[2])/2.0,(bounds[1]+bounds[3])/2.0)
-        shafts.append({'id':'SHAFT-PROVISIONAL','kind':'shaft','category':'vertical','point':point,'provisional':True}); nodes.append(shafts[-1])
-
-    project_systems = set(requirements.get('project_systems') or [])
-    edges = []
-    system_graphs = {}
+        nodes.append({'id':item['id'],'kind':item.get('type'),'category':item.get('category'),'point':item.get('point'),
+                      'room_id':item.get('room_id'),'plan_id':item.get('plan_id')})
+    shafts=[]
+    for index,shaft in enumerate(architecture.get('shafts') or [],1):
+        point=shaft.get('point') or _centroid(shaft.get('polygon'))
+        if not point:continue
+        row={'id':f'SHAFT-{index:02d}','kind':'shaft','category':'vertical','point':point,'plan_id':shaft.get('plan_id'),
+             'source':shaft.get('source','geometry')}
+        shafts.append(row);nodes.append(row)
+    project_systems=set(requirements.get('project_systems') or [])
+    edges=[];system_graphs={};unresolved=[]
     for system in sorted(project_systems):
-        allowed = SYSTEM_TARGETS.get(system,set())
-        endpoints = [n for n in nodes if n.get('kind') in allowed]
-        graph_nodes = [n['id'] for n in endpoints]
-        if endpoints:
-            shaft = min(shafts, key=lambda s: sum(math.dist(e['point'],s['point']) for e in endpoints))
-            graph_nodes.append(shaft['id'])
-            for endpoint in endpoints:
-                edge = {'id':f'{system.upper()}-E{len(edges)+1:03d}','system':system,'from':endpoint['id'],'to':shaft['id'],
-                        'load_source':endpoint['id'],'topology':'endpoint_to_vertical_core'}
-                edges.append(edge)
-        system_graphs[system] = {'nodes':graph_nodes,'edges':[e['id'] for e in edges if e['system']==system]}
-
-    return {'version':'mechanical-topology-v13.5','nodes':nodes,'edges':edges,'systems':system_graphs,
-            'quality':{'systems':len(system_graphs),'edges':len(edges),'provisional_shaft':any(s.get('provisional') for s in shafts)}}
+        allowed=SYSTEM_TARGETS.get(system,set()); endpoints=[n for n in nodes if n.get('kind') in allowed]
+        graph_nodes=[n['id'] for n in endpoints]
+        for endpoint in endpoints:
+            pid=endpoint.get('plan_id')
+            candidates=[s for s in shafts if s.get('plan_id')==pid and pid is not None]
+            if not candidates:
+                unresolved.append({'system':system,'endpoint_id':endpoint['id'],'plan_id':pid,'reason':'NO_LOCAL_SHAFT'})
+                continue
+            shaft=min(candidates,key=lambda s:math.dist(endpoint['point'],s['point']))
+            if shaft['id'] not in graph_nodes:graph_nodes.append(shaft['id'])
+            edges.append({'id':f'{system.upper()}-E{len(edges)+1:03d}','system':system,'from':endpoint['id'],'to':shaft['id'],
+                          'plan_id':pid,'load_source':endpoint['id'],'topology':'endpoint_to_local_vertical_core'})
+        system_graphs[system]={'nodes':graph_nodes,'edges':[e['id'] for e in edges if e['system']==system]}
+    cross_plan=sum(1 for e in edges if next(n for n in nodes if n['id']==e['from']).get('plan_id')!=next(n for n in nodes if n['id']==e['to']).get('plan_id'))
+    return {'version':'mechanical-topology-v13.12','nodes':nodes,'edges':edges,'systems':system_graphs,'unresolved':unresolved,
+            'quality':{'systems':len(system_graphs),'edges':len(edges),'provisional_shaft':False,'cross_plan_edges':cross_plan,
+                       'unresolved_without_local_shaft':len(unresolved)}}
