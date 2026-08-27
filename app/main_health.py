@@ -5,15 +5,16 @@ from . import unit_sanity  # patches dimension-based CAD unit sanity before proj
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from . import mechanical_workflow
 from . import mechanical_drawing_set
+from . import mechanical_review_fix
 from .fixture_detection_v2 import install as install_fixture_detection_v2
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
 from .system_typical_v1 import install as install_system_typical_v1
 from .manifest_contract_v2 import install as install_manifest_contract_v2
 from .project_mechanical_model import install as install_project_mechanical_model
+from .mechanical_site_manifest_v12 import install as install_manifest_site_v12
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
-from .mechanical_review_fix import register_mechanical_review_fix
 from .seo_runtime import register_seo_articles
 
 app = main_auto.app
@@ -43,7 +44,10 @@ install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_ou
 # confidence/evidence plus the planner's system-specific Typical decisions.
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
-register_mechanical_review_fix(app, main_auto.legacy)
+# Stage 12 replaces the legacy family-summary review with the exact per-sheet
+# Drawing Manifest. The user approves the same frozen contract consumed by CAD.
+install_manifest_site_v12(mechanical_review_fix)
+mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)
 
 # Compress HTML/CSS/JS/SVG/JSON responses without spending excessive CPU.
