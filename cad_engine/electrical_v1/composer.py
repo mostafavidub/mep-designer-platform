@@ -120,15 +120,15 @@ def compose_drawing_set(path: str|Path, architecture: ArchitecturalModel, manife
                         drawing_status: str="PRELIMINARY") -> Dict[str,Any]:
     """Compose each sheet as independent Paper Space geometry, not viewports onto one shared design model."""
     doc=ezdxf.new("R2013"); doc.header["$INSUNITS"]=4; _ensure_layers(doc); _add_symbol_blocks(doc)
-    # Modelspace is intentionally not the shared drawing canvas. It only holds file-manifest metadata.
     msp=doc.modelspace(); msp.add_text("ENGITOOLS ELECTRICAL DRAWING SET - PAPER SPACE OWNED GEOMETRY",dxfattribs={"layer":"ENGITOOLS-E-DOC","height":2.5}).set_placement((0,0))
-    req_by_id={r.id:r for r in requirements}; placement_by_eq={p.equipment_id:p for p in placements}
-    load_by_id={l.id:l for l in (calculations.get("topology",{}).get("loads") or [])} if isinstance(calculations,dict) else {}
-    route_map={r["circuit_id"]:r for r in routing.get("routes") or []}
+    req_by_id={r.id:r for r in requirements}
     signatures={}
-    default=doc.layouts.get("Layout1"); doc.layouts.delete(default.name)
-    for sheet in manifest:
-        layout=doc.layouts.new(sheet.sheet_id); layout.page_setup(size=paper,margins=(0,0,0,0),units="mm")
+    default=doc.layouts.get("Layout1")
+    for index,sheet in enumerate(manifest):
+        layout=doc.layouts.new(sheet.sheet_id)
+        if index==0 and default is not None:
+            doc.layouts.delete(default.name); default=None
+        layout.page_setup(size=paper,margins=(0,0,0,0),units="mm")
         _draw_title(layout,sheet,paper,drawing_status,project_name); sig={"title_block":1,"architectural_underlay":0}
         transform=lambda p:p; scale=1.0
         frame_id=sheet.source_frame_ids[0] if sheet.source_frame_ids else None
