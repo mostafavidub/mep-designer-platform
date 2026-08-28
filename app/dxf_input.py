@@ -27,38 +27,38 @@ def _read_with_final_endsec(path: Path):
 
 
 def read_input_dxf(path: Path):
-    """Read an architectural DXF, recovering only structurally damaged inputs.
-
-    Output artifacts remain subject to the strict validator. Recovery is limited
-    to uploaded source drawings and is accepted only when modelspace geometry is
-    still present, preventing a truncated file from becoming an empty design.
-    """
+    """Read an architectural DXF, recovering only structurally damaged inputs."""
     source = Path(path)
     try:
         doc = ezdxf.readfile(source)
         return doc, {'recovered': False, 'errors': 0, 'fixes': 0}
-    except DXFStructureError as strict_error:
-        if 'ENDSEC' in str(strict_error).upper():
-            try:
-                doc = _read_with_final_endsec(source)
-                entity_count = sum(1 for _ in doc.modelspace())
-                if entity_count < 1:
-                    raise DXFStructureError(
-                        f'فایل DXF پس از ترمیم ENDSEC هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
-                    )
-                return doc, {
-                    'recovered': True,
-                    'mode': 'final_endsec_repair',
-                    'errors': 1,
-                    'fixes': 1,
-                    'original_error': str(strict_error),
-                }
-            except Exception as repair_error:
-                raise DXFStructureError(f'ENDSEC repair failed: {repair_error}') from strict_error
+    except Exception as strict_error:
+        repair_error = None
+        try:
+            doc = _read_with_final_endsec(source)
+            entity_count = sum(1 for _ in doc.modelspace())
+            if entity_count < 1:
+                raise DXFStructureError(
+                    f'فایل DXF پس از ترمیم ENDSEC هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
+                )
+            return doc, {
+                'recovered': True,
+                'mode': 'final_endsec_repair',
+                'errors': 1,
+                'fixes': 1,
+                'original_error': str(strict_error),
+            }
+        except Exception as exc:
+            repair_error = exc
+
+        if not isinstance(strict_error, DXFStructureError):
+            raise strict_error
         try:
             doc, auditor = recover.readfile(source)
-        except Exception:
-            raise strict_error
+        except Exception as recovery_error:
+            raise DXFStructureError(
+                f'ترمیم امن DXF ممکن نشد: {repair_error}; recovery: {recovery_error}'
+            ) from strict_error
 
         entity_count = sum(1 for _ in doc.modelspace())
         if entity_count < 1:
