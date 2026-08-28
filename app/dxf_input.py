@@ -53,8 +53,8 @@ def read_input_dxf(path: Path):
                     'fixes': 1,
                     'original_error': str(strict_error),
                 }
-            except Exception:
-                pass
+            except Exception as repair_error:
+                raise DXFStructureError(f'ENDSEC repair failed: {repair_error}') from strict_error
         try:
             doc, auditor = recover.readfile(source)
         except Exception:
