@@ -7,6 +7,7 @@ from . import mechanical_workflow
 from . import mechanical_drawing_set
 from . import mechanical_review_fix
 from .architecture_reconstruction_v1 import install as install_architecture_reconstruction_v1
+from .architecture_topology_v1 import install as install_architecture_topology_v1
 from .fixture_detection_v2 import install as install_fixture_detection_v2
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
@@ -27,19 +28,18 @@ register_service_art_routes(app)
 install_level_detection_v3(main_auto)
 # Architecture Reconstruction v1 preserves walls, room polygons, doors,
 # windows, columns, stairs, shafts and fixed furniture in a per-level model.
-# This structured geometry becomes the design substrate for later routing.
 install_architecture_reconstruction_v1(main_auto)
+# Architecture Topology v1 turns that geometry into engineering relationships:
+# room IDs, door/window adjacency, nearest shafts, wet cores and service zones.
+install_architecture_topology_v1(main_auto)
 # Fixture & Equipment Detection v2 wraps the upgraded analyzer/inference after
-# architecture reconstruction so detections can later be attached to rooms and
-# canonical levels rather than only to raw modelspace coordinates.
+# architecture topology so detections can be attached to canonical geometry.
 install_fixture_detection_v2(main_auto)
 # Unresolved wet-level evidence becomes an explicit questionnaire requirement;
 # mechanical design approval is not considered ready until high-confidence CAD
 # evidence or a quantified user-confirmed fixture schedule resolves it.
 install_fixture_gate_v1(main_auto, mechanical_workflow)
 # Typical Floor equivalence is now evaluated per mechanical system family.
-# Different fixture/equipment evidence keeps otherwise similar floors separate
-# for the affected system only.
 install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
 # Approval freezes an exact content-hashed drawing manifest. Any post-approval
 # change or Proposal/CAD mismatch fails closed at the generation boundary.
@@ -48,13 +48,10 @@ install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_ou
 # confidence/evidence plus the planner's system-specific Typical decisions.
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
-# Stage 12 replaces the legacy family-summary review with the exact per-sheet
-# Drawing Manifest. The user approves the same frozen contract consumed by CAD.
 install_manifest_site_v12(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)
 
-# Compress HTML/CSS/JS/SVG/JSON responses without spending excessive CPU.
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
@@ -62,9 +59,6 @@ app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 async def performance_headers(request, call_next):
     response = await call_next(request)
     path = request.url.path
-
-    # Static assets with an explicit version query are immutable. Unversioned
-    # assets still get a useful cache window while remaining refreshable.
     if path.startswith('/static/'):
         if request.query_params.get('v'):
             response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -72,7 +66,6 @@ async def performance_headers(request, call_next):
             response.headers['Cache-Control'] = 'public, max-age=604800, stale-while-revalidate=86400'
     elif 'text/html' in response.headers.get('content-type', ''):
         response.headers['Cache-Control'] = 'no-cache'
-
     response.headers.setdefault('Vary', 'Accept-Encoding')
     return response
 
