@@ -9,6 +9,7 @@ from . import mechanical_review_fix
 from .architecture_reconstruction_v1 import install as install_architecture_reconstruction_v1
 from .architecture_topology_v1 import install as install_architecture_topology_v1
 from .fixture_detection_v2 import install as install_fixture_detection_v2
+from .fixture_context_v1 import install as install_fixture_context_v1
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
 from .system_typical_v1 import install as install_system_typical_v1
@@ -22,30 +23,17 @@ from .seo_runtime import register_seo_articles
 app = main_auto.app
 register_resumable_upload_routes(app)
 register_service_art_routes(app)
-# Level Detection v3 wraps the proven v2 inference. Explicit architectural
-# levels such as mezzanines can no longer disappear merely because their room
-# labels are missing, while weak orphan block titles remain non-active candidates.
 install_level_detection_v3(main_auto)
-# Architecture Reconstruction v1 preserves walls, room polygons, doors,
-# windows, columns, stairs, shafts and fixed furniture in a per-level model.
+# Step 1: reconstruct actual architecture and engineering topology.
 install_architecture_reconstruction_v1(main_auto)
-# Architecture Topology v1 turns that geometry into engineering relationships:
-# room IDs, door/window adjacency, nearest shafts, wet cores and service zones.
 install_architecture_topology_v1(main_auto)
-# Fixture & Equipment Detection v2 wraps the upgraded analyzer/inference after
-# architecture topology so detections can be attached to canonical geometry.
+# Step 2: detect fixtures/equipment then bind each detection to room/wet-core context.
 install_fixture_detection_v2(main_auto)
-# Unresolved wet-level evidence becomes an explicit questionnaire requirement;
-# mechanical design approval is not considered ready until high-confidence CAD
-# evidence or a quantified user-confirmed fixture schedule resolves it.
+install_fixture_context_v1(main_auto)
+# Existing downstream guards remain after the stronger evidence model.
 install_fixture_gate_v1(main_auto, mechanical_workflow)
-# Typical Floor equivalence is now evaluated per mechanical system family.
 install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
-# Approval freezes an exact content-hashed drawing manifest. Any post-approval
-# change or Proposal/CAD mismatch fails closed at the generation boundary.
 install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_output)
-# PMM v1 remains the canonical shadow snapshot and now records per-detection
-# confidence/evidence plus the planner's system-specific Typical decisions.
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 install_manifest_site_v12(mechanical_review_fix)
