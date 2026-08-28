@@ -1,10 +1,10 @@
 """Guarded multi-evidence architectural level detection.
 
-This module wraps the existing v2 inference instead of replacing it.  It keeps
+This module wraps the existing v2 inference instead of replacing it. It keeps
 proven v2 room/typical logic, restores architecturally explicit levels that v2
 would otherwise drop for lack of room labels, and keeps weak/orphan titles as
-non-active candidates.  This prevents missing mezzanines while avoiding the
-old phantom-level regression from reusable title blocks.
+non-active candidates. This prevents missing mezzanines while avoiding the old
+phantom-level regression from reusable title blocks.
 """
 import math
 import re
@@ -12,7 +12,7 @@ from collections import defaultdict
 
 from . import auto_inference_v2 as v2
 
-LEVEL_DETECTION_VERSION = "multi-evidence-v3.0"
+LEVEL_DETECTION_VERSION = "multi-evidence-v3.1"
 
 
 def _norm(value):
@@ -73,9 +73,6 @@ def _collect_candidates(files):
             same_source_rooms = by_source_rooms.get(source_key) or []
             nearby = sum(1 for p in same_source_rooms if _distance(point, p) < 100.0)
             source_type = item.get("source_type")
-            # Layout/model evidence is strong because main_auto has already
-            # filtered incoherent CAD sources. A named block needs room evidence
-            # before it can become active; otherwise it remains a candidate.
             if source_type == "layout":
                 confidence = 0.96 if nearby else 0.88
                 active = True
@@ -99,7 +96,6 @@ def _collect_candidates(files):
                 "title_point": [point[0], point[1]],
                 "nearby_room_labels": nearby,
             })
-    # Merge duplicates conservatively, retaining the strongest evidence.
     merged = {}
     for row in rows:
         old = merged.get(row["name"])
@@ -118,9 +114,6 @@ def _placeholder_profile(candidate):
         "source_name": candidate.get("source_name"),
         "room_counts": {},
         "recognized_room_labels": 0,
-        # Unknown room labels must not suppress an explicit occupied level.
-        # Planner's authority-safe fallback already scopes non-roof profiles
-        # conservatively, while answers can explicitly disable systems.
         "wet_fixture_candidate": False,
         "sanitary_candidate": False,
         "conditioned_candidate": not is_roof,
@@ -141,18 +134,29 @@ def infer_architecture_facts(analysis, discipline):
     profiles = [dict(p) for p in (auto.get("level_profiles") or [])]
     profile_map = {str(p.get("name")): p for p in profiles if p.get("name")}
 
+    restored = []
     for profile in profiles:
         candidate = next((c for c in candidates if c["name"] == profile.get("name")), None)
         evidence = ["room-pattern-v2"]
         if candidate:
             evidence.append(candidate["basis"])
             profile["level_confidence"] = max(0.95, candidate["confidence"])
+            # v2 may already retain an explicit architecture title even when it
+            # has no room evidence. It is still a title-restored level for audit
+            # provenance and must never be presented as room-confirmed evidence.
+            if not profile.get("recognized_room_labels") and candidate.get("active"):
+                profile["typical_signature"] = None
+                profile["typical_confidence"] = "insufficient"
+                profile["level_detection_status"] = "confirmed-from-explicit-title"
+                if candidate["name"] not in restored:
+                    restored.append(candidate["name"])
+            else:
+                profile["level_detection_status"] = "confirmed"
         else:
             profile["level_confidence"] = 0.90 if profile.get("recognized_room_labels") else 0.65
+            profile["level_detection_status"] = "confirmed"
         profile["level_evidence"] = evidence
-        profile["level_detection_status"] = "confirmed"
 
-    restored = []
     weak = []
     for candidate in candidates:
         if candidate["name"] in profile_map:
@@ -161,16 +165,14 @@ def infer_architecture_facts(analysis, discipline):
             new_profile = _placeholder_profile(candidate)
             profiles.append(new_profile)
             profile_map[candidate["name"]] = new_profile
-            restored.append(candidate["name"])
+            if candidate["name"] not in restored:
+                restored.append(candidate["name"])
         else:
             weak.append(candidate)
 
     if profiles:
         auto["level_profiles"] = profiles
         auto["levels"] = [{"name": p["name"], "confidence": p.get("level_confidence")} for p in profiles]
-        # Typical groups are intentionally recalculated only from profiles with
-        # actual high-confidence geometry/room signatures. Restored title-only
-        # levels can never become Typical by accident.
         inferred = v2.typical_groups_from_profiles(profiles)
         explicit = v2.explicit_typical_groups_from_files((analysis or {}).get("files") or [])
         explicit_keys = {tuple(x.get("levels") or []) for x in explicit}
@@ -190,7 +192,6 @@ def infer_architecture_facts(analysis, discipline):
 
 
 def install(main_auto_module):
-    """Patch only the inference binding used by project analysis."""
     if getattr(main_auto_module, "_level_detection_v3_installed", False):
         return
     main_auto_module.infer_architecture_facts = infer_architecture_facts
