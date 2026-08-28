@@ -12,7 +12,7 @@ from collections import defaultdict
 
 from . import auto_inference_v2 as v2
 
-LEVEL_DETECTION_VERSION = "multi-evidence-v3.4"
+LEVEL_DETECTION_VERSION = "multi-evidence-v3.5"
 
 
 def _norm(value):
@@ -73,7 +73,13 @@ def _collect_candidates(files):
                 "title_text": _norm(item.get("text")),
                 "title_point": [item.get("x"), item.get("y")],
             })
-        room_rows = [item for item in labels if v2.classify_room(item.get("text") or "")]
+        # Level-plan titles can contain room-like words (for example "بالکن")
+        # and must never count as their own room evidence.
+        room_rows = [
+            item for item in labels
+            if not _explicit_level_title(item.get("text") or "")
+            and v2.classify_room(item.get("text") or "")
+        ]
         for title in title_rows:
             source_key = (title["source_type"], title["source_name"])
             competing = [other for other in title_rows if (other["source_type"], other["source_name"]) == source_key]
