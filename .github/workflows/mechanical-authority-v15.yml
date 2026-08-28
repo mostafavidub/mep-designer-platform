@@ -16,6 +16,8 @@ on:
 jobs:
   authority-v15:
     runs-on: ubuntu-latest
+    env:
+      CAD_OUTPUT_DIR: /tmp/cad-engine
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
