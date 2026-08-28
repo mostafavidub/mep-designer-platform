@@ -9,11 +9,11 @@ from ezdxf.lldxf.const import DXFStructureError
 
 def _read_with_final_endsec(path: Path):
     raw = path.read_bytes()
-    matches = list(re.finditer(rb'(?m)^[ \\t]*0\\r?\\nEOF[ \\t]*(?:\\r?\\n)?', raw))
+    matches = list(re.finditer(rb'(?m)^[ \t]*0\r?\nEOF[ \t]*(?:\r?\n)?', raw))
     if not matches:
         raise DXFStructureError('missing EOF tag; safe ENDSEC repair is not possible')
     eof = matches[-1]
-    newline = b'\\r\\n' if b'\\r\\n' in raw[max(0, eof.start() - 100):eof.end()] else b'\\n'
+    newline = b'\r\n' if b'\r\n' in raw[max(0, eof.start() - 100):eof.end()] else b'\n'
     repaired = raw[:eof.start()] + b'  0' + newline + b'ENDSEC' + newline + raw[eof.start():]
     temp_name = None
     try:
@@ -68,6 +68,7 @@ def read_input_dxf(path: Path):
 
         return doc, {
             'recovered': True,
+            'mode': 'ezdxf_recover',
             'errors': len(auditor.errors),
             'fixes': len(auditor.fixes),
             'original_error': str(strict_error),
