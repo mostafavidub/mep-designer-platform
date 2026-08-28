@@ -1,0 +1,210 @@
+name: Reference Parity Generalization v17
+
+on:
+  push:
+    branches: [reference-parity-generalization-v17]
+  pull_request:
+    branches: [main]
+
+jobs:
+  stage-01-reference-decomposition:
+    runs-on: ubuntu-latest
+    steps: &base_steps
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_01_reference_decomposition -v
+
+  stage-02-detail-library:
+    needs: stage-01-reference-decomposition
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_02_detail_library -v
+
+  stage-03-detail-parameters:
+    needs: stage-02-detail-library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_03_detail_parameters -v
+
+  stage-04-detail-composer:
+    needs: stage-03-detail-parameters
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_04_detail_composer -v
+
+  stage-05-riser-graph:
+    needs: stage-04-detail-composer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_05_riser_graph -v
+
+  stage-06-riser-reconciliation:
+    needs: stage-05-riser-graph
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_06_riser_reconciliation -v
+
+  stage-07-riser-geometry:
+    needs: stage-06-riser-reconciliation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_07_riser_geometry -v
+
+  stage-08-calculation-dependencies:
+    needs: stage-07-riser-geometry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_08_calculation_dependencies -v
+
+  stage-09-calculation-traceability:
+    needs: stage-08-calculation-dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_09_calculation_traceability -v
+
+  stage-10-calculation-format:
+    needs: stage-09-calculation-traceability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_10_calculation_format -v
+
+  stage-11-notes-kb:
+    needs: stage-10-calculation-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_11_notes_knowledge_base -v
+
+  stage-12-notes-filter:
+    needs: stage-11-notes-kb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_12_project_specific_filter -v
+
+  stage-13-provenance:
+    needs: stage-12-notes-filter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_13_provenance -v
+
+  stage-14-reference-grammar:
+    needs: stage-13-provenance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_14_reference_grammar -v
+
+  stage-15-sheet-consistency:
+    needs: stage-14-reference-grammar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_15_sheet_consistency -v
+
+  stage-16-semantic-pairing:
+    needs: stage-15-sheet-consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_16_semantic_pairing -v
+
+  stage-17-four-component-scoring:
+    needs: stage-16-semantic-pairing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_17_four_component_scoring -v
+
+  stage-18-gap-fix-loop:
+    needs: stage-17-four-component-scoring
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_18_gap_fix_loop -v
+
+  stage-19-multi-project-regression:
+    needs: stage-18-gap-fix-loop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_19_multi_project_regression -v
+
+  stage-20-unseen-project-acceptance:
+    needs: stage-19-multi-project-regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest tests.test_reference_parity_generalization_v17.ReferenceParityV17Tests.test_stage_20_unseen_project_acceptance -v
+
+  cad-documentation-integration:
+    needs: stage-20-unseen-project-acceptance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_documentation_enhancer_v17 -v
+
+  release-contract:
+    needs: cad-documentation-integration
+    runs-on: ubuntu-latest
+    env:
+      CAD_OUTPUT_DIR: /tmp/engitools-v17-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r cad_engine/requirements.txt
+      - run: python -c "from cad_engine.mechanical_release_contract_v17 import release_contract_status; s=release_contract_status(); print(s); assert s['status']=='PASS'"
+      - run: python -c "from cad_engine.main_v17 import app; print('main_v17 import PASS')"
