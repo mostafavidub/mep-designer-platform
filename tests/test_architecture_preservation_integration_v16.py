@@ -10,6 +10,8 @@ from cad_engine.mechanical_authority_site_v16 import (
     evaluate_architecture_preservation,
     design_mechanical_authority_site,
 )
+from cad_engine.mechanical_release_contract_v16 import release_contract_status
+from cad_engine.main_v16 import app
 
 SRC_BOUNDS=(0.0,0.0,10.0,10.0)
 PLAN_AREA=(20.0,20.0,36.0,36.0)
@@ -69,6 +71,15 @@ def transformed_output(src:Path,dst:Path,drop_layer=None):
 
 
 class ArchitecturePreservationIntegrationV16(unittest.TestCase):
+    def test_release_contract_and_entrypoint_are_v16(self):
+        status=release_contract_status()
+        self.assertEqual(status['status'],'PASS',status)
+        self.assertEqual(status['version'],'16.0.0')
+        self.assertTrue(status['checks']['production_architecture_preservation_transaction'])
+        paths={getattr(r,'path',None) for r in app.routes}
+        self.assertIn('/architecture_preservation',paths)
+        self.assertIn('/mechanical_release',paths)
+
     def test_bottom_wall_and_door_are_preserved(self):
         with TemporaryDirectory() as td:
             src=Path(td)/'src.dxf'; dst=Path(td)/'out.dxf'; source_doc(src); transformed_output(src,dst)
