@@ -12,7 +12,7 @@ from collections import defaultdict
 
 from . import auto_inference_v2 as v2
 
-LEVEL_DETECTION_VERSION = "multi-evidence-v3.3"
+LEVEL_DETECTION_VERSION = "multi-evidence-v3.4"
 
 
 def _norm(value):
@@ -57,13 +57,7 @@ def _distance(a, b):
 
 
 def _collect_candidates(files):
-    """Collect explicit levels and attach only room evidence owned by that title.
-
-    Layout exports commonly place several plans in Model/Layout space. Counting
-    every room label from the same source falsely turns a title-only mezzanine
-    into a room-confirmed level. We therefore assign each room label to its
-    nearest explicit title in the same source before computing confidence.
-    """
+    """Collect explicit levels and attach only room evidence owned by that title."""
     rows = []
     for file_info in files or []:
         labels = file_info.get("text_labels") or []
@@ -79,18 +73,10 @@ def _collect_candidates(files):
                 "title_text": _norm(item.get("text")),
                 "title_point": [item.get("x"), item.get("y")],
             })
-        room_rows = []
-        for item in labels:
-            if not v2.classify_room(item.get("text") or ""):
-                continue
-            room_rows.append(item)
+        room_rows = [item for item in labels if v2.classify_room(item.get("text") or "")]
         for title in title_rows:
-            point = title["title_point"]
             source_key = (title["source_type"], title["source_name"])
-            competing = [
-                other for other in title_rows
-                if (other["source_type"], other["source_name"]) == source_key
-            ]
+            competing = [other for other in title_rows if (other["source_type"], other["source_name"]) == source_key]
             owned_rooms = 0
             for room in room_rows:
                 if (room.get("source_type"), room.get("source_name")) != source_key:
@@ -101,8 +87,7 @@ def _collect_candidates(files):
                     owned_rooms += 1
             source_type = title["source_type"]
             if source_type == "layout":
-                confidence = 0.96 if owned_rooms else 0.88
-                active = True
+                confidence = 0.96 if owned_rooms else 0.88; active = True
             elif owned_rooms >= 2:
                 confidence = 0.86; active = True
             elif owned_rooms == 1:
@@ -134,6 +119,31 @@ def _placeholder_profile(candidate):
     }
 
 
+def _mark_title_only_restorations(profiles, candidates, restored):
+    """Fail-safe provenance pass for explicit active levels with no owned rooms."""
+    by_name = {str(p.get("name")): p for p in profiles if p.get("name")}
+    for candidate in candidates:
+        if not candidate.get("active") or int(candidate.get("nearby_room_labels") or 0) != 0:
+            continue
+        name = candidate["name"]
+        if name not in restored:
+            restored.append(name)
+        profile = by_name.get(name)
+        if profile is None:
+            profile = _placeholder_profile(candidate)
+            profiles.append(profile); by_name[name] = profile
+        profile["typical_signature"] = None
+        profile["typical_confidence"] = "insufficient"
+        profile["level_confidence"] = max(float(profile.get("level_confidence") or 0), float(candidate["confidence"]))
+        profile["level_detection_status"] = "confirmed-from-explicit-title"
+        evidence = list(profile.get("level_evidence") or [])
+        for item in (candidate["basis"], candidate.get("source_type") or "unknown-source"):
+            if item not in evidence:
+                evidence.append(item)
+        profile["level_evidence"] = evidence
+    return profiles, restored
+
+
 def infer_architecture_facts(analysis, discipline):
     auto = v2.infer_architecture_facts(analysis, discipline)
     candidates = _collect_candidates((analysis or {}).get("files") or [])
@@ -147,7 +157,7 @@ def infer_architecture_facts(analysis, discipline):
         if candidate:
             evidence.append(candidate["basis"])
             profile["level_confidence"] = max(0.95, candidate["confidence"])
-            if candidate.get("active") and candidate.get("nearby_room_labels", 0) == 0:
+            if candidate.get("active") and int(candidate.get("nearby_room_labels") or 0) == 0:
                 profile["typical_signature"] = None
                 profile["typical_confidence"] = "insufficient"
                 profile["level_detection_status"] = "confirmed-from-explicit-title"
@@ -165,12 +175,13 @@ def infer_architecture_facts(analysis, discipline):
             continue
         if candidate["active"]:
             new_profile = _placeholder_profile(candidate)
-            profiles.append(new_profile)
-            profile_map[candidate["name"]] = new_profile
-            restored.append(candidate["name"])
+            profiles.append(new_profile); profile_map[candidate["name"]] = new_profile
+            if int(candidate.get("nearby_room_labels") or 0) == 0:
+                restored.append(candidate["name"])
         else:
             weak.append(candidate)
 
+    profiles, restored = _mark_title_only_restorations(profiles, candidates, restored)
     restored = list(dict.fromkeys(restored))
     if profiles:
         auto["level_profiles"] = profiles
