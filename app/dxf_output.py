@@ -3,9 +3,10 @@ from pathlib import Path
 
 import requests
 from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 
 from . import main as legacy
+from . import artifact_storage
 
 app = legacy.app
 _prev_flow_payload = legacy.flow_payload
@@ -165,9 +166,18 @@ def run_design_dxf(project_id, revision_id):
             dst = out / f'{discipline}_design_DXF.zip'
             shutil.copy2(package_path, dst)
 
+        artifact_qa = artifact_storage.validate_output_artifact(dst)
+        analysis = dict(p.analysis or {})
+        analysis['last_artifact_validation'] = artifact_qa
+        p.analysis = analysis
+
+        durable_uri = artifact_storage.upload_output(
+            p.id, r.revision_no, discipline, dst,
+        )
+
         # Reuse the existing artifact-path column for compatibility with the
         # current database schema; the file stored here is now DXF/ZIP, not PDF.
-        r.pdf_path = str(dst)
+        r.pdf_path = durable_uri or str(dst)
         r.status = 'ready'
         r.error = ''
         p.status = 'ready'
@@ -199,6 +209,8 @@ def flow_payload_dxf(p):
 
 
 def _resolve_existing_cad_artifact(pid, rev, discipline, stored_path):
+    if str(stored_path or '').startswith('s3://'):
+        return str(stored_path)
     path = Path(stored_path or '')
     if path.exists() and path.suffix.lower() in ('.dxf', '.zip'):
         return path
@@ -238,6 +250,13 @@ def get_cad_output(pid: int, rev: int, request: Request):
     path = _resolve_existing_cad_artifact(pid, rev, discipline, r.pdf_path)
     if not path:
         raise HTTPException(404, 'DXF output is not available for this revision; create a new revision.')
+
+    if isinstance(path, str) and path.startswith('s3://'):
+        suffix = Path(path).suffix.lower()
+        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
+        if not artifact_storage.configured():
+            raise HTTPException(503, 'فضای ذخیره‌سازی خروجی موقتاً در دسترس نیست.')
+        return RedirectResponse(artifact_storage.presigned_download(path, filename), status_code=307)
 
     if path.suffix.lower() == '.dxf':
         media_type = 'application/dxf'

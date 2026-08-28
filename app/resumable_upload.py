@@ -1,5 +1,4 @@
 import shutil
-import threading
 from pathlib import Path
 
 from fastapi import HTTPException, Request
@@ -98,7 +97,7 @@ def register_resumable_upload_routes(app):
             project.status = 'analyzing'
             project.last_error = ''
             db.commit()
-            threading.Thread(target=legacy.analyze_project_job, args=(pid,), daemon=True).start()
+            legacy.schedule_analysis(pid)
             return JSONResponse({'ok': True, 'complete': True, 'project_id': pid, 'flow_url': f'/projects/{pid}/flow'})
         except HTTPException:
             raise

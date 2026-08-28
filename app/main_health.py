@@ -19,6 +19,7 @@ from .mechanical_site_manifest_v12 import install as install_manifest_site_v12
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
 from .seo_runtime import register_seo_articles
+from .job_queue import register_job_queue
 
 app = main_auto.app
 register_resumable_upload_routes(app)
@@ -39,6 +40,7 @@ mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 install_manifest_site_v12(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)
+register_job_queue(app, main_auto.legacy)
 
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 

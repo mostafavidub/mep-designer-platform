@@ -186,6 +186,10 @@ def analyze_project_job(project_id):
     except Exception as e: p.status='awaiting_upload'; p.last_error=str(e); db.commit()
     finally: db.close()
 
+def schedule_analysis(project_id):
+    """Scheduling hook replaced by the persistent queue in production."""
+    threading.Thread(target=analyze_project_job,args=(project_id,),daemon=True).start()
+
 def run_design(project_id,revision_id):
     db=Session(); p=db.get(Project,project_id); r=db.get(Revision,revision_id)
     try:
@@ -296,7 +300,7 @@ def article(slug:str,request:Request):
 def start_project_discipline(discipline:str,request:Request,name:str=Form(''),file:UploadFile=File(...)):
     if discipline not in DISCIPLINES: raise HTTPException(404)
     u=current_user(request); db=Session(); project_name=(name or '').strip() or f"{DISCIPLINES[discipline]['title']} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"; p=Project(user_id=u.id,name=project_name,questions=qlist(DISCIPLINES[discipline]['questions']),answers={'discipline':discipline},status='uploading'); db.add(p); db.commit(); db.refresh(p)
-    try: save_project_input(p.id,file); p.status='analyzing'; p.last_error=''; db.commit(); pid=p.id; threading.Thread(target=analyze_project_job,args=(pid,),daemon=True).start()
+    try: save_project_input(p.id,file); p.status='analyzing'; p.last_error=''; db.commit(); pid=p.id; schedule_analysis(pid)
     except Exception as e: p.last_error=str(e); p.status='awaiting_upload'; db.commit(); pid=p.id
     db.close(); url=f'/projects/{pid}'
     if request.headers.get('x-requested-with')=='XMLHttpRequest': return JSONResponse({'ok':True,'project_id':pid,'status_url':f'/projects/{pid}/status','flow_url':f'/projects/{pid}/flow','fallback_url':url})
@@ -322,7 +326,7 @@ def project_flow(pid:int,request:Request):
 def upload(pid:int,request:Request,file:UploadFile=File(...)):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    try: save_project_input(p.id,file); p.status='analyzing'; p.last_error=''; db.commit(); threading.Thread(target=analyze_project_job,args=(pid,),daemon=True).start()
+    try: save_project_input(p.id,file); p.status='analyzing'; p.last_error=''; db.commit(); schedule_analysis(pid)
     except Exception as e: p.last_error=str(e); p.status='awaiting_upload'; db.commit()
     db.close()
     if request.headers.get('x-requested-with')=='XMLHttpRequest': return JSONResponse({'ok':True,'flow_url':f'/projects/{pid}/flow','fallback_url':f'/projects/{pid}'})

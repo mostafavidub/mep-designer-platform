@@ -1,0 +1,71 @@
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+import ezdxf
+
+from app import artifact_storage
+
+
+class ArtifactQualityGateTests(unittest.TestCase):
+    def _valid_dxf(self, path):
+        doc = ezdxf.new('R2010')
+        doc.modelspace().add_line((0, 0), (10, 10))
+        doc.saveas(path)
+
+    def test_valid_dxf_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / 'design.dxf'
+            self._valid_dxf(path)
+            report = artifact_storage.validate_output_artifact(path)
+            self.assertEqual(report['status'], 'PASS')
+            self.assertGreater(report['files'][0]['entities'], 0)
+
+    def test_empty_dxf_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / 'empty.dxf'
+            path.write_text('', encoding='utf-8')
+            with self.assertRaises(RuntimeError):
+                artifact_storage.validate_output_artifact(path)
+
+    def test_zip_requires_readable_dxf(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            dxf = root / 'sheet.dxf'
+            self._valid_dxf(dxf)
+            package = root / 'output.zip'
+            with zipfile.ZipFile(package, 'w') as archive:
+                archive.write(dxf, dxf.name)
+            report = artifact_storage.validate_output_artifact(package)
+            self.assertEqual(report['format'], 'ZIP')
+            self.assertEqual(len(report['files']), 1)
+
+    def test_zip_without_dxf_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            package = Path(td) / 'invalid.zip'
+            with zipfile.ZipFile(package, 'w') as archive:
+                archive.writestr('readme.txt', 'no drawing')
+            with self.assertRaises(RuntimeError):
+                artifact_storage.validate_output_artifact(package)
+
+
+class QueueIntegrationContractTests(unittest.TestCase):
+    def test_unbounded_thread_calls_removed_from_upload_paths(self):
+        main = Path('app/main.py').read_text(encoding='utf-8')
+        resumable = Path('app/resumable_upload.py').read_text(encoding='utf-8')
+        self.assertIn('schedule_analysis(pid)', main)
+        self.assertIn('legacy.schedule_analysis(pid)', resumable)
+        self.assertNotIn('threading.Thread(target=legacy.analyze_project_job', resumable)
+
+    def test_production_installs_persistent_queue_last(self):
+        source = Path('app/main_health.py').read_text(encoding='utf-8')
+        self.assertIn('register_job_queue(app, main_auto.legacy)', source)
+        self.assertGreater(
+            source.index('register_job_queue(app, main_auto.legacy)'),
+            source.index('register_mechanical_review_fix(app, main_auto.legacy)'),
+        )
+
+
+if __name__ == '__main__':
+    unittest.main()
