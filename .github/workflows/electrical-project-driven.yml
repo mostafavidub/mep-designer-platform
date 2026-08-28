@@ -1,0 +1,25 @@
+name: Electrical Project-Driven Tests
+
+on:
+  push:
+    branches: [feature/electrical-project-driven-v1]
+  pull_request:
+    branches: [main]
+
+jobs:
+  electrical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run electrical project-driven tests
+        env:
+          DATABASE_URL: sqlite:///./test_ci.db
+          CAD_DESIGNER_URL: http://127.0.0.1:9999
+        run: python -m unittest tests.test_electrical_project_driven_v1 -v
