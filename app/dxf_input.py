@@ -38,7 +38,7 @@ def read_input_dxf(path: Path):
         doc = ezdxf.readfile(source)
         return doc, {'recovered': False, 'errors': 0, 'fixes': 0}
     except DXFStructureError as strict_error:
-        if 'missing ENDSEC tag' in str(strict_error):
+        if 'ENDSEC' in str(strict_error).upper():
             try:
                 doc = _read_with_final_endsec(source)
                 entity_count = sum(1 for _ in doc.modelspace())
