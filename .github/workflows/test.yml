@@ -12,6 +12,7 @@ jobs:
     timeout-minutes: 15
     env:
       DATA_DIR: /tmp/engitools-ci-data
+      CAD_OUTPUT_DIR: /tmp/engitools-ci-cad
       DATABASE_URL: sqlite:///./test_ci.db
       CAD_DESIGNER_URL: http://127.0.0.1:9999
       MPLBACKEND: Agg
@@ -25,6 +26,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install matplotlib pypdf
-          mkdir -p "$DATA_DIR"
+          mkdir -p "$DATA_DIR" "$CAD_OUTPUT_DIR"
       - name: Run tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
