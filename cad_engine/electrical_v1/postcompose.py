@@ -27,12 +27,11 @@ def _fit_transform(bounds, paper, margins=(12,18,12,12)):
 
 
 def _frame(architecture, frame_id):
-    return next((f for f in architecture.frames if f.id==frame_id),None)
+    return next((f for f in architecture.frames if f.id==frame_id),None) if architecture is not None else None
 
 
 def _draw_cover(doc, manifest, signatures, paper):
-    covers=[s for s in manifest if s.family=="COVER"]
-    for sheet in covers:
+    for sheet in [s for s in manifest if s.family=="COVER"]:
         if sheet.sheet_id not in doc.layouts: continue
         layout=doc.layouts.get(sheet.sheet_id); y=paper[1]-28
         layout.add_text("ELECTRICAL DRAWING INDEX",dxfattribs={"layer":"ENGITOOLS-E-DOC","height":2.5}).set_placement((18,y)); y-=7
@@ -42,45 +41,40 @@ def _draw_cover(doc, manifest, signatures, paper):
 
 
 def _draw_panels(doc, manifest, topology, architecture, paper):
-    if not topology: return
+    if not topology or architecture is None: return
     for panel in topology.get("panels") or []:
         location=panel.location.value if isinstance(panel.location,EvidenceValue) and panel.location.status==EngineeringStatus.FINAL else None
         if not isinstance(location,dict) or not location.get("point"): continue
         frame_id=location.get("frame_id")
         if not frame_id:
             frame=next((f for f in architecture.frames if f.level_id==panel.level_id and f.eligible_for_electrical),None); frame_id=frame.id if frame else None
-        frame=_frame(architecture,frame_id) if frame_id else None
+        frame=_frame(architecture,frame_id)
         if not frame: continue
-        transform=_fit_transform(frame.bounds,paper); point=transform(location["point"])
+        point=_fit_transform(frame.bounds,paper)(location["point"])
         for sheet in manifest:
             if sheet.family!="POWER" or sheet.level_id!=panel.level_id or sheet.sheet_id not in doc.layouts: continue
             layout=doc.layouts.get(sheet.sheet_id)
-            if "ET_EL_PNL_01" in doc.blocks:
-                layout.add_blockref("ET_EL_PNL_01",point,dxfattribs={"layer":"ENGITOOLS-E-POWER"})
-            else:
-                layout.add_lwpolyline([(point[0]-2,point[1]-3),(point[0]+2,point[1]-3),(point[0]+2,point[1]+3),(point[0]-2,point[1]+3),(point[0]-2,point[1]-3)],dxfattribs={"layer":"ENGITOOLS-E-POWER"})
+            if "ET_EL_PNL_01" in doc.blocks: layout.add_blockref("ET_EL_PNL_01",point,dxfattribs={"layer":"ENGITOOLS-E-POWER"})
+            else: layout.add_lwpolyline([(point[0]-2,point[1]-3),(point[0]+2,point[1]-3),(point[0]+2,point[1]+3),(point[0]-2,point[1]+3),(point[0]-2,point[1]-3)],dxfattribs={"layer":"ENGITOOLS-E-POWER"})
             layout.add_text(panel.id,dxfattribs={"layer":"ENGITOOLS-E-ANNOTATION","height":1.3}).set_placement((point[0]+3,point[1]+2))
 
 
-def _draw_grounding(doc, manifest, grounding, signatures, paper, architecture):
+def _draw_grounding(doc, manifest, grounding, signatures, paper, architecture=None):
     elements=grounding.get("elements") or []
     for sheet in [s for s in manifest if s.family=="GROUNDING"]:
         if sheet.sheet_id not in doc.layouts: continue
         layout=doc.layouts.get(sheet.sheet_id); count=0; y=paper[1]-35
         for element in elements:
             data=element.get("data"); status=element.get("status")
-            text=f"{element['kind']}: {data if data is not None else status}"
-            layout.add_text(text,dxfattribs={"layer":"ENGITOOLS-E-GROUNDING","height":1.3}).set_placement((18,y)); y-=5; count+=1
+            layout.add_text(f"{element['kind']}: {data if data is not None else status}",dxfattribs={"layer":"ENGITOOLS-E-GROUNDING","height":1.3}).set_placement((18,y)); y-=5; count+=1
             if element["kind"]=="earth_electrode" and isinstance(data,dict) and data.get("point"):
                 frame_id=data.get("frame_id") or (sheet.source_frame_ids[0] if sheet.source_frame_ids else None)
-                frame=_frame(architecture,frame_id) if frame_id else None
-                if frame:
-                    q=_fit_transform(frame.bounds,paper)(data["point"])
-                    if "ET_EL_GND_01" in doc.blocks:
-                        layout.add_blockref("ET_EL_GND_01",q,dxfattribs={"layer":"ENGITOOLS-E-GROUNDING"})
-                    else:
-                        layout.add_circle(q,2.0,dxfattribs={"layer":"ENGITOOLS-E-GROUNDING"})
-                    layout.add_text("EARTH ELECTRODE",dxfattribs={"layer":"ENGITOOLS-E-ANNOTATION","height":1.1}).set_placement((q[0]+3,q[1]+1)); count+=1
+                frame=_frame(architecture,frame_id)
+                q=_fit_transform(frame.bounds,paper)(data["point"]) if frame else (90.0,y+4.0)
+                if "ET_EL_GND_01" in doc.blocks: layout.add_blockref("ET_EL_GND_01",q,dxfattribs={"layer":"ENGITOOLS-E-GROUNDING"})
+                else: layout.add_circle(q,2.0,dxfattribs={"layer":"ENGITOOLS-E-GROUNDING"})
+                label="EARTH ELECTRODE" if frame else "EARTH ELECTRODE - PLAN COORDINATION INPUT"
+                layout.add_text(label,dxfattribs={"layer":"ENGITOOLS-E-ANNOTATION","height":1.1}).set_placement((q[0]+3,q[1]+1)); count+=1
         signatures.setdefault(sheet.sheet_id,{}).setdefault("signature",{})["grounding_elements"]=count
 
 
@@ -121,15 +115,13 @@ def _draw_detail_links(doc, manifest, links, paper):
 
 
 def optimize_annotations(doc, manifest, paper):
-    """Resolve obvious annotation collisions and add leaders to moved labels."""
     moved=0
     for sheet in manifest:
         if sheet.sheet_id not in doc.layouts: continue
         layout=doc.layouts.get(sheet.sheet_id); texts=[e for e in layout if e.dxftype()=="TEXT" and str(getattr(e.dxf,"layer",""))=="ENGITOOLS-E-ANNOTATION"]
         occupied=[]
         for e in texts:
-            p=e.dxf.insert; h=max(float(e.dxf.height or 1),.8); text=str(e.dxf.text or ""); w=max(h*.55*len(text),h); box=[float(p.x),float(p.y),float(p.x)+w,float(p.y)+h]; original=(float(p.x),float(p.y))
-            attempts=0
+            p=e.dxf.insert; h=max(float(e.dxf.height or 1),.8); text=str(e.dxf.text or ""); w=max(h*.55*len(text),h); box=[float(p.x),float(p.y),float(p.x)+w,float(p.y)+h]; original=(float(p.x),float(p.y)); attempts=0
             while any(max(0,min(box[2],b[2])-max(box[0],b[0]))*max(0,min(box[3],b[3])-max(box[1],b[1]))>.2 for b in occupied) and attempts<8:
                 box=[box[0],box[1]+3,box[2],box[3]+3]; attempts+=1
             if attempts:
@@ -139,13 +131,5 @@ def optimize_annotations(doc, manifest, paper):
 
 
 def apply_postcomposition(path: str|Path, manifest, details, grounding, signatures, paper=(420.0,297.0), *, architecture=None, topology=None, links=None):
-    doc=ezdxf.readfile(str(path))
-    _draw_cover(doc,manifest,signatures,paper)
-    if architecture is not None:
-        _draw_panels(doc,manifest,topology or {},architecture,paper)
-        _draw_grounding(doc,manifest,grounding,signatures,paper,architecture)
-    _draw_details(doc,manifest,details,signatures,paper)
-    _draw_detail_links(doc,manifest,links or [],paper)
-    moved=optimize_annotations(doc,manifest,paper)
-    doc.saveas(str(path))
+    doc=ezdxf.readfile(str(path)); _draw_cover(doc,manifest,signatures,paper); _draw_panels(doc,manifest,topology or {},architecture,paper); _draw_grounding(doc,manifest,grounding,signatures,paper,architecture); _draw_details(doc,manifest,details,signatures,paper); _draw_detail_links(doc,manifest,links or [],paper); moved=optimize_annotations(doc,manifest,paper); doc.saveas(str(path))
     return {"status":"PASS","annotations_moved_with_leaders":moved}
