@@ -23,7 +23,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -r cad_engine/requirements.txt
       - run: pip install pytest
-      - run: python -m py_compile cad_engine/mechanical_authority_v15.py cad_engine/main_v15.py
-      - run: python -c "import cad_engine.main_v15 as m; assert m.health()['version'] == '15.0.0'"
+      - run: python -m py_compile cad_engine/mechanical_authority_v15.py cad_engine/mechanical_authority_site_v15.py cad_engine/main_v15.py
+      - run: python -c "import cad_engine.main_v15 as m; assert m.health()['version'] == '15.1.0'"
       - run: pytest -q tests/test_mechanical_authority_v15.py
       - run: docker build -f cad_engine/Dockerfile cad_engine -t engitools-cad-v15:test
