@@ -269,6 +269,11 @@ def mechanical_design(msp, rooms, systems, scale):
 
 def design_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revision: int):
     doc = ezdxf.readfile(src)
+    # New engineering symbols use LWPOLYLINE, which is unavailable in R12.
+    # Upgrade only the output document version; the architectural entities and
+    # coordinates remain untouched.
+    if doc.dxfversion < 'AC1015':
+        doc.dxfversion = 'AC1015'
     msp = doc.modelspace()
     prefix = PREFIX[discipline]
     for system in systems:

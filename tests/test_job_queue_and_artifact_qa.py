@@ -6,6 +6,7 @@ from pathlib import Path
 import ezdxf
 
 from app import artifact_storage
+from cad_engine.main import design_dxf
 
 
 class ArtifactQualityGateTests(unittest.TestCase):
@@ -51,6 +52,18 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_r12_input_is_upgraded_before_new_symbols_are_added(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / 'legacy-r12.dxf'
+            output = Path(td) / 'designed.dxf'
+            doc = ezdxf.new('R12')
+            doc.modelspace().add_text('LIVING ROOM', dxfattribs={'height': 200}).set_placement((1000, 1000))
+            doc.saveas(source)
+            design_dxf(source, output, 'electrical', ['elv'], 1)
+            designed = ezdxf.readfile(output)
+            self.assertGreaterEqual(designed.dxfversion, 'AC1015')
+            self.assertTrue(any(entity.dxftype() == 'LWPOLYLINE' for entity in designed.modelspace()))
+
     def test_unbounded_thread_calls_removed_from_upload_paths(self):
         main = Path('app/main.py').read_text(encoding='utf-8')
         resumable = Path('app/resumable_upload.py').read_text(encoding='utf-8')
