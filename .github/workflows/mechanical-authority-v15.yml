@@ -1,0 +1,27 @@
+name: Mechanical Authority v15
+
+on:
+  pull_request:
+    paths:
+      - 'cad_engine/**'
+      - 'tests/test_mechanical_authority_v15.py'
+      - '.github/workflows/mechanical-authority-v15.yml'
+  push:
+    branches: [main, authority-engine-v14]
+    paths:
+      - 'cad_engine/**'
+      - 'tests/test_mechanical_authority_v15.py'
+      - '.github/workflows/mechanical-authority-v15.yml'
+
+jobs:
+  authority-v15:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r cad_engine/requirements.txt
+      - run: pip install pytest
+      - run: python -m py_compile cad_engine/mechanical_authority_v15.py cad_engine/main_v15.py
+      - run: pytest -q tests/test_mechanical_authority_v15.py
