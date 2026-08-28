@@ -125,3 +125,14 @@ jobs:
         with: {python-version: '3.12'}
       - run: pip install ezdxf==1.4.2
       - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_12_hard_fail_rollback -v
+
+  production-integration:
+    needs: stage-12-hard-fail
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r cad_engine/requirements.txt
+      - name: Verify bottom wall/door preservation and fail-closed rollback
+        run: python -m unittest tests.test_architecture_preservation_integration_v16 -v
