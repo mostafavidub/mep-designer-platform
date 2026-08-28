@@ -19,11 +19,11 @@ from ezdxf import bbox
 from ezdxf.addons.drawing import Frontend, RenderContext
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
-from main import (
+from .main import (
     SYSTEMS, DesignRequest, OUTPUT_ROOT, source_files,
     design_dxf, render_pdf, merge_pdfs, zip_outputs,
 )
-from mechanical_authority_v15 import design_mechanical_authority
+from .mechanical_authority_v15 import design_mechanical_authority
 
 app = FastAPI(title="EngiTools CAD Designer", version="15.0.0")
 
