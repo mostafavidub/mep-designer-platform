@@ -129,6 +129,8 @@ jobs:
   production-integration:
     needs: stage-12-hard-fail
     runs-on: ubuntu-latest
+    env:
+      CAD_OUTPUT_DIR: /tmp/engitools-cad-engine-ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
