@@ -23,9 +23,9 @@ from .main import (
     SYSTEMS, DesignRequest, OUTPUT_ROOT, source_files,
     design_dxf, render_pdf, merge_pdfs, zip_outputs,
 )
-from .mechanical_authority_v15 import design_mechanical_authority
+from .mechanical_authority_site_v15 import design_mechanical_authority_site
 
-app = FastAPI(title="EngiTools CAD Designer", version="15.0.0")
+app = FastAPI(title="EngiTools CAD Designer", version="15.1.0")
 
 
 @app.get("/health")
@@ -33,7 +33,7 @@ def health():
     return {
         "ok": True,
         "service": "cad-designer",
-        "version": "15.0.0",
+        "version": "15.1.0",
         "mechanical_mode": "authority-project-driven",
         "electrical_mode": "rule-driven-preliminary",
     }
@@ -124,7 +124,7 @@ def design(req: DesignRequest):
             dxf_out=project_out/f"{idx:02d}_{safe_stem}_{discipline}.dxf"
 
             if discipline=="mechanical":
-                report=design_mechanical_authority(
+                report=design_mechanical_authority_site(
                     src,dxf_out,
                     answers=req.answers,
                     plan_analysis=req.plan_analysis,
@@ -136,6 +136,7 @@ def design(req: DesignRequest):
                         "engineering_acceptance":report.get("engineering_acceptance"),
                         "authority_qa":((report.get("authority") or {}).get("authority_qa")),
                         "dxf_qa":report.get("dxf_qa"),
+                        "semantic_qa":report.get("semantic_qa"),
                     }
                     raise HTTPException(422,detail)
                 pages=render_mechanical_pages(dxf_out,report,project_out)
@@ -158,7 +159,7 @@ def design(req: DesignRequest):
             "ok":True,
             "project_id":req.project_id,
             "discipline":discipline,
-            "engine_version":"15.0.0",
+            "engine_version":"15.1.0",
             "mode":"authority-project-driven" if discipline=="mechanical" else "rule-driven-preliminary",
             "preliminary":True,
             "requires_professional_review":True,
