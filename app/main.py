@@ -4,6 +4,7 @@ from datetime import datetime
 from collections import Counter
 
 import requests, ezdxf
+from .dxf_input import read_input_dxf
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -144,13 +145,13 @@ def own_project(pid,uid):
 def is_real_dxf_path(path): return path.suffix.lower()=='.dxf' and '__MACOSX' not in path.parts and not path.name.startswith('.') and not path.name.startswith('._')
 
 def analyze_dxf(path):
-    doc=ezdxf.readfile(path); msp=doc.modelspace(); counts=Counter(e.dxftype() for e in msp); texts=[]
+    doc,recovery=read_input_dxf(path); msp=doc.modelspace(); counts=Counter(e.dxftype() for e in msp); texts=[]
     for e in msp:
         try:
             if e.dxftype()=='TEXT' and e.dxf.text.strip(): texts.append(e.dxf.text.strip())
             elif e.dxftype()=='MTEXT' and e.plain_text().strip(): texts.append(e.plain_text().strip())
         except Exception: pass
-    return {'file':path.name,'version':doc.dxfversion,'insunits':int(doc.header.get('$INSUNITS',0) or 0),'layers':[l.dxf.name for l in doc.layers],'entities':dict(counts),'texts':texts[:200]}
+    return {'file':path.name,'version':doc.dxfversion,'insunits':int(doc.header.get('$INSUNITS',0) or 0),'layers':[l.dxf.name for l in doc.layers],'entities':dict(counts),'texts':texts[:200],'recovery':recovery}
 
 def safe_extract(zip_path,dest):
     with zipfile.ZipFile(zip_path) as z:

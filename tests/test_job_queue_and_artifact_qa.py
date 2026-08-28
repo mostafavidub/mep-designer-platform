@@ -6,6 +6,7 @@ from pathlib import Path
 import ezdxf
 
 from app import artifact_storage
+from app.dxf_input import read_input_dxf
 from cad_engine.main import design_dxf
 
 
@@ -52,6 +53,29 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_missing_endsec_input_is_recovered_without_losing_geometry(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / 'missing-endsec.dxf'
+            output = Path(td) / 'designed.dxf'
+            doc = ezdxf.new('R2010')
+            doc.modelspace().add_line((0, 0), (1000, 1000))
+            doc.modelspace().add_text('LIVING ROOM').set_placement((500, 500))
+            doc.saveas(source)
+
+            raw = source.read_text(encoding='utf-8')
+            marker = raw.rfind('  0\nENDSEC\n')
+            self.assertGreater(marker, 0)
+            source.write_text(raw[:marker] + raw[marker + len('  0\nENDSEC\n'):], encoding='utf-8')
+
+            recovered, report = read_input_dxf(source)
+            self.assertTrue(report['recovered'])
+            self.assertGreater(sum(1 for _ in recovered.modelspace()), 0)
+
+            design_report = design_dxf(source, output, 'mechanical', ['cold_water'], 1)
+            self.assertTrue(design_report['input_recovery']['recovered'])
+            designed = ezdxf.readfile(output)
+            self.assertGreater(sum(1 for _ in designed.modelspace()), 0)
+
     def test_r12_input_is_upgraded_before_new_symbols_are_added(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / 'legacy-r12.dxf'

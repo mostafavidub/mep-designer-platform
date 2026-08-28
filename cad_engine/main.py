@@ -8,6 +8,7 @@ import zipfile
 from pathlib import Path
 
 import ezdxf
+from app.dxf_input import read_input_dxf
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -268,7 +269,7 @@ def mechanical_design(msp, rooms, systems, scale):
     return stats
 
 def design_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revision: int):
-    doc = ezdxf.readfile(src)
+    doc, recovery = read_input_dxf(src)
     # New engineering symbols use LWPOLYLINE, which is unavailable in R12.
     # Upgrade only the output document version; the architectural entities and
     # coordinates remain untouched.
@@ -307,7 +308,7 @@ def design_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revisi
         msp.add_text("WARNING: NO RECOGNIZED ROOM LABELS; ONLY LAYERS/NOTES WERE GENERATED",dxfattribs={"layer":note_layer,"height":text_h*0.62}).set_placement((x0,yy))
 
     doc.saveas(dst)
-    return {"room_labels":len(rooms),"placements":stats}
+    return {"room_labels":len(rooms),"placements":stats,"input_recovery":recovery}
 
 def render_pdf(dxf_path: Path, pdf_path: Path, discipline: str):
     doc = ezdxf.readfile(dxf_path)
