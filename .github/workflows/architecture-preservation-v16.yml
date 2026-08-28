@@ -1,0 +1,140 @@
+name: Architecture Preservation Gate v16
+
+on:
+  push:
+    branches: [architecture-preservation-gate-v16]
+  pull_request:
+    branches: [main]
+
+jobs:
+  stage-01-snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_01_snapshot_baseline -v
+
+  stage-02-classifier:
+    needs: stage-01-snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_02_semantic_classifier -v
+
+  stage-03-criticality:
+    needs: stage-02-classifier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_03_criticality_fail_closed -v
+
+  stage-04-dependencies:
+    needs: stage-03-criticality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_04_dependency_graph -v
+
+  stage-05-mutation-policy:
+    needs: stage-04-dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_05_mutation_policy -v
+
+  stage-06-atomic-transform:
+    needs: stage-05-mutation-policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_06_atomic_transform -v
+
+  stage-07-diff:
+    needs: stage-06-atomic-transform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_07_diff_detects_critical_loss -v
+
+  stage-08-topology:
+    needs: stage-07-diff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_08_topology_preservation -v
+
+  stage-09-visibility:
+    needs: stage-08-topology
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_09_visibility_gate -v
+
+  stage-10-mechanical-impact:
+    needs: stage-09-visibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_10_mechanical_impact -v
+
+  stage-11-golden-regression:
+    needs: stage-10-mechanical-impact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_11_golden_regression -v
+
+  stage-12-hard-fail:
+    needs: stage-11-golden-regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install ezdxf==1.4.2
+      - run: python -m unittest tests.test_architecture_preservation_gate_v16.PreservationGateV16Tests.test_stage_12_hard_fail_rollback -v
+
+  production-integration:
+    needs: stage-12-hard-fail
+    runs-on: ubuntu-latest
+    env:
+      CAD_OUTPUT_DIR: /tmp/engitools-cad-engine-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r cad_engine/requirements.txt
+      - name: Verify bottom wall/door preservation and fail-closed rollback
+        run: python -m unittest tests.test_architecture_preservation_integration_v16 -v
