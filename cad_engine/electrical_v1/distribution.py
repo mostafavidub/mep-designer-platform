@@ -9,10 +9,24 @@ from .models import ElectricalDesignBasis, EngineeringStatus, EvidenceValue, Sys
 def _final(ev): return isinstance(ev,EvidenceValue) and ev.status==EngineeringStatus.FINAL and ev.value is not None
 
 
+def _explicit_none(value):
+    return value is False or value in ({}, [], (), "NONE", "none", "NOT_REQUIRED", "not_required")
+
+
 def normalize_requirement_scope(requirements: Dict[str,SystemRequirement], basis: ElectricalDesignBasis):
+    """Close requirement states only when the design basis explicitly proves absence.
+
+    This prevents an UNKNOWN subsystem from being silently treated as not required,
+    while allowing explicit empty schedules/false flags to close the gate.
+    """
     hvac=basis.get("hvac_electrical_loads")
-    if _final(hvac) and (hvac.value is False or hvac.value in ({},[],"NONE","none","NOT_REQUIRED","not_required")):
+    if _final(hvac) and _explicit_none(hvac.value):
         requirements["HVAC_POWER"]=SystemRequirement("HVAC_POWER",EngineeringStatus.NOT_REQUIRED,False,["design_basis.hvac_electrical_loads"],1.0,"explicitly no HVAC electrical loads")
+
+    dedicated=basis.get("dedicated_appliance_requirements")
+    if _final(dedicated) and _explicit_none(dedicated.value):
+        requirements["DEDICATED_POWER"]=SystemRequirement("DEDICATED_POWER",EngineeringStatus.NOT_REQUIRED,False,["design_basis.dedicated_appliance_requirements"],1.0,"explicitly no dedicated appliance loads")
+
     return requirements
 
 
