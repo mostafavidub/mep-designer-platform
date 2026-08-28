@@ -145,8 +145,9 @@ def _safe_area_qa(path: Path, data: Dict[str, Any]) -> Dict[str, Any]:
         if sheet.get("family") not in PLAN_FAMILIES or sheet.get("sheet_id") not in doc.layouts: continue
         checked += 1
         for e in doc.layouts.get(sheet.get("sheet_id")):
+            if e.dxftype() == "VIEWPORT": continue
             layer = str(getattr(e.dxf, "layer", "") or "")
-            if layer in {"ENGITOOLS-E-DOC", "ENGITOOLS-E-ARCH-UNDERLAY"}: continue
+            if layer in {"ENGITOOLS-E-DOC", "ENGITOOLS-E-ARCH-UNDERLAY", "VIEWPORTS"}: continue
             try:
                 from ezdxf import bbox
                 ext = bbox.extents([e], fast=True)
