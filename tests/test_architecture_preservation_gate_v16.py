@@ -15,18 +15,37 @@ def make_doc():
     for name in ('WALL','DOOR','WINDOW','SHAFT','GRID','A-NOTE'):
         if name not in doc.layers: doc.layers.add(name)
     m=doc.modelspace()
-    # closed room walls
     m.add_line((1,1),(9,1),dxfattribs={'layer':'WALL'})
     m.add_line((9,1),(9,8),dxfattribs={'layer':'WALL'})
     m.add_line((9,8),(1,8),dxfattribs={'layer':'WALL'})
     m.add_line((1,8),(1,1),dxfattribs={'layer':'WALL'})
-    # door/window/shaft/grid
     m.add_line((4,1),(5,1),dxfattribs={'layer':'DOOR'})
     m.add_line((9,4),(9,5),dxfattribs={'layer':'WINDOW'})
     m.add_lwpolyline([(7,6),(8,6),(8,7),(7,7)],close=True,dxfattribs={'layer':'SHAFT'})
     m.add_line((0,4.5),(10,4.5),dxfattribs={'layer':'GRID'})
     m.add_text('پلان معماری طبقه همکف',dxfattribs={'layer':'A-NOTE','height':.2}).set_placement((2,.3))
     return doc
+
+
+def shifted_snapshot(base,dx=0.0,dy=0.0):
+    out=copy.deepcopy(base)
+    for r in out['entities']:
+        x1,y1,x2,y2=r['bbox']; r['bbox']=(x1+dx,y1+dy,x2+dx,y2+dy)
+    return out
+
+
+def enrich_snapshot(base,case_index):
+    """Add matching protected archetypes so golden cases cover more architecture families."""
+    before=copy.deepcopy(base); after=shifted_snapshot(base,dx=case_index*12.0,dy=case_index*3.0)
+    extra_classes=['COLUMN','STAIR','RAMP','STRUCTURAL','OPENING']
+    for j,cls in enumerate(extra_classes):
+        if j>case_index%len(extra_classes): break
+        key=f'P1:X{case_index}-{j}'; b=(2+j,2+j,2.3+j,2.7+j); a=(b[0]+case_index*12,b[1]+case_index*3,b[2]+case_index*12,b[3]+case_index*3)
+        rec={'key':key,'handle':f'X{case_index}{j}','entity_type':'LINE','layer':cls,'bbox':b,'length':1.0,'area':0.0,'text':'','geometry_hash':key,'semantic_class':cls,'confidence':.97,'criticality':'CRITICAL'}
+        rec2=copy.deepcopy(rec); rec2['bbox']=a
+        before['entities'].append(rec); after['entities'].append(rec2)
+    before['entity_count']=len(before['entities']); after['entity_count']=len(after['entities'])
+    return before,after
 
 
 class PreservationGateV16Tests(unittest.TestCase):
@@ -96,10 +115,16 @@ class PreservationGateV16Tests(unittest.TestCase):
         self.assertFalse(validate_mechanical_impact(after,graph)['pass'])
 
     def test_stage_11_golden_regression(self):
-        a=snapshot_architecture(make_doc(),plan_id='P1')
-        result=run_golden_regression([{'name':'simple-room','before':a,'after':copy.deepcopy(a)}])
-        self.assertTrue(result['pass'])
-        self.assertTrue(result['results'][0]['pass'])
+        base=snapshot_architecture(make_doc(),plan_id='P1')
+        names=['simple-residential','bottom-door','translated-plan','multi-room','shaft-heavy','column-case','stair-core','ramp-case','structural-case','opening-case']
+        cases=[]
+        for i,name in enumerate(names):
+            before,after=enrich_snapshot(base,i)
+            cases.append({'name':name,'before':before,'after':after})
+        result=run_golden_regression(cases)
+        self.assertEqual(len(result['results']),10)
+        self.assertTrue(result['pass'],result)
+        self.assertTrue(all(r['pass'] for r in result['results']))
 
     def test_stage_12_hard_fail_rollback(self):
         ok=finalize_gate(diff={'critical_deleted':[]},topology={'pass':True},visibility={'pass':True},mechanical={'pass':True},regression={'pass':True})
