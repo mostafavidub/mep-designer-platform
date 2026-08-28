@@ -48,7 +48,6 @@ def _matches(value, terms):
 
 
 def _classify(layer="", block=""):
-    # Specific blocks win over generic layer names.
     for kind, terms in BLOCK_HINTS.items():
         if block and _matches(block, terms):
             return kind
@@ -212,6 +211,23 @@ def _expanded_bounds(points, pad_ratio=0.22):
     return [b[0]-px, b[1]-py, b[2]+px, b[3]+py]
 
 
+def _room_geometry_points(rooms):
+    points = []
+    for room in rooms:
+        polygon = room.get("polygon") or []
+        if polygon:
+            points.extend((float(p[0]), float(p[1])) for p in polygon if len(p) >= 2)
+            continue
+        bounds = room.get("bounds")
+        if bounds and len(bounds) == 4:
+            points.extend(((bounds[0], bounds[1]), (bounds[2], bounds[3])))
+            continue
+        label = room.get("label_point")
+        if label and len(label) == 2:
+            points.append((float(label[0]), float(label[1])))
+    return points
+
+
 def enrich_auto(auto, analysis):
     auto = dict(auto or {})
     profiles = auto.get("level_profiles") or []
@@ -221,9 +237,6 @@ def enrich_auto(auto, analysis):
         all_rooms.extend(f.get("architecture_rooms") or [])
         all_primitives.extend(f.get("architecture_primitives") or [])
 
-    # Assign semantic room labels to their closest canonical level title, then
-    # derive a spatial envelope from those labels. The envelope prevents an
-    # adjacent floor drawn elsewhere in modelspace from stealing walls/doors.
     level_rows = []
     for profile in profiles:
         title = profile.get("title_point")
@@ -239,11 +252,9 @@ def enrich_auto(auto, analysis):
             if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
                 continue
             assigned_rooms.append(room)
-        room_points = [tuple(r["label_point"]) for r in assigned_rooms]
-        region = _expanded_bounds(room_points)
+        geometry_points = _room_geometry_points(assigned_rooms)
+        region = _expanded_bounds(geometry_points)
         if region is None:
-            # Roofs may have no room labels; use a bounded vicinity around title
-            # rather than inventing a building polygon.
             region = [title[0]-1, title[1]-1, title[0]+1, title[1]+1]
         assigned_primitives = [p for p in all_primitives if _inside(region, p.get("centroid"))]
         by_kind = {k: [p for p in assigned_primitives if p.get("kind") == k] for k in LAYER_HINTS}
