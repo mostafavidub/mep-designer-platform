@@ -6,6 +6,7 @@ from . import dxf_output  # patches design/download flow to deliver DXF artifact
 from . import mechanical_workflow
 from . import mechanical_drawing_set
 from . import mechanical_review_fix
+from .architecture_reconstruction_v1 import install as install_architecture_reconstruction_v1
 from .fixture_detection_v2 import install as install_fixture_detection_v2
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
@@ -24,10 +25,13 @@ register_service_art_routes(app)
 # levels such as mezzanines can no longer disappear merely because their room
 # labels are missing, while weak orphan block titles remain non-active candidates.
 install_level_detection_v3(main_auto)
+# Architecture Reconstruction v1 preserves walls, room polygons, doors,
+# windows, columns, stairs, shafts and fixed furniture in a per-level model.
+# This structured geometry becomes the design substrate for later routing.
+install_architecture_reconstruction_v1(main_auto)
 # Fixture & Equipment Detection v2 wraps the upgraded analyzer/inference after
-# level detection so detections can be attached to the canonical level evidence.
-# It is additive: weak evidence remains a candidate and legacy detections are
-# preserved, which prevents a detector upgrade from silently deleting scope.
+# architecture reconstruction so detections can later be attached to rooms and
+# canonical levels rather than only to raw modelspace coordinates.
 install_fixture_detection_v2(main_auto)
 # Unresolved wet-level evidence becomes an explicit questionnaire requirement;
 # mechanical design approval is not considered ready until high-confidence CAD
