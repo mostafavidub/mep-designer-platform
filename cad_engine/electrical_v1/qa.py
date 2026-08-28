@@ -94,7 +94,8 @@ def reference_similarity_qa(manifest, signatures, threshold: float=.6):
 
 
 def _layout_extents(layout):
-    ext=bbox.extents(layout,fast=True)
+    printable=[e for e in layout if e.dxftype() not in {"VIEWPORT"}]
+    ext=bbox.extents(printable,fast=True)
     if not ext.has_data: return None
     return (float(ext.extmin.x),float(ext.extmin.y),float(ext.extmax.x),float(ext.extmax.y))
 
