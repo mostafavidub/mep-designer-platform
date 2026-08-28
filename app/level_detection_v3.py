@@ -12,7 +12,7 @@ from collections import defaultdict
 
 from . import auto_inference_v2 as v2
 
-LEVEL_DETECTION_VERSION = "multi-evidence-v3.1"
+LEVEL_DETECTION_VERSION = "multi-evidence-v3.2"
 
 
 def _norm(value):
@@ -20,10 +20,18 @@ def _norm(value):
 
 
 def _explicit_level_title(text):
+    s = _norm(text)
+    # Preserve the full architect-authored Persian level designation. The v2
+    # parser intentionally canonicalizes many titles, which is useful for
+    # grouping but loses meaningful suffixes such as "بالکن تجاری".
+    if "پلان" in s and "معماری" in s and ("نیم طبقه" in s or "نیم‌طبقه" in s):
+        level = re.sub(r"\bپلان\b|\bمعماری\b", " ", s)
+        level = _norm(level).replace("نیم‌طبقه", "نیم طبقه")
+        if level:
+            return level, "architectural-plan-title"
     parsed = v2._plan_title(text)
     if parsed and parsed[0] == "architecture":
         return parsed[1], "architectural-plan-title"
-    s = _norm(text)
     low = s.lower()
     patterns = (
         (r"\bmezzanine(?:\s+floor)?(?:\s+plan)?\b", "نیم طبقه"),
@@ -141,9 +149,6 @@ def infer_architecture_facts(analysis, discipline):
         if candidate:
             evidence.append(candidate["basis"])
             profile["level_confidence"] = max(0.95, candidate["confidence"])
-            # v2 may already retain an explicit architecture title even when it
-            # has no room evidence. It is still a title-restored level for audit
-            # provenance and must never be presented as room-confirmed evidence.
             if not profile.get("recognized_room_labels") and candidate.get("active"):
                 profile["typical_signature"] = None
                 profile["typical_confidence"] = "insufficient"
