@@ -75,7 +75,48 @@ MECHANICAL = [('heating','سیستم گرمایش چیست؟'),('cooling','سی�
 DISCIPLINES = {'electrical': {'title':'همراه برق','subtitle':'طراحی تخصصی نقشه‌های برق ساختمان','icon':'⚡','questions':COMMON+ELECTRICAL,'accent':'electrical'},'mechanical': {'title':'همراه مکانیک','subtitle':'طراحی تخصصی نقشه‌های مکانیکی ساختمان','icon':'◉','questions':COMMON+MECHANICAL,'accent':'mechanical'}}
 OUTPUT_SCOPES = {'electrical': {'label':'Electrical only','systems':['lighting','power','dedicated_loads','fire_alarm','elv','earthing_bonding','panels','single_line_diagram','electrical_risers','electrical_legend_notes']},'mechanical': {'label':'Mechanical only','systems':['cold_water','hot_water','sanitary','vent','gas','heating_supply','heating_return','cooling','condensate','exhaust_ventilation','mechanical_risers','mechanical_details_legend_notes']}}
 
-def qlist(items): return [{'key':k,'question':q} for k,q in items]
+QUESTION_OPTIONS = {
+    'occupancy': ['مسکونی', 'اداری', 'تجاری', 'مختلط'],
+    'codes': ['مقررات ملی ساختمان ایران', 'مقررات ملی ایران به‌همراه ضوابط آتش‌نشانی محلی', 'IEC / استانداردهای بین‌المللی', 'طبق ضوابط اعلامی کارفرما یا مشاور'],
+    'floors': ['همکف و یک طبقه', '۲ تا ۵ طبقه', '۶ تا ۱۰ طبقه', 'بیش از ۱۰ طبقه'],
+    'units': ['یک واحد', '۲ تا ۵ واحد', '۶ تا ۱۰ واحد', 'بیش از ۱۰ واحد'],
+    'typical': ['همه طبقات تیپ هستند', 'طبقات مسکونی تیپ و همکف/پارکینگ متفاوت است', 'چند تیپ پلان تکرارشونده داریم', 'هیچ طبقه‌ای تیپ نیست'],
+    'heights': ['ارتفاع و سقف کاذب مطابق پلان معماری است', 'سقف کاذب در همه طبقات اجرا می‌شود', 'سقف کاذب فقط در فضاهای مرطوب و راهروهاست', 'سقف کاذب نداریم'],
+    'shafts': ['شفت‌ها و رایزرها قطعی هستند', 'محل شفت‌ها قطعی است ولی ابعاد قابل اصلاح است', 'اجازه پیشنهاد محل و ابعاد شفت را دارید', 'شفت مشخص نشده و باید پیشنهاد شود'],
+    'roof': ['بام فاقد فضای تأسیساتی ویژه است', 'موتورخانه یا تجهیزات مکانیکی روی بام است', 'مخزن و پمپ روی بام است', 'آسانسور/خرپشته و تجهیزات مرتبط روی بام است'],
+    'language': ['توضیحات فارسی و تگ‌های فنی لاتین', 'کاملاً فارسی', 'کاملاً انگلیسی', 'فارسی و انگلیسی'],
+    'supply': ['همه واحدها تک‌فاز', 'واحدها تک‌فاز و مشاعات سه‌فاز', 'همه انشعاب‌ها سه‌فاز', 'ترکیبی بر اساس نوع مصرف'],
+    'main_panel': ['همکف نزدیک ورودی اصلی', 'پارکینگ یا زیرزمین', 'اتاق برق مستقل', 'محل در پلان مشخص شده است'],
+    'emergency': ['نیاز نداریم', 'ژنراتور', 'UPS', 'ژنراتور و UPS'],
+    'elevator': ['آسانسور نداریم', 'یک آسانسور مسافربر', 'دو یا چند آسانسور', 'آسانسور مسافربر و باربر/خودروبر'],
+    'loads': ['مصارف متعارف واحدهای مسکونی', 'پمپ آب و تجهیزات مکانیکی مشترک', 'تجهیزات سرمایش و گرمایش برقی', 'بارهای تجاری یا صنعتی ویژه'],
+    'lighting': ['روشنایی متعارف با کلیدهای معمولی', 'سنسور حضور برای مشاعات', 'دیمر و سناریوی روشنایی', 'سیستم هوشمند ساختمان'],
+    'power': ['پریزهای متعارف مطابق ضوابط', 'پریزهای متعارف به‌همراه مدارهای اختصاصی آشپزخانه', 'مصارف قدرت و سه‌فاز داریم', 'جانمایی پریزها در پلان مشخص شده است'],
+    'elv': ['آنتن، تلفن و شبکه', 'آنتن، تلفن، شبکه و آیفون', 'سیستم کامل جریان ضعیف و دوربین مداربسته', 'فقط زیرساخت و لوله‌گذاری'],
+    'fire_alarm': ['اعلام حریق متعارف مستقل', 'سیستم متعارف زون‌بندی‌شده', 'سیستم آدرس‌پذیر', 'طبق نظر آتش‌نشانی تعیین شود'],
+    'earthing': ['چاه ارت و هم‌بندی اصلی', 'سیستم ارت فونداسیون', 'ارت مشترک به‌همراه هم‌بندی کامل', 'طبق گزارش خاک و نظر مشاور تعیین شود'],
+    'heating': ['پکیج دیواری و رادیاتور', 'موتورخانه مرکزی و رادیاتور', 'گرمایش از کف', 'سیستم هیت‌پمپ/فن‌کویل'],
+    'cooling': ['کولر آبی', 'اسپلیت یا داکت‌اسپلیت', 'چیلر و فن‌کویل', 'VRF/VRV'],
+    'gas': ['ساختمان گاز ندارد', 'گاز برای پکیج و اجاق هر واحد', 'گاز مرکزی برای موتورخانه', 'محل ورود و کنتورها در پلان مشخص است'],
+    'water': ['ورود مستقیم آب شهری بدون مخزن و پمپ', 'مخزن و پمپ در زیرزمین/پارکینگ', 'مخزن و پمپ روی بام', 'محل ورود، مخزن و پمپ در پلان مشخص است'],
+    'sanitary': ['اتصال به شبکه فاضلاب شهری', 'چاه جذبی', 'سپتیک یا تصفیه‌خانه محلی', 'محل خروج در پلان مشخص است'],
+    'ventilation': ['همه فضاها به نما یا شفت دسترسی دارند', 'سرویس‌ها نیازمند اگزاست مکانیکی‌اند', 'پارکینگ نیازمند تهویه مکانیکی است', 'سرویس‌ها و پارکینگ هر دو تهویه مکانیکی می‌خواهند'],
+    'plumbing': ['لوله پنج‌لایه کلکتوری', 'لوله پلیمری انشعابی', 'لوله فلزی', 'نوع لوله را طراح پیشنهاد دهد'],
+    'drainage': ['فاضلاب و ونت متعارف ثقلی', 'سیستم فاضلاب کم‌صدا', 'محدودیت جدی برای شیب یا عبور لوله داریم', 'مسیرها و رایزرها در پلان مشخص شده‌اند'],
+    'hvac': ['تجهیزات داخل هر واحد جانمایی شوند', 'تجهیزات روی بام جانمایی شوند', 'تجهیزات در موتورخانه یا فضای تأسیساتی هستند', 'محل تجهیزات در پلان مشخص شده است'],
+    'parking': ['پارکینگ باز و دارای تهویه طبیعی', 'پارکینگ بسته با تهویه مکانیکی', 'پارکینگ نیمه‌باز', 'وضعیت تهویه طبق ضوابط محلی تعیین شود'],
+}
+
+TEXT_QUESTION_KEYS = {'location'}
+
+def present_question(item):
+    question = dict(item or {})
+    key = question.get('key')
+    question['input_type'] = 'text' if key in TEXT_QUESTION_KEYS else 'radio'
+    question['options'] = list(QUESTION_OPTIONS.get(key, []))
+    return question
+
+def qlist(items): return [present_question({'key':k,'question':q}) for k,q in items]
 
 BLOG = [
 {'slug':'electrical-building-plan','title':'نقشه برق ساختمان؛ راهنمای طراحی تأسیسات برقی از پلان تا رایزر','excerpt':'راهنمای کاربردی طراحی پلان روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، رایزر، تابلو برق و کنترل نهایی نقشه.','tag':'برق','body':[]},
@@ -213,7 +254,7 @@ def run_design(project_id,revision_id):
     finally: db.close()
 
 def flow_payload(p):
-    questions=p.questions or []; idx=p.current_question or 0; discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical')); cfg=DISCIPLINES.get(discipline,DISCIPLINES['mechanical']); current=questions[idx] if idx<len(questions) else None
+    questions=p.questions or []; idx=p.current_question or 0; discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical')); cfg=DISCIPLINES.get(discipline,DISCIPLINES['mechanical']); current=present_question(questions[idx]) if idx<len(questions) else None
     return {'project_id':p.id,'name':p.name,'status':p.status,'discipline':discipline,'discipline_title':cfg['title'],'error':p.last_error or '','question_count':len(questions),'current_index':idx,'progress':round((idx*100/len(questions)),1) if questions else 100,'question':current,'ready_to_design':p.status=='ready_to_design','current_revision':p.current_revision or 0,'pdf_url':f'/projects/{p.id}/pdf/{p.current_revision}' if p.status=='ready' and p.current_revision else None}
 
 @app.get('/health')
@@ -266,7 +307,7 @@ def legacy_start(request:Request,name:str=Form(''),file:UploadFile=File(...),dis
 def project_page(pid:int,request:Request):
     u=current_user(request); db,p=own_project(pid,u.id)
     if not p: raise HTTPException(404)
-    revisions=db.query(Revision).filter(Revision.project_id==p.id).order_by(Revision.revision_no.desc()).all(); q=p.questions or []; current_question=q[p.current_question] if p.current_question<len(q) else None; discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical')); cfg=DISCIPLINES.get(discipline,DISCIPLINES['mechanical']); response=templates.TemplateResponse('project.html',{'request':request,'p':p,'revisions':revisions,'current_question':current_question,'question_count':len(q),'discipline':discipline,'cfg':cfg}); db.close(); return response
+    revisions=db.query(Revision).filter(Revision.project_id==p.id).order_by(Revision.revision_no.desc()).all(); q=p.questions or []; current_question=present_question(q[p.current_question]) if p.current_question<len(q) else None; discipline=(p.answers or {}).get('discipline',(p.analysis or {}).get('discipline','mechanical')); cfg=DISCIPLINES.get(discipline,DISCIPLINES['mechanical']); response=templates.TemplateResponse('project.html',{'request':request,'p':p,'revisions':revisions,'current_question':current_question,'question_count':len(q),'discipline':discipline,'cfg':cfg}); db.close(); return response
 @app.get('/projects/{pid}/status')
 def project_status(pid:int,request:Request):
     u=current_user(request); db,p=own_project(pid,u.id)
