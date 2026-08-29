@@ -51,6 +51,10 @@ def read_input_dxf(path: Path):
         except Exception as exc:
             repair_error = exc
 
+        if 'ENDSEC' in str(strict_error).upper():
+            raise DXFStructureError(
+                f'ENDSEC repair failed ({type(strict_error).__name__}): {repair_error}'
+            ) from strict_error
         if not isinstance(strict_error, DXFStructureError):
             raise strict_error
         try:
