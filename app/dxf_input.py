@@ -7,46 +7,69 @@ from ezdxf import recover
 from ezdxf.lldxf.const import DXFStructureError
 
 
-_EOF_PATTERN = re.compile(rb'(?m)^[ \t]*0\r?\nEOF[ \t]*(?:\r?\n)?')
-_ENDSEC_BEFORE_EOF_PATTERN = re.compile(
-    rb'(?ms)^[ \t]*0\r?\nENDSEC[ \t]*\r?\n[ \t]*$'
-)
-
-
-def _last_eof(raw: bytes):
-    matches = list(_EOF_PATTERN.finditer(raw))
-    if not matches:
-        raise DXFStructureError('missing EOF tag; safe ENDSEC repair is not possible')
-    return matches[-1]
-
-
-def _has_terminal_endsec(raw: bytes, eof) -> bool:
-    # ENDSEC must be the final DXF tag immediately before EOF. Restrict the
-    # search to a small tail window so an ENDSEC from an earlier section does
-    # not produce a false positive.
-    tail = raw[max(0, eof.start() - 256):eof.start()]
-    return bool(_ENDSEC_BEFORE_EOF_PATTERN.search(tail))
+_TAG_ZERO = re.compile(rb"^[ \t]*0[ \t]*$")
 
 
 def _entity_count(doc) -> int:
     return sum(1 for _ in doc.modelspace())
 
 
-def _read_with_final_endsec(path: Path):
-    raw = path.read_bytes()
-    eof = _last_eof(raw)
-    if _has_terminal_endsec(raw, eof):
-        raise DXFStructureError(
-            'terminal ENDSEC already exists; duplicate insertion is unsafe'
-        )
-    newline = b'\r\n' if b'\r\n' in raw[max(0, eof.start() - 100):eof.end()] else b'\n'
-    repaired = raw[:eof.start()] + b'  0' + newline + b'ENDSEC' + newline + raw[eof.start():]
+def _structural_tags(raw: bytes):
+    """Read group-code 0 structure with CRLF/LF and indented values."""
+    lines = raw.splitlines()
+    tags = []
+    for index in range(len(lines) - 1):
+        if _TAG_ZERO.match(lines[index]):
+            value = lines[index + 1].strip().upper()
+            if value in {b"SECTION", b"ENDSEC", b"EOF"}:
+                tags.append(value)
+    return tags
+
+
+def _tail_repair_candidates(raw: bytes):
+    """Yield only repairs justified by balanced DXF section tags."""
+    if not raw or raw.count(b"\x00") > max(8, len(raw) // 100):
+        raise DXFStructureError("unsupported binary or empty DXF input")
+    tags = _structural_tags(raw)
+
+    if b"EOF" in tags:
+        last_eof = len(tags) - 1 - tags[::-1].index(b"EOF")
+        before_eof = tags[:last_eof]
+        depth = before_eof.count(b"SECTION") - before_eof.count(b"ENDSEC")
+        if depth == 1:
+            matches = list(re.finditer(
+                rb"(?im)^[ \t]*0[ \t]*\r?\n[ \t]*EOF[ \t]*(?:\r?\n)?", raw
+            ))
+            if matches:
+                eof = matches[-1]
+                newline = b"\r\n" if b"\r\n" in raw[max(0, eof.start() - 256):] else b"\n"
+                yield (raw[:eof.start()] + b"  0" + newline + b"ENDSEC" + newline +
+                       raw[eof.start():], "final_endsec_repair")
+        return
+
+    # Interrupted exports may omit EOF while all entity bytes remain intact.
+    depth = tags.count(b"SECTION") - tags.count(b"ENDSEC")
+    if depth not in (0, 1):
+        raise DXFStructureError(f"unsafe DXF section depth: {depth}")
+    newline = b"\r\n" if raw.count(b"\r\n") > raw.count(b"\n") // 2 else b"\n"
+    base = raw.rstrip(b"\r\n") + newline
+    if depth == 1:
+        yield (base + b"  0" + newline + b"ENDSEC" + newline +
+               b"  0" + newline + b"EOF" + newline, "truncated_tail_repair")
+    else:
+        yield base + b"  0" + newline + b"EOF" + newline, "missing_eof_repair"
+
+
+def _read_candidate(raw: bytes):
     temp_name = None
     try:
-        with tempfile.NamedTemporaryFile(suffix='.dxf', delete=False) as temp:
-            temp.write(repaired)
+        with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as temp:
+            temp.write(raw)
             temp_name = temp.name
-        return ezdxf.readfile(temp_name)
+        try:
+            return ezdxf.readfile(temp_name), None
+        except Exception:
+            return recover.readfile(temp_name)
     finally:
         if temp_name:
             Path(temp_name).unlink(missing_ok=True)
@@ -56,98 +79,73 @@ def _recover_document(source: Path):
     doc, auditor = recover.readfile(source)
     if _entity_count(doc) < 1:
         raise DXFStructureError(
-            f'فایل DXF پس از بازیابی هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
+            f"فایل DXF پس از بازیابی هیچ Entity قابل استفاده‌ای ندارد: {source.name}"
         )
     return doc, auditor
 
 
+def _read_repaired_tail(source: Path):
+    errors = []
+    for repaired, mode in _tail_repair_candidates(source.read_bytes()):
+        try:
+            doc, auditor = _read_candidate(repaired)
+            if _entity_count(doc) < 1:
+                raise DXFStructureError("repaired DXF has no usable entities")
+            return doc, auditor, mode
+        except Exception as exc:
+            errors.append(str(exc))
+    raise DXFStructureError("DXF tail repair failed: " + "; ".join(errors))
+
+
 def normalize_input_copy(path: Path):
-    """Normalize only the extracted working copy; preserve the original upload."""
+    """Validate the extracted working copy while preserving the upload."""
     source = Path(path)
     try:
-        doc = ezdxf.readfile(source)
-        return {'recovered': False, 'errors': 0, 'fixes': 0}
+        ezdxf.readfile(source)
+        return {"recovered": False, "errors": 0, "fixes": 0}
     except Exception as strict_error:
-        raw = source.read_bytes()
-        eof = _last_eof(raw)
-        recovery_error = None
-
-        # A parser may report "missing ENDSEC" for an earlier malformed section
-        # even when the terminal ENDSEC is present. Recovery must run before any
-        # byte-level repair; otherwise a duplicate ENDSEC corrupts a valid tail.
         try:
             doc, auditor = _recover_document(source)
-            mode = 'ezdxf_recover_normalized'
-        except Exception as exc:
-            recovery_error = exc
-            if _has_terminal_endsec(raw, eof):
-                raise DXFStructureError(
-                    f'ترمیم ساختار داخلی DXF ممکن نشد: {exc}'
-                ) from strict_error
-            doc = _read_with_final_endsec(source)
-            if _entity_count(doc) < 1:
-                raise DXFStructureError(
-                    f'فایل DXF پس از ترمیم ENDSEC هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
-                )
-            auditor = None
-            mode = 'final_endsec_repair'
-
-        # Do not force a recovered document back through the strict reader.
-        # Some valid AutoCAD files contain sections/proxy payloads accepted by
-        # ezdxf.recover but rejected by the strict loader. All consumers use
-        # read_input_dxf(), so validating the recovered modelspace is sufficient
-        # and the original extracted working copy can remain byte-for-byte intact.
+            mode = "ezdxf_recover_normalized"
+        except Exception:
+            doc, auditor, mode = _read_repaired_tail(source)
         return {
-            'recovered': True,
-            'mode': mode,
-            'errors': len(auditor.errors) if auditor is not None else 1,
-            'fixes': len(auditor.fixes) if auditor is not None else 1,
-            'original_error': str(strict_error),
-            'recovery_error': str(recovery_error) if recovery_error else '',
+            "recovered": True,
+            "mode": mode,
+            "errors": len(auditor.errors) if auditor is not None else 1,
+            "fixes": len(auditor.fixes) if auditor is not None else 1,
+            "original_error": str(strict_error),
         }
 
 
 def read_input_dxf(path: Path):
-    """Read an architectural DXF without ever inserting duplicate section tags."""
+    """Read uploaded DXF, recovering intact geometry from malformed tails."""
     source = Path(path)
     try:
         doc = ezdxf.readfile(source)
-        return doc, {'recovered': False, 'errors': 0, 'fixes': 0}
+        return doc, {"recovered": False, "errors": 0, "fixes": 0}
     except Exception as strict_error:
         recovery_error = None
         try:
             doc, auditor = _recover_document(source)
             return doc, {
-                'recovered': True,
-                'mode': 'ezdxf_recover',
-                'errors': len(auditor.errors),
-                'fixes': len(auditor.fixes),
-                'original_error': str(strict_error),
+                "recovered": True, "mode": "ezdxf_recover",
+                "errors": len(auditor.errors), "fixes": len(auditor.fixes),
+                "original_error": str(strict_error),
             }
         except Exception as exc:
             recovery_error = exc
 
-        raw = source.read_bytes()
-        eof = _last_eof(raw)
-        if _has_terminal_endsec(raw, eof):
-            raise DXFStructureError(
-                f'ترمیم ساختار داخلی DXF ممکن نشد: {recovery_error}'
-            ) from strict_error
-
         try:
-            doc = _read_with_final_endsec(source)
-            if _entity_count(doc) < 1:
-                raise DXFStructureError(
-                    f'فایل DXF پس از ترمیم ENDSEC هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
-                )
+            doc, auditor, mode = _read_repaired_tail(source)
             return doc, {
-                'recovered': True,
-                'mode': 'final_endsec_repair',
-                'errors': 1,
-                'fixes': 1,
-                'original_error': str(strict_error),
+                "recovered": True, "mode": mode,
+                "errors": len(auditor.errors) if auditor is not None else 1,
+                "fixes": len(auditor.fixes) if auditor is not None else 1,
+                "original_error": str(strict_error),
+                "recovery_error": str(recovery_error),
             }
         except Exception as repair_error:
             raise DXFStructureError(
-                f'ترمیم امن DXF ممکن نشد: {repair_error}; recovery: {recovery_error}'
+                f"ترمیم امن DXF ممکن نشد: {repair_error}; recovery: {recovery_error}"
             ) from strict_error
