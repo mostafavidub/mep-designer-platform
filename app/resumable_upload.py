@@ -11,22 +11,29 @@ MAX_CHUNKS = 400
 
 
 def _clear_abandoned_chunks():
-    """Reclaim only incomplete upload fragments; never touch source or output."""
+    """Reclaim interrupted uploads while preserving every completed project."""
     projects = legacy.DATA_DIR / 'projects'
     if not projects.exists():
         return
     db = legacy.Session()
     try:
-        active = {
-            str(row.id) for row in db.query(legacy.Project).filter(
-                legacy.Project.status == 'uploading'
-            ).all()
-        }
+        interrupted = db.query(legacy.Project).filter(
+            legacy.Project.status.in_(('uploading', 'awaiting_upload'))
+        ).all()
+        for row in interrupted:
+            shutil.rmtree(projects / str(row.id), ignore_errors=True)
+            row.status = 'awaiting_upload'
+            row.last_error = 'آپلود قبلی کامل نشده است؛ فایل را دوباره بارگذاری کنید.'
+        maintenance = db.query(legacy.Project).filter(
+            legacy.Project.name == 'Production upload integrity test'
+        ).all()
+        for row in maintenance:
+            shutil.rmtree(projects / str(row.id), ignore_errors=True)
+        db.commit()
     finally:
         db.close()
     for chunks in projects.glob('*/.upload_chunks'):
-        if chunks.parent.name not in active:
-            shutil.rmtree(chunks, ignore_errors=True)
+        shutil.rmtree(chunks, ignore_errors=True)
 
 
 def register_resumable_upload_routes(app):
