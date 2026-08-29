@@ -1,5 +1,6 @@
 import re
 import shutil
+import traceback
 from collections import Counter
 
 import requests
@@ -296,6 +297,7 @@ def analyze_project_job(project_id):
         p.last_error = ''
         db.commit()
     except Exception as e:
+        traceback.print_exc()
         p.status = 'awaiting_upload'
         p.last_error = str(e)
         db.commit()
