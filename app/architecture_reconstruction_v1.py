@@ -14,6 +14,7 @@ import ezdxf
 from ezdxf import bbox
 
 from . import auto_inference as base_inference
+from .dxf_input import read_input_dxf
 
 RECONSTRUCTION_VERSION = "architecture-reconstruction-v1"
 
@@ -138,7 +139,7 @@ def _text_value(entity):
 def reconstruct_dxf(path, base_result=None):
     result = dict(base_result or {})
     try:
-        doc = ezdxf.readfile(path)
+        doc, _recovery = read_input_dxf(path)
     except Exception as exc:
         result["architecture_reconstruction_version"] = RECONSTRUCTION_VERSION
         result["architecture_reconstruction_diagnostics"] = [f"read_failed:{type(exc).__name__}"]
