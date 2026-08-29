@@ -237,12 +237,17 @@ def run_design_dxf(project_id, revision_id):
             if not src.exists():
                 raise RuntimeError(f'فایل DXF تولیدشده پیدا نشد: {generated[0]}')
             dst = out / f'{discipline}_design.dxf'
-            shutil.copy2(src, dst)
+            # The CAD workspace and project output share the persistent volume.
+            # Move the completed artifact instead of duplicating it: large DXFs
+            # must still finalize when free space is tight.
+            dst.unlink(missing_ok=True)
+            shutil.move(str(src), str(dst))
         else:
             if not package_path.exists():
                 raise RuntimeError('بسته DXF تولیدشده پیدا نشد.')
             dst = out / f'{discipline}_design_DXF.zip'
-            shutil.copy2(package_path, dst)
+            dst.unlink(missing_ok=True)
+            shutil.move(str(package_path), str(dst))
 
         artifact_qa = artifact_storage.validate_output_artifact(dst)
         analysis = dict(p.analysis or {})
