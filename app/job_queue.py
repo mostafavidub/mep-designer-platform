@@ -401,4 +401,54 @@ def register_job_queue(app, legacy):
         finally:
             db.close()
 
+    @app.post('/internal/maintenance/projects/{pid}/complete-defaults')
+    def maintenance_complete_defaults(pid: int, request: Request):
+        """Complete one production E2E run with conservative proposed answers."""
+        _maintenance_authorized(request)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            if not project:
+                raise HTTPException(404)
+            if project.status not in ('asking', 'ready_to_design', 'drawing_set_review', 'failed'):
+                return {'accepted': False, 'status': project.status}
+
+            answers = dict(project.answers or {})
+            auto = (project.analysis or {}).get('architectural_auto') or {}
+            counts = auto.get('fixture_counts') or {}
+            quantified_fixtures = '، '.join(
+                f'{name} {count}' for name, count in counts.items() if int(count or 0) > 0
+            ) or 'سینک ۱، روشویی ۱، توالت ۱، دوش ۱'
+            overrides = {
+                'location': 'مشهد',
+                'gas': 'گاز برای پکیج و اجاق هر واحد',
+                'fixture_schedule': quantified_fixtures,
+            }
+            for question in project.questions or []:
+                key = question.get('key')
+                if not key or str(answers.get(key) or '').strip():
+                    continue
+                options = list(legacy.QUESTION_OPTIONS.get(key, []))
+                answers[key] = overrides.get(key) or (options[0] if options else 'تأیید')
+            project.answers = answers
+            project.current_question = len(project.questions or [])
+
+            if (answers.get('discipline') or 'mechanical') == 'mechanical':
+                proposal = mechanical_workflow.create_proposal(project)
+                approved = mechanical_workflow.approve_drawing_set(proposal)
+                analysis = dict(project.analysis or {})
+                analysis['drawing_set'] = approved
+                project.analysis = analysis
+            project.status = 'ready_to_design'
+            project.last_error = ''
+            db.commit()
+            revision, job, created = _enqueue_design_record(db, project)
+            return {
+                'accepted': True, 'created': created,
+                'revision_id': revision.id if revision else None,
+                'job_id': job.id if job else None,
+            }
+        finally:
+            db.close()
+
     return Job
