@@ -54,7 +54,7 @@ def _infer_scale(doc):
 
 def analyze_dxf_enhanced(path):
     result = _original_analyze_dxf_enhanced(path)
-    doc = main_auto.legacy.ezdxf.readfile(path)
+    doc, _recovery = main_auto.legacy.read_input_dxf(path)
     unit = _infer_scale(doc)
     result['unit_inference'] = unit
     result['effective_unit_to_m'] = unit['effective_scale_to_m']
