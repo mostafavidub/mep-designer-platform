@@ -421,7 +421,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     # when that floor has no branch endpoint.  Use the topology shaft proposed
     # for this exact plan and keep each system on its authoritative layer.
     route_systems={r.get("system") for r in all_routes}
-    local_shaft=next((s for s in (pipeline.get("topology",{}).get("shafts") or []) if s.get("plan_id")==pid and s.get("point")),None)
+    local_shaft=next((s for s in (pipeline.get("topology",{}).get("nodes") or []) if s.get("kind")=="shaft" and s.get("plan_id")==pid and s.get("point")),None)
     if local_shaft:
         p=_map_point(tuple(local_shaft["point"]),srcb,target)
         riser_tags={"sanitary":"S1","vent":"V1","cold_water":"CW1","hot_water":"HW1"}
