@@ -485,7 +485,10 @@ def _draw_schedule(doc,msp,board,pipeline,authority):
 
 
 def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict, answers: dict) -> dict:
-    doc=ezdxf.readfile(src);msp=doc.modelspace();manifest_rows=_layout_manifest(authority);boards=_boards(manifest_rows);arch=pipeline["architecture"];src_msp=doc.modelspace();project_name=_answer(answers,"project_name","name",default="پروژه تأسیسات مکانیکی")
+    doc=ezdxf.readfile(src)
+    if doc.dxfversion < 'AC1015':
+        doc.dxfversion = 'AC1015'
+    msp=doc.modelspace();manifest_rows=_layout_manifest(authority);boards=_boards(manifest_rows);arch=pipeline["architecture"];src_msp=doc.modelspace();project_name=_answer(answers,"project_name","name",default="پروژه تأسیسات مکانیکی")
     existing_layouts=[l.name for l in doc.layouts]
     for row in manifest_rows:
         if row["code"] not in existing_layouts:
