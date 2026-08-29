@@ -180,7 +180,26 @@ def save_project_input(project_id,file):
     for old in (pdir/'architecture.zip',pdir/'architecture.dxf'):
         if old.exists(): old.unlink()
     target=pdir/('architecture.zip' if ext=='.zip' else 'architecture.dxf')
-    with target.open('wb') as f: shutil.copyfileobj(file.file,f)
+    expected_size=getattr(file,'size',None)
+    with target.open('wb') as f:
+        shutil.copyfileobj(file.file,f)
+        f.flush(); os.fsync(f.fileno())
+    actual_size=target.stat().st_size
+    if expected_size is not None and actual_size!=int(expected_size):
+        target.unlink(missing_ok=True)
+        raise ValueError(
+            f'آپلود ناقص بود: expected {expected_size} bytes, stored {actual_size} bytes.'
+        )
+    if ext=='.zip':
+        try:
+            with zipfile.ZipFile(target) as archive:
+                bad=archive.testzip()
+                members=[x for x in archive.infolist() if x.filename.lower().endswith('.dxf')]
+                if bad or not members:
+                    raise ValueError(f'عضو خراب ZIP: {bad}' if bad else 'فایل DXF داخل ZIP نیست.')
+        except Exception:
+            target.unlink(missing_ok=True)
+            raise
     return target
 
 def analyze_project_job(project_id):
