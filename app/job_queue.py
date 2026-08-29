@@ -258,6 +258,7 @@ def register_job_queue(app, legacy):
                 Job.status == 'failed',
                 Job.last_error.ilike('%ENDSEC%'),
             ).all()
+            retried_project_ids = set()
             for job in endsec_jobs:
                 project = db.get(legacy.Project, job.project_id)
                 project_dir = legacy.DATA_DIR / 'projects' / str(job.project_id)
@@ -270,6 +271,40 @@ def register_job_queue(app, legacy):
                 job.available_at = datetime.utcnow()
                 job.locked_at = None
                 job.last_error = 'legacy ENDSEC retry scheduled'
+                project.status = 'analyzing'
+                project.last_error = ''
+                retried_project_ids.add(project.id)
+
+            # Some resumable uploads persisted the parser error on Project but
+            # the queue worker did not copy it to Job. Recover those records as
+            # well, reusing the latest analysis job or creating one if absent.
+            affected_projects = db.query(legacy.Project).filter(
+                legacy.Project.last_error.ilike('%ENDSEC%'),
+            ).all()
+            for project in affected_projects:
+                if project.id in retried_project_ids:
+                    continue
+                project_dir = legacy.DATA_DIR / 'projects' / str(project.id)
+                if not (
+                    (project_dir / 'architecture.zip').exists()
+                    or (project_dir / 'architecture.dxf').exists()
+                ):
+                    continue
+                job = db.query(Job).filter(
+                    Job.project_id == project.id,
+                    Job.job_type == 'analysis',
+                ).order_by(Job.id.desc()).first()
+                if job is None:
+                    job = Job(
+                        job_type='analysis', project_id=project.id,
+                        status='queued', max_attempts=MAX_ATTEMPTS,
+                    )
+                    db.add(job)
+                else:
+                    job.status = 'queued'
+                    job.available_at = datetime.utcnow()
+                    job.locked_at = None
+                    job.last_error = 'legacy project ENDSEC retry scheduled'
                 project.status = 'analyzing'
                 project.last_error = ''
             db.commit()
