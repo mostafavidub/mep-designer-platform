@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import threading
 import time
 from datetime import datetime, timedelta
@@ -248,65 +249,6 @@ def register_job_queue(app, legacy):
                 if job.revision_id:
                     revision = db.get(legacy.Revision, job.revision_id)
                     if revision: revision.status = 'queued'
-
-            # Deploy-time recovery for uploads rejected by the former ENDSEC
-            # normalizer. That implementation inserted a duplicate ENDSEC even
-            # when the uploaded file already had a valid terminal section. Mark
-            # each legacy failure before requeueing so it is retried only once.
-            endsec_jobs = db.query(Job).filter(
-                Job.job_type == 'analysis',
-                Job.status == 'failed',
-                Job.last_error.ilike('%ENDSEC%'),
-            ).all()
-            retried_project_ids = set()
-            for job in endsec_jobs:
-                project = db.get(legacy.Project, job.project_id)
-                project_dir = legacy.DATA_DIR / 'projects' / str(job.project_id)
-                if not project or not (
-                    (project_dir / 'architecture.zip').exists()
-                    or (project_dir / 'architecture.dxf').exists()
-                ):
-                    continue
-                job.status = 'queued'
-                job.available_at = datetime.utcnow()
-                job.locked_at = None
-                job.last_error = 'legacy ENDSEC retry scheduled'
-                project.status = 'analyzing'
-                project.last_error = ''
-                retried_project_ids.add(project.id)
-
-            # Some resumable uploads persisted the parser error on Project but
-            # the queue worker did not copy it to Job. Recover those records as
-            # well, reusing the latest analysis job or creating one if absent.
-            affected_projects = db.query(legacy.Project).filter(
-                legacy.Project.last_error.ilike('%ENDSEC%'),
-            ).all()
-            for project in affected_projects:
-                if project.id in retried_project_ids:
-                    continue
-                project_dir = legacy.DATA_DIR / 'projects' / str(project.id)
-                if not (
-                    (project_dir / 'architecture.zip').exists()
-                    or (project_dir / 'architecture.dxf').exists()
-                ):
-                    continue
-                job = db.query(Job).filter(
-                    Job.project_id == project.id,
-                    Job.job_type == 'analysis',
-                ).order_by(Job.id.desc()).first()
-                if job is None:
-                    job = Job(
-                        job_type='analysis', project_id=project.id,
-                        status='queued', max_attempts=MAX_ATTEMPTS,
-                    )
-                    db.add(job)
-                else:
-                    job.status = 'queued'
-                    job.available_at = datetime.utcnow()
-                    job.locked_at = None
-                    job.last_error = 'legacy project ENDSEC retry scheduled'
-                project.status = 'analyzing'
-                project.last_error = ''
             db.commit()
         finally:
             db.close()
@@ -381,5 +323,82 @@ def register_job_queue(app, legacy):
         job = db.query(Job).filter(Job.project_id == pid).order_by(Job.id.desc()).first()
         payload = {'status': project.status, 'position': _queue_position(db, job), 'job_status': job.status if job else None}
         db.close(); return payload
+
+    def _maintenance_authorized(request: Request):
+        expected = os.getenv('INTERNAL_MAINTENANCE_TOKEN', '')
+        supplied = request.headers.get('x-maintenance-token', '')
+        if not expected or not secrets.compare_digest(supplied, expected):
+            raise HTTPException(404)
+
+    @app.get('/internal/maintenance/projects/{pid}')
+    def maintenance_project(pid: int, request: Request):
+        """Private production probe used for end-to-end artifact verification."""
+        _maintenance_authorized(request)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            if not project:
+                raise HTTPException(404)
+            jobs = db.query(Job).filter(Job.project_id == pid).order_by(Job.id.asc()).all()
+            revisions = db.query(legacy.Revision).filter(
+                legacy.Revision.project_id == pid
+            ).order_by(legacy.Revision.id.asc()).all()
+            project_dir = legacy.DATA_DIR / 'projects' / str(pid)
+            files = []
+            if project_dir.exists():
+                files = [
+                    {'path': str(path.relative_to(project_dir)), 'size': path.stat().st_size}
+                    for path in project_dir.rglob('*') if path.is_file()
+                ]
+            return {
+                'project': {
+                    'id': project.id, 'status': project.status,
+                    'last_error': project.last_error or '',
+                    'answers': project.answers or {},
+                    'analysis': project.analysis or {},
+                },
+                'jobs': [
+                    {'id': job.id, 'type': job.job_type, 'status': job.status,
+                     'attempts': job.attempts, 'error': job.last_error or ''}
+                    for job in jobs
+                ],
+                'revisions': [
+                    {'id': revision.id, 'number': revision.revision_no,
+                     'status': revision.status, 'error': revision.error or ''}
+                    for revision in revisions
+                ],
+                'files': files,
+            }
+        finally:
+            db.close()
+
+    @app.post('/internal/maintenance/projects/{pid}/retry-analysis')
+    def maintenance_retry_analysis(pid: int, request: Request):
+        _maintenance_authorized(request)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            if not project:
+                raise HTTPException(404)
+            active = _active_job(db, pid, 'analysis')
+            if not active:
+                job = db.query(Job).filter(
+                    Job.project_id == pid, Job.job_type == 'analysis'
+                ).order_by(Job.id.desc()).first()
+                if job is None:
+                    job = Job(job_type='analysis', project_id=pid, status='queued')
+                    db.add(job)
+                else:
+                    job.status = 'queued'
+                    job.available_at = datetime.utcnow()
+                    job.locked_at = None
+                    job.last_error = ''
+                    job.attempts = 0
+            project.status = 'analyzing'
+            project.last_error = ''
+            db.commit()
+            return {'queued': True, 'project_id': pid}
+        finally:
+            db.close()
 
     return Job
