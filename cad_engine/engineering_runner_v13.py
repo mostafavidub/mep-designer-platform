@@ -21,7 +21,18 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     routing=route_topology(architecture,topology)
     sizing=size_networks(topology,routing,recognition,calculations)
     annotations=build_annotations(routing,sizing,recognition,calculations,topology)
-    details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=project_overrides)
+    detail_overrides=dict(project_overrides or {})
+    if not detail_overrides.get('levels'):
+        primary=set(architecture.get('primary_floor_plan_ids') or [])
+        levels=[]
+        for plan in architecture.get('plans') or []:
+            if primary and plan.get('plan_id') not in primary:
+                continue
+            level=plan.get('level') or plan.get('plan_id')
+            if level and level not in levels:
+                levels.append(level)
+        detail_overrides['levels']=levels or ['GROUND']
+    details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
     hvac=design_project_hvac(architecture,project_overrides=project_overrides)
     return {'version':'engineering-pipeline-v13.13','architecture':architecture,'recognition':recognition,'requirements':requirements,
             'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac}
