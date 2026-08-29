@@ -92,20 +92,11 @@ def normalize_input_copy(path: Path):
             auditor = None
             mode = 'final_endsec_repair'
 
-        candidate = source.with_name(source.name + '.repairing')
-        try:
-            # Re-serialize the recovered document so every subsequent analyzer
-            # and the CAD engine receive one strict, canonical DXF structure.
-            doc.saveas(candidate)
-            verified = ezdxf.readfile(candidate)
-            if _entity_count(verified) < 1:
-                raise DXFStructureError(
-                    f'فایل DXF نرمال‌شده هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
-                )
-            candidate.replace(source)
-        finally:
-            candidate.unlink(missing_ok=True)
-
+        # Do not force a recovered document back through the strict reader.
+        # Some valid AutoCAD files contain sections/proxy payloads accepted by
+        # ezdxf.recover but rejected by the strict loader. All consumers use
+        # read_input_dxf(), so validating the recovered modelspace is sufficient
+        # and the original extracted working copy can remain byte-for-byte intact.
         return {
             'recovered': True,
             'mode': mode,
