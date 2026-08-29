@@ -248,6 +248,30 @@ def register_job_queue(app, legacy):
                 if job.revision_id:
                     revision = db.get(legacy.Revision, job.revision_id)
                     if revision: revision.status = 'queued'
+
+            # Deploy-time recovery for uploads rejected by the former ENDSEC
+            # normalizer. That implementation inserted a duplicate ENDSEC even
+            # when the uploaded file already had a valid terminal section. Mark
+            # each legacy failure before requeueing so it is retried only once.
+            endsec_jobs = db.query(Job).filter(
+                Job.job_type == 'analysis',
+                Job.status == 'failed',
+                Job.last_error.ilike('%ENDSEC%'),
+            ).all()
+            for job in endsec_jobs:
+                project = db.get(legacy.Project, job.project_id)
+                project_dir = legacy.DATA_DIR / 'projects' / str(job.project_id)
+                if not project or not (
+                    (project_dir / 'architecture.zip').exists()
+                    or (project_dir / 'architecture.dxf').exists()
+                ):
+                    continue
+                job.status = 'queued'
+                job.available_at = datetime.utcnow()
+                job.locked_at = None
+                job.last_error = 'legacy ENDSEC retry scheduled'
+                project.status = 'analyzing'
+                project.last_error = ''
             db.commit()
         finally:
             db.close()
