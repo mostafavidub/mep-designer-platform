@@ -8,12 +8,42 @@ from pathlib import Path
 import requests
 from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse
+from starlette.background import BackgroundTask
 
 from . import main as legacy
 from . import artifact_storage
 
 app = legacy.app
 _prev_flow_payload = legacy.flow_payload
+
+
+def _purge_processing_files(pid: int, keep_output: bool = True):
+    """Test-mode retention: keep only a downloadable final artifact."""
+    pdir = legacy.DATA_DIR / 'projects' / str(pid)
+    for path in (pdir / 'architecture.zip', pdir / 'architecture.dxf', pdir / 'input', pdir / '.upload_chunks'):
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            path.unlink(missing_ok=True)
+    shutil.rmtree(legacy.DATA_DIR / 'cad-engine' / str(pid), ignore_errors=True)
+    if not keep_output:
+        shutil.rmtree(pdir, ignore_errors=True)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            if project:
+                project.name = f'Test project {pid} (expired)'
+                project.questions = []
+                project.answers = {}
+                project.analysis = {}
+                project.last_error = ''
+                project.status = 'expired'
+                for revision in db.query(legacy.Revision).filter(legacy.Revision.project_id == pid):
+                    revision.pdf_path = ''
+                    revision.error = ''
+            db.commit()
+        finally:
+            db.close()
 
 
 def validate_generated_manifest(drawing_set, design_reports):
@@ -267,6 +297,7 @@ def run_design_dxf(project_id, revision_id):
         p.current_revision = r.revision_no
         p.last_error = ''
         db.commit()
+        _purge_processing_files(p.id, keep_output=True)
     except Exception as exc:
         r.status = 'failed'
         r.error = str(exc)
@@ -347,7 +378,12 @@ def get_cad_output(pid: int, rev: int, request: Request):
     else:
         media_type = 'application/zip'
         filename = f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
-    return FileResponse(path, media_type=media_type, filename=filename)
+    return FileResponse(
+        path,
+        media_type=media_type,
+        filename=filename,
+        background=BackgroundTask(_purge_processing_files, pid, False),
+    )
 
 
 @app.get('/internal/maintenance/projects/{pid}/output/{rev}')
@@ -381,6 +417,7 @@ def maintenance_get_cad_output(pid: int, rev: int, request: Request):
     return FileResponse(
         resolved, media_type='application/dxf',
         filename=f'EngiTools_{discipline}_{pid}_R{rev}.dxf',
+        background=BackgroundTask(_purge_processing_files, pid, False),
     )
 
 
