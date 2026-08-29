@@ -1,6 +1,7 @@
 import os
 import secrets
 import shutil
+import uuid
 from collections import Counter
 from pathlib import Path
 
@@ -376,3 +377,34 @@ def maintenance_get_cad_output(pid: int, rev: int, request: Request):
         resolved, media_type='application/dxf',
         filename=f'EngiTools_{discipline}_{pid}_R{rev}.dxf',
     )
+
+
+@app.post('/internal/maintenance/upload-test')
+async def maintenance_upload_test(request: Request):
+    """Upload the exact customer artifact through the production save path."""
+    expected = os.getenv('INTERNAL_MAINTENANCE_TOKEN', '')
+    supplied = request.headers.get('x-maintenance-token', '')
+    if not expected or not secrets.compare_digest(supplied, expected):
+        raise HTTPException(404)
+    form = await request.form()
+    upload = form.get('file')
+    discipline = str(form.get('discipline') or 'mechanical')
+    if upload is None or discipline not in legacy.DISCIPLINES:
+        raise HTTPException(400)
+    db = legacy.Session()
+    try:
+        user = legacy.User(email=f'maintenance-{uuid.uuid4().hex}@local')
+        db.add(user); db.flush()
+        project = legacy.Project(
+            user_id=user.id, name='Production upload integrity test',
+            questions=legacy.qlist(legacy.DISCIPLINES[discipline]['questions']),
+            answers={'discipline': discipline}, status='uploading', last_error='',
+        )
+        db.add(project); db.commit(); db.refresh(project)
+        legacy.save_project_input(project.id, upload)
+        project.status='analyzing'; db.commit()
+        pid=project.id
+    finally:
+        db.close()
+    legacy.schedule_analysis(pid)
+    return {'ok': True, 'project_id': pid}
