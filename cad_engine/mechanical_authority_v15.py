@@ -417,6 +417,23 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
         pts=[_map_point(tuple(p),srcb,target) for p in r.get("points") or []];_draw_route(msp,doc,pts,r.get("system"))
         if pts:
             mid=pts[len(pts)//2];seg=size_by_route.get(r.get("id")) or {};txt=_annotation_text_for_segment({**r,**seg});layer=_route_layer(r.get("system"))[0];t=msp.add_mtext(txt,dxfattribs={"layer":layer,"char_height":.06});t.dxf.insert=(mid[0]+.08,mid[1]+.08);t.dxf.width=3.5
+    # Every active plumbing plan must show its local vertical connection even
+    # when that floor has no branch endpoint.  Use the topology shaft proposed
+    # for this exact plan and keep each system on its authoritative layer.
+    route_systems={r.get("system") for r in all_routes}
+    local_shaft=next((s for s in (pipeline.get("topology",{}).get("shafts") or []) if s.get("plan_id")==pid and s.get("point")),None)
+    if local_shaft:
+        p=_map_point(tuple(local_shaft["point"]),srcb,target)
+        riser_tags={"sanitary":"S1","vent":"V1","cold_water":"CW1","hot_water":"HW1"}
+        for offset,system in enumerate(sorted(systems & set(riser_tags))):
+            if system in route_systems:
+                continue
+            layer,color,lw=_route_layer(system);_ensure_layer(doc,layer,color,lw)
+            q=(p[0]+offset*.22,p[1]+offset*.16)
+            msp.add_circle(q,.10,dxfattribs={"layer":layer,"lineweight":lw})
+            msp.add_line((q[0]-.14,q[1]),(q[0]+.14,q[1]),dxfattribs={"layer":layer,"lineweight":lw})
+            t=msp.add_mtext(f"{riser_tags[system]} {system.upper()} RISER\nLOCAL VERTICAL CONNECTION",dxfattribs={"layer":layer,"char_height":.055})
+            t.dxf.insert=(q[0]+.16,q[1]+.16);t.dxf.width=2.8
     equipment=[e for e in (pipeline.get("hvac",{}).get("equipment") or []) if e.get("plan_id")==pid];walls=[w for w in pipeline["architecture"].get("walls") or [] if _inside(tuple(w.get("start") or (0,0)),srcb,.5) or _inside(tuple(w.get("end") or (0,0)),srcb,.5)];_ensure_ac_blocks(doc);_ensure_layer(doc,"ENGITOOLS-M-HVAC-EQUIP",3,30);_ensure_layer(doc,"ENGITOOLS-M-HVAC-AIRFLOW",1,25);_ensure_layer(doc,"ENGITOOLS-M-HVAC-CALLOUT",2,18);_ensure_layer(doc,"ENGITOOLS-M-RADIATOR",3,25);ac_units=[]
     for e in equipment:
         kind=e.get("kind");srcp=tuple(e.get("point") or ())
