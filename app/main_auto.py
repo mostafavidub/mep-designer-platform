@@ -66,6 +66,7 @@ def _expanded_entities(entities, depth=0):
 
 
 def analyze_dxf_enhanced(path):
+    input_recovery = legacy.normalize_input_copy(path)
     doc = legacy.ezdxf.readfile(path)
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
