@@ -19,7 +19,7 @@ def _clear_abandoned_chunks():
     db = legacy.Session()
     try:
         interrupted = db.query(legacy.Project).filter(
-            legacy.Project.status.in_(('uploading', 'awaiting_upload', 'failed'))
+            legacy.Project.status.in_(('uploading', 'awaiting_upload', 'failed', 'ready'))
         ).all()
         for row in interrupted:
             shutil.rmtree(projects / str(row.id), ignore_errors=True)
@@ -27,6 +27,9 @@ def _clear_abandoned_chunks():
             if row.status in ('uploading', 'awaiting_upload'):
                 row.status = 'awaiting_upload'
                 row.last_error = 'آپلود قبلی کامل نشده است؛ فایل را دوباره بارگذاری کنید.'
+            elif row.status == 'ready':
+                row.status = 'expired'
+                row.last_error = 'فایل آزمایشی پس از پایان پردازش پاک شده است.'
         maintenance = db.query(legacy.Project).filter(
             legacy.Project.name == 'Production upload integrity test'
         ).all()
