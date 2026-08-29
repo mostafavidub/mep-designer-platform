@@ -13,22 +13,26 @@ MAX_CHUNKS = 400
 def _clear_abandoned_chunks():
     """Reclaim interrupted uploads while preserving every completed project."""
     projects = legacy.DATA_DIR / 'projects'
+    cad_engine = legacy.DATA_DIR / 'cad-engine'
     if not projects.exists():
         return
     db = legacy.Session()
     try:
         interrupted = db.query(legacy.Project).filter(
-            legacy.Project.status.in_(('uploading', 'awaiting_upload'))
+            legacy.Project.status.in_(('uploading', 'awaiting_upload', 'failed'))
         ).all()
         for row in interrupted:
             shutil.rmtree(projects / str(row.id), ignore_errors=True)
-            row.status = 'awaiting_upload'
-            row.last_error = 'آپلود قبلی کامل نشده است؛ فایل را دوباره بارگذاری کنید.'
+            shutil.rmtree(cad_engine / str(row.id), ignore_errors=True)
+            if row.status in ('uploading', 'awaiting_upload'):
+                row.status = 'awaiting_upload'
+                row.last_error = 'آپلود قبلی کامل نشده است؛ فایل را دوباره بارگذاری کنید.'
         maintenance = db.query(legacy.Project).filter(
             legacy.Project.name == 'Production upload integrity test'
         ).all()
         for row in maintenance:
             shutil.rmtree(projects / str(row.id), ignore_errors=True)
+            shutil.rmtree(cad_engine / str(row.id), ignore_errors=True)
         db.commit()
     finally:
         db.close()
