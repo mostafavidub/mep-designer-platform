@@ -1,0 +1,13 @@
+{
+  "roadmap_name": "EngiTools 40-topic SEO roadmap",
+  "updated_at": "2026-08-29",
+  "published": [
+    {"slug": "mep-input-guide", "topic": "آماده‌سازی فایل DXF معماری برای طراحی تأسیسات"},
+    {"slug": "electrical-plan-scope", "topic": "انواع و Scope نقشه‌های برق ساختمان"},
+    {"slug": "mechanical-plan-scope", "topic": "انواع و Scope نقشه‌های مکانیکی ساختمان"},
+    {"slug": "electrical-building-plan", "topic": "راهنمای جامع نقشه برق ساختمان"},
+    {"slug": "mechanical-building-plan", "topic": "راهنمای جامع نقشه تأسیسات مکانیکی ساختمان"},
+    {"slug": "sanitary-drainage-plan", "topic": "نقشه فاضلاب ساختمان؛ شیب، ونت و رایزر"}
+  ],
+  "selection_note": "The original 40-item source was not present in repository/connected Drive at this run. Published-state is persisted here so later runs do not repeat topics; next selection must reconcile this list with the approved roadmap when available."
+}
