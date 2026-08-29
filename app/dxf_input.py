@@ -26,6 +26,40 @@ def _read_with_final_endsec(path: Path):
             Path(temp_name).unlink(missing_ok=True)
 
 
+
+def normalize_input_copy(path: Path):
+    """Normalize only the extracted working copy; preserve the original upload."""
+    source = Path(path)
+    try:
+        doc = ezdxf.readfile(source)
+        return {'recovered': False, 'errors': 0, 'fixes': 0}
+    except Exception as strict_error:
+        raw = source.read_bytes()
+        matches = list(re.finditer(rb'(?m)^[ \t]*0\r?\nEOF[ \t]*(?:\r?\n)?', raw))
+        if not matches:
+            raise strict_error
+        eof = matches[-1]
+        newline = b'\r\n' if b'\r\n' in raw[max(0, eof.start() - 100):eof.end()] else b'\n'
+        repaired = raw[:eof.start()] + b'  0' + newline + b'ENDSEC' + newline + raw[eof.start():]
+        candidate = source.with_name(source.name + '.repairing')
+        try:
+            candidate.write_bytes(repaired)
+            doc = ezdxf.readfile(candidate)
+            if sum(1 for _ in doc.modelspace()) < 1:
+                raise DXFStructureError(
+                    f'فایل DXF پس از ترمیم هیچ Entity قابل استفاده‌ای ندارد: {source.name}'
+                )
+            candidate.replace(source)
+        finally:
+            candidate.unlink(missing_ok=True)
+        return {
+            'recovered': True,
+            'mode': 'normalized_working_copy',
+            'errors': 1,
+            'fixes': 1,
+            'original_error': str(strict_error),
+        }
+
 def read_input_dxf(path: Path):
     """Read an architectural DXF, recovering only structurally damaged inputs."""
     source = Path(path)
