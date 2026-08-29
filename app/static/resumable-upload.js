@@ -36,7 +36,7 @@
       try{
         const qs=new URLSearchParams({index:String(index),total:String(total),filename});
         const r=await fetch(`${url}?${qs}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:blob,cache:'no-store'});
-        if(!r.ok)throw new Error(`HTTP ${r.status}`);
+        if(!r.ok){let message=`HTTP ${r.status}`;try{const body=await r.json();message=body.detail||message}catch(_){}throw new Error(message)}
         return await r.json();
       }catch(e){lastError=e;if(attempt<3){status.textContent=`اتصال ناپایدار؛ تلاش مجدد ${attempt+1}/3...`;await sleep(700*(attempt+1))}}
     }
@@ -63,7 +63,7 @@
       btn.textContent='در حال تحلیل...';openModal();loadFlow();
     }catch(err){
       console.error('Resumable upload failed',err);
-      status.textContent='آپلود کامل نشد؛ اتصال را بررسی و دوباره تلاش کنید.';
+      status.textContent=err?.message||'آپلود کامل نشد؛ دوباره تلاش کنید.';
       btn.disabled=false;btn.textContent='تلاش مجدد آپلود';
     }
   };
