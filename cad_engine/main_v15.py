@@ -139,6 +139,11 @@ def design(req: DesignRequest):
                         "authority_qa":((report.get("authority") or {}).get("authority_qa")),
                         "dxf_qa":report.get("dxf_qa"),
                         "semantic_qa":report.get("semantic_qa"),
+                        "stage":report.get("stage"),
+                        "architecture_preservation_qa":report.get("architecture_preservation_qa"),
+                        "architecture_preservation_qa_after_v17":report.get("architecture_preservation_qa_after_v17"),
+                        "reference_parity_documentation":report.get("reference_parity_documentation"),
+                        "documentation_enhancement_qa":report.get("documentation_enhancement_qa"),
                     }
                     raise HTTPException(422,detail)
                 pages=render_mechanical_pages(dxf_out,report,project_out)
