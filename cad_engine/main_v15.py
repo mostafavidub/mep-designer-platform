@@ -24,6 +24,7 @@ from .main import (
     design_dxf, render_pdf, merge_pdfs, zip_outputs,
 )
 from .mechanical_authority_site_v15 import design_mechanical_authority_site
+from app.dxf_input import normalize_input_copy
 
 app = FastAPI(title="EngiTools CAD Designer", version="15.1.0")
 
@@ -120,6 +121,7 @@ def design(req: DesignRequest):
         reports=[]
 
         for idx,src in enumerate(sources,start=1):
+            input_recovery=normalize_input_copy(src)
             safe_stem="".join(c if c.isalnum() or c in "-_" else "_" for c in src.stem)[:80] or f"plan_{idx}"
             dxf_out=project_out/f"{idx:02d}_{safe_stem}_{discipline}.dxf"
 
