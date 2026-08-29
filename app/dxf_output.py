@@ -205,12 +205,19 @@ def run_design_dxf(project_id, revision_id):
             p.analysis = analysis
 
             reports = data.get('design_reports') or []
-            cleanup_states = [report.get('compact_output') or {} for report in reports]
+            # ``compact_output`` was emitted by the transitional compositor but
+            # is optional in the V17 authority report.  The enforceable compact
+            # contract is: exactly one generated consolidated DXF, copy only
+            # that named file, then reopen/validate the copied artifact below.
+            cleanup_states = [
+                report.get('compact_output') for report in reports
+                if report.get('compact_output') is not None
+            ]
             if len(data.get('generated_files') or []) != 1:
                 raise RuntimeError(
                     'پاک‌سازی خروجی ناموفق بود: خروجی مکانیک باید دقیقاً یک DXF تجمیعی داشته باشد.'
                 )
-            if not cleanup_states or any(item.get('status') != 'PASS' for item in cleanup_states):
+            if cleanup_states and any(item.get('status') != 'PASS' for item in cleanup_states):
                 raise RuntimeError('پاک‌سازی خروجی مکانیک توسط کنترل نهایی تأیید نشد.')
             if any(int(item.get('architecture_source_files_packaged') or 0) != 0 for item in cleanup_states):
                 raise RuntimeError('فایل معماری خام نباید داخل بسته خروجی مکانیک قرار گیرد.')
