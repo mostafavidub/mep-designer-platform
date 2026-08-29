@@ -25,11 +25,11 @@ ROOM_ALIASES = {
 }
 
 FIXTURE_ALIASES = {
-    "wc": ("wc", "toilet", "closet"),
-    "basin": ("basin", "lavatory", "rooshooee", "روشویی"),
+    "wc": ("wc", "toilet", "closet", "farangi", "فرنگی", "توالت"),
+    "basin": ("basin", "lavatory", "rooshooee", "روشویی", "روشويی", "lav"),
     "sink": ("sink", "kitchen sink", "سینک"),
-    "shower": ("shower", "دوش"),
-    "floor_drain": ("floor drain", "fd", "k کفشور", "کفشور"),
+    "shower": ("shower", "دوش", "کابین دوش", "bath"),
+    "floor_drain": ("floor drain", "fd", "k کفشور", "کفشور", "کف خواب"),
 }
 
 EQUIPMENT_ALIASES = {
@@ -186,6 +186,19 @@ def reconstruct_architecture(path):
     doors = [i for i in inserts if i["layer"] in door_layers or "door" in _norm(i["name"])]
     columns = [i for i in inserts if i["layer"] in column_layers or "column" in _norm(i["name"])]
     walls = [line for line in lines if not wall_layers or line["layer"] in wall_layers]
+    # Many architectural exporters encode wall faces as closed LWPOLYLINE
+    # rectangles instead of LINE entities.  Preserve their edges as explicit
+    # wall evidence so routing and acceptance do not see an empty floor.
+    wall_polygons = [p for p in polygons if not wall_layers or p["layer"] in wall_layers]
+    if not wall_polygons and not walls:
+        wall_polygons = list(polygons)
+    for polygon in wall_polygons:
+        pts = polygon["points"]
+        for index, start in enumerate(pts):
+            end = pts[(index + 1) % len(pts)]
+            if start != end:
+                walls.append({"layer": polygon["layer"], "start": start, "end": end,
+                              "source": "closed_polyline_edge"})
 
     ext = bbox.extents(msp, fast=True); bounds = None
     if ext.has_data:
@@ -237,6 +250,22 @@ def recognize_fixtures_equipment(architecture):
         rows.append({"id": f"MEP-{len(rows)+1:03d}", "category": category, "type": kind, "point": item["point"],
                      "block": item.get("name"), "layer": item.get("layer"), "room_id": room.get("id") if room else None,
                      "confidence": confidence, "evidence": signals or ["nearby_text"]})
+    # Explicit fixture labels are valid installed-object evidence when the
+    # source uses exploded symbols or anonymous blocks.  Deduplicate them from
+    # nearby block detections and retain room assignment for topology.
+    for text in texts:
+        kind = _classify(text.get("text"), FIXTURE_ALIASES)
+        if not kind:
+            continue
+        point = text["point"]
+        if any(row.get("type") == kind and math.dist(tuple(row["point"]), tuple(point)) < 80 for row in rows):
+            continue
+        room = next((r for r in rooms if _inside(point, r["polygon"])), None)
+        rows.append({"id": f"MEP-{len(rows)+1:03d}", "category": "fixture",
+                     "type": kind, "point": point, "block": "", "layer": text.get("layer"),
+                     "room_id": room.get("id") if room else None, "confidence": 0.76,
+                     "evidence": ["explicit_text"]})
+
     return {"version": "fixture-equipment-recognition-v13.2", "detections": rows,
             "fixtures": [r for r in rows if r["category"] == "fixture"],
             "equipment": [r for r in rows if r["category"] == "equipment"],
