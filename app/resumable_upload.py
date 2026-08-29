@@ -10,7 +10,27 @@ CHUNK_SIZE_MAX = 2 * 1024 * 1024
 MAX_CHUNKS = 400
 
 
+def _clear_abandoned_chunks():
+    """Reclaim only incomplete upload fragments; never touch source or output."""
+    projects = legacy.DATA_DIR / 'projects'
+    if not projects.exists():
+        return
+    db = legacy.Session()
+    try:
+        active = {
+            str(row.id) for row in db.query(legacy.Project).filter(
+                legacy.Project.status == 'uploading'
+            ).all()
+        }
+    finally:
+        db.close()
+    for chunks in projects.glob('*/.upload_chunks'):
+        if chunks.parent.name not in active:
+            shutil.rmtree(chunks, ignore_errors=True)
+
+
 def register_resumable_upload_routes(app):
+    _clear_abandoned_chunks()
     @app.post('/api/upload/init/{discipline}')
     async def init_resumable_upload(discipline: str, request: Request):
         if discipline not in legacy.DISCIPLINES:
@@ -89,8 +109,12 @@ def register_resumable_upload_routes(app):
             assembled = pdir / (final_path.name + '.uploading')
             with assembled.open('wb') as out:
                 for i in range(total):
-                    with (chunks_dir / f'{i:05d}.part').open('rb') as src:
+                    chunk = chunks_dir / f'{i:05d}.part'
+                    with chunk.open('rb') as src:
                         shutil.copyfileobj(src, out, length=1024 * 1024)
+                    # Release each fragment immediately so assembly does not
+                    # require twice the uploaded file size on the volume.
+                    chunk.unlink()
             assembled.replace(final_path)
             shutil.rmtree(chunks_dir, ignore_errors=True)
 
@@ -102,9 +126,19 @@ def register_resumable_upload_routes(app):
         except HTTPException:
             raise
         except Exception as exc:
+            # Failed uploads must not consume persistent volume indefinitely.
+            shutil.rmtree(
+                legacy.DATA_DIR / 'projects' / str(pid) / '.upload_chunks',
+                ignore_errors=True,
+            )
+            uploading = legacy.DATA_DIR / 'projects' / str(pid) / 'architecture.zip.uploading'
+            uploading.unlink(missing_ok=True)
+            uploading = legacy.DATA_DIR / 'projects' / str(pid) / 'architecture.dxf.uploading'
+            uploading.unlink(missing_ok=True)
             project.last_error = str(exc)
             project.status = 'awaiting_upload'
             db.commit()
-            raise HTTPException(500, 'Upload could not be completed') from exc
+            detail = 'فضای موقت سرور پر شده است؛ فایل‌های ناقص پاک شدند، دوباره تلاش کنید.' if getattr(exc, 'errno', None) == 28 else 'آپلود روی سرور کامل نشد.'
+            raise HTTPException(507 if getattr(exc, 'errno', None) == 28 else 500, detail) from exc
         finally:
             db.close()
