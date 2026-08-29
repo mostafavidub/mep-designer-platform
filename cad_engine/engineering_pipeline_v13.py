@@ -266,6 +266,28 @@ def recognize_fixtures_equipment(architecture):
                      "room_id": room.get("id") if room else None, "confidence": 0.76,
                      "evidence": ["explicit_text"]})
 
+    # When architectural room programs are explicit but fixture blocks are
+    # exploded/anonymous, create traceable preliminary fixture endpoints from
+    # the accepted room use.  These are design proposals, not claimed detections.
+    inferred_by_room = {
+        "kitchen": ("sink",),
+        "bathroom": ("shower", "basin", "floor_drain"),
+        "toilet": ("wc", "basin", "floor_drain"),
+    }
+    for room in rooms:
+        point = room.get("label_point")
+        if not point:
+            continue
+        for kind in inferred_by_room.get(room.get("type"), ()):
+            if any(row.get("type") == kind and row.get("room_id") == room.get("id") for row in rows):
+                continue
+            offset = 35.0 * (1 + len([r for r in rows if r.get("room_id") == room.get("id")]))
+            proposed = (float(point[0]) + offset, float(point[1]) + offset * 0.35)
+            rows.append({"id": f"MEP-{len(rows)+1:03d}", "category": "fixture",
+                         "type": kind, "point": proposed, "block": "", "layer": "ROOM-PROGRAM",
+                         "room_id": room.get("id"), "confidence": 0.62,
+                         "status": "proposed", "evidence": ["room_program_inference"]})
+
     return {"version": "fixture-equipment-recognition-v13.2", "detections": rows,
             "fixtures": [r for r in rows if r["category"] == "fixture"],
             "equipment": [r for r in rows if r["category"] == "equipment"],
