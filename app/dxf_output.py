@@ -1,3 +1,5 @@
+import os
+import secrets
 import shutil
 from collections import Counter
 from pathlib import Path
@@ -340,3 +342,37 @@ def get_cad_output(pid: int, rev: int, request: Request):
         media_type = 'application/zip'
         filename = f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
     return FileResponse(path, media_type=media_type, filename=filename)
+
+
+@app.get('/internal/maintenance/projects/{pid}/output/{rev}')
+def maintenance_get_cad_output(pid: int, rev: int, request: Request):
+    """Token-protected artifact download used for production E2E verification."""
+    expected = os.getenv('INTERNAL_MAINTENANCE_TOKEN', '')
+    supplied = request.headers.get('x-maintenance-token', '')
+    if not expected or not secrets.compare_digest(supplied, expected):
+        raise HTTPException(404)
+    db = legacy.Session()
+    try:
+        project = db.get(legacy.Project, pid)
+        revision = db.query(legacy.Revision).filter(
+            legacy.Revision.project_id == pid,
+            legacy.Revision.revision_no == rev,
+        ).first()
+        if not project or not revision or revision.status != 'ready':
+            raise HTTPException(404)
+        discipline = (project.answers or {}).get(
+            'discipline', (project.analysis or {}).get('discipline', 'mechanical')
+        )
+        path = _resolve_existing_cad_artifact(pid, rev, discipline, revision.pdf_path)
+    finally:
+        db.close()
+    if not isinstance(path, Path) or not path.exists():
+        raise HTTPException(404)
+    project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
+    resolved = path.resolve()
+    if project_root not in resolved.parents:
+        raise HTTPException(404)
+    return FileResponse(
+        resolved, media_type='application/dxf',
+        filename=f'EngiTools_{discipline}_{pid}_R{rev}.dxf',
+    )
