@@ -1,4 +1,5 @@
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import requests
@@ -13,7 +14,15 @@ _prev_flow_payload = legacy.flow_payload
 
 
 def validate_generated_manifest(drawing_set, design_reports):
-    """Fail closed unless CAD issued exactly the customer-approved sheets."""
+    """Fail closed unless CAD covers every approved drawing requirement.
+
+    V17 reports the actual authority sheets in ``composition.manifest``.  The
+    older adapter only inspected ``authority_submission.layouts`` and therefore
+    reported zero generated sheets even after every CAD QA gate had passed.
+    Authority packages may also contain required cover/detail/note/schedule
+    sheets in addition to the customer-facing system plans, so validate the
+    approved system coverage instead of rejecting those mandatory additions.
+    """
     if not (drawing_set or {}).get('approved'):
         raise RuntimeError('مانیفست نقشه‌های مکانیکی هنوز تأیید نشده است.')
     manifest = (drawing_set or {}).get('approved_manifest') or {}
@@ -24,12 +33,71 @@ def validate_generated_manifest(drawing_set, design_reports):
         raise RuntimeError('مانیفست تأییدشده نامعتبر است.')
 
     generated_codes = []
+    generated_rows = []
     validation_states = []
     for report in design_reports or []:
         authority = report.get('authority_submission') or {}
-        generated_codes.extend(str(x) for x in (authority.get('layouts') or []))
-        validation_states.append(authority.get('validation_status'))
-    if generated_codes != expected_codes or len(generated_codes) != expected_count:
+        legacy_layouts = [str(x) for x in (authority.get('layouts') or [])]
+        composition = report.get('composition') or {}
+        rows = composition.get('manifest') or []
+        if rows:
+            generated_rows.extend(rows)
+            generated_codes.extend(str(x.get('code') or '') for x in rows)
+        else:
+            generated_codes.extend(legacy_layouts)
+        validation_states.append(
+            authority.get('validation_status')
+            or (report.get('dxf_qa') or {}).get('status')
+            or report.get('status')
+        )
+
+    if not generated_codes or any(not code for code in generated_codes):
+        raise RuntimeError(
+            'Generation Failed: Proposal/CAD sheet mismatch. '
+            f'Expected={expected_count} {expected_codes}; '
+            f'Generated={len(generated_codes)} {generated_codes}'
+        )
+    if len(generated_codes) != len(set(generated_codes)):
+        raise RuntimeError('Generation Failed: CAD issued duplicate sheet codes.')
+
+    # New authority reports expose machine-readable family/level rows.  Verify
+    # that all approved system plans and specials are covered while allowing
+    # mandatory authority support sheets (cover, details, notes and schedules).
+    if generated_rows:
+        family_map = {
+            'water_supply': 'WATER',
+            'sanitary_vent': 'SANITARY_VENT',
+            'heating': 'HEATING',
+            'cooling': 'SPLIT_AC',
+            'gas': 'GAS',
+            'ventilation_exhaust': 'EXHAUST',
+        }
+        required = Counter()
+        special_required = set()
+        for sheet in expected_sheets:
+            family = str(sheet.get('family') or '')
+            drawing_type = str(sheet.get('drawing_type') or '')
+            if drawing_type == 'floor_plan' and family in family_map:
+                required[family_map[family]] += 1
+            elif drawing_type in ('roof_plan', 'roof_rainwater') or str(sheet.get('code') or '').endswith('-RAIN'):
+                special_required.add('ROOF')
+            elif drawing_type == 'riser_diagram' or str(sheet.get('code') or '').endswith('-RISER'):
+                special_required.add('PLUMBING_RISER')
+        actual = Counter(str(row.get('family') or '') for row in generated_rows)
+        missing = {
+            family: count - actual.get(family, 0)
+            for family, count in required.items()
+            if actual.get(family, 0) < count
+        }
+        missing_specials = sorted(x for x in special_required if actual.get(x, 0) < 1)
+        if missing or missing_specials:
+            raise RuntimeError(
+                'Generation Failed: approved mechanical sheet coverage is incomplete. '
+                f'Missing={missing}; MissingSpecials={missing_specials}'
+            )
+    elif generated_codes != expected_codes or len(generated_codes) != expected_count:
+        # Preserve strict compatibility for legacy CAD reports which have no
+        # semantic manifest and therefore cannot prove equivalent coverage.
         raise RuntimeError(
             'Generation Failed: Proposal/CAD sheet mismatch. '
             f'Expected={expected_count} {expected_codes}; '
