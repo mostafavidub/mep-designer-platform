@@ -33,6 +33,18 @@ def _clear_abandoned_chunks():
         for row in maintenance:
             shutil.rmtree(projects / str(row.id), ignore_errors=True)
             shutil.rmtree(cad_engine / str(row.id), ignore_errors=True)
+        failed_revisions = db.query(legacy.Revision).filter(
+            legacy.Revision.status == 'failed'
+        ).all()
+        for revision in failed_revisions:
+            shutil.rmtree(
+                cad_engine / str(revision.project_id) / f'R{revision.revision_no:03d}',
+                ignore_errors=True,
+            )
+            shutil.rmtree(
+                projects / str(revision.project_id) / 'output' / f'rev_{revision.revision_no:03d}',
+                ignore_errors=True,
+            )
         db.commit()
     finally:
         db.close()
