@@ -145,6 +145,9 @@ def design(req: DesignRequest):
                         "reference_parity_documentation":report.get("reference_parity_documentation"),
                         "documentation_enhancement_qa":report.get("documentation_enhancement_qa"),
                     }
+                    # Failed transactions must not accumulate multi-sheet
+                    # DXF/PDF artifacts on the persistent volume.
+                    shutil.rmtree(project_out,ignore_errors=True)
                     raise HTTPException(422,detail)
                 pages=render_mechanical_pages(dxf_out,report,project_out)
                 page_pdfs.extend(pages)
