@@ -12,6 +12,7 @@ import re
 import ezdxf
 from ezdxf import bbox
 
+from .dxf_input import read_input_dxf
 from .fixture_equipment_rulebook import (
     CANDIDATE_THRESHOLD,
     CORROBORATION_BONUS,
@@ -256,7 +257,7 @@ def enhance_dxf_result(path, base_result):
     """Enrich one already-analyzed DXF result with fixture/equipment evidence."""
     result = dict(base_result or {})
     try:
-        doc = ezdxf.readfile(path)
+        doc, _recovery = read_input_dxf(path)
     except Exception as exc:
         result["fixture_detection_version"] = DETECTION_VERSION
         result["fixture_detection_diagnostics"] = [f"fixture_detector_read_failed:{type(exc).__name__}"]
