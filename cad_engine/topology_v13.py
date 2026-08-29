@@ -25,6 +25,25 @@ def build_system_topology(architecture,recognition,requirements,calculations):
         row={'id':f'SHAFT-{index:02d}','kind':'shaft','category':'vertical','point':point,'plan_id':shaft.get('plan_id'),
              'source':shaft.get('source','geometry')}
         shafts.append(row);nodes.append(row)
+    # Propose one local vertical core for each primary floor that has no
+    # explicit shaft.  The user-approved workflow permits a shaft proposal near
+    # wet rooms; keeping it local preserves the no-cross-plan contract.
+    plan_ids=list(architecture.get('primary_floor_plan_ids') or [])
+    for pid in plan_ids:
+        if any(s.get('plan_id')==pid for s in shafts):
+            continue
+        wet=[r for r in architecture.get('rooms') or [] if r.get('plan_id')==pid and r.get('type') in ('bathroom','toilet','kitchen')]
+        points=[tuple(r.get('label_point')) for r in wet if r.get('label_point')]
+        if points:
+            point=(sum(p[0] for p in points)/len(points),sum(p[1] for p in points)/len(points))
+        else:
+            plan=next((p for p in architecture.get('plans') or [] if p.get('plan_id')==pid),{})
+            b=plan.get('bounds') or architecture.get('bounds') or [0,0,0,0]
+            point=((b[0]+b[2])/2,(b[1]+b[3])/2)
+        row={'id':f'SHAFT-PROPOSED-{len(shafts)+1:02d}','kind':'shaft','category':'vertical',
+             'point':point,'plan_id':pid,'source':'proposed_near_wet_core','provisional':True}
+        shafts.append(row);nodes.append(row)
+
     project_systems=set(requirements.get('project_systems') or [])
     edges=[];system_graphs={};unresolved=[]
     for system in sorted(project_systems):
