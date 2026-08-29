@@ -139,10 +139,11 @@ def build_scope(p):
     gas_candidates = _profile_levels(p, 'gas_candidate', levels)
 
     # Missing room labels are not evidence that an occupied authority level does
-    # not need plumbing, sanitary, ventilation, or gas drawings. DXFs commonly
-    # omit or explode individual room names. Use every detected non-roof level
-    # as the conservative deliverable scope; explicit questionnaire negatives
-    # remain authoritative.
+    # not need plumbing, sanitary or ventilation drawings. DXFs commonly omit
+    # or explode individual room names. Gas is different: a separate gas plan is
+    # required only where architecture or the questionnaire identifies a gas
+    # consumer. Expanding gas to every floor made the approved proposal demand a
+    # sheet which the evidence-driven CAD engine correctly did not generate.
     if profiles_available:
         non_roof_levels = [
             str(profile.get('name')) for profile in (auto.get('level_profiles') or [])
@@ -152,8 +153,6 @@ def build_scope(p):
         wet_candidates = non_roof_levels
         sanitary_candidates = non_roof_levels
         ventilation_candidates = non_roof_levels
-        if not _negative(answers.get('gas')):
-            gas_candidates = non_roof_levels
 
     heating = [] if _negative(answers.get('heating')) else conditioned_candidates
     cooling = [] if _negative(answers.get('cooling')) else conditioned_candidates
