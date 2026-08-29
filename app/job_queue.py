@@ -421,9 +421,15 @@ def register_job_queue(app, legacy):
             ) or 'سینک ۱، روشویی ۱، توالت ۱، دوش ۱'
             overrides = {
                 'location': 'مشهد',
+                'heating': 'پکیج دیواری و رادیاتور',
+                'cooling': 'اسپلیت یا داکت‌اسپلیت',
                 'gas': 'گاز برای پکیج و اجاق هر واحد',
                 'fixture_schedule': quantified_fixtures,
             }
+            # This secured E2E run intentionally uses the declared conservative
+            # basis even if an earlier failed verification stored a different
+            # temporary default.
+            answers.update(overrides)
             for question in project.questions or []:
                 key = question.get('key')
                 if not key or str(answers.get(key) or '').strip():
