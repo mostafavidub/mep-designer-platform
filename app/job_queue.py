@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import os
 import secrets
+import shutil
 import threading
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -400,6 +402,37 @@ def register_job_queue(app, legacy):
             return {'queued': True, 'project_id': pid}
         finally:
             db.close()
+
+    @app.post('/internal/maintenance/projects/{pid}/purge-failed-artifacts')
+    def maintenance_purge_failed_artifacts(pid: int, request: Request):
+        """Remove only generated CAD/output files; preserve the uploaded source."""
+        _maintenance_authorized(request)
+        targets = [
+            Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(pid),
+            Path(legacy.DATA_DIR) / 'projects' / str(pid) / 'output',
+        ]
+        removed_bytes = 0
+        for target in targets:
+            if target.exists():
+                removed_bytes += sum(p.stat().st_size for p in target.rglob('*') if p.is_file())
+                shutil.rmtree(target, ignore_errors=True)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            if not project:
+                raise HTTPException(404)
+            for job in db.query(Job).filter(Job.project_id == pid, Job.status == 'processing').all():
+                job.status = 'failed'; job.locked_at = None
+                job.last_error = 'Generated artifacts removed after storage exhaustion.'
+            for revision in db.query(legacy.Revision).filter(
+                legacy.Revision.project_id == pid, legacy.Revision.status == 'processing'
+            ).all():
+                revision.status = 'failed'; revision.error = 'Generated artifacts removed after storage exhaustion.'
+            project.status = 'failed'; project.last_error = 'فضای موقت خروجی پاک‌سازی شد؛ طراحی آماده اجرای مجدد است.'
+            db.commit()
+        finally:
+            db.close()
+        return {'removed_bytes': removed_bytes, 'preserved_source': True}
 
     @app.post('/internal/maintenance/projects/{pid}/complete-defaults')
     def maintenance_complete_defaults(pid: int, request: Request):
