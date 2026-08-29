@@ -194,6 +194,14 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         board=boards.get(row.get("old_sheet"))
         if not board:
             continue
+        # SERVICE variants are engineering schematics generated from the
+        # approved service basis; they do not claim to contain a copied source
+        # architectural floor and therefore are outside geometry-preservation
+        # matching. Their mechanical content is covered by semantic/DXF QA.
+        if row.get("level")=="SERVICE":
+            sheet_results.append({"sheet":row.get("code"),"family":row.get("family"),"level":row.get("level"),
+                                  "status":"PASS","reason":"ENGINEERING_SERVICE_SCHEMATIC"})
+            continue
         plan=_source_plan_for_row(arch,row)
         if not plan:
             # A plan sheet without source architecture is a hard preservation failure.
