@@ -5,6 +5,7 @@ import time
 import unittest
 from pathlib import Path
 
+import app.analysis_workspace_guard as guard
 from app.analysis_workspace_guard import install
 
 
@@ -32,6 +33,46 @@ class _FakeLegacy:
             self.failures.append(exc)
         finally:
             shutil.rmtree(workspace, ignore_errors=True)
+
+
+class _Project:
+    def __init__(self):
+        self.status = 'analyzing'
+        self.last_error = ''
+
+
+class _DB:
+    def __init__(self, project):
+        self.project = project
+
+    def get(self, _model, _project_id):
+        return self.project
+
+    def close(self):
+        pass
+
+
+class _RetryLegacy:
+    Project = object
+
+    def __init__(self):
+        self.project = _Project()
+        self.attempts = 0
+        self.analyze_project_job = self._analyze
+
+    def Session(self):
+        return _DB(self.project)
+
+    def _analyze(self, project_id: int):
+        self.attempts += 1
+        if self.attempts == 1:
+            self.project.status = 'awaiting_upload'
+            self.project.last_error = (
+                "No such file or directory: '/tmp/engitools-analysis/74/000 architecture.dxf'"
+            )
+        else:
+            self.project.status = 'asking'
+            self.project.last_error = ''
 
 
 class AnalysisWorkspaceGuardTests(unittest.TestCase):
@@ -66,6 +107,19 @@ class AnalysisWorkspaceGuardTests(unittest.TestCase):
             elapsed = time.monotonic() - start
             self.assertEqual(legacy.failures, [])
             self.assertLess(elapsed, 0.15)
+
+    def test_missing_workspace_retries_once_when_original_is_durable(self):
+        legacy = _RetryLegacy()
+        original = guard.artifact_storage.input_is_durable
+        guard.artifact_storage.input_is_durable = lambda project_id: project_id == 74
+        try:
+            install(legacy)
+            legacy.analyze_project_job(74)
+        finally:
+            guard.artifact_storage.input_is_durable = original
+        self.assertEqual(legacy.attempts, 2)
+        self.assertEqual(legacy.project.status, 'asking')
+        self.assertEqual(legacy.project.last_error, '')
 
 
 if __name__ == '__main__':
