@@ -3,6 +3,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from . import main_auto
 from . import unit_sanity  # patches dimension-based CAD unit sanity before project analysis
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
+from . import artifact_storage
 from . import mechanical_workflow
 from . import mechanical_drawing_set
 from . import mechanical_review_fix
@@ -66,4 +67,6 @@ async def performance_headers(request, call_next):
 
 @app.get('/system_health')
 def integrated_system_health():
-    return main_auto.system_health()
+    status = main_auto.system_health()
+    status['object_storage'] = artifact_storage.healthcheck()
+    return status
