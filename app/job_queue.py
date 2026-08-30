@@ -270,15 +270,31 @@ def register_job_queue(app, legacy):
             jobs = db.query(Job).filter(
                 Job.status == 'processing',
             ).all()
+            # A deploy after the disk-pressure fix should recover the newest
+            # affected design in place. Other terminal/engineering failures
+            # remain untouched and still require an explicit user retry.
+            latest_disk_failure = db.query(Job).filter(
+                Job.job_type == 'design',
+                Job.status == 'failed',
+                func.lower(Job.last_error).like('%no space left on device%'),
+            ).order_by(Job.id.desc()).first()
+            if latest_disk_failure and latest_disk_failure not in jobs:
+                latest_disk_failure.attempts = 0
+                latest_disk_failure.last_error = ''
+                jobs.append(latest_disk_failure)
             for job in jobs:
                 job.status = 'queued'
                 job.available_at = datetime.utcnow()
                 job.locked_at = None
                 project = db.get(legacy.Project, job.project_id)
-                if project: project.status = 'queued' if job.job_type == 'design' else 'analyzing'
+                if project:
+                    project.status = 'queued' if job.job_type == 'design' else 'analyzing'
+                    project.last_error = ''
                 if job.revision_id:
                     revision = db.get(legacy.Revision, job.revision_id)
-                    if revision: revision.status = 'queued'
+                    if revision:
+                        revision.status = 'queued'
+                        revision.error = ''
             db.commit()
         finally:
             db.close()
