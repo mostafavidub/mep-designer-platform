@@ -50,7 +50,7 @@
     try{
       const name=(form.querySelector('[name="name"]')?.value||'').trim();
       const init=await fetch(`/api/upload/init/${discipline}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name}),cache:'no-store'});
-      if(!init.ok)throw new Error(`init ${init.status}`);
+      if(!init.ok){let message=`init ${init.status}`;try{const body=await init.json();message=body.detail||message}catch(_){}throw new Error(message)}
       const session=await init.json();projectId=session.project_id;flowUrl=session.flow_url;
       const total=Math.ceil(file.size/CHUNK);
       for(let i=0;i<total;i++){
