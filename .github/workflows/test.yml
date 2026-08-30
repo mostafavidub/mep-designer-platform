@@ -17,9 +17,13 @@ jobs:
           python-version: '3.12'
           cache: pip
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt -r cad_engine/requirements.txt
       - name: Run tests
         env:
           DATABASE_URL: sqlite:///./test_ci.db
+          DATA_DIR: /tmp/engitools-ci-data
+          CAD_OUTPUT_DIR: /tmp/engitools-ci-cad
+          TMPDIR: /tmp/engitools-ci-tmp
+          MPLBACKEND: Agg
           CAD_DESIGNER_URL: http://127.0.0.1:9999
         run: python -m unittest discover -s tests -p 'test_*.py' -v
