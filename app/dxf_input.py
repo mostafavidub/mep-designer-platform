@@ -11,7 +11,25 @@ _TAG_ZERO = re.compile(rb"^[ \t]*0[ \t]*$")
 
 
 def _entity_count(doc) -> int:
-    return sum(1 for _ in doc.modelspace())
+    """Count usable entities wherever the exporter stored the drawing."""
+    count = 0
+    seen = set()
+    for layout in doc.layouts:
+        for entity in layout:
+            handle = getattr(entity.dxf, 'handle', None)
+            key = handle or id(entity)
+            if key not in seen:
+                seen.add(key); count += 1
+    for block in doc.blocks:
+        name = str(getattr(block, 'name', '') or '')
+        if name.lower().startswith(('*model_space', '*paper_space')):
+            continue
+        for entity in block:
+            handle = getattr(entity.dxf, 'handle', None)
+            key = handle or id(entity)
+            if key not in seen:
+                seen.add(key); count += 1
+    return count
 
 
 def _structural_tags(raw: bytes):
