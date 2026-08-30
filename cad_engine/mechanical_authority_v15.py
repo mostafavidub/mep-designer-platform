@@ -166,6 +166,7 @@ def build_design_overrides(answers: dict) -> dict:
         "cooling_system": cooling_key,
         "heating_system": heating_key,
         "gas_service": bool(gas_answer and not any(x in gas_answer for x in ("ندارد","خیر","no gas"))),
+        "fixture_evidence": list(_answer(answers, "_plan_fixture_evidence", default=[]) or []),
         "hvac": {"city":city,"cooling":"split_ac" if cooling_key else None,"heating":"package_radiator" if heating_key else None},
         "water_inlet_pressure": _answer(answers,"water_pressure","water"),
         "gas_service_pressure": _answer(answers,"gas_pressure"),
