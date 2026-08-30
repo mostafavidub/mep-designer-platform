@@ -88,6 +88,15 @@ def presigned_download(uri: str, filename: str) -> str:
     )
 
 
+def delete_artifact(uri: str) -> bool:
+    """Delete one retained output only after an explicit user action."""
+    if not configured() or not str(uri or '').startswith('s3://'):
+        return False
+    bucket, key = _parse_uri(uri)
+    _client().delete_object(Bucket=bucket, Key=key)
+    return True
+
+
 def restore_project_input(project_id: int, project_dir: Path) -> bool:
     """Restore a missing original upload from object storage."""
     if not configured():
