@@ -479,4 +479,36 @@ def register_job_queue(app, legacy):
         finally:
             db.close()
 
+    @app.post('/internal/maintenance/projects/{pid}/retry-design')
+    def maintenance_retry_design(pid: int, request: Request):
+        """Safely retry the latest design while preserving its uploaded source."""
+        _maintenance_authorized(request)
+        shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(pid), ignore_errors=True)
+        shutil.rmtree(Path(legacy.DATA_DIR) / 'projects' / str(pid) / 'output', ignore_errors=True)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            if not project:
+                raise HTTPException(404)
+            job = db.query(Job).filter(
+                Job.project_id == pid, Job.job_type == 'design'
+            ).order_by(Job.id.desc()).first()
+            if not job or not job.revision_id:
+                raise HTTPException(409, 'Design job پیدا نشد.')
+            revision = db.get(legacy.Revision, job.revision_id)
+            job.status = 'queued'
+            job.attempts = 0
+            job.available_at = datetime.utcnow()
+            job.locked_at = None
+            job.last_error = ''
+            project.status = 'queued'
+            project.last_error = ''
+            if revision:
+                revision.status = 'queued'
+                revision.error = ''
+            db.commit()
+            return {'queued': True, 'project_id': pid, 'job_id': job.id}
+        finally:
+            db.close()
+
     return Job
