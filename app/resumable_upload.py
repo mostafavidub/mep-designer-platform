@@ -11,48 +11,8 @@ MAX_CHUNKS = 400
 
 
 def _clear_abandoned_chunks():
-    """Reclaim interrupted uploads while preserving every completed project."""
-    projects = legacy.DATA_DIR / 'projects'
-    cad_engine = legacy.DATA_DIR / 'cad-engine'
-    if not projects.exists():
-        return
-    db = legacy.Session()
-    try:
-        interrupted = db.query(legacy.Project).filter(
-            legacy.Project.status.in_(('uploading', 'awaiting_upload', 'failed', 'ready'))
-        ).all()
-        for row in interrupted:
-            shutil.rmtree(projects / str(row.id), ignore_errors=True)
-            shutil.rmtree(cad_engine / str(row.id), ignore_errors=True)
-            if row.status in ('uploading', 'awaiting_upload'):
-                row.status = 'awaiting_upload'
-                row.last_error = 'آپلود قبلی کامل نشده است؛ فایل را دوباره بارگذاری کنید.'
-            elif row.status == 'ready':
-                row.status = 'expired'
-                row.last_error = 'فایل آزمایشی پس از پایان پردازش پاک شده است.'
-        maintenance = db.query(legacy.Project).filter(
-            legacy.Project.name == 'Production upload integrity test'
-        ).all()
-        for row in maintenance:
-            shutil.rmtree(projects / str(row.id), ignore_errors=True)
-            shutil.rmtree(cad_engine / str(row.id), ignore_errors=True)
-        failed_revisions = db.query(legacy.Revision).filter(
-            legacy.Revision.status == 'failed'
-        ).all()
-        for revision in failed_revisions:
-            shutil.rmtree(
-                cad_engine / str(revision.project_id) / f'R{revision.revision_no:03d}',
-                ignore_errors=True,
-            )
-            shutil.rmtree(
-                projects / str(revision.project_id) / 'output' / f'rev_{revision.revision_no:03d}',
-                ignore_errors=True,
-            )
-        db.commit()
-    finally:
-        db.close()
-    for chunks in projects.glob('*/.upload_chunks'):
-        shutil.rmtree(chunks, ignore_errors=True)
+    """Legacy startup cleanup is disabled; queue cleanup handles transient CAD files safely."""
+    return
 
 
 def register_resumable_upload_routes(app):
@@ -65,9 +25,9 @@ def register_resumable_upload_routes(app):
             payload = await request.json()
         except Exception:
             payload = {}
-        user = legacy.current_user(request)
-        db = legacy.Session()
         try:
+            user = legacy.current_user(request)
+            db = legacy.Session()
             project_name = (payload.get('name') or '').strip() or f"{legacy.DISCIPLINES[discipline]['title']} - upload"
             project = legacy.Project(
                 user_id=user.id,
@@ -81,8 +41,17 @@ def register_resumable_upload_routes(app):
             db.commit()
             db.refresh(project)
             pid = project.id
+        except Exception as exc:
+            message = str(exc)
+            lowered = message.lower()
+            if 'no space left on device' in lowered or getattr(exc, 'errno', None) == 28:
+                raise HTTPException(507, 'فضای Volume سرور پر است.') from exc
+            if 'database' in lowered or 'sql' in lowered:
+                raise HTTPException(500, f'خطای دیتابیس هنگام ساخت پروژه: {type(exc).__name__}') from exc
+            raise HTTPException(500, f'ساخت پروژه ناموفق بود: {type(exc).__name__}') from exc
         finally:
-            db.close()
+            if 'db' in locals():
+                db.close()
         return JSONResponse({
             'ok': True,
             'project_id': pid,
