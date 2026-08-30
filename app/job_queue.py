@@ -247,6 +247,8 @@ def register_job_queue(app, legacy):
             'timeout', 'timed out', 'connection', 'temporarily', 'reset by peer',
             '502', '503', '504', 'no space left on device',
             'فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد',
+            'هیچ فایل dxf معتبر پیدا نشد',
+            'هیچ فایل dxf معتبر داخل zip پیدا نشد',
         ))
 
     def _finish(job_id, success, error=''):
