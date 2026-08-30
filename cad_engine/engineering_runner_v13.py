@@ -23,7 +23,7 @@ def _inside(point, polygon):
 
 
 def _merge_browser_fixture_evidence(architecture, recognition, evidence):
-    \"\"\"Merge only coordinate-backed analyzer evidence into reconstructed rooms.\"\"\"
+    """Merge only coordinate-backed analyzer evidence into reconstructed rooms."""
     aliases={'faucet':'basin','basin':'basin','sink':'sink','toilet':'wc','wc':'wc',
              'bath':'shower','bathtub':'shower','shower':'shower','floor_drain':'floor_drain'}
     rows=list(recognition.get('detections') or [])
@@ -38,7 +38,7 @@ def _merge_browser_fixture_evidence(architecture, recognition, evidence):
         room=next((r for r in rooms if _inside(point,r['polygon'])),None)
         if not room:
             continue
-        row={'id':f\"MEP-{len(rows)+1:03d}\",'category':'fixture','type':kind,'point':point,
+        row={'id':f"MEP-{len(rows)+1:03d}",'category':'fixture','type':kind,'point':point,
              'block':raw.get('name') or '','layer':'ANALYZED-SOURCE-BLOCK','room_id':room.get('id'),
              'plan_id':room.get('plan_id'),'confidence':0.90,'status':'detected','installed':True,
              'evidence':['browser_upload_analyzer','coordinate_in_reconstructed_room'],
