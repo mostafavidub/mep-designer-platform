@@ -29,6 +29,7 @@ jobs:
           PYTHONPATH: .:tests
         run: |
           python -m unittest -v \
+            test_analysis_workspace_guard.AnalysisWorkspaceGuardTests \
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_valid_dxf_passes \
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_empty_dxf_fails_closed \
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_zip_requires_readable_dxf \
