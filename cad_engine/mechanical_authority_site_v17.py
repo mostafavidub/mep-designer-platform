@@ -1,10 +1,11 @@
-"""Production mechanical authority wrapper v17.2.
+"""Production mechanical authority wrapper v17.3.
 
 The issued file is fail-closed: project inputs, approved manifest, engineering
 content, documentation, architecture preservation and exact-file isolation must
 all pass before a DXF can be released.
 """
 from __future__ import annotations
+from collections import Counter
 from pathlib import Path
 import shutil, tempfile
 
@@ -12,6 +13,17 @@ from .mechanical_authority_site_v16 import design_mechanical_authority_site as _
 from .reference_parity_engine_v17 import project_context_from_report, build_documentation_package
 from .documentation_enhancer_v17 import apply_documentation_enhancements
 from .final_delivery_gate_v17 import sanitize_to_approved_boards, validate_final_delivery
+
+WEB_TO_CAD_FAMILY = {
+    'WATER_SUPPLY': 'WATER',
+    'SANITARY_VENT': 'SANITARY_VENT',
+    'HEATING': 'HEATING',
+    'COOLING': 'SPLIT_AC',
+    'GAS': 'GAS',
+    'VENTILATION_EXHAUST': 'EXHAUST',
+    'ROOF_RAINWATER': 'ROOF',
+}
+PRIMARY_CAD_FAMILIES = set(WEB_TO_CAD_FAMILY.values())
 
 
 def _restore_or_remove(dst,backup):
@@ -49,31 +61,96 @@ def _manifest_rows(value):
     rows=[]
     for raw in value:
         if not isinstance(raw,dict): continue
-        rows.append({'family':str(raw.get('family') or raw.get('drawing_family') or raw.get('system') or '').strip().upper(),
-                     'level':str(raw.get('level') or raw.get('floor') or 'MULTI').strip().upper(),
-                     'purpose':str(raw.get('purpose') or raw.get('type') or 'PLAN').strip().upper(),
-                     'code':str(raw.get('code') or raw.get('sheet_code') or raw.get('sheet') or '').strip().upper()})
+        family=str(raw.get('family') or raw.get('drawing_family') or raw.get('system') or '').strip().upper()
+        canonical=WEB_TO_CAD_FAMILY.get(family,family)
+        levels=raw.get('levels') or []
+        if not isinstance(levels,list): levels=[levels]
+        level=str(raw.get('level') or raw.get('floor') or raw.get('pattern') or (levels[0] if len(levels)==1 else 'MULTI') or 'MULTI').strip().upper()
+        drawing_type=str(raw.get('drawing_type') or raw.get('purpose') or raw.get('type') or 'PLAN').strip().upper()
+        rows.append({
+            'family':family,'canonical_family':canonical,'level':level,
+            'purpose':str(raw.get('purpose') or 'PLAN').strip().upper(),
+            'drawing_type':drawing_type,
+            'code':str(raw.get('code') or raw.get('sheet_code') or raw.get('sheet') or '').strip().upper(),
+            'special':bool(raw.get('special')),
+        })
     return rows
 
 
+def _approved_primary_counts(rows):
+    counts=Counter()
+    for row in rows:
+        family=row['canonical_family']
+        if family not in PRIMARY_CAD_FAMILIES: continue
+        # Customer manifest can contain riser/equipment/detail roles under the
+        # same family. Only floor/roof plan identities control the primary CAD
+        # plan count; support documentation is allowed only for approved systems.
+        if family=='ROOF':
+            if row['drawing_type']=='ROOF_PLAN' and row['family']=='ROOF_RAINWATER': counts[family]+=1
+        elif row['drawing_type']=='FLOOR_PLAN':
+            counts[family]+=1
+    return counts
+
+
+def _generated_primary_counts(rows):
+    counts=Counter()
+    for row in rows:
+        family=row['canonical_family']
+        if family not in PRIMARY_CAD_FAMILIES: continue
+        level=row['level']
+        purpose=row['purpose']
+        if family=='ROOF':
+            counts[family]+=1
+        elif purpose=='PLAN' and level not in {'SERVICE','ROOF'}:
+            counts[family]+=1
+    return counts
+
+
 def validate_approved_manifest(report,answers):
-    approved_raw=(answers or {}).get('_approved_drawing_manifest');generated=_manifest_rows(((report.get('composition') or {}).get('manifest') or []))
+    """Enforce the workflow-approved system plan set on the generated CAD set.
+
+    Web and CAD planners use different internal family names and support-sheet
+    schemas. Canonical system identities are therefore the release contract:
+    no unapproved primary system may appear, every approved primary system must
+    appear, and the number of primary floor/roof plans must match. Cover, notes,
+    calculations, risers, schedules and project-applicable details are support
+    documents and may exist only when their parent approved system is present.
+    """
+    approved_raw=(answers or {}).get('_approved_drawing_manifest')
+    generated=_manifest_rows(((report.get('composition') or {}).get('manifest') or []))
     if approved_raw is None:
-        return {'version':'approved-manifest-gate-v17.2','status':'SKIPPED','errors':[],'reason':'NO_WORKFLOW_MANIFEST_IN_DIRECT_ENGINE_CALL','generated_count':len(generated)}
+        return {'version':'approved-manifest-gate-v17.3','status':'SKIPPED','errors':[],'reason':'NO_WORKFLOW_MANIFEST_IN_DIRECT_ENGINE_CALL','generated_count':len(generated)}
     approved=_manifest_rows(approved_raw);errors=[]
     if not approved: errors.append('approved_manifest_unparseable_or_empty')
     if not generated: errors.append('generated_manifest_empty')
-    if approved and generated:
-        if all(x['family'] for x in approved) and all(x['family'] for x in generated):
-            a={(x['family'],x['level'],x['purpose']) for x in approved};g={(x['family'],x['level'],x['purpose']) for x in generated}
-        else:
-            a={x['code'] for x in approved if x['code']};g={x['code'] for x in generated if x['code']}
-        if not a or not g: errors.append('manifest_has_no_comparable_identity')
-        else:
-            extra=sorted(g-a);missing=sorted(a-g)
-            if extra: errors.append('generated_unapproved_sheets:'+repr(extra))
-            if missing: errors.append('approved_sheets_not_generated:'+repr(missing))
-    return {'version':'approved-manifest-gate-v17.2','status':'PASS' if not errors else 'FAIL','errors':errors,'approved_count':len(approved),'generated_count':len(generated),'source':'workflow_approved_manifest'}
+    approved_primary=_approved_primary_counts(approved);generated_primary=_generated_primary_counts(generated)
+    approved_families=set(approved_primary);generated_families=set(generated_primary)
+    extra=sorted(generated_families-approved_families);missing=sorted(approved_families-generated_families)
+    if extra: errors.append('generated_unapproved_system_families:'+','.join(extra))
+    if missing: errors.append('approved_system_families_not_generated:'+','.join(missing))
+    for family in sorted(approved_families & generated_families):
+        if approved_primary[family] != generated_primary[family]:
+            errors.append(f'primary_plan_count_mismatch:{family}:approved={approved_primary[family]}:generated={generated_primary[family]}')
+
+    # Fail closed if support documents imply a system that the user did not approve.
+    support_parent={
+        'PLUMBING_RISER':'SANITARY_VENT',
+        'WATER_SERVICE_CALC':'WATER',
+    }
+    for row in generated:
+        parent=support_parent.get(row['canonical_family'])
+        if parent and parent not in approved_families:
+            errors.append(f'unapproved_support_family:{row["canonical_family"]}:requires={parent}')
+    if any(r['canonical_family']=='EQUIPMENT_SCHEDULE' for r in generated) and not (approved_families & {'HEATING','SPLIT_AC','GAS','EXHAUST'}):
+        errors.append('unapproved_support_family:EQUIPMENT_SCHEDULE:no_approved_equipment_system')
+    if any(r['canonical_family']=='GENERAL_DETAIL' for r in generated) and not approved_families:
+        errors.append('unapproved_support_family:GENERAL_DETAIL:no_approved_system')
+
+    return {
+        'version':'approved-manifest-gate-v17.3','status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
+        'approved_count':len(approved),'generated_count':len(generated),'source':'workflow_approved_manifest',
+        'approved_primary_counts':dict(approved_primary),'generated_primary_counts':dict(generated_primary),
+    }
 
 
 def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,plan_analysis:dict|None=None)->dict:
@@ -84,7 +161,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     if report.get('status')!='PASS':
         if backup and backup.exists():shutil.copy2(backup,dst);backup.unlink(missing_ok=True)
         return report
-    unresolved=_release_input_errors(report);report['release_input_qa']={'version':'release-input-gate-v17.2','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
+    unresolved=_release_input_errors(report);report['release_input_qa']={'version':'release-input-gate-v17.3','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
     if unresolved:
         report['status']='FAIL';report['stage']='release_input_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
@@ -119,6 +196,6 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='exact_file_final_delivery_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
-    report['version']='mechanical-authority-site-pipeline-v17.2';report['status']='PASS'
+    report['version']='mechanical-authority-site-pipeline-v17.3';report['status']='PASS'
     if backup:backup.unlink(missing_ok=True)
     return report
