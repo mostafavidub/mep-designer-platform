@@ -145,10 +145,10 @@ def predict_drawing_set(scope):
 
     water_patterns = families['water_supply']['count']; water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
     single_effective_level = water_patterns == 1 and not _normalize_typical_groups(typical_groups)
-    distinct_multi_level_equipment = water_patterns >= 3 and not _normalize_typical_groups(typical_groups) and not scope.get('roof_exists') and not systems['gas']['levels']
-    if scope.get('central_water_equipment') or single_effective_level or distinct_multi_level_equipment:
-        water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water equipment scope'))
-    if scope.get('hot_water_return_required') or distinct_multi_level_equipment:
+    water_service_required = bool(water_patterns and (scope.get('central_water_equipment') or len(systems['water_supply']['levels']) >= 2))
+    if water_service_required:
+        water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water service scope'))
+    if scope.get('hot_water_return_required'):
         water_roles.append(('RETURN', 'آب گرم — برگشت و بالانس', 'approved hot-water return scope'))
     if water_patterns:
         added = list(_append_family_roles(families['water_supply'], 'water_supply', scope.get('all_levels') or systems['water_supply']['levels'], water_roles)); deliverables.extend(added)
