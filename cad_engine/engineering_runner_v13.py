@@ -1,5 +1,6 @@
 """Engineering pipeline orchestration with strict print-plan isolation."""
 from __future__ import annotations
+import math
 from .engineering_pipeline_v13 import reconstruct_architecture,recognize_fixtures_equipment
 from .plan_segmentation_v13 import apply_plan_scopes
 from .system_requirements_v13 import derive_system_requirements
@@ -22,34 +23,101 @@ def _inside(point, polygon):
     return hit
 
 
+def _room_point(room):
+    p=room.get('label_point') or room.get('centroid') or room.get('point')
+    try:
+        return float(p[0]),float(p[1])
+    except Exception:
+        return None
+
+
+def _plan_for_point(architecture, point):
+    primary=set(architecture.get('primary_floor_plan_ids') or [])
+    plans=[p for p in architecture.get('plans') or [] if not primary or p.get('plan_id') in primary]
+    for plan in plans:
+        b=plan.get('bounds')
+        if b and b[0] <= point[0] <= b[2] and b[1] <= point[1] <= b[3]:
+            return plan
+    return None
+
+
+def _compatible_room(kind, room_type):
+    allowed={
+        'wc':{'toilet','bathroom'},
+        'basin':{'toilet','bathroom'},
+        'sink':{'kitchen'},
+        'shower':{'bathroom','toilet'},
+        'floor_drain':{'bathroom','toilet','kitchen'},
+    }
+    return room_type in allowed.get(kind,set())
+
+
+def _nearest_compatible_room(architecture, rooms, point, kind):
+    """Conservative fallback when a valid fixture sits just outside a bad room polygon.
+
+    Consultant DXFs frequently contain small closed annotation polylines around room
+    labels. The v13 reconstructor can select one of those as the room polygon. We only
+    use this fallback for coordinate-backed fixture evidence already recognized by the
+    browser analyzer, require semantic room compatibility, keep the fixture on the same
+    print plan, and cap distance to 18% of that plan's diagonal. Distant legend symbols
+    therefore remain unassigned.
+    """
+    plan=_plan_for_point(architecture,point)
+    if not plan:
+        return None
+    pid=plan.get('plan_id'); b=plan.get('bounds') or []
+    if len(b)!=4:
+        return None
+    max_distance=math.hypot(b[2]-b[0],b[3]-b[1])*.18
+    candidates=[]
+    for room in rooms:
+        if room.get('plan_id') != pid or not _compatible_room(kind,room.get('type')):
+            continue
+        rp=_room_point(room)
+        if not rp:
+            continue
+        distance=math.dist(point,rp)
+        if distance <= max_distance:
+            candidates.append((distance,room))
+    return min(candidates,key=lambda x:x[0])[1] if candidates else None
+
+
 def _merge_browser_fixture_evidence(architecture, recognition, evidence):
-    """Merge only coordinate-backed analyzer evidence into reconstructed rooms."""
+    """Merge traceable browser evidence, with a bounded same-plan room fallback."""
     aliases={'faucet':'basin','basin':'basin','sink':'sink','toilet':'wc','wc':'wc',
              'bath':'shower','bathtub':'shower','shower':'shower','floor_drain':'floor_drain'}
     rows=list(recognition.get('detections') or [])
-    rooms=[r for r in architecture.get('rooms') or [] if r.get('polygon')]
-    accepted=0
+    rooms=list(architecture.get('rooms') or [])
+    polygon_rooms=[r for r in rooms if r.get('polygon')]
+    accepted=0; fallback_accepted=0
     for raw in evidence or []:
         kind=aliases.get(str(raw.get('kind') or '').strip().lower())
         try: point=(float(raw.get('x')),float(raw.get('y')))
         except (TypeError,ValueError): continue
         if not kind or any(r.get('type')==kind and ((r.get('point') or (0,0))[0]-point[0])**2+((r.get('point') or (0,0))[1]-point[1])**2 < 2500 for r in rows):
             continue
-        room=next((r for r in rooms if _inside(point,r['polygon'])),None)
-        if not room:
-            continue
+        room=next((r for r in polygon_rooms if _inside(point,r['polygon'])),None)
+        evidence_tags=['browser_upload_analyzer']
+        confidence=.90
+        if room:
+            evidence_tags.append('coordinate_in_reconstructed_room')
+        else:
+            room=_nearest_compatible_room(architecture,rooms,point,kind)
+            if not room:
+                continue
+            evidence_tags.extend(['strong_source_block','bounded_same_plan_semantic_room_fallback'])
+            confidence=.84; fallback_accepted+=1
         row={'id':f"MEP-{len(rows)+1:03d}",'category':'fixture','type':kind,'point':point,
              'block':raw.get('name') or '','layer':'ANALYZED-SOURCE-BLOCK','room_id':room.get('id'),
-             'plan_id':room.get('plan_id'),'confidence':0.90,'status':'detected','installed':True,
-             'evidence':['browser_upload_analyzer','coordinate_in_reconstructed_room'],
-             'source_file':raw.get('source_file')}
+             'plan_id':room.get('plan_id'),'confidence':confidence,'status':'detected','installed':True,
+             'evidence':evidence_tags,'source_file':raw.get('source_file')}
         rows.append(row); accepted+=1
     recognition['detections']=rows
     recognition['fixtures']=[r for r in rows if r.get('category')=='fixture']
     recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
     quality=dict(recognition.get('quality') or {})
     quality.update({'detected':len(rows),'room_assigned':sum(bool(r.get('room_id')) for r in rows),
-                    'browser_evidence_accepted':accepted})
+                    'browser_evidence_accepted':accepted,'browser_evidence_fallback_accepted':fallback_accepted})
     recognition['quality']=quality
     return recognition
 
@@ -78,7 +146,7 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
         detail_overrides['levels']=levels or ['GROUND']
     details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
     hvac=design_project_hvac(architecture,project_overrides=project_overrides)
-    return {'version':'engineering-pipeline-v13.14','architecture':architecture,'recognition':recognition,'requirements':requirements,
+    return {'version':'engineering-pipeline-v13.15','architecture':architecture,'recognition':recognition,'requirements':requirements,
             'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac}
 
 def validate_pipeline(result):
