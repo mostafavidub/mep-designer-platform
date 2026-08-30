@@ -387,13 +387,6 @@ def register_job_queue(app, legacy):
 
     @app.on_event('startup')
     def start_persistent_workers():
-        # CAD workspaces are transient; durable final artifacts live in R2.
-        cad_root = Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine'))
-        shutil.rmtree(cad_root, ignore_errors=True)
-        cad_root.mkdir(parents=True, exist_ok=True)
-        projects_root = Path(legacy.DATA_DIR) / 'projects'
-        shutil.rmtree(projects_root, ignore_errors=True)
-        projects_root.mkdir(parents=True, exist_ok=True)
         _reclaim_failed_artifacts()
         _migrate_ready_outputs_to_object_storage()
         _recover_stale_jobs()
