@@ -1,5 +1,6 @@
 import unittest
 
+from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest
 
 
@@ -117,6 +118,77 @@ class ManifestSupportRolesV17Tests(unittest.TestCase):
             cad_sheet('GAS', code='M-141'),
         ]
         qa = self.qa(approved, generated)
+        self.assertEqual(qa['status'], 'FAIL')
+        self.assertIn('generated_unapproved_system_families:GAS', qa['errors'])
+
+    def test_real_web_approved_manifest_accepts_matching_cad_release_schema(self):
+        levels = ['GROUND', 'LEVEL-01']
+        proposal = predict_drawing_set({
+            'all_levels': levels + ['ROOF'],
+            'conditioned_levels': levels,
+            'heated_levels': levels,
+            'wet_fixture_levels': levels,
+            'sanitary_fixture_levels': levels,
+            'ventilation_required_levels': levels,
+            'gas_consumer_levels': levels,
+            'roof_exists': True,
+            'roof_level_name': 'ROOF',
+            'vertical_systems': True,
+            'typical_groups': [],
+        })
+        approved = approve_drawing_set(proposal)['approved_manifest']
+        generated = [
+            cad_sheet('SANITARY_VENT', 'GROUND', code='M-101'),
+            cad_sheet('SANITARY_VENT', 'LEVEL-01', code='M-102'),
+            cad_sheet('WATER', 'GROUND', code='M-111'),
+            cad_sheet('WATER', 'LEVEL-01', code='M-112'),
+            cad_sheet('WATER', 'SERVICE', code='M-113'),
+            cad_sheet('HEATING', 'GROUND', code='M-131'),
+            cad_sheet('HEATING', 'LEVEL-01', code='M-132'),
+            cad_sheet('GAS', 'GROUND', code='M-141'),
+            cad_sheet('GAS', 'LEVEL-01', code='M-142'),
+            cad_sheet('SPLIT_AC', 'GROUND', code='M-161'),
+            cad_sheet('SPLIT_AC', 'LEVEL-01', code='M-162'),
+            cad_sheet('SPLIT_AC', 'ROOF', code='M-164'),
+            cad_sheet('EXHAUST', 'GROUND', code='M-171'),
+            cad_sheet('EXHAUST', 'LEVEL-01', code='M-172'),
+            cad_sheet('ROOF', 'ROOF', code='M-003'),
+            cad_sheet('PLUMBING_RISER', 'MULTI', 'RISER', 'M-151'),
+            cad_sheet('WATER_SERVICE_CALC', 'MULTI', 'CALC', 'M-152'),
+            cad_sheet('GENERAL_DETAIL', 'MULTI', 'DETAIL', 'M-004', 'PLUMBING PROJECT-APPLICABLE DETAILS'),
+            cad_sheet('GENERAL_DETAIL', 'MULTI', 'DETAIL', 'M-005', 'HVAC PROJECT-APPLICABLE DETAILS'),
+            cad_sheet('GENERAL_DETAIL', 'MULTI', 'DETAIL', 'M-006', 'GAS PROJECT-APPLICABLE DETAILS'),
+            cad_sheet('EQUIPMENT_SCHEDULE', 'MULTI', 'SCHEDULE', 'M-181'),
+        ]
+        qa = validate_approved_manifest(
+            {'composition': {'manifest': generated}},
+            {'_approved_drawing_manifest': approved},
+        )
+        self.assertEqual(qa['status'], 'PASS', qa)
+        self.assertEqual(qa['approved_primary_counts'], qa['generated_primary_counts'])
+        self.assertIn('WATER/CALC', qa['approved_support_roles'])
+        self.assertIn('WATER/EQUIPMENT', qa['approved_support_roles'])
+
+    def test_real_web_manifest_without_gas_rejects_cad_gas_primary(self):
+        levels = ['GROUND']
+        approved = approve_drawing_set(predict_drawing_set({
+            'all_levels': levels,
+            'conditioned_levels': levels,
+            'heated_levels': levels,
+            'wet_fixture_levels': levels,
+            'sanitary_fixture_levels': levels,
+            'ventilation_required_levels': levels,
+            'gas_consumer_levels': [],
+            'roof_exists': False,
+            'vertical_systems': False,
+            'typical_groups': [],
+        }))['approved_manifest']
+        generated = [
+            cad_sheet('SANITARY_VENT', code='M-101'), cad_sheet('WATER', code='M-111'),
+            cad_sheet('HEATING', code='M-131'), cad_sheet('SPLIT_AC', code='M-161'),
+            cad_sheet('EXHAUST', code='M-171'), cad_sheet('GAS', code='M-141'),
+        ]
+        qa = validate_approved_manifest({'composition': {'manifest': generated}}, {'_approved_drawing_manifest': approved})
         self.assertEqual(qa['status'], 'FAIL')
         self.assertIn('generated_unapproved_system_families:GAS', qa['errors'])
 
