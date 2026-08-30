@@ -118,6 +118,25 @@ class QueueIntegrationContractTests(unittest.TestCase):
             designed = ezdxf.readfile(output)
             self.assertGreater(sum(1 for _ in designed.modelspace()), 0)
 
+    def test_missing_mid_section_endsec_is_repaired_before_entities(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / 'missing-header-endsec.dxf'
+            doc = ezdxf.new('R2010')
+            doc.modelspace().add_line((0, 0), (1000, 1000))
+            doc.saveas(source)
+
+            raw = source.read_text(encoding='utf-8')
+            first_endsec = raw.find('  0\nENDSEC\n')
+            self.assertGreater(first_endsec, 0)
+            source.write_text(
+                raw[:first_endsec] + raw[first_endsec + len('  0\nENDSEC\n'):],
+                encoding='utf-8',
+            )
+
+            recovered, report = read_input_dxf(source)
+            self.assertTrue(report['recovered'])
+            self.assertGreater(sum(1 for _ in recovered.modelspace()), 0)
+
     def test_r12_input_is_upgraded_before_new_symbols_are_added(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / 'legacy-r12.dxf'
