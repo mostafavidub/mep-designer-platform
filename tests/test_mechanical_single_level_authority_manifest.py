@@ -17,25 +17,33 @@ def scope(enclosed=False):
         'vertical_systems': False,
         'enclosed_parking': enclosed,
         'typical_groups': [],
+        'central_water_equipment': False,
     }
 
 
 class SingleLevelAuthorityManifestTests(unittest.TestCase):
-    def test_single_level_reference_family_pattern_has_13_sheets(self):
+    def test_single_level_direct_water_has_no_unjustified_water_equipment_or_calc(self):
         proposal = predict_drawing_set(scope())
-        self.assertEqual(proposal['deliverable_sheet_count'], 13)
-        self.assertEqual({
-            key: proposal['sheet_families'][key]['count']
-            for key in ('water_supply', 'sanitary_vent', 'heating', 'cooling', 'ventilation_exhaust')
-        }, {
-            'water_supply': 3, 'sanitary_vent': 4, 'heating': 2,
-            'cooling': 2, 'ventilation_exhaust': 2,
-        })
+        water = [x for x in proposal['drawing_manifest']['sheets'] if x.get('family') == 'water_supply']
+        self.assertEqual(len([x for x in water if x.get('drawing_type') == 'floor_plan']), 1)
+        self.assertIn('riser_diagram', {x.get('drawing_type') for x in water})
+        self.assertNotIn('equipment_plan', {x.get('drawing_type') for x in water})
+        self.assertNotIn('calculation_sheet', {x.get('drawing_type') for x in water})
+        self.assertEqual(proposal['deliverable_sheet_count'], len(proposal['drawing_manifest']['sheets']))
 
-    def test_enclosed_parking_adds_only_its_dedicated_ventilation_sheet(self):
-        proposal = predict_drawing_set(scope(True))
-        self.assertEqual(proposal['deliverable_sheet_count'], 14)
-        self.assertEqual(proposal['sheet_families']['ventilation_exhaust']['count'], 3)
+    def test_single_level_primary_families_remain_separate(self):
+        proposal = predict_drawing_set(scope())
+        for family in ('water_supply', 'sanitary_vent', 'heating', 'cooling', 'ventilation_exhaust'):
+            primary = [x for x in proposal['drawing_manifest']['sheets'] if x.get('family') == family and x.get('drawing_type') == 'floor_plan']
+            self.assertEqual(len(primary), 1)
+        self.assertFalse([x for x in proposal['drawing_manifest']['sheets'] if x.get('family') == 'gas'])
+
+    def test_enclosed_parking_adds_only_its_dedicated_ventilation_support(self):
+        base = predict_drawing_set(scope(False))
+        enclosed = predict_drawing_set(scope(True))
+        self.assertEqual(enclosed['deliverable_sheet_count'], base['deliverable_sheet_count'] + 1)
+        extra = [x for x in enclosed['drawing_manifest']['sheets'] if x.get('family') == 'ventilation_exhaust' and x.get('drawing_type') == 'ventilation_plan']
+        self.assertEqual(len(extra), 1)
 
 
 if __name__ == '__main__':
