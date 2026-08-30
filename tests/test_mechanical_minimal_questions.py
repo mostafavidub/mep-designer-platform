@@ -19,19 +19,19 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         value.update(overrides)
         return value
 
-    def test_rulebook_owns_material_coefficients_slopes_equipment_and_airflow(self):
+    def test_rulebook_owns_rules_but_not_project_facts(self):
         auto = self.auto()
         answers = canonical_auto_answers(auto, 'mechanical')
         self.assertIn('PPR', answers['water_design_basis'])
         self.assertIn('C=150', answers['water_design_basis'])
         self.assertIn('uPVC', answers['sanitary_design_basis'])
-        self.assertIn('per room load', answers['equipment_schedule'])
-        self.assertIn('m3/h', answers['ventilation_design_basis'])
-        self.assertEqual(answers['mechanical_rulebook_version'], '2.0')
-        self.assertEqual(answers['heights'], '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones')
-        self.assertIn('2.5 bar', answers['water_inlet_pressure'])
-        self.assertIn('booster pump', answers['water_source'])
-        self.assertEqual(answers['questionnaire_evidence_version'], '1.0')
+        self.assertEqual(answers['mechanical_rulebook_version'], '2.1')
+        self.assertEqual(answers['questionnaire_evidence_version'], '2.0')
+        for forbidden in (
+            'water_inlet_pressure', 'heating', 'cooling', 'water_source',
+            'equipment_schedule', 'ventilation_design_basis', 'heights',
+        ):
+            self.assertNotIn(forbidden, answers)
 
         analysis = {'files': [{'texts': ['پلان معماری همکف', 'مسکونی']}]}
         keys = [key for key, _ in dynamic_questions(analysis, 'mechanical', auto)]
@@ -45,9 +45,6 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         ):
             self.assertIn(required, keys)
         self.assertIn('fixture_schedule', keys)
-        prompts = dict(dynamic_questions(analysis, 'mechanical', auto))
-        self.assertIn('پاسخ کوتاه', prompts['gas'])
-        self.assertIn('پیشنهاد خودکار تجهیزات', prompts['fixture_schedule'])
 
     def test_fixture_question_is_skipped_when_architecture_has_real_blocks(self):
         auto = self.auto(fixture_blocks_detected=6, fixture_counts={'toilet': 2, 'sink': 2, 'bath': 2})
@@ -65,7 +62,7 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         self.assertNotIn('gas', keys)
         self.assertIn('ندارد', answers['gas'])
 
-    def test_complete_architecture_evidence_avoids_redundant_questions(self):
+    def test_detected_project_facts_may_be_reused_but_system_choice_still_requires_confirmation(self):
         auto = self.auto(
             fixture_blocks_detected=6,
             fixture_counts={'toilet': 2, 'sink': 2, 'bath': 2},
@@ -81,7 +78,10 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
             'ضوابط نظام مهندسی مبحث 14'
         )
         keys = [key for key, _ in dynamic_questions({'files': [{'texts': [text]}]}, 'mechanical', auto)]
-        self.assertEqual(keys, [])
+        self.assertIn('heating', keys)
+        self.assertIn('cooling', keys)
+        self.assertNotIn('water_inlet_pressure', keys)
+        self.assertNotIn('gas', keys)
 
 
 if __name__ == '__main__':
