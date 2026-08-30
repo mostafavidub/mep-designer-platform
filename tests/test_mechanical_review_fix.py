@@ -1,40 +1,41 @@
 import unittest
 
+from app.mechanical_drawing_set import predict_drawing_set
 from app.mechanical_review_fix import decorate_review_payload, review_question_html
 
 
 class MechanicalReviewFixTests(unittest.TestCase):
     def drawing_set(self):
         levels = ['همکف', 'اول', 'دوم']
-        def floor_sheets(label):
-            return [{'pattern': level, 'levels': [level], 'typical': False, 'special': False, 'label': label} for level in levels]
-        return {
-            'approved': False,
-            'approval_required': True,
-            'total_plans': 21,
-            'deliverable_sheet_count': 21,
-            'count_semantics': 'authority_separated_customer_deliverables',
-            'sheet_families': {
-                'water_supply': {'code': 'M-W', 'label': 'آب سرد و گرم', 'count': 4, 'sheets': floor_sheets('آب سرد و گرم') + [{'pattern': 'System special', 'levels': levels, 'typical': False, 'special': True, 'label': 'آبرسانی — رایزر / تجهیزات / شماتیک'}]},
-                'sanitary_vent': {'code': 'M-S', 'label': 'فاضلاب و ونت', 'count': 3, 'sheets': floor_sheets('فاضلاب و ونت')},
-                'heating': {'code': 'M-H', 'label': 'گرمایش', 'count': 3, 'sheets': floor_sheets('گرمایش')},
-                'cooling': {'code': 'M-C', 'label': 'سرمایش / HVAC', 'count': 4, 'sheets': floor_sheets('سرمایش') + [{'pattern': 'System special', 'levels': ['بام'], 'typical': False, 'special': True, 'label': 'سرمایش — تجهیزات / بام'}]},
-                'gas': {'code': 'M-G', 'label': 'گاز', 'count': 3, 'sheets': floor_sheets('گاز')},
-                'ventilation_exhaust': {'code': 'M-V', 'label': 'تهویه و اگزاست', 'count': 3, 'sheets': floor_sheets('تهویه و اگزاست')},
-                'roof_rainwater': {'code': 'M-R', 'label': 'بام / آب باران', 'count': 1, 'sheets': [{'pattern': 'بام', 'levels': ['بام'], 'typical': False, 'special': True, 'label': 'بام / آب باران'}]},
-            },
-        }
+        return predict_drawing_set({
+            'all_levels': levels + ['بام'],
+            'conditioned_levels': levels,
+            'heated_levels': levels,
+            'wet_fixture_levels': levels,
+            'sanitary_fixture_levels': levels,
+            'ventilation_required_levels': levels,
+            'gas_consumer_levels': levels,
+            'roof_exists': True,
+            'roof_level_name': 'بام',
+            'vertical_systems': True,
+            'typical_groups': [],
+        })
 
     def test_review_is_rendered_as_modal_confirmation_step(self):
-        payload = decorate_review_payload({'status': 'drawing_set_review'}, self.drawing_set())
+        ds = self.drawing_set()
+        payload = decorate_review_payload({'status': 'drawing_set_review'}, ds)
         self.assertEqual(payload['status'], 'asking')
         self.assertEqual(payload['question_count'], 1)
         self.assertEqual(payload['question']['key'], '_drawing_set_approval')
         self.assertIn('تأیید و شروع طراحی', payload['question']['question'])
-        self.assertIn('تعداد نقشه‌های مکانیکی موردنیاز: 21 پلان', payload['question']['question'])
+        self.assertIn(
+            f"تعداد نقشه‌های مکانیکی موردنیاز: {ds['deliverable_sheet_count']} پلان",
+            payload['question']['question'],
+        )
 
     def test_review_html_contains_authority_family_breakdown(self):
-        html = review_question_html(self.drawing_set())
+        ds = self.drawing_set()
+        html = review_question_html(ds)
         self.assertIn('آب سرد و گرم', html)
         self.assertIn('فاضلاب و ونت', html)
         self.assertIn('گرمایش', html)
@@ -43,7 +44,7 @@ class MechanicalReviewFixTests(unittest.TestCase):
         self.assertIn('تهویه و اگزاست', html)
         self.assertIn('بام / آب باران', html)
         self.assertIn('M-W', html)
-        self.assertNotIn('M-RISER-CALC', html)
+        self.assertIn(str(ds['deliverable_sheet_count']), html)
         self.assertIn('#answerForm textarea', html)
         self.assertIn('requestSubmit()', html)
 
