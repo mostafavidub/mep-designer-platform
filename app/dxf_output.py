@@ -121,7 +121,7 @@ def validate_generated_manifest(drawing_set, design_reports):
         # same issued sheet is not rejected because of adapter vocabulary.
         aliases = {
             'WATER': ('WATER', 'COLD_WATER', 'HOT_WATER', 'DOMESTIC_WATER'),
-            'SANITARY_VENT': ('SANITARY', 'VENT', 'DRAINAGE', 'WASTE'),
+            'SANITARY_VENT': ('SANITARY_VENT', 'SANITARY', 'DRAINAGE', 'WASTE'),
             'HEATING': ('HEATING', 'HYDRONIC', 'RADIATOR'),
             'SPLIT_AC': ('SPLIT_AC', 'COOLING', 'HVAC', 'AIR_CONDITION'),
             'GAS': ('GAS', 'FUEL_GAS'),
