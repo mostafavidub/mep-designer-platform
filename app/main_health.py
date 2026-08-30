@@ -1,3 +1,5 @@
+import shutil
+
 from starlette.middleware.gzip import GZipMiddleware
 
 from . import main_auto
@@ -74,4 +76,11 @@ def integrated_system_health():
 
 @app.get('/storage_health')
 def object_storage_health():
-    return artifact_storage.healthcheck()
+    status = artifact_storage.healthcheck()
+    usage = shutil.disk_usage(str(main_auto.legacy.DATA_DIR))
+    status['volume'] = {
+        'total_bytes': usage.total,
+        'used_bytes': usage.used,
+        'free_bytes': usage.free,
+    }
+    return status
