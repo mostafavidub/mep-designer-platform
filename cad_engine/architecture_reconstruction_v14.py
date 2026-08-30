@@ -79,6 +79,37 @@ def _centroid(poly):
     return (sum(p[0] for p in poly)/len(poly), sum(p[1] for p in poly)/len(poly))
 
 
+
+def _nested_inserts(entities,depth=0):
+    """Yield transformed nested INSERT evidence without promoting nested geometry."""
+    if depth>12:
+        return
+    for entity in entities:
+        if entity.dxftype()!='INSERT':
+            continue
+        try:
+            for child in entity.virtual_entities():
+                if child.dxftype()=='INSERT':
+                    p=_point(child)
+                    if p:
+                        yield {'name':str(child.dxf.name or ''),'point':p,
+                               'layer':str(getattr(child.dxf,'layer','0') or '0'),
+                               'evidence':'nested_block'}
+                yield from _nested_inserts([child],depth+1)
+        except Exception:
+            continue
+
+def _dedupe_inserts(items):
+    result=[]; seen=set()
+    for item in items:
+        key=(_norm(item.get('name')),round(float(item['point'][0]),4),
+             round(float(item['point'][1]),4),_norm(item.get('layer')))
+        if key in seen:
+            continue
+        seen.add(key); result.append(item)
+    return result
+
+
 def reconstruct_architecture(path):
     doc=ezdxf.readfile(path); msp=doc.modelspace()
     layer_norm={str(l.dxf.name):_norm(l.dxf.name) for l in doc.layers}
@@ -103,6 +134,10 @@ def reconstruct_architecture(path):
                 item={'points':poly,'area':_area(poly),'centroid':_centroid(poly),'layer':layer}; closed.append(item); rec.update(points=poly,closed=True)
         if len(underlay)<50000 and typ in ('LINE','LWPOLYLINE','POLYLINE','ARC','CIRCLE','INSERT','TEXT','MTEXT','HATCH'):
             underlay.append(rec)
+
+    # Nested blocks may contain the real fixture symbols. Only their transformed
+    # INSERT evidence is merged; room/wall geometry remains top-level and unchanged.
+    inserts=_dedupe_inserts(inserts+list(_nested_inserts(msp)))
 
     def layer_match(name,*tokens):
         n=layer_norm.get(name,_norm(name)); return any(_norm(t) in n for t in tokens)
