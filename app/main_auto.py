@@ -310,6 +310,31 @@ def analyze_project_job(project_id):
         db.close()
 
 
+
+def _present_question(item):
+    """Attach deterministic controls at the final API boundary."""
+    question = dict(item or {})
+    key = question.get('key')
+    question['input_type'] = 'text' if key in legacy.TEXT_QUESTION_KEYS else 'radio'
+    options = list(legacy.QUESTION_OPTIONS.get(key, []))
+    if key == 'fixture_schedule':
+        prompt = str(question.get('question') or '')
+        match = re.search(
+            r'پیشنهاد خودکار تجهیزات بر اساس فضاهای معماری:\\s*(.+?)\\.\\s*(?:پاسخ|$)',
+            prompt,
+        )
+        options = []
+        if match:
+            options.append(match.group(1).strip())
+        options.extend([
+            'sink 1; faucet 1; toilet 1; bath 1',
+            'sink 2; faucet 2; toilet 2; bath 2',
+            'بدون تجهیزات لوله‌کشی',
+        ])
+    question['options'] = list(dict.fromkeys(str(x).strip() for x in options if str(x).strip()))
+    return question
+
+
 def flow_payload(p):
     data = legacy._original_flow_payload(p) if hasattr(legacy, '_original_flow_payload') else None
     if data is None:
@@ -331,6 +356,8 @@ def flow_payload(p):
     data['auto_inference'] = (p.analysis or {}).get('architectural_auto') or {}
     data['questionnaire_mode'] = 'dynamic-unresolved-project-evidence-only'
     data['inference_mode'] = (p.analysis or {}).get('inference_mode', 'architecture-first-v2-spatial')
+    if data.get('question'):
+        data['question'] = _present_question(data['question'])
     return data
 
 
