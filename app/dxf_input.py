@@ -122,8 +122,14 @@ def normalize_input_copy(path: Path):
         try:
             doc, auditor = _recover_document(source)
             mode = "ezdxf_recover_normalized"
-        except Exception:
-            doc, auditor, mode = _read_repaired_tail(source)
+        except Exception as recovery_error:
+            try:
+                doc, auditor, mode = _read_repaired_tail(source)
+            except Exception as repair_error:
+                raise DXFStructureError(
+                    f"DXF parse failed: strict={strict_error}; "
+                    f"recovery={recovery_error}; repair={repair_error}"
+                ) from strict_error
         # Persist the normalized extracted working copy for strict downstream readers.
         # The user's original upload remains untouched.
         doc.saveas(source)
