@@ -118,6 +118,16 @@ def delete_artifact(uri: str) -> bool:
     return True
 
 
+def input_is_durable(project_id: int) -> bool:
+    """Return true only after the original upload is present in object storage."""
+    if not configured():
+        return False
+    response = _client().list_objects_v2(
+        Bucket=S3_BUCKET, Prefix=f'projects/{project_id}/input/', MaxKeys=1,
+    )
+    return bool(response.get('Contents'))
+
+
 def restore_project_input(project_id: int, project_dir: Path) -> bool:
     """Restore a missing original upload from object storage."""
     if not configured():
