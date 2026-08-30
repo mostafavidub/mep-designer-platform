@@ -156,8 +156,11 @@ def build_design_overrides(answers: dict) -> dict:
     cooling=_norm(_answer(answers,"cooling", default=""))
     heating=_norm(_answer(answers,"heating", default=""))
     gas_answer=_norm(_answer(answers,"gas", default=""))
-    cooling_key="wall_mounted_split_ac" if any(x in cooling for x in ("اسپلیت","کولر گازی","split")) else None
-    heating_key="package_radiator" if ("پکیج" in heating and any(x in heating for x in ("رادیاتور","شوفاژ"))) else None
+    cooling_key="wall_mounted_split_ac" if any(x in cooling for x in ("اسپلیت","کولر گازی","split","split unit")) else None
+    heating_key="package_radiator" if (
+        ("پکیج" in heating and any(x in heating for x in ("رادیاتور","شوفاژ")))
+        or ("radiator" in heating and any(x in heating for x in ("combi","boiler","hydronic")))
+    ) else None
     return {
         "city": city,
         "cooling_system": cooling_key,
