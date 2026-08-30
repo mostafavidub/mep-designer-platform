@@ -125,8 +125,27 @@ TEXT_QUESTION_KEYS = {'location'}
 
 def present_question(item):
     question = dict(item or {})
-    key = question.get('key')
-    question['input_type'] = 'text' if key in TEXT_QUESTION_KEYS else 'radio'
+    raw_key = str(question.get('key') or '').strip()
+    prompt = str(question.get('question') or '')
+    aliases = {
+        'heating_system': 'heating', 'cooling_system': 'cooling',
+        'gas_system': 'gas', 'water_supply': 'water_source',
+        'water_inlet': 'water_source', 'sewer_outlet': 'sanitary_outlet',
+        'sanitary_system': 'sanitary_outlet', 'shaft_route': 'mechanical_shaft_route',
+        'mechanical_equipment': 'equipment_schedule',
+    }
+    key = aliases.get(raw_key, raw_key)
+    if key not in QUESTION_OPTIONS:
+        prompt_keys = (
+            ('گرمایش', 'heating'), ('سرمایش', 'cooling'), ('گاز', 'gas'),
+            ('منبع آب', 'water_source'), ('ورود آب', 'water_source'),
+            ('فاضلاب', 'sanitary_outlet'), ('پارکینگ', 'parking_enclosure'),
+            ('شفت', 'mechanical_shaft_route'), ('تجهیزات', 'equipment_schedule'),
+            ('آب گرم', 'hot_water_system'), ('ضابطه', 'local_mechanical_code'),
+            ('فیکسچر', 'fixture_schedule'), ('بهداشتی', 'fixture_schedule'),
+        )
+        key = next((mapped for marker, mapped in prompt_keys if marker in prompt), key)
+    question['input_type'] = 'text' if raw_key in TEXT_QUESTION_KEYS else 'radio'
     question['options'] = list(QUESTION_OPTIONS.get(key, []))
     return question
 
