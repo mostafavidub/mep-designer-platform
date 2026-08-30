@@ -179,9 +179,13 @@ def register_job_queue(app, legacy):
                     Job.status.in_(('queued', 'processing')),
                 ).all()
             }
+            project_states = {
+                row[0]: row[1]
+                for row in db.query(legacy.Project.id, legacy.Project.status).all()
+            }
             project_ids = [
-                row[0] for row in db.query(legacy.Project.id).all()
-                if row[0] != exclude_project_id and row[0] not in active_ids
+                project_id for project_id in project_states
+                if project_id != exclude_project_id and project_id not in active_ids
             ]
         finally:
             db.close()
@@ -202,6 +206,11 @@ def register_job_queue(app, legacy):
                     shutil.rmtree(transient, ignore_errors=True)
                 else:
                     transient.unlink(missing_ok=True)
+            if project_states.get(project_id) in ('ready', 'failed', 'awaiting_upload', 'expired'):
+                try:
+                    artifact_storage.delete_project_inputs(project_id)
+                except Exception:
+                    pass
 
     def _claim(job_type):
         if job_type == 'design':
