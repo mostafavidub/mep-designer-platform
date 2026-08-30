@@ -11,10 +11,54 @@ from .annotation_v13 import build_annotations
 from .detail_library_v13 import build_details_schedules
 from .project_hvac_v13 import design_project_hvac
 
+
+def _inside(point, polygon):
+    x,y=point; hit=False; j=len(polygon)-1
+    for i,(xi,yi) in enumerate(polygon):
+        xj,yj=polygon[j]
+        if ((yi>y)!=(yj>y)) and x < (xj-xi)*(y-yi)/((yj-yi) or 1e-12)+xi:
+            hit=not hit
+        j=i
+    return hit
+
+
+def _merge_browser_fixture_evidence(architecture, recognition, evidence):
+    \"\"\"Merge only coordinate-backed analyzer evidence into reconstructed rooms.\"\"\"
+    aliases={'faucet':'basin','basin':'basin','sink':'sink','toilet':'wc','wc':'wc',
+             'bath':'shower','bathtub':'shower','shower':'shower','floor_drain':'floor_drain'}
+    rows=list(recognition.get('detections') or [])
+    rooms=[r for r in architecture.get('rooms') or [] if r.get('polygon')]
+    accepted=0
+    for raw in evidence or []:
+        kind=aliases.get(str(raw.get('kind') or '').strip().lower())
+        try: point=(float(raw.get('x')),float(raw.get('y')))
+        except (TypeError,ValueError): continue
+        if not kind or any(r.get('type')==kind and ((r.get('point') or (0,0))[0]-point[0])**2+((r.get('point') or (0,0))[1]-point[1])**2 < 2500 for r in rows):
+            continue
+        room=next((r for r in rooms if _inside(point,r['polygon'])),None)
+        if not room:
+            continue
+        row={'id':f\"MEP-{len(rows)+1:03d}\",'category':'fixture','type':kind,'point':point,
+             'block':raw.get('name') or '','layer':'ANALYZED-SOURCE-BLOCK','room_id':room.get('id'),
+             'plan_id':room.get('plan_id'),'confidence':0.90,'status':'detected','installed':True,
+             'evidence':['browser_upload_analyzer','coordinate_in_reconstructed_room'],
+             'source_file':raw.get('source_file')}
+        rows.append(row); accepted+=1
+    recognition['detections']=rows
+    recognition['fixtures']=[r for r in rows if r.get('category')=='fixture']
+    recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
+    quality=dict(recognition.get('quality') or {})
+    quality.update({'detected':len(rows),'room_assigned':sum(bool(r.get('room_id')) for r in rows),
+                    'browser_evidence_accepted':accepted})
+    recognition['quality']=quality
+    return recognition
+
+
 def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     architecture=reconstruct_architecture(src)
     recognition=recognize_fixtures_equipment(architecture)
     architecture,recognition=apply_plan_scopes(src,architecture,recognition)
+    recognition=_merge_browser_fixture_evidence(architecture,recognition,(project_overrides or {}).get('fixture_evidence'))
     requirements=derive_system_requirements(architecture,recognition)
     calculations=calculate_mechanical_loads(architecture,recognition,requirements,design_basis=design_basis)
     topology=build_system_topology(architecture,recognition,requirements,calculations)
@@ -34,7 +78,7 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
         detail_overrides['levels']=levels or ['GROUND']
     details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
     hvac=design_project_hvac(architecture,project_overrides=project_overrides)
-    return {'version':'engineering-pipeline-v13.13','architecture':architecture,'recognition':recognition,'requirements':requirements,
+    return {'version':'engineering-pipeline-v13.14','architecture':architecture,'recognition':recognition,'requirements':requirements,
             'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac}
 
 def validate_pipeline(result):
