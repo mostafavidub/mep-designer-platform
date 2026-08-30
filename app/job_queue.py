@@ -264,6 +264,62 @@ def register_job_queue(app, legacy):
             else:
                 _run_design(job_id)
 
+    def _migrate_ready_outputs_to_object_storage():
+        """Move legacy ready artifacts to R2, then reclaim their local workspaces."""
+        if not artifact_storage.configured():
+            return
+        db = legacy.Session()
+        try:
+            revisions = db.query(legacy.Revision).filter(
+                legacy.Revision.status == 'ready',
+            ).order_by(legacy.Revision.id.asc()).all()
+            migrated_projects = set()
+            for revision in revisions:
+                stored = str(revision.pdf_path or '')
+                if not stored or stored.startswith('s3://'):
+                    if stored.startswith('s3://'):
+                        migrated_projects.add(revision.project_id)
+                    continue
+                path = Path(stored)
+                if not path.exists() or path.suffix.lower() not in ('.dxf', '.zip'):
+                    continue
+                project = db.get(legacy.Project, revision.project_id)
+                if not project:
+                    continue
+                discipline = (project.answers or {}).get(
+                    'discipline', (project.analysis or {}).get('discipline', 'mechanical')
+                )
+                artifact_storage.validate_output_artifact(path)
+                durable_uri = artifact_storage.upload_output(
+                    project.id, revision.revision_no, discipline, path,
+                )
+                if not durable_uri:
+                    continue
+                revision.pdf_path = durable_uri
+                db.commit()
+                path.unlink(missing_ok=True)
+                migrated_projects.add(project.id)
+
+            for project_id in migrated_projects:
+                project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
+                for transient in (
+                    project_dir / 'architecture.zip',
+                    project_dir / 'architecture.dxf',
+                    project_dir / 'input',
+                    project_dir / '.upload_chunks',
+                    project_dir / 'output',
+                ):
+                    if transient.is_dir():
+                        shutil.rmtree(transient, ignore_errors=True)
+                    else:
+                        transient.unlink(missing_ok=True)
+                shutil.rmtree(
+                    Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(project_id),
+                    ignore_errors=True,
+                )
+        finally:
+            db.close()
+
     def _recover_stale_jobs():
         db = legacy.Session()
         try:
@@ -301,6 +357,7 @@ def register_job_queue(app, legacy):
 
     @app.on_event('startup')
     def start_persistent_workers():
+        _migrate_ready_outputs_to_object_storage()
         _recover_stale_jobs()
         for job_type in ('analysis', 'design'):
             threading.Thread(target=_worker, args=(job_type,), daemon=True, name=f'{job_type}-queue').start()
