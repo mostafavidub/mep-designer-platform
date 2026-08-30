@@ -321,30 +321,45 @@ def register_job_queue(app, legacy):
             db.close()
 
     def _recover_stale_jobs():
+        """Fail interrupted design jobs and reclaim only their transient CAD files."""
         db = legacy.Session()
+        interrupted_design_ids = []
         try:
-            jobs = db.query(Job).filter(
-                Job.status == 'processing',
-            ).all()
-            # Only jobs interrupted by a deployment are recovered automatically.
-            # Terminal failures require an explicit retry; otherwise every deploy
-            # can restart a disk-heavy failed design and fill the volume again.
+            jobs = db.query(Job).filter(Job.status == 'processing').all()
             for job in jobs:
-                job.status = 'queued'
-                job.available_at = datetime.utcnow()
                 job.locked_at = None
+                job.updated_at = datetime.utcnow()
                 project = db.get(legacy.Project, job.project_id)
-                if project:
-                    project.status = 'queued' if job.job_type == 'design' else 'analyzing'
-                    project.last_error = ''
-                if job.revision_id:
-                    revision = db.get(legacy.Revision, job.revision_id)
+                revision = db.get(legacy.Revision, job.revision_id) if job.revision_id else None
+                if job.job_type == 'design':
+                    error = 'طراحی هنگام انتشار نسخه جدید متوقف شد؛ دوباره روی شروع طراحی بزنید.'
+                    job.status = 'failed'
+                    job.last_error = error
+                    if project:
+                        project.status = 'failed'
+                        project.last_error = error
                     if revision:
-                        revision.status = 'queued'
-                        revision.error = ''
+                        revision.status = 'failed'
+                        revision.error = error
+                    interrupted_design_ids.append(job.project_id)
+                else:
+                    job.status = 'queued'
+                    job.available_at = datetime.utcnow()
+                    if project:
+                        project.status = 'analyzing'
+                        project.last_error = ''
             db.commit()
         finally:
             db.close()
+        for project_id in interrupted_design_ids:
+            shutil.rmtree(
+                Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(project_id),
+                ignore_errors=True,
+            )
+            shutil.rmtree(
+                Path(legacy.DATA_DIR) / 'projects' / str(project_id) / 'output',
+                ignore_errors=True,
+            )
 
     @app.on_event('startup')
     def start_persistent_workers():
