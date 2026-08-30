@@ -350,6 +350,16 @@ def register_job_queue(app, legacy):
         interrupted_design_ids = []
         try:
             jobs = db.query(Job).filter(Job.status == 'processing').all()
+            diagnostic_retry = db.query(Job).filter(
+                Job.job_type == 'design',
+                Job.status == 'failed',
+                func.lower(Job.last_error).like('%dxf tail repair failed%'),
+                ~func.lower(Job.last_error).like('%strict=%'),
+            ).order_by(Job.id.desc()).first()
+            if diagnostic_retry and diagnostic_retry not in jobs:
+                diagnostic_retry.status = 'processing'
+                diagnostic_retry.attempts = 0
+                jobs.append(diagnostic_retry)
             for job in jobs:
                 job.locked_at = None
                 job.updated_at = datetime.utcnow()
