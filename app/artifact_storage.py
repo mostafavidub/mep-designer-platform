@@ -76,6 +76,7 @@ def upload_input(project_id: int, path: Path) -> str | None:
         return None
     key = input_key(project_id, path.name)
     client.upload_file(str(path), S3_BUCKET, key)
+    client.head_object(Bucket=S3_BUCKET, Key=key)
     return f's3://{S3_BUCKET}/{key}'
 
 
