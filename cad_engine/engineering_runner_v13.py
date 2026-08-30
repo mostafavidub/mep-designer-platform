@@ -53,15 +53,6 @@ def _compatible_room(kind, room_type):
 
 
 def _nearest_compatible_room(architecture, rooms, point, kind):
-    """Conservative fallback when a valid fixture sits just outside a bad room polygon.
-
-    Consultant DXFs frequently contain small closed annotation polylines around room
-    labels. The v13 reconstructor can select one of those as the room polygon. We only
-    use this fallback for coordinate-backed fixture evidence already recognized by the
-    browser analyzer, require semantic room compatibility, keep the fixture on the same
-    print plan, and cap distance to 18% of that plan's diagonal. Distant legend symbols
-    therefore remain unassigned.
-    """
     plan=_plan_for_point(architecture,point)
     if not plan:
         return None
@@ -83,7 +74,6 @@ def _nearest_compatible_room(architecture, rooms, point, kind):
 
 
 def _merge_browser_fixture_evidence(architecture, recognition, evidence):
-    """Merge traceable browser evidence, with a bounded same-plan room fallback."""
     aliases={'faucet':'basin','basin':'basin','sink':'sink','toilet':'wc','wc':'wc',
              'bath':'shower','bathtub':'shower','shower':'shower','floor_drain':'floor_drain'}
     rows=list(recognition.get('detections') or [])
@@ -97,8 +87,7 @@ def _merge_browser_fixture_evidence(architecture, recognition, evidence):
         if not kind or any(r.get('type')==kind and ((r.get('point') or (0,0))[0]-point[0])**2+((r.get('point') or (0,0))[1]-point[1])**2 < 2500 for r in rows):
             continue
         room=next((r for r in polygon_rooms if _inside(point,r['polygon'])),None)
-        evidence_tags=['browser_upload_analyzer']
-        confidence=.90
+        evidence_tags=['browser_upload_analyzer']; confidence=.90
         if room:
             evidence_tags.append('coordinate_in_reconstructed_room')
         else:
@@ -146,8 +135,9 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
         detail_overrides['levels']=levels or ['GROUND']
     details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
     hvac=design_project_hvac(architecture,project_overrides=project_overrides)
-    return {'version':'engineering-pipeline-v13.15','architecture':architecture,'recognition':recognition,'requirements':requirements,
+    return {'version':'engineering-pipeline-v13.16','architecture':architecture,'recognition':recognition,'requirements':requirements,
             'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac}
+
 
 def validate_pipeline(result):
     errors=[];arch=result.get('architecture') or {};rec=result.get('recognition') or {};req=result.get('requirements') or {}
@@ -160,13 +150,25 @@ def validate_pipeline(result):
     if hvac.get('status')=='FAIL':errors.append('project_hvac_geometry_invalid')
     if (hvac.get('quality') or {}).get('cross_plan_routes',0):errors.append('cross_plan_hvac_routes')
     if (hvac.get('quality') or {}).get('out_of_bounds',0):errors.append('hvac_route_out_of_plan')
-    sized_ids={x.get('route_id') for x in sizing.get('segments') or [] if x.get('size_mm') is not None};route_ids={x.get('id') for x in routing.get('routes') or []}
+
+    route_rows=list(routing.get('routes') or [])
+    route_ids={x.get('id') for x in route_rows if x.get('id')}
+    topology_edge_ids={x.get('id') for x in topology.get('edges') or [] if x.get('id')}
+    routed_edge_ids={x.get('edge_id') for x in route_rows if x.get('edge_id')}
+    if topology_edge_ids-routed_edge_ids: errors.append('unrouted_topology_edges')
+    if routing.get('rejected'): errors.append('rejected_project_routes')
+    if any(len(r.get('points') or [])<2 or float(r.get('length') or 0)<=0 or not r.get('system') or not r.get('plan_id') for r in route_rows):
+        errors.append('invalid_project_route_geometry')
+
+    sized_ids={x.get('route_id') for x in sizing.get('segments') or [] if x.get('size_mm') is not None and float(x.get('size_mm') or 0)>0}
     if route_ids-sized_ids:errors.append('unsized_routes')
     annotated_ids={x.get('route_id') for x in annotations.get('annotations') or [] if x.get('route_id')}
     if route_ids-annotated_ids:errors.append('unannotated_routes')
+
     return {'status':'PASS' if not errors else 'FAIL','errors':errors,
             'metrics':{'plans':len(arch.get('plans') or []),'primary_floor_plans':len(arch.get('primary_floor_plan_ids') or []),
                        'rooms':len(arch.get('rooms') or []),'detections':len(rec.get('detections') or []),
-                       'systems':len(req.get('project_systems') or []),'routes':len(route_ids),'sized_routes':len(sized_ids),
+                       'systems':len(req.get('project_systems') or []),'topology_edges':len(topology_edge_ids),
+                       'routes':len(route_ids),'routed_topology_edges':len(routed_edge_ids),'sized_routes':len(sized_ids),
                        'annotated_routes':len(annotated_ids),'unresolved_local_shafts':len(topology.get('unresolved') or []),
                        'hvac_equipment':len(hvac.get('equipment') or []),'hvac_routes':len(hvac.get('routes') or [])}}
