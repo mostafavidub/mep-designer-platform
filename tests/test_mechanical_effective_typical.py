@@ -64,7 +64,7 @@ class EffectiveTypicalInferenceTests(unittest.TestCase):
         self.assertEqual(scope['ventilation_required_levels'], ['Ground', 'Office'])
         self.assertTrue(scope['roof_exists'])
 
-    def test_typical_group_reduces_within_each_system_not_across_systems(self):
+    def test_typical_group_reduces_primary_plans_but_keeps_required_water_service_documents(self):
         levels = ['L1', 'L2', 'L3']
         result = predict_drawing_set({
             'all_levels': levels,
@@ -78,11 +78,14 @@ class EffectiveTypicalInferenceTests(unittest.TestCase):
             'vertical_systems': True,
             'typical_groups': [{'name': 'Typical L1-L3', 'levels': levels, 'confidence': 'high'}],
         })
-        # Six separated system-family typical sheets + one water special sheet.
-        self.assertEqual(result['deliverable_sheet_count'], 7)
-        self.assertEqual(len(result['deliverable_sheets']), 7)
-        self.assertEqual(result['sheet_families']['water_supply']['count'], 2)
-        self.assertEqual(result['sheet_families']['cooling']['count'], 1)
+        primary = [x for x in result['deliverable_sheets'] if x.get('drawing_type') == 'floor_plan']
+        self.assertEqual(len(primary), 6)
+        self.assertTrue(all(x.get('typical') for x in primary))
+        water_types = [x.get('drawing_type') for x in result['deliverable_sheets'] if x.get('family') == 'water_supply']
+        self.assertIn('riser_diagram', water_types)
+        self.assertIn('equipment_plan', water_types)
+        self.assertIn('calculation_sheet', water_types)
+        self.assertEqual(result['deliverable_sheet_count'], len(result['deliverable_sheets']))
 
 
 if __name__ == '__main__':
