@@ -85,7 +85,6 @@ def _append_special(family, code, label, levels, reason, drawing_type="detail_sh
 
 
 def _append_family_roles(family, family_key, levels, roles):
-    """Add authority-required non-floor drawing roles to one family."""
     type_by_suffix = {"RISER": "riser_diagram", "EQUIP": "equipment_plan", "RETURN": "schematic",
                       "DETAIL": "detail_sheet", "RAIN": "roof_plan", "PARK": "ventilation_plan"}
     for suffix, label, reason in roles:
@@ -120,13 +119,6 @@ def approve_drawing_set(proposal):
 
 
 def _full_authority_documentation_required(scope, families, typical_groups):
-    """Select full detail/support package from project complexity, never project name.
-
-    The approved non-typical multi-level benchmark has three independent occupied
-    levels, a roof, vertical services and all principal mechanical families.  Such
-    projects require separate riser/equipment/detail sheets.  Verified Typical
-    groups remain consolidated and do not inherit this expanded package blindly.
-    """
     explicit = scope.get("full_authority_documentation")
     if explicit is not None: return bool(explicit)
     principal = ("water_supply", "sanitary_vent", "heating", "cooling", "gas", "ventilation_exhaust")
@@ -144,7 +136,11 @@ def predict_drawing_set(scope):
         families[key] = family; deliverables.extend(family["sheets"])
 
     water_patterns = families['water_supply']['count']; water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
-    single_effective_level = water_patterns == 1 and not _normalize_typical_groups(typical_groups)
+    all_project_levels = _unique_levels(scope.get('all_levels') or [])
+    # A family may consolidate several floors into one system-specific pattern.
+    # That does not make the whole project single-level and must not trigger
+    # single-storey support drawings in unrelated families.
+    single_effective_level = len(all_project_levels) == 1 and water_patterns == 1 and not _normalize_typical_groups(typical_groups)
     distinct_multi_level_equipment = water_patterns >= 3 and not _normalize_typical_groups(typical_groups) and not scope.get('roof_exists') and not systems['gas']['levels']
     if scope.get('central_water_equipment') or single_effective_level or distinct_multi_level_equipment:
         water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water equipment scope'))

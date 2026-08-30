@@ -1,10 +1,10 @@
 """Guarded multi-evidence architectural level detection.
 
-This module wraps the existing v2 inference instead of replacing it.  It keeps
+This module wraps the existing v2 inference instead of replacing it. It keeps
 proven v2 room/typical logic, restores architecturally explicit levels that v2
 would otherwise drop for lack of room labels, and keeps weak/orphan titles as
-non-active candidates.  This prevents missing mezzanines while avoiding the
-old phantom-level regression from reusable title blocks.
+non-active candidates. This prevents missing mezzanines while avoiding the old
+phantom-level regression from reusable title blocks.
 """
 import math
 import re
@@ -12,7 +12,7 @@ from collections import defaultdict
 
 from . import auto_inference_v2 as v2
 
-LEVEL_DETECTION_VERSION = "multi-evidence-v3.0"
+LEVEL_DETECTION_VERSION = "multi-evidence-v3.5"
 
 
 def _norm(value):
@@ -20,10 +20,14 @@ def _norm(value):
 
 
 def _explicit_level_title(text):
+    s = _norm(text)
+    if "پلان" in s and "معماری" in s and ("نیم طبقه" in s or "نیم‌طبقه" in s):
+        level = _norm(s.replace("پلان", " ").replace("معماری", " ")).replace("نیم‌طبقه", "نیم طبقه")
+        if level:
+            return level, "architectural-plan-title"
     parsed = v2._plan_title(text)
     if parsed and parsed[0] == "architecture":
         return parsed[1], "architectural-plan-title"
-    s = _norm(text)
     low = s.lower()
     patterns = (
         (r"\bmezzanine(?:\s+floor)?(?:\s+plan)?\b", "نیم طبقه"),
@@ -35,11 +39,8 @@ def _explicit_level_title(text):
         if re.search(pattern, low):
             return name, "recognized-level-title"
     fa = (
-        ("نیم طبقه", "نیم طبقه"),
-        ("نیم‌طبقه", "نیم طبقه"),
-        ("زیرزمین", "زیرزمین"),
-        ("همکف", "طبقه همکف"),
-        ("خرپشته", "خرپشته"),
+        ("نیم طبقه", "نیم طبقه"), ("نیم‌طبقه", "نیم طبقه"),
+        ("زیرزمین", "زیرزمین"), ("همکف", "طبقه همکف"), ("خرپشته", "خرپشته"),
     )
     if "پلان" in s:
         for marker, name in fa:
@@ -56,50 +57,50 @@ def _distance(a, b):
 
 
 def _collect_candidates(files):
+    """Collect explicit levels and attach only room evidence owned by that title."""
     rows = []
     for file_info in files or []:
         labels = file_info.get("text_labels") or []
-        by_source_rooms = defaultdict(list)
-        for item in labels:
-            if v2.classify_room(item.get("text") or ""):
-                by_source_rooms[(item.get("source_type"), item.get("source_name"))].append((item.get("x"), item.get("y")))
+        title_rows = []
         for item in labels:
             parsed = _explicit_level_title(item.get("text") or "")
             if not parsed:
                 continue
             level, basis = parsed
-            point = (item.get("x"), item.get("y"))
-            source_key = (item.get("source_type"), item.get("source_name"))
-            same_source_rooms = by_source_rooms.get(source_key) or []
-            nearby = sum(1 for p in same_source_rooms if _distance(point, p) < 100.0)
-            source_type = item.get("source_type")
-            # Layout/model evidence is strong because main_auto has already
-            # filtered incoherent CAD sources. A named block needs room evidence
-            # before it can become active; otherwise it remains a candidate.
-            if source_type == "layout":
-                confidence = 0.96 if nearby else 0.88
-                active = True
-            elif nearby >= 2:
-                confidence = 0.86
-                active = True
-            elif nearby == 1:
-                confidence = 0.72
-                active = True
-            else:
-                confidence = 0.42
-                active = False
-            rows.append({
-                "name": _norm(level),
-                "confidence": confidence,
-                "active": active,
-                "basis": basis,
-                "source_type": source_type,
-                "source_name": item.get("source_name"),
+            title_rows.append({
+                "name": _norm(level), "basis": basis,
+                "source_type": item.get("source_type"), "source_name": item.get("source_name"),
                 "title_text": _norm(item.get("text")),
-                "title_point": [point[0], point[1]],
-                "nearby_room_labels": nearby,
+                "title_point": [item.get("x"), item.get("y")],
             })
-    # Merge duplicates conservatively, retaining the strongest evidence.
+        # Level-plan titles can contain room-like words (for example "بالکن")
+        # and must never count as their own room evidence.
+        room_rows = [
+            item for item in labels
+            if not _explicit_level_title(item.get("text") or "")
+            and v2.classify_room(item.get("text") or "")
+        ]
+        for title in title_rows:
+            source_key = (title["source_type"], title["source_name"])
+            competing = [other for other in title_rows if (other["source_type"], other["source_name"]) == source_key]
+            owned_rooms = 0
+            for room in room_rows:
+                if (room.get("source_type"), room.get("source_name")) != source_key:
+                    continue
+                rp = (room.get("x"), room.get("y"))
+                nearest = min(competing, key=lambda other: _distance(rp, other["title_point"])) if competing else title
+                if nearest is title:
+                    owned_rooms += 1
+            source_type = title["source_type"]
+            if source_type == "layout":
+                confidence = 0.96 if owned_rooms else 0.88; active = True
+            elif owned_rooms >= 2:
+                confidence = 0.86; active = True
+            elif owned_rooms == 1:
+                confidence = 0.72; active = True
+            else:
+                confidence = 0.42; active = False
+            rows.append({**title, "confidence": confidence, "active": active, "nearby_room_labels": owned_rooms})
     merged = {}
     for row in rows:
         old = merged.get(row["name"])
@@ -112,27 +113,41 @@ def _placeholder_profile(candidate):
     name = candidate["name"]
     is_roof = "بام" in name or "roof" in name.lower()
     return {
-        "name": name,
-        "title_point": candidate.get("title_point"),
-        "source_type": candidate.get("source_type"),
-        "source_name": candidate.get("source_name"),
-        "room_counts": {},
-        "recognized_room_labels": 0,
-        # Unknown room labels must not suppress an explicit occupied level.
-        # Planner's authority-safe fallback already scopes non-roof profiles
-        # conservatively, while answers can explicitly disable systems.
-        "wet_fixture_candidate": False,
-        "sanitary_candidate": False,
-        "conditioned_candidate": not is_roof,
-        "ventilation_candidate": False,
-        "gas_candidate": False,
-        "roof": is_roof,
-        "typical_signature": None,
-        "typical_confidence": "insufficient",
-        "level_confidence": candidate["confidence"],
+        "name": name, "title_point": candidate.get("title_point"),
+        "source_type": candidate.get("source_type"), "source_name": candidate.get("source_name"),
+        "room_counts": {}, "recognized_room_labels": 0,
+        "wet_fixture_candidate": False, "sanitary_candidate": False,
+        "conditioned_candidate": not is_roof, "ventilation_candidate": False,
+        "gas_candidate": False, "roof": is_roof, "typical_signature": None,
+        "typical_confidence": "insufficient", "level_confidence": candidate["confidence"],
         "level_evidence": [candidate["basis"], candidate.get("source_type") or "unknown-source"],
         "level_detection_status": "confirmed-from-explicit-title",
     }
+
+
+def _mark_title_only_restorations(profiles, candidates, restored):
+    """Fail-safe provenance pass for explicit active levels with no owned rooms."""
+    by_name = {str(p.get("name")): p for p in profiles if p.get("name")}
+    for candidate in candidates:
+        if not candidate.get("active") or int(candidate.get("nearby_room_labels") or 0) != 0:
+            continue
+        name = candidate["name"]
+        if name not in restored:
+            restored.append(name)
+        profile = by_name.get(name)
+        if profile is None:
+            profile = _placeholder_profile(candidate)
+            profiles.append(profile); by_name[name] = profile
+        profile["typical_signature"] = None
+        profile["typical_confidence"] = "insufficient"
+        profile["level_confidence"] = max(float(profile.get("level_confidence") or 0), float(candidate["confidence"]))
+        profile["level_detection_status"] = "confirmed-from-explicit-title"
+        evidence = list(profile.get("level_evidence") or [])
+        for item in (candidate["basis"], candidate.get("source_type") or "unknown-source"):
+            if item not in evidence:
+                evidence.append(item)
+        profile["level_evidence"] = evidence
+    return profiles, restored
 
 
 def infer_architecture_facts(analysis, discipline):
@@ -140,6 +155,7 @@ def infer_architecture_facts(analysis, discipline):
     candidates = _collect_candidates((analysis or {}).get("files") or [])
     profiles = [dict(p) for p in (auto.get("level_profiles") or [])]
     profile_map = {str(p.get("name")): p for p in profiles if p.get("name")}
+    restored = []
 
     for profile in profiles:
         candidate = next((c for c in candidates if c["name"] == profile.get("name")), None)
@@ -147,30 +163,35 @@ def infer_architecture_facts(analysis, discipline):
         if candidate:
             evidence.append(candidate["basis"])
             profile["level_confidence"] = max(0.95, candidate["confidence"])
+            if candidate.get("active") and int(candidate.get("nearby_room_labels") or 0) == 0:
+                profile["typical_signature"] = None
+                profile["typical_confidence"] = "insufficient"
+                profile["level_detection_status"] = "confirmed-from-explicit-title"
+                restored.append(candidate["name"])
+            else:
+                profile["level_detection_status"] = "confirmed"
         else:
             profile["level_confidence"] = 0.90 if profile.get("recognized_room_labels") else 0.65
+            profile["level_detection_status"] = "confirmed"
         profile["level_evidence"] = evidence
-        profile["level_detection_status"] = "confirmed"
 
-    restored = []
     weak = []
     for candidate in candidates:
         if candidate["name"] in profile_map:
             continue
         if candidate["active"]:
             new_profile = _placeholder_profile(candidate)
-            profiles.append(new_profile)
-            profile_map[candidate["name"]] = new_profile
-            restored.append(candidate["name"])
+            profiles.append(new_profile); profile_map[candidate["name"]] = new_profile
+            if int(candidate.get("nearby_room_labels") or 0) == 0:
+                restored.append(candidate["name"])
         else:
             weak.append(candidate)
 
+    profiles, restored = _mark_title_only_restorations(profiles, candidates, restored)
+    restored = list(dict.fromkeys(restored))
     if profiles:
         auto["level_profiles"] = profiles
         auto["levels"] = [{"name": p["name"], "confidence": p.get("level_confidence")} for p in profiles]
-        # Typical groups are intentionally recalculated only from profiles with
-        # actual high-confidence geometry/room signatures. Restored title-only
-        # levels can never become Typical by accident.
         inferred = v2.typical_groups_from_profiles(profiles)
         explicit = v2.explicit_typical_groups_from_files((analysis or {}).get("files") or [])
         explicit_keys = {tuple(x.get("levels") or []) for x in explicit}
@@ -190,7 +211,6 @@ def infer_architecture_facts(analysis, discipline):
 
 
 def install(main_auto_module):
-    """Patch only the inference binding used by project analysis."""
     if getattr(main_auto_module, "_level_detection_v3_installed", False):
         return
     main_auto_module.infer_architecture_facts = infer_architecture_facts

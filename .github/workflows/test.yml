@@ -10,6 +10,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATA_DIR: /tmp/engitools-ci-data
+      CAD_OUTPUT_DIR: /tmp/engitools-ci-cad
+      DATABASE_URL: sqlite:///./test_ci.db
+      CAD_DESIGNER_URL: http://127.0.0.1:9999
+      MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,9 +23,9 @@ jobs:
           python-version: '3.12'
           cache: pip
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          pip install matplotlib pypdf
+          mkdir -p "$DATA_DIR" "$CAD_OUTPUT_DIR"
       - name: Run tests
-        env:
-          DATABASE_URL: sqlite:///./test_ci.db
-          CAD_DESIGNER_URL: http://127.0.0.1:9999
         run: python -m unittest discover -s tests -p 'test_*.py' -v

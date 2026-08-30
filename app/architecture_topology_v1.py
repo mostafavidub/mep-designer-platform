@@ -27,6 +27,12 @@ def _distance(a, b):
     return math.dist(tuple(a), tuple(b))
 
 
+def _point_in_bounds(point, bounds, tolerance=0.0):
+    if not point or not bounds or len(bounds) != 4:
+        return False
+    return bounds[0]-tolerance <= point[0] <= bounds[2]+tolerance and bounds[1]-tolerance <= point[1] <= bounds[3]+tolerance
+
+
 def _cluster(items, threshold):
     """Simple connected-component clustering by centroid proximity."""
     pending = list(range(len(items))); groups = []
@@ -76,10 +82,20 @@ def enrich_architecture_topology(auto):
         stairs = decorate(level.get("stairs"), "T")
         columns = decorate(level.get("columns"), "C")
 
-        # Doors/windows are associated by nearest room only within a bounded
-        # proximity, so annotations or symbols from another plan are not linked.
+        # Openings physically hosted by a room boundary/interior are stronger
+        # evidence than centroid distance. Fall back to bounded proximity only
+        # when reconstructed room bounds are unavailable or do not contain it.
         for collection, field in ((doors, "door_ids"), (windows, "window_ids")):
             for item in collection:
+                contained = [r for r in rooms if _point_in_bounds(item["center"], r.get("bounds"), tolerance=0.05)]
+                if contained:
+                    room = min(contained, key=lambda r: _distance(item["center"], r["center"]))
+                    dist = _distance(item["center"], room["center"])
+                    room[field].append(item["id"])
+                    item["nearest_room_id"] = room["id"]
+                    item["nearest_room_distance"] = round(dist, 4)
+                    item["room_link_basis"] = "opening_center_within_reconstructed_room_bounds"
+                    continue
                 candidates = [(r, _distance(item["center"], r["center"])) for r in rooms]
                 if candidates:
                     room, dist = min(candidates, key=lambda x: x[1])
@@ -87,6 +103,7 @@ def enrich_architecture_topology(auto):
                         room[field].append(item["id"])
                         item["nearest_room_id"] = room["id"]
                         item["nearest_room_distance"] = round(dist, 4)
+                        item["room_link_basis"] = "bounded_centroid_proximity"
 
         for room in rooms:
             if shafts:
