@@ -53,18 +53,24 @@ class ManifestSupportRolesV17Tests(unittest.TestCase):
         self.assertIn('WATER/EQUIPMENT', qa['approved_support_roles'])
         self.assertIn('WATER/CALC', qa['approved_support_roles'])
 
-    def test_plumbing_riser_requires_approved_sanitary_riser_role(self):
+    def test_plumbing_riser_is_derived_only_from_approved_plumbing_primary(self):
         approved = [web_sheet('sanitary_vent', 'floor_plan', 'M-S-01')]
         generated = [
             cad_sheet('SANITARY_VENT', code='M-101'),
             cad_sheet('PLUMBING_RISER', level='MULTI', purpose='RISER', code='M-151'),
         ]
         qa = self.qa(approved, generated)
-        self.assertEqual(qa['status'], 'FAIL')
-        self.assertIn('unapproved_support_role:PLUMBING_RISER:requires=SANITARY_VENT/RISER', qa['errors'])
+        self.assertEqual(qa['status'], 'PASS')
+        self.assertIn('PLUMBING_RISER<-approved_plumbing_primary', qa['derived_support_documents'])
 
-        approved.append(web_sheet('sanitary_vent', 'riser_diagram', 'M-S-RISER'))
-        self.assertEqual(self.qa(approved, generated)['status'], 'PASS')
+        no_plumbing = [web_sheet('heating', 'floor_plan', 'M-H-01')]
+        bad_generated = [
+            cad_sheet('HEATING', code='M-131'),
+            cad_sheet('PLUMBING_RISER', level='MULTI', purpose='RISER', code='M-151'),
+        ]
+        bad = self.qa(no_plumbing, bad_generated)
+        self.assertEqual(bad['status'], 'FAIL')
+        self.assertIn('unapproved_support_family:PLUMBING_RISER:no_approved_plumbing_system', bad['errors'])
 
     def test_roof_split_sheet_requires_equipment_or_roof_support_role(self):
         approved = [web_sheet('cooling', 'floor_plan', 'M-C-01')]
@@ -79,18 +85,30 @@ class ManifestSupportRolesV17Tests(unittest.TestCase):
         approved.append(web_sheet('cooling', 'equipment_plan', 'M-C-EQUIP', ['ROOF']))
         self.assertEqual(self.qa(approved, generated)['status'], 'PASS')
 
-    def test_equipment_schedule_is_not_justified_by_primary_plan_alone(self):
+    def test_equipment_schedule_is_derived_from_approved_equipment_system_primary(self):
         approved = [web_sheet('heating', 'floor_plan', 'M-H-01')]
         generated = [
             cad_sheet('HEATING', code='M-131'),
             cad_sheet('EQUIPMENT_SCHEDULE', level='MULTI', purpose='SCHEDULE', code='M-181'),
         ]
         qa = self.qa(approved, generated)
-        self.assertEqual(qa['status'], 'FAIL')
-        self.assertIn('unapproved_support_role:EQUIPMENT_SCHEDULE:no_approved_equipment_role', qa['errors'])
+        self.assertEqual(qa['status'], 'PASS')
+        self.assertIn('EQUIPMENT_SCHEDULE<-HEATING', qa['derived_support_documents'])
 
-        approved.append(web_sheet('heating', 'equipment_plan', 'M-H-EQUIP'))
-        self.assertEqual(self.qa(approved, generated)['status'], 'PASS')
+        water_only = [web_sheet('water_supply', 'floor_plan', 'M-W-01')]
+        bad = self.qa(water_only, [cad_sheet('WATER', code='M-111'), cad_sheet('EQUIPMENT_SCHEDULE', purpose='SCHEDULE', code='M-181')])
+        self.assertEqual(bad['status'], 'FAIL')
+        self.assertIn('unapproved_support_family:EQUIPMENT_SCHEDULE:no_approved_equipment_system', bad['errors'])
+
+    def test_generic_detail_group_cannot_introduce_unapproved_system(self):
+        approved = [web_sheet('water_supply', 'floor_plan', 'M-W-01')]
+        plumbing = [cad_sheet('WATER', code='M-111'), cad_sheet('GENERAL_DETAIL', purpose='DETAIL', code='M-004', title='PLUMBING PROJECT-APPLICABLE DETAILS')]
+        self.assertEqual(self.qa(approved, plumbing)['status'], 'PASS')
+
+        gas_detail = [cad_sheet('WATER', code='M-111'), cad_sheet('GENERAL_DETAIL', purpose='DETAIL', code='M-006', title='GAS PROJECT-APPLICABLE DETAILS')]
+        qa = self.qa(approved, gas_detail)
+        self.assertEqual(qa['status'], 'FAIL')
+        self.assertIn('unapproved_support_family:GENERAL_DETAIL/GAS:requires=GAS', qa['errors'])
 
     def test_generated_unapproved_primary_family_still_fails(self):
         approved = [web_sheet('sanitary_vent', 'floor_plan', 'M-S-01')]
