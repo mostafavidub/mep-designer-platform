@@ -115,7 +115,31 @@ def validate_generated_manifest(drawing_set, design_reports):
                 special_required.add('ROOF')
             elif drawing_type == 'riser_diagram' or str(sheet.get('code') or '').endswith('-RISER'):
                 special_required.add('PLUMBING_RISER')
-        actual = Counter(str(row.get('family') or '') for row in generated_rows)
+        # V17 may report semantic family variants (for example GAS_PLAN or
+        # GAS_DISTRIBUTION) while the approved planner uses canonical family
+        # names. Normalize report variants before comparing coverage so the
+        # same issued sheet is not rejected because of adapter vocabulary.
+        aliases = {
+            'WATER': ('WATER', 'COLD_WATER', 'HOT_WATER', 'DOMESTIC_WATER'),
+            'SANITARY_VENT': ('SANITARY', 'VENT', 'DRAINAGE', 'WASTE'),
+            'HEATING': ('HEATING', 'HYDRONIC', 'RADIATOR'),
+            'SPLIT_AC': ('SPLIT_AC', 'COOLING', 'HVAC', 'AIR_CONDITION'),
+            'GAS': ('GAS', 'FUEL_GAS'),
+            'EXHAUST': ('EXHAUST', 'VENTILATION'),
+            'ROOF': ('ROOF', 'RAINWATER'),
+            'PLUMBING_RISER': ('PLUMBING_RISER', 'RISER'),
+        }
+
+        def canonical_family(row):
+            evidence = ' '.join(str(row.get(key) or '') for key in (
+                'family', 'system', 'drawing_type', 'drawing_role', 'label', 'title'
+            )).upper().replace('-', '_').replace(' ', '_')
+            for canonical, variants in aliases.items():
+                if any(variant in evidence for variant in variants):
+                    return canonical
+            return str(row.get('family') or '').upper()
+
+        actual = Counter(canonical_family(row) for row in generated_rows)
         missing = {
             family: count - actual.get(family, 0)
             for family, count in required.items()
