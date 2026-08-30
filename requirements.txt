@@ -11,3 +11,4 @@ requests==2.32.4
 boto3==1.40.21
 python-docx==1.2.0
 openai==1.99.9
+google-auth==2.40.3
