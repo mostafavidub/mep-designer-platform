@@ -46,6 +46,13 @@ def register_resumable_upload_routes(app):
             lowered = message.lower()
             if 'no space left on device' in lowered or getattr(exc, 'errno', None) == 28:
                 raise HTTPException(507, 'فضای Volume سرور پر است.') from exc
+            if 'database or disk is full' in lowered:
+                usage = shutil.disk_usage(str(legacy.DATA_DIR))
+                raise HTTPException(507, f'فضای Volume پر است؛ فضای آزاد: {usage.free} بایت') from exc
+            if 'readonly database' in lowered:
+                raise HTTPException(500, 'دیتابیس فقط‌خواندنی شده است.') from exc
+            if 'database is locked' in lowered:
+                raise HTTPException(503, 'دیتابیس موقتاً قفل است.') from exc
             if 'database' in lowered or 'sql' in lowered:
                 raise HTTPException(500, f'خطای دیتابیس هنگام ساخت پروژه: {type(exc).__name__}') from exc
             raise HTTPException(500, f'ساخت پروژه ناموفق بود: {type(exc).__name__}') from exc
