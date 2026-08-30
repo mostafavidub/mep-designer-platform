@@ -144,7 +144,18 @@ def register_job_queue(app, legacy):
             db.close()
         for pid in ids:
             shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(pid), ignore_errors=True)
-            shutil.rmtree(Path(legacy.DATA_DIR) / 'projects' / str(pid) / 'output', ignore_errors=True)
+            project_dir = Path(legacy.DATA_DIR) / 'projects' / str(pid)
+            for transient in (
+                project_dir / 'architecture.zip',
+                project_dir / 'architecture.dxf',
+                project_dir / 'input',
+                project_dir / '.upload_chunks',
+                project_dir / 'output',
+            ):
+                if transient.is_dir():
+                    shutil.rmtree(transient, ignore_errors=True)
+                else:
+                    transient.unlink(missing_ok=True)
 
     def _claim(job_type):
         if job_type == 'design':
