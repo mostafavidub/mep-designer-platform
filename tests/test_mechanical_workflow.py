@@ -32,6 +32,25 @@ class MechanicalWorkflowTests(unittest.TestCase):
     def test_negative_gas_removes_gas_plans(self):
         p = self.project({'gas': 'خیر، ساختمان گاز ندارد'}); self.assertEqual(build_scope(p)['gas_consumer_levels'], [])
 
+    def test_explicit_tank_or_booster_enters_approved_water_scope(self):
+        p = self.project({'gas':'خیر','water_source':'کنتور شهری + مخزن ۵۰۰ لیتری + بوسترپمپ'})
+        scope = build_scope(p)
+        self.assertTrue(scope['central_water_equipment'])
+        proposal = create_proposal(p)
+        water_types = {x.get('drawing_type') for x in proposal['drawing_manifest']['sheets'] if x.get('family') == 'water_supply'}
+        self.assertIn('equipment_plan', water_types)
+        self.assertIn('calculation_sheet', water_types)
+
+    def test_direct_city_water_does_not_invent_central_equipment(self):
+        p = self.project({'gas':'خیر','water_source':'انشعاب مستقیم آب شهری بدون مخزن و بدون پمپ'})
+        self.assertFalse(build_scope(p)['central_water_equipment'])
+
+    def test_explicit_hot_water_return_enters_scope(self):
+        p = self.project({'hot_water_system':'پکیج مرکزی با خط برگشت آب گرم'})
+        self.assertTrue(build_scope(p)['hot_water_return_required'])
+        p.answers['hot_water_system'] = 'پکیج بدون برگشت'
+        self.assertFalse(build_scope(p)['hot_water_return_required'])
+
     def test_preflight_requires_project_water_rain_and_gas_values(self):
         p = self.project({'gas':'تأیید'}); missing = required_basis_questions(p)
         self.assertEqual(missing, ['water_inlet_pressure','rainfall_intensity','gas_pressure']); self.assertTrue(ensure_required_basis_questions(p)); self.assertEqual(p.status, 'asking')
