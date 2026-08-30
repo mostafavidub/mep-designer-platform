@@ -19,6 +19,14 @@ def _restore_or_remove(dst,backup):
     else: dst.unlink(missing_ok=True)
 
 
+def _normalize_project_answers(answers):
+    """Bridge questionnaire keys to legacy CAD input names without inventing values."""
+    a=dict(answers or {})
+    if a.get('water_inlet_pressure') not in (None,'') and a.get('water_pressure') in (None,''):
+        a['water_pressure']=a['water_inlet_pressure']
+    return a
+
+
 def _release_input_errors(report):
     errors=[]
     enrichment=report.get('enrichment') or {}
@@ -69,7 +77,7 @@ def validate_approved_manifest(report,answers):
 
 
 def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,plan_analysis:dict|None=None)->dict:
-    src=Path(src);dst=Path(dst);answers=dict(answers or {});backup=None
+    src=Path(src);dst=Path(dst);answers=_normalize_project_answers(answers);backup=None
     if dst.exists():
         fd,name=tempfile.mkstemp(prefix='engitools-v17-backup-',suffix='.dxf');Path(name).unlink(missing_ok=True);backup=Path(name);shutil.copy2(dst,backup)
     report=_design_v16(src,dst,answers=answers,plan_analysis=plan_analysis)
