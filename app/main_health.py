@@ -70,3 +70,8 @@ def integrated_system_health():
     status = main_auto.system_health()
     status['object_storage'] = artifact_storage.healthcheck()
     return status
+
+
+@app.get('/storage_health')
+def object_storage_health():
+    return artifact_storage.healthcheck()
