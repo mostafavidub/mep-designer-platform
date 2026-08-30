@@ -1,7 +1,9 @@
+import os
 import re
 import shutil
 import traceback
 from collections import Counter
+from pathlib import Path
 
 import requests
 from ezdxf import bbox
@@ -245,7 +247,7 @@ def analyze_project_job(project_id):
         return
     try:
         pdir = legacy.DATA_DIR / 'projects' / str(project_id)
-        inp = pdir / 'input'
+        inp = Path(os.getenv('TMPDIR', '/tmp')) / 'engitools-analysis' / str(project_id)
         shutil.rmtree(inp, ignore_errors=True)
         inp.mkdir(parents=True, exist_ok=True)
         z, d = pdir / 'architecture.zip', pdir / 'architecture.dxf'
@@ -307,7 +309,10 @@ def analyze_project_job(project_id):
         p.last_error = str(e)
         db.commit()
     finally:
-        db.close()
+        try:
+            shutil.rmtree(Path(os.getenv('TMPDIR', '/tmp')) / 'engitools-analysis' / str(project_id), ignore_errors=True)
+        finally:
+            db.close()
 
 
 
