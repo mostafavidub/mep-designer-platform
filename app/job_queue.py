@@ -3,11 +3,9 @@ from __future__ import annotations
 
 import os
 import secrets
-import shutil
 import threading
 import time
 from datetime import datetime, timedelta
-from pathlib import Path
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -132,7 +130,23 @@ def register_job_queue(app, legacy):
 
     legacy.flow_payload = flow_payload
 
+    def _reclaim_failed_artifacts(exclude_project_id=None):
+        """Reclaim generated files only; uploaded sources and ready outputs stay intact."""
+        db = legacy.Session()
+        try:
+            ids = [row[0] for row in db.query(legacy.Project.id).filter(
+                legacy.Project.status.in_(('failed', 'expired')),
+                legacy.Project.id != exclude_project_id,
+            ).all()]
+        finally:
+            db.close()
+        for pid in ids:
+            shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(pid), ignore_errors=True)
+            shutil.rmtree(Path(legacy.DATA_DIR) / 'projects' / str(pid) / 'output', ignore_errors=True)
+
     def _claim(job_type):
+        if job_type == 'design':
+            _reclaim_failed_artifacts()
         db = legacy.Session()
         try:
             query = db.query(Job).filter(
@@ -163,7 +177,8 @@ def register_job_queue(app, legacy):
         value = (message or '').lower()
         return any(token in value for token in (
             'timeout', 'timed out', 'connection', 'temporarily', 'reset by peer',
-            '502', '503', '504', 'فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد',
+            '502', '503', '504', 'no space left on device',
+            'فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد',
         ))
 
     def _finish(job_id, success, error=''):
@@ -178,6 +193,8 @@ def register_job_queue(app, legacy):
             if success:
                 job.status = 'completed'
             elif job.attempts < job.max_attempts and _transient(error):
+                if 'no space left on device' in (error or '').lower():
+                    _reclaim_failed_artifacts(job.project_id)
                 job.status = 'queued'
                 job.available_at = datetime.utcnow() + timedelta(seconds=RETRY_DELAY_SECONDS)
                 project = db.get(legacy.Project, job.project_id)
@@ -191,6 +208,15 @@ def register_job_queue(app, legacy):
                         revision.error = ''
             else:
                 job.status = 'failed'
+                project = db.get(legacy.Project, job.project_id)
+                if project:
+                    project.status = 'failed'
+                    project.last_error = error or 'پردازش ناموفق بود.'
+                if job.revision_id:
+                    revision = db.get(legacy.Revision, job.revision_id)
+                    if revision:
+                        revision.status = 'failed'
+                        revision.error = error or 'پردازش ناموفق بود.'
             db.commit()
         finally:
             db.close()
@@ -403,37 +429,6 @@ def register_job_queue(app, legacy):
         finally:
             db.close()
 
-    @app.post('/internal/maintenance/projects/{pid}/purge-failed-artifacts')
-    def maintenance_purge_failed_artifacts(pid: int, request: Request):
-        """Remove only generated CAD/output files; preserve the uploaded source."""
-        _maintenance_authorized(request)
-        targets = [
-            Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(pid),
-            Path(legacy.DATA_DIR) / 'projects' / str(pid) / 'output',
-        ]
-        removed_bytes = 0
-        for target in targets:
-            if target.exists():
-                removed_bytes += sum(p.stat().st_size for p in target.rglob('*') if p.is_file())
-                shutil.rmtree(target, ignore_errors=True)
-        db = legacy.Session()
-        try:
-            project = db.get(legacy.Project, pid)
-            if not project:
-                raise HTTPException(404)
-            for job in db.query(Job).filter(Job.project_id == pid, Job.status == 'processing').all():
-                job.status = 'failed'; job.locked_at = None
-                job.last_error = 'Generated artifacts removed after storage exhaustion.'
-            for revision in db.query(legacy.Revision).filter(
-                legacy.Revision.project_id == pid, legacy.Revision.status == 'processing'
-            ).all():
-                revision.status = 'failed'; revision.error = 'Generated artifacts removed after storage exhaustion.'
-            project.status = 'failed'; project.last_error = 'فضای موقت خروجی پاک‌سازی شد؛ طراحی آماده اجرای مجدد است.'
-            db.commit()
-        finally:
-            db.close()
-        return {'removed_bytes': removed_bytes, 'preserved_source': True}
-
     @app.post('/internal/maintenance/projects/{pid}/complete-defaults')
     def maintenance_complete_defaults(pid: int, request: Request):
         """Complete one production E2E run with conservative proposed answers."""
@@ -454,15 +449,9 @@ def register_job_queue(app, legacy):
             ) or 'سینک ۱، روشویی ۱، توالت ۱، دوش ۱'
             overrides = {
                 'location': 'مشهد',
-                'heating': 'پکیج دیواری و رادیاتور',
-                'cooling': 'اسپلیت یا داکت‌اسپلیت',
                 'gas': 'گاز برای پکیج و اجاق هر واحد',
                 'fixture_schedule': quantified_fixtures,
             }
-            # This secured E2E run intentionally uses the declared conservative
-            # basis even if an earlier failed verification stored a different
-            # temporary default.
-            answers.update(overrides)
             for question in project.questions or []:
                 key = question.get('key')
                 if not key or str(answers.get(key) or '').strip():
