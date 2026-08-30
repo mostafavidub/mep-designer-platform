@@ -363,6 +363,8 @@ def register_job_queue(app, legacy):
 
     @app.on_event('startup')
     def start_persistent_workers():
+        # CAD workspaces for terminal failed/expired projects are transient only.
+        _reclaim_failed_artifacts()
         _migrate_ready_outputs_to_object_storage()
         _recover_stale_jobs()
         for job_type in ('analysis', 'design'):
