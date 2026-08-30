@@ -151,7 +151,6 @@ def build_scope(p):
 
 
 def required_basis_questions(p):
-    """Return unresolved project facts that must be user/evidence confirmed before proposal."""
     if _discipline(p) != 'mechanical': return []
     answers = dict(p.answers or {}); scope = build_scope(p); required = []
     if scope.get('wet_fixture_levels') and _numeric(answers.get('water_inlet_pressure') or answers.get('water_pressure')) is None:
@@ -172,11 +171,16 @@ def _question_payload(key):
 def ensure_required_basis_questions(p):
     missing = required_basis_questions(p)
     if not missing: return False
-    qs = list(p.questions or []); keys = {q.get('key') for q in qs if isinstance(q, dict)}
+    qs = list(p.questions or [])
+    # Replace any legacy question with the fail-closed copy so obsolete text
+    # such as "unknown -> 2.5 bar default" can never reach the user.
     for key in missing:
-        if key not in keys: qs.append(_question_payload(key)); keys.add(key)
+        replacement = _question_payload(key); replaced = False
+        for i, q in enumerate(qs):
+            if isinstance(q, dict) and q.get('key') == key:
+                qs[i] = replacement; replaced = True
+        if not replaced: qs.append(replacement)
     p.questions = qs
-    # Find the first unresolved required question even for legacy projects whose current_question was already at the end.
     for i, q in enumerate(qs):
         if q.get('key') in missing:
             p.current_question = i; break
