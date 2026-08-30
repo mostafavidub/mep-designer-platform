@@ -316,7 +316,7 @@ def _present_question(item):
     question = dict(item or {})
     key = question.get('key') or question.get('id')
     prompt = str(question.get('question') or '')
-    if not key:
+    if not key or (key not in legacy.QUESTION_OPTIONS and key not in legacy.TEXT_QUESTION_KEYS):
         inferred = (
             ('heating', ('گرمایش', 'heating')), ('cooling', ('سرمایش', 'cooling')),
             ('gas', ('گاز', 'gas')), ('water_source', ('منبع آب', 'ورودی آب', 'water source')),
