@@ -1,4 +1,4 @@
-"""Production mechanical authority wrapper v17.4.
+"""Production mechanical authority wrapper v17.5.
 
 The issued file is fail-closed: project inputs, approved manifest, engineering
 content, documentation, architecture preservation and exact-file isolation must
@@ -114,10 +114,7 @@ def _approved_support_roles(rows):
     for row in rows:
         family=row['canonical_family']
         role=DRAWING_TYPE_ROLE.get(row['drawing_type'])
-        if family in PRIMARY_CAD_FAMILIES and role:
-            roles.add((family,role))
-        # A non-rainwater roof_plan nested under another family is support, not
-        # the primary roof/rainwater drawing.
+        if family in PRIMARY_CAD_FAMILIES and role: roles.add((family,role))
         if family in PRIMARY_CAD_FAMILIES and family!='ROOF' and row['drawing_type']=='ROOF_PLAN':
             roles.add((family,'ROOF_SUPPORT'))
     return roles
@@ -129,18 +126,19 @@ def _require_role(errors, approved_roles, family, role, generated_label):
 
 
 def validate_approved_manifest(report,answers):
-    """Enforce approved primary plans and project-dependent support documents.
+    """Enforce approved primary plans and justified support documents.
 
-    Primary floor/roof plan counts must match the customer-approved manifest.
-    Variable support sheets are release-authorized only when the approved Web
-    manifest contains the corresponding role. Cover/general-notes remain fixed
-    administrative documents; they cannot authorize an otherwise absent system.
+    Variable project-specific supports (water service/calculation and roof HVAC)
+    require explicit Web-manifest roles. Generic authority supports (combined
+    plumbing riser, project-applicable detail groups and equipment schedule) are
+    permitted only when their parent primary systems are approved; they cannot
+    introduce a new system by themselves.
     """
     approved_raw=(answers or {}).get('_approved_drawing_manifest')
     generated=_manifest_rows(((report.get('composition') or {}).get('manifest') or []))
     if approved_raw is None:
-        return {'version':'approved-manifest-gate-v17.4','status':'SKIPPED','errors':[],'reason':'NO_WORKFLOW_MANIFEST_IN_DIRECT_ENGINE_CALL','generated_count':len(generated)}
-    approved=_manifest_rows(approved_raw);errors=[]
+        return {'version':'approved-manifest-gate-v17.5','status':'SKIPPED','errors':[],'reason':'NO_WORKFLOW_MANIFEST_IN_DIRECT_ENGINE_CALL','generated_count':len(generated)}
+    approved=_manifest_rows(approved_raw);errors=[];derived_support=[]
     if not approved: errors.append('approved_manifest_unparseable_or_empty')
     if not generated: errors.append('generated_manifest_empty')
     approved_primary=_approved_primary_counts(approved);generated_primary=_generated_primary_counts(generated)
@@ -160,34 +158,38 @@ def validate_approved_manifest(report,answers):
         elif family=='WATER_SERVICE_CALC':
             _require_role(errors,approved_roles,'WATER','CALC','WATER_SERVICE_CALC')
         elif family=='PLUMBING_RISER':
-            _require_role(errors,approved_roles,'SANITARY_VENT','RISER','PLUMBING_RISER')
+            if not ({'WATER','SANITARY_VENT'} & approved_families):
+                errors.append('unapproved_support_family:PLUMBING_RISER:no_approved_plumbing_system')
+            else:
+                derived_support.append('PLUMBING_RISER<-approved_plumbing_primary')
         elif family=='SPLIT_AC' and purpose=='PLAN' and level=='ROOF':
-            # Roof outdoor-unit coordination is an equipment/roof-support role,
-            # not an extra primary cooling plan.
             if ('SPLIT_AC','EQUIPMENT') not in approved_roles and ('SPLIT_AC','ROOF_SUPPORT') not in approved_roles:
                 errors.append('unapproved_support_role:SPLIT_AC/ROOF:requires=SPLIT_AC/EQUIPMENT_OR_ROOF_SUPPORT')
         elif family=='GENERAL_DETAIL':
             if 'GAS' in title:
-                _require_role(errors,approved_roles,'GAS','DETAIL','GENERAL_DETAIL/GAS')
+                if 'GAS' not in approved_families: errors.append('unapproved_support_family:GENERAL_DETAIL/GAS:requires=GAS')
+                else: derived_support.append('GENERAL_DETAIL/GAS<-GAS')
             elif 'HVAC' in title:
-                if not any((f,'DETAIL') in approved_roles or (f,'EQUIPMENT') in approved_roles for f in ('HEATING','SPLIT_AC','EXHAUST')):
-                    errors.append('unapproved_support_role:GENERAL_DETAIL/HVAC:no_approved_hvac_detail_role')
+                parents=approved_families & {'HEATING','SPLIT_AC','EXHAUST'}
+                if not parents: errors.append('unapproved_support_family:GENERAL_DETAIL/HVAC:no_approved_hvac_system')
+                else: derived_support.append('GENERAL_DETAIL/HVAC<-'+','.join(sorted(parents)))
             elif 'PLUMBING' in title:
-                if not any((f,'DETAIL') in approved_roles for f in ('WATER','SANITARY_VENT')):
-                    errors.append('unapproved_support_role:GENERAL_DETAIL/PLUMBING:no_approved_plumbing_detail_role')
-            elif not approved_roles:
-                errors.append('unapproved_support_role:GENERAL_DETAIL:no_approved_support_role')
+                parents=approved_families & {'WATER','SANITARY_VENT'}
+                if not parents: errors.append('unapproved_support_family:GENERAL_DETAIL/PLUMBING:no_approved_plumbing_system')
+                else: derived_support.append('GENERAL_DETAIL/PLUMBING<-'+','.join(sorted(parents)))
+            elif not approved_families:
+                errors.append('unapproved_support_family:GENERAL_DETAIL:no_approved_system')
         elif family=='EQUIPMENT_SCHEDULE':
-            # A combined schedule is justified only by an approved equipment
-            # role; primary system presence alone is not enough.
-            if not any((f,'EQUIPMENT') in approved_roles for f in ('HEATING','SPLIT_AC','GAS','EXHAUST','WATER')):
-                errors.append('unapproved_support_role:EQUIPMENT_SCHEDULE:no_approved_equipment_role')
+            parents=approved_families & {'HEATING','SPLIT_AC','GAS','EXHAUST'}
+            if not parents: errors.append('unapproved_support_family:EQUIPMENT_SCHEDULE:no_approved_equipment_system')
+            else: derived_support.append('EQUIPMENT_SCHEDULE<-'+','.join(sorted(parents)))
 
     return {
-        'version':'approved-manifest-gate-v17.4','status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
+        'version':'approved-manifest-gate-v17.5','status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
         'approved_count':len(approved),'generated_count':len(generated),'source':'workflow_approved_manifest',
         'approved_primary_counts':dict(approved_primary),'generated_primary_counts':dict(generated_primary),
         'approved_support_roles':sorted(f'{f}/{r}' for f,r in approved_roles),
+        'derived_support_documents':sorted(set(derived_support)),
     }
 
 
@@ -199,7 +201,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     if report.get('status')!='PASS':
         if backup and backup.exists():shutil.copy2(backup,dst);backup.unlink(missing_ok=True)
         return report
-    unresolved=_release_input_errors(report);report['release_input_qa']={'version':'release-input-gate-v17.4','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
+    unresolved=_release_input_errors(report);report['release_input_qa']={'version':'release-input-gate-v17.5','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
     if unresolved:
         report['status']='FAIL';report['stage']='release_input_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
@@ -234,6 +236,6 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='exact_file_final_delivery_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
-    report['version']='mechanical-authority-site-pipeline-v17.4';report['status']='PASS'
+    report['version']='mechanical-authority-site-pipeline-v17.5';report['status']='PASS'
     if backup:backup.unlink(missing_ok=True)
     return report
