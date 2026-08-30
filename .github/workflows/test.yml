@@ -33,6 +33,7 @@ jobs:
             test_analysis_workspace_guard.AnalysisWorkspaceGuardTests \
             test_fixture_evidence_resilience.FixtureEvidenceResilienceTests \
             test_hvac_primary_floor_resilience.HvacPrimaryFloorResilienceTests \
+            test_final_mechanical_delivery_gate_v17.FinalMechanicalDeliveryGateV17Tests \
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_valid_dxf_passes \
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_empty_dxf_fails_closed \
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_zip_requires_readable_dxf \
