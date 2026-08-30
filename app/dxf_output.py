@@ -234,6 +234,20 @@ def run_design_dxf(project_id, revision_id):
             # The CAD engine reads the approved contract from answers. Keeping it
             # only in output_scope made the compositor reject every approved job.
             design_answers['_approved_drawing_manifest'] = approved_manifest
+            # Carry the exact fixture blocks found by the browser upload analyzer
+            # into the CAD transaction.  The engine still accepts them only when
+            # their original coordinates fall inside a reconstructed room; this
+            # preserves provenance and avoids inventing installed fixtures.
+            fixture_evidence = []
+            for analyzed_file in ((p.analysis or {}).get('files') or []):
+                for item in (analyzed_file.get('fixture_blocks') or []):
+                    if item.get('kind') and item.get('x') is not None and item.get('y') is not None:
+                        fixture_evidence.append({
+                            'kind': item.get('kind'), 'name': item.get('name'),
+                            'x': item.get('x'), 'y': item.get('y'),
+                            'source_file': analyzed_file.get('file'),
+                        })
+            design_answers['_plan_fixture_evidence'] = fixture_evidence
         payload = {
             'project_id': str(p.id),
             'discipline': discipline,
