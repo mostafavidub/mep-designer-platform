@@ -133,13 +133,26 @@ def register_job_queue(app, legacy):
     legacy.flow_payload = flow_payload
 
     def _reclaim_failed_artifacts(exclude_project_id=None):
-        """Reclaim generated files only; uploaded sources and ready outputs stay intact."""
+        """Reclaim local test workspaces while preserving durable R2 finals."""
         db = legacy.Session()
         try:
-            ids = [row[0] for row in db.query(legacy.Project.id).filter(
+            terminal_ids = [row[0] for row in db.query(legacy.Project.id).filter(
                 legacy.Project.status.in_(('failed', 'expired')),
                 legacy.Project.id != exclude_project_id,
             ).all()]
+            durable_ready_ids = []
+            ready_projects = db.query(legacy.Project).filter(
+                legacy.Project.status == 'ready',
+                legacy.Project.id != exclude_project_id,
+            ).all()
+            for project in ready_projects:
+                revision = db.query(legacy.Revision).filter(
+                    legacy.Revision.project_id == project.id,
+                    legacy.Revision.status == 'ready',
+                ).order_by(legacy.Revision.id.desc()).first()
+                if revision and str(revision.pdf_path or '').startswith('s3://'):
+                    durable_ready_ids.append(project.id)
+            ids = terminal_ids + durable_ready_ids
         finally:
             db.close()
         for pid in ids:
