@@ -48,7 +48,17 @@ def register_resumable_upload_routes(app):
                 raise HTTPException(507, 'فضای Volume سرور پر است.') from exc
             if 'database or disk is full' in lowered:
                 usage = shutil.disk_usage(str(legacy.DATA_DIR))
-                raise HTTPException(507, f'فضای Volume پر است؛ فضای آزاد: {usage.free} بایت') from exc
+                sizes = {}
+                for root in Path(legacy.DATA_DIR).iterdir():
+                    try:
+                        sizes[root.name] = root.stat().st_size if root.is_file() else sum(
+                            item.stat().st_size for item in root.rglob('*') if item.is_file()
+                        )
+                    except OSError:
+                        pass
+                largest = sorted(sizes.items(), key=lambda item: item[1], reverse=True)[:5]
+                summary = '، '.join(f'{name}={size}' for name, size in largest)
+                raise HTTPException(507, f'فضای Volume پر است؛ آزاد={usage.free}؛ {summary}') from exc
             if 'readonly database' in lowered:
                 raise HTTPException(500, 'دیتابیس فقط‌خواندنی شده است.') from exc
             if 'database is locked' in lowered:
