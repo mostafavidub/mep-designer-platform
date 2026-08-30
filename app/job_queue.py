@@ -284,6 +284,20 @@ def register_job_queue(app, legacy):
             db.close(); _finish(job_id, success, error)
         except Exception as exc:
             _finish(job_id, False, str(exc))
+        finally:
+            project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
+            try:
+                durable_input = artifact_storage.input_is_durable(project_id)
+            except Exception:
+                durable_input = False
+            if durable_input:
+                for transient in (project_dir / 'architecture.zip', project_dir / 'architecture.dxf', project_dir / 'input', project_dir / '.upload_chunks'):
+                    if transient.is_dir():
+                        shutil.rmtree(transient, ignore_errors=True)
+                    else:
+                        transient.unlink(missing_ok=True)
+            shutil.rmtree(project_dir / 'output', ignore_errors=True)
+            shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(project_id), ignore_errors=True)
 
     def _worker(job_type):
         while not stop_event.is_set():
