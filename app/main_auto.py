@@ -251,6 +251,10 @@ def analyze_project_job(project_id):
         shutil.rmtree(inp, ignore_errors=True)
         inp.mkdir(parents=True, exist_ok=True)
         z, d = pdir / 'architecture.zip', pdir / 'architecture.dxf'
+        if not z.exists() and not d.exists():
+            from .artifact_storage import restore_project_input
+            if not restore_project_input(project_id, pdir):
+                raise ValueError('فایل ورودی پروژه در فضای ذخیره‌سازی پیدا نشد.')
         if z.exists():
             legacy.safe_extract(z, inp)
         elif d.exists():
