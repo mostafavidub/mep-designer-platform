@@ -326,24 +326,9 @@ def register_job_queue(app, legacy):
             jobs = db.query(Job).filter(
                 Job.status == 'processing',
             ).all()
-            # A deploy after the disk-pressure fix should recover the newest
-            # affected design in place. Other terminal/engineering failures
-            # remain untouched and still require an explicit user retry.
-            latest_disk_failure = db.query(Job).filter(
-                Job.job_type == 'design',
-                Job.status == 'failed',
-                func.lower(Job.last_error).like('%no space left on device%'),
-            ).order_by(Job.id.desc()).first()
-            latest_dxf_repair_failure = db.query(Job).filter(
-                Job.job_type == 'design',
-                Job.status == 'failed',
-                func.lower(Job.last_error).like('%dxf tail repair failed%'),
-            ).order_by(Job.id.desc()).first()
-            for recoverable in (latest_disk_failure, latest_dxf_repair_failure):
-                if recoverable and recoverable not in jobs:
-                    recoverable.attempts = 0
-                    recoverable.last_error = ''
-                    jobs.append(recoverable)
+            # Only jobs interrupted by a deployment are recovered automatically.
+            # Terminal failures require an explicit retry; otherwise every deploy
+            # can restart a disk-heavy failed design and fill the volume again.
             for job in jobs:
                 job.status = 'queued'
                 job.available_at = datetime.utcnow()
