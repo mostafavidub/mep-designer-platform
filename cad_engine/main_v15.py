@@ -162,6 +162,14 @@ def design(req: DesignRequest):
 
         merged=project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}.pdf"
         merge_pdfs(page_pdfs,merged)
+
+        # The per-sheet previews are transient. Release their volume space
+        # before creating the DXF package, when peak disk usage occurs.
+        for page in dict.fromkeys(page_pdfs):
+            if page != merged:
+                page.unlink(missing_ok=True)
+        page_pdfs.clear()
+
         package=project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}_DXF.zip"
         zip_outputs(generated,package)
 
