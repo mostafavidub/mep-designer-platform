@@ -1,18 +1,14 @@
-"""Machine-readable mechanical Rule Book defaults.
+"""Machine-readable mechanical Rule Book.
 
-These are design rules, not customer facts.  The questionnaire must not ask a
-customer to provide values that the Rule Book or Code Designer owns.
+The Rule Book owns engineering rules (materials, slopes, calculation methods),
+not project facts. Project facts must come from traceable DXF evidence or an
+explicit user answer and unresolved facts must remain unresolved.
 """
-
 import math
 import re
 
+RULEBOOK_VERSION = '2.1'
 
-RULEBOOK_VERSION = '2.0'
-
-# Network composition is a technical rule, not a sheet-count heuristic.  The
-# designer must build shared distribution graphs and preserve the evidence
-# status of every terminal instead of drawing untraceable radial spokes.
 NETWORK_COMPOSITION_STANDARD = {
     'topology': 'shared trunk/branch split at every terminal junction',
     'sizing': 'each segment sized from cumulative downstream load',
@@ -22,27 +18,21 @@ NETWORK_COMPOSITION_STANDARD = {
         'heating_supply', 'heating_return', 'cooling', 'condensate',
         'gas', 'exhaust_ventilation', 'roof_rainwater',
     ),
-    'required_provenance': (
-        'Detected', 'Calculated', 'Rule-based Proposed', 'User-confirmed',
-    ),
+    'required_provenance': ('Detected', 'Calculated', 'Rule-based Proposed', 'User-confirmed'),
 }
 
-# Project facts that must come from reliable DXF evidence or a short customer
-# confirmation. They are not silent design defaults because each can change
-# routing, sizing or authority-review notes.
 PROJECT_EVIDENCE_STANDARD = (
     'location', 'heights', 'heating', 'cooling', 'water_inlet_pressure',
     'water_source', 'water_service_connection', 'sanitary_outlet',
-    'mechanical_shaft_route', 'equipment_schedule',
-    'ventilation_design_basis', 'hot_water_system', 'local_mechanical_code',
+    'mechanical_shaft_route', 'equipment_schedule', 'gas_pressure',
+    'rainfall_intensity', 'ventilation_design_basis', 'hot_water_system',
+    'local_mechanical_code',
 )
 
-DEFAULT_HEIGHTS = '3.20 m floor-to-floor; 0.40 m false ceiling in wet/service zones'
-DEFAULT_GAS_PROPOSAL = 'boiler 24 kW and cooker 10 kW; 21 mbar; meter/regulator at entrance'
-DEFAULT_WATER_INLET_PRESSURE = (
-    '2.5 bar conservative design basis at property inlet; storage tank and booster pump '
-    'maintain calculated residual pressure'
-)
+# Kept only for backward imports. These are suggestions, never automatic facts.
+DEFAULT_HEIGHTS = None
+DEFAULT_GAS_PROPOSAL = None
+DEFAULT_WATER_INLET_PRESSURE = None
 
 WATER = {
     'material': 'PPR',
@@ -50,29 +40,15 @@ WATER = {
     'target_velocity_mps': 1.5,
     'maximum_friction_loss_kpa_per_100m': 20,
 }
-
 SANITARY = {
-    'material': 'uPVC',
-    'branch_slope_pct': 2.0,
-    'main_slope_pct': 1.0,
-    'wc_dn_mm': 110,
-    'basin_bath_dn_mm': 50,
-    'vent_dn_mm': 50,
+    'material': 'uPVC', 'branch_slope_pct': 2.0, 'main_slope_pct': 1.0,
+    'wc_dn_mm': 110, 'basin_bath_dn_mm': 50, 'vent_dn_mm': 50,
 }
-
 VENTILATION = {
-    'toilet_m3h_each': 90,
-    'bath_m3h_each': 90,
-    'kitchen_m3h_each': 120,
-    'parking_ach': 6,
-    'default_parking_m3h_when_geometry_missing': 500,
+    'toilet_m3h_each': 90, 'bath_m3h_each': 90, 'kitchen_m3h_each': 120,
+    'parking_ach': 6, 'default_parking_m3h_when_geometry_missing': 500,
 }
 
-# Minimum *plan-visible* technical content.  This is deliberately separate
-# from a sheet-count rule: a drawing family is not complete merely because a
-# layout exists.  The Code Designer turns the applicable items into tagged
-# plan symbols and schedule entries, using calculated values rather than a
-# project-specific canned drawing.
 PLAN_DETAIL_STANDARD = {
     'water_supply': ('fixture_connection', 'shared_trunk', 'cumulative_segment_size', 'branch_diameter', 'isolation_valve', 'junction_tag', 'flow_direction', 'riser_tag', 'decision_provenance'),
     'sanitary_vent': ('fixture_connection', 'shared_trunk', 'cumulative_segment_size', 'branch_diameter', 'slope_tag', 'cleanout', 'junction_tag', 'flow_direction', 'vent_tag', 'riser_tag', 'decision_provenance'),
@@ -83,19 +59,16 @@ PLAN_DETAIL_STANDARD = {
     'roof_rainwater': ('roof_drain', 'drain_diameter', 'rainfall_basis', 'downpipe_riser'),
 }
 
-
 def plan_detail_requirements(family):
-    """Return the non-negotiable plan-visible details for a sheet family."""
     return PLAN_DETAIL_STANDARD.get(str(family or ''), ())
 
+# Maintained values may be presented as suggestions only. They are not silently
+# selected as a project design intensity.
 RAIN_MM_H = {
-    'تهران': 110, 'tehran': 110,
-    'مشهد': 90, 'mashhad': 90,
-    'اصفهان': 90, 'isfahan': 90,
-    'شیراز': 100, 'shiraz': 100,
+    'تهران': 110, 'tehran': 110, 'مشهد': 90, 'mashhad': 90,
+    'اصفهان': 90, 'isfahan': 90, 'شیراز': 100, 'shiraz': 100,
     'تبریز': 100, 'tabriz': 100,
 }
-
 
 def rainfall_mm_h(location):
     value = str(location or '').lower()
@@ -104,95 +77,47 @@ def rainfall_mm_h(location):
             return rainfall
     return None
 
-
 def is_confirmation(value):
     text = str(value or '').strip().replace('ي', 'ی').replace('ك', 'ک').lower()
     return text in ('تأیید', 'تایید', 'پیشنهاد بده', 'پیشنهاد شود', 'قبول', 'yes', 'ok', 'approve')
 
-
 def water_inlet_pressure_basis(value):
-    """Resolve missing/unknown pressure without blocking the design workflow.
-
-    Utility pressure is an external fact, but an unknown reading does not have
-    to make the drawing engine fail.  The Rule Book uses a conservative inlet
-    basis and explicitly includes storage/booster protection in that case.
-    A real numeric project value always wins.
-    """
+    """Return a real numeric project pressure or None; never fabricate one."""
     text = str(value or '').strip().replace('ي', 'ی').replace('ك', 'ک').lower()
-    unresolved = (
-        not text
-        or is_confirmation(text)
-        or any(marker in text for marker in (
-            'نمی‌دانم', 'نمیدانم', 'نامشخص', 'اندازه‌گیری نشده',
-            'unknown', 'unresolved', 'tbd', 'not measured',
-        ))
-    )
-    return DEFAULT_WATER_INLET_PRESSURE if unresolved else str(value).strip()
-
+    if not text or is_confirmation(text) or any(marker in text for marker in (
+        'نمی‌دانم','نمیدانم','نامشخص','اندازه‌گیری نشده','unknown','unresolved','tbd','not measured')):
+        return None
+    return str(value).strip() if re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار)', text, re.I) else None
 
 def fixture_schedule_proposal(auto_or_levels):
     rooms = {}
-    if isinstance(auto_or_levels, dict):
-        rooms = auto_or_levels.get('room_counts') or {}
+    if isinstance(auto_or_levels, dict): rooms = auto_or_levels.get('room_counts') or {}
     else:
         for level in auto_or_levels or []:
             for room in level.get('rooms') or []:
-                kind = room.get('room')
-                rooms[kind] = rooms.get(kind, 0) + 1
-    kitchen = int(rooms.get('kitchen', 0))
-    bath = int(rooms.get('bath', 0))
-    toilet = int(rooms.get('toilet', 0))
+                kind=room.get('room'); rooms[kind]=rooms.get(kind,0)+1
+    kitchen=int(rooms.get('kitchen',0));bath=int(rooms.get('bath',0));toilet=int(rooms.get('toilet',0))
     return f'sink {kitchen}; faucet {bath + toilet}; toilet {toilet}; bath {bath}'
-
 
 def roof_geometry_proposal(auto_or_levels):
     if isinstance(auto_or_levels, dict):
-        rooms = auto_or_levels.get('room_counts') or {}
-        level_count = max(1, len([x for x in auto_or_levels.get('levels') or [] if 'بام' not in str(x.get('name') or '') and 'roof' not in str(x.get('name') or '').lower()]))
-        explicit_area = auto_or_levels.get('roof_area_m2')
+        rooms=auto_or_levels.get('room_counts') or {};level_count=max(1,len([x for x in auto_or_levels.get('levels') or [] if 'بام' not in str(x.get('name') or '') and 'roof' not in str(x.get('name') or '').lower()]));explicit_area=auto_or_levels.get('roof_area_m2')
     else:
-        levels = [x for x in (auto_or_levels or []) if 'بام' not in str(x.get('level') or '') and 'roof' not in str(x.get('level') or '').lower()]
-        level_count = max(1, len(levels))
-        rooms = {}
+        levels=[x for x in (auto_or_levels or []) if 'بام' not in str(x.get('level') or '') and 'roof' not in str(x.get('level') or '').lower()];level_count=max(1,len(levels));rooms={}
         for level in levels:
             for room in level.get('rooms') or []:
-                kind = room.get('room')
-                rooms[kind] = rooms.get(kind, 0) + 1
-        explicit_area = None
-    room_total = sum(int(x or 0) for x in rooms.values())
-    area = float(explicit_area) if explicit_area else max(60.0, round(room_total * 12.0 / level_count, 1))
-    drains = max(2, int(math.ceil(area / 100.0)))
+                kind=room.get('room');rooms[kind]=rooms.get(kind,0)+1
+        explicit_area=None
+    room_total=sum(int(x or 0) for x in rooms.values());area=float(explicit_area) if explicit_area else max(60.0,round(room_total*12.0/level_count,1));drains=max(2,int(math.ceil(area/100.0)))
     return f'{area:g} m2 roof; {drains} drains at coordinated architecture low points'
 
-
 def automatic_answers(auto):
-    """Return non-customer mechanical decisions owned by the current Rule Book."""
-    rooms = auto.get('room_counts') or {}
-    cooling = float(auto.get('estimated_cooling_load_kw') or 0)
-    heating = float(auto.get('estimated_heating_load_kw') or 0)
-    conditioned = max(1, rooms.get('bedroom', 0) + rooms.get('living', 0) + rooms.get('office', 0) + rooms.get('shop', 0))
-    cooling_each = round(cooling / conditioned, 2) if cooling else None
-    heating_each = round(heating / conditioned, 2) if heating else None
+    """Return only non-project-specific technical rules.
 
-    airflow = (
-        rooms.get('toilet', 0) * VENTILATION['toilet_m3h_each']
-        + rooms.get('bath', 0) * VENTILATION['bath_m3h_each']
-        + rooms.get('kitchen', 0) * VENTILATION['kitchen_m3h_each']
-    )
-    if rooms.get('parking', 0):
-        airflow += VENTILATION['default_parking_m3h_when_geometry_missing']
-    airflow = max(airflow, 90)
-
-    equipment = (
-        f"Rulebook automatic selection; per room load: cooling {cooling_each or 'calculated'} kW, "
-        f"heating {heating_each or 'calculated'} kW; split cooling units and hydronic radiators; "
-        "outdoor units on coordinated roof/service location"
-    )
+    No heating/cooling system, pressure, equipment family, water-source topology,
+    height, discharge location, gas load or rainfall intensity may be injected here.
+    """
     return {
-        'heights': DEFAULT_HEIGHTS,
-        'water_inlet_pressure': DEFAULT_WATER_INLET_PRESSURE,
-        'heating': 'Rulebook automatic: condensing combi boiler + hydronic radiators',
-        'cooling': 'Rulebook automatic: split units sized from calculated room loads',
         'water_design_basis': (
             f"{WATER['material']}; Hazen-Williams C={WATER['hazen_williams_c']}; "
             f"maximum loss {WATER['maximum_friction_loss_kpa_per_100m']} kPa/100 m"
@@ -201,34 +126,16 @@ def automatic_answers(auto):
             f"{SANITARY['material']}; {SANITARY['branch_slope_pct']} percent branches; "
             f"{SANITARY['main_slope_pct']} percent mains"
         ),
-        'equipment_schedule': equipment,
-        'ventilation_design_basis': (
-            f"Rulebook calculated airflow {airflow} m3/h; discharge above roof/exterior; "
-            "make-up air from facade/openings"
-        ),
-        'water_source': 'Rulebook automatic: municipal meter + storage tank + booster pump sized from calculated demand',
         'mechanical_rulebook_version': RULEBOOK_VERSION,
-        'questionnaire_evidence_version': '1.0',
+        'questionnaire_evidence_version': '2.0',
     }
 
-
-def roof_basis(location, geometry_text):
-    """Complete roof rainfall while preserving geometry and provenance.
-
-    A missing/unsupported city must not silently erase the rainwater calculation.
-    Use the most conservative maintained Rulebook intensity and label that basis
-    explicitly so the engineer can replace it with the local authority value.
-    """
-    geometry = str(geometry_text or '').strip()
-    if not geometry:
-        return geometry
-    if re.search(r'\d+(?:\.\d+)?\s*(?:mm/h|میلی.?متر)', geometry, re.I):
-        return geometry
-    rainfall = rainfall_mm_h(location)
-    if rainfall is None:
-        rainfall = max(RAIN_MM_H.values())
-        return (
-            f'{geometry}; {rainfall} mm/h conservative Rulebook fallback '
-            '[LOCAL AUTHORITY REVIEW REQUIRED]'
-        )
-    return f'{geometry}; {rainfall} mm/h Rulebook design rainfall'
+def roof_basis(location, geometry_text, rainfall_intensity=None):
+    """Complete roof basis only with an explicit/evidenced rainfall intensity."""
+    geometry=str(geometry_text or '').strip()
+    if not geometry: return geometry
+    if re.search(r'\d+(?:\.\d+)?\s*(?:mm/h|میلی.?متر)', geometry, re.I): return geometry
+    raw=str(rainfall_intensity or '').strip()
+    match=re.search(r'(\d+(?:[\.,]\d+)?)\s*(?:mm/h|میلی.?متر)', raw, re.I)
+    if not match: return None
+    return f"{geometry}; {match.group(1).replace(',', '.')} mm/h user/evidence-confirmed design rainfall"
