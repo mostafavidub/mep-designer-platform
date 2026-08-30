@@ -9,6 +9,7 @@ from . import artifact_storage
 from . import mechanical_workflow
 from . import mechanical_drawing_set
 from . import mechanical_review_fix
+from .artifact_delivery_fix import install as install_artifact_delivery_fix
 from .architecture_reconstruction_v1 import install as install_architecture_reconstruction_v1
 from .architecture_topology_v1 import install as install_architecture_topology_v1
 from .fixture_detection_v2 import install as install_fixture_detection_v2
@@ -27,6 +28,9 @@ from .job_queue import register_job_queue
 from .gsc_api import register_gsc_routes
 
 app = main_auto.app
+# R2 must serve CAD artifacts as binary DXF/ZIP attachments before any route or
+# queue operation uploads or signs an artifact URL.
+install_artifact_delivery_fix(artifact_storage)
 register_resumable_upload_routes(app)
 register_service_art_routes(app)
 install_level_detection_v3(main_auto)
