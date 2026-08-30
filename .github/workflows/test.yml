@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  storage-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -18,7 +18,38 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt -r cad_engine/requirements.txt
-      - name: Run tests
+      - name: Run upload, DXF, queue and storage regression tests
+        env:
+          DATABASE_URL: sqlite:///./test_ci.db
+          DATA_DIR: /tmp/engitools-ci-data
+          CAD_OUTPUT_DIR: /tmp/engitools-ci-cad
+          TMPDIR: /tmp/engitools-ci-tmp
+          MPLBACKEND: Agg
+          CAD_DESIGNER_URL: http://127.0.0.1:9999
+          PYTHONPATH: .:tests
+        run: |
+          python -m unittest -v \
+            test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_valid_dxf_passes \
+            test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_empty_dxf_fails_closed \
+            test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_zip_requires_readable_dxf \
+            test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_zip_without_dxf_is_rejected \
+            test_job_queue_and_artifact_qa.QueueIntegrationContractTests \
+            test_resumable_upload.ResumableUploadTests \
+            test_mechanical_flow_e2e.MechanicalFlowE2ETests
+
+  full-suite-observability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r cad_engine/requirements.txt
+      - name: Run full legacy suite for visibility
         env:
           DATABASE_URL: sqlite:///./test_ci.db
           DATA_DIR: /tmp/engitools-ci-data
