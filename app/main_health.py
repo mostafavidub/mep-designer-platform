@@ -22,6 +22,7 @@ from .mechanical_site_manifest_v12 import install as install_manifest_site_v12
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
 from .seo_runtime import register_seo_articles
+from .analysis_workspace_guard import install as install_analysis_workspace_guard
 from .job_queue import register_job_queue
 from .gsc_api import register_gsc_routes
 
@@ -44,6 +45,9 @@ mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 install_manifest_site_v12(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)
+# The queue captures analyze_project_job at registration time, so the guard must
+# be installed immediately before it to protect the complete production analyzer.
+install_analysis_workspace_guard(main_auto.legacy)
 register_job_queue(app, main_auto.legacy)
 register_gsc_routes(app)
 
