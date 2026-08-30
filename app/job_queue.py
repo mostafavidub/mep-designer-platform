@@ -170,6 +170,39 @@ def register_job_queue(app, legacy):
                 else:
                     transient.unlink(missing_ok=True)
 
+    def _reclaim_verified_inputs(exclude_project_id=None):
+        """One-time/periodic migration: remove only inputs confirmed in R2."""
+        db = legacy.Session()
+        try:
+            active_ids = {
+                row[0] for row in db.query(Job.project_id).filter(
+                    Job.status.in_(('queued', 'processing')),
+                ).all()
+            }
+            project_ids = [
+                row[0] for row in db.query(legacy.Project.id).all()
+                if row[0] != exclude_project_id and row[0] not in active_ids
+            ]
+        finally:
+            db.close()
+        for project_id in project_ids:
+            try:
+                if not artifact_storage.input_is_durable(project_id):
+                    continue
+            except Exception:
+                continue
+            project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
+            for transient in (
+                project_dir / 'architecture.zip',
+                project_dir / 'architecture.dxf',
+                project_dir / 'input',
+                project_dir / '.upload_chunks',
+            ):
+                if transient.is_dir():
+                    shutil.rmtree(transient, ignore_errors=True)
+                else:
+                    transient.unlink(missing_ok=True)
+
     def _claim(job_type):
         if job_type == 'design':
             _reclaim_failed_artifacts()
@@ -421,6 +454,7 @@ def register_job_queue(app, legacy):
     def start_persistent_workers():
         _migrate_ready_outputs_to_object_storage()
         _reclaim_failed_artifacts()
+        _reclaim_verified_inputs()
         _recover_stale_jobs()
         for job_type in ('analysis', 'design'):
             threading.Thread(target=_worker, args=(job_type,), daemon=True, name=f'{job_type}-queue').start()
