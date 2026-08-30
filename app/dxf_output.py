@@ -130,22 +130,32 @@ def validate_generated_manifest(drawing_set, design_reports):
             'PLUMBING_RISER': ('PLUMBING_RISER', 'RISER'),
         }
 
-        def canonical_family(row):
-            evidence = ' '.join(str(row.get(key) or '') for key in (
-                'family', 'system', 'drawing_type', 'drawing_role', 'label', 'title'
+        def row_evidence(row):
+            return ' '.join(str(row.get(key) or '') for key in (
+                'code', 'family', 'system', 'drawing_type', 'drawing_role', 'label', 'title'
             )).upper().replace('-', '_').replace(' ', '_')
+
+        def canonical_family(row):
+            evidence = row_evidence(row)
             for canonical, variants in aliases.items():
                 if any(variant in evidence for variant in variants):
                     return canonical
             return str(row.get('family') or '').upper()
 
         actual = Counter(canonical_family(row) for row in generated_rows)
+        actual_specials = set()
+        for row in generated_rows:
+            evidence = row_evidence(row)
+            if 'ROOF' in evidence or 'RAINWATER' in evidence or str(row.get('code') or '').endswith('-RAIN'):
+                actual_specials.add('ROOF')
+            if 'RISER' in evidence or str(row.get('code') or '').endswith('-RISER'):
+                actual_specials.add('PLUMBING_RISER')
         missing = {
             family: count - actual.get(family, 0)
             for family, count in required.items()
             if actual.get(family, 0) < count
         }
-        missing_specials = sorted(x for x in special_required if actual.get(x, 0) < 1)
+        missing_specials = sorted(x for x in special_required if x not in actual_specials)
         if missing or missing_specials:
             raise RuntimeError(
                 'Generation Failed: approved mechanical sheet coverage is incomplete. '
