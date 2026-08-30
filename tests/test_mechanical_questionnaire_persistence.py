@@ -19,12 +19,19 @@ class MechanicalQuestionnairePersistenceTests(unittest.TestCase):
         self.assertTrue(analyzer_needs_refresh({'architecture_analyzer_version': '2.0'}, True))
         self.assertFalse(analyzer_needs_refresh({'architecture_analyzer_version': '2.0'}, False))
 
-    def test_rulebook_confirmation_keeps_calculation_ready_proposal(self):
-        auto = {'room_counts': {'bedroom': 2, 'living': 1}, 'estimated_cooling_load_kw': 9,
-                'estimated_heating_load_kw': 12}
-        proposal = automatic_answers(auto)['equipment_schedule']
-        self.assertIn('per room load', proposal)
-        self.assertNotEqual(proposal, 'تأیید')
+    def test_rulebook_never_injects_project_equipment_or_system_facts(self):
+        auto = {
+            'room_counts': {'bedroom': 2, 'living': 1},
+            'estimated_cooling_load_kw': 9,
+            'estimated_heating_load_kw': 12,
+        }
+        proposal = automatic_answers(auto)
+        self.assertNotIn('equipment_schedule', proposal)
+        self.assertNotIn('heating', proposal)
+        self.assertNotIn('cooling', proposal)
+        self.assertNotIn('water_inlet_pressure', proposal)
+        self.assertIn('water_design_basis', proposal)
+        self.assertIn('sanitary_design_basis', proposal)
 
 
 if __name__ == '__main__':

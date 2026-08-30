@@ -47,21 +47,34 @@ class MechanicalRoofScopeTests(unittest.TestCase):
             answers={'discipline': 'mechanical', 'heating': 'رادیاتور', 'cooling': 'اسپلیت', 'gas': 'تأیید'},
         )
 
-    def test_reused_occupied_roof_title_does_not_add_false_sheets(self):
+    def test_reused_occupied_roof_title_does_not_add_false_roof_deliverables(self):
         project = self._project(False)
         scope = build_scope(project)
         proposal = predict_drawing_set(scope)
         self.assertFalse(scope['roof_exists'])
-        self.assertEqual(proposal['deliverable_sheet_count'], 13)
+        sheets = proposal['drawing_manifest']['sheets']
+        self.assertFalse([x for x in sheets if x.get('family') == 'roof_rainwater'])
+        self.assertFalse([
+            x for x in sheets
+            if x.get('family') == 'cooling' and x.get('drawing_type') == 'equipment_plan' and x.get('levels') == ['بام']
+        ])
         questions = dynamic_questions(project.analysis, 'mechanical', project.analysis['architectural_auto'])
         self.assertNotIn('roof_drainage_geometry', [key for key, _ in questions])
 
-    def test_dedicated_roof_profile_remains_in_scope(self):
+    def test_dedicated_roof_profile_adds_project_justified_roof_deliverables(self):
         project = self._project(True)
         scope = build_scope(project)
         proposal = predict_drawing_set(scope)
         self.assertTrue(scope['roof_exists'])
-        self.assertEqual(proposal['deliverable_sheet_count'], 15)
+        sheets = proposal['drawing_manifest']['sheets']
+        roof = [x for x in sheets if x.get('family') == 'roof_rainwater' and x.get('drawing_type') == 'roof_plan']
+        self.assertEqual(len(roof), 1)
+        roof_cooling = [
+            x for x in sheets
+            if x.get('family') == 'cooling' and x.get('drawing_type') == 'equipment_plan' and x.get('levels') == ['بام']
+        ]
+        self.assertEqual(len(roof_cooling), 1)
+        self.assertEqual(proposal['deliverable_sheet_count'], len(sheets))
 
 
 if __name__ == '__main__':

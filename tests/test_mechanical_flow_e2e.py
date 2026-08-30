@@ -13,13 +13,11 @@ class MechanicalFlowE2ETests(unittest.TestCase):
     def test_answers_reach_drawing_set_proposal_over_real_http_routes(self):
         init = self.client.post('/api/upload/init/mechanical', json={'name': 'mechanical-flow-e2e'})
         self.assertEqual(init.status_code, 200)
-        payload = init.json()
-        pid = payload['project_id']
+        payload = init.json(); pid = payload['project_id']
 
         db = legacy.Session()
         try:
-            project = db.get(legacy.Project, pid)
-            self.assertIsNotNone(project)
+            project = db.get(legacy.Project, pid); self.assertIsNotNone(project)
             project.status = 'asking'
             project.questions = [
                 {'key': 'location', 'question': 'محل پروژه کجاست؟'},
@@ -29,81 +27,57 @@ class MechanicalFlowE2ETests(unittest.TestCase):
             project.answers = {'discipline': 'mechanical'}
             project.analysis = {
                 'discipline': 'mechanical',
-                'files': [
-                    {
-                        'file': 'architecture.dxf',
-                        'texts': ['همکف پلان معماری', 'طبقه اول پلان معماری', 'بام پلان معماری'],
-                    }
-                ],
+                'files': [{'file': 'architecture.dxf','texts': ['همکف پلان معماری', 'طبقه اول پلان معماری', 'بام پلان معماری']}],
                 'auto_summary': ['سه تراز معماری برای تست شناسایی شد'],
             }
             db.commit()
-        finally:
-            db.close()
+        finally: db.close()
 
-        flow = self.client.get(payload['flow_url'])
-        self.assertEqual(flow.status_code, 200)
-        self.assertEqual(flow.json()['status'], 'asking')
-        self.assertEqual(flow.json()['current_index'], 0)
+        flow = self.client.get(payload['flow_url']); self.assertEqual(flow.status_code, 200); self.assertEqual(flow.json()['status'], 'asking'); self.assertEqual(flow.json()['current_index'], 0)
+        first = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'مشهد'}); self.assertEqual(first.status_code, 200); self.assertEqual(first.json()['status'], 'asking'); self.assertEqual(first.json()['current_index'], 1)
 
-        first = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'مشهد'})
-        self.assertEqual(first.status_code, 200)
-        first_data = first.json()
-        self.assertEqual(first_data['status'], 'asking')
-        self.assertEqual(first_data['current_index'], 1)
-
-        final = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'خیر، ساختمان گاز ندارد'})
-        self.assertEqual(final.status_code, 200)
-        final_data = final.json()
-        self.assertEqual(final_data['status'], 'drawing_set_review')
-        self.assertIn('drawing_set', final_data)
-        self.assertTrue(final_data['drawing_set'])
-        self.assertGreater(final_data['drawing_set']['total_plans'], 0)
-        self.assertIn('systems', final_data['drawing_set'])
-
-        proposal = self.client.get(f'/projects/{pid}/drawing-set')
-        self.assertEqual(proposal.status_code, 200)
-        proposal_data = proposal.json()
-        self.assertGreater(proposal_data['total_plans'], 0)
-        self.assertIn('water_supply', proposal_data['systems'])
-        self.assertEqual(proposal_data['systems']['gas']['count'], 0)
-        self.assertFalse(proposal_data['approved'])
-        self.assertTrue(proposal_data['approval_required'])
-
-    def test_flow_poll_does_not_regress_an_active_design(self):
-        init = self.client.post('/api/upload/init/mechanical', json={'name': 'active-design-poll'})
-        self.assertEqual(init.status_code, 200)
-        pid = init.json()['project_id']
+        gas = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'خیر، ساختمان گاز ندارد'})
+        self.assertEqual(gas.status_code, 200); self.assertEqual(gas.json()['status'], 'asking')
 
         db = legacy.Session()
         try:
             project = db.get(legacy.Project, pid)
-            project.status = 'queued'
-            project.questions = []
-            project.current_question = 0
-            project.answers = {'discipline': 'mechanical'}
-            project.analysis = {
-                'discipline': 'mechanical',
-                'architecture_analyzer_version': '3.5-project-evidence-gate',
-                'drawing_set': {
-                    'approved': True,
-                    'drawing_manifest': {'schema_version': 'legacy', 'sheets': []},
-                },
-            }
-            db.commit()
-        finally:
-            db.close()
+            self.assertEqual(project.questions[project.current_question]['key'], 'water_inlet_pressure')
+        finally: db.close()
 
-        flow = self.client.get(f'/projects/{pid}/flow')
-        self.assertEqual(flow.status_code, 200)
-        self.assertEqual(flow.json()['status'], 'queued')
+        invalid = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'نامشخص'})
+        self.assertEqual(invalid.status_code, 200); self.assertEqual(invalid.json()['status'], 'asking'); self.assertIn('answer_error', invalid.json())
+
+        water = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '2.8 bar'})
+        self.assertEqual(water.status_code, 200); self.assertEqual(water.json()['status'], 'asking')
+        rain = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '95 mm/h'})
+        self.assertEqual(rain.status_code, 200); final_data = rain.json(); self.assertEqual(final_data['status'], 'drawing_set_review')
+        self.assertIn('drawing_set', final_data); self.assertTrue(final_data['drawing_set']); self.assertGreater(final_data['drawing_set']['total_plans'], 0); self.assertIn('systems', final_data['drawing_set'])
 
         db = legacy.Session()
         try:
-            self.assertEqual(db.get(legacy.Project, pid).status, 'queued')
-        finally:
-            db.close()
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.answers['water_inlet_pressure'], '2.8 bar')
+            self.assertEqual(project.answers['rainfall_intensity'], '95 mm/h')
+            self.assertEqual((project.analysis or {})['basis_preflight']['status'], 'PASS')
+        finally: db.close()
+
+        proposal = self.client.get(f'/projects/{pid}/drawing-set'); self.assertEqual(proposal.status_code, 200); proposal_data = proposal.json()
+        self.assertGreater(proposal_data['total_plans'], 0); self.assertIn('water_supply', proposal_data['systems']); self.assertEqual(proposal_data['systems']['gas']['count'], 0)
+        self.assertFalse(proposal_data['approved']); self.assertTrue(proposal_data['approval_required'])
+
+    def test_flow_poll_does_not_regress_an_active_design(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'active-design-poll'}); self.assertEqual(init.status_code, 200); pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid); project.status = 'queued'; project.questions = []; project.current_question = 0; project.answers = {'discipline': 'mechanical'}
+            project.analysis = {'discipline': 'mechanical','architecture_analyzer_version': '3.5-project-evidence-gate','drawing_set': {'approved': True,'drawing_manifest': {'schema_version': 'legacy', 'sheets': []}}}
+            db.commit()
+        finally: db.close()
+        flow = self.client.get(f'/projects/{pid}/flow'); self.assertEqual(flow.status_code, 200); self.assertEqual(flow.json()['status'], 'queued')
+        db = legacy.Session()
+        try: self.assertEqual(db.get(legacy.Project, pid).status, 'queued')
+        finally: db.close()
 
 
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == '__main__': unittest.main()
