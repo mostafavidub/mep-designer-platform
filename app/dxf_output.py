@@ -24,7 +24,7 @@ def _purge_processing_files(pid: int, keep_output: bool = True):
             shutil.rmtree(path, ignore_errors=True)
         else:
             path.unlink(missing_ok=True)
-    shutil.rmtree(legacy.DATA_DIR / 'cad-engine' / str(pid), ignore_errors=True)
+    shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(pid), ignore_errors=True)
     if not keep_output:
         shutil.rmtree(pdir, ignore_errors=True)
         db = legacy.Session()
@@ -307,24 +307,16 @@ def run_design_dxf(project_id, revision_id):
         if not generated:
             raise RuntimeError('موتور CAD هیچ فایل DXF تولید نکرد.')
 
-        out = pdir / 'output' / f'rev_{r.revision_no:03d}'
-        out.mkdir(parents=True, exist_ok=True)
+        # Validate and upload directly from the ephemeral CAD workspace.
+        # No final-artifact copy is ever created on the persistent Volume.
         if len(generated) == 1:
-            src = package_path.parent / generated[0]
-            if not src.exists():
+            dst = package_path.parent / generated[0]
+            if not dst.exists():
                 raise RuntimeError(f'فایل DXF تولیدشده پیدا نشد: {generated[0]}')
-            dst = out / f'{discipline}_design.dxf'
-            # The CAD workspace and project output share the persistent volume.
-            # Move the completed artifact instead of duplicating it: large DXFs
-            # must still finalize when free space is tight.
-            dst.unlink(missing_ok=True)
-            shutil.move(str(src), str(dst))
         else:
-            if not package_path.exists():
+            dst = package_path
+            if not dst.exists():
                 raise RuntimeError('بسته DXF تولیدشده پیدا نشد.')
-            dst = out / f'{discipline}_design_DXF.zip'
-            dst.unlink(missing_ok=True)
-            shutil.move(str(package_path), str(dst))
 
         artifact_qa = artifact_storage.validate_output_artifact(dst)
         analysis = dict(p.analysis or {})
@@ -334,19 +326,13 @@ def run_design_dxf(project_id, revision_id):
         durable_uri = artifact_storage.upload_output(
             p.id, r.revision_no, discipline, dst,
         )
-        if durable_uri:
-            # R2 is the durable copy. Keep no duplicate final artifact on the
-            # Railway volume after the upload has been verified.
-            dst.unlink(missing_ok=True)
-            try:
-                out.rmdir()
-                out.parent.rmdir()
-            except OSError:
-                pass
+        if not durable_uri:
+            raise RuntimeError('ذخیره خروجی نهایی در R2 تأیید نشد؛ فایل محلی نگهداری نشد.')
+        dst.unlink(missing_ok=True)
 
         # Reuse the existing artifact-path column for compatibility with the
-        # current database schema; the file stored here is now DXF/ZIP, not PDF.
-        r.pdf_path = durable_uri or str(dst)
+        # current database schema; final artifacts live only in R2.
+        r.pdf_path = durable_uri
         r.status = 'ready'
         r.error = ''
         p.status = 'ready'
