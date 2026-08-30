@@ -5,7 +5,7 @@ from app.mechanical_workflow import (
     build_scope, create_proposal, is_approved, required_basis_questions,
     ensure_required_basis_questions, REQUIRED_BASIS_QUESTION_SPECS,
 )
-from app.mechanical_drawing_set import approve_drawing_set
+from app.mechanical_drawing_set import MANIFEST_SCHEMA_VERSION
 
 
 class MechanicalWorkflowTests(unittest.TestCase):
@@ -53,11 +53,21 @@ class MechanicalWorkflowTests(unittest.TestCase):
         p = self.project({'gas':'خیر','water_inlet_pressure':'2.5 bar','rainfall_intensity':'90 mm/h'}); proposal = create_proposal(p)
         self.assertEqual(p.status, 'drawing_set_review'); self.assertFalse(proposal['approved']); self.assertTrue(proposal['approval_required']); self.assertIn('drawing_set', p.analysis); self.assertFalse(is_approved(p))
 
-    def test_real_approval_is_respected_only_with_complete_basis(self):
-        p = self.project({'gas':'خیر','water_inlet_pressure':'2.5 bar','rainfall_intensity':'90 mm/h'}); proposal = create_proposal(p)
-        p.analysis['drawing_set'] = approve_drawing_set(proposal)
+    def test_approved_current_manifest_is_respected_only_with_complete_basis(self):
+        p = self.project({'gas':'خیر','water_inlet_pressure':'2.5 bar','rainfall_intensity':'90 mm/h'})
+        p.analysis['drawing_set'] = {
+            'approved': True,
+            'drawing_manifest': {
+                'schema_version': MANIFEST_SCHEMA_VERSION,
+                'discipline': 'mechanical',
+                'total_sheets': 1,
+                'sheets': [{'code':'M-W-01'}],
+                'manifest_id': 'test-current-manifest',
+            },
+        }
         self.assertTrue(is_approved(p))
-        p.answers['water_inlet_pressure'] = 'نامشخص'; self.assertFalse(is_approved(p))
+        p.answers['water_inlet_pressure'] = 'نامشخص'
+        self.assertFalse(is_approved(p))
 
 
 if __name__ == '__main__': unittest.main()
