@@ -8,7 +8,6 @@ from pathlib import Path
 import requests
 from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse
-from starlette.background import BackgroundTask
 
 from . import main as legacy
 from . import artifact_storage
@@ -287,6 +286,15 @@ def run_design_dxf(project_id, revision_id):
         durable_uri = artifact_storage.upload_output(
             p.id, r.revision_no, discipline, dst,
         )
+        if durable_uri:
+            # R2 is the durable copy. Keep no duplicate final artifact on the
+            # Railway volume after the upload has been verified.
+            dst.unlink(missing_ok=True)
+            try:
+                out.rmdir()
+                out.parent.rmdir()
+            except OSError:
+                pass
 
         # Reuse the existing artifact-path column for compatibility with the
         # current database schema; the file stored here is now DXF/ZIP, not PDF.
@@ -378,12 +386,41 @@ def get_cad_output(pid: int, rev: int, request: Request):
     else:
         media_type = 'application/zip'
         filename = f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
-    return FileResponse(
-        path,
-        media_type=media_type,
-        filename=filename,
-        background=BackgroundTask(_purge_processing_files, pid, False),
-    )
+    return FileResponse(path, media_type=media_type, filename=filename)
+
+
+@app.post('/projects/{pid}/output/{rev}/delete')
+def delete_cad_output(pid: int, rev: int, request: Request):
+    """Delete a retained final artifact only on the owner's explicit request."""
+    user = legacy.current_user(request)
+    db, project = legacy.own_project(pid, user.id)
+    if not project:
+        raise HTTPException(404)
+    try:
+        revision = db.query(legacy.Revision).filter(
+            legacy.Revision.project_id == project.id,
+            legacy.Revision.revision_no == rev,
+        ).first()
+        if not revision or not revision.pdf_path:
+            raise HTTPException(404)
+        stored = str(revision.pdf_path)
+        if stored.startswith('s3://'):
+            artifact_storage.delete_artifact(stored)
+        else:
+            path = Path(stored)
+            project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
+            if path.exists() and project_root in path.resolve().parents:
+                path.unlink(missing_ok=True)
+        revision.pdf_path = ''
+        revision.status = 'deleted'
+        revision.error = ''
+        if project.current_revision == rev:
+            project.current_revision = 0
+            project.status = 'ready_to_design'
+        db.commit()
+    finally:
+        db.close()
+    return RedirectResponse(f'/projects/{pid}', status_code=303)
 
 
 @app.get('/internal/maintenance/projects/{pid}/output/{rev}')
@@ -417,7 +454,6 @@ def maintenance_get_cad_output(pid: int, rev: int, request: Request):
     return FileResponse(
         resolved, media_type='application/dxf',
         filename=f'EngiTools_{discipline}_{pid}_R{rev}.dxf',
-        background=BackgroundTask(_purge_processing_files, pid, False),
     )
 
 
