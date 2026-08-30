@@ -278,6 +278,11 @@ def analyze_project_job(project_id):
         prior_answers = dict(p.answers or {})
         answers = {'discipline': discipline}
         answers.update(canonical_auto_answers(auto, discipline))
+        if discipline == 'mechanical':
+            # Rule Book values remain proposals, not silent customer answers.
+            # These two choices materially change the issued drawing families.
+            answers.pop('heating', None)
+            answers.pop('cooling', None)
         question_keys = {key for key, _prompt in dynamic_questions(analysis, discipline, auto)}
         for key in question_keys:
             value = prior_answers.get(key)
