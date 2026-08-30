@@ -27,31 +27,46 @@ def _structural_tags(raw: bytes):
 
 
 def _tail_repair_candidates(raw: bytes):
-    """Yield only repairs justified by balanced DXF section tags."""
+    """Yield repairs at the semantic section boundary, never blindly at EOF."""
     if not raw or raw.count(b"\x00") > max(8, len(raw) // 100):
         raise DXFStructureError("unsupported binary or empty DXF input")
-    tags = _structural_tags(raw)
 
-    if b"EOF" in tags:
-        last_eof = len(tags) - 1 - tags[::-1].index(b"EOF")
-        before_eof = tags[:last_eof]
-        depth = before_eof.count(b"SECTION") - before_eof.count(b"ENDSEC")
-        if depth == 1:
-            matches = list(re.finditer(
-                rb"(?im)^[ \t]*0[ \t]*\r?\n[ \t]*EOF[ \t]*(?:\r?\n)?", raw
-            ))
-            if matches:
-                eof = matches[-1]
-                newline = b"\r\n" if b"\r\n" in raw[max(0, eof.start() - 256):] else b"\n"
-                yield (raw[:eof.start()] + b"  0" + newline + b"ENDSEC" + newline +
-                       raw[eof.start():], "final_endsec_repair")
-        return
+    newline = b"\r\n" if raw.count(b"\r\n") > raw.count(b"\n") // 2 else b"\n"
+    event_pattern = re.compile(
+        rb"(?im)^[ \t]*0[ \t]*\r?\n[ \t]*(SECTION|ENDSEC|EOF)[ \t]*(?:\r?\n)?"
+    )
+    events = list(event_pattern.finditer(raw))
+    depth = 0
+    yielded_offsets = set()
+
+    # A SECTION encountered while another section is still open pinpoints the
+    # missing ENDSEC: insert it immediately before the new SECTION.
+    for event in events:
+        value = event.group(1).upper()
+        if value == b"SECTION":
+            if depth == 1 and event.start() not in yielded_offsets:
+                yielded_offsets.add(event.start())
+                yield (
+                    raw[:event.start()] + b"  0" + newline + b"ENDSEC" + newline +
+                    raw[event.start():],
+                    "inter_section_endsec_repair",
+                )
+            depth += 1
+        elif value == b"ENDSEC":
+            depth = max(0, depth - 1)
+        elif value == b"EOF":
+            if depth == 1 and event.start() not in yielded_offsets:
+                yielded_offsets.add(event.start())
+                yield (
+                    raw[:event.start()] + b"  0" + newline + b"ENDSEC" + newline +
+                    raw[event.start():],
+                    "final_endsec_repair",
+                )
+            return
 
     # Interrupted exports may omit EOF while all entity bytes remain intact.
-    depth = tags.count(b"SECTION") - tags.count(b"ENDSEC")
     if depth not in (0, 1):
         raise DXFStructureError(f"unsafe DXF section depth: {depth}")
-    newline = b"\r\n" if raw.count(b"\r\n") > raw.count(b"\n") // 2 else b"\n"
     base = raw.rstrip(b"\r\n") + newline
     if depth == 1:
         yield (base + b"  0" + newline + b"ENDSEC" + newline +
@@ -109,6 +124,9 @@ def normalize_input_copy(path: Path):
             mode = "ezdxf_recover_normalized"
         except Exception:
             doc, auditor, mode = _read_repaired_tail(source)
+        # Persist the normalized extracted working copy for strict downstream readers.
+        # The user's original upload remains untouched.
+        doc.saveas(source)
         return {
             "recovered": True,
             "mode": mode,
