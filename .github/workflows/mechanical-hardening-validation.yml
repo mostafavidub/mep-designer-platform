@@ -30,6 +30,7 @@ jobs:
         run: |
           python -m py_compile \
             app/mechanical_rulebook.py \
+            app/mechanical_drawing_set.py \
             app/mechanical_workflow.py \
             cad_engine/system_requirements_v13.py \
             cad_engine/engineering_runner_v13.py \
@@ -41,9 +42,11 @@ jobs:
           python -m unittest -v \
             tests.test_authority_architecture_v14 \
             tests.test_final_mechanical_delivery_gate_v17 \
+            tests.test_manifest_support_roles_v17 \
             tests.test_mechanical_workflow \
             tests.test_mechanical_minimal_questions \
             tests.test_mechanical_flow_e2e
+          python -m pytest -q tests/test_mechanical_drawing_set.py
       - name: Run authority and preservation regressions
         run: |
           python -m pytest -q tests/test_mechanical_authority_v15.py
