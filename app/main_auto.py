@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import traceback
+import zipfile
 from collections import Counter
 from pathlib import Path
 
@@ -256,7 +257,20 @@ def analyze_project_job(project_id):
             if not restore_project_input(project_id, pdir):
                 raise ValueError('فایل ورودی پروژه در فضای ذخیره‌سازی پیدا نشد.')
         if z.exists():
-            legacy.safe_extract(z, inp)
+            with zipfile.ZipFile(z) as archive:
+                members = [
+                    info for info in archive.infolist()
+                    if not info.is_dir()
+                    and Path(info.filename).suffix.lower() == '.dxf'
+                    and '__MACOSX' not in Path(info.filename).parts
+                    and not Path(info.filename).name.startswith(('._', '.'))
+                ]
+                if not members:
+                    raise ValueError('هیچ فایل DXF معتبر داخل ZIP پیدا نشد.')
+                for index, info in enumerate(members):
+                    target = inp / f'{index:03d}-{Path(info.filename).name}'
+                    with archive.open(info) as source, target.open('wb') as destination:
+                        shutil.copyfileobj(source, destination)
         elif d.exists():
             shutil.copy2(d, inp / d.name)
         else:
