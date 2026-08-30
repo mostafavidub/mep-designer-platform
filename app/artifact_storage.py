@@ -119,6 +119,28 @@ def delete_artifact(uri: str) -> bool:
     return True
 
 
+def delete_project_inputs(project_id: int) -> int:
+    """Delete original uploads after processing; final outputs are untouched."""
+    if not configured():
+        return 0
+    client = _client()
+    prefix = f'projects/{project_id}/input/'
+    deleted = 0
+    while True:
+        response = client.list_objects_v2(Bucket=S3_BUCKET, Prefix=prefix)
+        objects = response.get('Contents') or []
+        if not objects:
+            break
+        client.delete_objects(
+            Bucket=S3_BUCKET,
+            Delete={'Objects': [{'Key': item['Key']} for item in objects], 'Quiet': True},
+        )
+        deleted += len(objects)
+        if not response.get('IsTruncated'):
+            break
+    return deleted
+
+
 def input_is_durable(project_id: int) -> bool:
     """Return true only after the original upload is present in object storage."""
     if not configured():
