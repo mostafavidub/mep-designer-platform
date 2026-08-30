@@ -17,13 +17,19 @@ _prev_flow_payload = legacy.flow_payload
 
 
 def _purge_processing_files(pid: int, keep_output: bool = True):
-    """Test-mode retention: keep only a downloadable final artifact."""
+    """Remove every local artifact; R2 is the only durable file store."""
     pdir = legacy.DATA_DIR / 'projects' / str(pid)
-    for path in (pdir / 'architecture.zip', pdir / 'architecture.dxf', pdir / 'input', pdir / '.upload_chunks'):
-        if path.is_dir():
-            shutil.rmtree(path, ignore_errors=True)
-        else:
-            path.unlink(missing_ok=True)
+    try:
+        durable_input = artifact_storage.input_is_durable(pid)
+    except Exception:
+        durable_input = False
+    if durable_input:
+        for path in (pdir / 'architecture.zip', pdir / 'architecture.dxf', pdir / 'input', pdir / '.upload_chunks'):
+            if path.is_dir():
+                shutil.rmtree(path, ignore_errors=True)
+            else:
+                path.unlink(missing_ok=True)
+    shutil.rmtree(pdir / 'output', ignore_errors=True)
     shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(pid), ignore_errors=True)
     if not keep_output:
         shutil.rmtree(pdir, ignore_errors=True)
@@ -349,6 +355,7 @@ def run_design_dxf(project_id, revision_id):
         p.status = 'failed'
         p.last_error = str(exc)
         db.commit()
+        _purge_processing_files(p.id, keep_output=True)
     finally:
         db.close()
 
