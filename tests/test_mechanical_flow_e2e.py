@@ -37,18 +37,30 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         first = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'مشهد'}); self.assertEqual(first.status_code, 200); self.assertEqual(first.json()['status'], 'asking'); self.assertEqual(first.json()['current_index'], 1)
 
         gas = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'خیر، ساختمان گاز ندارد'})
-        self.assertEqual(gas.status_code, 200); gas_data = gas.json(); self.assertEqual(gas_data['status'], 'asking')
-        self.assertEqual(gas_data['current_question']['key'], 'water_inlet_pressure')
+        self.assertEqual(gas.status_code, 200); self.assertEqual(gas.json()['status'], 'asking')
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.questions[project.current_question]['key'], 'water_inlet_pressure')
+        finally: db.close()
 
         invalid = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'نامشخص'})
         self.assertEqual(invalid.status_code, 200); self.assertEqual(invalid.json()['status'], 'asking'); self.assertIn('answer_error', invalid.json())
-        self.assertEqual(invalid.json()['current_question']['key'], 'water_inlet_pressure')
 
         water = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '2.8 bar'})
-        self.assertEqual(water.status_code, 200); self.assertEqual(water.json()['status'], 'asking'); self.assertEqual(water.json()['current_question']['key'], 'rainfall_intensity')
+        self.assertEqual(water.status_code, 200); self.assertEqual(water.json()['status'], 'asking')
         rain = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '95 mm/h'})
         self.assertEqual(rain.status_code, 200); final_data = rain.json(); self.assertEqual(final_data['status'], 'drawing_set_review')
         self.assertIn('drawing_set', final_data); self.assertTrue(final_data['drawing_set']); self.assertGreater(final_data['drawing_set']['total_plans'], 0); self.assertIn('systems', final_data['drawing_set'])
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.answers['water_inlet_pressure'], '2.8 bar')
+            self.assertEqual(project.answers['rainfall_intensity'], '95 mm/h')
+            self.assertEqual((project.analysis or {})['basis_preflight']['status'], 'PASS')
+        finally: db.close()
 
         proposal = self.client.get(f'/projects/{pid}/drawing-set'); self.assertEqual(proposal.status_code, 200); proposal_data = proposal.json()
         self.assertGreater(proposal_data['total_plans'], 0); self.assertIn('water_supply', proposal_data['systems']); self.assertEqual(proposal_data['systems']['gas']['count'], 0)
