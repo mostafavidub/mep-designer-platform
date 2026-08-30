@@ -315,10 +315,11 @@ def dynamic_questions(analysis, discipline, auto):
         # short confirmation of a transparent conservative proposal.
         if not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
             q.append(('heights', 'ارتفاع طبقه و سقف کاذب مشخص نیست. پیشنهاد: «۳٫۲۰ متر؛ سقف کاذب فضاهای تر ۴۰ سانتی‌متر». پاسخ کوتاه: «تأیید» یا فقط مقدار متفاوت.'))
-        if not re.search(r'رادیاتور|گرمایش از کف|فن.?کویل|هواساز|پکیج|بویلر|radiator|underfloor|fan.?coil|boiler', text, re.I):
-            q.append(('heating', 'مدل قطعی گرمایش در معماری مشخص نیست. پیشنهاد: «پکیج چگالشی + رادیاتور». پاسخ کوتاه: «تأیید»، «گرمایش از کف»، «فن‌کویل» یا مدل دیگر.'))
-        if not re.search(r'اسپلیت|کولر گازی|فن.?کویل|چیلر|هواساز|evaporative|split|fan.?coil|chiller|ahu', text, re.I):
-            q.append(('cooling', 'مدل قطعی سرمایش در معماری مشخص نیست. پیشنهاد: «اسپلیت با یونیت بیرونی روی بام/محل سرویس». پاسخ کوتاه: «تأیید»، «کولر آبی»، «فن‌کویل/چیلر» یا مدل دیگر.'))
+        # Heating and cooling are owner/design decisions. Symbols or notes in
+        # architecture are useful evidence, but must never silently choose the
+        # system on the customer's behalf.
+        q.append(('heating', 'سیستم گرمایش پروژه را انتخاب کنید.'))
+        q.append(('cooling', 'سیستم سرمایش پروژه را انتخاب کنید.'))
         if not auto.get('gas_absence_inferred'):
             q.append(('gas', f'پیشنهاد Rule Book برای پروژه گازدار: پکیج ۲۴ kW، اجاق ۱۰ kW، فشار ۲۱ mbar و کنتور/رگلاتور در ورودی. پاسخ کوتاه: «تأیید»، «بدون گاز» یا اصلاح مورد خاص.'))
         if not auto.get('water_inlet_pressure_inferred') and not re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار)', text, re.I):
