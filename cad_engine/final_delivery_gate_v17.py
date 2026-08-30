@@ -56,14 +56,14 @@ def _contained(e,boards):
     p=_point(e)
     if p:
         return any(b[0]-0.03 <= p[0] <= b[2]+0.03 and b[1]-0.03 <= p[1] <= b[3]+0.03 for b in boards)
-    # Unknown visible model-space content is unsafe in an issued file.
     return False
 
 
 def _remove_empty_paperspace_layouts(doc):
     removed=[]
     for layout in list(doc.layouts):
-        if layout.name=='Model':
+        name=layout.name
+        if name=='Model':
             continue
         try:
             count=sum(1 for _ in layout)
@@ -71,14 +71,14 @@ def _remove_empty_paperspace_layouts(doc):
             count=0
         if count==0:
             try:
-                doc.layouts.delete(layout.name); removed.append(layout.name)
+                doc.layouts.delete(name)
+                removed.append(name)
             except Exception:
                 pass
     return removed
 
 
 def sanitize_to_approved_boards(path:Path,report:dict)->dict:
-    """Delete every model-space entity not fully contained in an approved board."""
     path=Path(path); boards=_bounds_from_report(report)
     if not boards:
         return {'version':'final-delivery-gate-v17.1','status':'FAIL','errors':['no_approved_board_bounds']}
@@ -108,7 +108,6 @@ def sanitize_to_approved_boards(path:Path,report:dict)->dict:
 
 
 def validate_final_delivery(path:Path,report:dict)->dict:
-    """Re-open the exact issued file and fail if anything remains off-board."""
     boards=_bounds_from_report(report)
     errors=[]; outside=[]; empty_layouts=[]
     if not boards:
@@ -123,9 +122,11 @@ def validate_final_delivery(path:Path,report:dict)->dict:
             if len(outside)>=25:
                 break
     for layout in doc.layouts:
-        if layout.name=='Model': continue
+        if layout.name=='Model':
+            continue
         try:
-            if sum(1 for _ in layout)==0: empty_layouts.append(layout.name)
+            if sum(1 for _ in layout)==0:
+                empty_layouts.append(layout.name)
         except Exception:
             empty_layouts.append(layout.name)
     if outside: errors.append('visible_modelspace_entities_outside_approved_boards')
