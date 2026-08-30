@@ -260,7 +260,15 @@ def register_job_queue(app, legacy):
             db = legacy.Session(); project = db.get(legacy.Project, project_id)
             success = bool(project and project.status not in ('awaiting_upload', 'uploading', 'analyzing'))
             error = '' if success else (project.last_error if project else 'پروژه پیدا نشد.')
-            db.close(); _finish(job_id, success, error)
+            db.close()
+            if success and artifact_storage.input_is_durable(project_id):
+                project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
+                for transient in (project_dir / 'architecture.zip', project_dir / 'architecture.dxf', project_dir / 'input', project_dir / '.upload_chunks'):
+                    if transient.is_dir():
+                        shutil.rmtree(transient, ignore_errors=True)
+                    else:
+                        transient.unlink(missing_ok=True)
+            _finish(job_id, success, error)
         except Exception as exc:
             _finish(job_id, False, str(exc))
 
@@ -397,8 +405,8 @@ def register_job_queue(app, legacy):
 
     @app.on_event('startup')
     def start_persistent_workers():
-        _reclaim_failed_artifacts()
         _migrate_ready_outputs_to_object_storage()
+        _reclaim_failed_artifacts()
         _recover_stale_jobs()
         for job_type in ('analysis', 'design'):
             threading.Thread(target=_worker, args=(job_type,), daemon=True, name=f'{job_type}-queue').start()
