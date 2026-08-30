@@ -191,6 +191,20 @@ def predict_drawing_set(scope):
                 added = list(_append_family_roles(family, family_key, scope.get('all_levels') or family['effective_levels'], unique_roles))
                 deliverables.extend(added); existing_codes.update(s['code'] for s in added)
 
+    # A water equipment sheet and its calculation sheet are separate issued
+    # deliverables. Do not hide the calculation sheet behind the equipment role;
+    # the customer must approve the exact additional drawing before CAD release.
+    water_family = families['water_supply']
+    has_water_equipment = any(s.get('drawing_type') == 'equipment_plan' for s in water_family['sheets'])
+    has_water_calc = any(s.get('drawing_type') == 'calculation_sheet' for s in water_family['sheets'])
+    if has_water_equipment and not has_water_calc:
+        calc_sheet = _append_special(
+            water_family, 'M-W-CALC', 'آبرسانی — محاسبات پمپ / افت فشار',
+            systems['water_supply']['levels'], 'approved water-service calculation deliverable',
+            'calculation_sheet',
+        )
+        calc_sheet['family'] = 'water_supply'; deliverables.append(calc_sheet)
+
     roof_sheets = []
     if scope.get('roof_exists'):
         roof_sheets.append({'family': 'roof_rainwater', 'code': 'M-R-01', 'label': 'بام / آب باران',
