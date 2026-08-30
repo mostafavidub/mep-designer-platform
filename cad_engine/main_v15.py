@@ -149,8 +149,8 @@ def design(req: DesignRequest):
                     # DXF/PDF artifacts on the persistent volume.
                     shutil.rmtree(project_out,ignore_errors=True)
                     raise HTTPException(422,detail)
-                pages=render_mechanical_pages(dxf_out,report,project_out)
-                page_pdfs.extend(pages)
+                # The product delivers editable DXF. Per-sheet PDF previews
+                # duplicate the complete drawing and caused avoidable peak disk use.
             else:
                 report=design_dxf(src,dxf_out,discipline,systems,req.revision)
                 page=project_out/f"{idx:02d}_{discipline}.pdf"
@@ -160,18 +160,23 @@ def design(req: DesignRequest):
             reports.append({"source":src.name,**report})
             generated.append(dxf_out)
 
-        merged=project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}.pdf"
-        merge_pdfs(page_pdfs,merged)
+        merged=None
+        if page_pdfs:
+            merged=project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}.pdf"
+            merge_pdfs(page_pdfs,merged)
+            for page in dict.fromkeys(page_pdfs):
+                if page != merged:
+                    page.unlink(missing_ok=True)
+            page_pdfs.clear()
 
-        # The per-sheet previews are transient. Release their volume space
-        # before creating the DXF package, when peak disk usage occurs.
-        for page in dict.fromkeys(page_pdfs):
-            if page != merged:
-                page.unlink(missing_ok=True)
-        page_pdfs.clear()
-
+        # A single consolidated DXF is already the final artifact. Do not create
+        # a duplicate ZIP. For multiple sources, package once and remove the
+        # per-source intermediates immediately.
         package=project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}_DXF.zip"
-        zip_outputs(generated,package)
+        if len(generated) > 1:
+            zip_outputs(generated,package)
+            for path in generated:
+                path.unlink(missing_ok=True)
 
         return {
             "ok":True,
@@ -184,8 +189,8 @@ def design(req: DesignRequest):
             "systems":systems,
             "design_reports":reports,
             "generated_files":[p.name for p in generated],
-            "pdf_path":str(merged),
+            "pdf_path":str(merged) if merged else "",
             "zip_path":str(package),
-            "pdf_base64":base64.b64encode(merged.read_bytes()).decode("ascii"),
-            "zip_base64":base64.b64encode(package.read_bytes()).decode("ascii"),
+            "pdf_base64":base64.b64encode(merged.read_bytes()).decode("ascii") if merged else "",
+            "zip_base64":base64.b64encode(package.read_bytes()).decode("ascii") if package.exists() else "",
         }
