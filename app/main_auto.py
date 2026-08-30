@@ -314,7 +314,20 @@ def analyze_project_job(project_id):
 def _present_question(item):
     """Attach deterministic controls at the final API boundary."""
     question = dict(item or {})
-    key = question.get('key')
+    key = question.get('key') or question.get('id')
+    prompt = str(question.get('question') or '')
+    if not key:
+        inferred = (
+            ('heating', ('گرمایش', 'heating')), ('cooling', ('سرمایش', 'cooling')),
+            ('gas', ('گاز', 'gas')), ('water_source', ('منبع آب', 'ورودی آب', 'water source')),
+            ('sanitary_outlet', ('فاضلاب', 'sanitary')), ('parking_enclosure', ('پارکینگ', 'parking')),
+            ('mechanical_shaft_route', ('شفت', 'shaft')), ('equipment_schedule', ('تجهیزات مکانیک', 'equipment')),
+            ('fixture_schedule', ('فیکسچر', 'fixture', 'لوازم بهداشتی')),
+        )
+        lowered = prompt.lower()
+        key = next((name for name, tokens in inferred if any(token.lower() in lowered for token in tokens)), None)
+    if key:
+        question['key'] = key
     question['input_type'] = 'text' if key in legacy.TEXT_QUESTION_KEYS else 'radio'
     options = list(legacy.QUESTION_OPTIONS.get(key, []))
     if key == 'fixture_schedule':
