@@ -334,10 +334,16 @@ def register_job_queue(app, legacy):
                 Job.status == 'failed',
                 func.lower(Job.last_error).like('%no space left on device%'),
             ).order_by(Job.id.desc()).first()
-            if latest_disk_failure and latest_disk_failure not in jobs:
-                latest_disk_failure.attempts = 0
-                latest_disk_failure.last_error = ''
-                jobs.append(latest_disk_failure)
+            latest_dxf_repair_failure = db.query(Job).filter(
+                Job.job_type == 'design',
+                Job.status == 'failed',
+                func.lower(Job.last_error).like('%dxf tail repair failed%'),
+            ).order_by(Job.id.desc()).first()
+            for recoverable in (latest_disk_failure, latest_dxf_repair_failure):
+                if recoverable and recoverable not in jobs:
+                    recoverable.attempts = 0
+                    recoverable.last_error = ''
+                    jobs.append(recoverable)
             for job in jobs:
                 job.status = 'queued'
                 job.available_at = datetime.utcnow()
