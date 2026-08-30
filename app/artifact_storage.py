@@ -28,8 +28,14 @@ def configured() -> bool:
 
 def healthcheck() -> dict:
     """Verify production bucket access without exposing credentials."""
+    fields = {
+        'endpoint': bool(S3_ENDPOINT),
+        'bucket': bool(S3_BUCKET),
+        'access_key_id': bool(S3_ACCESS_KEY_ID),
+        'secret_access_key': bool(S3_SECRET_ACCESS_KEY),
+    }
     if not configured():
-        return {'configured': False, 'reachable': False}
+        return {'configured': False, 'reachable': False, 'fields': fields}
     try:
         _client().head_bucket(Bucket=S3_BUCKET)
         return {'configured': True, 'reachable': True}
