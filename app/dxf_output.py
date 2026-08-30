@@ -346,6 +346,7 @@ def run_design_dxf(project_id, revision_id):
         p.last_error = ''
         db.commit()
         _purge_processing_files(p.id, keep_output=True)
+        artifact_storage.delete_project_inputs(p.id)
     except Exception as exc:
         r.status = 'failed'
         r.error = str(exc)
