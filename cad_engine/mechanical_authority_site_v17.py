@@ -21,6 +21,11 @@ from .mechanical_authority_site_v16 import design_mechanical_authority_site as _
 from .reference_parity_engine_v17 import project_context_from_report, build_documentation_package
 from .documentation_enhancer_v17 import apply_documentation_enhancements
 from .final_delivery_gate_v17 import sanitize_to_approved_boards, validate_final_delivery
+from .mechanical_release_hardening_v18 import (
+    validate_layout_geometry, validate_titleblocks, validate_safe_zones,
+    validate_equipment_linkage, validate_detail_library,
+    validate_content_completeness, create_montage_and_validate,
+)
 
 WEB_TO_CAD_FAMILY = {
     'WATER_SUPPLY': 'WATER',
@@ -323,6 +328,11 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='approved_manifest_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
+    geometry=validate_layout_geometry(report.get('composition') or {});report['layout_geometry_qa']=geometry
+    if geometry.get('status')!='PASS':
+        report['status']='FAIL';report['stage']='layout_geometry_gate';_restore_or_remove(dst,backup)
+        if backup:backup.unlink(missing_ok=True)
+        return report
     context=project_context_from_report(report,answers=answers,project_id=src.stem);package=build_documentation_package(context);report['reference_parity_documentation']=package
     if package.get('status')!='PASS':
         report['status']='FAIL';report['stage']='reference_parity_documentation_gate';_restore_or_remove(dst,backup)
@@ -338,6 +348,19 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='final_delivery_isolation_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
+    hardening_gates=(
+        ('titleblock_qa',validate_titleblocks(dst,report.get('composition') or {}),'titleblock_gate'),
+        ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
+        ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {}),'equipment_linkage_gate'),
+        ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),
+        ('content_completeness_qa',validate_content_completeness(dst,report.get('composition') or {}),'content_completeness_gate'),
+    )
+    for key,gate,stage in hardening_gates:
+        report[key]=gate
+        if gate.get('status')!='PASS':
+            report['status']='FAIL';report['stage']=stage;_restore_or_remove(dst,backup)
+            if backup:backup.unlink(missing_ok=True)
+            return report
     population=validate_plan_board_population(dst,report,answers);report['plan_board_population_qa']=population
     if population.get('status')=='FAIL':
         report['status']='FAIL';report['stage']='plan_board_population_gate';_restore_or_remove(dst,backup)
@@ -353,6 +376,11 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='exact_file_final_delivery_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
-    report['version']='mechanical-authority-site-pipeline-v17.6';report['status']='PASS'
+    montage=create_montage_and_validate(dst,dst.with_name(dst.stem+'-montage.png'));report['montage_exact_reopen_qa']=montage
+    if montage.get('status')!='PASS':
+        report['status']='FAIL';report['stage']='montage_exact_reopen_gate';_restore_or_remove(dst,backup)
+        if backup:backup.unlink(missing_ok=True)
+        return report
+    report['version']='mechanical-authority-site-pipeline-v18.0';report['status']='PASS'
     if backup:backup.unlink(missing_ok=True)
     return report

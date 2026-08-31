@@ -7,6 +7,11 @@ def _intersects(a,b,c,d):
     return _ccw(a,c,d)!=_ccw(b,c,d) and _ccw(a,b,c)!=_ccw(a,b,d)
 def _route_candidates(start,end):
     x1,y1=start;x2,y2=end
+    if start==end:
+        # A local endpoint may coincide with the proposed vertical core. Keep
+        # the true endpoints and draw a measurable orthogonal connection loop.
+        d=.20
+        return [start,(x1+d,y1),(x1+d,y1+d),end],[start,(x1-d,y1),(x1-d,y1-d),end]
     def clean(points):
         out=[]
         for p in points:

@@ -84,10 +84,35 @@ def _merge_browser_fixture_evidence(architecture, recognition, evidence):
     return recognition
 
 
+def _add_locked_design_endpoints(architecture, recognition, design_basis):
+    """Create design endpoints only where user basis and room evidence agree."""
+    rows=list(recognition.get('detections') or []);existing={(r.get('plan_id'),r.get('room_id'),r.get('type')) for r in rows}
+    for room in architecture.get('rooms') or []:
+        room_type=room.get('type');candidates=[]
+        if room_type=='kitchen' and (design_basis or {}).get('gas_service') is True:
+            candidates.append(('stove','locked_gas_service_plus_architectural_kitchen',12.0))
+        if room_type in {'bathroom','toilet'}:
+            candidates.append(('exhaust_fan','architectural_wet_room_exhaust_requirement',150.0))
+        elif room_type=='kitchen':
+            candidates.append(('hood','architectural_kitchen_exhaust_requirement',300.0))
+        for kind,source,design_load in candidates:
+            key=(room.get('plan_id'),room.get('id'),kind)
+            if key in existing:continue
+            point=_room_point(room)
+            if not point:continue
+            rows.append({'id':f"DESIGN-{kind.upper()}-{len(rows)+1:03d}",'category':'equipment','type':kind,'point':point,
+                         'room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':1.0,'status':'designed','installed':False,
+                         'evidence':['user_locked_design_basis','reconstructed_architectural_room'],'source':source,'design_load':design_load})
+            existing.add(key)
+    recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
+    return recognition
+
+
 def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     architecture=reconstruct_architecture(src);recognition=recognize_fixtures_equipment(architecture)
     architecture,recognition=apply_plan_scopes(src,architecture,recognition)
     recognition=_merge_browser_fixture_evidence(architecture,recognition,(project_overrides or {}).get('fixture_evidence'))
+    recognition=_add_locked_design_endpoints(architecture,recognition,design_basis or {})
     requirements=derive_system_requirements(architecture,recognition,design_basis=design_basis)
     calculations=calculate_mechanical_loads(architecture,recognition,requirements,design_basis=design_basis)
     topology=build_system_topology(architecture,recognition,requirements,calculations);routing=route_topology(architecture,topology)
