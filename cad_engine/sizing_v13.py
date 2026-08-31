@@ -13,6 +13,7 @@ DEFAULT_TABLES = {
     'heating': [(1500,16),(3500,20),(7000,25),(14000,32),(999999,40)],
     'condensate': [(5000,25),(12000,32),(999999,40)],
     'gas': [(12,20),(30,25),(60,32),(9999,40)],
+    'exhaust': [(150,100),(300,125),(600,160),(1200,200),(999999,250)],
 }
 
 FIXTURE_LOAD = {
@@ -49,6 +50,10 @@ def size_networks(topology, routing, recognition, calculations, tables=None):
         elif system in {'heating','cooling','condensate','gas'}:
             rc=room_calc.get(item.get('room_id'),{})
             load={'heating':rc.get('heating_w',0),'cooling':rc.get('cooling_w',0),'condensate':rc.get('cooling_w',0),'gas':rc.get('gas_kw',0)}[system]
+        if item.get('design_load') is not None:
+            load=float(item.get('design_load'))
+        if system=='exhaust' and not load:
+            load=150.0
         totals[system]=totals.get(system,0.0)+float(load or 0)
         size=_size(system,float(load or 0),tables)
         sized.append({'route_id':route['id'],'system':system,'downstream_load':round(float(load or 0),2),'size_mm':size,
