@@ -10,7 +10,7 @@ import hashlib
 import json
 
 
-MANIFEST_SCHEMA_VERSION = "3.0"
+MANIFEST_SCHEMA_VERSION = "3.1"
 
 AUTHORITY_FAMILIES = {
     "water_supply": {"code": "M-W", "label": "آب سرد و گرم", "system": "water_supply"},
@@ -145,9 +145,11 @@ def predict_drawing_set(scope):
 
     water_patterns = families['water_supply']['count']; water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
     single_effective_level = water_patterns == 1 and not _normalize_typical_groups(typical_groups)
-    water_service_required = bool(water_patterns and (scope.get('central_water_equipment') or len(systems['water_supply']['levels']) >= 2))
+    # Project facts are authoritative. A multi-level building does not silently
+    # become a tank/pump project when the approved source is direct municipal.
+    water_service_required = bool(water_patterns and scope.get('central_water_equipment'))
     if water_service_required:
-        water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved water service scope'))
+        water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved central water equipment scope'))
     if scope.get('hot_water_return_required'):
         water_roles.append(('RETURN', 'آب گرم — برگشت و بالانس', 'approved hot-water return scope'))
     if water_patterns:
