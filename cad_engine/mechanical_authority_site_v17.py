@@ -4,10 +4,10 @@ The issued file is fail-closed: project inputs, approved manifest, engineering
 content, documentation, architecture preservation and exact-file isolation must
 all pass before a DXF can be released.
 
-v17.6 strengthens the approved-manifest contract so that every approved primary
-plan must result in exactly one generated primary board. Count-only agreement is
-not enough: duplicate/missing board identities and empty mechanical boards also
-block release.
+v17.6 strengthens the approved-manifest contract so that every approved plan
+(floor, roof, equipment or ventilation plan) must result in exactly one real
+generated board. Count-only family agreement is not enough: duplicate/missing
+board identities and empty mechanical boards also block release.
 """
 from __future__ import annotations
 from collections import Counter
@@ -32,6 +32,7 @@ WEB_TO_CAD_FAMILY = {
     'ROOF_RAINWATER': 'ROOF',
 }
 PRIMARY_CAD_FAMILIES = set(WEB_TO_CAD_FAMILY.values())
+PLAN_DRAWING_TYPES = {'FLOOR_PLAN','ROOF_PLAN','EQUIPMENT_PLAN','VENTILATION_PLAN'}
 DRAWING_TYPE_ROLE = {
     'RISER_DIAGRAM': 'RISER',
     'EQUIPMENT_PLAN': 'EQUIPMENT',
@@ -110,6 +111,18 @@ def _is_generated_primary(row):
     return row['purpose']=='PLAN' and row['level'] not in {'SERVICE','ROOF'}
 
 
+def _is_approved_plan_board(row):
+    return row['canonical_family'] in PRIMARY_CAD_FAMILIES and row['drawing_type'] in PLAN_DRAWING_TYPES
+
+
+def _is_generated_plan_board(row):
+    family=row['canonical_family']
+    if family not in PRIMARY_CAD_FAMILIES: return False
+    # CAD composition represents floor, service/equipment and roof plans with
+    # purpose=PLAN. ROOF itself is always a plan board.
+    return family=='ROOF' or row['purpose']=='PLAN'
+
+
 def _approved_primary_counts(rows):
     counts=Counter()
     for row in rows:
@@ -124,26 +137,26 @@ def _generated_primary_counts(rows):
     return counts
 
 
-def _primary_board_contract(approved,generated,composition):
-    """Require one real, unique board for every approved primary plan."""
+def _plan_board_contract(approved,generated,composition):
+    """Require one real, unique board for every approved plan-type deliverable."""
     errors=[]
-    approved_rows=[r for r in approved if _is_approved_primary(r)]
-    generated_rows=[r for r in generated if _is_generated_primary(r)]
+    approved_rows=[r for r in approved if _is_approved_plan_board(r)]
+    generated_rows=[r for r in generated if _is_generated_plan_board(r)]
     expected=len(approved_rows); actual=len(generated_rows)
     if expected != actual:
-        errors.append(f'total_primary_plan_count_mismatch:approved={expected}:generated={actual}')
+        errors.append(f'total_plan_count_mismatch:approved={expected}:generated={actual}')
 
     generated_codes=[r['code'] for r in generated_rows]
     blank_codes=[str(i) for i,c in enumerate(generated_codes) if not c]
-    if blank_codes: errors.append('generated_primary_code_missing:index='+','.join(blank_codes))
+    if blank_codes: errors.append('generated_plan_code_missing:index='+','.join(blank_codes))
     duplicates=sorted(k for k,v in Counter(generated_codes).items() if k and v>1)
-    if duplicates: errors.append('duplicate_generated_primary_codes:'+','.join(duplicates))
+    if duplicates: errors.append('duplicate_generated_plan_codes:'+','.join(duplicates))
 
     board_ids=[r['old_sheet'] for r in generated_rows]
     missing_board_id=[r['code'] or '?' for r in generated_rows if not r['old_sheet']]
-    if missing_board_id: errors.append('generated_primary_missing_board_id:'+','.join(sorted(missing_board_id)))
+    if missing_board_id: errors.append('generated_plan_missing_board_id:'+','.join(sorted(missing_board_id)))
     duplicate_board_ids=sorted(k for k,v in Counter(board_ids).items() if k and v>1)
-    if duplicate_board_ids: errors.append('duplicate_generated_primary_board_ids:'+','.join(duplicate_board_ids))
+    if duplicate_board_ids: errors.append('duplicate_generated_plan_board_ids:'+','.join(duplicate_board_ids))
 
     boards=(composition or {}).get('boards') or {}
     missing_boards=[]; invalid_boards=[]
@@ -156,17 +169,17 @@ def _primary_board_contract(approved,generated,composition):
         area=board.get('plan_area')
         if not isinstance(area,(list,tuple)) or len(area)!=4:
             invalid_boards.append(row['code'] or bid)
-    if missing_boards: errors.append('generated_primary_board_not_found:'+','.join(sorted(missing_boards)))
-    if invalid_boards: errors.append('generated_primary_board_invalid:'+','.join(sorted(invalid_boards)))
+    if missing_boards: errors.append('generated_plan_board_not_found:'+','.join(sorted(missing_boards)))
+    if invalid_boards: errors.append('generated_plan_board_invalid:'+','.join(sorted(invalid_boards)))
 
     real_board_count=sum(1 for r in generated_rows if r['old_sheet'] and r['old_sheet'] in boards)
     if real_board_count != actual:
-        errors.append(f'primary_board_count_mismatch:generated_primary={actual}:real_boards={real_board_count}')
+        errors.append(f'plan_board_count_mismatch:generated_plans={actual}:real_boards={real_board_count}')
 
     return {
         'status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
-        'expected_primary_plans':expected,'generated_primary_plans':actual,'real_primary_boards':real_board_count,
-        'generated_primary_codes':generated_codes,'generated_primary_board_ids':board_ids,
+        'expected_plans':expected,'generated_plans':actual,'real_plan_boards':real_board_count,
+        'generated_plan_codes':generated_codes,'generated_plan_board_ids':board_ids,
     }
 
 
@@ -187,7 +200,7 @@ def _require_role(errors, approved_roles, family, role, generated_label):
 
 
 def validate_approved_manifest(report,answers):
-    """Enforce approved primary plans, exact board count and justified supports."""
+    """Enforce approved plan boards, primary family counts and justified supports."""
     approved_raw=(answers or {}).get('_approved_drawing_manifest')
     composition=report.get('composition') or {}
     generated=_manifest_rows(composition.get('manifest') or [])
@@ -205,8 +218,8 @@ def validate_approved_manifest(report,answers):
         if approved_primary[family] != generated_primary[family]:
             errors.append(f'primary_plan_count_mismatch:{family}:approved={approved_primary[family]}:generated={generated_primary[family]}')
 
-    board_contract=_primary_board_contract(approved,generated,composition)
-    errors.extend(board_contract['errors'])
+    plan_contract=_plan_board_contract(approved,generated,composition)
+    errors.extend(plan_contract['errors'])
 
     approved_roles=_approved_support_roles(approved)
     for row in generated:
@@ -246,30 +259,30 @@ def validate_approved_manifest(report,answers):
         'version':'approved-manifest-gate-v17.6','status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
         'approved_count':len(approved),'generated_count':len(generated),'source':'workflow_approved_manifest',
         'approved_primary_counts':dict(approved_primary),'generated_primary_counts':dict(generated_primary),
-        'expected_primary_plans':board_contract['expected_primary_plans'],
-        'generated_primary_plans':board_contract['generated_primary_plans'],
-        'real_primary_boards':board_contract['real_primary_boards'],
-        'generated_primary_codes':board_contract['generated_primary_codes'],
+        'expected_plan_count':plan_contract['expected_plans'],
+        'generated_plan_count':plan_contract['generated_plans'],
+        'real_plan_board_count':plan_contract['real_plan_boards'],
+        'generated_plan_codes':plan_contract['generated_plan_codes'],
         'approved_support_roles':sorted(f'{f}/{r}' for f,r in approved_roles),
         'derived_support_documents':sorted(set(derived_support)),
     }
 
 
-def validate_primary_board_population(dst,report,answers):
-    """Reopen exact DXF and reject any primary board with no mechanical content."""
+def validate_plan_board_population(dst,report,answers):
+    """Reopen exact DXF and reject any issued plan board with no mechanical content."""
     approved_raw=(answers or {}).get('_approved_drawing_manifest')
     if approved_raw is None:
-        return {'version':'primary-board-population-v17.6','status':'SKIPPED','errors':[],'reason':'NO_WORKFLOW_MANIFEST_IN_DIRECT_ENGINE_CALL'}
+        return {'version':'plan-board-population-v17.6','status':'SKIPPED','errors':[],'reason':'NO_WORKFLOW_MANIFEST_IN_DIRECT_ENGINE_CALL'}
     composition=report.get('composition') or {}
     generated=_manifest_rows(composition.get('manifest') or [])
     boards=composition.get('boards') or {}
     try:
         doc=ezdxf.readfile(dst)
     except Exception as exc:
-        return {'version':'primary-board-population-v17.6','status':'FAIL','errors':['exact_dxf_reopen_failed:'+str(exc)]}
+        return {'version':'plan-board-population-v17.6','status':'FAIL','errors':['exact_dxf_reopen_failed:'+str(exc)]}
     results=[];errors=[]
     for row in generated:
-        if not _is_generated_primary(row): continue
+        if not _is_generated_plan_board(row): continue
         board=boards.get(row['old_sheet']) or {}
         area=board.get('plan_area')
         if not isinstance(area,(list,tuple)) or len(area)!=4:
@@ -287,9 +300,9 @@ def validate_primary_board_population(dst,report,answers):
                 continue
             if x1<=cx<=x2 and y1<=cy<=y2: count+=1
         status='PASS' if count>0 else 'FAIL'
-        if status=='FAIL': errors.append('empty_primary_mechanical_board:'+str(row['code'] or row['old_sheet']))
+        if status=='FAIL': errors.append('empty_plan_mechanical_board:'+str(row['code'] or row['old_sheet']))
         results.append({'code':row['code'],'board_id':row['old_sheet'],'mechanical_entity_count':count,'status':status})
-    return {'version':'primary-board-population-v17.6','status':'PASS' if not errors else 'FAIL','errors':errors,'boards':results,'exact_file_reopened':True}
+    return {'version':'plan-board-population-v17.6','status':'PASS' if not errors else 'FAIL','errors':errors,'boards':results,'exact_file_reopened':True}
 
 
 def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,plan_analysis:dict|None=None)->dict:
@@ -325,9 +338,9 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='final_delivery_isolation_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
-    population=validate_primary_board_population(dst,report,answers);report['primary_board_population_qa']=population
+    population=validate_plan_board_population(dst,report,answers);report['plan_board_population_qa']=population
     if population.get('status')=='FAIL':
-        report['status']='FAIL';report['stage']='primary_board_population_gate';_restore_or_remove(dst,backup)
+        report['status']='FAIL';report['stage']='plan_board_population_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
     preservation=evaluate_architecture_preservation(src,dst,report,answers=answers);report['architecture_preservation_qa_after_v17']=preservation
