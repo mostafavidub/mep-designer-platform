@@ -1,0 +1,15 @@
+{
+  "schema_version":"1.0.0",
+  "changes":[
+    {
+      "id":"GOV-2026-001",
+      "status":"APPROVED",
+      "summary":"Establish the ten-step mechanical design governance contract and project-1 golden baseline.",
+      "affected_capabilities":["all_locked_capabilities"],
+      "affected_projects":["project-1"],
+      "approval":{"status":"APPROVED","basis":"user instruction in project task"},
+      "migration":{"forward":"Adopt governance v1 and validate all future releases.","rollback":"Not permitted after adoption; supersede with a new approved governance version."}
+    }
+  ]
+}
+
