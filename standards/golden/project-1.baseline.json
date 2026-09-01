@@ -9,7 +9,10 @@
     "titleblock_count": 28,
     "populated_plan_count": 20,
     "detail_sheet_count": 3,
-    "modelspace_entity_count": 8183
+    "modelspace_entity_count": 8183,
+    "split_ac_visual_board_count": 4,
+    "split_ac_min_symbol_pixel_long_side": 28,
+    "split_ac_min_symbol_pixel_short_side": 14
   },
   "exact_family_counts": {
     "COVER":1, "GENERAL_NOTES":1, "ROOF":1, "SANITARY_VENT":3, "WATER":4,
@@ -24,4 +27,3 @@
   "required_gate_status": "PASS",
   "baseline_change_requires": "approved_contract_migration"
 }
-

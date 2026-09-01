@@ -1,6 +1,6 @@
 import ezdxf
-from cad_engine.mechanical_authority_v15 import _boards, _draw_titleblock, _draw_detail_sheet
-from cad_engine.mechanical_release_hardening_v18 import validate_layout_geometry, validate_titleblocks, validate_safe_zones, validate_equipment_linkage, validate_detail_library, validate_content_completeness, create_montage_and_validate
+from cad_engine.mechanical_authority_v15 import _boards, _draw_titleblock, _draw_detail_sheet, _ensure_ac_blocks
+from cad_engine.mechanical_release_hardening_v18 import validate_layout_geometry, validate_titleblocks, validate_safe_zones, validate_equipment_linkage, validate_detail_library, validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate
 
 
 def _rows(n=8):
@@ -67,6 +67,36 @@ def test_gate_4_equipment_requires_all_linked_routes(tmp_path):
     result=validate_equipment_linkage(path,composition)
     assert result["status"] == "FAIL"
     assert "ENGITOOLS-M-HEAT-RETURN" in result["errors"][0]
+
+
+def _split_document(board, tiny=False):
+    doc=ezdxf.new("R2010");msp=doc.modelspace()
+    for i,layer in enumerate(("ENGITOOLS-M-HVAC-EQUIP","ENGITOOLS-M-HVAC-REFRIG","ENGITOOLS-M-HVAC-COND","ENGITOOLS-M-HVAC-CALLOUT","ENGITOOLS-M-HVAC-AIRFLOW"),start=1):doc.layers.add(layer,color=(i%6)+1)
+    if tiny:
+        b=doc.blocks.new("ENGI_AC_INDOOR");b.add_lwpolyline([(-.05,-.02),(.05,-.02),(.05,.02),(-.05,.02)],close=True);b.add_text("IDU",dxfattribs={"height":.01})
+    else:_ensure_ac_blocks(doc)
+    p=(board.plan_area[0]+3,board.plan_area[1]+5);msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP"})
+    msp.add_line(p,(p[0]+1,p[1]),dxfattribs={"layer":"ENGITOOLS-M-HVAC-REFRIG"});msp.add_line(p,(p[0],p[1]+1),dxfattribs={"layer":"ENGITOOLS-M-HVAC-COND"});msp.add_line(p,(p[0]+.8,p[1]+.8),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT"});msp.add_line(p,(p[0]-.8,p[1]),dxfattribs={"layer":"ENGITOOLS-M-HVAC-AIRFLOW"});msp.add_mtext("IDU | AC-01 | 12000 BTU/h",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.11}).set_location((p[0]+.9,p[1]+.9))
+    return doc
+
+
+def test_split_gate_requires_standard_blocks_labels_callouts_and_leaders(tmp_path):
+    row=_rows(1)[0];row["family"]="SPLIT_AC";board=next(iter(_boards([row]).values()));composition={"boards":{board.sheet:vars(board)}};path=tmp_path/"split.dxf";_split_document(board).saveas(path)
+    result=validate_equipment_linkage(path,composition)
+    assert result["status"]=="PASS",result
+    doc=ezdxf.readfile(path)
+    for e in list(doc.modelspace()):
+        if e.dxftype()=="INSERT":doc.modelspace().delete_entity(e)
+    doc.modelspace().add_circle((board.plan_area[0]+3,board.plan_area[1]+5),.2,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP"});doc.saveas(path)
+    assert validate_equipment_linkage(path,composition)["status"]=="FAIL"
+
+
+def test_split_visual_gate_rejects_tiny_symbol_and_writes_per_sheet_preview(tmp_path):
+    row=_rows(1)[0];row["family"]="SPLIT_AC";board=next(iter(_boards([row]).values()));composition={"boards":{board.sheet:vars(board)}};path=tmp_path/"split.dxf";previews=tmp_path/"previews";_split_document(board,tiny=True).saveas(path)
+    assert validate_split_ac_visual_legibility(path,composition,previews)["status"]=="FAIL"
+    _split_document(board).saveas(path);result=validate_split_ac_visual_legibility(path,composition,previews)
+    assert result["status"]=="PASS",result
+    assert list(previews.glob("*.png"))
 
 
 def test_gate_5_detail_sheet_requires_real_geometry_and_tags(tmp_path):

@@ -29,6 +29,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         proposal = predict_drawing_set(self._benchmark_scope())
         manifest = proposal['drawing_manifest']
         self.assertEqual(manifest['total_sheets'], 29)
+        self.assertFalse(any(sheet['code'] == 'M-W-RETURN' for sheet in manifest['sheets']))
         html = review_question_html_v12(proposal)
         self.assertIn('تعداد شیت‌های تحویلی مکانیک: 29 شیت', html)
         self.assertIn('Manifest ID:', html)
@@ -36,6 +37,9 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         self.assertNotIn('15 پلان', html)
         for sheet in manifest['sheets']:
             self.assertIn(sheet['code'], html)
+        self.assertIn('IDU/ODU', html)
+        self.assertIn('پریویوی مستقل هر شیت', html)
+        self.assertIn('Release را متوقف می‌کند', html)
 
     def test_stage_12_approval_freezes_the_same_manifest_shown_to_customer(self):
         proposal = predict_drawing_set(self._benchmark_scope())
@@ -48,7 +52,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         self.assertNotEqual(approved['approved_manifest']['sheets'][0]['label'], 'MUTATED AFTER APPROVAL')
 
     def test_stage_12_runtime_rulebook_v4_contains_manifest_and_29_benchmark_contract(self):
-        self.assertEqual(VERSION, '4.0')
+        self.assertEqual(VERSION, '4.1')
         self.assertEqual(BENCHMARK['base_architectural_views'], 4)
         self.assertEqual(BENCHMARK['approved_deliverables'], 29)
         self.assertEqual(BENCHMARK['independent_issued_drawing_content'], 29)
@@ -66,6 +70,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
                 '29',
                 'CAD output does not match approved drawing manifest',
                 'approved deliverables = independent issued drawing content = issued layouts',
+                'Layer presence alone is not evidence',
             ):
                 self.assertIn(token, xml)
 

@@ -4,7 +4,8 @@
     {"paths":["cad_engine/mechanical_authority_v15.py"],"capabilities":["sheet_layout","title_block","safe_zones","split_ac","package_radiator","details","visual_release"]},
     {"paths":["cad_engine/engineering_runner_v13.py","cad_engine/routing_v13.py","cad_engine/sizing_v13.py"],"capabilities":["gas","split_ac","package_radiator","content_completeness"]},
     {"paths":["cad_engine/documentation_enhancer_v17.py"],"capabilities":["details","content_completeness","safe_zones"]},
-    {"paths":["cad_engine/final_delivery_gate_v17.py","cad_engine/mechanical_release_hardening_v18.py"],"capabilities":["sheet_layout","title_block","safe_zones","content_completeness","architecture_preservation","visual_release"]},
+    {"paths":["cad_engine/final_delivery_gate_v17.py","cad_engine/mechanical_release_hardening_v18.py"],"capabilities":["sheet_layout","title_block","safe_zones","split_ac","content_completeness","architecture_preservation","visual_release"]},
+    {"paths":["app/mechanical_site_manifest_v12.py","app/mechanical_drawing_set.py","app/dxf_output.py","data/rulebook/generate_rulebook_v4.py","docs/MECHANICAL_DRAWING_SET_STANDARD.md"],"capabilities":["split_ac","content_completeness","visual_release"],"requires":["focused_tests","web_regression","rulebook_regression"]},
     {"paths":["app/design_progress.py","app/dxf_output.py","app/job_queue.py","app/static/resumable-upload.js","app/templates/project.html"],"capabilities":["design_progress_visibility"],"requires":["focused_tests","web_regression"]},
     {"paths":["standards/**"],"capabilities":["all_locked_capabilities"],"requires":["governance_validation","contract_changelog"]}
   ],

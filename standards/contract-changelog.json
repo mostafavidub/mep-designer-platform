@@ -29,6 +29,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user request to show the active design stage and completion percentage"},
       "verification":{"focused_tests":"5 PASS","javascript_syntax":"PASS","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Initialize queued jobs at 3 percent and advance only at completed backend milestones through 100 percent.","rollback":"Supersede with an approved progress contract; do not remove progress visibility."}
+    },
+    {
+      "id":"GOV-2026-004",
+      "status":"APPROVED",
+      "summary":"Make Split-AC delivery fail closed on labeled standard IDU/ODU blocks, equipment callouts and leaders, airflow, linked routes, minimum plotted symbol size, and independent per-sheet visual previews; keep water equipment and hot-water-return sheets bound to the user's explicit system scope.",
+      "affected_capabilities":["split_ac","content_completeness","visual_release"],
+      "affected_projects":["all","project-1"],
+      "approval":{"status":"APPROVED","basis":"explicit user request after Split-AC equipment was not visibly recognizable in project-1 previews"},
+      "verification":{"focused_tests":"must_pass","golden_regression":"must_pass","exact_file_reopen":"must_pass","per_sheet_visual_qa":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Release only when semantic linkage and per-sheet visual legibility both pass.","rollback":"Supersede with an approved stricter contract; never return to layer-count-only acceptance."}
     }
   ]
 }

@@ -1,0 +1,20 @@
+{
+  "schema_version":"1.0.0",
+  "project_id":"project-1",
+  "release":"v18.1",
+  "status":"APPROVED",
+  "source_architecture_sha256":"2c0d46c5f60b34af766fc57b4d5b2ba751e5073319242fcdf14551ef6ccb1bce",
+  "issued_dxf_sha256":"f4f82649b0cce1de3d6bc50f6cc3426e7e571d2445b54bcdef59f9127159f803",
+  "package_sha256":"4983c698b2ccefcd46b0bbacf9ed0b1931245b1bf25f2ae1890892dd44814ac4",
+  "engine_version":"mechanical-authority-site-pipeline-v18.0",
+  "visual_gate_version":"split-ac-visual-legibility-v18.1",
+  "source_policy":{"architecture_used":true,"reference_mechanical_used":false},
+  "board_count":28,
+  "approved_plan_count":20,
+  "split_ac_visual_board_count":4,
+  "split_ac_min_symbol_pixel_long_side":30,
+  "split_ac_min_symbol_pixel_short_side":14,
+  "all_required_gates":"PASS",
+  "generating_commit":"f4ff9b5601feae2ba7225239b0ac3eae9836c124",
+  "artifacts_stored_outside_git":true
+}

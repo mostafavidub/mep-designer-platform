@@ -37,7 +37,8 @@ def validate_repository_governance(root: Path=ROOT) -> dict:
     if 'reference_mechanical_dxf' not in forbidden:errors.append('reference_mechanical_not_forbidden')
     baseline=json.loads((root/'standards/golden/project-1.baseline.json').read_text())
     if baseline.get('status')!='APPROVED':errors.append('golden_baseline_not_approved')
-    snapshot=json.loads((root/'standards/releases/project-1/v18.0.snapshot.json').read_text())
+    snapshot_path=root/str(steps[7].get('artifact') or '')
+    snapshot=json.loads(snapshot_path.read_text())
     if snapshot.get('status')!='APPROVED' or snapshot.get('all_required_gates')!='PASS':errors.append('release_snapshot_not_approved')
     changes=json.loads((root/'standards/contract-changelog.json').read_text())
     if not any(x.get('status')=='APPROVED' for x in changes.get('changes') or []):errors.append('approved_contract_change_missing')
@@ -54,6 +55,8 @@ def validate_release_against_contract(report: dict, project_contract: dict|None=
         status=str((report.get(gate) or {}).get('status') or 'MISSING').upper()
         if status!='PASS':errors.append(f'required_gate_not_pass:{gate}:{status}')
     composition=report.get('composition') or {};boards=composition.get('boards') or {};manifest=composition.get('manifest') or []
+    split_visual=report.get('split_ac_visual_qa') or {};split_boards=split_visual.get('boards') or []
+    split_units=[u for board in split_boards for u in (board.get('units') or [])]
     actual={
         'board_count':len(boards),
         'approved_plan_count':int((report.get('approved_manifest_qa') or {}).get('expected_plan_count') or 0),
@@ -61,6 +64,9 @@ def validate_release_against_contract(report: dict, project_contract: dict|None=
         'populated_plan_count':sum(x.get('status')=='PASS' for x in (report.get('plan_board_population_qa') or {}).get('boards') or []),
         'detail_sheet_count':sum(str(x.get('family') or '').upper()=='GENERAL_DETAIL' for x in manifest),
         'modelspace_entity_count':int((report.get('montage_exact_reopen_qa') or {}).get('entity_count') or 0),
+        'split_ac_visual_board_count':sum(x.get('status')=='PASS' for x in split_boards),
+        'split_ac_min_symbol_pixel_long_side':min((int(x.get('pixel_long_side') or max(int(x.get('pixel_width') or 0),int(x.get('pixel_height') or 0))) for x in split_units),default=0),
+        'split_ac_min_symbol_pixel_short_side':min((int(x.get('pixel_short_side') or min(int(x.get('pixel_width') or 0),int(x.get('pixel_height') or 0))) for x in split_units),default=0),
     }
     for name,minimum in (baseline.get('minimums') or {}).items():
         if actual.get(name,0)<minimum:errors.append(f'golden_minimum_regression:{name}:{actual.get(name,0)}<{minimum}')
@@ -69,4 +75,3 @@ def validate_release_against_contract(report: dict, project_contract: dict|None=
     if dict(families)!=expected:errors.append('golden_family_manifest_changed_without_migration')
     return {'version':'mechanical-release-governance-gate-v1.0','status':'PASS' if not errors else 'FAIL',
             'errors':sorted(set(errors)),'actual':actual,'family_counts':dict(families)}
-

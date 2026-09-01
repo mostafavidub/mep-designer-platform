@@ -211,6 +211,10 @@ def _cad_error_message(response):
         'ventilation_design': 'محاسبات تهویه',
         'roof_drainage_design': 'محاسبات آب باران بام',
         'Compact mechanical output': 'پاک‌سازی خروجی مکانیک',
+        'split_ac_visual_gate': 'کنترل خوانایی تصویری کولرها',
+        'split_symbol_too_small': 'سمبل کولر در مقیاس خروجی بیش از حد کوچک است',
+        'split_preview_empty': 'پریویوی پلان کولر قابل تأیید نیست',
+        'standard_equipment_block': 'سمبل استاندارد یونیت داخلی یا خارجی',
     }
     for source, target in translations.items():
         message = message.replace(source, target)

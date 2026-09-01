@@ -79,6 +79,10 @@ Applicable gas scope requires resolved connected load, flow, inlet pressure and 
 
 Heating supply and return must be connected networks. Cooling and condensate must be present with resolved cooling/heating load basis and per-conditioned-space allocation. Roof scope may carry explicit outdoor-equipment coordination.
 
+### Split-AC visual contract
+
+Every conditioned-space indoor unit uses the standard labeled `ENGI_AC_INDOOR` block and has a readable IDU tag, capacity callout, leader, airflow arrow, refrigerant route and condensate route. Every roof outdoor unit uses the labeled `ENGI_AC_OUTDOOR` block and identifies its served IDU. Release QA checks exact block identity, linked counts, minimum plotted pixel dimensions and a separately rendered preview for every Split-AC sheet. Entity or layer presence by itself never proves visual completeness.
+
 Ventilation requires an exhaust network, resolved airflow basis, make-up-air endpoints and safe discharge endpoints.
 
 ## Roof / Rainwater requirements

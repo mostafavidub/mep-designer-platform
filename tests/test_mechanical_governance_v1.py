@@ -14,7 +14,8 @@ def _passing_report():
             'approved_manifest_qa':{'status':'PASS','expected_plan_count':20},
             'titleblock_qa':{'status':'PASS','validated_titleblocks':28},
             'plan_board_population_qa':{'status':'PASS','boards':[{'status':'PASS'} for _ in range(20)]},
-            'montage_exact_reopen_qa':{'status':'PASS','entity_count':8183}}
+            'montage_exact_reopen_qa':{'status':'PASS','entity_count':8183},
+            'split_ac_visual_qa':{'status':'PASS','boards':[{'status':'PASS','units':[{'pixel_width':40,'pixel_height':20,'pixel_long_side':40,'pixel_short_side':20}]} for _ in range(4)]}}
     for gate in contract['required_gates']:report.setdefault(gate,{'status':'PASS'})
     return report
 
@@ -46,4 +47,3 @@ def test_semantic_content_reduction_fails_closed():
 def test_family_removal_requires_contract_migration():
     report=_passing_report();report['composition']['manifest'].pop()
     assert 'golden_family_manifest_changed_without_migration' in validate_release_against_contract(report)['errors']
-

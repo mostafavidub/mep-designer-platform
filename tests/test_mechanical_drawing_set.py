@@ -96,7 +96,7 @@ def test_single_level_direct_water_does_not_invent_pump_or_calculation_sheet():
     assert "calculation_sheet" not in water_types
 
 
-def test_two_real_water_levels_require_explicit_equipment_and_calculation_deliverables():
+def test_explicit_direct_water_scope_suppresses_equipment_and_calculation_deliverables():
     levels = ["Ground", "First"]
     result = predict_drawing_set(_three_level_scope(
         all_levels=levels,
@@ -111,8 +111,8 @@ def test_two_real_water_levels_require_explicit_equipment_and_calculation_delive
         central_water_equipment=False,
     ))
     water = [x for x in result["drawing_manifest"]["sheets"] if x.get("family") == "water_supply"]
-    assert len([x for x in water if x.get("drawing_type") == "equipment_plan"]) == 1
-    assert len([x for x in water if x.get("drawing_type") == "calculation_sheet"]) == 1
+    assert not [x for x in water if x.get("drawing_type") == "equipment_plan"]
+    assert not [x for x in water if x.get("drawing_type") == "calculation_sheet"]
 
 
 def test_explicit_central_water_equipment_requires_calc_even_on_one_level():

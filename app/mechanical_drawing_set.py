@@ -149,8 +149,12 @@ def predict_drawing_set(scope):
     # multi-level water system. Typical-plan consolidation must not erase these
     # coordination deliverables; a single-level direct service remains exempt.
     real_water_levels = systems['water_supply']['levels']
+    central_water_equipment = scope.get('central_water_equipment')
     water_service_required = bool(
-        water_patterns and (scope.get('central_water_equipment') or len(real_water_levels) >= 2)
+        water_patterns and (
+            bool(central_water_equipment) if central_water_equipment is not None
+            else len(real_water_levels) >= 2
+        )
     )
     if water_service_required:
         water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved central water equipment scope'))
@@ -182,13 +186,15 @@ def predict_drawing_set(scope):
     full_documentation = _full_authority_documentation_required(scope, families, typical_groups)
     if full_documentation:
         support_roles = {
-            'water_supply': [('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'full authority equipment drawing'), ('RETURN', 'آبرسانی — برگشت آب گرم و بالانس', 'full authority return schematic')],
+            'water_supply': [('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'full authority equipment drawing')],
             'sanitary_vent': [('RISER', 'فاضلاب و ونت — رایزر', 'full authority sanitary riser'), ('DETAIL', 'فاضلاب و ونت — جزئیات اجرایی', 'full authority sanitary detail')],
             'heating': [('EQUIP', 'گرمایش — تجهیزات و جزئیات', 'full authority heating equipment')],
             'gas': [('DETAIL', 'گاز — جزئیات اجرایی و اتصالات', 'full authority gas detail')],
             'cooling': [('DETAIL', 'سرمایش — جزئیات تجهیزات و درین', 'full authority cooling detail')],
             'ventilation_exhaust': [('DETAIL', 'تهویه — جزئیات تخلیه و هوای جبران', 'full authority ventilation detail')],
         }
+        if scope.get('hot_water_return_required'):
+            support_roles['water_supply'].append(('RETURN', 'آبرسانی — برگشت آب گرم و بالانس', 'full authority return schematic'))
         existing_codes = {s['code'] for s in deliverables}
         for family_key, roles in support_roles.items():
             family = families[family_key]
