@@ -145,9 +145,13 @@ def predict_drawing_set(scope):
 
     water_patterns = families['water_supply']['count']; water_roles = [('RISER', 'آبرسانی — رایزر', 'authority water riser')]
     single_effective_level = water_patterns == 1 and not _normalize_typical_groups(typical_groups)
-    # Project facts are authoritative. A multi-level building does not silently
-    # become a tank/pump project when the approved source is direct municipal.
-    water_service_required = bool(water_patterns and scope.get('central_water_equipment'))
+    # Keep the issued service/equipment and calculation documents for every
+    # multi-level water system. Typical-plan consolidation must not erase these
+    # coordination deliverables; a single-level direct service remains exempt.
+    real_water_levels = systems['water_supply']['levels']
+    water_service_required = bool(
+        water_patterns and (scope.get('central_water_equipment') or len(real_water_levels) >= 2)
+    )
     if water_service_required:
         water_roles.append(('EQUIP', 'آبرسانی — پمپ / مخزن / تجهیزات', 'approved central water equipment scope'))
     if scope.get('hot_water_return_required'):
