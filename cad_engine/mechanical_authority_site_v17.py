@@ -26,6 +26,7 @@ from .mechanical_release_hardening_v18 import (
     validate_equipment_linkage, validate_detail_library,
     validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate,
 )
+from .version_manifest import MECHANICAL_PIPELINE_VERSION
 
 WEB_TO_CAD_FAMILY = {
     'WATER_SUPPLY': 'WATER',
@@ -407,6 +408,6 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='montage_exact_reopen_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
-    report['version']='mechanical-authority-site-pipeline-v18.0';report['status']='PASS'
+    report['version']=MECHANICAL_PIPELINE_VERSION;report['status']='PASS'
     if backup:backup.unlink(missing_ok=True)
     return report

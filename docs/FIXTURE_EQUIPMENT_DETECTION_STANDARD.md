@@ -1,6 +1,6 @@
 # Fixture & Equipment Detection Standard
 
-Rule Book version: 2.3 — Multi-Signal Fixture & Equipment Detection
+Rule Book version: 2.4 — Multi-Signal Fixture & Equipment Detection
 
 ## Objective
 

@@ -1,6 +1,6 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 3.0 — Mechanical v11 / Final Engineering QA
+Rule Book version: 4.1 — Mechanical authority pipeline v18.2 / Final Engineering QA
 
 ## Governing principle
 

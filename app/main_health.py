@@ -1,5 +1,6 @@
 import os
 import shutil
+from cad_engine.version_manifest import active_version_manifest
 
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -101,6 +102,7 @@ async def performance_headers(request, call_next):
 def integrated_system_health():
     status = main_auto.system_health()
     status['object_storage'] = artifact_storage.healthcheck()
+    status['versions'] = active_version_manifest()
     return status
 
 

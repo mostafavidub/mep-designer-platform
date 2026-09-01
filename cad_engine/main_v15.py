@@ -25,8 +25,9 @@ from .main import (
 )
 from .mechanical_authority_site_v15 import design_mechanical_authority_site
 from app.dxf_input import normalize_input_copy
+from .version_manifest import CAD_API_VERSION, MECHANICAL_PIPELINE_VERSION
 
-app = FastAPI(title="EngiTools CAD Designer", version="15.1.0")
+app = FastAPI(title="EngiTools CAD Designer", version=CAD_API_VERSION)
 
 
 @app.get("/health")
@@ -34,7 +35,8 @@ def health():
     return {
         "ok": True,
         "service": "cad-designer",
-        "version": "15.1.0",
+        "version": CAD_API_VERSION,
+        "mechanical_pipeline_version": MECHANICAL_PIPELINE_VERSION,
         "mechanical_mode": "authority-project-driven",
         "electrical_mode": "rule-driven-preliminary",
     }
@@ -182,7 +184,7 @@ def design(req: DesignRequest):
             "ok":True,
             "project_id":req.project_id,
             "discipline":discipline,
-            "engine_version":"15.1.0",
+            "engine_version":CAD_API_VERSION,
             "mode":"authority-project-driven" if discipline=="mechanical" else "rule-driven-preliminary",
             "preliminary":True,
             "requires_professional_review":True,
