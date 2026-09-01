@@ -49,6 +49,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user request to show newly added output-production steps on the site"},
       "verification":{"focused_tests":"must_pass","web_regression":"must_pass","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Report only persisted backend milestones and aggregate synchronous engine gates into a truthful mechanical release QA phase.","rollback":"Supersede through an approved contract change; do not replace real milestones with simulated percentages."}
+    },
+    {
+      "id":"GOV-2026-006",
+      "status":"APPROVED",
+      "summary":"Make architectural north the sole directional authority and remove source print frames, inner borders and legacy footer/subtitle bands from every issued plan.",
+      "affected_capabilities":["architecture_preservation","sheet_layout","safe_zones","visual_release"],
+      "affected_projects":["all","project-1"],
+      "approval":{"status":"APPROVED","basis":"explicit user request based on three annotated project-1 output images"},
+      "verification":{"focused_tests":"must_pass","architecture_preservation":"must_pass","exact_file_reopen":"must_pass","montage":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Preserve the source architectural north symbol through the plan transform, suppress generated north arrows, and remove only positively identified source presentation furniture.","rollback":"Supersede only with a stricter approved contract; never restore duplicate north graphics or source sheet furniture."}
     }
   ]
 }

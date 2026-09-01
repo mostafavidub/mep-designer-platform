@@ -25,6 +25,7 @@ from .mechanical_release_hardening_v18 import (
     validate_layout_geometry, validate_titleblocks, validate_safe_zones,
     validate_equipment_linkage, validate_detail_library,
     validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate,
+    validate_architectural_presentation,
 )
 from .version_manifest import MECHANICAL_PIPELINE_VERSION
 
@@ -377,6 +378,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     hardening_gates=(
         ('titleblock_qa',validate_titleblocks(dst,report.get('composition') or {}),'titleblock_gate'),
         ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
+        ('architectural_presentation_qa',validate_architectural_presentation(dst,report.get('composition') or {}),'architectural_presentation_gate'),
         ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {}),'equipment_linkage_gate'),
         ('split_ac_visual_qa',validate_split_ac_visual_legibility(dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews')),'split_ac_visual_gate'),
         ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),

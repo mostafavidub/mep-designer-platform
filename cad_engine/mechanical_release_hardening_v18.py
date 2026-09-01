@@ -122,6 +122,33 @@ def validate_safe_zones(path: Path, composition: dict) -> dict:
             "boards":results,"exact_file_reopened":True}
 
 
+def validate_architectural_presentation(path: Path, composition: dict) -> dict:
+    """Forbid duplicate north graphics, source print frames and subtitle bands."""
+    boards=(composition or {}).get("boards") or {};errors=[];results=[]
+    try:doc=ezdxf.readfile(Path(path));entities=list(doc.modelspace())
+    except Exception as exc:return {"version":"architectural-presentation-gate-v18.2","status":"FAIL","errors":["exact_dxf_reopen_failed"],"detail":str(exc)}
+    generated_north=[e for e in entities if str(getattr(e.dxf,"layer","") or "").upper()=="ENGITOOLS-SHEET-NORTH"]
+    if generated_north:errors.append(f"duplicate_generated_north:{len(generated_north)}")
+    subtitle_entities=[e for e in entities if str(getattr(e.dxf,"layer","") or "").upper()=="ENGITOOLS-SHEET-SUBTITLE"]
+    if subtitle_entities:errors.append(f"forbidden_subtitle_band:{len(subtitle_entities)}")
+    for key,board in boards.items():
+        area=tuple(map(float,board.get("plan_area") or ()));frames=[]
+        if len(area)==4:
+            aw=max(area[2]-area[0],1e-9);ah=max(area[3]-area[1],1e-9)
+            for e in entities:
+                if e.dxftype() not in {"LWPOLYLINE","POLYLINE"}:continue
+                try:
+                    if not e.closed:continue
+                    ex=bbox.extents([e],fast=True)
+                    if not ex.has_data:continue
+                    x1,y1,x2,y2=map(float,(ex.extmin.x,ex.extmin.y,ex.extmax.x,ex.extmax.y))
+                    if (x2-x1)>=aw*.88 and (y2-y1)>=ah*.88 and _inside((x1,y1,x2,y2),area,.08):frames.append(str(getattr(e.dxf,"handle","") or "POLYLINE"))
+                except Exception:continue
+        if frames:errors.append(f"source_print_frame_present:{key}:{len(frames)}")
+        results.append({"board_id":key,"source_frame_count":len(frames),"status":"PASS" if not frames else "FAIL"})
+    return {"version":"architectural-presentation-gate-v18.2","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"generated_north_count":len(generated_north),"subtitle_entity_count":len(subtitle_entities),"exact_file_reopened":True}
+
+
 def validate_equipment_linkage(path: Path, composition: dict) -> dict:
     """Require equipment symbols and their service routes for active families."""
     family_contract={

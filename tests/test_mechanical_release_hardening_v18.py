@@ -1,6 +1,6 @@
 import ezdxf
-from cad_engine.mechanical_authority_v15 import _boards, _draw_titleblock, _draw_detail_sheet, _ensure_ac_blocks
-from cad_engine.mechanical_release_hardening_v18 import validate_layout_geometry, validate_titleblocks, validate_safe_zones, validate_equipment_linkage, validate_detail_library, validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate
+from cad_engine.mechanical_authority_v15 import _boards, _draw_titleblock, _draw_detail_sheet, _ensure_ac_blocks, _entity_should_copy, _north_from_architecture
+from cad_engine.mechanical_release_hardening_v18 import validate_layout_geometry, validate_titleblocks, validate_safe_zones, validate_equipment_linkage, validate_detail_library, validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate, validate_architectural_presentation
 
 
 def _rows(n=8):
@@ -38,6 +38,47 @@ def test_gate_2_missing_titleblock_fails_closed(tmp_path):
     path=tmp_path/"issued.dxf"; doc.saveas(path)
     composition={"boards":{board.sheet:vars(board)},"manifest":[{"old_sheet":board.sheet,"code":board.code}]}
     assert validate_titleblocks(path,composition)["status"] == "FAIL"
+
+
+def test_source_presentation_filter_removes_frame_and_footer_but_preserves_architecture():
+    doc=ezdxf.new("R2013");msp=doc.modelspace();bounds=(0.0,0.0,21.0,29.7)
+    frame=msp.add_lwpolyline([(0,0),(21,0),(21,29.7),(0,29.7)],close=True)
+    footer=msp.add_line((2,2),(19,2),dxfattribs={"layer":"MEN"})
+    wall=msp.add_line((2,2),(19,2),dxfattribs={"layer":"WALL"})
+    title=msp.add_text("پلان معماری طبقه همکف",dxfattribs={"height":.2});title.dxf.insert=(5,1.5)
+    assert _entity_should_copy(frame,bounds) is False
+    assert _entity_should_copy(footer,bounds) is False
+    assert _entity_should_copy(title,bounds) is False
+    assert _entity_should_copy(wall,bounds) is True
+
+
+def test_architectural_presentation_gate_rejects_duplicate_north_frame_and_subtitle(tmp_path):
+    rows=[{"old_sheet":"S1","code":"M-101","family":"SANITARY_VENT","level":"GROUND","title_fa":"Plan"}]
+    board=_boards(rows)["S1"];composition={"boards":{"S1":vars(board)},"manifest":rows}
+    doc=ezdxf.new("R2013");doc.layers.add("ENGITOOLS-SHEET-NORTH");doc.layers.add("ENGITOOLS-SHEET-SUBTITLE");msp=doc.modelspace()
+    x1,y1,x2,y2=board.plan_area
+    msp.add_lwpolyline([(x1,y1),(x2,y1),(x2,y2),(x1,y2)],close=True)
+    msp.add_line((x2-1,y2-1),(x2-1,y2-.2),dxfattribs={"layer":"ENGITOOLS-SHEET-NORTH"})
+    msp.add_text("SC:1/100",dxfattribs={"layer":"ENGITOOLS-SHEET-SUBTITLE","height":.1}).set_placement((x1+1,y1+.1))
+    path=tmp_path/"dirty-presentation.dxf";doc.saveas(path)
+    result=validate_architectural_presentation(path,composition)
+    assert result["status"]=="FAIL"
+    assert any(x.startswith("duplicate_generated_north") for x in result["errors"])
+    assert any(x.startswith("forbidden_subtitle_band") for x in result["errors"])
+    assert any(x.startswith("source_print_frame_present") for x in result["errors"])
+
+
+def test_north_vector_is_read_from_owning_architectural_compass_without_redraw():
+    doc=ezdxf.new("R2013");msp=doc.modelspace()
+    msp.add_text("N",dxfattribs={"height":.2}).set_placement((10,10))
+    msp.add_line((9.7,9),(10.3,9));msp.add_line((10,8.7),(10,9.3))
+    north=_north_from_architecture(doc,{"bounds":(0,0,21,29.7)})
+    assert north is not None
+    assert abs(north["angle_deg"]-90.0)<1e-6
+    rows=[{"old_sheet":"S1","code":"M-101","family":"SANITARY_VENT","level":"GROUND","title_fa":"Plan"}]
+    _draw_titleblock(doc,msp,_boards(rows)["S1"])
+    assert not [e for e in msp if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-SHEET-NORTH"]
+    assert not [e for e in msp if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-SHEET-SUBTITLE"]
 
 
 def test_gate_3_reserved_zones_are_enforced_on_exact_file(tmp_path):
