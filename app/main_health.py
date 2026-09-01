@@ -1,3 +1,4 @@
+import os
 import shutil
 
 from starlette.middleware.gzip import GZipMiddleware
@@ -58,6 +59,25 @@ register_gsc_routes(app)
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
+# The Railway hostname is a temporary trial URL and must not accumulate search
+# signals that cannot be preserved after the trial expires. Keep this scoped by
+# hostname so a future custom domain is indexable without a code change.
+TEMPORARY_NOINDEX_HOSTS = {
+    host.strip().lower().rstrip('.')
+    for host in os.getenv(
+        'TEMPORARY_NOINDEX_HOSTS',
+        'web-app-production-3d3b.up.railway.app',
+    ).split(',')
+    if host.strip()
+}
+
+
+def _request_hostname(request):
+    forwarded_host = request.headers.get('x-forwarded-host', '').split(',')[0].strip()
+    host = forwarded_host or request.headers.get('host', '')
+    return host.split(':', 1)[0].lower().rstrip('.')
+
+
 @app.middleware('http')
 async def performance_headers(request, call_next):
     response = await call_next(request)
@@ -71,6 +91,8 @@ async def performance_headers(request, call_next):
         response.headers['Cache-Control'] = 'no-cache'
     if path.startswith('/projects/') or path in {'/login', '/register'}:
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    elif _request_hostname(request) in TEMPORARY_NOINDEX_HOSTS:
+        response.headers['X-Robots-Tag'] = 'noindex, follow'
     response.headers.setdefault('Vary', 'Accept-Encoding')
     return response
 
