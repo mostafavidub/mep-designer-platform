@@ -16,6 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from . import artifact_storage
 from . import mechanical_workflow
+from .design_progress import get_project_progress, set_project_progress
 
 
 POLL_SECONDS = float(os.getenv('JOB_QUEUE_POLL_SECONDS', '2'))
@@ -98,6 +99,7 @@ def register_job_queue(app, legacy):
         db.add(job)
         project.status = 'queued'
         project.last_error = ''
+        set_project_progress(project, 'queued')
         db.commit()
         db.refresh(revision)
         db.refresh(job)
@@ -125,6 +127,11 @@ def register_job_queue(app, legacy):
                     'attempts': job.attempts,
                     'max_attempts': job.max_attempts,
                 }
+            progress = get_project_progress(project)
+            if progress:
+                data['design_progress'] = progress
+                if project.status in ('queued', 'designing', 'quality_check'):
+                    data['progress'] = progress['percent']
         finally:
             db.close()
         data['storage_durable'] = artifact_storage.configured()
@@ -235,6 +242,7 @@ def register_job_queue(app, legacy):
                 project = db.get(legacy.Project, job.project_id)
                 revision = db.get(legacy.Revision, job.revision_id)
                 if project: project.status = 'designing'
+                if project: set_project_progress(project, 'preparing_inputs')
                 if revision: revision.status = 'processing'
             db.commit()
             return job.id
@@ -271,6 +279,7 @@ def register_job_queue(app, legacy):
                 if project:
                     project.status = 'queued' if job.job_type == 'design' else 'analyzing'
                     project.last_error = ''
+                    if job.job_type == 'design': set_project_progress(project, 'queued')
                 if job.revision_id:
                     revision = db.get(legacy.Revision, job.revision_id)
                     if revision:
@@ -533,6 +542,9 @@ def register_job_queue(app, legacy):
         if not project: raise HTTPException(404)
         job = db.query(Job).filter(Job.project_id == pid).order_by(Job.id.desc()).first()
         payload = {'status': project.status, 'position': _queue_position(db, job), 'job_status': job.status if job else None}
+        progress = get_project_progress(project)
+        if progress:
+            payload['design_progress'] = progress
         db.close(); return payload
 
     def _maintenance_authorized(request: Request):

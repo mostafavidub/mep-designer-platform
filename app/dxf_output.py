@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 
 from . import main as legacy
 from . import artifact_storage
+from .design_progress import set_project_progress
 
 app = legacy.app
 _prev_flow_payload = legacy.flow_payload
@@ -223,6 +224,7 @@ def run_design_dxf(project_id, revision_id):
     try:
         p.status = 'designing'
         r.status = 'processing'
+        set_project_progress(p, 'preparing_inputs')
         db.commit()
         if not legacy.CAD_DESIGNER_URL:
             raise RuntimeError('موتور CAD Designer هنوز به این سرویس متصل نشده است.')
@@ -254,6 +256,8 @@ def run_design_dxf(project_id, revision_id):
                             'source_file': analyzed_file.get('file'),
                         })
             design_answers['_plan_fixture_evidence'] = fixture_evidence
+        set_project_progress(p, 'validating_contract')
+        db.commit()
         payload = {
             'project_id': str(p.id),
             'discipline': discipline,
@@ -272,12 +276,16 @@ def run_design_dxf(project_id, revision_id):
                 'approved_manifest': approved_manifest,
             },
         }
+        set_project_progress(p, 'engine_designing')
+        db.commit()
         resp = requests.post(legacy.CAD_DESIGNER_URL + '/design', json=payload, timeout=3600)
         if not resp.ok:
             message = _cad_error_message(resp)
             print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}', flush=True)
             raise RuntimeError(message)
         data = resp.json()
+        set_project_progress(p, 'validating_output')
+        db.commit()
         if data.get('discipline') and data['discipline'] != discipline:
             raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
 
@@ -313,6 +321,8 @@ def run_design_dxf(project_id, revision_id):
         if not generated:
             raise RuntimeError('موتور CAD هیچ فایل DXF تولید نکرد.')
 
+        set_project_progress(p, 'packaging')
+        db.commit()
         # Validate and upload directly from the ephemeral CAD workspace.
         # No final-artifact copy is ever created on the persistent Volume.
         if len(generated) == 1:
@@ -324,11 +334,15 @@ def run_design_dxf(project_id, revision_id):
             if not dst.exists():
                 raise RuntimeError('بسته DXF تولیدشده پیدا نشد.')
 
+        set_project_progress(p, 'artifact_qa')
+        db.commit()
         artifact_qa = artifact_storage.validate_output_artifact(dst)
         analysis = dict(p.analysis or {})
         analysis['last_artifact_validation'] = artifact_qa
         p.analysis = analysis
 
+        set_project_progress(p, 'uploading_output')
+        db.commit()
         durable_uri = artifact_storage.upload_output(
             p.id, r.revision_no, discipline, dst,
         )
@@ -338,12 +352,15 @@ def run_design_dxf(project_id, revision_id):
 
         # Reuse the existing artifact-path column for compatibility with the
         # current database schema; final artifacts live only in R2.
+        set_project_progress(p, 'finalizing')
+        db.commit()
         r.pdf_path = durable_uri
         r.status = 'ready'
         r.error = ''
         p.status = 'ready'
         p.current_revision = r.revision_no
         p.last_error = ''
+        set_project_progress(p, 'completed')
         db.commit()
         _purge_processing_files(p.id, keep_output=True)
         artifact_storage.delete_project_inputs(p.id)

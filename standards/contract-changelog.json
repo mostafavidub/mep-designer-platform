@@ -19,6 +19,16 @@
       "approval":{"status":"APPROVED","basis":"CI regression repair under the user-approved ten-step governance task"},
       "verification":{"focused_tests":"22 PASS","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Run semantic role validation before composition and full board identity validation when physical boards exist.","rollback":"Revert only through a superseding approved migration; never disable production board identity."}
+    },
+    {
+      "id":"GOV-2026-003",
+      "status":"APPROVED",
+      "summary":"Persist and display real milestone-based CAD design progress in the flow API, queue API, upload modal and project page.",
+      "affected_capabilities":["design_progress_visibility"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user request to show the active design stage and completion percentage"},
+      "verification":{"focused_tests":"5 PASS","javascript_syntax":"PASS","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Initialize queued jobs at 3 percent and advance only at completed backend milestones through 100 percent.","rollback":"Supersede with an approved progress contract; do not remove progress visibility."}
     }
   ]
 }
