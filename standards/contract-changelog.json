@@ -39,6 +39,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user request after Split-AC equipment was not visibly recognizable in project-1 previews"},
       "verification":{"focused_tests":"must_pass","golden_regression":"must_pass","exact_file_reopen":"must_pass","per_sheet_visual_qa":"must_pass","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Release only when semantic linkage and per-sheet visual legibility both pass.","rollback":"Supersede with an approved stricter contract; never return to layer-count-only acceptance."}
+    },
+    {
+      "id":"GOV-2026-005",
+      "status":"APPROVED",
+      "summary":"Expose the mechanical release QA phase and a durable completed/current/pending progress timeline in both customer progress interfaces.",
+      "affected_capabilities":["design_progress_visibility","split_ac","visual_release"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user request to show newly added output-production steps on the site"},
+      "verification":{"focused_tests":"must_pass","web_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Report only persisted backend milestones and aggregate synchronous engine gates into a truthful mechanical release QA phase.","rollback":"Supersede through an approved contract change; do not replace real milestones with simulated percentages."}
     }
   ]
 }

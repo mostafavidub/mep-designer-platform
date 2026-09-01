@@ -16,7 +16,7 @@
 
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const summary=d=>{const a=d.auto_summary||[];return a.length?`<div class="note-bar"><b>مواردی که خودکار به‌دست آمد:</b><ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''};
-  const designProgress=d=>{const p=d.design_progress||{};const value=Math.max(0,Math.min(100,Number(p.percent)||0));return `<div class="design-progress" aria-live="polite"><div class="design-progress-head"><b>${escapeHtml(p.label||'در حال آماده‌سازی طراحی')}</b><strong>${Math.round(value)}٪</strong></div><div class="progress"><span style="width:${value}%"></span></div>${p.detail?`<small class="muted">${escapeHtml(p.detail)}</small>`:''}</div>`};
+  const designProgress=d=>{const p=d.design_progress||{};const value=Math.max(0,Math.min(100,Number(p.percent)||0)),timeline=Array.isArray(p.timeline)?p.timeline:[];const steps=timeline.length?`<ol class="design-progress-steps">${timeline.map(x=>`<li class="${escapeHtml(x.state||'pending')}"><span></span>${escapeHtml(x.label||'')}</li>`).join('')}</ol>`:'';return `<div class="design-progress" aria-live="polite"><div class="design-progress-head"><b>${escapeHtml(p.label||'در حال آماده‌سازی طراحی')}</b><strong>${Math.round(value)}٪</strong></div><div class="progress"><span style="width:${value}%"></span></div>${p.detail?`<small class="muted">${escapeHtml(p.detail)}</small>`:''}${steps}</div>`};
   function render(d){
     if(!modalBody||!modalTitle||!modalBar)return;
     modalBar.style.width=(d.progress||0)+'%';
