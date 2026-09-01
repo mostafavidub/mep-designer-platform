@@ -17,6 +17,7 @@
       "affected_capabilities":["sheet_layout","content_completeness"],
       "affected_projects":["all"],
       "approval":{"status":"APPROVED","basis":"CI regression repair under the user-approved ten-step governance task"},
+      "verification":{"focused_tests":"22 PASS","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Run semantic role validation before composition and full board identity validation when physical boards exist.","rollback":"Revert only through a superseding approved migration; never disable production board identity."}
     }
   ]
