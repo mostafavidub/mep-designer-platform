@@ -12,6 +12,6 @@
     {"id":"content_completeness","status":"LOCKED","requirements":["per_board_mechanical_content","plan_annotation"],"tests":["test_gate_6_each_plan_requires_content_and_annotation"]},
     {"id":"architecture_preservation","status":"LOCKED","requirements":["critical_zero_loss","important_zero_loss","exact_reopen"],"tests":["test_final_sanitizer_removes_offsheet_source_geometry_and_empty_layout"]},
     {"id":"visual_release","status":"LOCKED","requirements":["montage","exact_file_reopen","stable_sha256"],"tests":["test_gate_7_exact_reopen_and_montage_are_verified"]},
-    {"id":"design_progress_visibility","status":"LOCKED","requirements":["durable_stage","monotonic_percent","flow_api","queue_api","modal_ui","project_ui"],"tests":["test_stage_percentages_are_monotonic_and_finish_at_100","test_backend_emits_real_milestones_around_cad_and_artifact_work","test_flow_and_queue_expose_progress_and_both_uis_render_it"]}
+    {"id":"design_progress_visibility","status":"LOCKED","requirements":["durable_stage","monotonic_percent","release_qa_stage","completed_current_pending_timeline","flow_api","queue_api","modal_ui","project_ui"],"tests":["test_stage_percentages_are_monotonic_and_finish_at_100","test_release_qa_is_visible_and_timeline_marks_real_state","test_backend_emits_real_milestones_around_cad_and_artifact_work","test_flow_and_queue_expose_progress_and_both_uis_render_it"]}
   ]
 }

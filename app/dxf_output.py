@@ -288,6 +288,12 @@ def run_design_dxf(project_id, revision_id):
             print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}', flush=True)
             raise RuntimeError(message)
         data = resp.json()
+        if discipline == 'mechanical':
+            set_project_progress(
+                p, 'mechanical_release_qa',
+                detail='کنترل ارتباط تجهیزات و مسیرها، جزئیات اجرایی، پریویوی هر پلان، exact-file reopen و montage',
+            )
+            db.commit()
         set_project_progress(p, 'validating_output')
         db.commit()
         if data.get('discipline') and data['discipline'] != discipline:

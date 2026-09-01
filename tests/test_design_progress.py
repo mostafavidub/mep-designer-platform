@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from app.design_progress import STAGES, get_project_progress, set_project_progress, stage_payload
+from app.design_progress import STAGES, get_project_progress, progress_timeline, set_project_progress, stage_payload
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,11 +32,20 @@ class DesignProgressTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stage_payload("made_up_stage")
 
+    def test_release_qa_is_visible_and_timeline_marks_real_state(self):
+        payload=stage_payload('mechanical_release_qa')
+        self.assertEqual(payload['percent'],78)
+        self.assertIn('تجهیزات',payload['label'])
+        states={x['stage']:x['state'] for x in progress_timeline('mechanical_release_qa')}
+        self.assertEqual(states['engine_designing'],'completed')
+        self.assertEqual(states['mechanical_release_qa'],'current')
+        self.assertEqual(states['packaging'],'pending')
+
     def test_backend_emits_real_milestones_around_cad_and_artifact_work(self):
         source = (ROOT / "app/dxf_output.py").read_text(encoding="utf-8")
         ordered = [
             "'preparing_inputs'", "'validating_contract'", "'engine_designing'",
-            "requests.post", "'validating_output'", "'packaging'", "'artifact_qa'",
+            "requests.post", "'mechanical_release_qa'", "'validating_output'", "'packaging'", "'artifact_qa'",
             "'uploading_output'", "'finalizing'", "'completed'",
         ]
         positions = [source.index(token) for token in ordered]
@@ -49,7 +58,9 @@ class DesignProgressTests(unittest.TestCase):
         self.assertIn("data['design_progress']", queue)
         self.assertIn("payload['design_progress']", queue)
         self.assertIn("d.design_progress", modal)
+        self.assertIn("p.timeline", modal)
         self.assertIn("data-design-progress", project)
+        self.assertIn("data-design-timeline", project)
         self.assertIn("aria-valuenow", project)
 
 
