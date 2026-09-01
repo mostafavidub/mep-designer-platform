@@ -17,7 +17,7 @@ python data/rulebook/generate_rulebook_v4.py "$RULEBOOK_TARGET"
 # CAD designer: mechanical requests use the fail-closed v17 authority pipeline
 # with Architecture Preservation Gate plus project-agnostic Detail/Riser/
 # Calculation/General-Notes parity. Electrical remains on the existing flow.
-uvicorn cad_engine.main_v17:app --host 127.0.0.1 --port 8081 &
+uvicorn cad_engine.main_v18:app --host 127.0.0.1 --port 8081 &
 CAD_PID=$!
 trap 'kill $CAD_PID 2>/dev/null || true' EXIT INT TERM
 

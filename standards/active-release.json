@@ -1,0 +1,7 @@
+{
+  "platform_release": "18.2.0",
+  "production_cad_entrypoint": "cad_engine.main_v18:app",
+  "mechanical_pipeline": "mechanical-authority-site-pipeline-v18.2",
+  "version_source": "cad_engine/version_manifest.py",
+  "historical_snapshots_are_immutable": true
+}

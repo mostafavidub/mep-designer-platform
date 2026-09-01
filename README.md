@@ -1,5 +1,9 @@
 # MEP Designer Platform
 
+Active production release: **18.2.0**. The CAD service starts from
+`cad_engine.main_v18:app`; `/version` and the website `/system_health` response
+publish the same authoritative component-version manifest.
+
 Architecture-first MEP design web application. Users upload architectural DXF files; the platform extracts and computes every engineering input that can be derived reliably from the plan, then asks only unresolved project facts or owner decisions.
 
 Current runtime:
