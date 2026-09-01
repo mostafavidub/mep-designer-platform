@@ -1,0 +1,24 @@
+{
+  "schema_version":"1.0.0",
+  "changes":[
+    {
+      "id":"GOV-2026-001",
+      "status":"APPROVED",
+      "summary":"Establish the ten-step mechanical design governance contract and project-1 golden baseline.",
+      "affected_capabilities":["all_locked_capabilities"],
+      "affected_projects":["project-1"],
+      "approval":{"status":"APPROVED","basis":"user instruction in project task"},
+      "migration":{"forward":"Adopt governance v1 and validate all future releases.","rollback":"Not permitted after adoption; supersede with a new approved governance version."}
+    },
+    {
+      "id":"GOV-2026-002",
+      "status":"APPROVED",
+      "summary":"Separate pre-composition manifest semantics from post-composition physical board enforcement; preserve fail-closed production board identity.",
+      "affected_capabilities":["sheet_layout","content_completeness"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"CI regression repair under the user-approved ten-step governance task"},
+      "verification":{"focused_tests":"22 PASS","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Run semantic role validation before composition and full board identity validation when physical boards exist.","rollback":"Revert only through a superseding approved migration; never disable production board identity."}
+    }
+  ]
+}

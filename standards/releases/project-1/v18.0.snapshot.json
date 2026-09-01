@@ -1,0 +1,17 @@
+{
+  "schema_version":"1.0.0",
+  "project_id":"project-1",
+  "release":"v18.0",
+  "status":"APPROVED",
+  "source_architecture_sha256":"2c0d46c5f60b34af766fc57b4d5b2ba751e5073319242fcdf14551ef6ccb1bce",
+  "issued_dxf_sha256":"4b35b0f55790efb07fcd0f24de67a0fce4ef3405d308d005816219d3cf756421",
+  "package_sha256":"4d9de8044a4f7811a405a794f9d8a62bb32ab2949e0bb7f9cc664a15011d909b",
+  "engine_version":"mechanical-authority-site-pipeline-v18.0",
+  "source_policy":{"architecture_used":true,"reference_mechanical_used":false},
+  "board_count":28,
+  "approved_plan_count":20,
+  "all_required_gates":"PASS",
+  "generating_commit":"8fcd05f050f7c08af5301daf15d92e873ee83a83",
+  "artifacts_stored_outside_git":true
+}
+

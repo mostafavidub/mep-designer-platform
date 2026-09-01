@@ -1,0 +1,12 @@
+{
+  "schema_version":"1.0.0",
+  "rules":[
+    {"paths":["cad_engine/mechanical_authority_v15.py"],"capabilities":["sheet_layout","title_block","safe_zones","split_ac","package_radiator","details","visual_release"]},
+    {"paths":["cad_engine/engineering_runner_v13.py","cad_engine/routing_v13.py","cad_engine/sizing_v13.py"],"capabilities":["gas","split_ac","package_radiator","content_completeness"]},
+    {"paths":["cad_engine/documentation_enhancer_v17.py"],"capabilities":["details","content_completeness","safe_zones"]},
+    {"paths":["cad_engine/final_delivery_gate_v17.py","cad_engine/mechanical_release_hardening_v18.py"],"capabilities":["sheet_layout","title_block","safe_zones","content_completeness","architecture_preservation","visual_release"]},
+    {"paths":["standards/**"],"capabilities":["all_locked_capabilities"],"requires":["governance_validation","contract_changelog"]}
+  ],
+  "default_for_cad_engine_change":["focused_tests","golden_regression","exact_reopen","montage"]
+}
+

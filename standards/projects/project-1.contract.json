@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "project_id": "project-1",
+  "contract_status": "LOCKED",
+  "input": {
+    "drive_folder_id": "1sDrs7AsbBGlqK4mUpd4LtEzUAwS7I7qT",
+    "architecture_filename": "معماری.dxf",
+    "architecture_sha256": "2c0d46c5f60b34af766fc57b4d5b2ba751e5073319242fcdf14551ef6ccb1bce",
+    "generation_inputs": ["architecture"],
+    "forbidden_generation_inputs": ["reference_mechanical_dxf", "electrical_dxf"]
+  },
+  "locked_answers": {
+    "location": "Gonbad-e Kavus",
+    "heating": "package_radiator",
+    "cooling": "wall_mounted_split_ac",
+    "gas_service": true,
+    "gas_service_pressure_mbar": 17.6,
+    "water_inlet_pressure_bar": 2.5,
+    "water_service_mode": "direct_city",
+    "hot_water_return": false,
+    "sewage_disposal": "septic",
+    "rainfall_intensity_mm_h": 110,
+    "enclosed_parking_mechanical_ventilation": false,
+    "outdoor_unit_location": "ROOF",
+    "route_restrictions": [],
+    "deliverable": "full_package"
+  },
+  "required_gates": [
+    "approved_manifest_qa", "layout_geometry_qa", "titleblock_qa", "safe_zone_qa",
+    "equipment_linkage_qa", "detail_library_qa", "content_completeness_qa",
+    "plan_board_population_qa", "architecture_preservation_qa_after_v17",
+    "exact_file_final_delivery_qa", "montage_exact_reopen_qa"
+  ]
+}
+

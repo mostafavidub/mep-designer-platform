@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "status": "LOCKED",
+  "policy": "Approved mechanical capabilities are append-only unless an approved contract migration explicitly changes them.",
+  "steps": [
+    {"id": 1, "name": "single_project_source_of_truth", "artifact": "standards/projects/project-1.contract.json", "required": true},
+    {"id": 2, "name": "locked_capability_registry", "artifact": "standards/capability-registry.json", "required": true},
+    {"id": 3, "name": "golden_project", "artifact": "standards/golden/project-1.baseline.json", "required": true},
+    {"id": 4, "name": "positive_and_destructive_acceptance_tests", "artifact": "tests/test_mechanical_governance_v1.py", "required": true},
+    {"id": 5, "name": "semantic_and_numeric_baseline", "artifact": "standards/golden/project-1.baseline.json", "required": true},
+    {"id": 6, "name": "change_impact_matrix", "artifact": "standards/change-impact-matrix.json", "required": true},
+    {"id": 7, "name": "fail_closed_release_pipeline", "artifact": "cad_engine/mechanical_governance_v1.py", "required": true},
+    {"id": 8, "name": "immutable_release_snapshot", "artifact": "standards/releases/project-1/v18.0.snapshot.json", "required": true},
+    {"id": 9, "name": "protected_merge_and_ci_policy", "artifact": ".github/workflows/mechanical-governance-v1.yml", "required": true},
+    {"id": 10, "name": "formal_contract_change_process", "artifact": "standards/CONTRACT_CHANGE_PROCESS.md", "required": true}
+  ],
+  "required_release_status": "PASS",
+  "non_pass_statuses": ["FAIL", "SKIPPED", "MISSING", "UNKNOWN"],
+  "task_handoff_required_section": "10-step governance impact"
+}
+
