@@ -27,9 +27,8 @@
   },
   "required_gates": [
     "approved_manifest_qa", "layout_geometry_qa", "titleblock_qa", "safe_zone_qa",
-    "equipment_linkage_qa", "detail_library_qa", "content_completeness_qa",
+    "equipment_linkage_qa", "split_ac_visual_qa", "detail_library_qa", "content_completeness_qa",
     "plan_board_population_qa", "architecture_preservation_qa_after_v17",
     "exact_file_final_delivery_qa", "montage_exact_reopen_qa"
   ]
 }
-

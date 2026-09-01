@@ -340,9 +340,9 @@ def _nearest_wall(p,walls):
 
 def _ensure_ac_blocks(doc):
     if "ENGI_AC_INDOOR" not in doc.blocks:
-        b=doc.blocks.new("ENGI_AC_INDOOR");b.add_lwpolyline([(-.60,-.12),(.60,-.12),(.60,.12),(-.60,.12)],close=True);b.add_line((-.45,0),(.45,0));b.add_line((-.45,-.06),(.45,-.06))
+        b=doc.blocks.new("ENGI_AC_INDOOR");b.add_lwpolyline([(-.90,-.34),(.90,-.34),(.90,.34),(-.90,.34)],close=True,dxfattribs={"lineweight":35});b.add_line((-.72,.08),(.72,.08),dxfattribs={"lineweight":25});b.add_line((-.72,-.08),(.72,-.08),dxfattribs={"lineweight":25});b.add_text("IDU",dxfattribs={"height":.22,"lineweight":25}).set_placement((-.22,-.27))
     if "ENGI_AC_OUTDOOR" not in doc.blocks:
-        b=doc.blocks.new("ENGI_AC_OUTDOOR");b.add_lwpolyline([(-.45,-.40),(.45,-.40),(.45,.40),(-.45,.40)],close=True);b.add_circle((0,0),.24);b.add_line((-.17,-.17),(.17,.17));b.add_line((-.17,.17),(.17,-.17))
+        b=doc.blocks.new("ENGI_AC_OUTDOOR");b.add_lwpolyline([(-.70,-.65),(.70,-.65),(.70,.65),(-.70,.65)],close=True,dxfattribs={"lineweight":35});b.add_circle((0,.08),.38,dxfattribs={"lineweight":25});b.add_line((-.27,-.19),(.27,.35),dxfattribs={"lineweight":25});b.add_line((-.27,.35),(.27,-.19),dxfattribs={"lineweight":25});b.add_text("ODU",dxfattribs={"height":.20,"lineweight":25}).set_placement((-.31,-.59))
 
 
 def _add_arrow(msp,start,end,layer):
@@ -452,7 +452,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             near=_nearest_wall(srcp,walls)
             if near:_,wallp,angle,_,_=near;p=_map_point(wallp,srcb,target);rot=math.degrees(angle)
             else:p=_map_point(srcp,srcb,target);rot=0
-            msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","rotation":rot});a=math.radians(rot+90);end=(p[0]+.55*math.cos(a),p[1]+.55*math.sin(a));_add_arrow(msp,p,end,"ENGITOOLS-M-HVAC-AIRFLOW");tag=e["id"].replace("AC-I","AC");cap=e.get("capacity_btu_h");note=f"{tag} | WALL-MOUNTED SPLIT AC"+(f" | {cap} BTU/h PRELIM." if cap else "")+"\nCOOLING & HEATING | DRAIN DN25 S=1% MIN";t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.06});t.dxf.insert=(p[0]+.8,p[1]+.65);t.dxf.width=4.3;ac_units.append({"tag":tag,"odu_tag":tag.replace("AC","ODU"),"level":board.level,"sheet":board.code,"equipment_type":"WALL-MOUNTED SPLIT AC","mode":"COOLING & HEATING","capacity_status":"PRELIMINARY","refrigerant_size_source":"SELECTED MANUFACTURER TABLE","condensate_nominal_diameter_mm":25,"condensate_min_slope_percent":1.0,"block":True,"airflow":True,"callout":True,"refrigerant":True,"condensate":True,"odu_destination_note":True,"schedule_match":True})
+            msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","rotation":rot,"lineweight":35});a=math.radians(rot+90);end=(p[0]+.85*math.cos(a),p[1]+.85*math.sin(a));_add_arrow(msp,p,end,"ENGITOOLS-M-HVAC-AIRFLOW");tag=e["id"].replace("AC-I","AC");cap=e.get("capacity_btu_h");tx=min(max(p[0]+1.05,target[0]+.2),target[2]-4.5);ty=min(max(p[1]+.85,target[1]+.5),target[3]-.4);msp.add_line(p,(tx-.10,ty-.10),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25});note=f"IDU | {tag} | WALL-MOUNTED SPLIT AC"+(f" | {cap} BTU/h PRELIM." if cap else "")+"\nCOOLING & HEATING | DRAIN DN25 S=1% MIN";t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.11});t.dxf.insert=(tx,ty);t.dxf.width=4.3;ac_units.append({"tag":tag,"odu_tag":tag.replace("AC","ODU"),"level":board.level,"sheet":board.code,"equipment_type":"WALL-MOUNTED SPLIT AC","mode":"COOLING & HEATING","capacity_status":"PRELIMINARY","refrigerant_size_source":"SELECTED MANUFACTURER TABLE","condensate_nominal_diameter_mm":25,"condensate_min_slope_percent":1.0,"block":True,"airflow":True,"callout":True,"refrigerant":True,"condensate":True,"odu_destination_note":True,"schedule_match":True})
         elif board.family=="HEATING" and kind=="radiator":
             p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.055});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":
@@ -468,8 +468,8 @@ def _draw_roof_hvac_equipment(doc,msp,board,pipeline):
     x1,y1,x2,y2=board.plan_area;cols=max(1,min(4,len(outdoor)))
     for i,e in enumerate(outdoor):
         col=i%cols;row=i//cols;p=(x1+1.4+col*min(3.2,(x2-x1-2.8)/max(cols-1,1)),y2-1.5-row*2.2)
-        msp.add_blockref("ENGI_AC_OUTDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP"})
-        t=msp.add_mtext(f"{e.get('id')} | ROOF ODU\nSERVES {e.get('serves') or 'IDU'} | REFRIGERANT RISER",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.055});t.dxf.insert=(p[0]+.55,p[1]+.35);t.dxf.width=2.6
+        msp.add_blockref("ENGI_AC_OUTDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","lineweight":35})
+        tp=(p[0]+.78,p[1]+.62);msp.add_line(p,(tp[0]-.08,tp[1]-.08),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25});t=msp.add_mtext(f"ODU | {e.get('id')}\nSERVES {e.get('serves') or 'IDU'} | REFRIGERANT RISER",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.10});t.dxf.insert=tp;t.dxf.width=2.8
     return len(outdoor)
 
 

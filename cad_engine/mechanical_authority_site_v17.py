@@ -24,7 +24,7 @@ from .final_delivery_gate_v17 import sanitize_to_approved_boards, validate_final
 from .mechanical_release_hardening_v18 import (
     validate_layout_geometry, validate_titleblocks, validate_safe_zones,
     validate_equipment_linkage, validate_detail_library,
-    validate_content_completeness, create_montage_and_validate,
+    validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate,
 )
 
 WEB_TO_CAD_FAMILY = {
@@ -377,6 +377,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         ('titleblock_qa',validate_titleblocks(dst,report.get('composition') or {}),'titleblock_gate'),
         ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
         ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {}),'equipment_linkage_gate'),
+        ('split_ac_visual_qa',validate_split_ac_visual_legibility(dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews')),'split_ac_visual_gate'),
         ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),
         ('content_completeness_qa',validate_content_completeness(dst,report.get('composition') or {}),'content_completeness_gate'),
     )

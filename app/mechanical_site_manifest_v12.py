@@ -55,6 +55,7 @@ def review_question_html_v12(drawing_set):
         '<thead><tr style="background:#F9FAFB"><th style="padding:7px">کد</th><th style="padding:7px">خانواده</th><th style="padding:7px">نوع نقشه</th><th style="padding:7px">طبقه / محدوده</th></tr></thead>'
         f'<tbody>{body}</tbody></table></div>'
         '<p style="font-size:13px;color:#667085;margin:10px 0">تعداد طبقات معماری با تعداد شیت‌های تأسیساتی یکی نیست. طبقات Typical فقط در همان سیستم و فقط وقتی تأیید شده باشند ادغام می‌شوند.</p>'
+        '<p style="font-size:13px;color:#344054;background:#F2F4F7;padding:9px 11px;border-radius:8px;margin:10px 0">در پلان‌های سرمایش، نمایش خوانای سمبل‌های IDU/ODU، تگ و ظرفیت، Leader، جهت پرتاب هوا، مسیر مبرد و درین و پریویوی مستقل هر شیت بخشی از قرارداد تحویل است؛ نبود هرکدام Release را متوقف می‌کند.</p>'
         '<style>#answerForm textarea,#answerForm>button{display:none!important}</style>'
         '<button type="button" class="btn primary wide" onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">تأیید همین Manifest و شروع طراحی</button>'
         '</div>'
@@ -63,4 +64,4 @@ def review_question_html_v12(drawing_set):
 
 def install(review_fix_module):
     review_fix_module.review_question_html = review_question_html_v12
-    review_fix_module.MANIFEST_PRESENTATION_VERSION = '12.0'
+    review_fix_module.MANIFEST_PRESENTATION_VERSION = '12.1'

@@ -144,9 +144,61 @@ def validate_equipment_linkage(path: Path, composition: dict) -> dict:
             layer=str(getattr(e.dxf,"layer","") or "").upper();p=_entity_center(e)
             if layer in counts and p and len(area)==4 and area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]:counts[layer]+=1
         missing=[layer for layer,count in counts.items() if count<1]
+        semantic={}
+        if family=="SPLIT_AC":
+            roof=str(board.get("level") or "").upper()=="ROOF";expected_name="ENGI_AC_OUTDOOR" if roof else "ENGI_AC_INDOOR";expected_label="ODU" if roof else "IDU"
+            local=[e for e in entities if (p:=_entity_center(e)) and len(area)==4 and area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]]
+            equipment=[e for e in local if e.dxftype()=="INSERT" and str(getattr(e.dxf,"name","")).upper()==expected_name]
+            callouts=[e for e in local if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-M-HVAC-CALLOUT" and expected_label in _plain_text(e).upper()]
+            leaders=[e for e in local if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-M-HVAC-CALLOUT" and e.dxftype() in {"LINE","LWPOLYLINE"}]
+            airflow=[e for e in local if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-M-HVAC-AIRFLOW"]
+            definition=doc.blocks.get(expected_name) if expected_name in doc.blocks else []
+            definition_text=" ".join(_plain_text(e) for e in definition).upper()
+            semantic={"expected_block":expected_name,"equipment_count":len(equipment),"callout_count":len(callouts),"leader_count":len(leaders),"airflow_entity_count":len(airflow),"definition_label":expected_label in definition_text}
+            if not equipment:missing.append("standard_equipment_block=0")
+            if len(callouts)<len(equipment):missing.append(f"readable_callouts={len(callouts)}<{len(equipment)}")
+            if len(leaders)<len(equipment):missing.append(f"callout_leaders={len(leaders)}<{len(equipment)}")
+            if not roof and len(airflow)<len(equipment):missing.append(f"airflow_geometry={len(airflow)}<{len(equipment)}")
+            if not semantic["definition_label"]:missing.append(f"block_label_missing:{expected_label}")
+            for layer in (["ENGITOOLS-M-HVAC-REFRIG","ENGITOOLS-M-HVAC-COND"] if not roof else []):
+                if counts.get(layer,0)<len(equipment):missing.append(f"linked_{layer}={counts.get(layer,0)}<{len(equipment)}")
         if missing:errors.append(f"equipment_or_route_missing:{key}:"+",".join(missing))
-        results.append({"board_id":key,"family":family,"counts":counts,"status":"PASS" if not missing else "FAIL"})
+        results.append({"board_id":key,"family":family,"counts":counts,"semantic":semantic,"status":"PASS" if not missing else "FAIL"})
     return {"version":"equipment-linkage-gate-v18.0","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"exact_file_reopened":True}
+
+
+def validate_split_ac_visual_legibility(path: Path, composition: dict, preview_dir: Path | None=None,
+                                        minimum_symbol_pixels: tuple[int,int]=(28,14), minimum_ink_pixels: int=20) -> dict:
+    """Render every Split-AC sheet and reject symbols that are not visibly legible."""
+    path=Path(path);preview_dir=Path(preview_dir) if preview_dir else None;errors=[];results=[]
+    try:
+        doc=ezdxf.readfile(path);entities=list(doc.modelspace())
+        from ezdxf.addons.drawing import RenderContext,Frontend
+        from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+        import matplotlib;matplotlib.use("Agg")
+        from matplotlib import pyplot as plt
+        fig=plt.figure(figsize=(8.27,11.69),dpi=120,facecolor="#101820");ax=fig.add_axes([.02,.02,.96,.96],facecolor="#101820");ax.set_axis_off();Frontend(RenderContext(doc),MatplotlibBackend(ax)).draw_layout(doc.modelspace(),finalize=True)
+        if preview_dir:preview_dir.mkdir(parents=True,exist_ok=True)
+        for key,board in ((composition or {}).get("boards") or {}).items():
+            if str(board.get("family") or "").upper()!="SPLIT_AC":continue
+            bounds=tuple(map(float,board.get("bounds") or ()));area=tuple(map(float,board.get("plan_area") or ()));roof=str(board.get("level") or "").upper()=="ROOF";name="ENGI_AC_OUTDOOR" if roof else "ENGI_AC_INDOOR"
+            ax.set_xlim(bounds[0],bounds[2]);ax.set_ylim(bounds[1],bounds[3]);fig.canvas.draw();np=__import__("numpy");rgba=np.asarray(fig.canvas.buffer_rgba());board_ink=int((np.abs(rgba[:,:,:3].astype(int)-np.array([16,24,32]))>18).any(axis=2).sum())
+            units=[]
+            for e in entities:
+                p=_entity_center(e)
+                if e.dxftype()!="INSERT" or str(getattr(e.dxf,"name","")).upper()!=name or not p or not(area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]):continue
+                ex=bbox.extents([e],fast=True);a=ax.transData.transform((ex.extmin.x,ex.extmin.y));b=ax.transData.transform((ex.extmax.x,ex.extmax.y));w=abs(int(b[0]-a[0]));h=abs(int(b[1]-a[1]));long_px=max(w,h);short_px=min(w,h);ink=board_ink;units.append({"handle":str(e.dxf.handle),"pixel_width":w,"pixel_height":h,"pixel_long_side":long_px,"pixel_short_side":short_px,"rendered_board_ink_pixels":ink});
+                if long_px<minimum_symbol_pixels[0] or short_px<minimum_symbol_pixels[1]:errors.append(f"split_symbol_too_small:{key}:{w}x{h}")
+            if not units:errors.append(f"split_visual_no_equipment:{key}")
+            preview=None
+            if preview_dir:
+                preview=preview_dir/f"{board.get('code') or key}-{board.get('level') or ''}.png";fig.savefig(preview,dpi=120,facecolor="#101820")
+                if not preview.exists() or preview.stat().st_size<1500:errors.append(f"split_preview_empty:{key}")
+            results.append({"board_id":key,"code":board.get("code"),"unit_count":len(units),"units":units,"preview":str(preview) if preview else None,"status":"PASS" if units and not any(f":{key}:" in x for x in errors) else "FAIL"})
+        plt.close(fig)
+    except Exception as exc:return {"version":"split-ac-visual-legibility-v18.1","status":"FAIL","errors":["split_visual_render_failed"],"detail":str(exc)}
+    if not results:errors.append("no_split_ac_boards")
+    return {"version":"split-ac-visual-legibility-v18.1","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"exact_file_reopened":True}
 
 
 def validate_detail_library(path: Path, composition: dict, minimum_geometry: int = 12) -> dict:
