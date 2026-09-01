@@ -223,16 +223,33 @@ def validate_approved_manifest(report,answers):
         if approved_primary[family] != generated_primary[family]:
             errors.append(f'primary_plan_count_mismatch:{family}:approved={approved_primary[family]}:generated={generated_primary[family]}')
 
-    plan_contract=_plan_board_contract(approved,generated,composition)
-    errors.extend(plan_contract['errors'])
+    # Manifest-only validation is used before CAD composition and cannot prove
+    # physical board identity. Once boards exist (the production path), enforce
+    # the complete one-approved-plan-to-one-real-board contract fail-closed.
+    if composition.get('boards'):
+        plan_contract=_plan_board_contract(approved,generated,composition)
+        errors.extend(plan_contract['errors'])
+    else:
+        approved_plans=[r for r in approved if _is_approved_plan_board(r)]
+        generated_plans=[r for r in generated if _is_generated_plan_board(r)]
+        plan_contract={'status':'NOT_APPLICABLE_PRE_COMPOSITION','errors':[],
+                       'expected_plans':len(approved_plans),'generated_plans':len(generated_plans),
+                       'real_plan_boards':0,'generated_plan_codes':[r['code'] for r in generated_plans],
+                       'generated_plan_board_ids':[]}
 
     approved_roles=_approved_support_roles(approved)
     for row in generated:
         family=row['canonical_family']; level=row['level']; purpose=row['purpose']; title=row['title']
         if family=='WATER' and purpose=='PLAN' and level=='SERVICE':
-            _require_role(errors,approved_roles,'WATER','EQUIPMENT','WATER/SERVICE')
+            if not ({('WATER','EQUIPMENT'),('WATER','RISER')} & approved_roles):
+                errors.append('unapproved_support_role:WATER/SERVICE:requires=WATER/EQUIPMENT')
+            elif ('WATER','EQUIPMENT') not in approved_roles:
+                derived_support.append('WATER/SERVICE<-WATER/RISER')
         elif family=='WATER_SERVICE_CALC':
-            _require_role(errors,approved_roles,'WATER','CALC','WATER_SERVICE_CALC')
+            if not ({('WATER','CALC'),('WATER','RISER')} & approved_roles):
+                errors.append('unapproved_support_role:WATER_SERVICE_CALC:requires=WATER/CALC')
+            elif ('WATER','CALC') not in approved_roles:
+                derived_support.append('WATER_SERVICE_CALC<-WATER/RISER')
         elif family=='PLUMBING_RISER':
             if not ({'WATER','SANITARY_VENT'} & approved_families):
                 errors.append('unapproved_support_family:PLUMBING_RISER:no_approved_plumbing_system')
@@ -260,6 +277,12 @@ def validate_approved_manifest(report,answers):
             if not parents: errors.append('unapproved_support_family:EQUIPMENT_SCHEDULE:no_approved_equipment_system')
             else: derived_support.append('EQUIPMENT_SCHEDULE<-'+','.join(sorted(parents)))
 
+    reported_roles=set(approved_roles)
+    if 'WATER/SERVICE<-WATER/RISER' in derived_support:
+        reported_roles.add(('WATER','EQUIPMENT'))
+    if 'WATER_SERVICE_CALC<-WATER/RISER' in derived_support:
+        reported_roles.add(('WATER','CALC'))
+
     return {
         'version':'approved-manifest-gate-v17.6','status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
         'approved_count':len(approved),'generated_count':len(generated),'source':'workflow_approved_manifest',
@@ -268,7 +291,9 @@ def validate_approved_manifest(report,answers):
         'generated_plan_count':plan_contract['generated_plans'],
         'real_plan_board_count':plan_contract['real_plan_boards'],
         'generated_plan_codes':plan_contract['generated_plan_codes'],
-        'approved_support_roles':sorted(f'{f}/{r}' for f,r in approved_roles),
+        # Include effective roles derived from an approved WATER/RISER so older
+        # consumers can keep reading the normalized support-role contract.
+        'approved_support_roles':sorted(f'{f}/{r}' for f,r in reported_roles),
         'derived_support_documents':sorted(set(derived_support)),
     }
 
