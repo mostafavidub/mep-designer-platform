@@ -42,5 +42,6 @@ def test_release_contract_contains_real_project_acceptance_features():
 
 def test_start_services_routes_cad_to_complete_release():
     text = Path("start_services.sh").read_text(encoding="utf-8")
-    assert "cad_engine.main_v15_2:app" in text
+    assert "cad_engine.main_v18:app" in text
+    assert "cad_engine.main_v15_2:app" not in text
     assert "cad_engine.main_v10_5:app" not in text

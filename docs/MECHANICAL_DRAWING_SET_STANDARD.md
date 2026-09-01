@@ -1,6 +1,6 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 4.1 — Mechanical authority pipeline v18.2 / Final Engineering QA
+Rule Book version: 4.2 — Mechanical authority pipeline v18.3 / Final Engineering QA
 
 ## Governing principle
 
@@ -9,6 +9,12 @@ The customer-facing mechanical drawing count is the number of approved mechanica
 The mandatory flow is:
 
 Architecture Upload -> Multi-Evidence Analysis -> Project Mechanical Model -> Mechanical Questions -> System Effective Levels -> System-Specific Typical Analysis -> Drawing Manifest -> Proposal -> Approval -> Frozen Approved Manifest -> CAD Generation -> Final Engineering QA -> Issue.
+
+## Architectural direction and presentation cleanliness
+
+The architectural north symbol is the sole directional authority. The engine must detect its vector from the owning architectural plan and preserve that original symbol through the same plan transform. It must never invent, default, or draw a second north arrow. Missing north evidence or any generated/source directional conflict blocks release.
+
+Architectural office print frames, inner white sheet borders, legacy footer/title strips, duplicated plan subtitles and scale bands are source presentation furniture—not building geometry—and must be removed from every issued plan. Only the EngiTools outer sheet frame and compact bottom title block may remain. Removal must be evidence-based; walls, doors, windows, shafts, grids, dimensions and unknown architectural geometry remain protected. Exact-file reopen QA must reject any surviving source frame, duplicated subtitle band or generated second north symbol.
 
 ## Project Mechanical Model (PMM)
 

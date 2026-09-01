@@ -10,7 +10,8 @@ Key contracts:
 - conservative architecture handling; source architectural entities are not deleted
 - preliminary/final provenance on every engineering value
 - integrated A4 sheet frame + compact bottom title block
-- north direction inherited from architecture when evidence exists
+- the architectural north symbol is the only north authority; never redraw it
+- legacy architectural print frames and footer/title bands are not copied
 - no drawing/title-block overlap
 - exact-file reopen QA before package is returned
 """
@@ -45,7 +46,7 @@ A4_H = 29.7
 TITLE_H = 3.10
 OUTER_MARGIN = 0.60
 PLAN_MARGIN = 1.05
-UNDERPLAN_H = 0.90
+UNDERPLAN_H = 0.0
 BOARD_GAP_X = 8.0
 BOARD_GAP_Y = 8.0
 BOARD_COLUMNS = 4
@@ -273,15 +274,37 @@ def _boards(manifest_rows):
     return result
 
 
-def _entity_should_copy(e):
+def _presentation_artifact_reason(e, bounds):
+    """Identify only source sheet furniture, never building geometry by region alone."""
+    ex=_entity_ext(e)
+    if not ex or not bounds:return None
+    x1,y1,x2,y2=map(float,bounds);sw=max(x2-x1,1e-9);sh=max(y2-y1,1e-9)
+    ex1,ey1,ex2,ey2=float(ex.extmin.x),float(ex.extmin.y),float(ex.extmax.x),float(ex.extmax.y)
+    ew=max(ex2-ex1,0.0);eh=max(ey2-ey1,0.0);typ=e.dxftype().upper()
+    layer=_norm(getattr(e.dxf,"layer",""));txt=_norm(_text(e))
+    if layer in {"suport","support","frame","sheet","border"}:return "SOURCE_PRINT_LAYER"
+    tolx=max(sw*.035,.15);toly=max(sh*.035,.15)
+    hugs=(abs(ex1-x1)<=tolx and abs(ex2-x2)<=tolx and abs(ey1-y1)<=toly and abs(ey2-y2)<=toly)
+    if typ in {"LWPOLYLINE","POLYLINE"} and hugs and ew>=sw*.85 and eh>=sh*.85:
+        return "SOURCE_PRINT_FRAME"
+    protected=("wall","door","window","shaft","column","grid","stair","dimension","struct","دیوار","در","پنجره")
+    semantic_arch=any(token in layer for token in protected) or typ in {"DIMENSION","HATCH","INSERT","ARC","CIRCLE","SPLINE"}
+    bottom=ey2<=y1+sh*.16+toly
+    stale_text=bool(LEGACY_SHEET_TEXT_RE.search(_text(e))) or any(x in txt for x in ("پلان معماری","architectural plan","sc:1/100"))
+    wide_separator=typ in {"LINE","LWPOLYLINE","POLYLINE"} and ew>=sw*.48 and eh<=sh*.08
+    if bottom and not semantic_arch and (stale_text or wide_separator):return "SOURCE_FOOTER_BAND"
+    return None
+
+
+def _entity_should_copy(e,bounds=None):
     layer=_norm(getattr(e.dxf,"layer",""))
-    if layer in {"suport","support","frame","sheet","border"}:return False
+    if _presentation_artifact_reason(e,bounds):return False
     if e.dxftype() in {"TEXT","MTEXT"} and LEGACY_SHEET_TEXT_RE.search(_text(e)):return False
     return True
 
 
 def _entities_in_bounds(msp,bounds):
-    return [e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e)]
+    return [e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e,bounds)]
 
 
 def _fit_transform(source_bounds,target_bounds):
@@ -370,8 +393,8 @@ def _draw_titleblock(doc,msp,board,project_name="EngiTools Project",status="Auth
     h=.11 if len(board.title)<=34 else .10 if len(board.title)<=50 else .09;mt(board.title,xL+.13,oy1+1.18,cw-.25,h)
     for i,(lab,val) in enumerate((("Discipline / رشته","Mechanical"),("Status / وضعیت",status),("Designed By / طراحی","EngiTools"),("Checked / کنترل","—"))):xx=xL+i*ccell+.09;mt(lab,xx,oy1+.50,ccell-.12,.055);mt(val,xx,oy1+.16,ccell-.12,.075)
     mt("Sheet No. / شماره نقشه",xR+.10,oy1+2.60,right-.18,.065);mt(board.code,xR+.30,oy1+1.82,right-.40,.18);scale="1:100" if board.family in PLAN_FAMILIES else "NTS";mt("Scale / مقیاس",xR+.10,oy1+1.10,1.18,.06);mt(scale,xR+1.57,oy1+1.08,1.0,.075);mt("Date / تاریخ",xR+.10,oy1+.72,1.18,.06);mt("—",xR+1.57,oy1+.70,1.0,.075);mt("Revision / بازنگری",xR+.10,oy1+.14,1.18,.06);mt("Rev 0",xR+1.57,oy1+.12,1.0,.075)
-    if board.family in PLAN_FAMILIES:
-        sx1,sy1,sx2,sy2=board.subtitle_area;e=msp.add_mtext(board.title,dxfattribs={"layer":"ENGITOOLS-SHEET-SUBTITLE","char_height":.10});e.dxf.insert=((sx1+sx2)/2-4,sy1+.36);e.dxf.width=8;e=msp.add_mtext("SC:1/100",dxfattribs={"layer":"ENGITOOLS-SHEET-SUBTITLE","char_height":.07});e.dxf.insert=((sx1+sx2)/2-1,sy1+.12);e.dxf.width=2
+    # Drawing title and scale live only in the compact title block. A second
+    # under-plan subtitle band is forbidden on every plan sheet.
 
 
 def _north_from_architecture(doc,plan):
@@ -545,7 +568,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         if b.family in PLAN_FAMILIES:
             plan=_find_roof_plan(arch) if b.family=="ROOF" or b.level=="ROOF" else _find_plan_for_level(arch,b.level)
             if plan:
-                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan);north_records[b.code]=north;_draw_north(msp,b,north)
+                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan);north_records[b.code]=north
                 if b.family=="ROOF" or (b.family=="SPLIT_AC" and b.level=="ROOF"):
                     overlay_reports.append({"sheet":b.code,"roof_outdoor_units":_draw_roof_hvac_equipment(doc,msp,b,pipeline)})
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
@@ -584,7 +607,8 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     if sum(len(v) for v in title_overlaps.values()):errors.append("drawing_titleblock_overlap")
     if any(sheet_content[k]==0 for k in boards):errors.append("blank_sheet")
     plan_boards=[b for b in boards.values() if b.family in PLAN_FAMILIES];missing_north=[b.code for b in plan_boards if not compose_report.get("north",{}).get(b.code)]
-    return {"version":"mechanical-authority-dxf-qa-v15.0","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":[f"north_input_required:{x}" for x in missing_north],"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north)}}
+    errors.extend(f"architectural_north_missing:{x}" for x in missing_north)
+    return {"version":"mechanical-authority-dxf-qa-v15.0","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":[],"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north)}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:

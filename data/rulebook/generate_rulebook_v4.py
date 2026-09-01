@@ -12,7 +12,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
 
-VERSION = "4.1"
+VERSION = "4.2"
 BENCHMARK = {
     "base_architectural_views": 4,
     "approved_deliverables": 29,
@@ -127,7 +127,12 @@ def build(path):
     add_bullet(doc, "Each Split-AC sheet shall be rendered independently at release scale. A symbol below the minimum plotted pixel size or an empty preview blocks issuance.")
     add_bullet(doc, "Layer presence alone is not evidence of a visible or readable cooling unit.")
 
-    add_heading(doc, "11. Professional responsibility")
+    add_heading(doc, "11. Architectural direction and presentation cleanliness")
+    add_bullet(doc, "The owning architectural plan's north symbol is the sole direction authority; preserve it through the plan transform and never draw a second or default north arrow.")
+    add_bullet(doc, "Missing architectural north evidence, conflicting north graphics, surviving source print frames, inner sheet borders or legacy footer/subtitle bands block issuance.")
+    add_bullet(doc, "Remove only positively identified presentation furniture. Walls, doors, windows, shafts, grids, dimensions and unknown architectural geometry remain protected.")
+
+    add_heading(doc, "12. Professional responsibility")
     add_bullet(doc, "This automated package remains subject to professional engineering review and applicable statutory approval. The software does not claim statutory approval merely because automated QA passes.")
 
     doc.core_properties.title = "EngiTools MEP Design Rule Book v4"

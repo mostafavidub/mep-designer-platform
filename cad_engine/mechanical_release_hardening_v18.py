@@ -122,6 +122,33 @@ def validate_safe_zones(path: Path, composition: dict) -> dict:
             "boards":results,"exact_file_reopened":True}
 
 
+def validate_architectural_presentation(path: Path, composition: dict) -> dict:
+    """Forbid duplicate north graphics, source print frames and subtitle bands."""
+    boards=(composition or {}).get("boards") or {};errors=[];results=[]
+    try:doc=ezdxf.readfile(Path(path));entities=list(doc.modelspace())
+    except Exception as exc:return {"version":"architectural-presentation-gate-v18.2","status":"FAIL","errors":["exact_dxf_reopen_failed"],"detail":str(exc)}
+    generated_north=[e for e in entities if str(getattr(e.dxf,"layer","") or "").upper()=="ENGITOOLS-SHEET-NORTH"]
+    if generated_north:errors.append(f"duplicate_generated_north:{len(generated_north)}")
+    subtitle_entities=[e for e in entities if str(getattr(e.dxf,"layer","") or "").upper()=="ENGITOOLS-SHEET-SUBTITLE"]
+    if subtitle_entities:errors.append(f"forbidden_subtitle_band:{len(subtitle_entities)}")
+    for key,board in boards.items():
+        area=tuple(map(float,board.get("plan_area") or ()));frames=[]
+        if len(area)==4:
+            aw=max(area[2]-area[0],1e-9);ah=max(area[3]-area[1],1e-9)
+            for e in entities:
+                if e.dxftype() not in {"LWPOLYLINE","POLYLINE"}:continue
+                try:
+                    if not e.closed:continue
+                    ex=bbox.extents([e],fast=True)
+                    if not ex.has_data:continue
+                    x1,y1,x2,y2=map(float,(ex.extmin.x,ex.extmin.y,ex.extmax.x,ex.extmax.y))
+                    if (x2-x1)>=aw*.88 and (y2-y1)>=ah*.88 and _inside((x1,y1,x2,y2),area,.08):frames.append(str(getattr(e.dxf,"handle","") or "POLYLINE"))
+                except Exception:continue
+        if frames:errors.append(f"source_print_frame_present:{key}:{len(frames)}")
+        results.append({"board_id":key,"source_frame_count":len(frames),"status":"PASS" if not frames else "FAIL"})
+    return {"version":"architectural-presentation-gate-v18.2","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"generated_north_count":len(generated_north),"subtitle_entity_count":len(subtitle_entities),"exact_file_reopened":True}
+
+
 def validate_equipment_linkage(path: Path, composition: dict) -> dict:
     """Require equipment symbols and their service routes for active families."""
     family_contract={
@@ -198,71 +225,62 @@ def validate_split_ac_visual_legibility(path: Path, composition: dict, preview_d
         plt.close(fig)
     except Exception as exc:return {"version":"split-ac-visual-legibility-v18.1","status":"FAIL","errors":["split_visual_render_failed"],"detail":str(exc)}
     if not results:errors.append("no_split_ac_boards")
-    return {"version":"split-ac-visual-legibility-v18.1","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"exact_file_reopened":True}
-
-
-def validate_detail_library(path: Path, composition: dict, minimum_geometry: int = 12) -> dict:
-    """Reject register-only detail sheets; tags and executable geometry are required."""
-    try:doc=ezdxf.readfile(Path(path));entities=list(doc.modelspace())
-    except Exception as exc:return {"version":"detail-library-gate-v18.0","status":"FAIL","errors":["exact_dxf_reopen_failed"],"detail":str(exc)}
-    errors=[];results=[]
-    for key,board in ((composition or {}).get("boards") or {}).items():
-        if str(board.get("family") or "").upper()!="GENERAL_DETAIL":continue
-        area=tuple(map(float,board.get("plan_area") or ()));geometry=tags=0
-        for e in entities:
-            p=_entity_center(e);layer=str(getattr(e.dxf,"layer","") or "").upper()
-            if not p or len(area)!=4 or not(area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]):continue
-            if layer=="ENGITOOLS-M-DETAIL" and e.dxftype() not in {"TEXT","MTEXT"}:geometry+=1
-            if layer=="ENGITOOLS-M-DETAIL" and "D-" in _plain_text(e).upper():tags+=1
-        missing=[]
-        if geometry<minimum_geometry:missing.append(f"geometry={geometry}")
-        if tags<2:missing.append(f"tags={tags}")
-        if missing:errors.append(f"detail_sheet_incomplete:{key}:"+",".join(missing))
-        results.append({"board_id":key,"geometry_count":geometry,"detail_tag_count":tags,"status":"PASS" if not missing else "FAIL"})
-    if not results:errors.append("no_detail_sheets")
-    return {"version":"detail-library-gate-v18.0","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"exact_file_reopened":True}
-
-
-def validate_content_completeness(path: Path, composition: dict) -> dict:
-    """Per-board semantic content gate; global entity totals cannot mask blanks."""
-    try:doc=ezdxf.readfile(Path(path));entities=list(doc.modelspace())
-    except Exception as exc:return {"version":"content-completeness-gate-v18.0","status":"FAIL","errors":["exact_dxf_reopen_failed"],"detail":str(exc)}
-    plan_families={"ROOF","SANITARY_VENT","WATER","HEATING","GAS","SPLIT_AC","EXHAUST"};errors=[];results=[]
-    for key,board in ((composition or {}).get("boards") or {}).items():
-        family=str(board.get("family") or "").upper();area=tuple(map(float,board.get("plan_area") or ()));mechanical=annotations=0
-        for e in entities:
-            p=_entity_center(e);layer=str(getattr(e.dxf,"layer","") or "").upper()
-            if not p or len(area)!=4 or not(area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]):continue
-            if layer.startswith("ENGITOOLS-M-") or layer.startswith("ENGITOOLS-V17-DOCUMENTATION"):mechanical+=1
-            if e.dxftype() in {"TEXT","MTEXT"} and (layer.startswith("ENGITOOLS-M-") or layer.startswith("ENGITOOLS-V17-")):annotations+=1
-        minimum=2 if family in plan_families else 1
-        missing=[]
-        if mechanical<minimum:missing.append(f"mechanical={mechanical}<{minimum}")
-        if family in plan_families and annotations<1:missing.append("annotation=0")
-        if missing:errors.append(f"board_content_incomplete:{key}:"+",".join(missing))
-        results.append({"board_id":key,"family":family,"mechanical_entity_count":mechanical,"annotation_count":annotations,"status":"PASS" if not missing else "FAIL"})
-    return {"version":"content-completeness-gate-v18.0","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"exact_file_reopened":True}
-
-
-def create_montage_and_validate(path: Path, montage_path: Path) -> dict:
-    """Render the exact issued DXF and prove that reopen is non-mutating."""
-    path=Path(path);montage_path=Path(montage_path);before=path.read_bytes();digest=hashlib.sha256(before).hexdigest()
-    try:
-        doc=ezdxf.readfile(path);entity_count=len(doc.modelspace())
-        from ezdxf.addons.drawing import RenderContext, Frontend
-        from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
-        import matplotlib
-        matplotlib.use("Agg")
-        from matplotlib import pyplot as plt
-        fig=plt.figure(figsize=(18,12),dpi=110);ax=fig.add_axes([.01,.01,.98,.98]);ax.set_axis_off()
-        Frontend(RenderContext(doc),MatplotlibBackend(ax)).draw_layout(doc.modelspace(),finalize=True)
-        montage_path.parent.mkdir(parents=True,exist_ok=True);fig.savefig(montage_path,dpi=110,bbox_inches="tight",facecolor="white");plt.close(fig)
-    except Exception as exc:
-        return {"version":"montage-exact-reopen-gate-v18.0","status":"FAIL","errors":["montage_render_or_reopen_failed"],"detail":str(exc)}
-    after=path.read_bytes();errors=[]
-    if hashlib.sha256(after).hexdigest()!=digest:errors.append("exact_file_changed_during_qa")
-    if entity_count<1:errors.append("exact_file_empty")
-    if not montage_path.exists() or montage_path.stat().st_size<1500:errors.append("montage_empty_or_too_small")
-    return {"version":"montage-exact-reopen-gate-v18.0","status":"PASS" if not errors else "FAIL","errors":errors,
-            "exact_file_reopened":True,"sha256":digest,"entity_count":entity_count,"montage_path":str(montage_path),
-            "montage_size_bytes":montage_path.stat().st_size if montage_path.exists() else 0}
+    return {"version":"split-ac-visuao¾vòÚ$z{-®éÜj×^LŽˆÛÝ[
+ÏLBˆÝ]\ÏIÔTÔÉÈYˆÛÝ[Œ[ÙH	ÑRS	ÂˆYˆÝ]\ÏOIÑRS	Îˆ\œ›ÜœË˜\[™
+	Ù[\WÜ[—ÛYXÚ[šXØ[Ø›Ø\™‰ÊÜÝŠ›ÝÖÉØÛÙI×HÜˆ›ÝÖÉÛÛÜÚY]	×JJBˆ™\Ý[Ë˜\[™
+ÉØÛÙIÎœ›ÝÖÉØÛÙI×K	Ø›Ø\™ÚY	Îœ›ÝÖÉÛÛÜÚY]	×K	ÛYXÚ[šXØ[Ù[]WØÛÝ[	Î˜ÛÝ[	ÜÝ]\ÉÎœÝ]\ßJBˆ™]\›ˆÉÝ™\œÚ[Û‰Î‰Ü[‹X›Ø\™\Ü[][Û‹]ŒMË‰Ë	ÜÝ]\ÉÎ‰ÔTÔÉÈYˆ›Ý\œ›ÜœÈ[ÙH	ÑRS	Ë	Ù\œ›ÜœÉÎ™\œ›ÜœË	Ø›Ø\™ÉÎœ™\Ý[Ë	Ù^XÝÙš[WÜ™[Ü[™Y	Î•Y_B‚‚™Yˆ\ÚYÛ—ÛYXÚ[šXØ[Ø]]Üš]WÜÚ]JÜ˜Î”]Ý”][œÝÙ\œÎ™XÝ›Û™OS›Û™K[—Ø[˜[\Ú\Î™XÝ›Û™OS›Û™JKO™XÝ‚ˆÜ˜ÏT]
+Ü˜ÊNÙÝT]
+Ý
+NØ[œÝÙ\œÏWÛ›Ü›X[^™WÜ›Ú™XÝØ[œÝÙ\œÊ[œÝÙ\œÊNØ˜XÚÝ\S›Û™BˆYˆÝ™^\ÝÊ
+N‚ˆ™˜[YO][\š[K›ZÜÝ[\
+™Yš^IÙ[™Ú]ÛÛË]ŒMËX˜XÚÝ\IËÝY™š^IË™‰ÊNÔ]
+˜[YJK[›[šÊZ\ÜÚ[™×ÛÚÏUYJNØ˜XÚÝ\T]
+˜[YJNÜÚ][˜ÛÜLŠÝ˜XÚÝ\
+Bˆ™\ÜWÙ\ÚYÛ—ÝŒMŠÜ˜ËÝ[œÝÙ\œÏX[œÝÙ\œË[—Ø[˜[\Ú\Ï\[—Ø[˜[\Ú\ÊBˆYˆ™\Ü™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆYˆ˜XÚÝ\[™˜XÚÝ\™^\ÝÊ
+NœÚ][˜ÛÜLŠ˜XÚÝ\Ý
+NØ˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ[œ™\ÛÛ™YWÜ™[X\ÙWÚ[œ]Ù\œ›ÜœÊ™\Ü
+NÜ™\ÜÉÜ™[X\ÙWÚ[œ]ÜXI×O^ÉÝ™\œÚ[Û‰Î‰Ü™[X\ÙKZ[œ]YØ]K]ŒMË‰Ë	ÜÝ]\ÉÎ‰ÔTÔÉÈYˆ›Ý[œ™\ÛÛ™Y[ÙH	ÑRS	Ë	Ù\œ›ÜœÉÎ[œ™\ÛÛ™YBˆYˆ[œ™\ÛÛ™Y‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÜ™[X\ÙWÚ[œ]ÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\ÜˆX[šY™\ÝÜXO]˜[Y]WØ\›Ý™YÛX[šY™\Ý
+™\Ü[œÝÙ\œÊNÜ™\ÜÉØ\›Ý™YÛX[šY™\ÝÜXI×O[X[šY™\ÝÜXBˆYˆX[šY™\ÝÜXK™Ù]
+	ÜÝ]\ÉÊOOIÑRS	Î‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIØ\›Ý™YÛX[šY™\ÝÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\ÜˆÙ[ÛY]žO]˜[Y]WÛ^[Ý]ÙÙ[ÛY]žJ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJNÜ™\ÜÉÛ^[Ý]ÙÙ[ÛY]žWÜXI×OYÙ[ÛY]žBˆYˆÙ[ÛY]žK™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÛ^[Ý]ÙÙ[ÛY]žWÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\ÜˆÛÛ^\›Ú™XÝØÛÛ^Ùœ›ÛWÜ™\Ü
+™\Ü[œÝÙ\œÏX[œÝÙ\œË›Ú™XÝÚY\Ü˜ËœÝ[JNÜXÚØYÙOXZ[ÙØÝ[Y[][Û—ÜXÚØYÙJÛÛ^
+NÜ™\ÜÉÜ™Y™\™[˜ÙWÜ\š]WÙØÝ[Y[][Û‰×O\XÚØYÙBˆYˆXÚØYÙK™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÜ™Y™\™[˜ÙWÜ\š]WÙØÝ[Y[][Û—ÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ[š[˜Ù[Y[X\WÙØÝ[Y[][Û—Ù[š[˜Ù[Y[ÊÝ™\ÜÛÛ^
+NÜ™\ÜÉÙØÝ[Y[][Û—Ù[š[˜Ù[Y[ÜXI×OY[š[˜Ù[Y[ˆYˆ[š[˜Ù[Y[™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÙØÝ[Y[][Û—Ù[š[˜Ù[Y[ÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ\ÛÛ][Û\Ø[š]^™WÝ×Ø\›Ý™YØ›Ø\™ÊÝ™\Ü
+NÜ™\ÜÉÙš[˜[Ù[]™\žWÚ\ÛÛ][Û—ÜXI×OZ\ÛÛ][Û‚ˆYˆ\ÛÛ][Û‹™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÙš[˜[Ù[]™\žWÚ\ÛÛ][Û—ÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ\™[š[™×ÙØ]\ÏJˆ
+	Ý]X›ØÚ×ÜXIË˜[Y]WÝ]X›ØÚÜÊÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJK	Ý]X›ØÚ×ÙØ]IÊKˆ
+	ÜØY™WÞ›Û™WÜXIË˜[Y]WÜØY™WÞ›Û™\ÊÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJK	ÜØY™WÞ›Û™WÙØ]IÊKˆ
+	Ø\˜Ú]XÝ\˜[Ü™\Ù[][Û—ÜXIË˜[Y]WØ\˜Ú]XÝ\˜[Ü™\Ù[][ÛŠÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJK	Ø\˜Ú]XÝ\˜[Ü™\Ù[][Û—ÙØ]IÊKˆ
+	Ù\]Z\Y[Û[šØYÙWÜXIË˜[Y]WÙ\]Z\Y[Û[šØYÙJÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJK	Ù\]Z\Y[Û[šØYÙWÙØ]IÊKˆ
+	ÜÜ]ØX×Ýš\ÝX[ÜXIË˜[Y]WÜÜ]ØX×Ýš\ÝX[ÛYÚXš[]JÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßKÝÚ]Û˜[YJÝœÝ[JÉË\Ü]\™]šY]ÜÉÊJK	ÜÜ]ØX×Ýš\ÝX[ÙØ]IÊKˆ
+	Ù]Z[ÛXœ˜\žWÜXIË˜[Y]WÙ]Z[ÛXœ˜\žJÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJK	Ù]Z[ÛXœ˜\žWÙØ]IÊKˆ
+	ØÛÛ[ØÛÛ\][™\Ü×ÜXIË˜[Y]WØÛÛ[ØÛÛ\][™\ÜÊÝ™\Ü™Ù]
+	ØÛÛ\ÜÚ][Û‰ÊHÜˆßJK	ØÛÛ[ØÛÛ\][™\Ü×ÙØ]IÊKˆ
+Bˆ›ÜˆÙ^KØ]KÝYÙH[ˆ\™[š[™×ÙØ]\Î‚ˆ™\ÜÚÙ^WOYØ]BˆYˆØ]K™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×O\ÝYÙN×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\ÜˆÜ[][Û]˜[Y]WÜ[—Ø›Ø\™ÜÜ[][ÛŠÝ™\Ü[œÝÙ\œÊNÜ™\ÜÉÜ[—Ø›Ø\™ÜÜ[][Û—ÜXI×O\Ü[][Û‚ˆYˆÜ[][Û‹™Ù]
+	ÜÝ]\ÉÊOOIÑRS	Î‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÜ[—Ø›Ø\™ÜÜ[][Û—ÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ™\Ù\˜][ÛY]˜[X]WØ\˜Ú]XÝ\™WÜ™\Ù\˜][ÛŠÜ˜ËÝ™\Ü[œÝÙ\œÏX[œÝÙ\œÊNÜ™\ÜÉØ\˜Ú]XÝ\™WÜ™\Ù\˜][Û—ÜXWØY\—ÝŒMÉ×O\™\Ù\˜][Û‚ˆYˆ™\Ù\˜][Û‹™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIØ\˜Ú]XÝ\™WÜ™\Ù\˜][Û—ØY\—ÜØ[š]^˜][Û‰Î×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ^XÝ]˜[Y]WÙš[˜[Ù[]™\žJÝ™\Ü
+NÜ™\ÜÉÙ^XÝÙš[WÙš[˜[Ù[]™\žWÜXI×OY^XÝˆYˆ^XÝ™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÙ^XÝÙš[WÙš[˜[Ù[]™\žWÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ[ÛYÙOXÜ™X]WÛ[ÛYÙWØ[™Ý˜[Y]JÝÝÚ]Û˜[YJÝœÝ[JÉË[[ÛYÙKœ™ÉÊJNÜ™\ÜÉÛ[ÛYÙWÙ^XÝÜ™[Ü[—ÜXI×O[[ÛYÙBˆYˆ[ÛYÙK™Ù]
+	ÜÝ]\ÉÊHOIÔTÔÉÎ‚ˆ™\ÜÉÜÝ]\É×OIÑRS	ÎÜ™\ÜÉÜÝYÙI×OIÛ[ÛYÙWÙ^XÝÜ™[Ü[—ÙØ]IÎ×Ü™\ÝÜ™WÛÜ—Ü™[[Ý™JÝ˜XÚÝ\
+BˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Üˆ™\ÜÉÝ™\œÚ[Û‰×OSQPÒS’PÐSÔTSS‘WÕ‘T”ÒSÓŽÜ™\ÜÉÜÝ]\É×OIÔTÔÉÂˆYˆ˜XÚÝ\˜˜XÚÝ\[›[šÊZ\ÜÚ[™×ÛÚÏUYJBˆ™]\›ˆ™\Ü
