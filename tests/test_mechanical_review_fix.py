@@ -29,7 +29,7 @@ class MechanicalReviewFixTests(unittest.TestCase):
         self.assertEqual(payload['question']['key'], '_drawing_set_approval')
         self.assertIn('تأیید و شروع طراحی', payload['question']['question'])
         self.assertIn(
-            f"تعداد نقشه‌های مکانیکی موردنیاز: {ds['deliverable_sheet_count']} پلان",
+            f"تعداد شیت‌های تحویلی مکانیک: {ds['deliverable_sheet_count']} شیت",
             payload['question']['question'],
         )
 
@@ -53,7 +53,7 @@ class MechanicalReviewFixTests(unittest.TestCase):
         ds['sheet_families']['water_supply']['sheets'][0]['pattern'] = '<script>alert(1)</script>'
         html = review_question_html(ds)
         self.assertNotIn('<script>alert(1)</script>', html)
-        self.assertIn('&lt;script&gt;', html)
+        self.assertNotIn('alert(1)', html)
 
 
 if __name__ == '__main__':

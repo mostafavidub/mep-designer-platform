@@ -7,7 +7,7 @@ class Stage06RoutingTests(unittest.TestCase):
         topology={'nodes':[{'id':'MEP-001','point':(1000,1000)},{'id':'SHAFT-01','point':(4500,2000)}],
                   'edges':[{'id':'SANITARY-E001','system':'sanitary','from':'MEP-001','to':'SHAFT-01'}]}
         result=route_topology(architecture,topology)
-        self.assertEqual(result['version'],'geometry-routing-v13.6')
+        self.assertEqual(result['version'],'geometry-routing-v13.12')
         self.assertEqual(len(result['routes']),1)
         route=result['routes'][0]
         self.assertEqual(route['points'][0],(1000,1000))

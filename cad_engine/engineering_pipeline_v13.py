@@ -254,6 +254,10 @@ def recognize_fixtures_equipment(architecture):
     # source uses exploded symbols or anonymous blocks.  Deduplicate them from
     # nearby block detections and retain room assignment for topology.
     for text in texts:
+        # Room-use labels such as BATHROOM are not installed fixture labels.
+        # Without this guard the short legacy alias "bath" fabricates a shower.
+        if _classify_room(text.get("text")):
+            continue
         kind = _classify(text.get("text"), FIXTURE_ALIASES)
         if not kind:
             continue
@@ -291,4 +295,6 @@ def recognize_fixtures_equipment(architecture):
     return {"version": "fixture-equipment-recognition-v13.2", "detections": rows,
             "fixtures": [r for r in rows if r["category"] == "fixture"],
             "equipment": [r for r in rows if r["category"] == "equipment"],
-            "quality": {"detected": len(rows), "room_assigned": sum(1 for r in rows if r.get("room_id"))}}
+            "quality": {"detected": len(rows), "installed_detected": sum(1 for r in rows if r.get("status") != "proposed"),
+                        "proposed": sum(1 for r in rows if r.get("status") == "proposed"),
+                        "room_assigned": sum(1 for r in rows if r.get("room_id"))}}

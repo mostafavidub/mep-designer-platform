@@ -11,10 +11,22 @@ from cad_engine.authority_architecture_v14 import (
 from cad_engine.system_requirements_v13 import derive_system_requirements as derive_pipeline_requirements
 from cad_engine.engineering_runner_v13 import validate_pipeline
 from cad_engine.final_delivery_gate_v17 import sanitize_to_approved_boards, validate_final_delivery
-from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest
+from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest, _release_input_errors
 
 
 class FinalMechanicalDeliveryGateV17Tests(unittest.TestCase):
+    def test_release_input_gate_rejects_failed_engineering_acceptance(self):
+        report={
+            'pipeline_qa':{'status':'PASS','errors':[]},
+            'engineering_acceptance':{'status':'FAIL','errors':['routing:non_orthogonal_route']},
+            'authority':{'design_basis':{'status':'PASS'}},
+            'enrichment':{},
+        }
+        self.assertIn(
+            'engineering_acceptance:routing:non_orthogonal_route',
+            _release_input_errors(report),
+        )
+
     def test_design_basis_is_fail_closed_when_user_inputs_missing(self):
         project=build_project_model({'GROUND':{'wet':True,'habitable':True,'exhaust':True,'gas_appliance':False}},False)
         basis=resolve_design_basis(project,{'city':'Tehran'})

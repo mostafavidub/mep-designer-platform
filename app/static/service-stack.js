@@ -19,8 +19,8 @@
 
   const artSources=[
     'https://res.cloudinary.com/pnuzoh4o/image/upload/v1787475602/engitools/mechanical-hero-20260823-final.webp',
-    '/static/electrical-hero-v2.webp?v=20260826-hero',
-    '/static/architect-hero-v2.webp?v=20260826-hero'
+    '/static/service-art-electrical.svg?v=20260902',
+    '/static/service-art-architect.svg?v=20260902'
   ];
 
   cards.forEach((card,i)=>{

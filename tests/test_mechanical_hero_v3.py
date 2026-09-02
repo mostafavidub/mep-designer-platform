@@ -10,21 +10,22 @@ class MechanicalHeroV3Tests(unittest.TestCase):
 
     def test_mechanical_page_loads_isolated_static_hero(self):
         r=self.client.get('/mechanical'); self.assertEqual(r.status_code,200)
-        self.assertIn('/static/mechanical-hero-v3.css?v=20260823-1308',r.text)
-        self.assertIn('/static/mechanical-hero-v3.js?v=20260823-1200',r.text)
+        self.assertIn('/static/mechanical-hero-v3.css?v=20260826-hero2',r.text)
+        self.assertIn('/static/mechanical-hero-v3.js?v=20260826-hero2',r.text)
         self.assertIn(FULL_RES_MECHANICAL_ART,r.text)
         self.assertNotIn('/static/mechanical-hero-static.css',r.text)
         self.assertNotIn('/static/hero-scroll-v1.js',r.text)
 
     def test_mechanical_hero_css_is_static_scoped_and_split(self):
         css=self.client.get('/static/mechanical-hero-v3.css'); self.assertEqual(css.status_code,200)
-        for expected in ('.mechanical .discipline-hero.mechanical-landing-hero',"grid-template-areas:'. copy' 'meta meta'",'min-height:100svh','background-size:cover','display:none!important','animation:none!important','transition:none!important','transform:none!important','@media(max-width:1024px)','@media(max-width:640px)'):
+        for expected in ('.discipline-page .discipline-hero.mechanical-landing-hero',"grid-template-areas:'. copy' 'meta meta'",'min-height:100svh','background-size:cover','display:none!important','animation:none!important','transition:none!important','transform:none!important','@media(max-width:1024px)','@media(max-width:640px)'):
             self.assertIn(expected,css.text)
 
     def test_mechanical_hero_script_uses_full_resolution_approved_asset(self):
         js=self.client.get('/static/mechanical-hero-v3.js'); self.assertEqual(js.status_code,200)
         self.assertIn(FULL_RES_MECHANICAL_ART,js.text)
-        self.assertIn('width="1672" height="941"',js.text)
+        self.assertIn('width="1536" height="1024"',js.text)
+        self.assertNotIn("classList.contains('electrical')",js.text)
         self.assertNotIn('hero-integrated-mep-v1',js.text)
         self.assertNotIn('hero-electrical',js.text)
         self.assertNotIn('hero-mechanical.svg',js.text)

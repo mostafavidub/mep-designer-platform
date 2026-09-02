@@ -240,13 +240,29 @@ def enrich_auto(auto, analysis):
             if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
                 continue
             assigned_rooms.append(room)
-        room_points = [tuple(r["label_point"]) for r in assigned_rooms]
-        region = _expanded_bounds(room_points)
+        # Partition reconstructed primitives by the same nearest-title rule as
+        # rooms.  A room-label envelope can collapse to a few centimetres when
+        # a level has only one label and would then discard its doors, walls and
+        # shafts.  Nearest-title partitioning preserves the whole plan while
+        # still preventing adjacent model-space plans from stealing entities.
+        assigned_primitives = []
+        for primitive in all_primitives:
+            p = tuple(primitive.get("centroid") or [])
+            if len(p) != 2:
+                continue
+            if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
+                continue
+            assigned_primitives.append(primitive)
+        spatial_points = [tuple(r["label_point"]) for r in assigned_rooms]
+        for primitive in assigned_primitives:
+            b = primitive.get("bounds") or []
+            if len(b) == 4:
+                spatial_points.extend(((b[0], b[1]), (b[2], b[3])))
+        region = _expanded_bounds(spatial_points, pad_ratio=0.02)
         if region is None:
             # Roofs may have no room labels; use a bounded vicinity around title
             # rather than inventing a building polygon.
             region = [title[0]-1, title[1]-1, title[0]+1, title[1]+1]
-        assigned_primitives = [p for p in all_primitives if _inside(region, p.get("centroid"))]
         by_kind = {k: [p for p in assigned_primitives if p.get("kind") == k] for k in LAYER_HINTS}
         level_rows.append({
             "name": profile.get("name"), "roof": bool(profile.get("roof")),

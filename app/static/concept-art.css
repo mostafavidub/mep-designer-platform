@@ -1,8 +1,8 @@
 /* EngiTools service cards — approved clean split layout. */
 :root{
   --et-art-mechanical:url('https://res.cloudinary.com/pnuzoh4o/image/upload/v1787475602/engitools/mechanical-hero-20260823-final.webp');
-  --et-art-electrical:url('/static/electrical-hero-v2.webp?v=20260826-hero');
-  --et-art-architect:url('/static/architect-hero-v2.webp?v=20260826-hero');
+  --et-art-electrical:url('/static/service-art-electrical.svg?v=20260902');
+  --et-art-architect:url('/static/service-art-architect.svg?v=20260902');
 }
 
 /* Desktop: exactly two clean panels, image LEFT / copy RIGHT. */

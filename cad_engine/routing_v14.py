@@ -72,8 +72,20 @@ def route_topology(architecture,topology,clearance=None):
  for edge in topology.get('edges') or []:
   a=node_by_id.get(edge.get('from')); b=node_by_id.get(edge.get('to'))
   if not a or not b or not a.get('point') or not b.get('point'): continue
+  start=tuple(a['point']); end=tuple(b['point'])
+  if start == end:
+   # A proposed wet-core can coincide with a room-program endpoint. Emit a
+   # visible orthogonal service loop instead of a zero-length "route" that the
+   # CAD composer cannot draw or verify after exact-file reopen.
+   x,y=start; points=[start,(x+clearance,y),(x+clearance,y+clearance),(x,y+clearance),end]
+   score=_score(points,walls,obstacles)
+   routes.append({'id':f"ROUTE-{len(routes)+1:04d}",'edge_id':edge['id'],'system':edge['system'],'role':edge.get('role'),
+                  'from':edge.get('from'),'to':edge.get('to'),'endpoint_ids':list(edge.get('endpoint_ids') or []),
+                  'points':points,'length':round(score['length'],3),'wall_crossings':score['wall_crossings'],
+                  'obstacle_hits':score['obstacle_hits'],'bends':3,'routing':'orthogonal_coincident_endpoint_service_loop'})
+   continue
   ranked=[]
-  for pts in _candidates(tuple(a['point']),tuple(b['point']),clearance):
+  for pts in _candidates(start,end,clearance):
    score=_score(pts,walls,obstacles); ranked.append((score['penalty'],score,pts))
   _,score,points=min(ranked,key=lambda x:x[0])
   routes.append({'id':f"ROUTE-{len(routes)+1:04d}",'edge_id':edge['id'],'system':edge['system'],'role':edge.get('role'),

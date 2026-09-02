@@ -80,10 +80,14 @@ def enrich_architecture_topology(auto):
         # proximity, so annotations or symbols from another plan are not linked.
         for collection, field in ((doors, "door_ids"), (windows, "window_ids")):
             for item in collection:
+                containing = [r for r in rooms if r.get("bounds") and _center(r.get("bounds")) and
+                              r["bounds"][0] <= item["center"][0] <= r["bounds"][2] and
+                              r["bounds"][1] <= item["center"][1] <= r["bounds"][3]]
                 candidates = [(r, _distance(item["center"], r["center"])) for r in rooms]
-                if candidates:
-                    room, dist = min(candidates, key=lambda x: x[1])
-                    if dist <= proximity:
+                if containing or candidates:
+                    room, dist = ((min(((r, _distance(item["center"], r["center"])) for r in containing), key=lambda x: x[1]))
+                                  if containing else min(candidates, key=lambda x: x[1]))
+                    if containing or dist <= proximity:
                         room[field].append(item["id"])
                         item["nearest_room_id"] = room["id"]
                         item["nearest_room_distance"] = round(dist, 4)

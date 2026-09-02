@@ -47,7 +47,9 @@ class EngineeringPipelineV13Tests(unittest.TestCase):
             self.assertEqual(result['version'], 'fixture-equipment-recognition-v13.2')
             self.assertIn('basin', {x['type'] for x in result['fixtures']})
             self.assertIn('exhaust_fan', {x['type'] for x in result['equipment']})
-            self.assertEqual(result['quality']['room_assigned'], 2)
+            self.assertEqual(result['quality']['installed_detected'], 2)
+            self.assertEqual(result['quality']['proposed'], 2)
+            self.assertEqual(result['quality']['room_assigned'], 4)
             self.assertTrue(all(x['room_id'] == 'ROOM-001' for x in result['detections']))
         finally:
             os.remove(path)

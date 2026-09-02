@@ -7,7 +7,11 @@ explicit user answer and unresolved facts must remain unresolved.
 import math
 import re
 
-RULEBOOK_VERSION = '2.1'
+from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION
+
+# Active application code must never carry a second, independently maintained
+# Rule Book version. Compatibility snapshots keep their historical versions.
+RULEBOOK_VERSION = MECHANICAL_RULEBOOK_VERSION
 
 NETWORK_COMPOSITION_STANDARD = {
     'topology': 'shared trunk/branch split at every terminal junction',

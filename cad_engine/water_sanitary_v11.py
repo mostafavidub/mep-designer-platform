@@ -74,12 +74,12 @@ def install(v10_4):
                     )
 
         checks = {}
-        if 'water_supply' in families:
+        if 'water_supply' in families and levels:
             checks['cold_water_network'] = _line_count(msp, 'ENGITOOLS-M-COLD_WATER') >= 2
             checks['hot_water_network'] = _line_count(msp, 'ENGITOOLS-M-HOT_WATER') >= 1
             checks['water_sizing_tags'] = _text_count(msp, 'ENGITOOLS-M-COLD_WATER', 'DN') >= 1
             checks['water_isolation'] = _insert_count(msp, 'ET_M_ISOLATION_VALVE') >= 1
-        if 'sanitary_vent' in families:
+        if 'sanitary_vent' in families and levels:
             checks['sanitary_network'] = _line_count(msp, 'ENGITOOLS-M-SANITARY') >= 2
             checks['vent_network'] = _line_count(msp, 'ENGITOOLS-M-VENT') >= 1
             checks['sanitary_slope_tags'] = _text_count(msp, 'ENGITOOLS-M-SANITARY', 'S=') >= 1

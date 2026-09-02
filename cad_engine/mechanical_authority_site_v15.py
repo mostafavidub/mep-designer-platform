@@ -110,7 +110,7 @@ def enrich_roof_rainwater(doc, msp, pipeline, authority, compose, answers):
         return {"status":"INPUT_REQUIRED","reason":"NO_ROOF_ENVELOPE"}
     x1,y1,x2,y2=source_box
     area=max(0,(x2-x1)*(y2-y1))
-    intensity=_numeric(_answer(answers,"rainfall_intensity"))
+    intensity=_numeric(_answer(answers,"rainfall_intensity","rainfall_intensity_mm_h"))
     runoff=1.0
     q_total=(intensity*area*runoff/3600.0) if intensity is not None else None
 
@@ -160,7 +160,9 @@ def enrich_water_service(doc,msp,pipeline,authority,compose,answers):
     _ensure_layer(doc,layer,5,30)
     x1,y1,x2,y2=tuple(b["plan_area"])
     fu,q=_water_fixture_proxy(pipeline)
-    pressure_bar=_numeric(_answer(answers,"water_pressure","water"))
+    pressure_bar=_numeric(_answer(answers,"water_pressure","water_inlet_pressure","water_inlet_pressure_bar","water"))
+    service_mode=str(_answer(answers,"water_service_mode",default="") or "").strip().lower()
+    direct_city=service_mode=="direct_city"
     service_head=pressure_bar*10.197 if pressure_bar is not None else None
     nlevels=len(authority["project"].get("levels") or {})
     static=max(3.2,3.2*nlevels)
@@ -174,25 +176,40 @@ def enrich_water_service(doc,msp,pipeline,authority,compose,answers):
 
     y=(y1+y2)/2+.6
     xs=[x1+1.1,x1+4.0,x1+7.2,x1+10.6,x1+13.7,x1+16.6]
-    labels=[
-        ("CITY","CITY WATER"),("WM","WATER METER"),("T-01",f"{selected_l} L TANK"),
-        ("P-01",f"PUMP\nQ≈{q:.2f} L/s\nH≈{pump_head:.1f} m" if pump_head is not None else f"PUMP\nQ≈{q:.2f} L/s\nH=PENDING"),
-        ("CV-01","CHECK VALVE"),("CW1","DISTRIBUTION\nRISER"),
-    ]
+    labels=(
+        [("CITY","CITY WATER"),("WM","WATER METER"),("ISV-01","ISOLATION VALVE"),
+         ("PRV-01","PRESSURE CONTROL / TEST POINT"),("CV-01","CHECK VALVE"),("CW1","DISTRIBUTION\nRISER")]
+        if direct_city else
+        [("CITY","CITY WATER"),("WM","WATER METER"),("T-01",f"{selected_l} L TANK"),
+         ("P-01",f"PUMP\nQ≈{q:.2f} L/s\nH≈{pump_head:.1f} m" if pump_head is not None else f"PUMP\nQ≈{q:.2f} L/s\nH=PENDING"),
+         ("CV-01","CHECK VALVE"),("CW1","DISTRIBUTION\nRISER")]
+    )
     for a,bb in zip(xs,xs[1:]):
         msp.add_line((a,y),(bb,y),dxfattribs={"layer":layer})
     msp.add_circle((xs[0],y),.18,dxfattribs={"layer":layer})
     msp.add_circle((xs[1],y),.38,dxfattribs={"layer":layer})
-    _rect(msp,layer,xs[2]-.65,y-.75,xs[2]+.65,y+.75)
-    msp.add_circle((xs[3],y),.48,dxfattribs={"layer":layer})
-    msp.add_line((xs[3]-.30,y-.30),(xs[3]+.30,y+.30),dxfattribs={"layer":layer})
+    if direct_city:
+        msp.add_lwpolyline([(xs[2]-.22,y-.22),(xs[2],y),(xs[2]-.22,y+.22)],dxfattribs={"layer":layer})
+        msp.add_lwpolyline([(xs[2]+.22,y-.22),(xs[2],y),(xs[2]+.22,y+.22)],dxfattribs={"layer":layer})
+        msp.add_circle((xs[3],y),.34,dxfattribs={"layer":layer})
+    else:
+        _rect(msp,layer,xs[2]-.65,y-.75,xs[2]+.65,y+.75)
+        msp.add_circle((xs[3],y),.48,dxfattribs={"layer":layer})
+        msp.add_line((xs[3]-.30,y-.30),(xs[3]+.30,y+.30),dxfattribs={"layer":layer})
     msp.add_lwpolyline([(xs[4]-.22,y-.22),(xs[4],y),(xs[4]-.22,y+.22)],dxfattribs={"layer":layer})
     msp.add_lwpolyline([(xs[4]+.22,y-.22),(xs[4],y),(xs[4]+.22,y+.22)],dxfattribs={"layer":layer})
     msp.add_line((xs[5],y-1.2),(xs[5],y+2.1),dxfattribs={"layer":layer})
     for x,(tag,text) in zip(xs,labels):
         _mtext(msp,layer,f"{tag}\n{text}",x-.55,y+1.0,1.5,.055)
 
-    lines=[
+    lines=([
+        "WATER SERVICE / DIRECT CITY BASIS",
+        f"Fixture-unit proxy ≈ {fu:.1f}",
+        f"Peak flow Q ≈ {q:.2f} L/s PRELIM.",
+        f"Utility pressure = {pressure_bar:.2f} bar" if pressure_bar is not None else "Utility pressure = INPUT REQUIRED",
+        "No tank or booster pump in approved project basis.",
+        "Verify residual pressure at most remote fixture before construction.",
+    ] if direct_city else [
         "WATER SERVICE / BOOSTER BASIS",
         f"Fixture-unit proxy ≈ {fu:.1f}",
         f"Peak flow Q ≈ {q:.2f} L/s PRELIM.",
@@ -200,12 +217,12 @@ def enrich_water_service(doc,msp,pipeline,authority,compose,answers):
         f"Utility pressure = {pressure_bar:.2f} bar" if pressure_bar is not None else "Utility pressure = INPUT REQUIRED",
         f"Gross head ≈ {gross:.1f} m",
         f"Pump head ≈ {pump_head:.1f} m" if pump_head is not None else "Final pump head = PENDING UTILITY PRESSURE",
-    ]
+    ])
     for i,line in enumerate(lines):
         _mtext(msp,layer,line,x1+.7,y2-.8-i*.65,8.2,.07 if i==0 else .055)
     return {
         "status":"PASS" if pressure_bar is not None else "INPUT_REQUIRED",
-        "fixture_unit_proxy":round(fu,2),"q_lps":round(q,3),"tank_l":selected_l,
+        "fixture_unit_proxy":round(fu,2),"q_lps":round(q,3),"service_mode":service_mode or "unresolved","tank_l":0 if direct_city else selected_l,
         "utility_pressure_bar":pressure_bar,"pump_head_m":round(pump_head,2) if pump_head is not None else None,
         "provenance":"fixture detection proxy + utility pressure input",
     }
@@ -412,7 +429,15 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
 
     dxf_qa=qa_authority_dxf(dst,compose)
     semantic_qa=qa_semantic_sheet_content(dst,compose)
-    status="PASS" if pipeline_qa["status"]=="PASS" and dxf_qa["status"]=="PASS" and semantic_qa["status"]=="PASS" else "FAIL"
+    status="PASS" if all(result.get("status")=="PASS" for result in (
+        pipeline_qa, acceptance, dxf_qa, semantic_qa,
+    )) else "FAIL"
+    failed_stage=next((name for name,result in (
+        ("pipeline_qa",pipeline_qa),
+        ("engineering_acceptance_gate",acceptance),
+        ("dxf_qa",dxf_qa),
+        ("semantic_qa",semantic_qa),
+    ) if result.get("status")!="PASS"),None)
     return {
         "status":status,
         "version":"mechanical-authority-site-pipeline-v15.1",
@@ -423,4 +448,5 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "enrichment":enrich,
         "dxf_qa":dxf_qa,
         "semantic_qa":semantic_qa,
+        "stage":failed_stage,
     }

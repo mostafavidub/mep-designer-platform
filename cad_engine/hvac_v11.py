@@ -38,12 +38,12 @@ def install(v10_4):
             if hab: conditioned.append(level)
             if wet: exhaust_levels.append(level)
 
-        if 'heating' in families:
+        if 'heating' in families and levels:
             checks['heating_supply_network']=_line_count(msp,'ENGITOOLS-M-HEATING_SUPPLY') >= max(1,len(conditioned))
             checks['heating_return_network']=_line_count(msp,'ENGITOOLS-M-HEATING_RETURN') >= max(1,len(conditioned))
             checks['heating_load_resolved']=model.get('heating_load_kw') not in (None,'',False) and model.get('per_room_heating_kw') not in (None,'',False)
 
-        if 'cooling' in families:
+        if 'cooling' in families and levels:
             checks['cooling_network']=_line_count(msp,'ENGITOOLS-M-COOLING') >= max(1,len(conditioned))
             checks['condensate_network']=_line_count(msp,'ENGITOOLS-M-CONDENSATE') >= max(1,len(conditioned))
             checks['cooling_load_resolved']=model.get('cooling_load_kw') not in (None,'',False) and model.get('per_room_cooling_kw') not in (None,'',False)
@@ -57,7 +57,7 @@ def install(v10_4):
                 msp.add_blockref('ET_M_OUTDOOR_UNIT',point,dxfattribs={'layer':'ENGITOOLS-M-COOLING'})
                 v10_4._plan_text(msp,'OUTDOOR UNIT / SERVICE CLEARANCE [COORDINATE]',point,'ENGITOOLS-M-COOLING',(.25,.2))
 
-        if 'ventilation_exhaust' in families:
+        if 'ventilation_exhaust' in families and levels:
             # The base engine already routes exhaust to the riser. Add explicit
             # make-up-air and safe-discharge endpoints, which were previously
             # present only as prose in the schedule.

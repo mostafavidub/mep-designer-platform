@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "project_id": "project-1",
+  "release": "v18.4",
+  "status": "APPROVED",
+  "source_architecture_sha256": "2c0d46c5f60b34af766fc57b4d5b2ba751e5073319242fcdf14551ef6ccb1bce",
+  "issued_dxf_sha256": "27b6ef141a229a13ba1b86245d8b1820f12b4c35f7825f5ff1174419b0be8268",
+  "package_sha256": "b46a893a65549ae550fd2268156350bbde750608ceed6e890cf038b35b595d44",
+  "engine_version": "mechanical-authority-site-pipeline-v18.4",
+  "visual_gate_version": "split-ac-visual-legibility-v18.1",
+  "rulebook_version": "4.3",
+  "source_policy": {
+    "architecture_used": true,
+    "reference_mechanical_used": false,
+    "electrical_dxf_used": false
+  },
+  "board_count": 28,
+  "approved_plan_count": 20,
+  "plan_preview_count": 20,
+  "modelspace_entity_count": 8068,
+  "split_ac_visual_board_count": 4,
+  "split_ac_min_symbol_pixel_long_side": 30,
+  "split_ac_min_symbol_pixel_short_side": 14,
+  "all_required_gates": "PASS",
+  "approved_migrations": ["GOV-2026-006", "GOV-2026-008", "GOV-2026-009"],
+  "artifacts_stored_outside_git": true
+}

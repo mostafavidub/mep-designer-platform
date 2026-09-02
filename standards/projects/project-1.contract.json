@@ -23,6 +23,7 @@
     "enclosed_parking_mechanical_ventilation": false,
     "outdoor_unit_location": "ROOF",
     "route_restrictions": [],
+    "mechanical_shaft_route": "propose_near_wet_core",
     "deliverable": "full_package"
   },
   "required_gates": [

@@ -136,6 +136,8 @@ def build_scope(p):
     if profiles_available:
         non_roof_levels = list(dict.fromkeys(str(profile.get('name')) for profile in (auto.get('level_profiles') or []) if profile.get('name') and not profile.get('roof')))
         wet_candidates = non_roof_levels; sanitary_candidates = non_roof_levels; ventilation_candidates = non_roof_levels
+        if not _negative(answers.get('gas')):
+            gas_candidates = non_roof_levels
     heating = [] if _negative(answers.get('heating')) else conditioned_candidates
     cooling = [] if _negative(answers.get('cooling')) else conditioned_candidates
     ventilation = [] if _negative(answers.get('ventilation')) else ventilation_candidates

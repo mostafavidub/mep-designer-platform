@@ -8,10 +8,18 @@ import ezdxf
 from app import artifact_storage
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
+from app.manifest_contract_v2 import manifest_digest
 from cad_engine.main import design_dxf
 
 
 class ArtifactQualityGateTests(unittest.TestCase):
+    def _approved_set(self, sheets):
+        manifest = {'schema_version': '3.1', 'discipline': 'mechanical',
+                    'total_sheets': len(sheets), 'sheets': sheets}
+        manifest['manifest_id'] = manifest_digest(manifest)
+        return {'approved': True, 'drawing_manifest': dict(manifest),
+                'approved_manifest': dict(manifest),
+                'approved_manifest_id': manifest['manifest_id']}
     def _valid_dxf(self, path):
         doc = ezdxf.new('R2010')
         doc.modelspace().add_line((0, 0), (10, 10))
@@ -53,18 +61,12 @@ class ArtifactQualityGateTests(unittest.TestCase):
                 artifact_storage.validate_output_artifact(package)
 
     def test_v17_manifest_accepts_complete_authority_package(self):
-        drawing_set = {
-            'approved': True,
-            'approved_manifest': {
-                'manifest_id': 'approved-1', 'total_sheets': 4,
-                'sheets': [
+        drawing_set = self._approved_set([
                     {'code': 'M-W-01', 'family': 'water_supply', 'drawing_type': 'floor_plan'},
                     {'code': 'M-S-01', 'family': 'sanitary_vent', 'drawing_type': 'floor_plan'},
                     {'code': 'M-S-RISER', 'family': 'sanitary_vent', 'drawing_type': 'riser_diagram'},
                     {'code': 'M-S-RAIN', 'family': 'sanitary_vent', 'drawing_type': 'roof_plan'},
-                ],
-            },
-        }
+                ])
         rows = [
             {'code': 'M-001', 'family': 'COVER'},
             {'code': 'M-101', 'family': 'SANITARY_VENT'},
@@ -81,12 +83,8 @@ class ArtifactQualityGateTests(unittest.TestCase):
         self.assertEqual(result['generated_sheets'], len(rows))
 
     def test_v17_manifest_rejects_missing_approved_family(self):
-        drawing_set = {
-            'approved': True,
-            'approved_manifest': {'manifest_id': 'approved-2', 'total_sheets': 1,
-                                  'sheets': [{'code': 'M-W-01', 'family': 'water_supply',
-                                              'drawing_type': 'floor_plan'}]},
-        }
+        drawing_set = self._approved_set([{'code': 'M-W-01', 'family': 'water_supply',
+                                           'drawing_type': 'floor_plan'}])
         with self.assertRaisesRegex(RuntimeError, 'coverage is incomplete'):
             validate_generated_manifest(drawing_set, [{
                 'status': 'PASS',
