@@ -1,4 +1,4 @@
-"""Active production CAD entrypoint for platform release 18.3."""
+"""Active production CAD entrypoint for platform release 18.4."""
 
 from .main_v17 import app
 from .version_manifest import active_version_manifest

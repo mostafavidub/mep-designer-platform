@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from . import main as legacy
 from . import artifact_storage
 from .design_progress import set_project_progress
+from .design_recovery import clear_active_recovery
 
 app = legacy.app
 _prev_flow_payload = legacy.flow_payload
@@ -370,6 +371,7 @@ def run_design_dxf(project_id, revision_id):
         p.status = 'ready'
         p.current_revision = r.revision_no
         p.last_error = ''
+        clear_active_recovery(p)
         set_project_progress(p, 'completed')
         db.commit()
         _purge_processing_files(p.id, keep_output=True)

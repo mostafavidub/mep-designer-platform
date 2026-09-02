@@ -35,6 +35,6 @@ jobs:
       - run: pip install -r cad_engine/requirements.txt
       - run: pip install pytest
       - run: python -m py_compile cad_engine/mechanical_authority_v15.py cad_engine/mechanical_authority_site_v15.py cad_engine/main_v15.py cad_engine/main_v18.py cad_engine/version_manifest.py
-      - run: python -c "import cad_engine.main_v18 as m; assert m.version()['platform_release'] == '18.3.0'"
+      - run: python -c "import cad_engine.main_v18 as m; assert m.version()['platform_release'] == '18.4.0'"
       - run: python -m pytest -q tests/test_mechanical_authority_v15.py tests/test_active_version_contract.py
       - run: docker build -f cad_engine/Dockerfile cad_engine -t engitools-cad-v15:test

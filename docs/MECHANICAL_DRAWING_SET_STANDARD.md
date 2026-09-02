@@ -1,6 +1,6 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 4.2 — Mechanical authority pipeline v18.3 / Final Engineering QA
+Rule Book version: 4.3 — Mechanical authority pipeline v18.4 / Final Engineering QA
 
 ## Governing principle
 
@@ -15,6 +15,12 @@ Architecture Upload -> Multi-Evidence Analysis -> Project Mechanical Model -> Me
 The architectural north symbol is the sole directional authority. The engine must detect its vector from the owning architectural plan and preserve that original symbol through the same plan transform. It must never invent, default, or draw a second north arrow. Missing north evidence or any generated/source directional conflict blocks release.
 
 Architectural office print frames, inner white sheet borders, legacy footer/title strips, duplicated plan subtitles and scale bands are source presentation furniture—not building geometry—and must be removed from every issued plan. Only the EngiTools outer sheet frame and compact bottom title block may remain. Removal must be evidence-based; walls, doors, windows, shafts, grids, dimensions and unknown architectural geometry remain protected. Exact-file reopen QA must reject any surviving source frame, duplicated subtitle band or generated second north symbol.
+
+## Controlled automatic recovery
+
+Every design job has a maximum of three recorded attempts. Only allow-listed operational failures—temporary service/network errors, durable-input restoration, exhausted workspace, exact-file reopen, montage/preview, packaging and artifact transaction failures—may trigger automatic repair and retry. Recovery restores the durable architectural input, removes only transient CAD workspaces, retains the same approved manifest and revision, and restarts from the earliest safe executable stage.
+
+Engineering input requirements, unapproved manifests, directional evidence gaps, deterministic design contradictions and unknown failures are never guessed or automatically changed. They stop fail-closed and request user or engineering action. The site must show the active recovery, attempt number and stage; the project must retain a bounded audit history of every failure, selected repair and result.
 
 ## Project Mechanical Model (PMM)
 
