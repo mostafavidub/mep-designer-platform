@@ -12,7 +12,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
 
 
-VERSION = "4.2"
+VERSION = "4.3"
 BENCHMARK = {
     "base_architectural_views": 4,
     "approved_deliverables": 29,
@@ -132,7 +132,13 @@ def build(path):
     add_bullet(doc, "Missing architectural north evidence, conflicting north graphics, surviving source print frames, inner sheet borders or legacy footer/subtitle bands block issuance.")
     add_bullet(doc, "Remove only positively identified presentation furniture. Walls, doors, windows, shafts, grids, dimensions and unknown architectural geometry remain protected.")
 
-    add_heading(doc, "12. Professional responsibility")
+    add_heading(doc, "12. Controlled automatic recovery")
+    add_bullet(doc, "A design job may make at most three recorded attempts and may retry only allow-listed operational or transactional failures.")
+    add_bullet(doc, "Recovery restores durable inputs, cleans transient workspaces, preserves the approved manifest/revision and resumes from the earliest safe executable stage.")
+    add_bullet(doc, "Missing engineering inputs, unapproved contracts, directional evidence gaps, deterministic contradictions and unknown errors remain fail-closed and are never guessed.")
+    add_bullet(doc, "The customer interface displays the repair state and attempt count; the project retains the bounded recovery audit history.")
+
+    add_heading(doc, "13. Professional responsibility")
     add_bullet(doc, "This automated package remains subject to professional engineering review and applicable statutory approval. The software does not claim statutory approval merely because automated QA passes.")
 
     doc.core_properties.title = "EngiTools MEP Design Rule Book v4"

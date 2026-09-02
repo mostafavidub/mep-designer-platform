@@ -47,6 +47,7 @@ jobs:
             tests.test_mechanical_minimal_questions \
             tests.test_mechanical_flow_e2e
           python -m pytest -q tests/test_mechanical_drawing_set.py
+          python -m pytest -q tests/test_design_recovery.py tests/test_design_progress.py
       - name: Run authority and preservation regressions
         run: |
           python -m pytest -q tests/test_mechanical_authority_v15.py

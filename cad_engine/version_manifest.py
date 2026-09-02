@@ -1,10 +1,10 @@
 """Single source of truth for active production component versions."""
 
-PLATFORM_RELEASE = "18.3.0"
+PLATFORM_RELEASE = "18.4.0"
 CAD_API_VERSION = PLATFORM_RELEASE
-MECHANICAL_PIPELINE_VERSION = "mechanical-authority-site-pipeline-v18.3"
+MECHANICAL_PIPELINE_VERSION = "mechanical-authority-site-pipeline-v18.4"
 MECHANICAL_VISUAL_GATE_VERSION = "split-ac-visual-legibility-v18.1"
-MECHANICAL_RULEBOOK_VERSION = "4.2"
+MECHANICAL_RULEBOOK_VERSION = "4.3"
 MECHANICAL_SITE_MANIFEST_VERSION = "12.1"
 FIXTURE_EQUIPMENT_RULEBOOK_VERSION = "2.4-fixture-equipment-approved-symbols"
 GOVERNANCE_VERSION = "mechanical-governance-v1.0"

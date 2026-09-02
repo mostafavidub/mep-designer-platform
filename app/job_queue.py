@@ -17,10 +17,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from . import artifact_storage
 from . import mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
+from .design_recovery import classify_recovery, get_recovery, record_recovery
 
 
 POLL_SECONDS = float(os.getenv('JOB_QUEUE_POLL_SECONDS', '2'))
-MAX_ATTEMPTS = int(os.getenv('JOB_MAX_ATTEMPTS', '2'))
+MAX_ATTEMPTS = int(os.getenv('JOB_MAX_ATTEMPTS', '3'))
 RETRY_DELAY_SECONDS = int(os.getenv('JOB_RETRY_DELAY_SECONDS', '30'))
 STALE_AFTER_MINUTES = int(os.getenv('JOB_STALE_AFTER_MINUTES', '70'))
 
@@ -132,6 +133,9 @@ def register_job_queue(app, legacy):
                 data['design_progress'] = progress
                 if project.status in ('queued', 'designing', 'quality_check'):
                     data['progress'] = progress['percent']
+            recovery = get_recovery(project)
+            if recovery:
+                data['design_recovery'] = recovery
         finally:
             db.close()
         data['storage_durable'] = artifact_storage.configured()
@@ -242,22 +246,16 @@ def register_job_queue(app, legacy):
                 project = db.get(legacy.Project, job.project_id)
                 revision = db.get(legacy.Revision, job.revision_id)
                 if project: project.status = 'designing'
-                if project: set_project_progress(project, 'preparing_inputs')
+                if project:
+                    recovery=get_recovery(project);detail=''
+                    if recovery.get('active'):
+                        detail=f'اجرای مجدد کنترل‌شده؛ تلاش {job.attempts} از {job.max_attempts}'
+                    set_project_progress(project, 'preparing_inputs', detail=detail)
                 if revision: revision.status = 'processing'
             db.commit()
             return job.id
         finally:
             db.close()
-
-    def _transient(message):
-        value = (message or '').lower()
-        return any(token in value for token in (
-            'timeout', 'timed out', 'connection', 'temporarily', 'reset by peer',
-            '502', '503', '504', 'no space left on device',
-            'فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد',
-            'هیچ فایل dxf معتبر پیدا نشد',
-            'هیچ فایل dxf معتبر داخل zip پیدا نشد',
-        ))
 
     def _finish(job_id, success, error=''):
         db = legacy.Session()
@@ -270,8 +268,10 @@ def register_job_queue(app, legacy):
             job.updated_at = datetime.utcnow()
             if success:
                 job.status = 'completed'
-            elif job.attempts < job.max_attempts and _transient(error):
-                if 'no space left on device' in (error or '').lower():
+            else:
+                decision=classify_recovery(error,attempt=job.attempts,max_attempts=job.max_attempts)
+            if not success and decision.recoverable:
+                if decision.strategy == 'reclaim_workspace':
                     _reclaim_failed_artifacts(job.project_id)
                 job.status = 'queued'
                 job.available_at = datetime.utcnow() + timedelta(seconds=RETRY_DELAY_SECONDS)
@@ -279,18 +279,21 @@ def register_job_queue(app, legacy):
                 if project:
                     project.status = 'queued' if job.job_type == 'design' else 'analyzing'
                     project.last_error = ''
-                    if job.job_type == 'design': set_project_progress(project, 'queued')
+                    if job.job_type == 'design':
+                        record_recovery(project,decision,attempt=job.attempts,max_attempts=job.max_attempts,error=error)
+                        set_project_progress(project,decision.resume_stage,detail=f'اصلاح خودکار؛ تلاش بعدی {job.attempts+1} از {job.max_attempts}')
                 if job.revision_id:
                     revision = db.get(legacy.Revision, job.revision_id)
                     if revision:
                         revision.status = 'queued'
                         revision.error = ''
-            else:
+            elif not success:
                 job.status = 'failed'
                 project = db.get(legacy.Project, job.project_id)
                 if project:
                     project.status = 'failed'
                     project.last_error = error or 'پردازش ناموفق بود.'
+                    record_recovery(project,decision,attempt=job.attempts,max_attempts=job.max_attempts,error=error)
                 if job.revision_id:
                     revision = db.get(legacy.Revision, job.revision_id)
                     if revision:
@@ -541,10 +544,14 @@ def register_job_queue(app, legacy):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project: raise HTTPException(404)
         job = db.query(Job).filter(Job.project_id == pid).order_by(Job.id.desc()).first()
-        payload = {'status': project.status, 'position': _queue_position(db, job), 'job_status': job.status if job else None}
+        payload = {'status': project.status, 'position': _queue_position(db, job), 'job_status': job.status if job else None,
+                   'attempts':job.attempts if job else 0,'max_attempts':job.max_attempts if job else 0}
         progress = get_project_progress(project)
         if progress:
             payload['design_progress'] = progress
+        recovery = get_recovery(project)
+        if recovery:
+            payload['design_recovery'] = recovery
         db.close(); return payload
 
     def _maintenance_authorized(request: Request):
