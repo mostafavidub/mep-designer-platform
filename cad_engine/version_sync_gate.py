@@ -7,12 +7,21 @@ from pathlib import Path
 
 from app.fixture_equipment_rulebook import RULEBOOK_VERSION as FIXTURE_RULEBOOK_VERSION
 from app.mechanical_rulebook import RULEBOOK_VERSION as APP_RULEBOOK_VERSION
-from data.rulebook.generate_rulebook_v4 import VERSION as GENERATED_RULEBOOK_VERSION
 
 from .version_manifest import active_version_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
+RULEBOOK_GENERATOR = ROOT / "data" / "rulebook" / "generate_rulebook_v4.py"
+
+
+def _generator_uses_active_rulebook_version() -> bool:
+    """Verify the generator contract without importing optional python-docx."""
+    source = RULEBOOK_GENERATOR.read_text(encoding="utf-8")
+    return (
+        "from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION" in source
+        and "VERSION = MECHANICAL_RULEBOOK_VERSION" in source
+    )
 
 
 def synchronization_errors() -> list[str]:
@@ -26,7 +35,7 @@ def synchronization_errors() -> list[str]:
 
     if APP_RULEBOOK_VERSION != active["mechanical_rulebook"]:
         errors.append("application-rulebook-version-drift")
-    if GENERATED_RULEBOOK_VERSION != active["mechanical_rulebook"]:
+    if not _generator_uses_active_rulebook_version():
         errors.append("generated-rulebook-version-drift")
     if FIXTURE_RULEBOOK_VERSION != active["fixture_equipment_rulebook"]:
         errors.append("fixture-rulebook-version-drift")
