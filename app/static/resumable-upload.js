@@ -25,7 +25,17 @@
     if(d.status==='ready_to_design'){modalBar.style.width='100%';modalTitle.textContent='تحلیل کامل شد';modalBody.innerHTML=summary(d)+`<div class="modal-ready"><div class="modal-ready-icon">✓</div><h3>اطلاعات لازم تکمیل است</h3><p>داده‌های قابل استخراج تحلیل شده‌اند.</p><button id="designBtn" class="btn primary wide">شروع طراحی ${d.discipline==='electrical'?'برق':'مکانیک'}</button></div>`;document.getElementById('designBtn').onclick=startDesign;return}
     if(['queued','designing','quality_check'].includes(d.status)){modalTitle.textContent='پیشرفت طراحی';modalBody.innerHTML=summary(d)+designProgress(d)+'<div class="modal-processing"><div class="analysis-loader"></div><div><b>موتور طراحی در حال اجراست</b><p>پس از پایان هر مرحله، مرحله بعد و درصد جدید نمایش داده می‌شود.</p></div></div>';timer=setTimeout(loadFlow,1600);return}
     if(d.status==='ready'){modalBar.style.width='100%';modalTitle.textContent='خروجی آماده است';modalBody.innerHTML=summary(d)+`<div class="modal-ready"><div class="modal-ready-icon">✓</div><h3>طراحی آماده شد</h3>${d.pdf_url?`<a class="btn primary wide" href="${d.pdf_url}">دانلود PDF</a>`:''}</div>`;return}
-    if(['failed','awaiting_upload'].includes(d.status)){modalTitle.textContent='فرآیند متوقف شد';modalBody.innerHTML=`<div class="modal-error"><b>پیام سیستم</b><p>${d.error||'امکان ادامه وجود ندارد.'}</p></div>`;return}
+    if(['failed','awaiting_upload'].includes(d.status)){
+      const needsUpload=d.status==='awaiting_upload';
+      const fallback=needsUpload
+        ?'فایل دریافت شد، اما تحلیل آن کامل نشد. همان فایل را دوباره انتخاب کنید؛ بخش‌های سالم آپلود به‌صورت امن از نو بررسی می‌شوند.'
+        :'پردازش پس از تلاش‌های کنترل‌شده کامل نشد. جزئیات خطا ثبت شده است.';
+      modalTitle.textContent=needsUpload?'تحلیل فایل کامل نشد':'فرآیند متوقف شد';
+      modalBody.innerHTML=`<div class="modal-error"><b>پیام سیستم</b><p>${escapeHtml(d.error||fallback)}</p>${needsUpload?'<button id="retryUpload" class="btn primary wide" type="button">انتخاب مجدد فایل و ادامه</button>':''}</div>`;
+      const retry=document.getElementById('retryUpload');
+      if(retry)retry.onclick=()=>{closeModal();btn.disabled=false;btn.textContent='تلاش مجدد آپلود';input.focus();input.click()};
+      return
+    }
     timer=setTimeout(loadFlow,1500);
   }
   async function loadFlow(){if(!flowUrl)return;try{const r=await fetch(flowUrl,{cache:'no-store'});if(!r.ok)throw new Error('flow');render(await r.json())}catch(_){timer=setTimeout(loadFlow,2000)}}
