@@ -26,6 +26,17 @@ RETRY_DELAY_SECONDS = int(os.getenv('JOB_RETRY_DELAY_SECONDS', '30'))
 STALE_AFTER_MINUTES = int(os.getenv('JOB_STALE_AFTER_MINUTES', '70'))
 
 
+def backup_input_without_blocking(project_id: int, original: Path) -> str:
+    """Copy an upload to object storage without blocking local analysis."""
+    if not original.exists():
+        return ''
+    try:
+        artifact_storage.upload_input(project_id, original)
+        return ''
+    except Exception as exc:
+        return f'{type(exc).__name__}: {exc}'[:1200]
+
+
 def register_job_queue(app, legacy):
     class Job(legacy.Base):
         __tablename__ = 'design_jobs'
@@ -310,12 +321,21 @@ def register_job_queue(app, legacy):
             original = project_dir / 'architecture.zip'
             if not original.exists():
                 original = project_dir / 'architecture.dxf'
-            if original.exists():
-                artifact_storage.upload_input(project_id, original)
+            storage_warning = ''
+            # The persistent Railway volume already owns the upload.  R2 is a
+            # durability copy, not a prerequisite for parsing it.  A temporary
+            # object-storage outage must therefore never turn a completely
+            # received file into an unrecoverable ``awaiting_upload`` project.
+            storage_warning = backup_input_without_blocking(project_id, original)
             original_analyze(project_id)
             db = legacy.Session(); project = db.get(legacy.Project, project_id)
             success = bool(project and project.status not in ('awaiting_upload', 'uploading', 'analyzing'))
             error = '' if success else (project.last_error if project else 'پروژه پیدا نشد.')
+            if success and storage_warning and project:
+                analysis = dict(project.analysis or {})
+                analysis['input_storage_warning'] = storage_warning
+                project.analysis = analysis
+                db.commit()
             db.close()
             if success and artifact_storage.input_is_durable(project_id):
                 project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
