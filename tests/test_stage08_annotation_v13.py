@@ -10,7 +10,7 @@ class Stage08AnnotationTests(unittest.TestCase):
         calculations={'rooms':[{'room_id':'ROOM-001','cooling_w':0,'exhaust_cfm':0}]}
         topology={'edges':[{'id':'SAN-E001','from':'MEP-001','to':'SHAFT-01','system':'sanitary'}]}
         result=build_annotations(routing,sizing,recognition,calculations,topology)
-        self.assertEqual(result['version'],'annotation-engine-v13.8')
+        self.assertEqual(result['version'],'annotation-engine-v13.8.1')
         label=result['annotations'][0]['text']
         self.assertIn('DN110',label)
         self.assertIn('SLOPE 2.0%',label)

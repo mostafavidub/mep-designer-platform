@@ -11,7 +11,10 @@ def _route_candidates(start,end):
         # A local endpoint may coincide with the proposed vertical core. Keep
         # the true endpoints and draw a measurable orthogonal connection loop.
         d=.20
-        return [start,(x1+d,y1),(x1+d,y1+d),end],[start,(x1-d,y1),(x1-d,y1-d),end]
+        return (
+            [start,(x1+d,y1),(x1+d,y1+d),(x1,y1+d),end],
+            [start,(x1-d,y1),(x1-d,y1-d),(x1,y1-d),end],
+        )
     def clean(points):
         out=[]
         for p in points:

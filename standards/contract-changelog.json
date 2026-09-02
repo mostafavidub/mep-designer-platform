@@ -61,6 +61,26 @@
       "migration":{"forward":"Preserve the source architectural north symbol through the plan transform, suppress generated north arrows, and remove only positively identified source presentation furniture.","rollback":"Supersede only with a stricter approved contract; never restore duplicate north graphics or source sheet furniture."}
     },
     {
+      "id":"GOV-2026-009",
+      "status":"APPROVED",
+      "summary":"Migrate the project-1 golden entity floor after removing all generated north arrows, legacy subtitle bands, source MEN presentation entities and the tank/pump symbol forbidden by the approved direct-city water basis; preserve every semantic sheet, equipment and visual minimum.",
+      "affected_capabilities":["architecture_preservation","sheet_layout","safe_zones","content_completeness","active_version_synchronization"],
+      "affected_projects":["project-1"],
+      "approval":{"status":"APPROVED","basis":"user-approved continuation of the seven-step correction, architectural-north/frame standards and locked project-1 direct_city answer"},
+      "verification":{"removed_generated_north_entities":76,"removed_subtitle_entities":40,"removed_source_presentation_entities":19,"direct_city_service_delta":1,"all_semantic_minimums_unchanged":true,"required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Set the project-1 modelspace floor to the clean v18.4 exact-file result while retaining all per-family, plan, equipment, detail and visual gates.","rollback":"Do not restore forbidden presentation furniture or unapproved water equipment; supersede with a stricter semantic baseline."}
+    },
+    {
+      "id":"GOV-2026-008",
+      "status":"APPROVED",
+      "summary":"Make the active version manifest the permanent authority for the website, CAD engine, application and generated Rule Books, current documentation, release record and production launchers; block merge and deployment on any drift.",
+      "affected_capabilities":["active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user request that every site and engine change remain synchronized with the latest healthy release"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","site_health_contract":"must_pass","cad_version_contract":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Derive active runtime versions from cad_engine/version_manifest.py and validate every replicated release surface in fail-closed CI.","rollback":"Supersede only with a stricter approved synchronization contract; never restore independently maintained active-version literals."}
+    },
+    {
       "id":"GOV-2026-007",
       "status":"APPROVED",
       "summary":"Add allow-listed, maximum-three-attempt automatic design recovery with durable audit history and customer-visible repair state.",

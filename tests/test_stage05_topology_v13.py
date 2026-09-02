@@ -7,11 +7,32 @@ class Stage05TopologyTests(unittest.TestCase):
         recognition={'detections':[{'id':'MEP-001','category':'fixture','type':'wc','point':(1000,1000),'room_id':'ROOM-001'}]}
         requirements={'project_systems':['cold_water','sanitary','vent']}
         result=build_system_topology(architecture,recognition,requirements,{})
-        self.assertEqual(result['version'],'mechanical-topology-v13.5')
+        self.assertEqual(result['version'],'mechanical-topology-v13.12')
         self.assertFalse(result['quality']['provisional_shaft'])
         self.assertGreaterEqual(len(result['systems']['sanitary']['edges']),1)
         edge=next(e for e in result['edges'] if e['system']=='sanitary')
         self.assertEqual(edge['from'],'MEP-001')
         self.assertTrue(edge['to'].startswith('SHAFT-'))
+
+    def test_real_shaft_without_plan_id_is_owned_by_containing_plan(self):
+        architecture={'plans':[{'plan_id':'PLAN-01','bounds':[0,0,5000,4000]}],
+                      'primary_floor_plan_ids':['PLAN-01'],
+                      'shafts':[{'point':(4000,1000)}],'bounds':[0,0,5000,4000],
+                      'rooms':[{'plan_id':'PLAN-01','type':'bathroom','label_point':(1000,1000)}]}
+        recognition={'detections':[{'id':'MEP-001','category':'fixture','type':'wc','point':(1000,1000),'room_id':'ROOM-001','plan_id':'PLAN-01'}]}
+        result=build_system_topology(architecture,recognition,{'project_systems':['sanitary']},{})
+        self.assertFalse(result['quality']['provisional_shaft'])
+        self.assertEqual(result['nodes'][1]['plan_id'],'PLAN-01')
+
+    def test_user_approved_wet_core_proposal_is_not_provisional(self):
+        architecture={'plans':[{'plan_id':'PLAN-01','bounds':[0,0,5000,4000]}],
+                      'primary_floor_plan_ids':['PLAN-01'],'shafts':[],
+                      'rooms':[{'plan_id':'PLAN-01','type':'bathroom','label_point':(1000,1000)}]}
+        recognition={'detections':[{'id':'MEP-001','category':'fixture','type':'wc','point':(1000,1000),'room_id':'ROOM-001','plan_id':'PLAN-01'}]}
+        result=build_system_topology(architecture,recognition,{'project_systems':['sanitary']},{},
+                                     design_basis={'mechanical_shaft_route':'propose_near_wet_core'})
+        self.assertFalse(result['quality']['provisional_shaft'])
+        proposed=next(n for n in result['nodes'] if n['id'].startswith('SHAFT-PROPOSED'))
+        self.assertTrue(proposed['proposal_approved'])
 
 if __name__=='__main__': unittest.main()

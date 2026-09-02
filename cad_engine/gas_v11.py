@@ -7,7 +7,7 @@ def _families(calc):
 
 def _negative(value):
     text = str(value or '').strip().lower()
-    return any(x in text for x in ('خیر','ندارد','بدون','none','no gas','false'))
+    return text in {'no', 'none', 'false', '0'} or any(x in text for x in ('خیر','ندارد','بدون','no gas'))
 
 
 def _ensure_gas_blocks(doc):

@@ -54,7 +54,7 @@ class WaterSanitaryV11Tests(unittest.TestCase):
         doc = self._doc()
         report = v10_4._add_shared_distribution_networks(
             doc, [self._level()], {'water_main_dn_mm':25,'sanitary_slope_pct':2.0},
-            {'_approved_drawing_manifest': {'sheets':[{'family':'heating'}]}},
+            {'_approved_drawing_manifest': {'sheets':[{'family':'gas'}]}, '_design_inputs': {'gas':'no'}},
         )
         self.assertEqual(report['water_sanitary_status'], 'PASS')
 

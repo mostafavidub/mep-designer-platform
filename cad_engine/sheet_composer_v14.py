@@ -18,6 +18,14 @@ STYLES={
  'condensate':('ENGITOOLS-M-CONDENSATE',4,'HIDDEN',25), 'gas':('ENGITOOLS-M-GAS',2,'DASHED',30),
  'exhaust':('ENGITOOLS-M-EXHAUST',6,'DASHED',30),
 }
+# Topology uses family names while issued CAD layers distinguish supply and
+# return legs.  A family route is rendered on its primary supply layer; return
+# routes retain their explicit style when present.
+STYLES.update({
+ 'heating': STYLES['heating_supply'],
+ 'cooling': STYLES['cooling_supply'],
+ 'ventilation': STYLES['exhaust'],
+})
 
 def _lt(doc,name):
  if name.upper()=='CONTINUOUS': return 'Continuous'

@@ -6,6 +6,7 @@ def test_coincident_endpoint_gets_measurable_orthogonal_connection_loop():
     candidates=_route_candidates((2,2),(2,2))
     assert all(len(points)>=4 for points in candidates)
     assert all(sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(points,points[1:]))>0 for points in candidates)
+    assert all(all(a[0]==b[0] or a[1]==b[1] for a,b in zip(points,points[1:])) for points in candidates)
 
 
 def test_exhaust_and_locked_gas_endpoints_are_sized_from_design_load():

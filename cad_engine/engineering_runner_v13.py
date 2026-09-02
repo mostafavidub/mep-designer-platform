@@ -115,7 +115,7 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     recognition=_add_locked_design_endpoints(architecture,recognition,design_basis or {})
     requirements=derive_system_requirements(architecture,recognition,design_basis=design_basis)
     calculations=calculate_mechanical_loads(architecture,recognition,requirements,design_basis=design_basis)
-    topology=build_system_topology(architecture,recognition,requirements,calculations);routing=route_topology(architecture,topology)
+    topology=build_system_topology(architecture,recognition,requirements,calculations,design_basis=design_basis);routing=route_topology(architecture,topology)
     sizing=size_networks(topology,routing,recognition,calculations);annotations=build_annotations(routing,sizing,recognition,calculations,topology)
     detail_overrides=dict(project_overrides or {})
     if not detail_overrides.get('levels'):

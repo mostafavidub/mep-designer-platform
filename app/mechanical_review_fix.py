@@ -79,15 +79,15 @@ def review_question_html(drawing_set):
         '<div style="text-align:right;font-size:16px;line-height:2">'
         '<div style="font-size:20px;font-weight:800;margin-bottom:8px">پیشنهاد نقشه‌های مکانیکی پروژه</div>'
         '<p style="font-size:14px;color:#667085;margin:0 0 10px">'
-        'بر اساس تحلیل معماری، تعداد نقشه‌های مکانیکی موردنیاز و قابل تحویل به شرح زیر است.</p>'
+        'بر اساس تحلیل معماری، شیت‌های مکانیکی موردنیاز و قابل تحویل به شرح زیر است.</p>'
         f'<ul style="margin:8px 0 14px;padding-right:22px">{items}</ul>'
-        f'<div style="font-size:18px;font-weight:800">تعداد نقشه‌های مکانیکی موردنیاز: {total} پلان</div>'
+        f'<div style="font-size:18px;font-weight:800">تعداد شیت‌های تحویلی مکانیک: {total} شیت</div>'
         '<p style="font-size:14px;font-weight:400;color:#667085;margin:10px 0 14px">'
         'Effective Level و طبقات تیپ فقط داخل همان سیستم اعمال می‌شوند. طراحی CAD تا تأیید این لیست شروع نمی‌شود.</p>'
         '<style>#answerForm textarea,#answerForm>button{display:none!important}</style>'
         '<button type="button" class="btn primary wide" '
         'onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">'
-        'تأیید و شروع طراحی</button>'
+        'تأیید و شروع طراحی — تأیید همین Manifest</button>'
         '</div>'
     )
 

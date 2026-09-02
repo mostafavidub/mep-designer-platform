@@ -1,7 +1,13 @@
 {
   "platform_release": "18.4.0",
+  "cad_api": "18.4.0",
   "production_cad_entrypoint": "cad_engine.main_v18:app",
   "mechanical_pipeline": "mechanical-authority-site-pipeline-v18.4",
+  "mechanical_visual_gate": "split-ac-visual-legibility-v18.1",
+  "mechanical_rulebook": "4.3",
+  "mechanical_site_manifest": "12.1",
+  "fixture_equipment_rulebook": "2.4-fixture-equipment-approved-symbols",
+  "governance": "mechanical-governance-v1.0",
   "version_source": "cad_engine/version_manifest.py",
   "historical_snapshots_are_immutable": true
 }

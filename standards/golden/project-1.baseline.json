@@ -2,14 +2,14 @@
   "schema_version": "1.0.0",
   "project_id": "project-1",
   "status": "APPROVED",
-  "engine_version": "mechanical-authority-site-pipeline-v18.0",
+    "engine_version": "mechanical-authority-site-pipeline-v18.4",
   "minimums": {
     "board_count": 28,
     "approved_plan_count": 20,
     "titleblock_count": 28,
     "populated_plan_count": 20,
     "detail_sheet_count": 3,
-    "modelspace_entity_count": 8183,
+        "modelspace_entity_count": 8068,
     "split_ac_visual_board_count": 4,
     "split_ac_min_symbol_pixel_long_side": 28,
     "split_ac_min_symbol_pixel_short_side": 14

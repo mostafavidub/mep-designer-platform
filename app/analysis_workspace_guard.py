@@ -38,6 +38,8 @@ def _missing_workspace_error(message: str) -> bool:
 
 
 def _should_retry_from_durable_input(legacy, project_id: int) -> bool:
+    if not hasattr(legacy, 'Session'):
+        return False
     db = legacy.Session()
     try:
         project = db.get(legacy.Project, int(project_id))

@@ -38,15 +38,10 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('Panel Schedule', r.text)
         self.assertIn('project-1-electrical-before-after.svg', r.text)
         self.assertIn('/static/electrical-hero-v1.css', r.text)
-        self.assertIn('electrical-landing-hero', r.text)
-        self.assertIn('electrical-hero-art', r.text)
-        self.assertIn('طراحی سیستم‌های', r.text)
-        self.assertIn('الکتریکی ساختمان', r.text)
-        self.assertIn('از پلان تا مدارک اجرایی', r.text)
-        self.assertIn('شروع تحلیل پلان', r.text)
-        self.assertIn('مشاهده نمونه خروجی‌ها', r.text)
-        self.assertEqual(r.text.count('electrical-hero-feature'), 5)
-        for section in ('ARCHITECTURE-FIRST', 'DYNAMIC QUESTIONS', 'COMPARISON', 'REVISION FLOW', 'TRANSPARENT LIMITS', 'RELATED GUIDES'):
+        self.assertIn('discipline-page electrical', r.text)
+        self.assertIn('طراحی هوشمند تأسیسات برقی ساختمان', r.text)
+        self.assertIn('شروع طراحی برق', r.text)
+        for section in ('SCOPE', 'START DESIGN', 'APPROVED PROJECTS', 'DELIVERABLES'):
             self.assertIn(section, r.text)
         self.assertNotIn('/static/hero-scroll-v1.js', r.text)
         self.assertNotIn('/static/workflow-road.js', r.text)
@@ -189,8 +184,8 @@ class LandingSmokeTests(unittest.TestCase):
             self.assertIn('BreadcrumbList', article.text)
 
     def test_field_specific_hero_assets_exist(self):
-        electrical = self.client.get('/static/hero-electrical.svg')
-        mechanical = self.client.get('/static/hero-mechanical.svg')
+        electrical = self.client.get('/static/service-art-electrical.svg')
+        mechanical = self.client.get('/static/service-art-mechanical.svg')
         self.assertEqual(electrical.status_code, 200)
         self.assertEqual(mechanical.status_code, 200)
         self.assertIn('LIGHTING / POWER / FIRE / ELV', electrical.text)

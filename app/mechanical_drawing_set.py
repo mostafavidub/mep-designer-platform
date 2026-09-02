@@ -177,7 +177,8 @@ def predict_drawing_set(scope):
             if family['count']:
                 added = list(_append_family_roles(family, family_key, family['effective_levels'], [(suffix, label, reason)])); deliverables.extend(added)
 
-    if scope.get('roof_exists') and families['cooling']['count']:
+    if (scope.get('roof_exists') and families['cooling']['count']
+            and not any(s.get('code') == 'M-C-EQUIP' for s in deliverables)):
         added = list(_append_family_roles(families['cooling'], 'cooling', systems['roof_drainage']['levels'], [('EQUIP', 'سرمایش — جانمایی تجهیزات بام', 'authority roof cooling equipment')])); deliverables.extend(added)
 
     if scope.get('enclosed_parking') and families['ventilation_exhaust']['count']:

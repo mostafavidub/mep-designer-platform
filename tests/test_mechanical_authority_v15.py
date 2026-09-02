@@ -32,12 +32,53 @@ def test_design_overrides_maps_site_answers():
     assert x["gas_service"] is True
 
 
+def test_project_contract_canonical_answers_are_consumed_without_rewording():
+    x=build_design_overrides({
+        'location':'Gonbad-e Kavus',
+        'cooling':'wall_mounted_split_ac',
+        'heating':'package_radiator',
+        'gas_service':True,
+        'gas_service_pressure_mbar':17.6,
+        'water_inlet_pressure_bar':2.5,
+        'rainfall_intensity_mm_h':110,
+        'water_service_mode':'direct_city',
+        'outdoor_unit_location':'ROOF',
+        'mechanical_shaft_route':'propose_near_wet_core',
+    })
+    assert x['cooling_system']=='wall_mounted_split_ac'
+    assert x['heating_system']=='package_radiator'
+    assert x['gas_service'] is True
+    assert x['gas_service_pressure']==17.6
+    assert x['water_inlet_pressure']==2.5
+    assert x['water_service_mode']=='direct_city'
+    assert x['rainfall_intensity']==110
+    assert x['mechanical_shaft_route']=='propose_near_wet_core'
+
+
 def test_sheet_codes_are_systematic():
     assert _sheet_code("SANITARY_VENT","GROUND",1)=="M-101"
     assert _sheet_code("WATER","LEVEL-01",1)=="M-112"
     assert _sheet_code("HEATING","LEVEL-02",1)=="M-133"
     assert _sheet_code("SPLIT_AC","ROOF",1)=="M-164"
     assert _sheet_code("EXHAUST","GROUND",1)=="M-171"
+
+
+def test_service_equipment_board_does_not_require_fabricated_north(tmp_path):
+    path=tmp_path/'service.dxf'
+    doc=ezdxf.new('R2010')
+    doc.modelspace().add_line((1,1),(2,1),dxfattribs={'layer':'ENGITOOLS-M-WATER-SERVICE'})
+    doc.saveas(path)
+    composition={
+        'copy_failures':[],
+        'north':{},
+        'boards':{'B1':{
+            'sheet':'B1','code':'M-114','title':'Water service','family':'WATER','level':'SERVICE',
+            'bounds':(0,0,10,10),'plan_area':(0,0,8,8),
+            'subtitle_area':(0,8,8,9),'title_area':(0,9,10,10),
+        }},
+    }
+    result=qa_authority_dxf(path,composition)
+    assert not any(error.startswith('architectural_north_missing') for error in result['errors'])
 
 
 def _synthetic_source(path: Path):

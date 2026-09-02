@@ -157,24 +157,31 @@ def _answer(answers, *keys, default=None):
 def build_design_overrides(answers: dict) -> dict:
     location=_answer(answers,"location", default="")
     city=str(location).split("،")[-1].strip() if location else None
-    cooling=_norm(_answer(answers,"cooling", default=""))
-    heating=_norm(_answer(answers,"heating", default=""))
-    gas_answer=_norm(_answer(answers,"gas", default=""))
-    cooling_key="wall_mounted_split_ac" if any(x in cooling for x in ("اسپلیت","کولر گازی","split","split unit")) else None
+    cooling=_norm(_answer(answers,"cooling","cooling_system", default=""))
+    heating=_norm(_answer(answers,"heating","heating_system", default=""))
+    gas_raw=_answer(answers,"gas","gas_service", default="")
+    gas_answer=_norm(gas_raw)
+    cooling_key="wall_mounted_split_ac" if (
+        cooling=="wall_mounted_split_ac" or any(x in cooling for x in ("اسپلیت","کولر گازی","split","split unit"))
+    ) else None
     heating_key="package_radiator" if (
-        ("پکیج" in heating and any(x in heating for x in ("رادیاتور","شوفاژ")))
+        heating=="package_radiator"
+        or ("پکیج" in heating and any(x in heating for x in ("رادیاتور","شوفاژ")))
         or ("radiator" in heating and any(x in heating for x in ("combi","boiler","hydronic")))
     ) else None
     return {
         "city": city,
         "cooling_system": cooling_key,
         "heating_system": heating_key,
-        "gas_service": bool(gas_answer and not any(x in gas_answer for x in ("ندارد","خیر","no gas"))),
+        "gas_service": bool(gas_raw is True or (gas_answer and not any(x in gas_answer for x in ("ندارد","خیر","no gas")))),
         "fixture_evidence": list(_answer(answers, "_plan_fixture_evidence", default=[]) or []),
         "hvac": {"city":city,"cooling":"split_ac" if cooling_key else None,"heating":"package_radiator" if heating_key else None},
-        "water_inlet_pressure": _answer(answers,"water_pressure","water"),
-        "gas_service_pressure": _answer(answers,"gas_pressure"),
-        "rainfall_intensity": _answer(answers,"rainfall_intensity"),
+        "water_inlet_pressure": _answer(answers,"water_pressure","water_inlet_pressure","water_inlet_pressure_bar","water"),
+        "gas_service_pressure": _answer(answers,"gas_pressure","gas_service_pressure","gas_service_pressure_mbar"),
+        "rainfall_intensity": _answer(answers,"rainfall_intensity","rainfall_intensity_mm_h"),
+        "water_service_mode": _answer(answers,"water_service_mode"),
+        "outdoor_unit_location": _answer(answers,"outdoor_unit_location"),
+        "mechanical_shaft_route": _answer(answers,"mechanical_shaft_route"),
         "envelope": {
             "u_wall": _answer(answers,"u_wall"),
             "u_roof": _answer(answers,"u_roof"),
@@ -527,8 +534,8 @@ def _numeric(v):
 
 
 def _draw_calc(doc,msp,board,pipeline,authority):
-    _ensure_layer(doc,"ENGITOOLS-M-CALC",7,18);x1,y1,x2,y2=board.plan_area;main=[s for s in pipeline["sizing"].get("segments") or [] if s.get("system")=="cold_water"];q=.12*math.sqrt(max(len(main),1)*3);pressure=_numeric(authority["design_basis"]["basis"].get("water_inlet_pressure"));static=9.6 if len(authority["project"].get("levels") or {})>=3 else 6.4;residual=15.0;friction=max(4.0,.25*(static+residual));gross=static+residual+friction;avail=(pressure*10.197) if pressure is not None else None;final=max(0,gross-avail) if avail is not None else None
-    lines=["WATER SERVICE / PUMP DUTY CALCULATION",f"Peak demand Q ≈ {q:.2f} L/s (preliminary demand proxy)",f"Static head ≈ {static:.1f} m",f"Residual pressure target ≈ {residual:.1f} m",f"Friction + fittings allowance ≈ {friction:.1f} m",f"Gross head ≈ {gross:.1f} m",f"Utility pressure head = {avail:.1f} m" if avail is not None else "Utility pressure = INPUT REQUIRED",f"Pump head ≈ {final:.1f} m" if final is not None else "Final pump duty = PENDING UTILITY PRESSURE"]
+    _ensure_layer(doc,"ENGITOOLS-M-CALC",7,18);x1,y1,x2,y2=board.plan_area;main=[s for s in pipeline["sizing"].get("segments") or [] if s.get("system")=="cold_water"];q=.12*math.sqrt(max(len(main),1)*3);basis=authority["design_basis"]["basis"];pressure=_numeric(basis.get("water_inlet_pressure"));static=9.6 if len(authority["project"].get("levels") or {})>=3 else 6.4;residual=15.0;friction=max(4.0,.25*(static+residual));gross=static+residual+friction;avail=(pressure*10.197) if pressure is not None else None;final=max(0,gross-avail) if avail is not None else None;direct_city=str(basis.get("water_service_mode") or "").lower()=="direct_city"
+    lines=(["WATER SERVICE / DIRECT CITY PRESSURE CHECK",f"Peak demand Q ≈ {q:.2f} L/s (preliminary demand proxy)",f"Static head ≈ {static:.1f} m",f"Residual pressure target ≈ {residual:.1f} m",f"Friction + fittings allowance ≈ {friction:.1f} m",f"Required head ≈ {gross:.1f} m",f"Utility pressure head = {avail:.1f} m" if avail is not None else "Utility pressure = INPUT REQUIRED","Approved basis: no tank or booster pump."] if direct_city else ["WATER SERVICE / PUMP DUTY CALCULATION",f"Peak demand Q ≈ {q:.2f} L/s (preliminary demand proxy)",f"Static head ≈ {static:.1f} m",f"Residual pressure target ≈ {residual:.1f} m",f"Friction + fittings allowance ≈ {friction:.1f} m",f"Gross head ≈ {gross:.1f} m",f"Utility pressure head = {avail:.1f} m" if avail is not None else "Utility pressure = INPUT REQUIRED",f"Pump head ≈ {final:.1f} m" if final is not None else "Final pump duty = PENDING UTILITY PRESSURE"])
     for i,line in enumerate(lines):t=msp.add_mtext(line,dxfattribs={"layer":"ENGITOOLS-M-CALC","char_height":.10 if i==0 else .075});t.dxf.insert=(x1+.8,y2-1.0-i*1.25);t.dxf.width=x2-x1-1.6
 
 
@@ -606,7 +613,11 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     if compose_report.get("copy_failures"):errors.append("architecture_copy_failures")
     if sum(len(v) for v in title_overlaps.values()):errors.append("drawing_titleblock_overlap")
     if any(sheet_content[k]==0 for k in boards):errors.append("blank_sheet")
-    plan_boards=[b for b in boards.values() if b.family in PLAN_FAMILIES];missing_north=[b.code for b in plan_boards if not compose_report.get("north",{}).get(b.code)]
+    # North is inherited only on boards containing a source architectural plan.
+    # A service/equipment diagram has no architectural orientation, so adding a
+    # generated arrow would violate the sole-authority north contract.
+    plan_boards=[b for b in boards.values() if b.family in PLAN_FAMILIES and b.level!="SERVICE"]
+    missing_north=[b.code for b in plan_boards if not compose_report.get("north",{}).get(b.code)]
     errors.extend(f"architectural_north_missing:{x}" for x in missing_north)
     return {"version":"mechanical-authority-dxf-qa-v15.0","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":[],"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north)}}
 

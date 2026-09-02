@@ -59,7 +59,7 @@ def review_question_html_v12(drawing_set):
         '<p style="font-size:13px;color:#344054;background:#F2F4F7;padding:9px 11px;border-radius:8px;margin:10px 0">جهت شمال فقط از نماد همان پلان معماری خوانده و حفظ می‌شود؛ فلش شمال دوم تولید نمی‌شود. کادر چاپ داخلی، نوار عنوان/مقیاس قدیمی و اجزای خارج از خود پلان نیز از تمام شیت‌های تحویلی حذف می‌شوند.</p>'
         '<p style="font-size:13px;color:#344054;background:#F2F4F7;padding:9px 11px;border-radius:8px;margin:10px 0">اگر خطای عملیاتی قابل‌اصلاح رخ دهد، سامانه حداکثر سه تلاش کنترل‌شده با نمایش مرحله و ثبت سابقه انجام می‌دهد؛ اطلاعات مهندسی ناقص یا خطای ناشناخته هرگز حدس زده نمی‌شود.</p>'
         '<style>#answerForm textarea,#answerForm>button{display:none!important}</style>'
-        '<button type="button" class="btn primary wide" onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">تأیید همین Manifest و شروع طراحی</button>'
+        '<button type="button" class="btn primary wide" onclick="document.getElementById(\'answer\').value=\'تأیید\';document.getElementById(\'answerForm\').requestSubmit()">تأیید و شروع طراحی — همین Manifest</button>'
         '</div>'
     )
 

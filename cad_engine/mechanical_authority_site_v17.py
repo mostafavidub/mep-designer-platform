@@ -76,6 +76,8 @@ def _release_input_errors(report):
     if basis.get('status')!='PASS': errors.append('design_basis_not_locked')
     pipeline_qa=report.get('pipeline_qa') or {}
     if pipeline_qa.get('status')!='PASS': errors.extend('pipeline:'+str(x) for x in pipeline_qa.get('errors') or [])
+    acceptance=report.get('engineering_acceptance') or {}
+    if acceptance.get('status')!='PASS': errors.extend('engineering_acceptance:'+str(x) for x in acceptance.get('errors') or ['MISSING'])
     return sorted(set(errors))
 
 

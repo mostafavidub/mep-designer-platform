@@ -68,7 +68,8 @@ class SystemTypicalV1Tests(unittest.TestCase):
         result = planner.predict_drawing_set(scope)
         self.assertEqual(result['sheet_families']['water_supply']['effective_levels'], ['L1', 'L2'])
         self.assertEqual(result['sheet_families']['water_supply']['sheets'][0]['levels'], ['L1', 'L2'])
-        self.assertEqual(result['sheet_families']['heating']['count'], 2)
+        self.assertEqual(result['sheet_families']['heating']['count'], 3)
+        self.assertTrue(any(s.get('drawing_type') == 'equipment_plan' for s in result['sheet_families']['heating']['sheets']))
 
 
 if __name__ == '__main__':

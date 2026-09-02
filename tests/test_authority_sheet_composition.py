@@ -35,16 +35,16 @@ class AuthoritySheetCompositionTests(unittest.TestCase):
 
     def test_two_patterns_without_enclosed_parking_match_standard_authority_manifest(self):
         proposal = predict_drawing_set(scope(['Ground', 'Typical']))
-        self.assertEqual(proposal['total_plans'], 13)
+        self.assertEqual(proposal['total_plans'], 15)
         self.assertEqual(self.counts(proposal), {
-            'water_supply': 3, 'sanitary_vent': 4, 'heating': 2,
+            'water_supply': 5, 'sanitary_vent': 4, 'heating': 2,
             'cooling': 2, 'ventilation_exhaust': 2,
         })
 
     def test_enclosed_parking_adds_only_its_dedicated_exhaust_role(self):
         proposal = predict_drawing_set(scope(['Ground', 'Typical'], enclosed_parking=True))
-        self.assertEqual(proposal['total_plans'], 14)
+        self.assertEqual(proposal['total_plans'], 16)
         self.assertEqual(self.counts(proposal), {
-            'water_supply': 3, 'sanitary_vent': 4, 'heating': 2,
+            'water_supply': 5, 'sanitary_vent': 4, 'heating': 2,
             'cooling': 2, 'ventilation_exhaust': 3,
         })

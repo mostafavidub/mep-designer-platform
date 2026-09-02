@@ -21,6 +21,8 @@ def _paper_text(v8, layout, value, x, y, h=3.2):
 def _new_special_layout(doc, v8, project_id, code, title, subtitle):
     layout = doc.layouts.new(code)
     layout.page_setup(size=(594, 420), margins=(0, 0, 0, 0), units='mm')
+    for viewport in list(layout.query('VIEWPORT')):
+        layout.delete_entity(viewport)
     _paper_text(v8, layout, title, 20, 395, 6.0)
     _paper_text(v8, layout, subtitle, 20, 384, 4.0)
     _paper_text(v8, layout, f'PROJECT ID: {project_id}', 20, 24, 3.0)

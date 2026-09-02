@@ -25,7 +25,7 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         self.assertIn('PPR', answers['water_design_basis'])
         self.assertIn('C=150', answers['water_design_basis'])
         self.assertIn('uPVC', answers['sanitary_design_basis'])
-        self.assertEqual(answers['mechanical_rulebook_version'], '2.1')
+        self.assertEqual(answers['mechanical_rulebook_version'], '4.3')
         self.assertEqual(answers['questionnaire_evidence_version'], '2.0')
         for forbidden in (
             'water_inlet_pressure', 'heating', 'cooling', 'water_source',

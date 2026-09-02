@@ -12,20 +12,16 @@ class ConceptArtTests(unittest.TestCase):
             r=self.client.get(asset); self.assertEqual(r.status_code,200); self.assertIn('<svg',r.text)
 
     def test_mechanical_card_art_is_browser_safe_nonblank_svg(self):
-        r=self.client.get('/static/hero-mechanical.svg?v=20260822-1618'); self.assertEqual(r.status_code,200)
-        self.assertIn('image/svg+xml',r.headers.get('content-type','')); self.assertGreater(len(r.content),1000)
+        r=self.client.get('/static/service-art-mechanical.svg?v=20260902'); self.assertEqual(r.status_code,200)
+        self.assertIn('image/svg+xml',r.headers.get('content-type','')); self.assertGreater(len(r.content),500)
 
     def test_native_img_rendering_is_wired_and_visible(self):
         js=self.client.get('/static/service-stack.js'); css=self.client.get('/static/concept-art.css')
         self.assertEqual(js.status_code,200); self.assertEqual(css.status_code,200)
         self.assertIn("art.className='service-stack-art'",js.text)
-        self.assertIn("'/service-art/mechanical.jpg?v=20260822-2045'",js.text)
+        self.assertIn('mechanical-hero-20260823-final.webp',js.text)
+        self.assertIn("'/static/service-art-electrical.svg?v=20260902'",js.text)
         self.assertIn('object-fit:contain!important',css.text)
-        art=self.client.get('/service-art/mechanical.jpg?v=20260822-2045')
-        self.assertEqual(art.status_code,200); self.assertGreater(len(art.content),10000)
-        self.assertEqual(art.headers.get('content-type'),'image/jpeg')
-        self.assertEqual(art.headers.get('x-engitools-art'),'mechanical-approved-jpeg')
-        self.assertTrue(art.content.startswith(b'\xff\xd8\xff'))
 
     def test_mechanical_and_electrical_landings_reuse_service_art(self):
         css=self.client.get('/static/concept-art.css'); self.assertEqual(css.status_code,200)

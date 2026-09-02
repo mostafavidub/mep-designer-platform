@@ -59,9 +59,15 @@ def _collect_candidates(files):
     rows = []
     for file_info in files or []:
         labels = file_info.get("text_labels") or []
+        title_points = defaultdict(list)
+        for title_item in labels:
+            if _explicit_level_title(title_item.get("text") or ""):
+                title_points[(title_item.get("source_type"), title_item.get("source_name"))].append(
+                    (title_item.get("x"), title_item.get("y"))
+                )
         by_source_rooms = defaultdict(list)
         for item in labels:
-            if v2.classify_room(item.get("text") or ""):
+            if not _explicit_level_title(item.get("text") or "") and v2.classify_room(item.get("text") or ""):
                 by_source_rooms[(item.get("source_type"), item.get("source_name"))].append((item.get("x"), item.get("y")))
         for item in labels:
             parsed = _explicit_level_title(item.get("text") or "")
@@ -71,7 +77,12 @@ def _collect_candidates(files):
             point = (item.get("x"), item.get("y"))
             source_key = (item.get("source_type"), item.get("source_name"))
             same_source_rooms = by_source_rooms.get(source_key) or []
-            nearby = sum(1 for p in same_source_rooms if _distance(point, p) < 100.0)
+            source_titles = title_points.get(source_key) or [point]
+            nearby = sum(
+                1 for p in same_source_rooms
+                if _distance(point, p) < 100.0
+                and _distance(point, p) <= min(_distance(other, p) for other in source_titles)
+            )
             source_type = item.get("source_type")
             # Layout/model evidence is strong because main_auto has already
             # filtered incoherent CAD sources. A named block needs room evidence
@@ -139,6 +150,7 @@ def infer_architecture_facts(analysis, discipline):
     auto = v2.infer_architecture_facts(analysis, discipline)
     candidates = _collect_candidates((analysis or {}).get("files") or [])
     profiles = [dict(p) for p in (auto.get("level_profiles") or [])]
+    restored = []
     profile_map = {str(p.get("name")): p for p in profiles if p.get("name")}
 
     for profile in profiles:
@@ -147,12 +159,14 @@ def infer_architecture_facts(analysis, discipline):
         if candidate:
             evidence.append(candidate["basis"])
             profile["level_confidence"] = max(0.95, candidate["confidence"])
+            if candidate.get("nearby_room_labels", 0) == 0:
+                profile["level_detection_status"] = "confirmed-from-explicit-title"
+                restored.append(candidate["name"])
         else:
             profile["level_confidence"] = 0.90 if profile.get("recognized_room_labels") else 0.65
         profile["level_evidence"] = evidence
-        profile["level_detection_status"] = "confirmed"
+        profile.setdefault("level_detection_status", "confirmed")
 
-    restored = []
     weak = []
     for candidate in candidates:
         if candidate["name"] in profile_map:

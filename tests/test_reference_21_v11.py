@@ -4,7 +4,7 @@ from pathlib import Path
 
 import ezdxf
 
-from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
+from app import mechanical_drawing_set as drawing_planner
 from cad_engine import main_v10_5 as production
 from tests.test_reference_13_v11 import SYSTEMS, full_inputs
 
@@ -39,9 +39,9 @@ class Reference21Benchmark(unittest.TestCase):
             'roof_exists': True, 'roof_level_name': 'پشت بام',
             'vertical_systems': True, 'typical_groups': [],
         }
-        approved = approve_drawing_set(predict_drawing_set(scope))
+        approved = drawing_planner.approve_drawing_set(drawing_planner.predict_drawing_set(scope))
         manifest = approved['approved_manifest']
-        self.assertEqual(manifest['total_sheets'], 21)
+        self.assertEqual(manifest['total_sheets'], 29)
 
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / 'architecture.dxf'
@@ -60,7 +60,7 @@ class Reference21Benchmark(unittest.TestCase):
             actual = [x.name for x in out.layouts if x.name.startswith('M-')]
             expected = [x['code'] for x in manifest['sheets']]
             self.assertEqual(actual, expected)
-            self.assertEqual(len(actual), 21)
+            self.assertEqual(len(actual), 29)
             self.assertEqual(meta['final_engineering_qa']['status'], 'PASS')
             self.assertEqual(meta['technical_quality']['score_10'], 10.0)
             self.assertEqual(len(out.audit().errors), 0)

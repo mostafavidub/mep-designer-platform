@@ -7,6 +7,7 @@
     {"paths":["cad_engine/final_delivery_gate_v17.py","cad_engine/mechanical_release_hardening_v18.py"],"capabilities":["sheet_layout","title_block","safe_zones","split_ac","content_completeness","architecture_preservation","visual_release"]},
     {"paths":["app/mechanical_site_manifest_v12.py","app/mechanical_drawing_set.py","app/dxf_output.py","data/rulebook/generate_rulebook_v4.py","docs/MECHANICAL_DRAWING_SET_STANDARD.md"],"capabilities":["split_ac","content_completeness","visual_release"],"requires":["focused_tests","web_regression","rulebook_regression"]},
     {"paths":["app/design_progress.py","app/design_recovery.py","app/dxf_output.py","app/job_queue.py","app/static/resumable-upload.js","app/static/modal.css","app/templates/project.html"],"capabilities":["design_progress_visibility","controlled_design_recovery"],"requires":["focused_tests","web_regression","recovery_regression"]},
+    {"paths":["cad_engine/version_manifest.py","cad_engine/version_sync_gate.py","app/mechanical_rulebook.py","data/rulebook/generate_rulebook_v4.py","docs/ACTIVE_VERSION_MATRIX.md","standards/active-release.json","README.md","start_services.sh","cad_engine/Dockerfile"],"capabilities":["active_version_synchronization"],"requires":["positive_test","destructive_test","site_health_contract","cad_version_contract","release_blocking_ci"]},
     {"paths":["standards/**"],"capabilities":["all_locked_capabilities"],"requires":["governance_validation","contract_changelog"]}
   ],
   "default_for_cad_engine_change":["focused_tests","golden_regression","exact_reopen","montage"]
