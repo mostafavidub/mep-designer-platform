@@ -2,10 +2,12 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 import ezdxf
 
 from app import artifact_storage
+from app.job_queue import backup_input_without_blocking
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
 from app.manifest_contract_v2 import manifest_digest
@@ -93,6 +95,23 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_object_storage_outage_does_not_block_local_analysis(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / 'architecture.dxf'
+            source.write_bytes(b'valid local upload')
+            with patch(
+                'app.job_queue.artifact_storage.upload_input',
+                side_effect=ConnectionError('temporary object storage outage'),
+            ):
+                warning = backup_input_without_blocking(81, source)
+            self.assertIn('ConnectionError', warning)
+            self.assertTrue(source.exists())
+
+    def test_upload_failure_ui_never_uses_opaque_cannot_continue_message(self):
+        source = Path('app/static/resumable-upload.js').read_text(encoding='utf-8')
+        self.assertNotIn("d.error||'امکان ادامه وجود ندارد.'", source)
+        self.assertIn('انتخاب مجدد فایل و ادامه', source)
+
     def test_missing_endsec_input_is_recovered_without_losing_geometry(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / 'missing-endsec.dxf'

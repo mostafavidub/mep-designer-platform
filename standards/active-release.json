@@ -1,6 +1,6 @@
 {
-  "platform_release": "18.4.0",
-  "cad_api": "18.4.0",
+  "platform_release": "18.4.1",
+  "cad_api": "18.4.1",
   "production_cad_entrypoint": "cad_engine.main_v18:app",
   "mechanical_pipeline": "mechanical-authority-site-pipeline-v18.4",
   "mechanical_visual_gate": "split-ac-visual-legibility-v18.1",
