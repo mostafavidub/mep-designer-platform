@@ -99,6 +99,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction to execute all seven corrective steps"},
       "verification":{"focused_tests":"PASS","negative_tests":"PASS","database_reload":"PASS","web_regression":"PASS","full_regression":"422 PASS","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Normalize legacy and new explicit answers into the v18.5 basis contract, require the same fields before queueing and at authority QA, and resume missing-input work at authority_contract.","rollback":"Supersede only with a stricter contract; never restore free-text equality, divergent preflight requirements or raw QA exposure."}
+    },
+    {
+      "id":"GOV-2026-011",
+      "status":"APPROVED",
+      "summary":"Migrate failed pre-v18.5 authority runs into explicit rainfall and shaft questions before retrying, including jobs already queued during a rolling deployment; consume each legacy failure once and preserve prior analysis.",
+      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all","project-84"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete all corrective stages and eliminate the production failure"},
+      "verification":{"focused_tests":"35 PASS","full_regression":"424 PASS","production_project_84":"must_request_missing_inputs","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Inspect only unconsumed failed revision reports, map allow-listed authority errors to explicit questions, and block both new and already-queued design execution until answers are persisted.","rollback":"Supersede only with a stricter migration; never blindly requeue a known missing-input authority failure."}
     }
   ]
 }

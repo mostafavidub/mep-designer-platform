@@ -363,7 +363,20 @@ def register_job_queue(app, legacy):
 
     def _run_design(job_id):
         db = legacy.Session(); job = db.get(Job, job_id)
-        project_id, revision_id = job.project_id, job.revision_id; db.close()
+        project_id, revision_id = job.project_id, job.revision_id
+        project = db.get(legacy.Project, project_id)
+        if project and _recover_legacy_basis_failure(db, project):
+            revision = db.get(legacy.Revision, revision_id)
+            if revision:
+                revision.status = 'input_required'
+                revision.error = ''
+            job.status = 'input_required'
+            job.last_error = ''
+            job.locked_at = None
+            db.commit()
+            db.close()
+            return
+        db.close()
         try:
             artifact_storage.ensure_design_input(project_id, legacy.DATA_DIR, legacy.safe_extract)
             original_design(project_id, revision_id)
@@ -525,11 +538,44 @@ def register_job_queue(app, legacy):
                 app.router.routes.remove(route)
         app.add_api_route(path, endpoint, methods=[method])
 
+    def _recover_legacy_basis_failure(db, project):
+        """Convert one unconsumed pre-v18.5 authority failure into questions.
+
+        Old failed revisions contain an unstructured QA dictionary.  They must
+        never be blindly queued again: extract only the allow-listed missing
+        engineering inputs and remember the consumed revision so a completed
+        answer is not reopened on every future revision.
+        """
+        analysis = dict(project.analysis or {})
+        consumed = set(analysis.get('legacy_basis_failures_consumed') or [])
+        revisions = (
+            db.query(legacy.Revision)
+            .filter(legacy.Revision.project_id == project.id, legacy.Revision.status == 'failed')
+            .order_by(legacy.Revision.id.desc())
+            .all()
+        )
+        for revision in revisions:
+            marker = str(revision.id)
+            if marker in consumed:
+                continue
+            raw = str(revision.error or '')
+            missing = legacy_basis_missing(raw)
+            consumed.add(marker)
+            analysis['legacy_basis_failures_consumed'] = sorted(consumed)
+            project.analysis = analysis
+            if missing and mechanical_workflow.reopen_basis_questions(project, missing):
+                project.last_error = ''
+                return True
+        return False
+
     def _prepare_design(db, project):
         if project.status in ('queued', 'designing', 'quality_check'):
             return False
         discipline = (project.answers or {}).get('discipline', (project.analysis or {}).get('discipline', 'mechanical'))
         if discipline == 'mechanical':
+            if project.status == 'failed' and _recover_legacy_basis_failure(db, project):
+                db.commit()
+                return False
             if mechanical_workflow.refresh_stale_proposal(project):
                 db.commit()
                 return False
@@ -747,3 +793,12 @@ def register_job_queue(app, legacy):
             db.close()
 
     return Job
+def legacy_basis_missing(error):
+    """Extract only approved user-input keys from legacy authority reports."""
+    raw = str(error or '')
+    mapping = {
+        'design_basis_input_required:city': 'city',
+        'design_basis_input_required:rainfall_intensity': 'rainfall_intensity',
+        'provisional_shaft_not_authority_acceptable': 'mechanical_shaft_route',
+    }
+    return [key for token, key in mapping.items() if token in raw]
