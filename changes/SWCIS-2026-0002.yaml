@@ -2,7 +2,7 @@
   "change_id":"SWCIS-2026-0002",
   "summary":"Adopt Single Living System, canonical CAD entrypoint, automatic build identity, artifact stamping, Git-only rollback, and fail-closed runtime-version governance.",
   "requester":"mostafavidub",
-  "change_types":["drawing_output","documentation","governance","release_identity","deployment","test"],
+  "change_types":["drawing_output","documentation","governance","release_identity","runtime","deployment","test","ui_api"],
   "changed_rule_ids":[],
   "impacted_modules":["rule_book","pmm","questionnaire","planner","cad_designer","routing","sizing","equipment","manufacturer_selector","detail_riser","qa","manifest","ui_api","docs","versioning","migration","governance","deployment"],
   "impact_notes":{"repository":"full closure: release identity, runtime, artifact, documentation, migration, QA, and deployment contracts changed or verified"},

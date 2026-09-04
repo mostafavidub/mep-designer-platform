@@ -19,6 +19,6 @@
     "versioning": {"owners": ["release"], "paths": ["standards/swcis/release_contract.yaml", "standards/swcis/version_manifest.yaml", "standards/releases/**", "standards/contract-changelog.json"], "depends_on": ["manifest", "docs"]},
     "migration": {"owners": ["platform", "release"], "paths": ["migrations/**", "standards/swcis/migrations/**", "standards/test-suites/**"], "depends_on": ["pmm", "versioning"]},
     "governance": {"owners": ["quality", "release"], "paths": ["standards/swcis/**", "changes/**", "tools/swcis_*.py", "tools/runtime_version_guard.py", "tests/test_swcis_governance.py", ".github/**", "AGENTS.md"], "depends_on": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration"]},
-    "deployment": {"owners": ["release", "operations"], "paths": ["Dockerfile", "docker-compose*.yml", "start_services.sh", ".github/workflows/**"], "depends_on": ["governance", "versioning", "migration", "qa"]}
+    "deployment": {"owners": ["release", "operations"], "paths": ["Dockerfile", "cad_engine/Dockerfile", "docker-compose*.yml", "start_services.sh", ".github/workflows/**"], "depends_on": ["governance", "versioning", "migration", "qa"]}
   }
 }

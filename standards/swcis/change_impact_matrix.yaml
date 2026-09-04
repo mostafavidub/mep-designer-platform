@@ -13,6 +13,7 @@
     "test": {"path_patterns": ["tests/**"], "seed_modules": ["qa"], "required_evidence": ["tests"]},
     "governance": {"path_patterns": ["standards/swcis/**", "standards/test-suites/**", "changes/**", "tools/swcis_*.py", "tools/runtime_version_guard.py", "tests/test_swcis_governance.py", ".github/**", "AGENTS.md"], "seed_modules": ["governance"], "required_evidence": ["tests", "docs", "version_bump"]},
     "release_identity": {"path_patterns": ["cad_engine/build_identity.py", "cad_engine/version_manifest.py", "cad_engine/version_sync_gate.py", "standards/active-release.json", "docs/ACTIVE_VERSION_MATRIX.md"], "seed_modules": ["manifest", "versioning"], "required_evidence": ["tests", "docs", "version_bump", "migration", "contract_diff", "deployment_plan", "rollback_plan"]},
+    "runtime": {"path_patterns": ["cad_engine/main*.py"], "seed_modules": ["cad_designer"], "required_evidence": ["tests", "golden_regression", "semantic_diff", "artifact_diff", "migration", "deployment_plan", "rollback_plan"]},
     "deployment": {"path_patterns": ["Dockerfile", "cad_engine/Dockerfile", "docker-compose*.yml", "start_services.sh", ".github/workflows/**"], "seed_modules": ["deployment"], "required_evidence": ["tests", "deployment_plan", "rollback_plan"]}
   },
   "unclassified_policy": "FAIL",
