@@ -145,6 +145,7 @@ def design(req: DesignRequest):
                         missing.append("mechanical_shaft_route")
                     failed_stage=report.get("stage")
                     stage_keys={
+                        "approved_manifest_gate":"approved_manifest_qa",
                         "layout_geometry_gate":"layout_geometry_qa",
                         "reference_parity_documentation_gate":"reference_parity_documentation",
                         "documentation_enhancement_gate":"documentation_enhancement_qa",

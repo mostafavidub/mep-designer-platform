@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_active_runtime_and_public_version_contract_are_identical():
-    assert PLATFORM_RELEASE == CAD_API_VERSION == "18.5.8"
-    assert MECHANICAL_PIPELINE_VERSION.endswith("v18.5.8")
+    assert PLATFORM_RELEASE == CAD_API_VERSION == "18.5.9"
+    assert MECHANICAL_PIPELINE_VERSION.endswith("v18.5.9")
     assert PRODUCTION_CAD_ENTRYPOINT == "cad_engine.main_v18:app"
     assert active_version_manifest()["platform_release"] == PLATFORM_RELEASE
     main_v15 = (ROOT / "cad_engine" / "main_v15.py").read_text()
@@ -55,7 +55,7 @@ def test_release_record_and_current_docs_do_not_drift():
     matrix = (ROOT / "docs" / "ACTIVE_VERSION_MATRIX.md").read_text()
     standard = (ROOT / "docs" / "MECHANICAL_DRAWING_SET_STANDARD.md").read_text()
     fixture = (ROOT / "docs" / "FIXTURE_EQUIPMENT_DETECTION_STANDARD.md").read_text()
-    assert "18.5.8" in matrix and PRODUCTION_CAD_ENTRYPOINT in matrix
+    assert "18.5.9" in matrix and PRODUCTION_CAD_ENTRYPOINT in matrix
     assert "Rule Book version: 4.3" in standard
     assert "Rule Book version: 2.4" in fixture
 

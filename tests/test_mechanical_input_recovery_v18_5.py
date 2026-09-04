@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 
 from app.dxf_output import _cad_error_message, customer_safe_error
@@ -47,6 +48,11 @@ def test_cad_error_retains_failed_stage_and_nested_gate_error():
     safe = customer_safe_error(raw)
     assert 'equipment_linkage_gate' in safe
     assert 'equipment_or_route_missing:m-161:indoor_unit' in safe
+
+
+def test_approved_manifest_gate_is_in_failed_stage_contract():
+    source = Path('cad_engine/main_v15.py').read_text()
+    assert '"approved_manifest_gate":"approved_manifest_qa"' in source
 
 
 def test_late_input_failure_reopens_only_missing_questions_and_preserves_analysis():

@@ -1,7 +1,7 @@
 # Mechanical Design Basis Contract
 
 Active contract: `mechanical-design-basis-v18.5.3`
-Platform release: `18.5.8`
+Platform release: `18.5.9`
 
 Mechanical design is fail-closed before queueing and again at the CAD authority
 boundary. The website, persisted project answers and CAD engine use the same
