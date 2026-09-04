@@ -143,6 +143,22 @@ def design(req: DesignRequest):
                             missing.extend(aliases.get(x,x) for x in str(error).split(":",1)[1].split(","))
                     if "topology:provisional_shaft_not_authority_acceptable" in (engineering_acceptance.get("errors") or []):
                         missing.append("mechanical_shaft_route")
+                    failed_stage=report.get("stage")
+                    stage_keys={
+                        "layout_geometry_gate":"layout_geometry_qa",
+                        "reference_parity_documentation_gate":"reference_parity_documentation",
+                        "documentation_enhancement_gate":"documentation_enhancement_qa",
+                        "final_delivery_isolation_gate":"final_delivery_isolation_qa",
+                        "titleblock_gate":"titleblock_qa", "safe_zone_gate":"safe_zone_qa",
+                        "architectural_presentation_gate":"architectural_presentation_qa",
+                        "equipment_linkage_gate":"equipment_linkage_qa",
+                        "split_ac_visual_gate":"split_ac_visual_qa", "detail_library_gate":"detail_library_qa",
+                        "content_completeness_gate":"content_completeness_qa",
+                        "plan_board_population_gate":"plan_board_population_qa",
+                        "architecture_preservation_after_sanitization":"architecture_preservation_qa_after_v17",
+                        "exact_file_final_delivery_gate":"exact_file_final_delivery_qa",
+                        "montage_exact_reopen_gate":"montage_exact_reopen_qa",
+                    }
                     detail={
                         "message":"Mechanical authority pipeline failed",
                         "code":"MECHANICAL_INPUT_REQUIRED" if missing else "MECHANICAL_QA_FAILED",
@@ -153,7 +169,8 @@ def design(req: DesignRequest):
                         "authority_qa":authority_qa,
                         "dxf_qa":report.get("dxf_qa"),
                         "semantic_qa":report.get("semantic_qa"),
-                        "stage":report.get("stage"),
+                        "stage":failed_stage,
+                        "failed_stage_qa":report.get(stage_keys.get(failed_stage,"")),
                         "architecture_preservation_qa":report.get("architecture_preservation_qa"),
                         "architecture_preservation_qa_after_v17":report.get("architecture_preservation_qa_after_v17"),
                         "reference_parity_documentation":report.get("reference_parity_documentation"),

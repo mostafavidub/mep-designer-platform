@@ -1,6 +1,6 @@
 # Architecture Input Retention Standard
 
-Active platform release: `18.5.7`
+Active platform release: `18.5.8`
 
 The uploaded architectural DXF or ZIP is a release-critical project source.
 Automated cleanup may remove a local copy only after the same project has a

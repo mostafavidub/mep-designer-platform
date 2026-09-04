@@ -247,7 +247,7 @@ def _cad_error_message(response):
         readable='، '.join(labels.get(key,key) for key in missing)
         return f"INPUT_REQUIRED[{','.join(missing)}]: برای ادامه این اطلاعات را تکمیل کنید: {readable}"
     if isinstance(detail, dict):
-        failures = [item for item in evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid'))]
+        failures = [item for item in evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate'))]
         diagnostic = ' | '.join(dict.fromkeys(failures))[:1600] or str(detail)[:1600]
         return f'CAD_QA_FAILURE: {diagnostic}'
     message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
