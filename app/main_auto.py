@@ -426,6 +426,47 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
 QUESTIONNAIRE_VERSION = '5.1-single-source'
 
 
+def panel_analysis_payload(auto):
+    """Return the compact, trusted drawing summary consumed by the user panel."""
+    raw_area = auto.get('geometry_area_m2')
+    try:
+        area = round(float(raw_area), 2) if raw_area is not None else None
+    except (TypeError, ValueError):
+        area = None
+    if area is not None and not 15 <= area <= 100000:
+        area = None
+
+    profiles = [
+        profile for profile in (auto.get('level_profiles') or [])
+        if not profile.get('roof')
+    ]
+    floors = len(profiles) or None
+    evidence = []
+    warnings = []
+    if area is not None:
+        evidence.append(f'مساحت هندسی {area} مترمربع در موتور مرکزی محاسبه شد.')
+    else:
+        warnings.append('مساحت قابل اتکا از نقشه استخراج نشد؛ متراژ باید توسط کاربر تأیید شود.')
+    if floors:
+        evidence.append(f'{floors} طبقه قابل استفاده از عناوین و هندسه معماری تشخیص داده شد.')
+
+    return {
+        'status': 'confirm' if area is not None else 'review',
+        'area': area,
+        'floors': floors,
+        'floorAreas': [],
+        'unit': 'مترمربع' if area is not None else 'نامشخص',
+        'confidence': 72 if area is not None and floors else 58 if area is not None else 0,
+        'method': 'closed-boundary' if area is not None else 'none',
+        'warnings': warnings,
+        'evidence': evidence,
+        'checks': [
+            {'label': 'محاسبه در موتور مرکزی انجام شد', 'passed': True},
+            {'label': 'مساحت قابل اتکا استخراج شد', 'passed': area is not None},
+        ],
+    }
+
+
 @app.get('/api/questionnaire/{discipline}')
 def questionnaire_schema(discipline: str):
     if discipline not in {'mechanical', 'electrical'}:
@@ -498,6 +539,7 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
                 if isinstance(value, (str, int, float, bool))
             },
             'auto_summary': auto_summary(auto, discipline),
+            'panel_analysis': panel_analysis_payload(auto),
         }
 
 
