@@ -2,21 +2,12 @@
   "schema_version": "1.0.0",
   "standard": "SWCIS",
   "seal_before_comparison": true,
-  "real_projects": [
-    {"project_id": "1", "baseline": "standards/golden/project-1.baseline.json", "input_policy": "private input excluded; hashes and semantic baseline only"},
-    {"project_id": "3", "baseline": "INPUT_REQUIRED", "input_policy": "register and block affected release until sealed baseline exists"},
-    {"project_id": "4", "baseline": "INPUT_REQUIRED", "input_policy": "register and block affected release until sealed baseline exists"},
-    {"project_id": "6", "baseline": "INPUT_REQUIRED", "input_policy": "register and block affected release until sealed baseline exists"},
-    {"project_id": "7", "baseline": "INPUT_REQUIRED", "input_policy": "register and block affected release until sealed baseline exists"},
-    {"project_id": "8", "baseline": "INPUT_REQUIRED", "input_policy": "register and block affected release until sealed baseline exists"},
-    {"project_id": "10", "baseline": "INPUT_REQUIRED", "input_policy": "register and block affected release until sealed baseline exists"}
+  "scope": "Regression governance contract only. Test-project inventories and customer/project identifiers belong in versioned test-suite configuration outside SWCIS.",
+  "required_suites": [
+    {"suite_type": "representative_regression", "minimum_cases": 1, "inventory_source": "repository test configuration", "selection_policy": "risk-based coverage of affected modules"},
+    {"suite_type": "synthetic_negative", "minimum_cases": 1, "inventory_source": "repository test configuration", "selection_policy": "at least one destructive or fail-closed case for each changed contract"}
   ],
-  "synthetic_cases": [
-    {"case_id": "SYN-MISSING-RCP", "purpose": "missing authoritative ceiling data remains INPUT_REQUIRED"},
-    {"case_id": "SYN-ROUTE-COLLISION", "purpose": "2.5D obstruction conflict fails routing QA"},
-    {"case_id": "SYN-MANUFACTURER-NOMATCH", "purpose": "selector does not invent a product"},
-    {"case_id": "SYN-SCHEMA-OLD-READER", "purpose": "migration compatibility"},
-    {"case_id": "SYN-SEMANTIC-REMOVAL", "purpose": "locked drawing semantic removal fails"}
-  ],
-  "comparison": {"mode": "blind_then_unseal", "required": ["input_hash", "generator_version", "rulebook_version", "pmm_schema_version", "output_hash", "semantic_diff", "artifact_diff", "strict_score"], "pass": "all available baselines pass; INPUT_REQUIRED projects block changes whose impact requires full golden coverage"}
+  "required_case_categories": ["missing_authoritative_input", "dependency_or_route_conflict", "external_data_no_match", "schema_compatibility", "locked_semantic_removal"],
+  "concrete_test_inventory_policy": "FORBIDDEN_IN_SWCIS",
+  "comparison": {"mode": "blind_then_unseal", "required": ["input_hash", "generator_version", "rulebook_version", "pmm_schema_version", "output_hash", "semantic_diff", "artifact_diff", "strict_score"], "pass": "all risk-selected suites and required categories pass; unavailable required evidence blocks the affected release"}
 }

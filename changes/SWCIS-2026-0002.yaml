@@ -1,0 +1,16 @@
+{
+  "change_id": "SWCIS-2026-0002",
+  "summary": "Remove test-project inventory from SWCIS and make regression governance project-agnostic.",
+  "requester": "mostafavidub",
+  "change_types": ["governance", "documentation", "test"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {"qa": "generic regression contract validated", "manifest": "downstream verified", "ui_api": "downstream verified", "docs": "canonical wording corrected", "versioning": "major standard version bump", "migration": "no runtime data migration; governance contract consumer review required", "governance": "project identifiers now rejected", "deployment": "downstream gate verified"},
+  "evidence": {
+    "tests": ["tests/test_swcis_governance.py"],
+    "docs": ["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump": ["standards/swcis/version_manifest.yaml:2.0.0"]
+  },
+  "risk": {"likelihood": 1, "severity": 2, "detectability": 1, "score": 2, "rationale": "Governance metadata is generalized; runtime design behavior is unchanged."},
+  "waiver": null
+}
