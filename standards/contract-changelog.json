@@ -2,6 +2,16 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-021",
+      "status":"APPROVED",
+      "summary":"Add fail-closed Structural/RCP 2.5D coordination, official-datasheet manufacturer selection, graph-native parametric details/risers and sealed seven-project strict regression.",
+      "affected_capabilities":["structural_rcp_25d_coordination","manufacturer_selection","parametric_detail_riser_identity","sealed_seven_project_regression","active_version_synchronization"],
+      "affected_projects":["all","project-1","project-3","project-4","project-6","project-7","project-8","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to implement all four ordered fail-closed phases"},
+      "verification":{"focused_tests":"must_pass","full_regression":"must_pass","seven_project_golden":"must_pass","exact_reopen":"must_pass","montage":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Require each phase to pass before the next and expose missing authoritative inputs as INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Supersede only with a stricter contract; never fabricate structural/RCP or manufacturer facts."}
+    },
+    {
       "id":"GOV-2026-001",
       "status":"APPROVED",
       "summary":"Establish the ten-step mechanical design governance contract and project-1 golden baseline.",

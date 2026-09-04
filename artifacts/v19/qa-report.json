@@ -1,0 +1,132 @@
+{
+  "artifacts": [
+    "project-1-sealed-preview.json",
+    "project-3-sealed-preview.json",
+    "project-4-sealed-preview.json",
+    "project-6-sealed-preview.json",
+    "project-7-sealed-preview.json",
+    "project-8-sealed-preview.json",
+    "project-10-sealed-preview.json",
+    "seven-project-montage.png"
+  ],
+  "exact_file_reopen": "PASS",
+  "golden": {
+    "errors": [
+      "PROJECT_1_INPUT_REQUIRED",
+      "PROJECT_1_BELOW_MINIMUM",
+      "PROJECT_1_REGRESSION",
+      "PROJECT_3_INPUT_REQUIRED",
+      "PROJECT_3_REGRESSION",
+      "PROJECT_4_INPUT_REQUIRED",
+      "PROJECT_4_REGRESSION",
+      "PROJECT_6_INPUT_REQUIRED",
+      "PROJECT_6_BELOW_MINIMUM",
+      "PROJECT_6_REGRESSION",
+      "PROJECT_7_INPUT_REQUIRED",
+      "PROJECT_7_BELOW_MINIMUM",
+      "PROJECT_7_REGRESSION",
+      "PROJECT_8_INPUT_REQUIRED",
+      "PROJECT_8_BELOW_MINIMUM",
+      "PROJECT_8_REGRESSION",
+      "PROJECT_10_INPUT_REQUIRED",
+      "PROJECT_10_BELOW_MINIMUM",
+      "PROJECT_10_REGRESSION",
+      "PASS_RATE_BELOW_THRESHOLD"
+    ],
+    "pass_rate": 0.0,
+    "results": [
+      {
+        "baseline": 84.5,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 1,
+        "raw_score": 84.5,
+        "reference_opened_post_seal": true,
+        "score": 69.5,
+        "status": "INPUT_REQUIRED"
+      },
+      {
+        "baseline": 85.6,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 3,
+        "raw_score": 85.6,
+        "reference_opened_post_seal": true,
+        "score": 70.6,
+        "status": "INPUT_REQUIRED"
+      },
+      {
+        "baseline": 85.1,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 4,
+        "raw_score": 85.1,
+        "reference_opened_post_seal": true,
+        "score": 70.1,
+        "status": "INPUT_REQUIRED"
+      },
+      {
+        "baseline": 83.8,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 6,
+        "raw_score": 83.8,
+        "reference_opened_post_seal": true,
+        "score": 68.8,
+        "status": "INPUT_REQUIRED"
+      },
+      {
+        "baseline": 73.5,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 7,
+        "raw_score": 73.5,
+        "reference_opened_post_seal": true,
+        "score": 58.5,
+        "status": "INPUT_REQUIRED"
+      },
+      {
+        "baseline": 78.6,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 8,
+        "raw_score": 78.6,
+        "reference_opened_post_seal": true,
+        "score": 63.6,
+        "status": "INPUT_REQUIRED"
+      },
+      {
+        "baseline": 84.6,
+        "delta": -15.0,
+        "penalties": [
+          15.0
+        ],
+        "project_id": 10,
+        "raw_score": 84.6,
+        "reference_opened_post_seal": true,
+        "score": 69.6,
+        "status": "INPUT_REQUIRED"
+      }
+    ],
+    "status": "FAIL",
+    "thresholds": {
+      "maximum_drop": 0.0,
+      "minimum_score": 70.0,
+      "required_pass_rate": 1.0
+    }
+  },
+  "montage_preview": "PASS",
+  "status": "FAIL"
+}

@@ -1,0 +1,32 @@
+{
+  "blind_output": {
+    "input_scope": "ARCHITECTURE_ONLY",
+    "missing_inputs": [
+      "STRUCTURAL_MODEL",
+      "RCP_MODEL"
+    ],
+    "project_id": 8,
+    "reference_opened": false,
+    "semantic_preview": {
+      "identity_mismatches": 0,
+      "networks": 0
+    },
+    "source": {
+      "archive": "8.zip",
+      "kind": "ATTACHED_ARCHITECTURE_DXF",
+      "member_size": 26227497,
+      "sha256": "43c696a6e2703ce746d22b169b90108f0a6a44d3873e56e32f80124793fe1d70"
+    },
+    "submission_state": "INPUT_REQUIRED"
+  },
+  "phase_1": "INPUT_REQUIRED",
+  "reference_access": "POST_SEAL_ONLY",
+  "seal": {
+    "architecture_hash": "43c696a6e2703ce746d22b169b90108f0a6a44d3873e56e32f80124793fe1d70",
+    "output_hash": "f106d6cdf10e904a2ec39525bb00db3ed8609c6613d70ec906f6ba15a7f976e2",
+    "project_id": 8,
+    "schema": "blind-seal/1.0",
+    "seal_hash": "d779903ff7086a0bc9dd14d6b5365cf14b988262582755be37009a604d364dcd",
+    "sealed_before_reference": true
+  }
+}

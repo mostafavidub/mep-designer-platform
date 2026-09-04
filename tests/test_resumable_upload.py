@@ -43,7 +43,7 @@ class ResumableUploadTests(unittest.TestCase):
             r = self.client.get(path)
             self.assertEqual(r.status_code, 200)
             self.assertIn('/static/resumable-upload.js', r.text)
-            self.assertIn('/static/resumable-upload.js?v=18.5.10', r.text)
+            self.assertIn('/static/resumable-upload.js?v=19.0.0', r.text)
 
 
 if __name__ == '__main__':

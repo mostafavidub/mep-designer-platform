@@ -5,11 +5,11 @@ The executable source of truth is `cad_engine/version_manifest.py`.
 
 | Component | Active version |
 |---|---|
-| Platform and CAD API | 18.5.10 |
-| Production CAD entrypoint | `cad_engine.main_v18:app` |
-| Mechanical pipeline | `mechanical-authority-site-pipeline-v18.5.10` |
+| Platform and CAD API | 19.0.0 |
+| Production CAD entrypoint | `cad_engine.main_v19:app` |
+| Mechanical pipeline | `mechanical-coordination-pipeline-v19.0.0` |
 | Split-AC visual gate | `split-ac-visual-legibility-v18.1` |
-| Mechanical Rule Book | 4.3 |
+| Mechanical Rule Book | 5.0 |
 | Mechanical site manifest | 12.1 |
 | Fixture/equipment detection | `2.4-fixture-equipment-approved-symbols` |
 | Ten-step governance | `mechanical-governance-v1.0` |

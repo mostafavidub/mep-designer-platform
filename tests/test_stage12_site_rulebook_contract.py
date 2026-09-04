@@ -52,7 +52,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         self.assertNotEqual(approved['approved_manifest']['sheets'][0]['label'], 'MUTATED AFTER APPROVAL')
 
     def test_stage_12_runtime_rulebook_v4_contains_manifest_and_29_benchmark_contract(self):
-        self.assertEqual(VERSION, '4.3')
+        self.assertEqual(VERSION, '5.0')
         self.assertEqual(BENCHMARK['base_architectural_views'], 4)
         self.assertEqual(BENCHMARK['approved_deliverables'], 29)
         self.assertEqual(BENCHMARK['independent_issued_drawing_content'], 29)
