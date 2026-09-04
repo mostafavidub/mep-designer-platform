@@ -189,6 +189,16 @@
       "approval":{"status":"APPROVED","basis":"project-85 R10 identified approved_manifest_gate after explicit user request to fix the failure"},
       "verification":{"manifest_gate_mapping_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_manifest_mismatch","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Transport approved_manifest_qa whenever approved_manifest_gate fails.","rollback":"Never discard the manifest mismatch that caused a fail-closed revision."}
+    },
+    {
+      "id":"GOV-2026-020",
+      "status":"APPROVED",
+      "summary":"Prioritize the failed stage and its exact errors ahead of large upstream reports so actionable QA evidence can never be truncated.",
+      "affected_capabilities":["customer_safe_errors","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction after project-85 R12 retained the gate but truncated its mismatch errors"},
+      "verification":{"large_report_truncation_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_exact_manifest_error","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Serialize failed stage and failed_stage_qa.errors before all other diagnostic evidence.","rollback":"Never allow generic upstream data to truncate the cause of the active failed gate."}
     }
   ]
 }

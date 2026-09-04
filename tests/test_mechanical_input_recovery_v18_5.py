@@ -55,6 +55,19 @@ def test_approved_manifest_gate_is_in_failed_stage_contract():
     assert '"approved_manifest_gate":"approved_manifest_qa"' in source
 
 
+def test_failed_stage_errors_survive_large_earlier_reports():
+    class LargeResponse:
+        def json(self):
+            return {'detail': {'code':'MECHANICAL_QA_FAILED', 'status':'FAIL',
+                'pipeline_qa':{'metrics':{'blob':'x' * 3000}},
+                'stage':'approved_manifest_gate',
+                'failed_stage_qa':{'status':'FAIL','errors':['total_plan_count_mismatch:approved=17:generated=16']}}}
+    raw = _cad_error_message(LargeResponse())
+    assert raw.index('total_plan_count_mismatch') < 300
+    assert 'approved_manifest_gate' in customer_safe_error(raw)
+    assert 'total_plan_count_mismatch:approved=17:generated=16' in customer_safe_error(raw)
+
+
 def test_late_input_failure_reopens_only_missing_questions_and_preserves_analysis():
     project=SimpleNamespace(
         answers={'discipline':'mechanical','city':'مشهد','location':'مشهد',
