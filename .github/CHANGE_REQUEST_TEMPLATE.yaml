@@ -1,0 +1,16 @@
+{
+  "change_id": "SWCIS-YYYY-NNNN",
+  "summary": "replace me",
+  "requester": "github-handle",
+  "change_types": ["replace-with-key-from-change_impact_matrix"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["replace-with-validator-output"],
+  "impact_notes": {"module-name": "changed | updated | verified-not-affected"},
+  "evidence": {
+    "traceability": [], "tests": [], "docs": [], "version_bump": [], "migration": [],
+    "golden_regression": [], "semantic_diff": [], "artifact_diff": [], "numeric_diff": [],
+    "contract_diff": [], "deployment_plan": [], "rollback_plan": []
+  },
+  "risk": {"likelihood": 1, "severity": 1, "detectability": 1, "score": 1, "rationale": "replace me"},
+  "waiver": null
+}

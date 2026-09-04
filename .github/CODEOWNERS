@@ -1,0 +1,9 @@
+# SWCIS owner enforcement. Replace/add teams as the organization creates them.
+* @mostafavidub
+/standards/swcis/ @mostafavidub
+/data/rulebook/ @mostafavidub
+/cad_engine/ @mostafavidub
+/app/ @mostafavidub
+/tests/ @mostafavidub
+/.github/ @mostafavidub
+/docs/ @mostafavidub

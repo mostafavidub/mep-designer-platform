@@ -1,5 +1,17 @@
 ## Change summary
 
+## SWCIS (mandatory)
+
+- Change request: `changes/<id>.yaml`
+- Canonical SWCIS version: `1.0.0`
+- [ ] Every changed path is classified.
+- [ ] Computed affected modules exactly match or are contained by the declared checklist.
+- [ ] Required tests/docs/version bumps/migrations/diffs are linked as evidence.
+- [ ] Every changed Rule ID has the complete PMM → engine → drawing → QA → regression → docs chain.
+- [ ] Risk score and required owner reviews are complete.
+- [ ] No bypass exists; any permitted waiver is versioned, independently reviewed, unexpired, and scoped.
+- [ ] `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml` returns PASS.
+
 ## Verification
 
 - [ ] Positive acceptance test
@@ -27,4 +39,3 @@
 
 - [ ] No locked behavior is weakened or removed.
 - [ ] If locked behavior changes, an approved changelog entry and versioned migration are included.
-

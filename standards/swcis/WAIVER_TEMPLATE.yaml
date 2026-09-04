@@ -1,0 +1,12 @@
+{
+  "waiver_id": "SWCIS-W-YYYY-NNNN",
+  "scope": ["exact gate or artifact"],
+  "reason": "why the narrow temporary exception is necessary",
+  "risk": 1,
+  "requester": "github-handle",
+  "reviewer": "different-github-handle",
+  "approved_at": "YYYY-MM-DD",
+  "expires_at": "YYYY-MM-DD (maximum 30 days)",
+  "compensating_controls": ["specific control"],
+  "remediation_issue": "URL or issue id"
+}

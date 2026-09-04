@@ -1,0 +1,13 @@
+{
+  "migration_id": "SWCIS-M-YYYY-NNNN",
+  "from_version": "x.y.z",
+  "to_version": "x.y.z",
+  "affected_contracts": [],
+  "consumer_inventory": [],
+  "compatibility_order": ["deploy backward-compatible readers", "validate", "deploy writers"],
+  "forward_plan": [],
+  "rollback_plan": [],
+  "data_validation": [],
+  "deprecation_window": {"starts": "YYYY-MM-DD", "ends": "YYYY-MM-DD"},
+  "approvers": []
+}
