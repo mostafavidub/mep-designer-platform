@@ -134,11 +134,23 @@ def design(req: DesignRequest):
                     plan_analysis=req.plan_analysis,
                 )
                 if report.get("status")!="PASS":
+                    authority_qa=((report.get("authority") or {}).get("authority_qa")) or {}
+                    engineering_acceptance=report.get("engineering_acceptance") or {}
+                    missing=[]
+                    for error in authority_qa.get("errors") or []:
+                        if str(error).startswith("design_basis_input_required:"):
+                            aliases={"gas_service_pressure":"gas_pressure"}
+                            missing.extend(aliases.get(x,x) for x in str(error).split(":",1)[1].split(","))
+                    if "topology:provisional_shaft_not_authority_acceptable" in (engineering_acceptance.get("errors") or []):
+                        missing.append("mechanical_shaft_route")
                     detail={
                         "message":"Mechanical authority pipeline failed",
+                        "code":"MECHANICAL_INPUT_REQUIRED" if missing else "MECHANICAL_QA_FAILED",
+                        "status":"INPUT_REQUIRED" if missing else "FAIL",
+                        "missing_inputs":list(dict.fromkeys(missing)),
                         "pipeline_qa":report.get("pipeline_qa"),
-                        "engineering_acceptance":report.get("engineering_acceptance"),
-                        "authority_qa":((report.get("authority") or {}).get("authority_qa")),
+                        "engineering_acceptance":engineering_acceptance,
+                        "authority_qa":authority_qa,
                         "dxf_qa":report.get("dxf_qa"),
                         "semantic_qa":report.get("semantic_qa"),
                         "stage":report.get("stage"),

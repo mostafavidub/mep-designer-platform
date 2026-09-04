@@ -51,7 +51,9 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         water = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '2.8 bar'})
         self.assertEqual(water.status_code, 200); self.assertEqual(water.json()['status'], 'asking')
         rain = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '95 mm/h'})
-        self.assertEqual(rain.status_code, 200); final_data = rain.json(); self.assertEqual(final_data['status'], 'drawing_set_review')
+        self.assertEqual(rain.status_code, 200); self.assertEqual(rain.json()['status'], 'asking')
+        shaft = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'پیشنهاد نزدیک هسته فضاهای تر'})
+        self.assertEqual(shaft.status_code, 200); final_data = shaft.json(); self.assertEqual(final_data['status'], 'drawing_set_review')
         self.assertIn('drawing_set', final_data); self.assertTrue(final_data['drawing_set']); self.assertGreater(final_data['drawing_set']['total_plans'], 0); self.assertIn('systems', final_data['drawing_set'])
 
         db = legacy.Session()

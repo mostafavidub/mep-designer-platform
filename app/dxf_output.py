@@ -18,6 +18,23 @@ app = legacy.app
 _prev_flow_payload = legacy.flow_payload
 
 
+def customer_safe_error(value):
+    """Never expose internal QA dictionaries, paths, or stack details."""
+    message=str(value or '').strip()
+    if not message:
+        return ''
+    if message.startswith('INPUT_REQUIRED['):
+        return message.split(']:',1)[-1].strip()
+    technical_tokens=('pipeline_qa','authority_qa','engineering_acceptance','traceback',
+                      "{'status':",'documentation_enhancement_qa','architecture_preservation_qa')
+    if any(token in message.lower() for token in technical_tokens) or len(message)>900:
+        return 'کنترل فنی خروجی کامل نشد. جزئیات برای تیم فنی ثبت شده است؛ اطلاعات و فایل پروژه حفظ شده‌اند.'
+    return message
+
+
+legacy.templates.env.globals['customer_safe_error'] = customer_safe_error
+
+
 def _purge_processing_files(pid: int, keep_output: bool = True):
     """Remove every local artifact; R2 is the only durable file store."""
     pdir = legacy.DATA_DIR / 'projects' / str(pid)
@@ -193,6 +210,14 @@ def _cad_error_message(response):
         detail = payload.get('detail') if isinstance(payload, dict) else None
     except Exception:
         detail = None
+    if isinstance(detail, dict) and detail.get('status') == 'INPUT_REQUIRED':
+        missing=list(detail.get('missing_inputs') or [])
+        labels={'city':'شهر پروژه','rainfall_intensity':'شدت بارندگی طراحی','mechanical_shaft_route':'تأیید مسیر شفت مکانیکی',
+                'water_inlet_pressure':'فشار آب ورودی','gas_service_pressure':'فشار سرویس گاز'}
+        readable='، '.join(labels.get(key,key) for key in missing)
+        return f"INPUT_REQUIRED[{','.join(missing)}]: برای ادامه این اطلاعات را تکمیل کنید: {readable}"
+    if isinstance(detail, dict):
+        return 'طراحی متوقف شد: کنترل فنی خروجی کامل نشد. جزئیات برای تیم فنی ثبت شده است.'
     message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
     translations = {
         'Authority-ready mechanical generation blocked: unresolved engineering inputs:':
@@ -398,6 +423,14 @@ def flow_payload_dxf(p):
     data['output_format'] = 'DXF'
     # Temporary compatibility for the existing modal JS.
     data['pdf_url'] = output_url
+    data['error'] = customer_safe_error(data.get('error'))
+    basis=(p.analysis or {}).get('basis_preflight') or {}
+    if basis.get('status') == 'INPUT_REQUIRED':
+        data['input_required'] = {
+            'missing': list(basis.get('missing') or []),
+            'resume_stage': basis.get('resume_stage'),
+            'message': 'اطلاعات قبلی و تحلیل پلان حفظ شده‌اند؛ فقط موارد زیر را تکمیل کنید.',
+        }
     return data
 
 

@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_active_runtime_and_public_version_contract_are_identical():
-    assert PLATFORM_RELEASE == CAD_API_VERSION == "18.4.1"
-    assert MECHANICAL_PIPELINE_VERSION.endswith("v18.4")
+    assert PLATFORM_RELEASE == CAD_API_VERSION == "18.5.0"
+    assert MECHANICAL_PIPELINE_VERSION.endswith("v18.5")
     assert PRODUCTION_CAD_ENTRYPOINT == "cad_engine.main_v18:app"
     assert active_version_manifest()["platform_release"] == PLATFORM_RELEASE
     main_v15 = (ROOT / "cad_engine" / "main_v15.py").read_text()
@@ -36,6 +36,12 @@ def test_every_production_launcher_uses_the_active_entrypoint():
     assert "uvicorn cad_engine.main_v17:app" not in launcher + dockerfile
 
 
+def test_authority_ci_uses_central_version_instead_of_stale_literal():
+    workflow = (ROOT / ".github" / "workflows" / "mechanical-authority-v15.yml").read_text()
+    assert "from cad_engine.version_manifest import PLATFORM_RELEASE" in workflow
+    assert "platform_release'] == '18." not in workflow
+
+
 def test_release_record_and_current_docs_do_not_drift():
     release = json.loads((ROOT / "standards" / "active-release.json").read_text())
     assert release["platform_release"] == PLATFORM_RELEASE
@@ -49,7 +55,7 @@ def test_release_record_and_current_docs_do_not_drift():
     matrix = (ROOT / "docs" / "ACTIVE_VERSION_MATRIX.md").read_text()
     standard = (ROOT / "docs" / "MECHANICAL_DRAWING_SET_STANDARD.md").read_text()
     fixture = (ROOT / "docs" / "FIXTURE_EQUIPMENT_DETECTION_STANDARD.md").read_text()
-    assert "18.4.1" in matrix and PRODUCTION_CAD_ENTRYPOINT in matrix
+    assert "18.5.0" in matrix and PRODUCTION_CAD_ENTRYPOINT in matrix
     assert "Rule Book version: 4.3" in standard
     assert "Rule Book version: 2.4" in fixture
 

@@ -17,6 +17,7 @@ INPUT_REQUIRED = (
     "unresolved engineering inputs", "input_required", "اطلاعات فنی لازم",
     "approved mechanical drawing manifest is missing", "مانیفست تأییدشده نامعتبر",
     "architectural_north_missing", "discipline must be", "output_scope",
+    "design_basis_input_required", "provisional_shaft_not_authority_acceptable",
 )
 TRANSIENT = (
     "timeout", "timed out", "connection", "temporarily", "reset by peer",

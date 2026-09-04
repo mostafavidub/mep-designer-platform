@@ -5,6 +5,7 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from .mechanical_drawing_set import approve_drawing_set, is_current_manifest, predict_drawing_set
+from .mechanical_basis_contract import canonical_city, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
 
 SYSTEM_LABELS = {
     'cooling': 'سرمایش', 'heating': 'گرمایش', 'water_supply': 'آب سرد و گرم',
@@ -13,6 +14,11 @@ SYSTEM_LABELS = {
 }
 
 REQUIRED_BASIS_QUESTION_SPECS = {
+    'city': {
+        'question': 'شهر پروژه را مشخص کنید. شهر برای شرایط اقلیمی و ضوابط محلی الزامی است.',
+        'options': ['تهران', 'مشهد', 'اصفهان', 'شیراز'],
+        'unit': None,
+    },
     'water_inlet_pressure': {
         'question': 'فشار واقعی آب در محل کنتور/ورودی پروژه چند bar است؟ این مقدار باید از اندازه‌گیری یا اطلاعات معتبر پروژه تأیید شود.',
         'options': ['2.0 bar', '2.5 bar', '3.0 bar', '4.0 bar'],
@@ -27,6 +33,11 @@ REQUIRED_BASIS_QUESTION_SPECS = {
         'question': 'فشار سرویس گاز مورد تأیید پروژه چند mbar است؟ این مقدار باید از مشخصات انشعاب/شرکت گاز یا مدرک معتبر پروژه باشد.',
         'options': ['17.4 mbar', '20 mbar', '21 mbar', '22 mbar'],
         'unit': 'mbar',
+    },
+    'mechanical_shaft_route': {
+        'question': 'مسیر عمودی تأسیسات مکانیکی را تأیید کنید. در صورت نبود شفت معماری، موتور فقط با اجازه صریح شما محل پیشنهادی ایجاد می‌کند.',
+        'options': ['پیشنهاد نزدیک هسته فضاهای تر', 'شفت کنار راه‌پله', 'شفت‌های موجود معماری استفاده شوند', 'اجازه پیشنهاد مسیر و ابعاد شفت را دارید'],
+        'unit': None,
     },
 }
 
@@ -168,14 +179,18 @@ def build_scope(p):
 
 def required_basis_questions(p):
     if _discipline(p) != 'mechanical': return []
-    answers = dict(p.answers or {}); scope = build_scope(p); required = []
+    answers = normalize_answers(p.answers or {}); scope = build_scope(p); required = []
+    if not canonical_city(answers):
+        required.append('city')
     if scope.get('wet_fixture_levels') and _numeric(answers.get('water_inlet_pressure') or answers.get('water_pressure')) is None:
         required.append('water_inlet_pressure')
-    if scope.get('roof_exists') and _numeric(answers.get('rainfall_intensity')) is None:
+    if scope.get('roof_exists') and numeric(answers.get('rainfall_intensity_mm_h') or answers.get('rainfall_intensity')) is None:
         required.append('rainfall_intensity')
     gas_enabled = bool(answers.get('gas')) and not _negative(answers.get('gas'))
     if gas_enabled and _numeric(answers.get('gas_pressure')) is None:
         required.append('gas_pressure')
+    if scope.get('vertical_systems') and not shaft_approval(answers):
+        required.append('mechanical_shaft_route')
     return required
 
 
@@ -205,8 +220,41 @@ def ensure_required_basis_questions(p):
     return True
 
 
+def reopen_basis_questions(p, missing):
+    """Return a late authority failure to its exact unanswered questions."""
+    allowed=[key for key in missing if key in REQUIRED_BASIS_QUESTION_SPECS]
+    answers=dict(p.answers or {})
+    for key in allowed:
+        if key == 'city':
+            answers.pop('city', None); answers.pop('location', None)
+        elif key == 'rainfall_intensity':
+            answers.pop('rainfall_intensity', None); answers.pop('rainfall_intensity_mm_h', None)
+        elif key == 'mechanical_shaft_route':
+            answers.pop('mechanical_shaft_route', None); answers.pop('mechanical_shaft_approval', None)
+        else:
+            answers.pop(key, None)
+    p.answers=answers
+    questions=list(p.questions or [])
+    for key in allowed:
+        replacement=_question_payload(key)
+        indices=[i for i,q in enumerate(questions) if isinstance(q,dict) and q.get('key')==key]
+        if indices: questions[indices[0]]=replacement
+        else: questions.append(replacement)
+    p.questions=questions
+    p.current_question=next((i for i,q in enumerate(questions) if q.get('key') in allowed),len(questions))
+    p.status='asking'
+    analysis=dict(p.analysis or {})
+    analysis['basis_preflight']={'status':'INPUT_REQUIRED','missing':allowed,'resume_stage':'authority_contract'}
+    p.analysis=analysis
+    return bool(allowed)
+
+
 def _basis_answer_error(key, answer):
     if key not in REQUIRED_BASIS_QUESTION_SPECS: return None
+    if key == 'city':
+        return None if canonical_city({'city': answer}) else 'شهر پروژه باید مشخص شود.'
+    if key == 'mechanical_shaft_route':
+        return None if shaft_approval(normalize_answers({}, answer_key=key, raw_answer=answer)) else 'یکی از مسیرهای شفت را به‌صورت صریح تأیید کنید.'
     value = _numeric(answer)
     if value is None or value <= 0:
         return f"برای {key} باید مقدار عددی معتبر و تأییدشده وارد شود؛ Default خودکار اعمال نمی‌شود."
@@ -217,7 +265,24 @@ def _clear_basis_preflight(p):
     analysis = dict(p.analysis or {}); analysis['basis_preflight'] = {'status':'PASS','missing':[]}; p.analysis = analysis
 
 
+def _commit_and_verify_answer(db, p, key):
+    """Commit, reload, and fail closed if canonical persistence was lost."""
+    db.commit(); db.expire(p); db.refresh(p)
+    if not persisted_answer_is_valid(p.answers or {}, key):
+        p.status = 'asking'
+        analysis = dict(p.analysis or {})
+        analysis['answer_error'] = 'پاسخ در قرارداد پروژه ذخیره نشد؛ لطفاً همان مورد را دوباره ثبت کنید.'
+        analysis['basis_persistence_qa'] = {'status':'FAIL','key':key}
+        p.analysis = analysis; db.commit()
+        return False
+    analysis = dict(p.analysis or {})
+    analysis['basis_persistence_qa'] = {'status':'PASS','key':key}
+    p.analysis = analysis; db.commit(); db.refresh(p)
+    return True
+
+
 def _advance_mechanical(p):
+    p.answers = normalize_answers(p.answers or {})
     if ensure_required_basis_questions(p): return False
     _clear_basis_preflight(p); create_proposal(p); return True
 
@@ -267,12 +332,12 @@ def register_mechanical_workflow(app, legacy):
             key = qs[idx]['key']; cleaned = answer.strip(); error = _basis_answer_error(key, cleaned)
             if error:
                 analysis = dict(p.analysis or {}); analysis['answer_error'] = error; p.analysis = analysis; p.status = 'asking'; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
-            a = dict(p.answers or {}); a[key] = cleaned; p.answers = a; p.current_question = idx + 1
+            p.answers = normalize_answers(p.answers or {}, answer_key=key, raw_answer=cleaned); p.current_question = idx + 1
             if p.current_question >= len(qs):
                 if _discipline(p) == 'mechanical': _advance_mechanical(p)
                 else: p.status = 'ready_to_design'
             else: p.status = 'asking'
-            db.commit()
+            _commit_and_verify_answer(db, p, key)
         db.close(); return RedirectResponse(f'/projects/{pid}', 303)
 
     def answer_json(pid: int, request: Request, answer: str = Form(...)):
@@ -287,12 +352,12 @@ def register_mechanical_workflow(app, legacy):
         error = _basis_answer_error(key, cleaned_answer)
         if error:
             data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); data['answer_error'] = error; db.close(); return JSONResponse(data)
-        a = dict(p.answers or {}); a[key] = cleaned_answer; p.answers = a; p.current_question = idx + 1
+        p.answers = normalize_answers(p.answers or {}, answer_key=key, raw_answer=cleaned_answer); p.current_question = idx + 1
         if p.current_question >= len(qs):
             if _discipline(p) == 'mechanical': _advance_mechanical(p)
             else: p.status = 'ready_to_design'
         else: p.status = 'asking'
-        db.commit(); db.refresh(p); data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data)
+        _commit_and_verify_answer(db, p, key); data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data)
 
     def drawing_set(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)

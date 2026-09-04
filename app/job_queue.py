@@ -299,8 +299,21 @@ def register_job_queue(app, legacy):
                         revision.status = 'queued'
                         revision.error = ''
             elif not success:
-                job.status = 'failed'
                 project = db.get(legacy.Project, job.project_id)
+                if decision.strategy == 'request_user_input' and project:
+                    import re
+                    match=re.search(r'INPUT_REQUIRED\[([^]]*)\]',error or '')
+                    missing=[x.strip() for x in (match.group(1).split(',') if match else []) if x.strip()]
+                    if mechanical_workflow.reopen_basis_questions(project,missing):
+                        job.status='input_required'
+                        job.last_error=''
+                        project.last_error=''
+                        record_recovery(project,decision,attempt=job.attempts,max_attempts=job.max_attempts,error=error)
+                        if job.revision_id:
+                            revision=db.get(legacy.Revision,job.revision_id)
+                            if revision: revision.status='input_required';revision.error=''
+                        db.commit();return
+                job.status = 'failed'
                 if project:
                     project.status = 'failed'
                     project.last_error = error or 'پردازش ناموفق بود.'

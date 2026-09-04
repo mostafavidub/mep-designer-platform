@@ -46,10 +46,20 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
             plan=next((p for p in architecture.get('plans') or [] if p.get('plan_id')==pid),{})
             b=plan.get('bounds') or architecture.get('bounds') or [0,0,0,0]
             point=((b[0]+b[2])/2,(b[1]+b[3])/2)
-        approved=(design_basis or {}).get('mechanical_shaft_route')=='propose_near_wet_core'
+        basis=design_basis or {}; approval=basis.get('mechanical_shaft_approval') or {}
+        strategy=approval.get('strategy') or basis.get('mechanical_shaft_route')
+        proposal_strategies={'propose_near_wet_core','propose_adjacent_to_stair','proposal_authorized'}
+        # Canonical route values were the signed approval contract before
+        # v18.5; keep those releases reproducible while new submissions carry
+        # the richer approval/provenance object.
+        approved=strategy in proposal_strategies and (
+            approval.get('status')=='APPROVED' or basis.get('mechanical_shaft_route') in proposal_strategies
+        )
         row={'id':f'SHAFT-PROPOSED-{len(shafts)+1:02d}','kind':'shaft','category':'vertical',
              'point':point,'plan_id':pid,'source':'proposed_near_wet_core','provisional':not approved,
-             'proposal_approved':approved}
+             'proposal_approved':approved,
+             'approval':({**approval,'strategy':strategy,'plan_id':pid,'approved_point':point}
+                         if approved else {'status':'INPUT_REQUIRED','strategy':strategy,'plan_id':pid})}
         shafts.append(row);nodes.append(row)
 
     project_systems=set(requirements.get('project_systems') or [])
@@ -72,6 +82,6 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
                           'plan_id':pid,'load_source':endpoint['id'],'topology':'endpoint_to_local_vertical_core'})
         system_graphs[system]={'nodes':graph_nodes,'edges':[e['id'] for e in edges if e['system']==system]}
     cross_plan=sum(1 for e in edges if next(n for n in nodes if n['id']==e['from']).get('plan_id')!=next(n for n in nodes if n['id']==e['to']).get('plan_id'))
-    return {'version':'mechanical-topology-v13.12','nodes':nodes,'edges':edges,'systems':system_graphs,'unresolved':unresolved,
+    return {'version':'mechanical-topology-v13.13','nodes':nodes,'edges':edges,'systems':system_graphs,'unresolved':unresolved,
             'quality':{'systems':len(system_graphs),'edges':len(edges),'provisional_shaft':any(s.get('provisional') for s in shafts),'cross_plan_edges':cross_plan,
                        'unresolved_without_local_shaft':len(unresolved)}}
