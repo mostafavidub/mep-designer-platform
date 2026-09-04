@@ -8,9 +8,14 @@ from .main_v18 import app
 from .build_identity import build_identity
 from .mechanical_release_contract_v19 import release_contract_status
 from .mechanical_authority_site_v19 import design_mechanical_authority_site
-from .main_v3 import design_dxf
+from .main_v3 import design_dxf as _design_dxf
 
 _base.design_mechanical_authority_site = design_mechanical_authority_site
+
+
+def design_dxf(src, dst, discipline, systems, revision, calc=None):
+    """Backward-compatible call shape routed through the canonical module."""
+    return _design_dxf(src, dst, discipline, systems, revision, calc or {})
 
 
 @app.get("/version")
