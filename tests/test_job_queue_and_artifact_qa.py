@@ -7,7 +7,12 @@ from unittest.mock import patch
 import ezdxf
 
 from app import artifact_storage
-from app.job_queue import backup_input_without_blocking, design_input_available, legacy_basis_missing
+from app.job_queue import (
+    backup_input_without_blocking,
+    design_input_available,
+    design_input_materializable,
+    legacy_basis_missing,
+)
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
 from app.manifest_contract_v2 import manifest_digest
@@ -113,6 +118,14 @@ class QueueIntegrationContractTests(unittest.TestCase):
         self.assertIn('if durable_input:', source)
         self.assertNotIn('artifact_storage.delete_project_inputs(project_id)', source)
         self.assertIn("project.status = 'awaiting_upload'", source)
+
+    def test_legacy_durable_marker_must_materialize_before_retry_is_queued(self):
+        with tempfile.TemporaryDirectory() as td:
+            with patch('app.job_queue.design_input_available', return_value=True), patch(
+                'app.job_queue.artifact_storage.ensure_design_input',
+                side_effect=RuntimeError('stored legacy object cannot be restored'),
+            ):
+                self.assertFalse(design_input_materializable(85, Path(td), lambda *_: None))
 
     def test_legacy_authority_failure_reopens_only_allow_listed_inputs(self):
         raw = (

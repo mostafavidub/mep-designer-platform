@@ -139,6 +139,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction after project 85 lost its architecture source during retry"},
       "verification":{"focused_storage_tests":"must_pass","negative_cleanup_test":"must_pass","reupload_fallback":"must_pass","full_regression":"must_pass","production_project_85":"must_show_reupload_form","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Remove local source only after a durable copy is verified; retain durable inputs across all processing states; require re-upload only for already-orphaned legacy projects.","rollback":"Never restore automatic deletion of the sole local source or durable input."}
+    },
+    {
+      "id":"GOV-2026-015",
+      "status":"APPROVED",
+      "summary":"Require a legacy architecture object to materialize into an actual DXF before a retry revision can be queued; false durable markers route directly to safe re-upload.",
+      "affected_capabilities":["controlled_design_recovery","artifact_storage","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to eliminate the observed project-85 missing-source retry loop"},
+      "verification":{"materialization_negative_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_reupload_form_without_new_failed_revision","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Restore and extract the source during retry preflight; enqueue design only after at least one DXF is physically present.","rollback":"Never use object-list presence alone as proof that a design input can be consumed."}
     }
   ]
 }

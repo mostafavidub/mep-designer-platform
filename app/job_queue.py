@@ -52,6 +52,17 @@ def design_input_available(project_id: int, data_dir: Path) -> bool:
         return False
 
 
+def design_input_materializable(project_id: int, data_dir: Path, safe_extract) -> bool:
+    """Prove a source can be restored and yields at least one usable DXF."""
+    if not design_input_available(project_id, data_dir):
+        return False
+    try:
+        artifact_storage.ensure_design_input(project_id, data_dir, safe_extract)
+        return True
+    except Exception:
+        return False
+
+
 def register_job_queue(app, legacy):
     class Job(legacy.Base):
         __tablename__ = 'design_jobs'
@@ -595,7 +606,7 @@ def register_job_queue(app, legacy):
     def _prepare_design(db, project):
         if project.status in ('queued', 'designing', 'quality_check'):
             return False
-        if not design_input_available(project.id, legacy.DATA_DIR):
+        if not design_input_materializable(project.id, legacy.DATA_DIR, legacy.safe_extract):
             project.status = 'awaiting_upload'
             project.last_error = 'نسخه قابل‌بازیابی فایل معماری موجود نیست. همان فایل DXF یا ZIP را دوباره بارگذاری کنید؛ پاسخ‌ها و تحلیل ثبت‌شده حفظ می‌شوند.'
             db.commit()
