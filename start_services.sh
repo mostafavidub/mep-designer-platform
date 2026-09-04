@@ -1,6 +1,10 @@
 #!/bin/sh
-# EngiTools production release: mechanical authority pipeline v17 + preservation + project-agnostic reference parity.
+# EngiTools production release: mechanical v19.1 architecture-only Pre-Submission profile.
 set -eu
+
+# Direct script execution changes Python's import root to data/rulebook. Keep
+# the application root importable for the shared active-version contract.
+export PYTHONPATH="$(pwd)${PYTHONPATH:+:$PYTHONPATH}"
 
 # CAD workspaces are regenerable and must never consume the persistent
 # Railway Volume. The Volume is reserved for SQLite metadata only; final
@@ -14,9 +18,8 @@ RULEBOOK_TARGET="${RULEBOOK_PATH:-/data/rulebook/MEP_Design_Rulebook.docx}"
 mkdir -p "$(dirname "$RULEBOOK_TARGET")"
 python data/rulebook/generate_rulebook_v4.py "$RULEBOOK_TARGET"
 
-# CAD designer: mechanical requests use the fail-closed v17 authority pipeline
-# with Architecture Preservation Gate plus project-agnostic Detail/Riser/
-# Calculation/General-Notes parity. Electrical remains on the existing flow.
+# CAD designer: mechanical requests use the version-locked v19.1 authority
+# adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
 uvicorn cad_engine.main_v19:app --host 127.0.0.1 --port 8081 &
 CAD_PID=$!
 trap 'kill $CAD_PID 2>/dev/null || true' EXIT INT TERM
