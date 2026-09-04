@@ -41,7 +41,17 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         db = legacy.Session()
         try:
             project = db.get(legacy.Project, pid)
+            self.assertEqual(project.questions[project.current_question]['key'], 'cooling_system')
+        finally: db.close()
+
+        cooling = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'اسپلیت دیواری'})
+        self.assertEqual(cooling.status_code, 200); self.assertEqual(cooling.json()['status'], 'asking')
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
             self.assertEqual(project.questions[project.current_question]['key'], 'water_inlet_pressure')
+            self.assertEqual(project.answers['cooling_system'], 'wall_mounted_split_ac')
         finally: db.close()
 
         invalid = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'نامشخص'})

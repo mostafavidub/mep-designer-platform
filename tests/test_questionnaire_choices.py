@@ -19,6 +19,10 @@ qlist = namespace['qlist']
 
 
 class QuestionnaireChoiceTests(unittest.TestCase):
+    def test_cooling_question_never_offers_an_unsupported_authority_system(self):
+        cooling = next(question for question in qlist(MECHANICAL) if question['key'] == 'cooling')
+        self.assertEqual(cooling['options'], ['اسپلیت دیواری'])
+
     def test_location_remains_free_text(self):
         location = next(question for question in qlist(COMMON) if question['key'] == 'location')
         self.assertEqual(location['input_type'], 'text')
@@ -30,7 +34,8 @@ class QuestionnaireChoiceTests(unittest.TestCase):
                 if question['key'] == 'location':
                     continue
                 self.assertEqual(question['input_type'], 'radio', question['key'])
-                self.assertGreaterEqual(len(question['options']), 4, question['key'])
+                minimum = 1 if question['key'] == 'cooling' else 4
+                self.assertGreaterEqual(len(question['options']), minimum, question['key'])
 
     def test_legacy_stored_question_is_enriched_at_render_time(self):
         question = present_question({'key': 'heating', 'question': 'سیستم گرمایش چیست؟'})

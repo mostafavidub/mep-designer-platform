@@ -43,3 +43,17 @@ def test_late_input_failure_reopens_only_missing_questions_and_preserves_analysi
     assert 'city' not in project.answers and 'location' not in project.answers
     assert project.analysis['architectural_auto']['rooms']==13
     assert project.analysis['basis_preflight']['resume_stage']=='authority_contract'
+
+
+def test_project_85_cooling_failure_reopens_exact_question_and_clears_unsupported_answer():
+    project=SimpleNamespace(
+        answers={'discipline':'mechanical','city':'مشهد','cooling':'اسپلیت یا داکت‌اسپلیت'},
+        questions=[],current_question=9,status='failed',
+        analysis={'architectural_auto':{'rooms':13},'drawing_set':{'approved':True}},
+    )
+    assert reopen_basis_questions(project,['cooling_system'])
+    assert project.status == 'asking'
+    assert project.questions[0]['key'] == 'cooling_system'
+    assert project.questions[0]['options'] == ['اسپلیت دیواری']
+    assert 'cooling' not in project.answers and 'cooling_system' not in project.answers
+    assert project.analysis['architectural_auto']['rooms'] == 13

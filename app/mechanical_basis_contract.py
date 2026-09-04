@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import re
 
 
-CONTRACT_VERSION = "mechanical-design-basis-v18.5.2"
+CONTRACT_VERSION = "mechanical-design-basis-v18.5.3"
 
 
 def _text(value):
@@ -34,6 +34,24 @@ def canonical_city(answers):
     return parts[-1] if parts else None
 
 
+def canonical_cooling_system(answers):
+    """Return only cooling systems the active authority engine can issue."""
+    value = (answers or {}).get("cooling_system") or (answers or {}).get("cooling")
+    text = _text(value).lower()
+    if not text:
+        return None
+    if text == "wall_mounted_split_ac":
+        return text
+    unsupported = ("داکت", "vrf", "vrv", "چیلر", "فن کویل", "فن‌کویل", "کولر آبی")
+    if any(token in text for token in unsupported):
+        return None
+    if any(token in text for token in ("اسپلیت دیواری", "کولر گازی دیواری", "wall mounted split", "wall-mounted split")):
+        return "wall_mounted_split_ac"
+    if text in ("اسپلیت", "کولر گازی / اسپلیت", "کولر گازی", "split", "split unit"):
+        return "wall_mounted_split_ac"
+    return None
+
+
 def canonical_shaft_strategy(value):
     text = _text(value).lower()
     if not text:
@@ -57,6 +75,9 @@ def normalize_answers(answers, *, answer_key=None, raw_answer=None):
     city = canonical_city(out)
     if city:
         out["city"] = city
+    cooling = canonical_cooling_system(out)
+    if cooling:
+        out["cooling_system"] = cooling
     rainfall = numeric(out.get("rainfall_intensity_mm_h") or out.get("rainfall_intensity"))
     if rainfall is not None:
         out["rainfall_intensity_mm_h"] = rainfall
@@ -105,4 +126,6 @@ def persisted_answer_is_valid(answers, key):
         return numeric((answers or {}).get("rainfall_intensity_mm_h") or (answers or {}).get(key)) is not None
     if key == "mechanical_shaft_route":
         return bool(shaft_approval(answers))
+    if key == "cooling_system":
+        return bool(canonical_cooling_system(answers))
     return bool(_text((answers or {}).get(key)))

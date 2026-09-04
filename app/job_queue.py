@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 import shutil
 import threading
@@ -796,9 +797,14 @@ def register_job_queue(app, legacy):
 def legacy_basis_missing(error):
     """Extract only approved user-input keys from legacy authority reports."""
     raw = str(error or '')
-    mapping = {
-        'design_basis_input_required:city': 'city',
-        'design_basis_input_required:rainfall_intensity': 'rainfall_intensity',
-        'provisional_shaft_not_authority_acceptable': 'mechanical_shaft_route',
-    }
-    return [key for token, key in mapping.items() if token in raw]
+    allowed = ('city', 'rainfall_intensity', 'cooling_system')
+    found = []
+    for key in allowed:
+        authority_match = re.search(r'design_basis_input_required:([^\]"\'}]+)', raw)
+        input_match = re.search(r'INPUT_REQUIRED\[([^\]]+)', raw)
+        values = ','.join(match.group(1) for match in (authority_match, input_match) if match)
+        if key in {item.strip() for item in values.split(',')}:
+            found.append(key)
+    if 'provisional_shaft_not_authority_acceptable' in raw:
+        found.append('mechanical_shaft_route')
+    return found

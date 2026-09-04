@@ -98,13 +98,13 @@ class QueueIntegrationContractTests(unittest.TestCase):
     def test_legacy_authority_failure_reopens_only_allow_listed_inputs(self):
         raw = (
             "{'authority_qa': {'errors': "
-            "['design_basis_input_required:rainfall_intensity']}, "
+            "['design_basis_input_required:rainfall_intensity,cooling_system']}, "
             "'engineering_acceptance': {'errors': "
             "['topology:provisional_shaft_not_authority_acceptable']}}"
         )
         self.assertEqual(
             legacy_basis_missing(raw),
-            ['rainfall_intensity', 'mechanical_shaft_route'],
+            ['rainfall_intensity', 'cooling_system', 'mechanical_shaft_route'],
         )
         self.assertEqual(legacy_basis_missing('traceback: unrelated failure'), [])
 
