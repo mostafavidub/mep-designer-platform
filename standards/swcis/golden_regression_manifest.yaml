@@ -8,6 +8,6 @@
     {"suite_type": "synthetic_negative", "minimum_cases": 1, "inventory_source": "repository test configuration", "selection_policy": "at least one destructive or fail-closed case for each changed contract"}
   ],
   "required_case_categories": ["missing_authoritative_input", "dependency_or_route_conflict", "external_data_no_match", "schema_compatibility", "locked_semantic_removal"],
-  "concrete_test_inventory_policy": "FORBIDDEN_IN_SWCIS",
+  "concrete_test_inventory_policy": "Stored outside SWCIS at standards/test-suites/golden-regression.json",
   "comparison": {"mode": "blind_then_unseal", "required": ["input_hash", "generator_version", "rulebook_version", "pmm_schema_version", "output_hash", "semantic_diff", "artifact_diff", "strict_score"], "pass": "all risk-selected suites and required categories pass; unavailable required evidence blocks the affected release"}
 }

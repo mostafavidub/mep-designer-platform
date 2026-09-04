@@ -1,12 +1,17 @@
 # Repository delivery rules
 
-## Mandatory System-Wide Change Impact Standard
+## Mandatory Single Living System + SWCIS
 
-Before any repository change, read `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`, create or update exactly one versioned `changes/<change-id>.yaml`, and run:
+Before any repository change, read `docs/SINGLE_LIVING_SYSTEM_STANDARD.md`, `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`, create or update exactly one versioned `changes/<change-id>.yaml`, and run:
 
 `python tools/swcis_validate.py --base <base-ref> --change-request changes/<change-id>.yaml`
 
 Implement and verify the complete affected-module closure reported by the validator. No Work/chat may claim completion, merge, or deploy while any SWCIS gate is not `PASS`. The repository files are the canonical source of truth; chat summaries are not policy. Every handoff must name the SWCIS version, change request, affected modules, evidence, and gate result.
+
+Production uses only canonical entrypoints and paths. Git is executable history;
+runtime-version copies are forbidden. Every artifact must carry the automatic
+build identity from `cad_engine/build_identity.py`. Rollback uses an approved Git
+commit/tag, never a historical Python module.
 
 All mechanical design work follows `standards/mechanical-design-governance-v1.json`.
 

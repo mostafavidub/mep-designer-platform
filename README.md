@@ -1,8 +1,9 @@
 # MEP Designer Platform
 
-Active production release: **19.1.0**. The CAD service starts from
-`cad_engine.main_v19:app`; `/version` and the website `/system_health` response
-publish the same authoritative component-version manifest.
+Production is a **Single Living System** identified automatically by its Git
+commit and dependency hashes. The CAD service starts only from
+`cad_engine.main:app`; `/version` and `/system_health` publish the same immutable
+build identity. Git commits/tags are the release history and rollback mechanism.
 
 Architecture-first MEP design web application. Users upload architectural DXF files; the platform extracts and computes every engineering input that can be derived reliably from the plan, then asks only unresolved project facts or owner decisions.
 

@@ -1,13 +1,11 @@
 {
-  "platform_release": "19.1.0",
-  "cad_api": "19.1.0",
-  "production_cad_entrypoint": "cad_engine.main_v19:app",
-  "mechanical_pipeline": "mechanical-pre-submission-pipeline-v19.1.0",
-  "mechanical_visual_gate": "split-ac-visual-legibility-v18.1",
-  "mechanical_rulebook": "5.0",
-  "mechanical_site_manifest": "12.1",
-  "fixture_equipment_rulebook": "2.4-fixture-equipment-approved-symbols",
-  "governance": "mechanical-governance-v1.0",
-  "version_source": "cad_engine/version_manifest.py",
-  "historical_snapshots_are_immutable": true
+  "identity_policy": "git-commit-and-content-hashes",
+  "production_cad_entrypoint": "cad_engine.main:app",
+  "pmm_schema_revision": "project-mechanical-model/v2",
+  "mechanical_rulebook_revision": "mechanical-rulebook/5.0",
+  "manufacturer_schema_revision": "manufacturer-catalogue/1",
+  "compliance_profile_revision": "mechanical-design-governance/1",
+  "version_source": "cad_engine/build_identity.py",
+  "rollback_source": "approved-git-commit-or-tag",
+  "historical_runtime_copies_allowed": false
 }

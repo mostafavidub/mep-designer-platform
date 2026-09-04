@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 2.0.0
+**Canonical version:** 3.0.0
 
 **Status:** LOCKED
 
@@ -13,6 +13,16 @@ This document is the human-readable canonical reference for every repository cha
 No change may merge or deploy until SWCIS classifies every changed path, computes every transitive downstream dependency, and verifies that the change request contains the required implementation, tests, documentation, version, migration, traceability, semantic/artifact diff, golden-regression, review, and rollback evidence. Missing, skipped, unknown, or `INPUT_REQUIRED` evidence is not PASS.
 
 This applies to the Rule Book, PMM, questionnaire, planner, CAD designer, routing, sizing, equipment, manufacturer selector, detail/riser generation, QA, manifests, UI/API, documentation, versioning, migrations, CI/CD, and deployment.
+
+## Single Living System release philosophy
+
+SWCIS enforces one production implementation and canonical path per component.
+Executable release identity is derived from Git commit and content hashes, never
+hand-edited component version strings. Parallel versioned runtimes are forbidden;
+compatibility snapshots may exist only in explicit archived/test-fixture locations
+and may not be imported by production. Schemas and configuration contracts keep
+semantic revisions and tested migrations. Every artifact carries the complete
+automatic build identity. Rollback redeploys an approved Git commit or tag.
 
 ## Canonical artifacts
 

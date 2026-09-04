@@ -1,0 +1,1 @@
+{"schema_revision":"golden-regression-inventory/1","required_project_contracts":[1,3,4,6,7,8,10],"synthetic_cases":["missing_authoritative_input","dependency_or_route_conflict","external_data_no_match","schema_compatibility","locked_semantic_removal"],"pass_policy":"Every named project and synthetic case must PASS; missing, skipped, or unavailable blocks release."}
