@@ -159,6 +159,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction after the gas-pressure question displayed gas-system choices and R7 hid its failing QA gate"},
       "verification":{"numeric_gas_pressure_ui":"must_pass","late_gas_alias_recovery":"must_pass","customer_safe_error":"must_pass","full_regression":"must_pass","production_project_85":"must_resume_at_numeric_pressure_or expose actionable QA","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Re-present invalid legacy gas-pressure answers as a numeric mbar question; map CAD gas_service_pressure to gas_pressure; preserve internal structured failures while keeping the customer view safe.","rollback":"Never infer a semantic gas-system question from an explicit scalar pressure key or discard the failing structured QA evidence."}
+    },
+    {
+      "id":"GOV-2026-017",
+      "status":"APPROVED",
+      "summary":"Expose allow-listed CAD QA gate codes in customer-safe failure messages so a failed revision is actionable without leaking internal dictionaries, paths, or stack traces.",
+      "affected_capabilities":["customer_safe_errors","controlled_design_recovery","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to diagnose and eliminate the project-85 final technical failure"},
+      "verification":{"safe_gate_code_test":"must_pass","full_regression":"must_pass","production_project_85":"must_display_actionable_gate_code","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Render only normalized allow-listed QA identifiers and keep raw structured evidence internal.","rollback":"Never return to an opaque generic failure that prevents deterministic repair."}
     }
   ]
 }

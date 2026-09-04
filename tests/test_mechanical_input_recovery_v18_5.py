@@ -27,6 +27,14 @@ def test_raw_internal_qa_is_never_shown_to_customer():
     assert 'تیم فنی' in safe
 
 
+def test_structured_cad_failure_shows_only_actionable_gate_codes():
+    raw = "CAD_QA_FAILURE: {'status':'FAIL','errors':['split_visual_no_equipment:M-161','board_overlap:M-1:M-2']}"
+    safe = customer_safe_error(raw)
+    assert 'split_visual_no_equipment:m-161' in safe
+    assert 'board_overlap:m-1:m-2' in safe
+    assert "{'status'" not in safe
+
+
 def test_late_input_failure_reopens_only_missing_questions_and_preserves_analysis():
     project=SimpleNamespace(
         answers={'discipline':'mechanical','city':'مشهد','location':'مشهد',
