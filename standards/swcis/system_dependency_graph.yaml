@@ -6,7 +6,7 @@
     "pmm": {"owners": ["platform", "engineering"], "paths": ["app/mechanical_basis_contract.py", "app/manifest_contract_v2.py", "standards/projects/**"], "depends_on": ["rule_book"]},
     "questionnaire": {"owners": ["product", "engineering"], "paths": ["templates/**", "static/**", "tests/test_questionnaire_choices.py"], "depends_on": ["pmm", "rule_book"]},
     "planner": {"owners": ["engineering"], "paths": ["cad_engine/*planner*.py", "cad_engine/system_requirements*.py"], "depends_on": ["pmm", "questionnaire"]},
-    "cad_designer": {"owners": ["cad", "engineering"], "paths": ["cad_engine/main*.py", "cad_engine/sheet_composer*.py", "app/dxf_output.py"], "depends_on": ["planner"]},
+    "cad_designer": {"owners": ["cad", "engineering"], "paths": ["cad_engine/main*.py", "cad_engine/runtime_core.py", "cad_engine/sheet_composer*.py", "app/dxf_output.py"], "depends_on": ["planner"]},
     "routing": {"owners": ["engineering"], "paths": ["cad_engine/routing*.py", "cad_engine/topology*.py", "cad_engine/coordination*.py"], "depends_on": ["planner", "pmm"]},
     "sizing": {"owners": ["engineering"], "paths": ["cad_engine/sizing*.py", "cad_engine/mechanical_calculations*.py", "cad_engine/gas*.py", "cad_engine/water_sanitary*.py", "cad_engine/rainwater*.py", "cad_engine/hvac*.py"], "depends_on": ["routing", "pmm", "rule_book"]},
     "equipment": {"owners": ["engineering"], "paths": ["cad_engine/equipment*.py", "app/fixture*.py"], "depends_on": ["sizing", "pmm"]},

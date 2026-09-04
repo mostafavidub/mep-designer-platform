@@ -19,7 +19,7 @@ from ezdxf import bbox
 from ezdxf.addons.drawing import Frontend, RenderContext
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
-from .main_v3 import (
+from .runtime_core import (
     SYSTEMS, DesignRequest, OUTPUT_ROOT, source_files,
     design_dxf, render_pdf, merge_pdfs, zip_outputs,
 )
