@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "standard": "SWCIS",
+  "change_types": {
+    "rule": {"path_patterns": ["data/rulebook/**", "standards/swcis/rule_traceability_matrix.yaml"], "seed_modules": ["rule_book"], "required_evidence": ["traceability", "tests", "docs", "version_bump", "golden_regression", "semantic_diff"]},
+    "schema": {"path_patterns": ["app/*contract*.py", "standards/projects/**"], "seed_modules": ["pmm"], "required_evidence": ["migration", "tests", "docs", "version_bump", "artifact_diff"]},
+    "calculation": {"path_patterns": ["cad_engine/*calculation*.py", "cad_engine/sizing*.py"], "seed_modules": ["sizing"], "required_evidence": ["tests", "golden_regression", "numeric_diff", "docs"]},
+    "routing": {"path_patterns": ["cad_engine/routing*.py", "cad_engine/topology*.py", "cad_engine/coordination*.py"], "seed_modules": ["routing"], "required_evidence": ["tests", "golden_regression", "semantic_diff"]},
+    "equipment": {"path_patterns": ["cad_engine/*equipment*.py", "cad_engine/manufacturer*.py", "app/fixture*.py"], "seed_modules": ["equipment", "manufacturer_selector"], "required_evidence": ["tests", "golden_regression", "docs", "artifact_diff"]},
+    "drawing_output": {"path_patterns": ["cad_engine/*sheet*.py", "cad_engine/*detail*.py", "cad_engine/*riser*.py", "app/dxf_output.py"], "seed_modules": ["cad_designer", "detail_riser"], "required_evidence": ["tests", "golden_regression", "semantic_diff", "artifact_diff"]},
+    "ui_api": {"path_patterns": ["app/**", "templates/**", "static/**"], "seed_modules": ["ui_api"], "required_evidence": ["tests", "docs", "contract_diff"]},
+    "documentation": {"path_patterns": ["docs/**", "README.md"], "seed_modules": ["docs"], "required_evidence": ["docs"]},
+    "test": {"path_patterns": ["tests/**"], "seed_modules": ["qa"], "required_evidence": ["tests"]},
+    "governance": {"path_patterns": ["standards/swcis/**", "changes/**", "tools/swcis_*.py", "tests/test_swcis_governance.py", ".github/**", "AGENTS.md"], "seed_modules": ["governance"], "required_evidence": ["tests", "docs", "version_bump"]},
+    "deployment": {"path_patterns": ["Dockerfile", "docker-compose*.yml", "start_services.sh", ".github/workflows/**"], "seed_modules": ["deployment"], "required_evidence": ["tests", "deployment_plan", "rollback_plan"]}
+  },
+  "unclassified_policy": "FAIL",
+  "closure_direction": "changed_module_and_all_transitive_dependents"
+}

@@ -1,0 +1,23 @@
+{
+  "change_id": "SWCIS-2026-0001",
+  "summary": "Introduce repository-wide fail-closed change-impact governance.",
+  "requester": "mostafavidub",
+  "change_types": ["rule", "test", "governance", "documentation", "deployment"],
+  "changed_rule_ids": ["MEP-INPUT-001", "MEP-ROUTE-001", "MEP-SIZE-001", "MEP-EQUIP-001", "MEP-SUBMIT-001"],
+  "impacted_modules": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "rule_book": "traceability contract added", "pmm": "traceability consumer registered", "questionnaire": "dependency registered", "planner": "dependency registered", "cad_designer": "dependency registered", "routing": "dependency and rule registered", "sizing": "dependency and rule registered", "equipment": "dependency and rule registered", "manufacturer_selector": "dependency and rule registered", "detail_riser": "dependency registered", "qa": "fail-closed gate and tests added", "manifest": "release dependency registered", "ui_api": "contract dependency registered", "docs": "canonical standard added", "versioning": "SWCIS 1.0.0 manifest added", "migration": "policy contract added", "governance": "validator and CI added", "deployment": "protected-commit policy added"
+  },
+  "evidence": {
+    "traceability": ["standards/swcis/rule_traceability_matrix.yaml"],
+    "tests": ["tests/test_swcis_governance.py"],
+    "docs": ["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump": ["standards/swcis/version_manifest.yaml:1.0.0"],
+    "golden_regression": ["standards/swcis/golden_regression_manifest.yaml inventory validation; unavailable projects remain INPUT_REQUIRED and block applicable releases"],
+    "semantic_diff": ["standards/swcis/release_contract.yaml artifact_diff_contract"],
+    "deployment_plan": ["merge only after required SWCIS check and existing product checks pass; deploy protected merged commit only"],
+    "rollback_plan": ["revert the merge commit; SWCIS remains fail-closed until the revert itself passes impact validation"]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 2, "score": 20, "rationale": "Governance-only bootstrap is broad but detected by isolated contract and negative tests."},
+  "waiver": null
+}
