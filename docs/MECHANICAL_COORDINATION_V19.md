@@ -21,3 +21,12 @@ the transaction before the next phase. `FAIL`, `SKIPPED`, `MISSING`, `UNKNOWN`,
 
 Private customer drawings and generated customer DXFs are never committed.
 Only hashes, semantic metrics and reproducibility metadata may enter baselines.
+
+## Production runtime authority
+
+The website stamps every mechanical design request with the complete active
+version manifest and PMM v2 input contract. The active `main_v19` service
+rejects a stale or missing stamp, runs all v19 preflight phases, and only then
+invokes the stable drawing compositor. Every successful report returns the
+versions actually executed; the website rejects the artifact if analysis,
+design or verification differs from its active version.

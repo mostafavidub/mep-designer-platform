@@ -20,5 +20,6 @@ jobs:
           pytest -q tests/test_manufacturer_selector_v19.py
           pytest -q tests/test_parametric_documentation_v19.py
           pytest -q tests/test_submission_qa_v19.py
+          pytest -q tests/test_mechanical_runtime_v19.py
           pytest -q
           python -m cad_engine.version_sync_gate

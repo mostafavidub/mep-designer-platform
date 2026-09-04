@@ -16,6 +16,7 @@ REQUIRED_CAPABILITIES = {
     "graph_native_identity_locked_risers":"cad_engine.parametric_documentation_v19",
     "blind_seal_before_reference":"cad_engine.submission_qa_v19",
     "seven_project_strict_golden_regression":"cad_engine.submission_qa_v19",
+    "production_v19_version_locked_adapter":"cad_engine.mechanical_authority_site_v19",
 }
 
 def release_contract_status():

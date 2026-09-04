@@ -25,7 +25,7 @@ from .main import (
 )
 from .mechanical_authority_site_v15 import design_mechanical_authority_site
 from app.dxf_input import normalize_input_copy
-from .version_manifest import CAD_API_VERSION, MECHANICAL_PIPELINE_VERSION
+from .version_manifest import CAD_API_VERSION, MECHANICAL_PIPELINE_VERSION, active_version_manifest
 
 app = FastAPI(title="EngiTools CAD Designer", version=CAD_API_VERSION)
 
@@ -137,6 +137,7 @@ def design(req: DesignRequest):
                     authority_qa=((report.get("authority") or {}).get("authority_qa")) or {}
                     engineering_acceptance=report.get("engineering_acceptance") or {}
                     missing=[]
+                    missing.extend(((report.get("input_required") or {}).get("missing_inputs") or []))
                     for error in authority_qa.get("errors") or []:
                         if str(error).startswith("design_basis_input_required:"):
                             aliases={"gas_service_pressure":"gas_pressure"}
@@ -159,6 +160,8 @@ def design(req: DesignRequest):
                         "architecture_preservation_after_sanitization":"architecture_preservation_qa_after_v17",
                         "exact_file_final_delivery_gate":"exact_file_final_delivery_qa",
                         "montage_exact_reopen_gate":"montage_exact_reopen_qa",
+                        "v19_preflight_gate":"v19_qa",
+                        "v19_runtime_contract_gate":"v19_qa",
                     }
                     detail={
                         "message":"Mechanical authority pipeline failed",
@@ -176,6 +179,8 @@ def design(req: DesignRequest):
                         "architecture_preservation_qa_after_v17":report.get("architecture_preservation_qa_after_v17"),
                         "reference_parity_documentation":report.get("reference_parity_documentation"),
                         "documentation_enhancement_qa":report.get("documentation_enhancement_qa"),
+                        "v19_qa":report.get("v19_qa"),
+                        "active_versions":active_version_manifest(),
                     }
                     # Failed transactions must not accumulate multi-sheet
                     # DXF/PDF artifacts on the persistent volume.
@@ -215,7 +220,7 @@ def design(req: DesignRequest):
             "project_id":req.project_id,
             "discipline":discipline,
             "engine_version":CAD_API_VERSION,
-            "mode":"authority-project-driven" if discipline=="mechanical" else "rule-driven-preliminary",
+            "mode":"mechanical-v19-authoritative" if discipline=="mechanical" else "rule-driven-preliminary",
             "preliminary":True,
             "requires_professional_review":True,
             "systems":systems,
