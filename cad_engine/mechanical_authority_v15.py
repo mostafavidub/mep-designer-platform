@@ -39,6 +39,7 @@ from .authority_architecture_v14 import (
     validate_authority_contract,
 )
 from .equipment_representation_v14 import validate_split_representation
+from app.mechanical_basis_contract import normalize_answers
 
 
 A4_W = 21.0
@@ -155,7 +156,8 @@ def _answer(answers, *keys, default=None):
 
 
 def build_design_overrides(answers: dict) -> dict:
-    location=_answer(answers,"location", default="")
+    answers=normalize_answers(answers or {})
+    location=_answer(answers,"city","location", default="")
     city=str(location).split("،")[-1].strip() if location else None
     cooling=_norm(_answer(answers,"cooling","cooling_system", default=""))
     heating=_norm(_answer(answers,"heating","heating_system", default=""))
@@ -182,6 +184,7 @@ def build_design_overrides(answers: dict) -> dict:
         "water_service_mode": _answer(answers,"water_service_mode"),
         "outdoor_unit_location": _answer(answers,"outdoor_unit_location"),
         "mechanical_shaft_route": _answer(answers,"mechanical_shaft_route"),
+        "mechanical_shaft_approval": _answer(answers,"mechanical_shaft_approval"),
         "envelope": {
             "u_wall": _answer(answers,"u_wall"),
             "u_roof": _answer(answers,"u_roof"),

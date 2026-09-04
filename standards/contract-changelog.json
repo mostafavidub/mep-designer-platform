@@ -89,6 +89,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user request to let the site repair and retry failed design stages when safely possible"},
       "verification":{"focused_tests":"must_pass","recovery_regression":"must_pass","web_regression":"must_pass","governance":"must_pass","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Classify failures through the allow-list, restore durable input/clean transient state, retry the same revision up to three attempts, and expose/persist every recovery action.","rollback":"Supersede only with a stricter approved recovery policy; never enable unlimited retries or autonomous engineering guesses."}
+    },
+    {
+      "id":"GOV-2026-010",
+      "status":"APPROVED",
+      "summary":"Unify website, persistence and CAD authority inputs for city, rainfall and mechanical-shaft approval; return late missing-input failures to exact questions without exposing raw QA or repeating architectural analysis.",
+      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","active_version_synchronization"],
+      "affected_projects":["all","project-82"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to execute all seven corrective steps"},
+      "verification":{"focused_tests":"PASS","negative_tests":"PASS","database_reload":"PASS","web_regression":"PASS","full_regression":"422 PASS","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Normalize legacy and new explicit answers into the v18.5 basis contract, require the same fields before queueing and at authority QA, and resume missing-input work at authority_contract.","rollback":"Supersede only with a stricter contract; never restore free-text equality, divergent preflight requirements or raw QA exposure."}
     }
   ]
 }
