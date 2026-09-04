@@ -33,9 +33,10 @@ def synchronization_errors() -> list[str]:
     errors: list[str] = []
 
     release = json.loads((ROOT / "standards" / "active-release.json").read_text())
-    for key, value in active.items():
-        if release.get(key) != value:
-            errors.append(f"active-release:{key}:expected={value}:actual={release.get(key)}")
+    if release.get("production_cad_entrypoint") != active["production_cad_entrypoint"]:
+        errors.append("active-release:production_cad_entrypoint")
+    if release.get("identity_policy") != "git-commit-and-content-hashes":
+        errors.append("active-release:identity_policy")
 
     if APP_RULEBOOK_VERSION != active["mechanical_rulebook"]:
         errors.append("application-rulebook-version-drift")
@@ -45,13 +46,10 @@ def synchronization_errors() -> list[str]:
         errors.append("fixture-rulebook-version-drift")
 
     matrix = (ROOT / "docs" / "ACTIVE_VERSION_MATRIX.md").read_text()
-    for key, value in active.items():
-        if str(value) not in matrix:
-            errors.append(f"active-version-matrix-missing:{key}:{value}")
+    if active["production_cad_entrypoint"] not in matrix:
+        errors.append("active-version-matrix-missing:production_cad_entrypoint")
 
     readme = (ROOT / "README.md").read_text()
-    if active["platform_release"] not in readme:
-        errors.append("readme-platform-version-drift")
     if active["production_cad_entrypoint"] not in readme:
         errors.append("readme-production-entrypoint-drift")
 

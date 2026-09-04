@@ -1,5 +1,5 @@
 #!/bin/sh
-# EngiTools production release: mechanical v19.1 architecture-only Pre-Submission profile.
+# EngiTools canonical production runtime. Build identity comes from Git.
 set -eu
 
 # Direct script execution changes Python's import root to data/rulebook. Keep
@@ -20,7 +20,7 @@ python data/rulebook/generate_rulebook_v4.py "$RULEBOOK_TARGET"
 
 # CAD designer: mechanical requests use the version-locked v19.1 authority
 # adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
-uvicorn cad_engine.main_v19:app --host 127.0.0.1 --port 8081 &
+uvicorn cad_engine.main:app --host 127.0.0.1 --port 8081 &
 CAD_PID=$!
 trap 'kill $CAD_PID 2>/dev/null || true' EXIT INT TERM
 

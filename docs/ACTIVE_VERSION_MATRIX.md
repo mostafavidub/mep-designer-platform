@@ -1,13 +1,13 @@
-# Active Version Matrix
+# Build Identity and Semantic Revision Matrix
 
 This file distinguishes the production contract from immutable release history.
-The executable source of truth is `cad_engine/version_manifest.py`.
+Executable identity is automatic and sourced from `cad_engine/build_identity.py`.
 
 | Component | Active version |
 |---|---|
-| Platform and CAD API | 19.1.0 |
-| Production CAD entrypoint | `cad_engine.main_v19:app` |
-| Mechanical pipeline | `mechanical-pre-submission-pipeline-v19.1.0` |
+| Platform and CAD API | Git commit SHA |
+| Production CAD entrypoint | `cad_engine.main:app` |
+| Mechanical pipeline | Git commit SHA |
 | Split-AC visual gate | `split-ac-visual-legibility-v18.1` |
 | Mechanical Rule Book | 5.0 |
 | Mechanical site manifest | 12.1 |
@@ -22,9 +22,8 @@ the repository for regression, traceability, and backward compatibility. They
 are not production entrypoints. Historical snapshots are immutable and retain
 the version that produced them.
 
-Any change to an active version must update the central manifest, this matrix,
-runtime entrypoints, and version-contract tests in one pull request. Drift is a
-release-blocking failure.
+New runtime-version files are forbidden. Compatibility debt is audited and must
+only decrease; schema/config revisions remain semantic.
 
 ## Permanent synchronization policy
 

@@ -3,14 +3,15 @@
   "standard": "SWCIS",
   "canonical_reference": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "status": "LOCKED",
-  "required_gates": ["repository_contract", "change_classification", "impact_closure", "evidence_coverage", "traceability", "migration", "version", "golden_regression", "waiver_validation"],
+  "required_gates": ["repository_contract", "change_classification", "impact_closure", "evidence_coverage", "traceability", "migration", "build_identity", "single_runtime", "golden_regression", "waiver_validation"],
   "pass_value": "PASS",
   "blocking_values": ["FAIL", "SKIPPED", "MISSING", "UNKNOWN", "INPUT_REQUIRED"],
   "merge_policy": "All required gates PASS and required branch protection check swcis-governance succeeds.",
-  "deploy_policy": "Deploy only from a protected merged commit whose SWCIS check and product test suite passed.",
+  "deploy_policy": "Deploy only the canonical runtime from a protected merged commit whose SWCIS, compile, unit, contract, integration, golden and E2E gates passed.",
   "waiver_contract": {"directory": "standards/swcis/waivers", "required_fields": ["waiver_id", "scope", "reason", "risk", "reviewer", "approved_at", "expires_at", "compensating_controls"], "maximum_days": 30, "expired_policy": "FAIL", "self_approval": false},
   "risk_scoring": {"formula": "likelihood * severity * detectability", "range_each": [1, 5], "bands": {"low": [1, 20], "medium": [21, 50], "high": [51, 90], "critical": [91, 125]}, "requirements": {"medium": ["module_owner_review"], "high": ["engineering_and_qa_review", "full_golden_regression"], "critical": ["release_owner_review", "rollback_rehearsal", "no_waiver"]}},
   "artifact_diff_contract": {"required_dimensions": ["files", "sheets", "drawing_families", "entities", "labels", "units", "geometry_bounds", "qa_status"], "numeric_tolerance_source": "rule_traceability_matrix", "removed_locked_semantics": "FAIL", "missing_dimension": "FAIL"},
   "schema_migration_policy": {"compatibility": "backward-compatible reader before writer rollout", "required": ["migration_id", "from_version", "to_version", "forward_plan", "rollback_plan", "data_validation", "consumer_inventory", "deprecation_window"], "destructive_change": "major_version_and_explicit_approved_migration"},
-  "version_rules": {"major": "breaking contract, removed semantics, destructive migration", "minor": "backward-compatible capability/rule/schema addition", "patch": "behavior-preserving correction or documentation clarification", "all_artifacts_same_schema_version": true}
+  "runtime_identity": {"source": "git_commit_and_content_hashes", "manual_component_versions": "FORBIDDEN", "parallel_runtime_versions": "FORBIDDEN", "canonical_cad_entrypoint": "cad_engine.main:app", "artifact_stamp_required": true, "rollback": "approved_git_commit_or_tag"},
+  "version_rules": {"scope": "schema_and_configuration_contracts_only", "major": "breaking contract, removed semantics, destructive migration", "minor": "backward-compatible capability/rule/schema addition", "patch": "behavior-preserving correction or documentation clarification", "all_artifacts_same_schema_version": true}
 }

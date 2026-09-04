@@ -13,12 +13,12 @@
     "manufacturer_selector": {"owners": ["engineering", "data"], "paths": ["cad_engine/manufacturer_selector*.py", "data/manufacturer/**"], "depends_on": ["equipment", "sizing"]},
     "detail_riser": {"owners": ["cad", "engineering"], "paths": ["cad_engine/*detail*.py", "cad_engine/*riser*.py", "cad_engine/parametric_documentation*.py"], "depends_on": ["routing", "sizing", "equipment", "manufacturer_selector"]},
     "qa": {"owners": ["quality", "engineering"], "paths": ["cad_engine/*qa*.py", "cad_engine/*acceptance*.py", "cad_engine/*gate*.py", "tests/**"], "depends_on": ["cad_designer", "routing", "sizing", "equipment", "detail_riser"]},
-    "manifest": {"owners": ["platform", "quality"], "paths": ["cad_engine/version_manifest.py", "app/*manifest*.py", "standards/active-release.json"], "depends_on": ["pmm", "qa"]},
+    "manifest": {"owners": ["platform", "quality"], "paths": ["cad_engine/version_manifest.py", "cad_engine/build_identity.py", "app/*manifest*.py", "standards/active-release.json"], "depends_on": ["pmm", "qa"]},
     "ui_api": {"owners": ["product", "platform"], "paths": ["app/main.py", "app/*.py", "templates/**", "static/**"], "depends_on": ["pmm", "planner", "qa", "manifest"]},
     "docs": {"owners": ["engineering", "product"], "paths": ["docs/**", "README.md"], "depends_on": ["rule_book", "pmm", "qa", "manifest"]},
     "versioning": {"owners": ["release"], "paths": ["standards/swcis/release_contract.yaml", "standards/swcis/version_manifest.yaml", "standards/releases/**", "standards/contract-changelog.json"], "depends_on": ["manifest", "docs"]},
-    "migration": {"owners": ["platform", "release"], "paths": ["migrations/**", "standards/swcis/migrations/**"], "depends_on": ["pmm", "versioning"]},
-    "governance": {"owners": ["quality", "release"], "paths": ["standards/swcis/**", "changes/**", "tools/swcis_*.py", "tests/test_swcis_governance.py", ".github/**", "AGENTS.md"], "depends_on": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration"]},
+    "migration": {"owners": ["platform", "release"], "paths": ["migrations/**", "standards/swcis/migrations/**", "standards/test-suites/**"], "depends_on": ["pmm", "versioning"]},
+    "governance": {"owners": ["quality", "release"], "paths": ["standards/swcis/**", "changes/**", "tools/swcis_*.py", "tools/runtime_version_guard.py", "tests/test_swcis_governance.py", ".github/**", "AGENTS.md"], "depends_on": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration"]},
     "deployment": {"owners": ["release", "operations"], "paths": ["Dockerfile", "docker-compose*.yml", "start_services.sh", ".github/workflows/**"], "depends_on": ["governance", "versioning", "migration", "qa"]}
   }
 }

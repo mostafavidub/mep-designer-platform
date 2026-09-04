@@ -14,6 +14,7 @@ from . import main as legacy
 from . import artifact_storage
 from .design_progress import set_project_progress
 from cad_engine.version_manifest import active_version_manifest
+from cad_engine.build_identity import build_identity, stamp_artifact
 from .design_recovery import clear_active_recovery
 
 app = legacy.app
@@ -439,6 +440,10 @@ def run_design_dxf(project_id, revision_id):
         artifact_qa = artifact_storage.validate_output_artifact(dst)
         analysis = dict(p.analysis or {})
         analysis['last_artifact_validation'] = artifact_qa
+        analysis['artifact_build_identity'] = stamp_artifact({
+            'artifact_name': dst.name,
+            'artifact_bytes': dst.stat().st_size,
+        })
         p.analysis = analysis
 
         set_project_progress(p, 'uploading_output')
