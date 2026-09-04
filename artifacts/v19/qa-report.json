@@ -10,26 +10,188 @@
     "seven-project-montage.png"
   ],
   "exact_file_reopen": "PASS",
-  "golden": {
+  "montage_preview": "PASS",
+  "operating_profile": "ARCHITECTURE_ONLY_PRE_SUBMISSION",
+  "profile_regression": {
+    "errors": [],
+    "policy": "PROFILE_PASS_DOES_NOT_GRANT_COORDINATION_OR_SUBMISSION_APPROVAL",
+    "profile": "ARCHITECTURE_ONLY_PRE_SUBMISSION",
+    "results": [
+      {
+        "baseline": 84.5,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 1,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 84.5,
+          "reference_opened_post_seal": true,
+          "score": 79.5,
+          "status": "PRE_SUBMISSION"
+        }
+      },
+      {
+        "baseline": 85.6,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 3,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 85.6,
+          "reference_opened_post_seal": true,
+          "score": 80.6,
+          "status": "PRE_SUBMISSION"
+        }
+      },
+      {
+        "baseline": 85.1,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 4,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 85.1,
+          "reference_opened_post_seal": true,
+          "score": 80.1,
+          "status": "PRE_SUBMISSION"
+        }
+      },
+      {
+        "baseline": 83.8,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 6,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 83.8,
+          "reference_opened_post_seal": true,
+          "score": 78.8,
+          "status": "PRE_SUBMISSION"
+        }
+      },
+      {
+        "baseline": 73.5,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 7,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 73.5,
+          "reference_opened_post_seal": true,
+          "score": 68.5,
+          "status": "PRE_SUBMISSION"
+        }
+      },
+      {
+        "baseline": 78.6,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 8,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 78.6,
+          "reference_opened_post_seal": true,
+          "score": 73.6,
+          "status": "PRE_SUBMISSION"
+        }
+      },
+      {
+        "baseline": 84.6,
+        "checks": {
+          "not_coordinated": true,
+          "pre_submission": true,
+          "rcp_input_listed": true,
+          "seal_valid": true,
+          "structural_input_listed": true,
+          "submission_ready_false": true
+        },
+        "project_id": 10,
+        "status": "PASS",
+        "strict_score": {
+          "penalties": [
+            5.0
+          ],
+          "raw_score": 84.6,
+          "reference_opened_post_seal": true,
+          "score": 79.6,
+          "status": "PRE_SUBMISSION"
+        }
+      }
+    ],
+    "status": "PASS",
+    "submission_ready": false
+  },
+  "status": "PASS",
+  "strict_submission_regression": {
     "errors": [
-      "PROJECT_1_INPUT_REQUIRED",
-      "PROJECT_1_BELOW_MINIMUM",
+      "PROJECT_1_PRE_SUBMISSION",
       "PROJECT_1_REGRESSION",
-      "PROJECT_3_INPUT_REQUIRED",
+      "PROJECT_3_PRE_SUBMISSION",
       "PROJECT_3_REGRESSION",
-      "PROJECT_4_INPUT_REQUIRED",
+      "PROJECT_4_PRE_SUBMISSION",
       "PROJECT_4_REGRESSION",
-      "PROJECT_6_INPUT_REQUIRED",
-      "PROJECT_6_BELOW_MINIMUM",
+      "PROJECT_6_PRE_SUBMISSION",
       "PROJECT_6_REGRESSION",
-      "PROJECT_7_INPUT_REQUIRED",
+      "PROJECT_7_PRE_SUBMISSION",
       "PROJECT_7_BELOW_MINIMUM",
       "PROJECT_7_REGRESSION",
-      "PROJECT_8_INPUT_REQUIRED",
-      "PROJECT_8_BELOW_MINIMUM",
+      "PROJECT_8_PRE_SUBMISSION",
       "PROJECT_8_REGRESSION",
-      "PROJECT_10_INPUT_REQUIRED",
-      "PROJECT_10_BELOW_MINIMUM",
+      "PROJECT_10_PRE_SUBMISSION",
       "PROJECT_10_REGRESSION",
       "PASS_RATE_BELOW_THRESHOLD"
     ],
@@ -37,87 +199,87 @@
     "results": [
       {
         "baseline": 84.5,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 1,
         "raw_score": 84.5,
         "reference_opened_post_seal": true,
-        "score": 69.5,
-        "status": "INPUT_REQUIRED"
+        "score": 79.5,
+        "status": "PRE_SUBMISSION"
       },
       {
         "baseline": 85.6,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 3,
         "raw_score": 85.6,
         "reference_opened_post_seal": true,
-        "score": 70.6,
-        "status": "INPUT_REQUIRED"
+        "score": 80.6,
+        "status": "PRE_SUBMISSION"
       },
       {
         "baseline": 85.1,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 4,
         "raw_score": 85.1,
         "reference_opened_post_seal": true,
-        "score": 70.1,
-        "status": "INPUT_REQUIRED"
+        "score": 80.1,
+        "status": "PRE_SUBMISSION"
       },
       {
         "baseline": 83.8,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 6,
         "raw_score": 83.8,
         "reference_opened_post_seal": true,
-        "score": 68.8,
-        "status": "INPUT_REQUIRED"
+        "score": 78.8,
+        "status": "PRE_SUBMISSION"
       },
       {
         "baseline": 73.5,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 7,
         "raw_score": 73.5,
         "reference_opened_post_seal": true,
-        "score": 58.5,
-        "status": "INPUT_REQUIRED"
+        "score": 68.5,
+        "status": "PRE_SUBMISSION"
       },
       {
         "baseline": 78.6,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 8,
         "raw_score": 78.6,
         "reference_opened_post_seal": true,
-        "score": 63.6,
-        "status": "INPUT_REQUIRED"
+        "score": 73.6,
+        "status": "PRE_SUBMISSION"
       },
       {
         "baseline": 84.6,
-        "delta": -15.0,
+        "delta": -5.0,
         "penalties": [
-          15.0
+          5.0
         ],
         "project_id": 10,
         "raw_score": 84.6,
         "reference_opened_post_seal": true,
-        "score": 69.6,
-        "status": "INPUT_REQUIRED"
+        "score": 79.6,
+        "status": "PRE_SUBMISSION"
       }
     ],
     "status": "FAIL",
@@ -127,6 +289,5 @@
       "required_pass_rate": 1.0
     }
   },
-  "montage_preview": "PASS",
-  "status": "FAIL"
+  "submission_ready": false
 }

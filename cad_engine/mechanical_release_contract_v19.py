@@ -1,9 +1,9 @@
-"""Locked release contract for coordinated mechanical pipeline v19."""
+"""Locked release contract for the mechanical v19.1 Pre-Submission profile."""
 from __future__ import annotations
 from importlib import import_module
 from .mechanical_release_contract_v17 import REQUIRED_CAPABILITIES as PRIOR_CAPABILITIES
 
-RELEASE_VERSION = "19.0.0"
+RELEASE_VERSION = "19.1.0"
 REQUIRED_CAPABILITIES = {
     **PRIOR_CAPABILITIES,
     "structural_rcp_coordination_model":"cad_engine.coordination_v19",
@@ -16,6 +16,7 @@ REQUIRED_CAPABILITIES = {
     "graph_native_identity_locked_risers":"cad_engine.parametric_documentation_v19",
     "blind_seal_before_reference":"cad_engine.submission_qa_v19",
     "seven_project_strict_golden_regression":"cad_engine.submission_qa_v19",
+    "architecture_only_pre_submission_regression":"cad_engine.submission_qa_v19",
     "production_v19_version_locked_adapter":"cad_engine.mechanical_authority_site_v19",
 }
 

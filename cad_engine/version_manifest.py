@@ -1,8 +1,8 @@
 """Single source of truth for active production component versions."""
 
-PLATFORM_RELEASE = "19.0.0"
+PLATFORM_RELEASE = "19.1.0"
 CAD_API_VERSION = PLATFORM_RELEASE
-MECHANICAL_PIPELINE_VERSION = "mechanical-coordination-pipeline-v19.0.0"
+MECHANICAL_PIPELINE_VERSION = "mechanical-pre-submission-pipeline-v19.1.0"
 MECHANICAL_VISUAL_GATE_VERSION = "split-ac-visual-legibility-v18.1"
 MECHANICAL_RULEBOOK_VERSION = "5.0"
 MECHANICAL_SITE_MANIFEST_VERSION = "12.1"

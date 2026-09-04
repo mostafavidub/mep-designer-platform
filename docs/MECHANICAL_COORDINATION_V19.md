@@ -1,8 +1,11 @@
-# Mechanical coordination release 19.0.0
+# Mechanical pre submission release 19.1.0
 
-Release 19 introduces four ordered, fail-closed gates. A non-PASS result stops
-the transaction before the next phase. `FAIL`, `SKIPPED`, `MISSING`, `UNKNOWN`,
-`INPUT_REQUIRED`, and `PRE_SUBMISSION` never authorize issue, merge, or deploy.
+Release 19.1 uses an architecture-only Pre-Submission operating profile until
+Structural/RCP inputs become available. Missing structural data does not stop
+draft generation, but the output is permanently marked `PRE_SUBMISSION`,
+`NOT_COORDINATED`, and `NOT_MANUFACTURER_CONFIRMED`. It cannot be represented
+as Submission Ready. Malformed supplied data and real QA failures remain
+fail-closed.
 
 1. Structural/RCP coordination stores source-hashed beams, columns, slabs,
    ceilings, shafts, service zones and forbidden zones in a shared 3D datum.

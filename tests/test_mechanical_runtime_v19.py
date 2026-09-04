@@ -10,12 +10,16 @@ class MechanicalRuntimeV19Tests(unittest.TestCase):
         result=design_mechanical_authority_site(Path("a.dxf"),Path("b.dxf"),answers={},plan_analysis={})
         self.assertEqual(result["stage"],"v19_runtime_contract_gate")
 
-    def test_current_version_without_structural_rcp_returns_input_required(self):
+    @patch("cad_engine.mechanical_authority_site_v19._design_v17")
+    def test_current_version_without_structural_rcp_always_builds_pre_submission(self,designer):
+        designer.return_value={"status":"PASS"}
         answers={"_runtime_contract":active_version_manifest(),"_v19_input_contract":{}}
         result=design_mechanical_authority_site(Path("a.dxf"),Path("b.dxf"),answers=answers,plan_analysis={})
-        self.assertEqual(result["stage"],"v19_preflight_gate")
-        self.assertEqual(result["input_required"]["status"],"INPUT_REQUIRED")
-        self.assertIn("STRUCTURAL_MODEL",result["input_required"]["missing_inputs"])
+        designer.assert_called_once()
+        self.assertEqual(result["submission_state"],"PRE_SUBMISSION")
+        self.assertEqual(result["coordination_claim"],"NOT_COORDINATED")
+        self.assertFalse(result["v19_qa"]["submission"]["submission_ready"])
+        self.assertIn("STRUCTURAL_MODEL",result["v19_qa"]["submission"]["missing_inputs"])
 
     @patch("cad_engine.mechanical_authority_site_v19._design_v17")
     @patch("cad_engine.mechanical_authority_site_v19.run_v19_pipeline")

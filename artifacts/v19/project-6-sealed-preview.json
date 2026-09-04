@@ -1,5 +1,6 @@
 {
   "blind_output": {
+    "coordination_claim": "NOT_COORDINATED",
     "input_scope": "ARCHITECTURE_ONLY",
     "missing_inputs": [
       "STRUCTURAL_MODEL",
@@ -17,16 +18,17 @@
       "member_size": 25805634,
       "sha256": "c9bac2cf6d74a29b1deabb08ab3d47ac105feda43b1da193b2da3c01d1a6cb16"
     },
-    "submission_state": "INPUT_REQUIRED"
+    "submission_ready": false,
+    "submission_state": "PRE_SUBMISSION"
   },
-  "phase_1": "INPUT_REQUIRED",
+  "phase_1": "PRE_SUBMISSION_NOT_COORDINATED",
   "reference_access": "POST_SEAL_ONLY",
   "seal": {
     "architecture_hash": "c9bac2cf6d74a29b1deabb08ab3d47ac105feda43b1da193b2da3c01d1a6cb16",
-    "output_hash": "dc48289a639005ae8a77f21b159846f3ab9a3b4bd709f04be737dd0ddb05a4a4",
+    "output_hash": "2db276a4d8acc9eba4bb8db6efc401b65571170fc52492f452bde31fbf50e540",
     "project_id": 6,
     "schema": "blind-seal/1.0",
-    "seal_hash": "f523a5e4303dd3ad91016d94d6d71e1d3321797e336e320e3973b22f54455d42",
+    "seal_hash": "9bad280ac54bed5eead6ab458c51eb2aa6b68060380bbdd5f26d7a5475d10236",
     "sealed_before_reference": true
   }
 }

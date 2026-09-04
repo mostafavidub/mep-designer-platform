@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from .mechanical_authority_site_v17 import design_mechanical_authority_site as _design_v17
 from .mechanical_pipeline_v19 import run_v19_pipeline
+from .coordination_v19 import build_coordination_model
 from .version_manifest import active_version_manifest
 
 
@@ -30,8 +31,28 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     contract_errors=_runtime_contract_errors(answers)
     if contract_errors:
         return {"status":"FAIL","stage":"v19_runtime_contract_gate","v19_qa":{"status":"FAIL","errors":contract_errors}}
-    result=run_v19_pipeline(_v19_payload(answers,plan_analysis))
-    if result["status"]!="PASS":
+    payload=_v19_payload(answers,plan_analysis)
+    coordination=build_coordination_model(payload)
+    missing_structure=coordination["status"]=="INPUT_REQUIRED" and set(coordination.get("missing_inputs") or {}) <= {"STRUCTURAL_MODEL","RCP_MODEL","SLAB","CEILING"}
+    if missing_structure:
+        # Current operating profile explicitly permits architecture-only work,
+        # but it can never inherit coordinated/submission-ready claims.
+        result={
+            "status":"PRE_SUBMISSION","blocked_at":None,
+            "operating_profile":"ARCHITECTURE_ONLY_PRE_SUBMISSION",
+            "phases":{
+                "coordination":coordination,
+                "manufacturer":{"status":"PRE_SUBMISSION","selection_type":"DESIGN_ENVELOPE","claim":"NOT_MANUFACTURER_CONFIRMED"},
+                "documentation":{"status":"PRE_SUBMISSION","source":"LEGACY_GRAPH_COMPOSER","claim":"REQUIRES_COORDINATION_REVALIDATION"},
+                "golden":{"status":"NOT_APPLICABLE_TO_PRE_SUBMISSION"},
+            },
+            "submission":{"status":"PRE_SUBMISSION","release_allowed":True,"submission_ready":False,
+                          "missing_inputs":coordination.get("missing_inputs") or [],
+                          "claims":["NOT_COORDINATED","NOT_MANUFACTURER_CONFIRMED"]},
+        }
+    else:
+        result=run_v19_pipeline(payload)
+    if result["status"] not in {"PASS","PRE_SUBMISSION"}:
         missing=[]; coordination=(result.get("phases") or {}).get("coordination") or {}; model=coordination.get("model") or {}
         missing.extend(model.get("missing_inputs") or coordination.get("missing_inputs") or [])
         if result.get("blocked_at")=="manufacturer": missing.append("OFFICIAL_MANUFACTURER_DATASHEET")
@@ -41,4 +62,6 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
                 "input_required":{"status":"INPUT_REQUIRED","missing_inputs":sorted(set(missing))}}
     legacy=_design_v17(src,dst,answers=answers,plan_analysis=plan_analysis)
     legacy["v19_qa"]=result; legacy["executed_versions"]=active_version_manifest(); legacy["pipeline_authority"]="mechanical-v19"
+    legacy["submission_state"]="PRE_SUBMISSION" if result["status"]=="PRE_SUBMISSION" else "SUBMISSION_READY"
+    legacy["coordination_claim"]="NOT_COORDINATED" if result["status"]=="PRE_SUBMISSION" else "COORDINATED"
     return legacy

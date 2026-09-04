@@ -223,6 +223,7 @@ def design(req: DesignRequest):
             "mode":"mechanical-v19-authoritative" if discipline=="mechanical" else "rule-driven-preliminary",
             "preliminary":True,
             "requires_professional_review":True,
+            "submission_state":("PRE_SUBMISSION" if discipline=="mechanical" and any(r.get("submission_state")=="PRE_SUBMISSION" for r in reports) else "SUBMISSION_READY" if discipline=="mechanical" else "PRELIMINARY"),
             "systems":systems,
             "design_reports":reports,
             "generated_files":[p.name for p in generated],

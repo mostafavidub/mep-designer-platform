@@ -1,4 +1,4 @@
-"""Active production CAD entrypoint for coordinated release 19.0.0."""
+"""Active production CAD entrypoint for pre-submission release 19.1.0."""
 from . import main_v15 as _v15
 from .main_v18 import app
 from .mechanical_release_contract_v19 import release_contract_status

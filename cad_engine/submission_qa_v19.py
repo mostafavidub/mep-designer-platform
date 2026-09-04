@@ -71,6 +71,35 @@ def run_golden_regression(cases: list[dict], baseline: dict, thresholds: dict | 
             "thresholds":thresholds, "pass_rate":pass_rate}
 
 
+def run_pre_submission_regression(cases: list[dict], baseline: dict) -> dict:
+    """Verify the architecture-only profile without granting submission approval."""
+    errors, results = [], []
+    ids = sorted(case.get("project_id") for case in cases)
+    if ids != list(GOLDEN_PROJECTS):
+        errors.append("GOLDEN_COHORT_INCOMPLETE")
+    for case in cases:
+        project_id = case["project_id"]
+        output = case["blind_output"]
+        score = strict_score(case["seal"], output, case["post_seal_reference"])
+        missing = set(output.get("missing_inputs") or [])
+        checks = {
+            "seal_valid": verify_seal(case["seal"], output),
+            "pre_submission": output.get("submission_state") == "PRE_SUBMISSION",
+            "not_coordinated": output.get("coordination_claim") == "NOT_COORDINATED",
+            "structural_input_listed": "STRUCTURAL_MODEL" in missing,
+            "rcp_input_listed": "RCP_MODEL" in missing,
+            "submission_ready_false": output.get("submission_ready") is False,
+        }
+        failed = [name for name, passed in checks.items() if not passed]
+        errors.extend(f"PROJECT_{project_id}_{name.upper()}" for name in failed)
+        results.append({"project_id":project_id,"status":"PASS" if not failed else "FAIL",
+                        "checks":checks,"strict_score":score,
+                        "baseline":float((baseline.get("scores") or {}).get(str(project_id),0))})
+    return {"status":"PASS" if not errors else "FAIL","errors":errors,"results":results,
+            "profile":"ARCHITECTURE_ONLY_PRE_SUBMISSION","submission_ready":False,
+            "policy":"PROFILE_PASS_DOES_NOT_GRANT_COORDINATION_OR_SUBMISSION_APPROVAL"}
+
+
 def submission_gate(phases: dict) -> dict:
     required = ("coordination", "manufacturer", "documentation", "golden")
     states = {name:(phases.get(name) or {}).get("status", "MISSING") for name in required}

@@ -2,6 +2,16 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-022",
+      "status":"APPROVED",
+      "summary":"Adopt architecture-only PRE-SUBMISSION as the temporary production profile when Structural/RCP drawings are unavailable, while prohibiting coordinated or Submission Ready claims.",
+      "affected_capabilities":["production_v19_runtime_authority","structural_rcp_25d_coordination","manufacturer_selection","active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction that all current projects lack structural drawings and must always produce Pre-Submission output"},
+      "verification":{"architecture_only_generation":"must_pass","not_coordinated_claim":"must_pass","runtime_version_parity":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Generate architecture-only drawings through the current v19 pipeline and label every result PRE_SUBMISSION and NOT_COORDINATED.","rollback":"When Structural/RCP becomes mandatory, supersede this temporary profile without reclassifying historical Pre-Submission outputs."}
+    },
+    {
       "id":"GOV-2026-021",
       "status":"APPROVED",
       "summary":"Add fail-closed Structural/RCP 2.5D coordination, official-datasheet manufacturer selection, graph-native parametric details/risers and sealed seven-project strict regression.",

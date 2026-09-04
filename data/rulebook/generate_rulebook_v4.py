@@ -145,7 +145,7 @@ def build(path):
     add_heading(doc, "14. Structural/RCP coordination and 2.5D routing")
     add_bullet(doc, "Beam, column, slab, ceiling, shaft, service-zone and forbidden-zone geometry must carry source revision and hash provenance.")
     add_bullet(doc, "Routing evaluates multiple service elevations and candidates. Clash, penetration, clearance and gravity-slope failures block selection.")
-    add_bullet(doc, "Without authoritative Structural and RCP inputs the state is INPUT_REQUIRED; the system must not claim clash-free coordination.")
+    add_bullet(doc, "Without authoritative Structural and RCP inputs the system may issue only PRE-SUBMISSION drawings marked NOT COORDINATED; it must not claim clash-free coordination or Submission Ready status.")
 
     add_heading(doc, "15. Manufacturer and documentation authority")
     add_bullet(doc, "A manufacturer model requires an official datasheet hash/revision plus capacity, dimensions, connections, clearance, route, elevation, pump and fan constraint checks.")

@@ -1,6 +1,6 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 5.0 — Mechanical coordinated pipeline v19.0 / Final Engineering QA
+Rule Book version: 5.0 — Mechanical Pre-Submission pipeline v19.1 / Final Engineering QA
 
 ## Governing principle
 

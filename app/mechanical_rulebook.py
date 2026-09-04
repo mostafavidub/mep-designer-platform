@@ -17,7 +17,7 @@ NETWORK_COMPOSITION_STANDARD = {
     'topology': 'shared trunk/branch split at every terminal junction',
     'sizing': 'each segment sized from cumulative downstream load',
     'routing': 'multi-elevation 2.5D candidates with structural/RCP clash, penetration, clearance and slope checks',
-    'coordination_input_policy': 'authoritative Structural/RCP input only; otherwise INPUT_REQUIRED',
+    'coordination_input_policy': 'without Structural/RCP issue only PRE_SUBMISSION with NOT_COORDINATED claim',
     'manufacturer_policy': 'official hashed datasheet selection or non-confirmed Design Envelope',
     'documentation_identity': 'Plan ID=Riser ID=Calc ID=Schedule ID',
     'independent_systems': (
