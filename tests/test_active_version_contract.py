@@ -38,6 +38,11 @@ def test_every_production_launcher_uses_the_active_entrypoint():
     assert "uvicorn cad_engine.main_v17:app" not in launcher + dockerfile
 
 
+def test_production_startup_exports_application_import_root():
+    script=(ROOT/"start_services.sh").read_text()
+    assert 'export PYTHONPATH="$(pwd)${PYTHONPATH:+:$PYTHONPATH}"' in script
+
+
 def test_authority_ci_uses_central_version_instead_of_stale_literal():
     workflow = (ROOT / ".github" / "workflows" / "mechanical-authority-v15.yml").read_text()
     assert "from cad_engine.version_manifest import PLATFORM_RELEASE" in workflow
