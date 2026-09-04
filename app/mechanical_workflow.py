@@ -5,7 +5,7 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from .mechanical_drawing_set import approve_drawing_set, is_current_manifest, predict_drawing_set
-from .mechanical_basis_contract import canonical_city, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
+from .mechanical_basis_contract import canonical_city, canonical_cooling_system, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
 
 SYSTEM_LABELS = {
     'cooling': 'سرمایش', 'heating': 'گرمایش', 'water_supply': 'آب سرد و گرم',
@@ -14,6 +14,11 @@ SYSTEM_LABELS = {
 }
 
 REQUIRED_BASIS_QUESTION_SPECS = {
+    'cooling_system': {
+        'question': 'سیستم سرمایش قابل‌صدور را تأیید کنید. موتور فعلی فقط نقشه کامل اسپلیت دیواری را پشتیبانی می‌کند.',
+        'options': ['اسپلیت دیواری'],
+        'unit': None,
+    },
     'city': {
         'question': 'شهر پروژه را مشخص کنید. شهر برای شرایط اقلیمی و ضوابط محلی الزامی است.',
         'options': ['تهران', 'مشهد', 'اصفهان', 'شیراز'],
@@ -182,6 +187,8 @@ def required_basis_questions(p):
     answers = normalize_answers(p.answers or {}); scope = build_scope(p); required = []
     if not canonical_city(answers):
         required.append('city')
+    if scope.get('conditioned_levels') and not canonical_cooling_system(answers):
+        required.append('cooling_system')
     if scope.get('wet_fixture_levels') and _numeric(answers.get('water_inlet_pressure') or answers.get('water_pressure')) is None:
         required.append('water_inlet_pressure')
     if scope.get('roof_exists') and numeric(answers.get('rainfall_intensity_mm_h') or answers.get('rainfall_intensity')) is None:
@@ -231,6 +238,8 @@ def reopen_basis_questions(p, missing):
             answers.pop('rainfall_intensity', None); answers.pop('rainfall_intensity_mm_h', None)
         elif key == 'mechanical_shaft_route':
             answers.pop('mechanical_shaft_route', None); answers.pop('mechanical_shaft_approval', None)
+        elif key == 'cooling_system':
+            answers.pop('cooling_system', None); answers.pop('cooling', None)
         else:
             answers.pop(key, None)
     p.answers=answers
@@ -253,6 +262,8 @@ def _basis_answer_error(key, answer):
     if key not in REQUIRED_BASIS_QUESTION_SPECS: return None
     if key == 'city':
         return None if canonical_city({'city': answer}) else 'شهر پروژه باید مشخص شود.'
+    if key == 'cooling_system':
+        return None if canonical_cooling_system({'cooling_system': answer}) else 'این موتور فعلاً فقط اسپلیت دیواری را پشتیبانی می‌کند؛ سیستم دیگری نباید به‌عنوان اسپلیت طراحی شود.'
     if key == 'mechanical_shaft_route':
         return None if shaft_approval(normalize_answers({}, answer_key=key, raw_answer=answer)) else 'یکی از مسیرهای شفت را به‌صورت صریح تأیید کنید.'
     value = _numeric(answer)

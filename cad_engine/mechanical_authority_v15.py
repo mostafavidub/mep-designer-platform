@@ -39,7 +39,7 @@ from .authority_architecture_v14 import (
     validate_authority_contract,
 )
 from .equipment_representation_v14 import validate_split_representation
-from app.mechanical_basis_contract import normalize_answers
+from app.mechanical_basis_contract import canonical_cooling_system, normalize_answers
 
 
 A4_W = 21.0
@@ -159,13 +159,10 @@ def build_design_overrides(answers: dict) -> dict:
     answers=normalize_answers(answers or {})
     location=_answer(answers,"city","location", default="")
     city=str(location).split("،")[-1].strip() if location else None
-    cooling=_norm(_answer(answers,"cooling","cooling_system", default=""))
+    cooling_key=canonical_cooling_system(answers)
     heating=_norm(_answer(answers,"heating","heating_system", default=""))
     gas_raw=_answer(answers,"gas","gas_service", default="")
     gas_answer=_norm(gas_raw)
-    cooling_key="wall_mounted_split_ac" if (
-        cooling=="wall_mounted_split_ac" or any(x in cooling for x in ("اسپلیت","کولر گازی","split","split unit"))
-    ) else None
     heating_key="package_radiator" if (
         heating=="package_radiator"
         or ("پکیج" in heating and any(x in heating for x in ("رادیاتور","شوفاژ")))

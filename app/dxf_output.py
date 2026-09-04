@@ -213,7 +213,8 @@ def _cad_error_message(response):
     if isinstance(detail, dict) and detail.get('status') == 'INPUT_REQUIRED':
         missing=list(detail.get('missing_inputs') or [])
         labels={'city':'شهر پروژه','rainfall_intensity':'شدت بارندگی طراحی','mechanical_shaft_route':'تأیید مسیر شفت مکانیکی',
-                'water_inlet_pressure':'فشار آب ورودی','gas_service_pressure':'فشار سرویس گاز'}
+                'water_inlet_pressure':'فشار آب ورودی','gas_service_pressure':'فشار سرویس گاز',
+                'cooling_system':'سیستم سرمایش قابل‌پشتیبانی'}
         readable='، '.join(labels.get(key,key) for key in missing)
         return f"INPUT_REQUIRED[{','.join(missing)}]: برای ادامه این اطلاعات را تکمیل کنید: {readable}"
     if isinstance(detail, dict):

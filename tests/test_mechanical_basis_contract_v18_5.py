@@ -1,5 +1,6 @@
 from app.mechanical_basis_contract import (
-    canonical_city, canonical_shaft_strategy, normalize_answers, numeric, shaft_approval,
+    canonical_city, canonical_cooling_system, canonical_shaft_strategy,
+    normalize_answers, numeric, persisted_answer_is_valid, shaft_approval,
 )
 
 
@@ -21,3 +22,17 @@ def test_contract_accepts_city_alias_and_rejects_unknown_shaft_text():
     assert numeric('۱۱۰٫۵ mm/h') == 110.5
     assert canonical_shaft_strategy('یک جای خوب پیدا کن') is None
     assert shaft_approval({'mechanical_shaft_route': 'یک جای خوب پیدا کن'}) is None
+
+
+def test_cooling_contract_accepts_only_explicit_wall_split():
+    for value in ('اسپلیت دیواری', 'کولر گازی دیواری', 'wall_mounted_split_ac'):
+        assert canonical_cooling_system({'cooling': value}) == 'wall_mounted_split_ac'
+    for value in ('اسپلیت یا داکت‌اسپلیت', 'داکت اسپلیت', 'VRF/VRV', 'چیلر و فن‌کویل', 'کولر آبی'):
+        assert canonical_cooling_system({'cooling': value}) is None
+        assert not persisted_answer_is_valid({'cooling': value}, 'cooling_system')
+
+
+def test_normalization_persists_the_same_cooling_authority_used_by_cad():
+    answers = normalize_answers({}, answer_key='cooling_system', raw_answer='اسپلیت دیواری')
+    assert answers['cooling_system'] == 'wall_mounted_split_ac'
+    assert persisted_answer_is_valid(answers, 'cooling_system')

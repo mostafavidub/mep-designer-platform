@@ -10,7 +10,7 @@ from app.mechanical_workflow import (
 class MechanicalWorkflowTests(unittest.TestCase):
     def project(self, answers=None, analysis=None):
         return SimpleNamespace(
-            answers={'discipline': 'mechanical', **(answers or {})},
+            answers={'discipline': 'mechanical', 'cooling':'اسپلیت دیواری', **(answers or {})},
             analysis=analysis or {
                 'discipline': 'mechanical',
                 'architectural_auto': {
@@ -65,7 +65,15 @@ class MechanicalWorkflowTests(unittest.TestCase):
 
     def test_basis_question_options_are_suggestions_not_defaults(self):
         for key, spec in REQUIRED_BASIS_QUESTION_SPECS.items():
-            self.assertGreaterEqual(len(spec['options']), 4); self.assertNotIn('default', spec['question'].lower()); self.assertNotIn('خودکار', spec['question'])
+            self.assertGreaterEqual(len(spec['options']), 1)
+            if key != 'cooling_system': self.assertGreaterEqual(len(spec['options']), 4)
+            self.assertNotIn('default', spec['question'].lower()); self.assertNotIn('خودکار', spec['question'])
+
+    def test_unsupported_cooling_is_reasked_before_design(self):
+        p = self.project({'city':'مشهد','cooling':'VRF/VRV','gas':'خیر','water_inlet_pressure':'2.5 bar','rainfall_intensity':'90 mm/h','mechanical_shaft_route':'پیشنهاد نزدیک هسته فضاهای تر'})
+        self.assertEqual(required_basis_questions(p), ['cooling_system'])
+        self.assertTrue(ensure_required_basis_questions(p))
+        self.assertEqual(p.questions[0]['options'], ['اسپلیت دیواری'])
 
     def test_create_proposal_moves_to_review_and_requires_approval(self):
         p = self.project({'city':'مشهد','gas':'خیر','water_inlet_pressure':'2.5 bar','rainfall_intensity':'90 mm/h','mechanical_shaft_route':'پیشنهاد نزدیک هسته فضاهای تر'}); proposal = create_proposal(p)

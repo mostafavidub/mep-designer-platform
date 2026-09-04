@@ -119,6 +119,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user request to prevent the observed Railway 502 answer-submission failure"},
       "verification":{"idempotent_replay":"must_pass","transient_retry_ui":"must_pass","full_regression":"must_pass","production_project_85":"must_resume_without_prior-answer_loss","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Send the expected question index with every answer, treat replays as successful state reads, retry 5xx/network failures four times with backoff, and retain the answer in the page if all attempts fail.","rollback":"Supersede only with a stricter submission protocol; never return to non-idempotent answer advancement."}
+    },
+    {
+      "id":"GOV-2026-013",
+      "status":"APPROVED",
+      "summary":"Unify the website and CAD cooling contract, offer only authority-supported wall-mounted split AC, reject unsupported cooling without substitution, and recover existing missing-cooling failures at the exact question without repeating architecture analysis.",
+      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to eliminate the observed project-85 cooling_system failure"},
+      "verification":{"focused_tests":"must_pass","negative_cooling_tests":"must_pass","project_85_recovery":"must_pass","full_regression":"must_pass","production_project_85":"must_reopen_supported_cooling_question","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Canonicalize explicit wall-mounted split answers once across website, persistence and CAD; reopen old cooling failures exactly once and preserve prior analysis.","rollback":"Supersede only after complete authority gates exist for another cooling system; never restore unsupported choices or silent substitution."}
     }
   ]
 }
