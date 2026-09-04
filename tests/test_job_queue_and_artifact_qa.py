@@ -7,7 +7,7 @@ from unittest.mock import patch
 import ezdxf
 
 from app import artifact_storage
-from app.job_queue import backup_input_without_blocking
+from app.job_queue import backup_input_without_blocking, legacy_basis_missing
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
 from app.manifest_contract_v2 import manifest_digest
@@ -95,6 +95,19 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_legacy_authority_failure_reopens_only_allow_listed_inputs(self):
+        raw = (
+            "{'authority_qa': {'errors': "
+            "['design_basis_input_required:rainfall_intensity']}, "
+            "'engineering_acceptance': {'errors': "
+            "['topology:provisional_shaft_not_authority_acceptable']}}"
+        )
+        self.assertEqual(
+            legacy_basis_missing(raw),
+            ['rainfall_intensity', 'mechanical_shaft_route'],
+        )
+        self.assertEqual(legacy_basis_missing('traceback: unrelated failure'), [])
+
     def test_object_storage_outage_does_not_block_local_analysis(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / 'architecture.dxf'
