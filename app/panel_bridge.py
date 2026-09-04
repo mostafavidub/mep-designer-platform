@@ -162,7 +162,21 @@ def register_panel_bridge(app, legacy, Job):
                 if project.status == "asking":
                     project.last_error = "اطلاعات فنی پروژه کامل نیست؛ پاسخ‌های تکمیلی لازم است."
                     db.commit()
-                    raise HTTPException(409, project.last_error)
+                    return JSONResponse(
+                        {
+                            "status": "asking",
+                            "error": project.last_error,
+                            "detail": project.last_error,
+                            "questions": list(project.questions or []),
+                            "question_count": len(project.questions or []),
+                            "inferred_answers": {
+                                str(key): str(value)
+                                for key, value in dict(project.answers or {}).items()
+                                if value is not None and str(value).strip()
+                            },
+                        },
+                        status_code=409,
+                    )
                 if discipline == "mechanical":
                     drawing_set = dict((project.analysis or {}).get("drawing_set") or {})
                     if not drawing_set:

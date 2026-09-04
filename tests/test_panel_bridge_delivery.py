@@ -21,7 +21,15 @@ def test_panel_bridge_negative_requires_both_service_and_project_tokens():
     assert 'request.headers.get("x-panel-token", "")' in BRIDGE
     assert 'request.headers.get("x-project-token", "")' in BRIDGE
     assert BRIDGE.count("secrets.compare_digest") >= 2
-    assert 'raise HTTPException(409, project.last_error)' in BRIDGE
+    assert 'status_code=409' in BRIDGE
+
+
+def test_panel_bridge_returns_exact_supplementary_questions_for_recovery():
+    assert '"status": "asking"' in BRIDGE
+    assert '"questions": list(project.questions or [])' in BRIDGE
+    assert '"question_count": len(project.questions or [])' in BRIDGE
+    assert '"inferred_answers"' in BRIDGE
+    assert 'status_code=409' in BRIDGE
 
 
 def test_panel_bridge_golden_uses_persisted_design_progress():
