@@ -35,6 +35,20 @@ def test_structured_cad_failure_shows_only_actionable_gate_codes():
     assert "{'status'" not in safe
 
 
+def test_cad_error_retains_failed_stage_and_nested_gate_error():
+    class FailedResponse:
+        def json(self):
+            return {'detail': {'code':'MECHANICAL_QA_FAILED', 'status':'FAIL',
+                'stage':'equipment_linkage_gate',
+                'failed_stage_qa':{'status':'FAIL','errors':['equipment_or_route_missing:M-161:indoor_unit']}}}
+    raw = _cad_error_message(FailedResponse())
+    assert 'equipment_linkage_gate' in raw
+    assert 'equipment_or_route_missing:M-161:indoor_unit' in raw
+    safe = customer_safe_error(raw)
+    assert 'equipment_linkage_gate' in safe
+    assert 'equipment_or_route_missing:m-161:indoor_unit' in safe
+
+
 def test_late_input_failure_reopens_only_missing_questions_and_preserves_analysis():
     project=SimpleNamespace(
         answers={'discipline':'mechanical','city':'مشهد','location':'مشهد',

@@ -169,6 +169,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction to diagnose and eliminate the project-85 final technical failure"},
       "verification":{"safe_gate_code_test":"must_pass","full_regression":"must_pass","production_project_85":"must_display_actionable_gate_code","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Render only normalized allow-listed QA identifiers and keep raw structured evidence internal.","rollback":"Never return to an opaque generic failure that prevents deterministic repair."}
+    },
+    {
+      "id":"GOV-2026-018",
+      "status":"APPROVED",
+      "summary":"Propagate the exact failed CAD stage and its QA record across the CAD-to-site boundary so every fail-closed revision is diagnosable and repairable.",
+      "affected_capabilities":["mechanical_release_qa","customer_safe_errors","controlled_design_recovery","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to identify and eliminate the project-85 R9 mechanical_qa_failed result"},
+      "verification":{"failed_stage_contract_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_failed_stage","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Include failed_stage_qa selected from the report stage and retain its normalized error codes in the site revision.","rollback":"Never collapse an actionable failed CAD stage into MECHANICAL_QA_FAILED alone."}
     }
   ]
 }

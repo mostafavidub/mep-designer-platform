@@ -1,6 +1,6 @@
 # MEP Designer Platform
 
-Active production release: **18.5.7**. The CAD service starts from
+Active production release: **18.5.8**. The CAD service starts from
 `cad_engine.main_v18:app`; `/version` and the website `/system_health` response
 publish the same authoritative component-version manifest.
 

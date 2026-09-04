@@ -1,6 +1,6 @@
 # Design-basis input control standard
 
-Active platform release: `18.5.7`
+Active platform release: `18.5.8`
 
 - Questions whose engineering contract requires a scalar value must render as a numeric input, never as semantic system choices.
 - The UI must display the required unit beside the field and the server must reject missing, zero, negative, or nonnumeric values.
