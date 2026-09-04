@@ -36,12 +36,14 @@ SAFE_REBUILD = (
 
 def classify_recovery(error: str, *, attempt: int, max_attempts: int) -> RecoveryDecision:
     value=str(error or "").lower()
+    if any(token in value for token in INPUT_STORAGE):
+        if attempt >= max_attempts:
+            return RecoveryDecision(False,"request_input_reupload","awaiting_upload","durable_input_missing")
+        return RecoveryDecision(True,"restore_durable_input","preparing_inputs","input_restore_allowed")
     if attempt >= max_attempts:
         return RecoveryDecision(False,"stop","failed","retry_budget_exhausted")
     if any(token in value for token in INPUT_REQUIRED):
         return RecoveryDecision(False,"request_user_input","failed","engineering_input_required")
-    if any(token in value for token in INPUT_STORAGE):
-        return RecoveryDecision(True,"restore_durable_input","preparing_inputs","input_restore_allowed")
     if "no space left on device" in value:
         return RecoveryDecision(True,"reclaim_workspace","preparing_inputs","workspace_reclaim_allowed")
     if any(token in value for token in TRANSIENT):

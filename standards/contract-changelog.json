@@ -129,6 +129,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction to eliminate the observed project-85 cooling_system failure"},
       "verification":{"focused_tests":"must_pass","negative_cooling_tests":"must_pass","project_85_recovery":"must_pass","full_regression":"must_pass","production_project_85":"must_reopen_supported_cooling_question","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Canonicalize explicit wall-mounted split answers once across website, persistence and CAD; reopen old cooling failures exactly once and preserve prior analysis.","rollback":"Supersede only after complete authority gates exist for another cooling system; never restore unsupported choices or silent substitution."}
+    },
+    {
+      "id":"GOV-2026-014",
+      "status":"APPROVED",
+      "summary":"Preserve the last architectural source across failed and retryable projects, prohibit automatic deletion of durable R2 inputs, and route irrecoverable legacy projects to explicit re-upload without discarding answers or analysis.",
+      "affected_capabilities":["controlled_design_recovery","artifact_storage","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction after project 85 lost its architecture source during retry"},
+      "verification":{"focused_storage_tests":"must_pass","negative_cleanup_test":"must_pass","reupload_fallback":"must_pass","full_regression":"must_pass","production_project_85":"must_show_reupload_form","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Remove local source only after a durable copy is verified; retain durable inputs across all processing states; require re-upload only for already-orphaned legacy projects.","rollback":"Never restore automatic deletion of the sole local source or durable input."}
     }
   ]
 }

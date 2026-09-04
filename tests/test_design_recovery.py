@@ -21,6 +21,13 @@ def test_engineering_input_and_retry_budget_fail_closed():
     assert not unknown.recoverable
 
 
+def test_missing_durable_input_requests_reupload_after_retry_budget():
+    decision=classify_recovery('فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد.',attempt=3,max_attempts=3)
+    assert not decision.recoverable
+    assert decision.strategy == 'request_input_reupload'
+    assert decision.resume_stage == 'awaiting_upload'
+
+
 def test_recovery_history_is_durable_and_clears_only_active_marker():
     project=SimpleNamespace(analysis={"drawing_set":{"approved":True}})
     decision=classify_recovery("montage render failed",attempt=1,max_attempts=3)
