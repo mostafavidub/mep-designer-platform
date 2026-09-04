@@ -179,6 +179,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction to identify and eliminate the project-85 R9 mechanical_qa_failed result"},
       "verification":{"failed_stage_contract_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_failed_stage","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Include failed_stage_qa selected from the report stage and retain its normalized error codes in the site revision.","rollback":"Never collapse an actionable failed CAD stage into MECHANICAL_QA_FAILED alone."}
+    },
+    {
+      "id":"GOV-2026-019",
+      "status":"APPROVED",
+      "summary":"Include approved_manifest_qa in the failed-stage transport contract so plan-count, family and board mismatches are preserved for deterministic correction.",
+      "affected_capabilities":["mechanical_release_qa","approved_drawing_manifest","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"project-85 R10 identified approved_manifest_gate after explicit user request to fix the failure"},
+      "verification":{"manifest_gate_mapping_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_manifest_mismatch","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Transport approved_manifest_qa whenever approved_manifest_gate fails.","rollback":"Never discard the manifest mismatch that caused a fail-closed revision."}
     }
   ]
 }
