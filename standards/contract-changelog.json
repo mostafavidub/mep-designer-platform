@@ -149,6 +149,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction to eliminate the observed project-85 missing-source retry loop"},
       "verification":{"materialization_negative_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_reupload_form_without_new_failed_revision","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Restore and extract the source during retry preflight; enqueue design only after at least one DXF is physically present.","rollback":"Never use object-list presence alone as proof that a design input can be consumed."}
+    },
+    {
+      "id":"GOV-2026-016",
+      "status":"APPROVED",
+      "summary":"Render scalar design-basis questions as unit-aware numeric controls, preserve their canonical keys through every presentation adapter, and retain structured CAD QA evidence for deterministic recovery.",
+      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction after the gas-pressure question displayed gas-system choices and R7 hid its failing QA gate"},
+      "verification":{"numeric_gas_pressure_ui":"must_pass","late_gas_alias_recovery":"must_pass","customer_safe_error":"must_pass","full_regression":"must_pass","production_project_85":"must_resume_at_numeric_pressure_or expose actionable QA","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Re-present invalid legacy gas-pressure answers as a numeric mbar question; map CAD gas_service_pressure to gas_pressure; preserve internal structured failures while keeping the customer view safe.","rollback":"Never infer a semantic gas-system question from an explicit scalar pressure key or discard the failing structured QA evidence."}
     }
   ]
 }

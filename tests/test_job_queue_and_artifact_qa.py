@@ -140,6 +140,12 @@ class QueueIntegrationContractTests(unittest.TestCase):
         )
         self.assertEqual(legacy_basis_missing('traceback: unrelated failure'), [])
 
+    def test_legacy_gas_service_pressure_maps_to_questionnaire_contract_key(self):
+        self.assertEqual(
+            legacy_basis_missing('design_basis_input_required:gas_service_pressure'),
+            ['gas_pressure'],
+        )
+
     def test_object_storage_outage_does_not_block_local_analysis(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / 'architecture.dxf'

@@ -5,7 +5,7 @@ from pathlib import Path
 
 source = Path('app/main.py').read_text(encoding='utf-8')
 tree = ast.parse(source)
-wanted = {'COMMON', 'ELECTRICAL', 'MECHANICAL', 'QUESTION_OPTIONS', 'TEXT_QUESTION_KEYS'}
+wanted = {'COMMON', 'ELECTRICAL', 'MECHANICAL', 'QUESTION_OPTIONS', 'TEXT_QUESTION_KEYS', 'NUMBER_QUESTION_KEYS'}
 nodes = [node for node in tree.body if
          (isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id in wanted for target in node.targets))
          or (isinstance(node, ast.FunctionDef) and node.name in {'present_question', 'qlist'})]
@@ -41,6 +41,17 @@ class QuestionnaireChoiceTests(unittest.TestCase):
         question = present_question({'key': 'heating', 'question': 'سیستم گرمایش چیست؟'})
         self.assertEqual(question['input_type'], 'radio')
         self.assertIn('پکیج دیواری و رادیاتور', question['options'])
+
+    def test_gas_pressure_is_a_numeric_mbar_field_not_gas_system_choices(self):
+        question = present_question({
+            'key': 'gas_pressure', 'input_type': 'number', 'unit': 'mbar',
+            'question': 'فشار سرویس گاز چند mbar است؟',
+        })
+        self.assertEqual(question['key'], 'gas_pressure')
+        self.assertEqual(question['input_type'], 'number')
+        self.assertEqual(question['options'], [])
+        self.assertEqual(question['unit'], 'mbar')
+        self.assertNotIn('ساختمان گاز ندارد', question['options'])
 
     def test_other_text_field_selects_other_radio(self):
         template = Path('app/templates/project.html').read_text(encoding='utf-8')

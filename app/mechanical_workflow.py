@@ -203,7 +203,18 @@ def required_basis_questions(p):
 
 def _question_payload(key):
     spec = REQUIRED_BASIS_QUESTION_SPECS[key]
-    return {'key': key, 'question': spec['question'], 'input_type': 'radio', 'options': list(spec['options']), 'required': True, 'source': 'mechanical_basis_preflight'}
+    numeric_input = bool(spec.get('unit'))
+    return {
+        'key': key,
+        'question': spec['question'],
+        'input_type': 'number' if numeric_input else 'radio',
+        'options': [] if numeric_input else list(spec['options']),
+        'unit': spec.get('unit'),
+        'min': 0.1 if numeric_input else None,
+        'step': 0.1 if numeric_input else None,
+        'required': True,
+        'source': 'mechanical_basis_preflight',
+    }
 
 
 def ensure_required_basis_questions(p):

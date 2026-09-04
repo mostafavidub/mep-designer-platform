@@ -339,6 +339,13 @@ def _present_question(item):
     question = dict(item or {})
     key = question.get('key') or question.get('id')
     prompt = str(question.get('question') or '')
+    if key in legacy.NUMBER_QUESTION_KEYS or question.get('input_type') == 'number':
+        question['key'] = key
+        question['input_type'] = 'number'
+        question['options'] = []
+        question.setdefault('min', 0.1)
+        question.setdefault('step', 0.1)
+        return question
     if not key or (key not in legacy.QUESTION_OPTIONS and key not in legacy.TEXT_QUESTION_KEYS):
         inferred = (
             ('heating', ('گرمایش', 'heating')), ('cooling', ('سرمایش', 'cooling')),

@@ -57,3 +57,24 @@ def test_project_85_cooling_failure_reopens_exact_question_and_clears_unsupporte
     assert project.questions[0]['options'] == ['اسپلیت دیواری']
     assert 'cooling' not in project.answers and 'cooling_system' not in project.answers
     assert project.analysis['architectural_auto']['rooms'] == 13
+
+
+def test_nested_authority_gas_pressure_failure_reopens_numeric_contract_key():
+    class NestedResponse:
+        def json(self):
+            return {'detail': {'authority_qa': {
+                'status': 'FAIL',
+                'errors': ['design_basis_input_required:gas_service_pressure'],
+            }}}
+    message = _cad_error_message(NestedResponse())
+    assert message.startswith('INPUT_REQUIRED[gas_pressure]')
+    project = SimpleNamespace(
+        answers={'discipline':'mechanical','gas':'گاز برای پکیج','gas_pressure':'ساختمان گاز ندارد'},
+        questions=[],current_question=0,status='failed',analysis={},
+    )
+    assert reopen_basis_questions(project, ['gas_pressure'])
+    question = project.questions[0]
+    assert question['key'] == 'gas_pressure'
+    assert question['input_type'] == 'number'
+    assert question['unit'] == 'mbar'
+    assert question['options'] == []
