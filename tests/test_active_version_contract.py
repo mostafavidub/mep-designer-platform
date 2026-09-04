@@ -24,11 +24,11 @@ def test_release_record_contains_only_policy_and_semantic_revisions():
     assert release["rollback_source"] == "approved-git-commit-or-tag"
     assert not any(key in release for key in ("platform_release", "cad_api", "mechanical_pipeline"))
 
-def test_all_identity_consumers_are_synchronized():
+def test_all_active_site_engine_rulebook_and_release_versions_are_synchronized():
     assert synchronization_errors() == []
     assert assert_versions_synchronized()["status"] == "PASS"
 
-def test_identity_gate_detects_entrypoint_drift(monkeypatch, tmp_path):
+def test_version_gate_is_destructive_and_detects_release_drift(monkeypatch, tmp_path):
     import cad_engine.version_sync_gate as gate
     copied = tmp_path / "repo"
     for relative in ("standards/active-release.json","docs/ACTIVE_VERSION_MATRIX.md","README.md","start_services.sh","cad_engine/Dockerfile"):
