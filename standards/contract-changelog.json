@@ -2,6 +2,26 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-022",
+      "status":"APPROVED",
+      "summary":"Adopt architecture-only PRE-SUBMISSION as the temporary production profile when Structural/RCP drawings are unavailable, while prohibiting coordinated or Submission Ready claims.",
+      "affected_capabilities":["production_v19_runtime_authority","structural_rcp_25d_coordination","manufacturer_selection","active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction that all current projects lack structural drawings and must always produce Pre-Submission output"},
+      "verification":{"architecture_only_generation":"must_pass","not_coordinated_claim":"must_pass","runtime_version_parity":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Generate architecture-only drawings through the current v19 pipeline and label every result PRE_SUBMISSION and NOT_COORDINATED.","rollback":"When Structural/RCP becomes mandatory, supersede this temporary profile without reclassifying historical Pre-Submission outputs."}
+    },
+    {
+      "id":"GOV-2026-021",
+      "status":"APPROVED",
+      "summary":"Add fail-closed Structural/RCP 2.5D coordination, official-datasheet manufacturer selection, graph-native parametric details/risers and sealed seven-project strict regression.",
+      "affected_capabilities":["structural_rcp_25d_coordination","manufacturer_selection","parametric_detail_riser_identity","sealed_seven_project_regression","active_version_synchronization"],
+      "affected_projects":["all","project-1","project-3","project-4","project-6","project-7","project-8","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to implement all four ordered fail-closed phases"},
+      "verification":{"focused_tests":"must_pass","full_regression":"must_pass","seven_project_golden":"must_pass","exact_reopen":"must_pass","montage":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Require each phase to pass before the next and expose missing authoritative inputs as INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Supersede only with a stricter contract; never fabricate structural/RCP or manufacturer facts."}
+    },
+    {
       "id":"GOV-2026-001",
       "status":"APPROVED",
       "summary":"Establish the ten-step mechanical design governance contract and project-1 golden baseline.",
@@ -189,6 +209,16 @@
       "approval":{"status":"APPROVED","basis":"project-85 R10 identified approved_manifest_gate after explicit user request to fix the failure"},
       "verification":{"manifest_gate_mapping_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_manifest_mismatch","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Transport approved_manifest_qa whenever approved_manifest_gate fails.","rollback":"Never discard the manifest mismatch that caused a fail-closed revision."}
+    },
+    {
+      "id":"GOV-2026-020",
+      "status":"APPROVED",
+      "summary":"Prioritize the failed stage and its exact errors ahead of large upstream reports so actionable QA evidence can never be truncated.",
+      "affected_capabilities":["customer_safe_errors","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction after project-85 R12 retained the gate but truncated its mismatch errors"},
+      "verification":{"large_report_truncation_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_exact_manifest_error","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Serialize failed stage and failed_stage_qa.errors before all other diagnostic evidence.","rollback":"Never allow generic upstream data to truncate the cause of the active failed gate."}
     }
   ]
 }

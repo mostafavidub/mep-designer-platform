@@ -1,6 +1,7 @@
 import os
 import shutil
 from cad_engine.version_manifest import active_version_manifest
+from cad_engine.mechanical_release_contract_v19 import release_contract_status
 
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -105,6 +106,7 @@ def integrated_system_health():
     status = main_auto.system_health()
     status['object_storage'] = artifact_storage.healthcheck()
     status['versions'] = active_version_manifest()
+    status['mechanical_v19'] = release_contract_status()
     return status
 
 

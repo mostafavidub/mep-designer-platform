@@ -9,7 +9,7 @@ stages migrate to consume it as the contract.
 from copy import deepcopy
 
 
-PMM_SCHEMA = "project-mechanical-model/v1"
+PMM_SCHEMA = "project-mechanical-model/v2"
 
 
 def _unique(values):
@@ -124,7 +124,7 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
 
     model = {
         "schema": PMM_SCHEMA,
-        "mode": "shadow",
+        "mode": "authoritative-coordination-contract",
         "discipline": "mechanical",
         "levels": levels,
         "level_names": level_names,
@@ -133,6 +133,17 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "spaces": _space_rows(levels),
         "fixtures": _fixture_rows(auto),
         "equipment": deepcopy(auto.get("equipment") or []),
+        "coordination": deepcopy(analysis.get("coordination_v19") or {
+            "status": "INPUT_REQUIRED", "missing_inputs": ["STRUCTURAL_MODEL", "RCP_MODEL"],
+            "claim": "NOT_COORDINATED",
+        }),
+        "manufacturer_selection": deepcopy(analysis.get("manufacturer_selection_v19") or {
+            "status": "PRE_SUBMISSION", "selection_type": "DESIGN_ENVELOPE",
+            "claim": "NOT_MANUFACTURER_CONFIRMED",
+        }),
+        "documentation_identity": deepcopy(analysis.get("documentation_identity_v19") or {
+            "status": "INPUT_REQUIRED", "required_identity": "Plan ID=Riser ID=Calc ID=Schedule ID",
+        }),
         "shafts": _shaft_rows(levels),
         "systems": {
             "conditioned_levels": deepcopy(scope.get("conditioned_levels") or []),
@@ -155,6 +166,8 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
             "fixture_blocks_detected": int(auto.get("fixture_blocks_detected") or 0),
             "roof_drain_count": int(auto.get("roof_drain_count") or 0),
             "answers_present": sorted(str(key) for key in answers.keys()),
+            "structural_rcp_policy": "authoritative-input-only",
+            "manufacturer_policy": "official-datasheet-or-design-envelope",
         },
     }
 

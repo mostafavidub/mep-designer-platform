@@ -1,4 +1,4 @@
-"""Generate the production MEP Design Rule Book v4 DOCX.
+"""Generate the production MEP Design Rule Book v5 DOCX.
 
 The runtime document mirrors the machine-enforced Drawing Manifest contract.
 It is generated at deploy time so the deployed RULEBOOK_PATH is always the
@@ -10,9 +10,10 @@ import sys
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
+from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION
 
 
-VERSION = "4.3"
+VERSION = MECHANICAL_RULEBOOK_VERSION
 BENCHMARK = {
     "base_architectural_views": 4,
     "approved_deliverables": 29,
@@ -141,10 +142,24 @@ def build(path):
     add_heading(doc, "13. Professional responsibility")
     add_bullet(doc, "This automated package remains subject to professional engineering review and applicable statutory approval. The software does not claim statutory approval merely because automated QA passes.")
 
-    doc.core_properties.title = "EngiTools MEP Design Rule Book v4"
+    add_heading(doc, "14. Structural/RCP coordination and 2.5D routing")
+    add_bullet(doc, "Beam, column, slab, ceiling, shaft, service-zone and forbidden-zone geometry must carry source revision and hash provenance.")
+    add_bullet(doc, "Routing evaluates multiple service elevations and candidates. Clash, penetration, clearance and gravity-slope failures block selection.")
+    add_bullet(doc, "Without authoritative Structural and RCP inputs the system may issue only PRE-SUBMISSION drawings marked NOT COORDINATED; it must not claim clash-free coordination or Submission Ready status.")
+
+    add_heading(doc, "15. Manufacturer and documentation authority")
+    add_bullet(doc, "A manufacturer model requires an official datasheet hash/revision plus capacity, dimensions, connections, clearance, route, elevation, pump and fan constraint checks.")
+    add_bullet(doc, "Absent or non-compliant manufacturer evidence produces a non-confirmed Design Envelope and PRE-SUBMISSION state.")
+    add_bullet(doc, "Parametric details require executable geometry, dimensions, fittings, material, clearance and tags. Riser segments are projected from the network graph with Plan ID = Riser ID = Calc ID = Schedule ID.")
+
+    add_heading(doc, "16. Blind golden regression")
+    add_bullet(doc, "Projects 1, 3, 4, 6, 7, 8 and 10 are generated architecture-only, cryptographically sealed, and only then compared with references.")
+    add_bullet(doc, "Missing, failed, skipped or unknown phase status blocks release; reference leakage or post-seal mutation invalidates scoring.")
+
+    doc.core_properties.title = "EngiTools MEP Design Rule Book v5"
     doc.core_properties.subject = "Mechanical approved drawing manifest and 29-deliverable benchmark"
     doc.save(path)
-    print(f"installed Rule Book v4: {path} ({path.stat().st_size} bytes)")
+    print(f"installed Rule Book v{VERSION}: {path} ({path.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":

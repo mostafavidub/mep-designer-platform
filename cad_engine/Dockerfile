@@ -4,4 +4,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 COPY requirements.txt /tmp/cad-requirements.txt
 RUN pip install --no-cache-dir -r /tmp/cad-requirements.txt
 COPY . ./cad_engine
-CMD ["sh","-c","uvicorn cad_engine.main_v18:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh","-c","uvicorn cad_engine.main_v19:app --host 0.0.0.0 --port ${PORT:-8080}"]

@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from . import main as legacy
 from . import artifact_storage
 from .design_progress import set_project_progress
+from cad_engine.version_manifest import active_version_manifest
 from .design_recovery import clear_active_recovery
 
 app = legacy.app
@@ -247,8 +248,14 @@ def _cad_error_message(response):
         readable='، '.join(labels.get(key,key) for key in missing)
         return f"INPUT_REQUIRED[{','.join(missing)}]: برای ادامه این اطلاعات را تکمیل کنید: {readable}"
     if isinstance(detail, dict):
+        priority = []
+        if detail.get('stage'):
+            priority.append(str(detail['stage']))
+        failed_stage_qa = detail.get('failed_stage_qa')
+        if isinstance(failed_stage_qa, dict):
+            priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
         failures = [item for item in evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate'))]
-        diagnostic = ' | '.join(dict.fromkeys(failures))[:1600] or str(detail)[:1600]
+        diagnostic = ' | '.join(dict.fromkeys(priority + failures))[:1600] or str(detail)[:1600]
         return f'CAD_QA_FAILURE: {diagnostic}'
     message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
     translations = {
@@ -318,6 +325,18 @@ def run_design_dxf(project_id, revision_id):
                             'source_file': analyzed_file.get('file'),
                         })
             design_answers['_plan_fixture_evidence'] = fixture_evidence
+            design_answers['_runtime_contract'] = active_version_manifest()
+            analysis = dict(p.analysis or {})
+            pmm = analysis.get('project_mechanical_model') or {}
+            design_answers['_v19_input_contract'] = {
+                'coordination_inputs': analysis.get('coordination_inputs_v19') or {},
+                'route_request': analysis.get('route_request_v19') or {},
+                'equipment_requirements': analysis.get('equipment_requirements_v19') or {},
+                'manufacturer_catalogue': analysis.get('manufacturer_catalogue_v19') or [],
+                'detail_specs': analysis.get('detail_specs_v19') or [],
+                'network_graph': analysis.get('network_graph_v19') or {},
+                'pmm_schema': pmm.get('schema'),
+            }
         set_project_progress(p, 'validating_contract')
         db.commit()
         payload = {
@@ -338,6 +357,10 @@ def run_design_dxf(project_id, revision_id):
                 'approved_manifest': approved_manifest,
             },
         }
+        if discipline == 'mechanical':
+            for stage in ('coordination_v19', 'manufacturer_v19', 'documentation_v19'):
+                set_project_progress(p, stage)
+                db.commit()
         set_project_progress(p, 'engine_designing')
         db.commit()
         resp = requests.post(legacy.CAD_DESIGNER_URL + '/design', json=payload, timeout=3600)
@@ -346,6 +369,15 @@ def run_design_dxf(project_id, revision_id):
             print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}', flush=True)
             raise RuntimeError(message)
         data = resp.json()
+        if discipline == 'mechanical':
+            active_versions = active_version_manifest()
+            if data.get('engine_version') != active_versions['cad_api']:
+                raise RuntimeError('نسخه موتور CAD با نسخه فعال سایت تطابق ندارد.')
+            for report in data.get('design_reports') or []:
+                if report.get('pipeline_authority') != 'mechanical-v19':
+                    raise RuntimeError('خروجی توسط مسیر مکانیکی فعال v19 تولید نشده است.')
+                if report.get('executed_versions') != active_versions:
+                    raise RuntimeError('نسخه تحلیل، طراحی یا بازبینی خروجی با سایت تطابق ندارد.')
         if discipline == 'mechanical':
             set_project_progress(
                 p, 'mechanical_release_qa',

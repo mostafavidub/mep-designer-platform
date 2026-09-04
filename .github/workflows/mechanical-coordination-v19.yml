@@ -1,0 +1,25 @@
+name: Mechanical Coordination v19
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  fail-closed-v19:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12', cache: pip}
+      - run: pip install -r requirements.txt -r cad_engine/requirements.txt pytest
+      - name: Ordered v19 gates and full regression
+        env: {PYTHONPATH: '.:tests', MPLBACKEND: Agg, DATABASE_URL: 'sqlite:///./test_v19.db', DATA_DIR: /tmp/v19-data, CAD_OUTPUT_DIR: /tmp/v19-cad}
+        run: |
+          pytest -q tests/test_coordination_v19.py
+          pytest -q tests/test_manufacturer_selector_v19.py
+          pytest -q tests/test_parametric_documentation_v19.py
+          pytest -q tests/test_submission_qa_v19.py
+          pytest -q tests/test_mechanical_runtime_v19.py
+          pytest -q
+          python -m cad_engine.version_sync_gate

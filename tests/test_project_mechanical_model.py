@@ -72,7 +72,9 @@ class ProjectMechanicalModelTests(unittest.TestCase):
             proposal={"drawing_manifest": manifest, "total_plans": 2},
         )
         self.assertEqual(model["schema"], PMM_SCHEMA)
-        self.assertEqual(model["mode"], "shadow")
+        self.assertEqual(model["mode"], "authoritative-coordination-contract")
+        self.assertEqual(model["coordination"]["status"], "INPUT_REQUIRED")
+        self.assertEqual(model["manufacturer_selection"]["status"], "PRE_SUBMISSION")
         self.assertEqual(model["level_names"], ["Ground", "Roof"])
         self.assertEqual(model["drawing_manifest"], manifest)
         self.assertEqual(model["drawing_manifest_count"], 2)
@@ -82,7 +84,7 @@ class ProjectMechanicalModelTests(unittest.TestCase):
         self.assertEqual(model["fixtures"][0]["type"], "toilet")
         self.assertEqual(model["shafts"], [{"level": "Ground", "count": 1, "source": "architecture-room-labels"}])
 
-    def test_diagnostics_are_non_blocking_in_shadow_mode(self):
+    def test_structural_diagnostics_remain_fail_closed(self):
         model = build_project_mechanical_model(
             self._analysis(),
             scope=self._scope(),
@@ -90,7 +92,7 @@ class ProjectMechanicalModelTests(unittest.TestCase):
         )
         self.assertFalse(model["valid"])
         self.assertIn("planner_total_does_not_match_manifest_count", model["diagnostics"])
-        self.assertEqual(model["mode"], "shadow")
+        self.assertEqual(model["mode"], "authoritative-coordination-contract")
 
     def test_install_preserves_existing_proposal_behaviour(self):
         class FakeWorkflow:
