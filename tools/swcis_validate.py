@@ -89,10 +89,14 @@ def repository_errors(data: dict[str, dict] | None = None) -> list[str]:
             if not rule.get(field):
                 errors.append(f"traceability_gap:{rule_id}:{field}")
 
-    if {p.get("project_id") for p in data["golden"].get("real_projects", [])} != {"1", "3", "4", "6", "7", "8", "10"}:
-        errors.append("golden_project_inventory_mismatch")
-    if not data["golden"].get("synthetic_cases"):
-        errors.append("synthetic_cases_missing")
+    golden = data["golden"]
+    if "real_projects" in golden or "project_id" in json.dumps(golden):
+        errors.append("project_inventory_forbidden_in_swcis")
+    suite_types = {suite.get("suite_type") for suite in golden.get("required_suites", [])}
+    if suite_types != {"representative_regression", "synthetic_negative"}:
+        errors.append("required_regression_suite_contract_missing")
+    if not golden.get("required_case_categories"):
+        errors.append("required_case_categories_missing")
     for artifact in data["version"].get("machine_contracts", []):
         if not (ROOT / artifact).is_file():
             errors.append(f"canonical_artifact_missing:{artifact}")

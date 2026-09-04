@@ -3,7 +3,7 @@
 ## SWCIS (mandatory)
 
 - Change request: `changes/<id>.yaml`
-- Canonical SWCIS version: `1.0.0`
+- Canonical SWCIS version: see `standards/swcis/version_manifest.yaml`
 - [ ] Every changed path is classified.
 - [ ] Computed affected modules exactly match or are contained by the declared checklist.
 - [ ] Required tests/docs/version bumps/migrations/diffs are linked as evidence.

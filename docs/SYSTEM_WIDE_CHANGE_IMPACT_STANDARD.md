@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 1.0.0
+**Canonical version:** 2.0.0
 
 **Status:** LOCKED
 
@@ -20,7 +20,7 @@ This applies to the Rule Book, PMM, questionnaire, planner, CAD designer, routin
 - `rule_traceability_matrix.yaml`: mandatory Rule ID → PMM field → engine → drawing family/sheet → QA rule → regression test → documentation chain.
 - `change_impact_matrix.yaml`: change categories and required evidence.
 - `release_contract.yaml`: locked gates, risk, waiver, migration, diff, merge, and deployment policy.
-- `golden_regression_manifest.yaml`: projects 1, 3, 4, 6, 7, 8, 10 and synthetic cases.
+- `golden_regression_manifest.yaml`: project-agnostic regression-suite and synthetic-negative-test requirements.
 - `version_manifest.yaml`: canonical version and coordinated bump rules.
 
 All `.yaml` contracts use the JSON-compatible subset of YAML so the validator is deterministic and has no third-party parser dependency.
@@ -42,9 +42,9 @@ All `.yaml` contracts use the JSON-compatible subset of YAML so the validator is
 
 The comparison must inventory files, sheets, drawing families, entities, labels, units, geometry bounds, and QA status. Numeric tolerance must be linked to a Rule ID. Removed locked semantics, omitted dimensions, hash-after-comparison, or baseline updates produced by the candidate itself fail closed. Baseline acceptance and candidate generation must be separately reviewable.
 
-## Golden regression
+## Regression governance
 
-Projects 1, 3, 4, 6, 7, 8, and 10 are mandatory inventory. Private source drawings never enter Git; store hashes, reproducibility metadata, and semantic baselines. Projects whose authoritative input or sealed baseline is unavailable remain `INPUT_REQUIRED` and block any change requiring their full coverage. Synthetic cases cover missing RCP, route collision, manufacturer no-match, old-schema compatibility, and locked-semantic removal.
+SWCIS defines how regression suites are selected, sealed, compared, and accepted; it does not contain project or customer identifiers. Concrete test-project inventories belong in versioned test-suite configuration outside `standards/swcis/`. Risk-selected representative tests and synthetic negative tests are mandatory. Required categories cover missing authoritative input, dependency or route conflict, external-data no-match, schema compatibility, and locked-semantic removal. Private source drawings never enter Git; only hashes, reproducibility metadata, and semantic baselines may be stored.
 
 ## Waivers
 
@@ -56,7 +56,7 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every SWCIS and product gate is PASS.
+> Before changing anything, read SWCIS 2.0.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every SWCIS and product gate is PASS.
 
 ## Administration and branch protection
 

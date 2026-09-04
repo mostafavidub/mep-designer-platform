@@ -48,6 +48,15 @@ class SwcisGovernanceTests(unittest.TestCase):
         broken["trace"]["rules"][0]["qa_rules"] = []
         self.assertIn("traceability_gap:MEP-INPUT-001:qa_rules", repository_errors(broken))
 
+    def test_swcis_has_no_test_project_inventory(self):
+        golden = contracts()["golden"]
+        self.assertNotIn("real_projects", golden)
+        self.assertNotIn("project_id", json.dumps(golden))
+        self.assertEqual(
+            {suite["suite_type"] for suite in golden["required_suites"]},
+            {"representative_regression", "synthetic_negative"},
+        )
+
     def test_expired_or_self_approved_waiver_fails(self):
         waiver_dir = ROOT / "standards" / "swcis" / "waivers"
         waiver_dir.mkdir(exist_ok=True)
