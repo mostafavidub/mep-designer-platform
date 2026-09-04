@@ -32,7 +32,6 @@ class MechanicalFlowE2ETests(unittest.TestCase):
             }
             db.commit()
         finally: db.close()
-
         flow = self.client.get(payload['flow_url']); self.assertEqual(flow.status_code, 200); self.assertEqual(flow.json()['status'], 'asking'); self.assertEqual(flow.json()['current_index'], 0)
         first = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'مشهد'}); self.assertEqual(first.status_code, 200); self.assertEqual(first.json()['status'], 'asking'); self.assertEqual(first.json()['current_index'], 1)
 
@@ -80,6 +79,44 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         db = legacy.Session()
         try: self.assertEqual(db.get(legacy.Project, pid).status, 'queued')
         finally: db.close()
+
+    def test_answer_replay_after_lost_response_is_idempotent(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'answer-idempotency'})
+        pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'asking'
+            project.questions = [
+                {'key': 'location', 'question': 'محل پروژه کجاست؟'},
+                {'key': 'gas', 'question': 'ساختمان گاز دارد؟'},
+            ]
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            db.commit()
+        finally:
+            db.close()
+
+        payload = {'answer': 'گنبد کاووس', 'expected_question_index': '0'}
+        first = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        replay = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(replay.status_code, 200)
+        self.assertTrue(replay.json()['idempotent_replay'])
+        self.assertEqual(replay.json()['current_index'], 1)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 1)
+            self.assertNotIn('gas', project.answers)
+        finally:
+            db.close()
+
+    def test_project_answer_ui_retries_transient_gateway_failures(self):
+        source = open('app/templates/project.html', encoding='utf-8').read()
+        self.assertIn("expected_question_index", source)
+        self.assertIn("for(let attempt=0;attempt<4;attempt++)", source)
+        self.assertIn("X-Idempotent-Answer", source)
 
 
 if __name__ == '__main__': unittest.main()

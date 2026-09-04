@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import re
 
 
-CONTRACT_VERSION = "mechanical-design-basis-v18.5.1"
+CONTRACT_VERSION = "mechanical-design-basis-v18.5.2"
 
 
 def _text(value):

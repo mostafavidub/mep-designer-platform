@@ -109,6 +109,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction to complete all corrective stages and eliminate the production failure"},
       "verification":{"focused_tests":"35 PASS","full_regression":"424 PASS","production_project_84":"must_request_missing_inputs","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Inspect only unconsumed failed revision reports, map allow-listed authority errors to explicit questions, and block both new and already-queued design execution until answers are persisted.","rollback":"Supersede only with a stricter migration; never blindly requeue a known missing-input authority failure."}
+    },
+    {
+      "id":"GOV-2026-012",
+      "status":"APPROVED",
+      "summary":"Make questionnaire submissions idempotent and automatically retry transient gateway failures without losing the entered answer or advancing more than one question.",
+      "affected_capabilities":["questionnaire_persistence","web_resilience","active_version_synchronization"],
+      "affected_projects":["all","project-85"],
+      "approval":{"status":"APPROVED","basis":"explicit user request to prevent the observed Railway 502 answer-submission failure"},
+      "verification":{"idempotent_replay":"must_pass","transient_retry_ui":"must_pass","full_regression":"must_pass","production_project_85":"must_resume_without_prior-answer_loss","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Send the expected question index with every answer, treat replays as successful state reads, retry 5xx/network failures four times with backoff, and retain the answer in the page if all attempts fail.","rollback":"Supersede only with a stricter submission protocol; never return to non-idempotent answer advancement."}
     }
   ]
 }

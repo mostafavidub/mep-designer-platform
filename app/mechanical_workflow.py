@@ -324,10 +324,14 @@ def register_mechanical_workflow(app, legacy):
         finally: db.close()
     legacy.analyze_project_job = analyze_project_job
 
-    def answer(pid: int, request: Request, answer: str = Form(...)):
+    def answer(pid: int, request: Request, answer: str = Form(...), expected_question_index: str = Form('')):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
         qs = p.questions or []; idx = p.current_question
+        try: replayed = expected_question_index != '' and int(expected_question_index) != idx
+        except (TypeError, ValueError): replayed = False
+        if replayed:
+            db.close(); return RedirectResponse(f'/projects/{pid}', 303)
         if idx < len(qs):
             key = qs[idx]['key']; cleaned = answer.strip(); error = _basis_answer_error(key, cleaned)
             if error:
@@ -340,10 +344,14 @@ def register_mechanical_workflow(app, legacy):
             _commit_and_verify_answer(db, p, key)
         db.close(); return RedirectResponse(f'/projects/{pid}', 303)
 
-    def answer_json(pid: int, request: Request, answer: str = Form(...)):
+    def answer_json(pid: int, request: Request, answer: str = Form(...), expected_question_index: str = Form('')):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
         qs = p.questions or []; idx = p.current_question
+        try: replayed = expected_question_index != '' and int(expected_question_index) != idx
+        except (TypeError, ValueError): replayed = False
+        if replayed:
+            data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); data['idempotent_replay'] = True; db.close(); return JSONResponse(data)
         if p.status != 'asking' or idx >= len(qs):
             data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data)
         current_question = qs[idx]; cleaned_answer = answer.strip(); key = current_question.get('key')
