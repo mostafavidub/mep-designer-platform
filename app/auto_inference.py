@@ -26,6 +26,10 @@ ROOM_RULES = {
     'elevator': ['elevator', 'lift', 'آسانسور'],
     'office': ['office', 'اداری', 'دفتر'],
     'shop': ['shop', 'commercial', 'تجاری', 'فروشگاه'],
+    'pool': ['pool', 'استخر'],
+    'sauna': ['sauna', 'سونا'],
+    'jacuzzi': ['jacuzzi', 'جکوزی'],
+    'boiler_room': ['boiler room', 'mechanical room', 'موتورخانه'],
 }
 
 INSUNITS_TO_M = {
@@ -298,7 +302,7 @@ def dynamic_questions(analysis, discipline, auto):
         q.append(('location', 'شهر و محل پروژه کجاست؟ این مورد برای شرایط اقلیمی و الزامات محلی لازم است.'))
     if not auto.get('occupancy_inferred'):
         q.append(('occupancy', 'کاربری دقیق ساختمان چیست؟ این مورد از پلان با اطمینان کافی تشخیص داده نشد.'))
-    if discipline == 'electrical' and not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
+    if discipline == 'electrical' and not auto.get('floor_height_inferred') and not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
         q.append(('heights', 'ارتفاع طبقات و وضعیت سقف کاذب را بفرمایید؛ این اطلاعات در پلان دوبعدی پیدا نشد.'))
 
     if discipline == 'electrical':
@@ -310,10 +314,20 @@ def dynamic_questions(analysis, discipline, auto):
             q.append(('elevator', 'آسانسور در پلان تشخیص داده شد. توان/نوع برق آسانسور یا مشخصات سازنده را در صورت موجود بودن بفرمایید.'))
         q.append(('special_loads', 'آیا بار الکتریکی خاصی خارج از آنچه از پلان قابل تشخیص است دارید؟ مثل جکوزی، سونا، پمپ خاص، شارژر خودرو یا تجهیزات صنعتی. اگر ندارید بنویسید «ندارد».'))
     else:
+        if not re.search(r'موتورخانه|boiler room|mechanical room|بدون موتورخانه', text, re.I):
+            q.append(('has_boiler_room', 'آیا پروژه موتورخانه مرکزی دارد؟'))
+        if not re.search(r'استخر|pool|بدون استخر', text, re.I):
+            q.append(('has_pool', 'آیا پروژه استخر دارد؟'))
+        if not re.search(r'سونا|sauna|بدون سونا', text, re.I):
+            q.append(('has_sauna', 'آیا پروژه سونا دارد؟'))
+        if not re.search(r'جکوزی|jacuzzi|بدون جکوزی', text, re.I):
+            q.append(('has_jacuzzi', 'آیا پروژه جکوزی دارد؟'))
+        if not re.search(r'اطفای حریق|اسپرینکلر|sprinkler|fire suppression', text, re.I):
+            q.append(('has_fire_suppression', 'آیا طراحی سیستم اطفای حریق در محدوده این پروژه است؟'))
         # Project facts below materially change routing or sizing and cannot be
         # safely replaced by a generic Rule Book value.  Every prompt accepts a
         # short confirmation of a transparent conservative proposal.
-        if not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
+        if not auto.get('floor_height_inferred') and not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
             q.append(('heights', 'ارتفاع طبقه و سقف کاذب مشخص نیست. پیشنهاد: «۳٫۲۰ متر؛ سقف کاذب فضاهای تر ۴۰ سانتی‌متر». پاسخ کوتاه: «تأیید» یا فقط مقدار متفاوت.'))
         # Heating and cooling are owner/design decisions. Symbols or notes in
         # architecture are useful evidence, but must never silently choose the

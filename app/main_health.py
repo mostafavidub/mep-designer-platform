@@ -30,6 +30,7 @@ from .analysis_workspace_guard import install as install_analysis_workspace_guar
 from .job_queue import register_job_queue
 from .gsc_api import register_gsc_routes
 from .commercial_flow import register_commercial_flow
+from .panel_bridge import register_panel_bridge
 
 app = main_auto.app
 # R2 must serve CAD artifacts as binary DXF/ZIP attachments before any route or
@@ -56,9 +57,10 @@ register_seo_articles(app, main_auto.legacy)
 # The queue captures analyze_project_job at registration time, so the guard must
 # be installed immediately before it to protect the complete production analyzer.
 install_analysis_workspace_guard(main_auto.legacy)
-register_job_queue(app, main_auto.legacy)
+DesignJob = register_job_queue(app, main_auto.legacy)
 register_gsc_routes(app)
 register_commercial_flow(app, main_auto.legacy)
+register_panel_bridge(app, main_auto.legacy, DesignJob)
 
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 

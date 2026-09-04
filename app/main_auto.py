@@ -3,12 +3,13 @@ import re
 import shutil
 import traceback
 import zipfile
+import tempfile
 from collections import Counter
 from pathlib import Path
 
 import requests
 from ezdxf import bbox
-from fastapi import Request
+from fastapi import Request, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse, Response
 
 from . import main as legacy
@@ -33,6 +34,26 @@ def unanswered_questions(questions, answers):
         (key, prompt) for key, prompt in questions
         if not str(answers.get(key) or '').strip()
     ]
+
+
+def build_unified_questionnaire(analysis, discipline, supplied_answers=None):
+    """Build one file-aware questionnaire for the public site and user panel."""
+    auto = infer_architecture_facts(analysis, discipline)
+    analysis['architectural_auto'] = auto
+    analysis['auto_summary'] = auto_summary(auto, discipline)
+    answers = {'discipline': discipline}
+    answers.update(canonical_auto_answers(auto, discipline))
+    if discipline == 'mechanical':
+        answers.pop('heating', None)
+        answers.pop('cooling', None)
+    proposed = dynamic_questions(analysis, discipline, auto)
+    question_keys = {key for key, _prompt in proposed}
+    for key, value in dict(supplied_answers or {}).items():
+        if key in question_keys and value is not None and str(value).strip():
+            if not (is_confirmation(value) and str(answers.get(key) or '').strip()):
+                answers[key] = value
+    unresolved = unanswered_questions(proposed, answers)
+    return auto, answers, unresolved
 
 
 def _entity_text(e):
@@ -288,31 +309,10 @@ def analyze_project_job(project_id):
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',
         }
-        auto = infer_architecture_facts(analysis, discipline)
-        analysis['architectural_auto'] = auto
-        analysis['auto_summary'] = auto_summary(auto, discipline)
-
-        # Analysis may be re-run for a migrated analyzer or a replacement DXF.
-        # Never discard already submitted project facts: doing so resets the
-        # questionnaire to question one every time /flow is polled.
         prior_answers = dict(p.answers or {})
-        answers = {'discipline': discipline}
-        answers.update(canonical_auto_answers(auto, discipline))
-        if discipline == 'mechanical':
-            # Rule Book values remain proposals, not silent customer answers.
-            # These two choices materially change the issued drawing families.
-            answers.pop('heating', None)
-            answers.pop('cooling', None)
-        question_keys = {key for key, _prompt in dynamic_questions(analysis, discipline, auto)}
-        for key in question_keys:
-            value = prior_answers.get(key)
-            if value is not None and str(value).strip():
-                # A short confirmation accepts the full Rule Book proposal; it
-                # must not replace a calculation-ready canonical value with the
-                # literal word "تأیید".
-                if not (is_confirmation(value) and str(answers.get(key) or '').strip()):
-                    answers[key] = value
-        qs = unanswered_questions(dynamic_questions(analysis, discipline, auto), answers)
+        _auto, answers, qs = build_unified_questionnaire(
+            analysis, discipline, prior_answers
+        )
 
         p.analysis = analysis
         p.questions = legacy.qlist(qs)
@@ -422,6 +422,83 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
     ('gas', 'وجود انشعاب گاز، اگر در نقشه مشخص نباشد'),
     ('water_source', 'اطلاعات قطعی ورودی آب/مخزن/پمپ، فقط در صورت وجود تصمیم قبلی'),
 ]
+
+QUESTIONNAIRE_VERSION = '5.1-single-source'
+
+
+@app.get('/api/questionnaire/{discipline}')
+def questionnaire_schema(discipline: str):
+    if discipline not in {'mechanical', 'electrical'}:
+        raise HTTPException(status_code=404, detail='Unknown discipline')
+    base = legacy.DISCIPLINES[discipline]['questions']
+    if discipline == 'mechanical':
+        base = [
+            ('has_gas_system', 'آیا ساختمان گازکشی دارد؟'),
+            ('has_boiler_room', 'آیا پروژه موتورخانه مرکزی دارد؟'),
+            ('has_pool', 'آیا پروژه استخر دارد؟'),
+            ('has_sauna', 'آیا پروژه سونا دارد؟'),
+            ('has_jacuzzi', 'آیا پروژه جکوزی دارد؟'),
+            ('has_fire_suppression', 'آیا طراحی سیستم اطفای حریق در محدوده این پروژه است؟'),
+            ('has_mechanical_ventilation', 'آیا طراحی تهویه مکانیکی و اگزاست در محدوده پروژه است؟'),
+        ] + list(base)
+    return {
+        'version': QUESTIONNAIRE_VERSION,
+        'discipline': discipline,
+        'questions': legacy.qlist(base),
+        'source': 'engi-design-engine',
+    }
+
+
+@app.post('/api/questionnaire/analyze')
+async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 'mechanical', occupancy: str = ''):
+    """Return the exact unresolved questionnaire used by the public workflow."""
+    if discipline not in {'mechanical', 'electrical'}:
+        raise HTTPException(status_code=400, detail='Unknown discipline')
+    name = Path(file.filename or '').name
+    if Path(name).suffix.lower() not in {'.zip', '.dxf'}:
+        raise HTTPException(status_code=415, detail='Only ZIP or DXF is accepted')
+    content = await file.read(50_000_001)
+    if not content or len(content) > 50_000_000:
+        raise HTTPException(status_code=413, detail='File is empty or larger than 50 MB')
+    with tempfile.TemporaryDirectory(prefix='engitools-questionnaire-') as temp:
+        root = Path(temp)
+        source = root / name
+        source.write_bytes(content)
+        inputs = root / 'inputs'
+        inputs.mkdir()
+        if source.suffix.lower() == '.zip':
+            try:
+                legacy.safe_extract(source, inputs)
+            except (zipfile.BadZipFile, ValueError):
+                raise HTTPException(status_code=400, detail='ZIP file is invalid or unsafe')
+        else:
+            shutil.copy2(source, inputs / name)
+        files = sorted(path for path in inputs.rglob('*.dxf') if legacy.is_real_dxf_path(path))
+        if not files or len(files) > 8:
+            raise HTTPException(status_code=400, detail='No valid DXF found or package contains too many files')
+        analysis = {
+            'discipline': discipline,
+            'architecture_analyzer_version': '3.5-project-evidence-gate',
+            'file_count': len(files),
+            'files': [analyze_dxf_enhanced(path) for path in files],
+            'inference_mode': 'architecture-first-v2-spatial',
+        }
+        auto, answers, unresolved = build_unified_questionnaire(
+            analysis,
+            discipline,
+            {'occupancy': occupancy.strip()} if occupancy.strip() else {},
+        )
+        return {
+            'version': QUESTIONNAIRE_VERSION,
+            'discipline': discipline,
+            'source': 'engi-design-engine',
+            'questions': legacy.qlist(unresolved),
+            'inferred_answers': {
+                key: str(value) for key, value in answers.items()
+                if isinstance(value, (str, int, float, bool))
+            },
+            'auto_summary': auto_summary(auto, discipline),
+        }
 
 
 @app.get('/system-health')
