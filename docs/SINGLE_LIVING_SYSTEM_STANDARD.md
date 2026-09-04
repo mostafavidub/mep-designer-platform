@@ -1,6 +1,6 @@
 # Single Living System Standard
 
-**Status:** LOCKED  
+**Status:** LOCKED
 **Canonical runtime:** `cad_engine.main:app`
 
 Production has one living implementation per component. Git commits and approved tags are the only executable history and the only rollback source. Runtime filenames, imports, launchers, routes, or deployment settings must not encode release numbers.
