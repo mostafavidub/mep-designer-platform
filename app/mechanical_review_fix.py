@@ -169,14 +169,14 @@ def register_mechanical_review_fix(app, legacy):
         db.close()
         return JSONResponse(data)
 
-    def answer_json(pid: int, request: Request, answer: str = Form(...)):
+    def answer_json(pid: int, request: Request, answer: str = Form(...), expected_question_index: str = Form('')):
         u = legacy.current_user(request)
         db, p = legacy.own_project(pid, u.id)
         if not p:
             raise HTTPException(404)
         if p.status != 'drawing_set_review':
             db.close()
-            return old_answer_json(pid, request, answer)
+            return old_answer_json(pid, request, answer, expected_question_index)
         normalized = str(answer or '').strip().replace('ي', 'ی').replace('أ', 'ا').replace('إ', 'ا')
         if normalized not in ('تأیید', 'تایید', 'approve', 'yes'):
             ds = (p.analysis or {}).get('drawing_set') or {}
