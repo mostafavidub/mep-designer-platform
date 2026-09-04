@@ -26,6 +26,16 @@ def customer_safe_error(value):
         return ''
     if message.startswith('INPUT_REQUIRED['):
         return message.split(']:',1)[-1].strip()
+    if message.lower().startswith('cad_qa_failure:'):
+        diagnostic = message.split(':', 1)[1].strip()
+        codes = []
+        ignored = {'status', 'version', 'errors', 'metrics', 'checks', 'fail', 'pass', 'none', 'true', 'false'}
+        for token in re.findall(r'(?<![\w/])[a-z][a-z0-9_]*(?::[a-z0-9_.,=<>-]+)*', diagnostic.lower()):
+            root = token.split(':', 1)[0]
+            if root not in ignored and ('_' in token or ':' in token) and token not in codes:
+                codes.append(token)
+        code_text = '، '.join(codes[:8]) or 'cad_qa_failure'
+        return f'کنترل فنی خروجی کامل نشد (کد: {code_text}). اطلاعات و فایل پروژه حفظ شده‌اند.'
     technical_tokens=('pipeline_qa','authority_qa','engineering_acceptance','traceback','cad_qa_failure',
                       "{'status':",'documentation_enhancement_qa','architecture_preservation_qa')
     if any(token in message.lower() for token in technical_tokens) or len(message)>900:
