@@ -13,4 +13,4 @@ def test_artifact_stamp_preserves_metadata():
     stamped = stamp_artifact({"artifact":"example.dxf"}); assert stamped["artifact"] == "example.dxf"; assert stamped["build"] == build_identity()
 
 def test_no_new_parallel_runtime_versions_and_canonical_launchers():
-    assert audit("56c3fc2")["status"] == "PASS"
+    assert audit("HEAD")["status"] == "PASS"
