@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 import shutil
 import uuid
@@ -25,7 +26,7 @@ def customer_safe_error(value):
         return ''
     if message.startswith('INPUT_REQUIRED['):
         return message.split(']:',1)[-1].strip()
-    technical_tokens=('pipeline_qa','authority_qa','engineering_acceptance','traceback',
+    technical_tokens=('pipeline_qa','authority_qa','engineering_acceptance','traceback','cad_qa_failure',
                       "{'status':",'documentation_enhancement_qa','architecture_preservation_qa')
     if any(token in message.lower() for token in technical_tokens) or len(message)>900:
         return 'کنترل فنی خروجی کامل نشد. جزئیات برای تیم فنی ثبت شده است؛ اطلاعات و فایل پروژه حفظ شده‌اند.'
@@ -210,15 +211,35 @@ def _cad_error_message(response):
         detail = payload.get('detail') if isinstance(payload, dict) else None
     except Exception:
         detail = None
-    if isinstance(detail, dict) and detail.get('status') == 'INPUT_REQUIRED':
-        missing=list(detail.get('missing_inputs') or [])
+    if isinstance(detail, dict):
+        def collect(value):
+            if isinstance(value, dict):
+                return [item for child in value.values() for item in collect(child)]
+            if isinstance(value, (list, tuple, set)):
+                return [item for child in value for item in collect(child)]
+            return [str(value)] if value not in (None, '') else []
+
+        evidence = collect(detail)
+        missing = list(detail.get('missing_inputs') or [])
+        for item in evidence:
+            match = re.search(r'design_basis_input_required:([^\]"\'};]+)', item)
+            if match:
+                missing.extend(x.strip() for x in match.group(1).split(',') if x.strip())
+        aliases = {'gas_service_pressure': 'gas_pressure'}
+        missing = list(dict.fromkeys(aliases.get(key, key) for key in missing))
+    else:
+        evidence = []
+        missing = []
+    if isinstance(detail, dict) and (detail.get('status') == 'INPUT_REQUIRED' or missing):
         labels={'city':'شهر پروژه','rainfall_intensity':'شدت بارندگی طراحی','mechanical_shaft_route':'تأیید مسیر شفت مکانیکی',
-                'water_inlet_pressure':'فشار آب ورودی','gas_service_pressure':'فشار سرویس گاز',
+                'water_inlet_pressure':'فشار آب ورودی','gas_service_pressure':'فشار سرویس گاز','gas_pressure':'فشار سرویس گاز',
                 'cooling_system':'سیستم سرمایش قابل‌پشتیبانی'}
         readable='، '.join(labels.get(key,key) for key in missing)
         return f"INPUT_REQUIRED[{','.join(missing)}]: برای ادامه این اطلاعات را تکمیل کنید: {readable}"
     if isinstance(detail, dict):
-        return 'طراحی متوقف شد: کنترل فنی خروجی کامل نشد. جزئیات برای تیم فنی ثبت شده است.'
+        failures = [item for item in evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid'))]
+        diagnostic = ' | '.join(dict.fromkeys(failures))[:1600] or str(detail)[:1600]
+        return f'CAD_QA_FAILURE: {diagnostic}'
     message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
     translations = {
         'Authority-ready mechanical generation blocked: unresolved engineering inputs:':

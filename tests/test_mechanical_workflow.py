@@ -54,7 +54,11 @@ class MechanicalWorkflowTests(unittest.TestCase):
     def test_preflight_requires_project_water_rain_and_gas_values(self):
         p = self.project({'gas':'تأیید'}); missing = required_basis_questions(p)
         self.assertEqual(missing, ['city','water_inlet_pressure','rainfall_intensity','gas_pressure']); self.assertTrue(ensure_required_basis_questions(p)); self.assertEqual(p.status, 'asking')
-        self.assertEqual([q['key'] for q in p.questions], missing); self.assertTrue(all(q['input_type']=='radio' and len(q['options'])>=4 for q in p.questions)); self.assertEqual((p.analysis or {})['basis_preflight']['status'], 'INPUT_REQUIRED')
+        self.assertEqual([q['key'] for q in p.questions], missing)
+        numeric = {q['key']: q for q in p.questions if q['key'] != 'city'}
+        self.assertTrue(all(q['input_type'] == 'number' and not q['options'] for q in numeric.values()))
+        self.assertEqual(numeric['gas_pressure']['unit'], 'mbar')
+        self.assertEqual((p.analysis or {})['basis_preflight']['status'], 'INPUT_REQUIRED')
 
     def test_preflight_does_not_accept_unknown_as_numeric_fact(self):
         p = self.project({'city':'مشهد','gas':'خیر','water_inlet_pressure':'نامشخص','rainfall_intensity':'unknown','mechanical_shaft_route':'پیشنهاد نزدیک هسته فضاهای تر'}); self.assertEqual(required_basis_questions(p), ['water_inlet_pressure','rainfall_intensity'])

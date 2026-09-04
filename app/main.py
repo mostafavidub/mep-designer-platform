@@ -122,11 +122,19 @@ QUESTION_OPTIONS = {
 }
 
 TEXT_QUESTION_KEYS = {'location'}
+NUMBER_QUESTION_KEYS = {'water_inlet_pressure', 'rainfall_intensity', 'gas_pressure'}
 
 def present_question(item):
     question = dict(item or {})
     raw_key = str(question.get('key') or '').strip()
     prompt = str(question.get('question') or '')
+    if raw_key in NUMBER_QUESTION_KEYS or question.get('input_type') == 'number':
+        question['key'] = raw_key
+        question['input_type'] = 'number'
+        question['options'] = []
+        question.setdefault('min', 0.1)
+        question.setdefault('step', 0.1)
+        return question
     aliases = {
         'heating_system': 'heating', 'cooling_system': 'cooling',
         'gas_system': 'gas', 'water_supply': 'water_source',

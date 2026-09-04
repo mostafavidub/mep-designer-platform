@@ -1,7 +1,7 @@
 # EngiTools Mechanical Authority Release v15.2
 
 > **Historical release record.** This document preserves the v15.2 acceptance
-> contract. Production now runs platform 18.5.5 through `cad_engine.main_v18:app`;
+> contract. Production now runs platform 18.5.6 through `cad_engine.main_v18:app`;
 > this record must not be used to identify the active runtime version.
 
 This document is the production release checklist for the mechanical workflow.  It is project-driven: the exact number of sheets depends on project evidence and required systems; the Gonbad benchmark happens to resolve to 28 sheets.
