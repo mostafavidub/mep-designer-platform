@@ -3,7 +3,7 @@ from pathlib import Path
 
 from app.auto_inference import dynamic_questions
 from app.main import present_question
-from app.main_auto import build_unified_questionnaire
+from app.main_auto import build_unified_questionnaire, panel_analysis_payload
 from app.main_health import app
 from fastapi.testclient import TestClient
 
@@ -80,6 +80,26 @@ class UnifiedQuestionnaireV5Tests(unittest.TestCase):
             files={'file': ('invalid.zip', b'not-a-zip', 'application/zip')},
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_panel_analysis_is_compact_and_uses_canonical_inference(self):
+        payload = panel_analysis_payload({
+            'geometry_area_m2': 425.125,
+            'level_profiles': [
+                {'name': 'همکف', 'roof': False},
+                {'name': 'اول', 'roof': False},
+                {'name': 'بام', 'roof': True},
+            ],
+        })
+        self.assertEqual(payload['status'], 'confirm')
+        self.assertEqual(payload['area'], 425.12)
+        self.assertEqual(payload['floors'], 2)
+        self.assertEqual(payload['method'], 'closed-boundary')
+
+    def test_panel_analysis_requires_manual_area_when_inference_is_missing(self):
+        payload = panel_analysis_payload({'level_profiles': []})
+        self.assertEqual(payload['status'], 'review')
+        self.assertIsNone(payload['area'])
+        self.assertTrue(payload['warnings'])
 
 
 if __name__ == '__main__':
