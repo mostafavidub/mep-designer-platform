@@ -7,7 +7,7 @@ from unittest.mock import patch
 import ezdxf
 
 from app import artifact_storage
-from app.job_queue import backup_input_without_blocking, legacy_basis_missing
+from app.job_queue import backup_input_without_blocking, design_input_available, legacy_basis_missing
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
 from app.manifest_contract_v2 import manifest_digest
@@ -95,6 +95,25 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_design_input_requires_a_local_or_durable_architecture_copy(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            with patch('app.job_queue.artifact_storage.input_is_durable', return_value=False):
+                self.assertFalse(design_input_available(85, root))
+                project_dir = root / 'projects' / '85'
+                project_dir.mkdir(parents=True)
+                (project_dir / 'architecture.dxf').write_bytes(b'local-source')
+                self.assertTrue(design_input_available(85, root))
+            (project_dir / 'architecture.dxf').unlink()
+            with patch('app.job_queue.artifact_storage.input_is_durable', return_value=True):
+                self.assertTrue(design_input_available(85, root))
+
+    def test_failed_project_cleanup_never_deletes_the_only_architecture_copy(self):
+        source = Path('app/job_queue.py').read_text(encoding='utf-8')
+        self.assertIn('if durable_input:', source)
+        self.assertNotIn('artifact_storage.delete_project_inputs(project_id)', source)
+        self.assertIn("project.status = 'awaiting_upload'", source)
+
     def test_legacy_authority_failure_reopens_only_allow_listed_inputs(self):
         raw = (
             "{'authority_qa': {'errors': "

@@ -38,6 +38,20 @@ def backup_input_without_blocking(project_id: int, original: Path) -> str:
         return f'{type(exc).__name__}: {exc}'[:1200]
 
 
+def design_input_available(project_id: int, data_dir: Path) -> bool:
+    """True only when design can read a local or durable architecture source."""
+    project_dir = Path(data_dir) / 'projects' / str(project_id)
+    if any((project_dir / name).exists() for name in ('architecture.zip', 'architecture.dxf')):
+        return True
+    input_dir = project_dir / 'input'
+    if input_dir.exists() and any(input_dir.rglob('*.dxf')):
+        return True
+    try:
+        return artifact_storage.input_is_durable(project_id)
+    except Exception:
+        return False
+
+
 def register_job_queue(app, legacy):
     class Job(legacy.Base):
         __tablename__ = 'design_jobs'
@@ -181,13 +195,14 @@ def register_job_queue(app, legacy):
         for pid in ids:
             shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/data/cad-engine')) / str(pid), ignore_errors=True)
             project_dir = Path(legacy.DATA_DIR) / 'projects' / str(pid)
-            for transient in (
-                project_dir / 'architecture.zip',
-                project_dir / 'architecture.dxf',
-                project_dir / 'input',
-                project_dir / '.upload_chunks',
-                project_dir / 'output',
-            ):
+            try:
+                durable_input = artifact_storage.input_is_durable(pid)
+            except Exception:
+                durable_input = False
+            transients = [project_dir / '.upload_chunks', project_dir / 'output']
+            if durable_input:
+                transients.extend((project_dir / 'architecture.zip', project_dir / 'architecture.dxf', project_dir / 'input'))
+            for transient in transients:
                 if transient.is_dir():
                     shutil.rmtree(transient, ignore_errors=True)
                 else:
@@ -229,11 +244,8 @@ def register_job_queue(app, legacy):
                     shutil.rmtree(transient, ignore_errors=True)
                 else:
                     transient.unlink(missing_ok=True)
-            if project_states.get(project_id) in ('ready', 'failed', 'awaiting_upload', 'expired'):
-                try:
-                    artifact_storage.delete_project_inputs(project_id)
-                except Exception:
-                    pass
+            # Durable architecture is retained across ready/failed/retry states.
+            # Deletion is permitted only through an explicit user lifecycle action.
 
     def _claim(job_type):
         if job_type == 'design':
@@ -301,6 +313,17 @@ def register_job_queue(app, legacy):
                         revision.error = ''
             elif not success:
                 project = db.get(legacy.Project, job.project_id)
+                if decision.strategy == 'request_input_reupload' and project:
+                    job.status = 'input_required'
+                    project.status = 'awaiting_upload'
+                    project.last_error = 'نسخه قابل‌بازیابی فایل معماری موجود نیست. همان فایل DXF یا ZIP را دوباره بارگذاری کنید؛ پاسخ‌ها و تحلیل ثبت‌شده حفظ می‌شوند.'
+                    record_recovery(project,decision,attempt=job.attempts,max_attempts=job.max_attempts,error=error)
+                    if job.revision_id:
+                        revision = db.get(legacy.Revision, job.revision_id)
+                        if revision:
+                            revision.status = 'input_required'
+                            revision.error = project.last_error
+                    db.commit(); return
                 if decision.strategy == 'request_user_input' and project:
                     import re
                     match=re.search(r'INPUT_REQUIRED\[([^]]*)\]',error or '')
@@ -571,6 +594,11 @@ def register_job_queue(app, legacy):
 
     def _prepare_design(db, project):
         if project.status in ('queued', 'designing', 'quality_check'):
+            return False
+        if not design_input_available(project.id, legacy.DATA_DIR):
+            project.status = 'awaiting_upload'
+            project.last_error = 'نسخه قابل‌بازیابی فایل معماری موجود نیست. همان فایل DXF یا ZIP را دوباره بارگذاری کنید؛ پاسخ‌ها و تحلیل ثبت‌شده حفظ می‌شوند.'
+            db.commit()
             return False
         discipline = (project.answers or {}).get('discipline', (project.analysis or {}).get('discipline', 'mechanical'))
         if discipline == 'mechanical':
