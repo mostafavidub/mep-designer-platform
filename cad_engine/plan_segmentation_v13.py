@@ -105,8 +105,30 @@ def detect_print_plans(src):
     return plans
 
 
-def apply_plan_scopes(src,architecture,recognition):
+def _plans_from_authoritative_profiles(profiles):
+    plans=[]
+    for profile in profiles or []:
+        bounds=profile.get('region_bounds')
+        status=str(profile.get('level_detection_status') or '')
+        try:bounds=[float(x) for x in bounds]
+        except (TypeError,ValueError):continue
+        if len(bounds)!=4 or bounds[2]<=bounds[0] or bounds[3]<=bounds[1]:continue
+        if status and not status.startswith('confirmed'):continue
+        roof=bool(profile.get('roof'))
+        plans.append({'plan_id':f"PLAN-AUTH-{len(plans)+1:02d}",'bounds':bounds,
+                      'source':'sealed_browser_level_profile','drawing_type':'ROOF_PLAN' if roof else 'ARCH_FLOOR_PLAN',
+                      'level':str(profile.get('name') or f"LEVEL-{len(plans)+1:02d}"),
+                      'mechanical_role':'ROOF_SUPPORT' if roof else 'PRIMARY_FLOOR',
+                      'title_text':[],'entity_count':0})
+    return plans
+
+
+def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     plans=detect_print_plans(src)
+    if plans and not any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in plans):
+        authoritative=_plans_from_authoritative_profiles(authoritative_profiles)
+        if any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in authoritative):
+            plans=authoritative
     # Legacy/single-plan drawings without office print frames remain valid.
     if not plans:
         bounds=architecture.get("bounds") or [0,0,0,0]

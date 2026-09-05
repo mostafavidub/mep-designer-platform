@@ -57,6 +57,26 @@ def build_annotations(routing, sizing, recognition, calculations, topology):
             'source': 'calculated_route',
         })
 
+    # Fixture symbols are drawing objects in their own right.  A floor drain
+    # must therefore keep its FD identity even when topology directs the
+    # sanitary edge toward the fixture (or the route is represented by a
+    # shared branch).  Deriving the tag only from edge.from silently omitted
+    # valid drains from otherwise complete plans.
+    for item in recognition.get('detections') or []:
+        if item.get('type') != 'floor_drain' or not item.get('point'):
+            continue
+        point = tuple(item['point'][:2])
+        annotations.append({
+            'id': f"ANN-{len(annotations) + 1:03d}",
+            'route_id': None,
+            'system': 'sanitary',
+            'text': 'FD',
+            'anchor': point,
+            'leader': True,
+            'source': 'detected_floor_drain',
+            'object_id': item.get('id'),
+        })
+
     shaft = _shaft_anchor(topology)
     main_rows = [x for x in sizing.get('vertical_mains') or [] if x.get('size_mm') is not None]
     tag_by_system = {
@@ -81,6 +101,13 @@ def build_annotations(routing, sizing, recognition, calculations, topology):
         })
 
     sanitary_main = next((x for x in main_rows if x.get('system') == 'sanitary'), None)
+    if sanitary_main is None:
+        sanitary_segments = [
+            x for x in sizing.get('segments') or []
+            if x.get('system') == 'sanitary' and x.get('size_mm') is not None
+        ]
+        if sanitary_segments:
+            sanitary_main = max(sanitary_segments, key=lambda x: float(x['size_mm']))
     if shaft and sanitary_main:
         annotations.append({
             'id': f"ANN-{len(annotations) + 1:03d}",
@@ -93,7 +120,7 @@ def build_annotations(routing, sizing, recognition, calculations, topology):
         })
 
     return {
-        'version': 'annotation-engine-v13.8.1',
+        'version': 'annotation-engine-v13.8.2',
         'annotations': annotations,
         'quality': {
             'annotations': len(annotations),
@@ -101,5 +128,6 @@ def build_annotations(routing, sizing, recognition, calculations, topology):
             'sized_route_labels': sum(1 for x in annotations if 'DN' in x['text']),
             'anchored_vertical_labels': sum(1 for x in annotations if x.get('source') == 'vertical_main' and x.get('anchor')),
             'cleanout_labels': sum(1 for x in annotations if x.get('source') == 'cleanout'),
+            'floor_drain_labels': sum(1 for x in annotations if x.get('source') == 'detected_floor_drain'),
         },
     }
