@@ -45,7 +45,7 @@ class DesignProgressTests(unittest.TestCase):
         source = (ROOT / "app/dxf_output.py").read_text(encoding="utf-8")
         ordered = [
             "'preparing_inputs'", "'validating_contract'", "'engine_designing'",
-            "requests.post", "'mechanical_release_qa'", "'validating_output'", "'packaging'", "'artifact_qa'",
+            "resp = _post_to_compatible_cad(payload)", "'mechanical_release_qa'", "'validating_output'", "'packaging'", "'artifact_qa'",
             "'uploading_output'", "'finalizing'", "'completed'",
         ]
         positions = [source.index(token) for token in ordered]
