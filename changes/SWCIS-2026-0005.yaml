@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0005",
+  "summary": "Return the exact supplementary questionnaire when the panel bridge discovers unresolved inputs so the customer can answer and resume instead of reaching a dead end.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "test", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["questionnaire", "ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "questionnaire": "Expose the canonical unresolved questions already computed by the engine without changing question semantics.",
+    "ui_api": "Panel project creation returns a structured 409 payload containing exact supplementary questions and preserved inferred answers.",
+    "qa": "Add positive and negative bridge contract tests for the supplementary-question response.",
+    "manifest": "Automatic Git/content build identity remains authoritative and response changes do not alter artifact identity.",
+    "docs": "Record the user-recovery contract and rollback evidence in this change request.",
+    "versioning": "No runtime copy or hand-authored runtime version is introduced.",
+    "migration": "The structured fields are additive; existing consumers can continue reading detail/error.",
+    "governance": "SWCIS impact closure is recorded and validated.",
+    "deployment": "Deploy the protected merge before publishing the panel consumer."
+  },
+  "evidence": {
+    "traceability": ["tests/test_panel_bridge_delivery.py"],
+    "tests": ["focused panel bridge contract tests and full repository suite"],
+    "docs": ["changes/SWCIS-2026-0005.yaml documents the recovery contract"],
+    "version_bump": ["not required: behavior-preserving API recovery fix under automatic Git/content build identity"],
+    "migration": ["additive JSON error fields; no stored-data migration"],
+    "golden_regression": ["no CAD output semantics changed; full golden suite remains required"],
+    "semantic_diff": ["same canonical questions; unresolved items are now returned to the panel"],
+    "artifact_diff": ["no customer drawing or generated DXF committed"],
+    "numeric_diff": ["no sizing or engineering calculation change"],
+    "contract_diff": ["409 response adds status, questions, inferred_answers, question_count, and error"],
+    "deployment_plan": ["merge after SWCIS and product checks pass; deploy Railway; then publish the panel consumer"],
+    "rollback_plan": ["revert the protected merge commit and corresponding Sites deployment"]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 3,
+    "detectability": 2,
+    "score": 12,
+    "rationale": "The change affects a production cross-service recovery path, but is additive and preserves all existing questionnaire decisions."
+  },
+  "waiver": null
+}
