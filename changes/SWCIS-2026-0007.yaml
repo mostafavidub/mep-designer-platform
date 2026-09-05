@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0007",
+  "summary": "Preserve panel-supplied answers across synchronous file reanalysis and advance to design when every canonical question is answered.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "test", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["questionnaire", "ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "questionnaire": "Reapply supplied questionnaire answers after the legacy analyzer resets its working state.",
+    "ui_api": "Return 409 only for questions that remain unresolved after answer restoration.",
+    "qa": "Cover the post-analysis restoration and completed-questionnaire advance contract.",
+    "manifest": "Automatic Git/content build identity remains authoritative.",
+    "docs": "Document the root-cause correction and rollback evidence.",
+    "versioning": "No runtime-version copy is introduced.",
+    "migration": "No schema change; existing answer JSON is preserved.",
+    "governance": "SWCIS impact closure is recorded and validated.",
+    "deployment": "Deploy the protected engine merge before retesting the live panel."
+  },
+  "evidence": {
+    "traceability": ["tests/test_panel_bridge_delivery.py"],
+    "tests": ["focused post-analysis answer restoration tests and full repository suite"],
+    "docs": ["changes/SWCIS-2026-0007.yaml"],
+    "version_bump": ["not required: behavior-preserving persistence fix under automatic Git/content build identity"],
+    "migration": ["no schema migration"],
+    "golden_regression": ["no CAD semantics changed; full golden suite remains required"],
+    "semantic_diff": ["answered gas pressure remains present after analysis and no longer reopens the same question"],
+    "artifact_diff": ["no customer drawing or generated DXF committed"],
+    "numeric_diff": ["no engineering numeric rule changed"],
+    "contract_diff": ["asking is derived from actual unresolved questions after restored answers"],
+    "deployment_plan": ["merge after SWCIS and product checks pass, then deploy Railway"],
+    "rollback_plan": ["revert the protected merge commit"]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 4,
+    "detectability": 2,
+    "score": 16,
+    "rationale": "The change fixes answer persistence in the production bridge while retaining fail-closed unresolved-input behavior."
+  },
+  "waiver": null
+}

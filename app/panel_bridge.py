@@ -171,18 +171,35 @@ def register_panel_bridge(app, legacy, Job):
                 project = db.get(legacy.Project, pid)
                 if not project:
                     raise HTTPException(404)
-                if project.status == "asking":
+                # The legacy analyzer rebuilds file evidence and intentionally
+                # resets answers. The panel contract already collected the
+                # answers, so restore them after analysis before deciding
+                # whether another question is genuinely unresolved.
+                restored_answers = dict(project.answers or {})
+                restored_answers.update(
+                    {str(key): value for key, value in supplied_answers.items() if str(value).strip()}
+                )
+                restored_answers["discipline"] = discipline
+                if occupancy.strip():
+                    restored_answers["occupancy"] = occupancy.strip()
+                restored_answers["panel_external_project_id"] = external_project_id
+                project.answers = restored_answers
+                basis_missing = mechanical_workflow.required_basis_questions(project)
+                unanswered = [
+                    question
+                    for question in list(project.questions or [])
+                    if isinstance(question, dict)
+                    and question.get("key")
+                    and not str(restored_answers.get(question["key"], "")).strip()
+                ]
+                unresolved_by_key = {question.get("key"): question for question in unanswered}
+                for key in basis_missing:
+                    unresolved_by_key[key] = mechanical_workflow._question_payload(key)
+                unresolved = list(unresolved_by_key.values())
+                if unresolved:
+                    project.status = "asking"
                     project.last_error = "اطلاعات فنی پروژه کامل نیست؛ پاسخ‌های تکمیلی لازم است."
                     db.commit()
-                    missing = mechanical_workflow.required_basis_questions(project)
-                    unresolved = (
-                        [mechanical_workflow._question_payload(key) for key in missing]
-                        if missing
-                        else [
-                            question for question in list(project.questions or [])
-                            if isinstance(question, dict) and not (project.answers or {}).get(question.get("key"))
-                        ]
-                    )
                     return JSONResponse(
                         {
                             "status": "asking",
@@ -198,6 +215,9 @@ def register_panel_bridge(app, legacy, Job):
                         },
                         status_code=409,
                     )
+                project.status = "ready_to_design"
+                project.last_error = ""
+                db.commit()
                 if discipline == "mechanical":
                     drawing_set = dict((project.analysis or {}).get("drawing_set") or {})
                     if not drawing_set:

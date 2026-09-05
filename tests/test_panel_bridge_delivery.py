@@ -41,6 +41,16 @@ def test_panel_bridge_resumes_asking_project_with_new_answers():
     assert 'project.status = "uploading"' in BRIDGE
 
 
+def test_panel_bridge_restores_answers_after_analyzer_reset_before_advancing():
+    analyzer = BRIDGE.index('legacy.analyze_project_job(pid)')
+    restoration = BRIDGE.index('restored_answers.update(', analyzer)
+    unresolved = BRIDGE.index('unresolved_by_key', restoration)
+    advance = BRIDGE.index('project.status = "ready_to_design"', unresolved)
+    assert analyzer < restoration < unresolved < advance
+    assert 'restored_answers.get(question["key"], "")' in BRIDGE
+    assert 'basis_missing = mechanical_workflow.required_basis_questions(project)' in BRIDGE
+
+
 def test_panel_bridge_golden_uses_persisted_design_progress():
     assert "get_project_progress(project)" in BRIDGE
     assert 'data["progress"] = progress["percent"]' in BRIDGE
