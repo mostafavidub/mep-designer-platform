@@ -26,10 +26,19 @@ def test_panel_bridge_negative_requires_both_service_and_project_tokens():
 
 def test_panel_bridge_returns_exact_supplementary_questions_for_recovery():
     assert '"status": "asking"' in BRIDGE
-    assert '"questions": list(project.questions or [])' in BRIDGE
-    assert '"question_count": len(project.questions or [])' in BRIDGE
+    assert 'missing = mechanical_workflow.required_basis_questions(project)' in BRIDGE
+    assert '"questions": unresolved' in BRIDGE
+    assert '"question_count": len(unresolved)' in BRIDGE
     assert '"inferred_answers"' in BRIDGE
+    assert 'isinstance(value, (str, int, float, bool))' in BRIDGE
     assert 'status_code=409' in BRIDGE
+
+
+def test_panel_bridge_resumes_asking_project_with_new_answers():
+    assert 'if project.status != "asking"' in BRIDGE
+    assert 'answers = dict(project.answers or {})' in BRIDGE
+    assert 'answers.update({str(k): v for k, v in supplied_answers.items()' in BRIDGE
+    assert 'project.status = "uploading"' in BRIDGE
 
 
 def test_panel_bridge_golden_uses_persisted_design_progress():
