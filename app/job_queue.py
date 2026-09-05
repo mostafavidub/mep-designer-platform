@@ -12,7 +12,7 @@ from pathlib import Path
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import artifact_storage
@@ -704,6 +704,17 @@ def register_job_queue(app, legacy):
         if not expected or not secrets.compare_digest(supplied, expected):
             raise HTTPException(404)
 
+    def _panel_project_id(external_project_id: str) -> int:
+        """Resolve a panel reference without exposing the link table publicly."""
+        with legacy.engine.connect() as connection:
+            row = connection.execute(
+                text('SELECT project_id FROM panel_project_links WHERE external_project_id = :external_id'),
+                {'external_id': external_project_id},
+            ).first()
+        if not row:
+            raise HTTPException(404)
+        return int(row[0])
+
     @app.get('/internal/maintenance/projects/{pid}')
     def maintenance_project(pid: int, request: Request):
         """Private production probe used for end-to-end artifact verification."""
@@ -856,6 +867,18 @@ def register_job_queue(app, legacy):
             return {'queued': True, 'project_id': pid, 'job_id': job.id}
         finally:
             db.close()
+
+    @app.get('/internal/maintenance/panel-projects/{external_project_id}')
+    def maintenance_panel_project(external_project_id: str, request: Request):
+        """Private project probe addressed by the reference visible in the panel."""
+        _maintenance_authorized(request)
+        return maintenance_project(_panel_project_id(external_project_id), request)
+
+    @app.post('/internal/maintenance/panel-projects/{external_project_id}/retry-design')
+    def maintenance_retry_panel_design(external_project_id: str, request: Request):
+        """Retry a paid panel project without recreating it or charging again."""
+        _maintenance_authorized(request)
+        return maintenance_retry_design(_panel_project_id(external_project_id), request)
 
     return Job
 def legacy_basis_missing(error):
