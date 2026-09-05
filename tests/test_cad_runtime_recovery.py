@@ -62,3 +62,11 @@ def test_local_runtime_mismatch_does_not_loop(post):
 
     assert not result.ok
     post.assert_called_once()
+
+
+def test_startup_requeues_only_exact_preserved_build_identity_failures():
+    source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
+    assert "runtime_contract_mismatch:build_identity" in source
+    assert "Job.status == 'failed'" in source
+    assert "failed_job.status = 'queued'" in source
+    assert "failed_job.attempts = 0" in source

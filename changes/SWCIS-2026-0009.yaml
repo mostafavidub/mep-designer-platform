@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0009",
+  "summary":"Requeue preserved paid design jobs stopped solely by the resolved CAD build-identity deployment drift.",
+  "requester":"mostafavidub",
+  "change_types":["ui_api","test","governance","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["ui_api","qa","manifest","docs","versioning","migration","governance","deployment"],
+  "impact_notes":{"ui_api":"Requeue only failed design jobs containing the exact build-identity mismatch code.","qa":"Verify the allow-list and preserved revision transition.","manifest":"Automatic build identity remains authoritative.","docs":"Record one-time recovery behavior.","versioning":"No manual runtime version.","migration":"No schema change; existing rows transition through the queue.","governance":"SWCIS closure recorded.","deployment":"Startup resumes only affected preserved jobs after protected deployment."},
+  "evidence":{"traceability":["tests/test_cad_runtime_recovery.py"],"tests":["focused recovery test and full suite"],"docs":["changes/SWCIS-2026-0009.yaml"],"version_bump":["not required: operational recovery"],"migration":["no schema migration"],"golden_regression":["no CAD semantics changed; full suite required"],"semantic_diff":["only runtime_contract_mismatch:build_identity failed jobs transition to queued"],"artifact_diff":["no artifacts changed"],"numeric_diff":["no numeric rule changed"],"contract_diff":["locked contract unchanged"],"deployment_plan":["merge after PASS and deploy to resume preserved jobs"],"rollback_plan":["revert merge and redeploy prior approved commit"]},
+  "risk":{"likelihood":2,"severity":5,"detectability":2,"score":20,"rationale":"Paid jobs are resumed, but only by exact allow-listed failure identity."},
+  "waiver":null
+}
