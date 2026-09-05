@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,7 +35,12 @@ def _git(*args: str) -> str:
 
 
 def _commit_sha() -> str:
-    return os.getenv("GIT_COMMIT_SHA", "").strip() or _git("rev-parse", "HEAD") or "UNKNOWN"
+    return (
+        os.getenv("GIT_COMMIT_SHA", "").strip()
+        or os.getenv("RAILWAY_GIT_COMMIT_SHA", "").strip()
+        or _git("rev-parse", "HEAD")
+        or "UNKNOWN"
+    )
 
 
 def _build_timestamp() -> str:
@@ -44,7 +48,12 @@ def _build_timestamp() -> str:
     if explicit:
         return explicit
     commit_time = _git("show", "-s", "--format=%cI", "HEAD")
-    return commit_time or datetime.now(timezone.utc).isoformat()
+    if commit_time:
+        return commit_time
+    # Production images intentionally omit .git. Deployment metadata is shared
+    # by every process in one image and therefore cannot drift by startup time.
+    deployment = os.getenv("RAILWAY_DEPLOYMENT_ID", "").strip()
+    return deployment or f"commit:{_commit_sha()}"
 
 
 def build_identity() -> dict[str, object]:
