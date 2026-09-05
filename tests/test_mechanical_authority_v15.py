@@ -81,6 +81,21 @@ def test_service_equipment_board_does_not_require_fabricated_north(tmp_path):
     assert not any(error.startswith('architectural_north_missing') for error in result['errors'])
 
 
+def test_one_source_north_is_shared_across_aligned_architectural_plans(tmp_path):
+    from cad_engine.mechanical_authority_v15 import _shared_architectural_north
+    path = tmp_path / 'aligned-plans.dxf'
+    doc = ezdxf.new('R2010')
+    doc.modelspace().add_text('N', dxfattribs={'height': .2}).set_placement((8, 8))
+    doc.saveas(path)
+    reopened = ezdxf.readfile(path)
+    north = _shared_architectural_north(reopened, [
+        {'bounds': (0, 0, 10, 10)},
+        {'bounds': (20, 0, 30, 10)},
+    ])
+    assert north is not None
+    assert north['source'] == 'SHARED_ARCHITECTURAL_NORTH'
+
+
 def _synthetic_source(path: Path):
     doc=ezdxf.new("R2010")
     msp=doc.modelspace()
