@@ -159,6 +159,15 @@ def build_design_overrides(answers: dict) -> dict:
     answers=normalize_answers(answers or {})
     plan_analysis=_answer(answers,"_plan_analysis",default={}) or {}
     architectural_auto=plan_analysis.get("architectural_auto") or {}
+    level_profiles=list(architectural_auto.get("level_profiles") or [])
+    model_levels=list((architectural_auto.get("architecture_model") or {}).get("levels") or [])
+    bounds_by_name={str(x.get("name")):x.get("region_bounds") for x in model_levels if x.get("region_bounds")}
+    authoritative_level_profiles=[]
+    for profile in level_profiles:
+        enriched=dict(profile)
+        if not enriched.get("region_bounds"):
+            enriched["region_bounds"]=bounds_by_name.get(str(enriched.get("name")))
+        authoritative_level_profiles.append(enriched)
     location=_answer(answers,"city","location", default="")
     city=str(location).split("،")[-1].strip() if location else None
     cooling_key=canonical_cooling_system(answers)
@@ -176,7 +185,7 @@ def build_design_overrides(answers: dict) -> dict:
         "heating_system": heating_key,
         "gas_service": bool(gas_raw is True or (gas_answer and not any(x in gas_answer for x in ("ندارد","خیر","no gas")))),
         "fixture_evidence": list(_answer(answers, "_plan_fixture_evidence", default=[]) or []),
-        "authoritative_level_profiles": list(architectural_auto.get("level_profiles") or []),
+        "authoritative_level_profiles": authoritative_level_profiles,
         "hvac": {"city":city,"cooling":"split_ac" if cooling_key else None,"heating":"package_radiator" if heating_key else None},
         "water_inlet_pressure": _answer(answers,"water_pressure","water_inlet_pressure","water_inlet_pressure_bar","water"),
         "gas_service_pressure": _answer(answers,"gas_pressure","gas_service_pressure","gas_service_pressure_mbar"),
