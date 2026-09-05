@@ -287,33 +287,10 @@ def _cad_error_message(response):
     return f'طراحی متوقف شد: {message}'
 
 
-def _is_build_identity_mismatch(response):
-    """Recognize only the locked runtime gate's exact build-identity failure."""
-    if response.status_code != 422:
-        return False
-    try:
-        payload = response.json()
-    except (TypeError, ValueError):
-        return False
-    return (
-        'v19_runtime_contract_gate' in str(payload)
-        and 'runtime_contract_mismatch:build_identity' in str(payload)
-    )
-
-
 def _post_to_compatible_cad(payload):
-    """Prefer configured CAD, then recover once through this deployment's CAD."""
-    configured = legacy.CAD_DESIGNER_URL.rstrip('/')
-    response = requests.post(configured + '/design', json=payload, timeout=3600)
+    """Use the canonical CAD process shipped in this exact deployment."""
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
-    if _is_build_identity_mismatch(response) and cobuilt and cobuilt != configured:
-        print(
-            '[mechanical-design] external CAD build identity mismatch; '
-            'retrying once against co-built CAD runtime',
-            flush=True,
-        )
-        response = requests.post(cobuilt + '/design', json=payload, timeout=3600)
-    return response
+    return requests.post(cobuilt + '/design', json=payload, timeout=3600)
 
 
 def run_design_dxf(project_id, revision_id):
@@ -325,7 +302,7 @@ def run_design_dxf(project_id, revision_id):
         r.status = 'processing'
         set_project_progress(p, 'preparing_inputs')
         db.commit()
-        if not legacy.CAD_DESIGNER_URL:
+        if not os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').strip():
             raise RuntimeError('موتور CAD Designer هنوز به این سرویس متصل نشده است.')
 
         pdir = legacy.DATA_DIR / 'projects' / str(p.id)
