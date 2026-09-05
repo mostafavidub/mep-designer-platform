@@ -332,6 +332,7 @@ def run_design_dxf(project_id, revision_id):
                             'source_file': analyzed_file.get('file'),
                         })
             design_answers['_plan_fixture_evidence'] = fixture_evidence
+            design_answers['_plan_analysis'] = p.analysis
             design_answers['_runtime_contract'] = active_version_manifest()
             analysis = dict(p.analysis or {})
             pmm = analysis.get('project_mechanical_model') or {}
