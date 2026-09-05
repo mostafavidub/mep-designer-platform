@@ -449,6 +449,20 @@ def _draw_north(msp,board,north):
     msp.add_line((cx,cy),(cx+vx*.72,cy+vy*.72),dxfattribs={"layer":layer});msp.add_lwpolyline([tip,l,r],close=True,dxfattribs={"layer":layer});msp.add_line(base1,base2,dxfattribs={"layer":layer});t=msp.add_text("N",dxfattribs={"layer":layer,"height":.20,"rotation":north["angle_deg"]-90});t.dxf.insert=(cx+vx*1.12-px*.06,cy+vy*1.12-py*.06)
 
 
+def _shared_architectural_north(doc, plans):
+    """Use one source north for aligned plans, never invent an orientation."""
+    found = [_north_from_architecture(doc, plan) for plan in plans]
+    found = [item for item in found if item]
+    if not found:
+        return None
+    base = found[0]
+    for item in found[1:]:
+        delta = abs(float(item["angle_deg"]) - float(base["angle_deg"])) % 360
+        if min(delta, 360 - delta) > 2.0:
+            return None
+    return {**base, "source": "SHARED_ARCHITECTURAL_NORTH"}
+
+
 def _route_layer(system):
     return {"sanitary":("ENGITOOLS-M-SANITARY",1,60),"vent":("ENGITOOLS-M-VENT",3,30),"cold_water":("ENGITOOLS-M-COLD_WATER",5,30),"hot_water":("ENGITOOLS-M-HOT_WATER",1,30),"heating_flow":("ENGITOOLS-M-HEAT-FLOW",2,35),"heating_return":("ENGITOOLS-M-HEAT-RETURN",6,35),"gas":("ENGITOOLS-M-GAS",2,35),"refrigerant":("ENGITOOLS-M-HVAC-REFRIG",6,30),"condensate":("ENGITOOLS-M-HVAC-COND",4,25),"exhaust":("ENGITOOLS-M-EXHAUST",6,30)}.get(system,(f"ENGITOOLS-M-{system.upper()}",7,25))
 
@@ -586,13 +600,14 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         if row["code"] not in existing_layouts:
             try:doc.layouts.new(row["code"])
             except Exception:pass
+    shared_north=_shared_architectural_north(doc, arch.get("plans") or [])
     copy_failures=[];overlay_reports=[];detail_index=0;north_records={}
     for row in manifest_rows:
         b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
         if b.family in PLAN_FAMILIES:
             plan=_find_roof_plan(arch) if b.family=="ROOF" or b.level=="ROOF" else _find_plan_for_level(arch,b.level)
             if plan:
-                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan);north_records[b.code]=north
+                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
                 if b.family=="ROOF" or (b.family=="SPLIT_AC" and b.level=="ROOF"):
                     overlay_reports.append({"sheet":b.code,"roof_outdoor_units":_draw_roof_hvac_equipment(doc,msp,b,pipeline)})
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
