@@ -109,42 +109,54 @@ def register_panel_bridge(app, legacy, Job):
                 access_token = project_token(external_project_id, external_user_hash)
                 if not secrets.compare_digest(existing.access_token_hash, digest(access_token)):
                     raise HTTPException(409, "Project link cannot be recovered")
-                data = status_payload(project)
-                data.update({"project_token": access_token, "engine_project_id": project.id})
-                return JSONResponse(data)
-            email = f"panel-{external_user_hash[:32]}@local"
-            user = db.query(legacy.User).filter(legacy.User.email == email).first()
-            if not user:
-                user = legacy.User(email=email)
-                db.add(user)
-                db.flush()
-            answers = {str(k): v for k, v in supplied_answers.items() if str(v).strip()}
-            answers["discipline"] = discipline
-            if occupancy.strip():
-                answers["occupancy"] = occupancy.strip()
-            answers["panel_external_project_id"] = external_project_id
-            project = legacy.Project(
-                user_id=user.id,
-                name=name.strip()[:255] or external_project_id,
-                questions=legacy.qlist(legacy.DISCIPLINES[discipline]["questions"]),
-                answers=answers,
-                status="uploading",
-                last_error="",
-            )
-            db.add(project)
-            db.commit()
-            db.refresh(project)
-            access_token = project_token(external_project_id, external_user_hash)
-            db.add(
-                PanelProjectLink(
-                    external_project_id=external_project_id,
-                    external_user_hash=external_user_hash,
-                    project_id=project.id,
-                    access_token_hash=digest(access_token),
+                if project.status != "asking":
+                    data = status_payload(project)
+                    data.update({"project_token": access_token, "engine_project_id": project.id})
+                    return JSONResponse(data)
+                answers = dict(project.answers or {})
+                answers.update({str(k): v for k, v in supplied_answers.items() if str(v).strip()})
+                answers["discipline"] = discipline
+                if occupancy.strip():
+                    answers["occupancy"] = occupancy.strip()
+                project.answers = answers
+                project.status = "uploading"
+                project.last_error = ""
+                db.commit()
+                pid = project.id
+            else:
+                email = f"panel-{external_user_hash[:32]}@local"
+                user = db.query(legacy.User).filter(legacy.User.email == email).first()
+                if not user:
+                    user = legacy.User(email=email)
+                    db.add(user)
+                    db.flush()
+                answers = {str(k): v for k, v in supplied_answers.items() if str(v).strip()}
+                answers["discipline"] = discipline
+                if occupancy.strip():
+                    answers["occupancy"] = occupancy.strip()
+                answers["panel_external_project_id"] = external_project_id
+                project = legacy.Project(
+                    user_id=user.id,
+                    name=name.strip()[:255] or external_project_id,
+                    questions=legacy.qlist(legacy.DISCIPLINES[discipline]["questions"]),
+                    answers=answers,
+                    status="uploading",
+                    last_error="",
                 )
-            )
-            db.commit()
-            pid = project.id
+                db.add(project)
+                db.commit()
+                db.refresh(project)
+                access_token = project_token(external_project_id, external_user_hash)
+                db.add(
+                    PanelProjectLink(
+                        external_project_id=external_project_id,
+                        external_user_hash=external_user_hash,
+                        project_id=project.id,
+                        access_token_hash=digest(access_token),
+                    )
+                )
+                db.commit()
+                pid = project.id
         finally:
             db.close()
 
@@ -162,17 +174,26 @@ def register_panel_bridge(app, legacy, Job):
                 if project.status == "asking":
                     project.last_error = "اطلاعات فنی پروژه کامل نیست؛ پاسخ‌های تکمیلی لازم است."
                     db.commit()
+                    missing = mechanical_workflow.required_basis_questions(project)
+                    unresolved = (
+                        [mechanical_workflow._question_payload(key) for key in missing]
+                        if missing
+                        else [
+                            question for question in list(project.questions or [])
+                            if isinstance(question, dict) and not (project.answers or {}).get(question.get("key"))
+                        ]
+                    )
                     return JSONResponse(
                         {
                             "status": "asking",
                             "error": project.last_error,
                             "detail": project.last_error,
-                            "questions": list(project.questions or []),
-                            "question_count": len(project.questions or []),
+                            "questions": unresolved,
+                            "question_count": len(unresolved),
                             "inferred_answers": {
                                 str(key): str(value)
                                 for key, value in dict(project.answers or {}).items()
-                                if value is not None and str(value).strip()
+                                if isinstance(value, (str, int, float, bool)) and str(value).strip()
                             },
                         },
                         status_code=409,
