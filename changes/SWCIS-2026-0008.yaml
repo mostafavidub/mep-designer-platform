@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0008",
+  "summary": "Recover from an out-of-sync external CAD deployment by retrying the same paid design transaction against the co-built local CAD runtime without weakening the runtime contract gate.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "Retry only the exact runtime build-identity mismatch against the co-built local CAD endpoint.",
+    "qa": "Prove exact mismatch recovery and prove unrelated CAD failures are never retried.",
+    "manifest": "The complete automatic build identity remains mandatory on both attempts.",
+    "docs": "Record the recovery boundary and operational deployment correction.",
+    "versioning": "No hand-maintained runtime version is introduced.",
+    "migration": "No database or project-data migration is required.",
+    "governance": "SWCIS impact closure is recorded and validated.",
+    "deployment": "Deploy the protected merge so the web and bundled CAD processes share one build; retain the external endpoint only as the preferred first attempt."
+  },
+  "evidence": {
+    "traceability": ["tests/test_cad_runtime_recovery.py"],
+    "tests": ["focused runtime mismatch recovery tests and full repository suite"],
+    "docs": ["changes/SWCIS-2026-0008.yaml"],
+    "version_bump": ["not required: operational recovery under automatic Git/content build identity"],
+    "migration": ["no schema migration"],
+    "golden_regression": ["no CAD semantics changed; full golden suite remains required"],
+    "semantic_diff": ["only runtime_contract_mismatch:build_identity is eligible for one local retry"],
+    "artifact_diff": ["no customer drawing or generated artifact committed"],
+    "numeric_diff": ["no engineering numeric rule changed"],
+    "contract_diff": ["the locked runtime contract is evaluated unchanged by the co-built CAD runtime"],
+    "deployment_plan": ["merge after all SWCIS and product checks pass, deploy protected main, then retry the preserved failed project without another payment"],
+    "rollback_plan": ["revert the protected merge commit and redeploy the prior approved Git commit"]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "The recovery touches paid production generation, but is restricted to an exact fail-closed build identity mismatch and the bundled same-build runtime."
+  },
+  "waiver": null
+}
