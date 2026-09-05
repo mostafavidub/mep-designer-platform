@@ -38,3 +38,17 @@ def test_panel_transaction_carries_same_analysis_into_cad():
     from pathlib import Path
     source=(Path(__file__).parents[1]/"app/dxf_output.py").read_text()
     assert "design_answers['_plan_analysis'] = p.analysis" in source
+
+
+def test_unreliable_reused_roof_title_is_not_forwarded_as_roof_authority():
+    analysis = {"architectural_auto": {
+        "roof_scope_reliable": False,
+        "level_profiles": [
+            {"name": "بام", "roof": True, "room_counts": {"bedroom": 2}},
+            {"name": "طبقه اول", "roof": False},
+        ],
+    }}
+    overrides = build_design_overrides({"_plan_analysis": analysis})
+    profiles = overrides["authoritative_level_profiles"]
+    assert profiles[0]["roof"] is False
+    assert profiles[1]["roof"] is False

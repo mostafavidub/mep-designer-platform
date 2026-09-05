@@ -160,11 +160,16 @@ def build_design_overrides(answers: dict) -> dict:
     plan_analysis=_answer(answers,"_plan_analysis",default={}) or {}
     architectural_auto=plan_analysis.get("architectural_auto") or {}
     level_profiles=list(architectural_auto.get("level_profiles") or [])
+    roof_scope_reliable=bool(architectural_auto.get("roof_scope_reliable", True))
     model_levels=list((architectural_auto.get("architecture_model") or {}).get("levels") or [])
     bounds_by_name={str(x.get("name")):x.get("region_bounds") for x in model_levels if x.get("region_bounds")}
     authoritative_level_profiles=[]
     for profile in level_profiles:
         enriched=dict(profile)
+        # A reused title that happens to say "roof" is not permission to add
+        # rainwater scope or request rainfall after the customer has paid.
+        if enriched.get("roof") and not roof_scope_reliable:
+            enriched["roof"] = False
         if not enriched.get("region_bounds"):
             enriched["region_bounds"]=bounds_by_name.get(str(enriched.get("name")))
         authoritative_level_profiles.append(enriched)
