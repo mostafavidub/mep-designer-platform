@@ -23,6 +23,17 @@ def test_candidate_browser_regions_never_become_cad_authority():
     assert plans==[]
 
 
+def test_confirmed_profile_inherits_bounds_from_sealed_architecture_model():
+    analysis={"architectural_auto":{
+        "level_profiles":[{"name":"طبقه اول", "level_detection_status":"confirmed", "roof":False}],
+        "architecture_model":{"levels":[{"name":"طبقه اول", "region_bounds":[5,6,105,86]}]},
+    }}
+    overrides=build_design_overrides({"_plan_analysis":analysis})
+    plans=_plans_from_authoritative_profiles(overrides["authoritative_level_profiles"])
+    assert len(plans)==1
+    assert plans[0]["bounds"]==[5.0,6.0,105.0,86.0]
+
+
 def test_panel_transaction_carries_same_analysis_into_cad():
     from pathlib import Path
     source=(Path(__file__).parents[1]/"app/dxf_output.py").read_text()

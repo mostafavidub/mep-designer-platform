@@ -10,7 +10,7 @@ class Stage08AnnotationTests(unittest.TestCase):
         calculations={'rooms':[{'room_id':'ROOM-001','cooling_w':0,'exhaust_cfm':0}]}
         topology={'edges':[{'id':'SAN-E001','from':'MEP-001','to':'SHAFT-01','system':'sanitary'}]}
         result=build_annotations(routing,sizing,recognition,calculations,topology)
-        self.assertEqual(result['version'],'annotation-engine-v13.8.2')
+        self.assertEqual(result['version'],'annotation-engine-v13.8.3')
         label=result['annotations'][0]['text']
         self.assertIn('DN110',label)
         self.assertIn('SLOPE 2.0%',label)
@@ -44,5 +44,17 @@ class Stage08AnnotationTests(unittest.TestCase):
         cleanouts=[x for x in result['annotations'] if x.get('source')=='cleanout']
         self.assertEqual(len(cleanouts),1)
         self.assertIn('DN90',cleanouts[0]['text'])
+
+    def test_cleanout_anchors_to_real_sanitary_route_when_shaft_is_not_reconstructed(self):
+        result=build_annotations(
+            {'routes':[{'id':'R-SAN','edge_id':'E1','system':'sanitary','points':[(1,2),(30,40)]}]},
+            {'segments':[{'route_id':'R-SAN','system':'sanitary','size_mm':110}], 'vertical_mains':[]},
+            {'detections':[{'id':'WC1','type':'wc','point':(1,2)}]},
+            {'rooms':[]},
+            {'nodes':[], 'edges':[{'id':'E1','from':'WC1'}]},
+        )
+        cleanouts=[x for x in result['annotations'] if x.get('source')=='cleanout']
+        self.assertEqual(len(cleanouts),1)
+        self.assertEqual(cleanouts[0]['anchor'],(630.0,-460.0))
 
 if __name__=='__main__': unittest.main()

@@ -108,19 +108,26 @@ def build_annotations(routing, sizing, recognition, calculations, topology):
         ]
         if sanitary_segments:
             sanitary_main = max(sanitary_segments, key=lambda x: float(x['size_mm']))
-    if shaft and sanitary_main:
+    cleanout_anchor = shaft
+    if cleanout_anchor is None and sanitary_main:
+        route_id = sanitary_main.get('route_id')
+        sanitary_route = next((x for x in routing.get('routes') or [] if x.get('id') == route_id), None)
+        points = list((sanitary_route or {}).get('points') or [])
+        if points:
+            cleanout_anchor = tuple(points[-1][:2])
+    if cleanout_anchor and sanitary_main:
         annotations.append({
             'id': f"ANN-{len(annotations) + 1:03d}",
             'route_id': None,
             'system': 'sanitary',
             'text': f"C.O. AT BASE OF SANITARY RISER S1 DN{int(sanitary_main['size_mm'])}",
-            'anchor': (shaft[0] + 600.0, shaft[1] - 500.0),
+            'anchor': (cleanout_anchor[0] + 600.0, cleanout_anchor[1] - 500.0),
             'leader': True,
             'source': 'cleanout',
         })
 
     return {
-        'version': 'annotation-engine-v13.8.2',
+        'version': 'annotation-engine-v13.8.3',
         'annotations': annotations,
         'quality': {
             'annotations': len(annotations),
