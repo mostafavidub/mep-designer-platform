@@ -60,6 +60,20 @@ def register_panel_bridge(app, legacy, Job):
 
     def status_payload(project):
         data = legacy.flow_payload(project)
+        # The panel persists its own project list. Always expose the current,
+        # customer-safe failure separately so a stale local row cannot hide the
+        # reason after the engine transitions to ``failed``.
+        safe_error = dxf_output.customer_safe_error(project.last_error or data.get("error"))
+        data["last_error"] = safe_error
+        if project.status in ("failed", "awaiting_upload", "asking"):
+            data["failure"] = {
+                "message": safe_error or "فرآیند کامل نشد؛ وضعیت پروژه را دوباره بررسی کنید.",
+                "action": (
+                    "complete_answers" if project.status == "asking"
+                    else "reupload" if project.status == "awaiting_upload"
+                    else "technical_review"
+                ),
+            }
         progress = get_project_progress(project)
         if progress:
             data["design_progress"] = progress

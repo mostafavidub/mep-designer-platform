@@ -63,3 +63,10 @@ def test_panel_bridge_web_contract_exposes_output_only_when_ready():
     assert 'data["download_url"]' in BRIDGE
     assert '@app.get("/internal/panel/projects/{pid}/output")' in BRIDGE
     assert "presigned_download" in BRIDGE
+
+
+def test_panel_bridge_always_exposes_safe_failure_details_for_stopped_projects():
+    assert 'data["last_error"] = safe_error' in BRIDGE
+    assert 'data["failure"]' in BRIDGE
+    assert 'dxf_output.customer_safe_error' in BRIDGE
+    assert '"technical_review"' in BRIDGE
