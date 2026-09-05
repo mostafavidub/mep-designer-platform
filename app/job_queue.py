@@ -508,6 +508,31 @@ def register_job_queue(app, legacy):
         db = legacy.Session()
         interrupted_design_ids = []
         try:
+            # A paid panel project can be preserved after the external CAD
+            # service drifts from the web build. Once a same-build recovery is
+            # deployed, resume only that exact fail-closed condition. Other QA
+            # failures remain stopped and require their normal corrective path.
+            build_drift_jobs = db.query(Job).filter(
+                Job.job_type == 'design',
+                Job.status == 'failed',
+                func.lower(Job.last_error).like('%runtime_contract_mismatch:build_identity%'),
+            ).all()
+            for failed_job in build_drift_jobs:
+                project = db.get(legacy.Project, failed_job.project_id)
+                revision = db.get(legacy.Revision, failed_job.revision_id) if failed_job.revision_id else None
+                failed_job.status = 'queued'
+                failed_job.attempts = 0
+                failed_job.available_at = datetime.utcnow()
+                failed_job.locked_at = None
+                failed_job.last_error = ''
+                if project:
+                    project.status = 'queued'
+                    project.last_error = ''
+                    set_project_progress(project, 'queued')
+                if revision:
+                    revision.status = 'queued'
+                    revision.error = ''
+            db.commit()
             jobs = db.query(Job).filter(Job.status == 'processing').all()
             diagnostic_retry = db.query(Job).filter(
                 Job.job_type == 'design',
