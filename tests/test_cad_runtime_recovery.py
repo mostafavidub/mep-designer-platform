@@ -11,25 +11,15 @@ def response(status, payload):
 
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")
 @patch("app.dxf_output.requests.post")
-def test_exact_build_identity_mismatch_retries_once_against_cobuilt_runtime(post):
-    post.side_effect = [
-        response(422, {
-            "detail": {
-                "stage": "v19_runtime_contract_gate",
-                "v19_qa": {"errors": ["runtime_contract_mismatch:build_identity"]},
-            }
-        }),
-        response(200, {"status": "PASS"}),
-    ]
+def test_design_uses_only_canonical_cobuilt_runtime(post):
+    post.return_value = response(200, {"status": "PASS"})
 
     result = dxf_output._post_to_compatible_cad({"project_id": "preserved"})
 
     assert result.ok
-    assert [call.args[0] for call in post.call_args_list] == [
-        "https://external-cad.example/design",
-        "http://127.0.0.1:8081/design",
-    ]
-    assert post.call_args_list[0].kwargs["json"] == post.call_args_list[1].kwargs["json"]
+    post.assert_called_once()
+    assert post.call_args.args[0] == "http://127.0.0.1:8081/design"
+    assert post.call_args.kwargs["json"] == {"project_id": "preserved"}
 
 
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")
