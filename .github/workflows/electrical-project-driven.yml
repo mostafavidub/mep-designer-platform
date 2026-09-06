@@ -32,6 +32,7 @@ jobs:
           python -m unittest tests.test_electrical_authority_v15 -v
           python -m unittest tests.test_electrical_release_gate -v
           python -m unittest tests.test_electrical_construction_qa -v
+          python -m unittest tests.test_electrical_submission_quality -v
           python -m unittest tests.test_electrical_basis_contract_v19 -v
           python -m unittest tests.test_electrical_panel_parity_v19 -v
           python -m unittest tests.test_electrical_runtime_v19 -v
