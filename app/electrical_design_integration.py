@@ -40,12 +40,18 @@ def _ensure_approved_manifest(project):
         return False
     analysis = dict(project.analysis or {})
     current = dict(analysis.get("drawing_set") or {})
-    if not electrical_drawing_set.approved_manifest_is_valid(current):
-        approved = electrical_drawing_set.approve_drawing_set(electrical_drawing_set.proposal(project))
-        analysis["drawing_set"] = approved
-        analysis["electrical_drawing_set"] = approved
-        project.analysis = analysis
-    return True
+    if electrical_drawing_set.approved_manifest_is_valid(current):
+        return True
+    # Never silently approve the user's delivery set at design time. Public UI
+    # must pass drawing_set_review; panel projects are auto-approved earlier by
+    # the authenticated discipline dispatcher before they reach the queue.
+    proposed = electrical_drawing_set.proposal(project)
+    analysis["drawing_set"] = proposed
+    analysis["electrical_drawing_set"] = proposed
+    project.analysis = analysis
+    project.status = "drawing_set_review"
+    project.last_error = ""
+    return False
 
 
 def install(dxf_output, legacy):
@@ -106,9 +112,11 @@ def install(dxf_output, legacy):
             }
             data["ready_to_design"] = False
         drawing = (project.analysis or {}).get("drawing_set") or {}
+        if not electrical_drawing_set.approved_manifest_is_valid(drawing):
+            data["ready_to_design"] = False
         data["drawing_set"] = {
             "status": drawing.get("status"),
-            "sheet_count": drawing.get("sheet_count") or len(drawing.get("approved_manifest") or []),
+            "sheet_count": drawing.get("sheet_count") or len(drawing.get("approved_manifest") or drawing.get("manifest") or []),
             "manifest_sha256": drawing.get("manifest_sha256"),
         }
         data["electrical_workflow_version"] = "v19.0"
