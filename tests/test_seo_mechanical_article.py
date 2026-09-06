@@ -29,6 +29,9 @@ class MechanicalSeoArticleTests(unittest.TestCase):
     def test_system_health_remains_available(self):
         response = self.client.get('/system_health')
         self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn('build_identity', payload)
+        self.assertIn('identity_matches', payload['cad_designer'])
         self.assertEqual(response.json().get('status'), 'ok')
 
 

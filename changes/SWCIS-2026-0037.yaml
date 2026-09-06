@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0037",
+  "summary": "Expose panel and dedicated-CAD build identities in system health so cross-service contract drift is detected before a paid design job starts.",
+  "requester": "mostafavidub",
+  "change_types": ["observability", "test", "governance", "deployment", "ui_api"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Panel health probes the dedicated CAD version endpoint.",
+    "ui_api": "System health now includes both non-secret release identities and a parity flag.",
+    "manifest": "All governed identity fields become observable before job execution.",
+    "qa": "Runtime gate remains strict; health now diagnoses its prerequisite deterministically.",
+    "versioning": "Cross-service version drift is directly visible.",
+    "migration": "No stored-data migration.",
+    "docs": "This change request records contract observability.",
+    "governance": "No gate or evidence requirement is weakened.",
+    "deployment": "Deploy both services from one commit, require identity_matches, then retry the preserved project."
+  },
+  "evidence": {
+    "tests": ["tests/test_seo_mechanical_article.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0037.yaml"],
+    "version_bump": ["Automatic identity changes with Git commit"],
+    "golden_regression": ["System health returns build identity and parity state"],
+    "semantic_diff": ["Health payload includes dedicated CAD identity"],
+    "artifact_diff": ["Output artifacts unchanged"],
+    "contract_diff": ["Release identity mismatch is observable before design"],
+    "deployment_plan": ["deploy both services; verify identity_matches; retry PRJ-7253354"],
+    "migration": ["none"],
+    "rollback_plan": ["revert the health payload extension; stored projects remain intact"]
+  },
+  "risk": {"likelihood": 1, "severity": 3, "detectability": 1, "score": 3, "rationale": "Read-only health enrichment using an existing private endpoint with regression coverage."},
+  "waiver": null
+}

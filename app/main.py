@@ -5,6 +5,7 @@ from collections import Counter
 
 import requests, ezdxf
 from .dxf_input import normalize_input_copy, read_input_dxf
+from cad_engine.build_identity import build_identity
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -335,9 +336,18 @@ def system_health():
     integrated_cad = os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1'
     cad={'configured':integrated_cad or bool(CAD_DESIGNER_URL),'reachable':integrated_cad}
     if CAD_DESIGNER_URL and not integrated_cad:
-        try: cad['reachable']=requests.get(CAD_DESIGNER_URL+'/health',timeout=3).ok
+        try:
+            health_response=requests.get(CAD_DESIGNER_URL+'/health',timeout=3)
+            cad['reachable']=health_response.ok
+            version_response=requests.get(CAD_DESIGNER_URL+'/version',timeout=3)
+            if version_response.ok:
+                cad['build_identity']=version_response.json()
         except Exception: pass
-    return {'status':'ok','cad_designer':cad,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
+    panel_identity=build_identity()
+    remote_version=cad.get('build_identity') or {}
+    remote_identity=remote_version.get('build_identity', remote_version) if isinstance(remote_version, dict) else {}
+    cad['identity_matches']=remote_identity == panel_identity if remote_version else integrated_cad
+    return {'status':'ok','cad_designer':cad,'build_identity':panel_identity,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
 @app.get('/sitemap.xml')
 def sitemap(request:Request):
     scheme=request.headers.get('x-forwarded-proto','https').split(',')[0].strip(); base=f'{scheme}://{request.url.netloc}'; paths=['/','/electrical','/mechanical','/blog']+[f"/blog/{p['slug']}" for p in BLOG]; rows=''.join(f'<url><loc>{base}{path}</loc><changefreq>{"weekly" if path.startswith("/blog/") else "daily"}</changefreq><priority>{"0.8" if path.startswith("/blog/") else "0.9"}</priority></url>' for path in paths); xml='<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+rows+'</urlset>'; return Response(content=xml,media_type='application/xml')
