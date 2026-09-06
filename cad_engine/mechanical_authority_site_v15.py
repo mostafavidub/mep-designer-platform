@@ -257,8 +257,12 @@ def enrich_gas(doc,msp,pipeline,authority,compose,answers):
         top=y2-.8
         _mtext(msp,layer,"GAS PIPE SIZING — TABLE P.22",x1+.7,top,10,.08)
         if not routes:
-            _mtext(msp,layer,"No gas route generated from project evidence.",x1+.7,top-.8,10,.06)
-            records.append({"sheet":row["code"],"status":"INPUT_REQUIRED","reason":"NO_GAS_ROUTE"})
+            if load_kw<=0:
+                _mtext(msp,layer,"No gas appliance/load detected on this approved architectural level; no branch route is applicable.",x1+.7,top-.8,12,.06)
+                records.append({"sheet":row["code"],"status":"NOT_APPLICABLE","reason":"NO_DETECTED_GAS_LOAD"})
+            else:
+                _mtext(msp,layer,"Gas load exists but no authority-safe route was generated.",x1+.7,top-.8,10,.06)
+                records.append({"sheet":row["code"],"status":"INPUT_REQUIRED","reason":"NO_GAS_ROUTE_WITH_DETECTED_LOAD"})
             continue
         for i,r in enumerate(routes,1):
             length=float(r.get("length") or 0)

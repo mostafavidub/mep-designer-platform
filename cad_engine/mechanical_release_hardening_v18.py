@@ -166,15 +166,25 @@ def validate_equipment_linkage(path: Path, composition: dict) -> dict:
         if family=="SPLIT_AC" and str(board.get("level") or "").upper()=="ROOF":required=["ENGITOOLS-M-HVAC-EQUIP"]
         if family=="ROOF" and "SPLIT_AC" not in all_families: required=None
         if not required:continue
-        area=tuple(map(float,board.get("plan_area") or ())); counts={layer:0 for layer in required}
+        area=tuple(map(float,board.get("plan_area") or ())); counts={layer:0 for layer in required};local=[]
         for e in entities:
             layer=str(getattr(e.dxf,"layer","") or "").upper();p=_entity_center(e)
-            if layer in counts and p and len(area)==4 and area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]:counts[layer]+=1
+            if p and len(area)==4 and area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]:
+                local.append(e)
+                if layer in counts:counts[layer]+=1
         missing=[layer for layer,count in counts.items() if count<1]
         semantic={}
+        if family=="GAS" and missing:
+            no_load=any(
+                str(getattr(e.dxf,"layer","") or "").upper()=="ENGITOOLS-M-GAS-TABLE"
+                and "NO GAS APPLIANCE/LOAD DETECTED" in _plain_text(e).upper()
+                for e in local
+            )
+            if no_load:
+                missing=[]
+                semantic={"route_requirement":"NOT_APPLICABLE","evidence":"NO_DETECTED_GAS_LOAD"}
         if family=="SPLIT_AC":
             roof=str(board.get("level") or "").upper()=="ROOF";expected_name="ENGI_AC_OUTDOOR" if roof else "ENGI_AC_INDOOR";expected_label="ODU" if roof else "IDU"
-            local=[e for e in entities if (p:=_entity_center(e)) and len(area)==4 and area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]]
             equipment=[e for e in local if e.dxftype()=="INSERT" and str(getattr(e.dxf,"name","")).upper()==expected_name]
             callouts=[e for e in local if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-M-HVAC-CALLOUT" and expected_label in _plain_text(e).upper()]
             leaders=[e for e in local if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-M-HVAC-CALLOUT" and e.dxftype() in {"LINE","LWPOLYLINE"}]

@@ -17,7 +17,7 @@ Key contracts:
 """
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 import math
 import re
@@ -82,6 +82,15 @@ GAS_TABLE_P22 = {
     40:[1.1,2.4,4.6,9.4,14.1,27.1,43.3,76.9,157.9],
     45:[1.1,2.2,4.3,8.8,13.3,25.5,40.6,72.2,148.1],
     50:[1.0,2.1,4.1,8.4,12.6,24.3,38.6,68.7,141.0],
+}
+
+APPROVED_FAMILY_SYSTEMS = {
+    "WATER_SUPPLY": {"cold_water", "hot_water"},
+    "SANITARY_VENT": {"sanitary", "vent"},
+    "HEATING": {"heating"},
+    "COOLING": {"split_ac"},
+    "GAS": {"gas"},
+    "VENTILATION_EXHAUST": {"exhaust"},
 }
 GAS_SIZES_IN = ["1/2","3/4","1","1-1/4","1-1/2","2","2-1/2","3","4"]
 GAS_DN = {"1/2":15,"3/4":20,"1":25,"1-1/4":32,"1-1/2":40,"2":50,"2-1/2":65,"3":80,"4":100}
@@ -236,7 +245,46 @@ def build_authority_model(pipeline, answers):
     overrides=build_design_overrides(answers)
     basis=resolve_design_basis(project,overrides)
     req=derive_authority_requirements(project,basis)
+    # The workflow-approved manifest is the user's selected output scope. A
+    # floor may legitimately contain no recognized terminal, but the requested
+    # service plan must still be issued for that architectural level. Extend
+    # only levels that the architecture pipeline actually proved; nonexistent
+    # levels remain fail-closed in the approved-manifest gate.
+    approved=(answers or {}).get("_approved_drawing_manifest") or {}
+    approved_rows=approved.get("sheets") if isinstance(approved,dict) else approved
+    known_levels=set((project.get("levels") or {}).keys())
+    for row in approved_rows or []:
+        if not isinstance(row,dict) or str(row.get("drawing_type") or "").strip().upper()!="FLOOR_PLAN":
+            continue
+        systems=APPROVED_FAMILY_SYSTEMS.get(str(row.get("family") or "").strip().upper()) or set()
+        levels=row.get("levels") or [row.get("level")]
+        for level in levels:
+            if level not in known_levels:
+                continue
+            current=set(req.get("by_level",{}).get(level) or [])
+            if "gas" in systems and basis.get("basis",{}).get("gas_service") is not True:
+                systems=systems-{"gas"}
+            req["by_level"][level]=sorted(current|systems)
+    req["project_systems"]=sorted({system for systems in req.get("by_level",{}).values() for system in systems}|({"vent_termination","rainwater","split_outdoor"}&set(req.get("project_systems") or [])))
     manifest=build_reference_driven_manifest(project,req)
+    approved_roof_termination=any(
+        isinstance(row,dict)
+        and str(row.get("family") or "").strip().upper()=="SANITARY_VENT"
+        and str(row.get("drawing_type") or "").strip().upper()=="ROOF_PLAN"
+        for row in approved_rows or []
+    )
+    if approved_roof_termination and not any(row.get("family")=="ROOF" for row in manifest.get("sheets") or []):
+        # No authoritative roof architecture was proved. Preserve the approved
+        # deliverable as an explicit engineering termination schematic rather
+        # than fabricating a roof plan or silently dropping the sheet.
+        manifest["sheets"].append({
+            "sheet":None,"family":"SANITARY_VENT","level":"SERVICE","purpose":"PLAN",
+            "title":"VENT TERMINATION / ROOF COORDINATION SCHEMATIC — ROOF ARCHITECTURE NOT PROVIDED",
+        })
+        for i,row in enumerate(manifest["sheets"]):
+            row["sheet"]=f"M-{i:02d}"
+        counts=Counter(row["family"] for row in manifest["sheets"])
+        manifest["sheet_count"]=len(manifest["sheets"]);manifest["family_counts"]=dict(counts)
     network=build_network_contract(req)
     calc=build_calculation_contract()
     qa=validate_authority_contract(project,basis,req,manifest,network,calc)
@@ -519,6 +567,17 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.055});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":
             p=_map_point(srcp,srcb,target);msp.add_lwpolyline([(p[0]-.30,p[1]-.42),(p[0]+.30,p[1]-.42),(p[0]+.30,p[1]+.42),(p[0]-.30,p[1]+.42)],close=True,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});msp.add_circle(p,.13,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});t=msp.add_mtext(f"{e['id']} | WALL PACKAGE | {e.get('capacity_kw',0):.1f} kW\nHF/HR + GAS ISOLATION + FLUE",dxfattribs={"layer":"ENGITOOLS-M-PACKAGE","char_height":.055});t.dxf.insert=(p[0]+.42,p[1]+.42);t.dxf.width=3.8
+    if not all_routes and not equipment:
+        # Preserve the approved plan without inventing terminals. The explicit
+        # note is mechanical content and makes the evidence boundary visible
+        # to reviewers instead of silently omitting the requested floor.
+        _ensure_layer(doc,"ENGITOOLS-M-NOTES",7,18)
+        x1,y1,x2,y2=target
+        note=msp.add_mtext(
+            "APPROVED SERVICE PLAN — NO RELIABLE TERMINAL OR BRANCH ENDPOINT DETECTED ON THIS ARCHITECTURAL LEVEL",
+            dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.07},
+        )
+        note.dxf.insert=(x1+.25,y2-.35);note.dxf.width=max(1.0,x2-x1-.5)
     return {"routes":len(all_routes),"equipment":len(equipment),"split_contract":validate_split_representation(ac_units) if ac_units else None}
 
 
@@ -612,6 +671,26 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                 if b.family=="ROOF" or (b.family=="SPLIT_AC" and b.level=="ROOF"):
                     overlay_reports.append({"sheet":b.code,"roof_outdoor_units":_draw_roof_hvac_equipment(doc,msp,b,pipeline)})
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
+            elif b.level=="SERVICE":
+                _ensure_layer(doc,"ENGITOOLS-M-NOTES",7,18)
+                x1,y1,x2,y2=b.plan_area
+                if b.family=="SANITARY_VENT":
+                    for system,x in (("sanitary",x1+(x2-x1)*.42),("vent",x1+(x2-x1)*.58)):
+                        layer,color,lw=_route_layer(system);_ensure_layer(doc,layer,color,lw)
+                        msp.add_line((x,y1+1.2),(x,y2-2.4),dxfattribs={"layer":layer,"lineweight":lw})
+                        msp.add_circle((x,y2-2.4),.14,dxfattribs={"layer":layer,"lineweight":lw})
+                        label=msp.add_mtext(
+                            "S1 SANITARY STACK — COORDINATE TO APPROVED ROOF OUTLET" if system=="sanitary" else "V1 VENT TERMINATION — FINAL ROOF LOCATION REQUIRES COORDINATION",
+                            dxfattribs={"layer":layer,"char_height":.07},
+                        )
+                        label.dxf.insert=(x+.2,y2-2.2);label.dxf.width=5.2
+                t=msp.add_mtext(
+                    "VENT TERMINATION / ROOF COORDINATION SCHEMATIC\n"
+                    "NO AUTHORITATIVE ROOF ARCHITECTURE PROVIDED — FINAL OUTLET LOCATIONS REQUIRE ROOF COORDINATION",
+                    dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.11},
+                )
+                t.dxf.insert=(x1+.6,y2-1.0);t.dxf.width=max(1.0,x2-x1-1.2)
+                overlay_reports.append({"sheet":b.code,"status":"SERVICE_SCHEMATIC","architectural_roof":False})
         elif b.family=="GENERAL_DETAIL":detail_index+=1;_draw_detail_sheet(doc,msp,b,detail_index)
         elif b.family=="PLUMBING_RISER":_draw_riser(doc,msp,b,authority)
         elif b.family=="WATER_SERVICE_CALC":_draw_calc(doc,msp,b,pipeline,authority)
