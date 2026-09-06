@@ -1,7 +1,9 @@
 """Install Electrical v19 preflight/recovery around the shared DXF design flow."""
 from __future__ import annotations
 
+import os
 import re
+import requests
 
 from . import electrical_workflow, electrical_drawing_set
 
@@ -22,7 +24,6 @@ ERROR_ALIASES = {
 def missing_from_error(error):
     text = str(error or "").lower()
     found = []
-    # Prefer machine-readable INPUT_REQUIRED lists when the CAD adapter emits them.
     match = re.search(r"input_required\[([^\]]+)\]", text, re.I)
     tokens = [x.strip() for x in (match.group(1).split(",") if match else []) if x.strip()]
     for key, aliases in ERROR_ALIASES.items():
@@ -52,6 +53,18 @@ def install(dxf_output, legacy):
         return
     original_run = legacy.run_design
     original_flow = legacy.flow_payload
+    original_post = dxf_output._post_to_compatible_cad
+
+    def post_to_compatible_cad(payload):
+        if str((payload or {}).get("discipline") or "").lower() != "electrical":
+            return original_post(payload)
+        cobuilt = os.getenv("COBUILT_CAD_DESIGNER_URL", "http://127.0.0.1:8081").rstrip("/")
+        response = requests.post(cobuilt + "/design-electrical-v19", json=payload, timeout=3600)
+        if response.ok:
+            data = response.json()
+            if data.get("mode") != "electrical-v19-authoritative" or data.get("pipeline_authority") != "electrical-v19":
+                raise RuntimeError("نسخه مسیر تولید برق با قرارداد فعال v19 تطابق ندارد.")
+        return response
 
     def run_design(project_id, revision_id):
         db = legacy.Session(); project = db.get(legacy.Project, project_id)
@@ -61,19 +74,14 @@ def install(dxf_output, legacy):
         if discipline != "electrical":
             db.close(); return original_run(project_id, revision_id)
         if not _ensure_approved_manifest(project):
-            # Preserve the queued revision but do not send an invalid contract to CAD.
             revision = db.get(legacy.Revision, revision_id)
             if revision:
-                revision.status = "queued"
-                revision.error = ""
+                revision.status = "queued"; revision.error = ""
             db.commit(); db.close(); return
         db.commit(); db.close()
 
         original_run(project_id, revision_id)
 
-        # The shared runner owns transaction/artifact durability and catches CAD
-        # exceptions internally.  Inspect the persisted result and reopen the
-        # exact missing basis question instead of stranding the user at failed.
         db = legacy.Session(); project = db.get(legacy.Project, project_id)
         if project and project.status == "failed":
             missing = missing_from_error(project.last_error)
@@ -104,8 +112,10 @@ def install(dxf_output, legacy):
             "manifest_sha256": drawing.get("manifest_sha256"),
         }
         data["electrical_workflow_version"] = "v19.0"
+        data["electrical_cad_mode"] = "electrical-v19-authoritative"
         return data
 
+    dxf_output._post_to_compatible_cad = post_to_compatible_cad
     legacy.run_design = run_design
     legacy.flow_payload = flow_payload
     legacy._electrical_design_v19_installed = True
