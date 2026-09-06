@@ -1,6 +1,6 @@
 """Canonical, fail-closed electrical design-basis answer contract.
 
-Project facts are never manufactured from Rule Book defaults.  The contract only
+Project facts are never manufactured from Rule Book defaults. The contract only
 normalizes explicit answers or evidence already persisted by the architecture
 analyzer and records provenance for approvals that permit the engine to propose
 an engineering location/strategy.
@@ -11,6 +11,12 @@ from datetime import datetime, timezone
 import re
 
 CONTRACT_VERSION = "electrical-design-basis-v19.0"
+SUPPLY_CONFIGURATIONS = {"single_phase", "three_phase", "mixed_single_units_three_phase_common"}
+EARTHING_VALUES = {"tn-s", "tn-c-s", "tt", "foundation_earth", "earth_electrode", "input_required"}
+PANEL_STRATEGIES = {
+    "use_evidenced_location", "propose_near_main_entry", "propose_parking_or_basement",
+    "use_electrical_room", "proposal_authorized",
+}
 
 
 def _text(value):
@@ -36,9 +42,16 @@ def canonical_city(answers):
 
 
 def canonical_supply(value):
+    if isinstance(value, dict):
+        configuration = str(value.get("configuration") or "").strip()
+        if configuration in SUPPLY_CONFIGURATIONS:
+            return {"configuration": configuration, "voltage_v": numeric(value.get("voltage_v"))}
+        return None
     text = _text(value).lower()
     if not text:
         return None
+    if text in SUPPLY_CONFIGURATIONS:
+        return {"configuration": text, "voltage_v": None}
     three = any(x in text for x in ("سه فاز", "سه‌فاز", "three phase", "3ph", "3 ph"))
     single = any(x in text for x in ("تک فاز", "تک‌فاز", "single phase", "1ph", "1 ph"))
     mixed = any(x in text for x in ("مشاعات سه", "ترکیبی", "mixed"))
@@ -56,6 +69,8 @@ def canonical_earthing(value):
     text = _text(value).lower()
     if not text:
         return None
+    if text in EARTHING_VALUES:
+        return text
     aliases = {
         "tn-s": ("tn-s", "tns"), "tn-c-s": ("tn-c-s", "tncs"),
         "tt": (" tt", "tt ", "سیستم tt"), "foundation_earth": ("ارت فونداسیون", "foundation earth"),
@@ -73,6 +88,8 @@ def canonical_panel_strategy(value):
     text = _text(value).lower()
     if not text:
         return None
+    if text in PANEL_STRATEGIES:
+        return text
     if any(x in text for x in ("محل در پلان", "existing", "architectural", "مشخص شده")):
         return "use_evidenced_location"
     if any(x in text for x in ("نزدیک ورودی", "همکف نزدیک ورودی")):
@@ -123,7 +140,8 @@ def normalize_answers(answers, *, answer_key=None, raw_answer=None):
         out["service_panel_location"] = strategy
         existing = dict(out.get("service_panel_location_approval") or {})
         if answer_key in {"service_panel_location", "main_panel"} or existing.get("status") != "APPROVED":
-            out["service_panel_location_approval"] = _approval(strategy, raw_answer if answer_key else out.get("main_panel"))
+            raw = raw_answer if answer_key else (out.get("main_panel") or strategy)
+            out["service_panel_location_approval"] = _approval(strategy, raw)
     out["_electrical_basis_contract"] = {"version": CONTRACT_VERSION, "status": "NORMALIZED"}
     return out
 
@@ -134,7 +152,7 @@ def panel_location_approval(answers):
     if approval.get("status") == "APPROVED" and strategy:
         return {**approval, "strategy": strategy}
     if strategy:
-        return _approval(strategy, (answers or {}).get("main_panel"), "legacy_explicit_user_answer")
+        return _approval(strategy, (answers or {}).get("main_panel") or strategy, "legacy_explicit_user_answer")
     return None
 
 
