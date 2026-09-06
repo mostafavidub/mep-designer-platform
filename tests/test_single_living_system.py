@@ -22,5 +22,11 @@ def test_container_identity_is_deterministic_without_git_metadata():
     assert first["commit_sha"] == "abc123"
     assert first["build_timestamp"] == "commit:abc123"
 
+def test_container_identity_never_uses_service_local_deployment_id():
+    from cad_engine import build_identity as module
+    env = {"RAILWAY_DEPLOYMENT_ID": "service-local-id"}
+    with patch.dict(module.os.environ, env, clear=True), patch.object(module, "_git", return_value=""):
+        assert module._build_timestamp() == "commit:UNKNOWN"
+
 def test_no_new_parallel_runtime_versions_and_canonical_launchers():
     assert audit("HEAD")["status"] == "PASS"
