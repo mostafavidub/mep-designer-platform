@@ -20,8 +20,22 @@ python data/rulebook/generate_rulebook_v4.py "$RULEBOOK_TARGET"
 
 # CAD designer: mechanical requests use the version-locked v19.1 authority
 # adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
-uvicorn cad_engine.main:app --host 127.0.0.1 --port 8081 &
-CAD_PID=$!
-trap 'kill $CAD_PID 2>/dev/null || true' EXIT INT TERM
+# Keep the co-built CAD runtime supervised.  Railway may reclaim a background
+# child independently while leaving the public web process alive; without a
+# supervisor every later paid job then fails with a localhost connection error.
+run_cad_designer() {
+  while :; do
+    uvicorn cad_engine.main:app --host 127.0.0.1 --port 8081
+    status=$?
+    echo "CAD designer stopped with status $status; restarting in 1 second" >&2
+    sleep 1
+  done
+}
+
+if [ "${COBUILT_CAD_IN_PROCESS:-0}" != "1" ]; then
+  run_cad_designer &
+  CAD_SUPERVISOR_PID=$!
+  trap 'kill "$CAD_SUPERVISOR_PID" 2>/dev/null || true' EXIT INT TERM
+fi
 
 exec uvicorn app.main_health:app --host 0.0.0.0 --port ${PORT:-8080}

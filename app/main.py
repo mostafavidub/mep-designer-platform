@@ -332,8 +332,9 @@ def flow_payload(p):
 def health(): return {'ok':True}
 @app.get('/system_health')
 def system_health():
-    cad={'configured':bool(CAD_DESIGNER_URL),'reachable':False}
-    if CAD_DESIGNER_URL:
+    integrated_cad = os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1'
+    cad={'configured':integrated_cad or bool(CAD_DESIGNER_URL),'reachable':integrated_cad}
+    if CAD_DESIGNER_URL and not integrated_cad:
         try: cad['reachable']=requests.get(CAD_DESIGNER_URL+'/health',timeout=3).ok
         except Exception: pass
     return {'status':'ok','cad_designer':cad,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
