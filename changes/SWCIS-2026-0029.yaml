@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0029",
+  "summary": "Avoid a redundant deep copy of the already validated internal architectural payload when dispatching large paid projects to the in-process canonical CAD route.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "drawing_output", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "The canonical design function receives an attribute-compatible namespace that references the existing trusted internal payload without recursive copying.",
+    "ui_api": "No public request or response contract changes.",
+    "manifest": "Approved manifest data is passed by reference without semantic transformation.",
+    "qa": "The same canonical route validation and every downstream locked QA gate still execute.",
+    "versioning": "Canonical Git/content-derived runtime identity remains unchanged.",
+    "migration": "No data or schema migration.",
+    "docs": "This change request records the large-payload memory correction.",
+    "governance": "The optimization removes only an internal redundant copy; authority and acceptance rules are unchanged.",
+    "deployment": "Deploy, retry the preserved 30 MB project, and require successful artifact validation and download."
+  },
+  "evidence": {
+    "tests": ["tests/test_cad_runtime_recovery.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0029.yaml"],
+    "version_bump": ["Git/content-derived deployment identity"],
+    "golden_regression": ["Large architectural analysis object passed to in-process design"],
+    "semantic_diff": ["Attribute values and object identity are preserved without Pydantic recursive duplication"],
+    "artifact_diff": ["Expected DXF and QA contract unchanged"],
+    "contract_diff": ["No external contract change"],
+    "deployment_plan": ["deploy; retry PRJ-7253354 without charging; monitor to ready; verify downloadable artifact"],
+    "migration": ["none"],
+    "rollback_plan": ["revert the commit; stored project inputs and prior revisions remain intact"]
+  },
+  "risk": {"likelihood": 1, "severity": 4, "detectability": 1, "score": 4, "rationale": "The canonical route accesses request fields as attributes; focused and full regression suites verify behavior."},
+  "waiver": null
+}

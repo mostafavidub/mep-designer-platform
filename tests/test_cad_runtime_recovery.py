@@ -34,6 +34,9 @@ def test_constrained_production_calls_canonical_design_in_process(design):
     assert result.ok
     assert result.json()["generated_files"] == ["result.dxf"]
     design.assert_called_once()
+    request = design.call_args.args[0]
+    assert request.project_id == "98"
+    assert request.plan_analysis == {}
 
 
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")
