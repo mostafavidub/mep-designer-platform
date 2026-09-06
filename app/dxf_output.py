@@ -664,6 +664,12 @@ def maintenance_get_cad_output(pid: int, rev: int, request: Request):
         path = _resolve_existing_cad_artifact(pid, rev, discipline, revision.pdf_path)
     finally:
         db.close()
+    if isinstance(path, str) and path.startswith('s3://'):
+        suffix = Path(path).suffix.lower()
+        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
+        if not artifact_storage.configured():
+            raise HTTPException(503, 'فضای ذخیره‌سازی خروجی موقتاً در دسترس نیست.')
+        return RedirectResponse(artifact_storage.presigned_download(path, filename), status_code=307)
     if not isinstance(path, Path) or not path.exists():
         raise HTTPException(404)
     project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
