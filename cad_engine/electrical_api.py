@@ -30,6 +30,27 @@ def _missing_inputs(report):
     return list(dict.fromkeys(missing))
 
 
+def _aggregate_release_state(reports):
+    """Never promote the HTTP response beyond the authority reports it contains."""
+    if not reports:
+        return {
+            "submission_state": "PRE_SUBMISSION",
+            "preliminary": True,
+            "real_project_acceptance": False,
+            "production_release_allowed": False,
+        }
+    states = [str(r.get("submission_state") or "PRE_SUBMISSION") for r in reports]
+    accepted = [bool((r.get("acceptance") or {}).get("real_project_acceptance")) for r in reports]
+    release = [bool((r.get("acceptance") or {}).get("production_release_allowed")) for r in reports]
+    review_ready = all(state == "EXECUTION_REVIEW_READY" for state in states)
+    return {
+        "submission_state": "EXECUTION_REVIEW_READY" if review_ready else "PRE_SUBMISSION",
+        "preliminary": not review_ready,
+        "real_project_acceptance": all(accepted),
+        "production_release_allowed": all(release),
+    }
+
+
 def register_electrical(app):
     @app.get("/electrical/status")
     def electrical_status():
@@ -82,14 +103,14 @@ def register_electrical(app):
                 zip_outputs(generated, package)
                 for path in generated:
                     path.unlink(missing_ok=True)
+            release_state = _aggregate_release_state(reports)
             return {
                 "ok": True, "project_id": req.project_id, "discipline": "electrical",
                 "engine_identity": build_identity(),
                 "mode": "electrical-authoritative",
                 "pipeline_authority": PIPELINE_AUTHORITY,
-                "preliminary": False,
+                **release_state,
                 "requires_professional_review": True,
-                "submission_state": "EXECUTION_REVIEW_READY",
                 "systems": scope.get("systems") or [],
                 "design_reports": reports,
                 "generated_files": [p.name for p in generated],
