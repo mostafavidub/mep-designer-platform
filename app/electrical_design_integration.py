@@ -7,6 +7,155 @@ import requests
 
 from . import electrical_workflow, electrical_drawing_set
 
+
+# These questions are intentionally on-demand.  They are not added to the first
+# design-basis questionnaire: the CAD authority resolves the applicable detail
+# library first, then returns exact ``detail-id.parameter`` evidence keys.  Only
+# the parameters needed by this project are reopened in the site/panel flow.
+CONSTRUCTION_DETAIL_QUESTION_SPECS = {
+    "detail_panel_mounting_height_mm": {
+        "question": "ارتفاع نصب تابلو از کف تمام‌شده را برای دیتیل اجرایی مشخص کنید.",
+        "input_type": "number", "options": [], "unit": "mm",
+    },
+    "detail_panel_clearance_mm": {
+        "question": "فاصله آزاد دسترسی/کار مقابل تابلو را برای دیتیل اجرایی مشخص کنید.",
+        "input_type": "number", "options": [], "unit": "mm",
+    },
+    "detail_wall_type": {
+        "question": "نوع دیوار محل نصب تجهیزات و عبور تأسیسات را مشخص کنید (مثلاً بنایی، بتن، دیوار خشک یا دیتیل مصوب پروژه).",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_meter_mounting_height_mm": {
+        "question": "ارتفاع نصب کنتور/باکس اندازه‌گیری از کف تمام‌شده را مشخص کنید.",
+        "input_type": "number", "options": [], "unit": "mm",
+    },
+    "detail_service_type": {
+        "question": "نوع سرویس ورودی و آرایش کنتور مورد تأیید پروژه را برای دیتیل اجرایی بنویسید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_conduit_support_spacing_mm": {
+        "question": "فاصله ساپورت لوله/کاندوئیت برق را طبق مشخصات پروژه وارد کنید.",
+        "input_type": "number", "options": [], "unit": "mm",
+    },
+    "detail_conduit_type": {
+        "question": "نوع لوله/کاندوئیت مورد تأیید پروژه را مشخص کنید (جنس، نوع نصب یا کلاس لازم).",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_fire_rating": {
+        "question": "درجه مقاومت حریق دیوار/نفوذ تأسیساتی را مشخص کنید؛ اگر الزام حریق ندارد، صریحاً همین مورد را ثبت کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_sleeve_type": {
+        "question": "نوع Sleeve/غلاف عبور کابل از دیوار را طبق دیتیل مصوب پروژه مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_earthing_electrode_type": {
+        "question": "نوع الکترود/ارت اجرایی پروژه را برای دیتیل اتصال زمین مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_earthing_conductor": {
+        "question": "مشخصات هادی ارت/هم‌بندی مورد تأیید پروژه را وارد کنید (جنس و سطح مقطع/شرح مصوب).",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_earthing_inspection_point": {
+        "question": "محل/نوع نقطه تست و بازرسی سیستم ارت را برای دیتیل اجرایی مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_ceiling_type": {
+        "question": "نوع سقف/سقف کاذب مؤثر بر نصب چراغ و دتکتور را مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_fixture_type": {
+        "question": "نوع نصب/ساپورت چراغ مورد تأیید پروژه را برای دیتیل اجرایی مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_device_mounting_height_mm": {
+        "question": "ارتفاع نصب تجهیز دیواریِ این دیتیل (کلید/پریز تیپ) از کف تمام‌شده را وارد کنید. اگر تیپ‌ها ارتفاع متفاوت دارند، مقدار/شرح تیپ مصوب را در مدارک پروژه یکسان‌سازی کنید.",
+        "input_type": "number", "options": [], "unit": "mm",
+    },
+    "detail_detector_clearance_basis": {
+        "question": "مبنای فاصله آزاد/جانمایی دتکتور از موانع را طبق ضابطه یا دیتیل مصوب پروژه مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_emergency_mounting": {
+        "question": "روش و محل نصب چراغ اضطراری را طبق پروژه مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_emergency_supply": {
+        "question": "منبع/مدار تغذیه چراغ اضطراری را طبق مدارک پروژه مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_junction_box_size": {
+        "question": "سایز/تیپ جعبه اتصال (Junction Box) را برای دیتیل اجرایی مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_junction_box_access": {
+        "question": "روش دسترسی و محل مجاز Junction Box را مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_service_cable": {
+        "question": "مشخصات کابل ورودی/فیدر این ترمینیشن را طبق محاسبات یا اطلاعات تأییدشده پروژه وارد کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_lug_type": {
+        "question": "نوع کابلشو/سرکابل مورد تأیید پروژه برای ترمینیشن را مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_termination_protection": {
+        "question": "روش حفاظت/عایق‌کاری و تکمیل ترمینیشن کابل را طبق مشخصات پروژه بنویسید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_isolator_rating": {
+        "question": "رنج/ظرفیت ایزولاتور تجهیز را طبق نام‌پلاک یا محاسبات تأییدشده وارد کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_isolator_mounting": {
+        "question": "روش/ارتفاع نصب ایزولاتور را طبق پروژه مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+    "detail_isolator_clearance": {
+        "question": "فاصله آزاد دسترسی ایزولاتور از تجهیز/مانع را طبق پروژه مشخص کنید.",
+        "input_type": "text", "options": [], "unit": None,
+    },
+}
+
+# ``reopen_basis_questions`` and ``question_payload`` read this shared registry.
+# Adding on-demand construction questions here keeps the primary Electrical
+# workflow versionless and avoids duplicating answer persistence logic.
+electrical_workflow.REQUIRED_BASIS_QUESTION_SPECS.update(CONSTRUCTION_DETAIL_QUESTION_SPECS)
+
+DETAIL_RECOVERY_KEYS = {
+    "d-el-panel-mount.mounting_height": "detail_panel_mounting_height_mm",
+    "d-el-panel-mount.wall_type": "detail_wall_type",
+    "d-el-panel-mount.clearance": "detail_panel_clearance_mm",
+    "d-el-meter.mounting_height": "detail_meter_mounting_height_mm",
+    "d-el-meter.service_type": "detail_service_type",
+    "d-el-conduit-support.support_spacing": "detail_conduit_support_spacing_mm",
+    "d-el-conduit-support.conduit_type": "detail_conduit_type",
+    "d-el-wall-pen.wall_type": "detail_wall_type",
+    "d-el-wall-pen.fire_rating": "detail_fire_rating",
+    "d-el-wall-pen.sleeve": "detail_sleeve_type",
+    "d-el-earthing.electrode_type": "detail_earthing_electrode_type",
+    "d-el-earthing.conductor": "detail_earthing_conductor",
+    "d-el-earthing.inspection_point": "detail_earthing_inspection_point",
+    "d-el-light-mount.ceiling_type": "detail_ceiling_type",
+    "d-el-light-mount.fixture_type": "detail_fixture_type",
+    "d-el-switch-outlet.mounting_height": "detail_device_mounting_height_mm",
+    "d-el-switch-outlet.wall_type": "detail_wall_type",
+    "d-el-fire-detector.ceiling_type": "detail_ceiling_type",
+    "d-el-fire-detector.clearance_basis": "detail_detector_clearance_basis",
+    "d-el-emergency.mounting": "detail_emergency_mounting",
+    "d-el-emergency.supply": "detail_emergency_supply",
+    "d-el-jb.box_size": "detail_junction_box_size",
+    "d-el-jb.access": "detail_junction_box_access",
+    "d-el-termination.cable": "detail_service_cable",
+    "d-el-termination.lug": "detail_lug_type",
+    "d-el-termination.protection": "detail_termination_protection",
+    "d-el-isolator.rating": "detail_isolator_rating",
+    "d-el-isolator.mounting": "detail_isolator_mounting",
+    "d-el-isolator.clearance": "detail_isolator_clearance",
+}
+
 ERROR_ALIASES = {
     "city": ("city", "project location", "شهر"),
     "supply_configuration": ("supply_voltage_v", "phase_configuration", "utility_service", "supply", "انشعاب"),
@@ -26,6 +175,10 @@ def missing_from_error(error):
     found = []
     match = re.search(r"input_required\[([^\]]+)\]", text, re.I)
     tokens = [x.strip() for x in (match.group(1).split(",") if match else []) if x.strip()]
+    for token in tokens:
+        mapped = DETAIL_RECOVERY_KEYS.get(token.lower())
+        if mapped:
+            found.append(mapped)
     for key, aliases in ERROR_ALIASES.items():
         evidence = tokens + [text]
         if any(any(alias.lower() in item for alias in aliases) for item in evidence):
@@ -114,7 +267,23 @@ def install(dxf_output, legacy):
             "sheet_count": drawing.get("sheet_count") or len(drawing.get("approved_manifest") or drawing.get("manifest") or []),
             "manifest_sha256": drawing.get("manifest_sha256"),
         }
+        answers = dict(project.answers or {})
+        construction_keys = set(CONSTRUCTION_DETAIL_QUESTION_SPECS)
+        pending = [
+            str(q.get("key")) for q in (project.questions or [])
+            if isinstance(q, dict) and q.get("key") in construction_keys and not str(answers.get(q.get("key"), "")).strip()
+        ]
+        captured = [key for key in construction_keys if str(answers.get(key, "")).strip()]
+        data["construction_detail_inputs"] = {
+            "status": "INPUT_REQUIRED" if pending else ("CAPTURED" if captured else "ON_DEMAND"),
+            "pending": pending,
+            "captured_count": len(captured),
+            "message": (
+                "دیتیل‌های اجرایی فقط در صورت نیاز موتور CAD سؤال تکمیلی ایجاد می‌کنند؛ مقدار پیش‌فرض پروژه‌ای ساخته نمی‌شود."
+            ),
+        }
         data["electrical_contract_revision"] = "electrical-runtime/1"
+        data["electrical_execution_detail_contract"] = "construction-detail-inputs/1"
         data["electrical_cad_mode"] = "electrical-authoritative"
         return data
 
