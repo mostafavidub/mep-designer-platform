@@ -39,7 +39,7 @@ from .authority_architecture_v14 import (
     validate_authority_contract,
 )
 from .equipment_representation_v14 import validate_split_representation
-from app.mechanical_basis_contract import canonical_cooling_system, normalize_answers
+from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
 A4_W = 21.0
@@ -186,14 +186,9 @@ def build_design_overrides(answers: dict) -> dict:
     location=_answer(answers,"city","location", default="")
     city=str(location).split("،")[-1].strip() if location else None
     cooling_key=canonical_cooling_system(answers)
-    heating=_norm(_answer(answers,"heating","heating_system", default=""))
     gas_raw=_answer(answers,"gas","gas_service", default="")
     gas_answer=_norm(gas_raw)
-    heating_key="package_radiator" if (
-        heating=="package_radiator"
-        or ("پکیج" in heating and any(x in heating for x in ("رادیاتور","شوفاژ")))
-        or ("radiator" in heating and any(x in heating for x in ("combi","boiler","hydronic")))
-    ) else None
+    heating_key=canonical_heating_system(answers)
     return {
         "city": city,
         "cooling_system": cooling_key,
@@ -241,6 +236,10 @@ def _level_evidence(pipeline):
 def build_authority_model(pipeline, answers):
     levels=_level_evidence(pipeline)
     roof=any(p.get("mechanical_role")=="ROOF_SUPPORT" for p in pipeline["architecture"].get("plans") or [])
+    plan_analysis=_answer(answers,"_plan_analysis",default={}) or {}
+    architectural_auto=plan_analysis.get("architectural_auto") or {}
+    if architectural_auto.get("roof_scope_reliable") is False:
+        roof=False
     project=build_project_model(levels=levels,roof_present=roof,occupancy=_answer(answers,"occupancy",default="residential"),excluded_frames=(pipeline["architecture"].get("quality") or {}).get("excluded_frame_count",0))
     overrides=build_design_overrides(answers)
     basis=resolve_design_basis(project,overrides)

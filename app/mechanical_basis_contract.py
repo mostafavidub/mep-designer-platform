@@ -52,6 +52,23 @@ def canonical_cooling_system(answers):
     return None
 
 
+def canonical_heating_system(answers):
+    """Return only the heating system the active CAD engine can issue."""
+    value = (answers or {}).get("heating_system") or (answers or {}).get("heating")
+    text = _text(value).lower()
+    if not text:
+        return None
+    if text == "package_radiator":
+        return text
+    if (
+        "پکیج" in text and any(token in text for token in ("رادیاتور", "شوفاژ"))
+    ) or (
+        "radiator" in text and any(token in text for token in ("combi", "package"))
+    ):
+        return "package_radiator"
+    return None
+
+
 def canonical_shaft_strategy(value):
     text = _text(value).lower()
     if not text:
@@ -78,6 +95,9 @@ def normalize_answers(answers, *, answer_key=None, raw_answer=None):
     cooling = canonical_cooling_system(out)
     if cooling:
         out["cooling_system"] = cooling
+    heating = canonical_heating_system(out)
+    if heating:
+        out["heating_system"] = heating
     rainfall = numeric(out.get("rainfall_intensity_mm_h") or out.get("rainfall_intensity"))
     if rainfall is not None:
         out["rainfall_intensity_mm_h"] = rainfall
@@ -128,4 +148,6 @@ def persisted_answer_is_valid(answers, key):
         return bool(shaft_approval(answers))
     if key == "cooling_system":
         return bool(canonical_cooling_system(answers))
+    if key == "heating_system":
+        return bool(canonical_heating_system(answers))
     return bool(_text((answers or {}).get(key)))
