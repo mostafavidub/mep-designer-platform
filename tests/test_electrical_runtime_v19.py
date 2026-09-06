@@ -94,6 +94,27 @@ class ElectricalRuntimeTests(unittest.TestCase):
         self.assertEqual(cfg['sizing_tables'], {})
         self.assertEqual(cfg['panel_rules'], {})
 
+    def test_api_does_not_overstate_pre_submission_report(self):
+        state = electrical_api._aggregate_release_state([
+            {
+                'submission_state':'PRE_SUBMISSION',
+                'acceptance':{'real_project_acceptance':False, 'production_release_allowed':False},
+            }
+        ])
+        self.assertEqual(state['submission_state'], 'PRE_SUBMISSION')
+        self.assertTrue(state['preliminary'])
+        self.assertFalse(state['real_project_acceptance'])
+        self.assertFalse(state['production_release_allowed'])
+
+    def test_api_aggregates_multi_file_release_state_fail_closed(self):
+        state = electrical_api._aggregate_release_state([
+            {'submission_state':'EXECUTION_REVIEW_READY', 'acceptance':{'real_project_acceptance':True, 'production_release_allowed':True}},
+            {'submission_state':'PRE_SUBMISSION', 'acceptance':{'real_project_acceptance':False, 'production_release_allowed':False}},
+        ])
+        self.assertEqual(state['submission_state'], 'PRE_SUBMISSION')
+        self.assertFalse(state['real_project_acceptance'])
+        self.assertFalse(state['production_release_allowed'])
+
     def test_cad_runtime_has_no_web_app_dependency(self):
         for module in (production, cad_contract, runtime_support, electrical_api):
             source = inspect.getsource(module)
