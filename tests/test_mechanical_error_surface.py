@@ -5,6 +5,8 @@ from app import dxf_output
 
 
 class _Response:
+    status_code = 422
+
     def json(self):
         return {
             'detail': (
@@ -22,6 +24,29 @@ class MechanicalErrorSurfaceTests(unittest.TestCase):
         self.assertNotIn('127.0.0.1:8081', message)
         source = inspect.getsource(dxf_output.run_design_dxf)
         self.assertNotIn('raise_for_status()', source)
+
+    def test_server_diagnostic_keeps_qa_evidence_but_excludes_geometry(self):
+        class Rejection:
+            status_code = 422
+
+            def json(self):
+                return {'detail': {
+                    'code': 'MECHANICAL_QA_FAILED',
+                    'stage': 'engineering_acceptance_gate',
+                    'engineering_acceptance': {
+                        'status': 'FAIL',
+                        'errors': ['routing:route_crosses_architectural_wall'],
+                        'metrics': {'wall_crossings': 2},
+                        'project_geometry': {'rooms': [1, 2, 3]},
+                    },
+                }}
+
+        diagnostic = dxf_output._cad_rejection_diagnostic(Rejection())
+        self.assertEqual(diagnostic['engineering_acceptance']['errors'], [
+            'routing:route_crosses_architectural_wall'
+        ])
+        self.assertEqual(diagnostic['engineering_acceptance']['metrics'], {'wall_crossings': 2})
+        self.assertNotIn('project_geometry', str(diagnostic))
 
 
 if __name__ == '__main__':
