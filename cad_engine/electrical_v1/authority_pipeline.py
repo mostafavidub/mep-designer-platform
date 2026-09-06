@@ -5,7 +5,8 @@ from typing import Any, Dict, Optional
 
 import ezdxf
 
-from .authority_qa import normalized_semantic_duplicate_qa, reopened_file_authority_qa, release_contract_status
+from .authority_qa import normalized_semantic_duplicate_qa, reopened_file_authority_qa
+from .release_contract import release_contract_status
 from .documentation import SYMBOL_LIBRARY
 from .strict_pipeline import run_strict_electrical_pipeline
 
