@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0024",
+  "summary": "Generate traceable design-only plumbing endpoints from reconstructed architectural wet rooms when proprietary or exploded source symbols cannot be recognized, so required networks cannot reach final QA with zero endpoints.",
+  "requester": "mostafavidub",
+  "change_types": ["drawing_output", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "pmm", "qa", "questionnaire", "routing", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Wet-room labels now create explicit design endpoints for kitchen, toilet, and bathroom plumbing when source symbols are absent; generated endpoints remain distinct from detected installed fixtures.",
+    "equipment": "Each generated plumbing fixture is marked status=designed and installed=false with architectural-room provenance.",
+    "planner": "Required cold-water, hot-water, sanitary, and vent systems always receive routable endpoints when the architectural use establishes demand.",
+    "routing": "Generated endpoints use the reconstructed room label point and retain strict plan-local routing.",
+    "sizing": "New routes carry endpoint loads through the existing sizing engine without relaxed thresholds.",
+    "detail_riser": "Existing detail and riser generation consumes the resulting sized networks; no detail contract is weakened.",
+    "qa": "Positive, duplicate-suppression, and non-wet-room destructive tests preserve fail-closed behavior; the affected real-file class passes pipeline and engineering acceptance locally.",
+    "ui_api": "No questionnaire or API shape changes are required because the data is derivable from architectural room evidence.",
+    "manifest": "No sheet family or submission claim changes; output remains PRE_SUBMISSION and NOT_COORDINATED where applicable.",
+    "pmm": "No PMM schema change; provenance remains available in generated endpoint evidence.",
+    "manufacturer_selector": "No manufacturer selection behavior changes.",
+    "questionnaire": "No additional user question is introduced for information derivable from the plan.",
+    "versioning": "Deployment identity remains Git/content-derived.",
+    "migration": "No database or contract migration is required.",
+    "docs": "This change request records the design-versus-detection semantic boundary.",
+    "governance": "No locked QA gate is bypassed or weakened; missing route evidence is corrected upstream.",
+    "deployment": "Merge only after all CI gates pass, deploy the merged commit, and retry the affected paid project in place."
+  },
+  "evidence": {
+    "tests": ["tests/test_fixture_evidence_resilience.py", "tests/test_stage05_topology_v13.py", "tests/test_final_mechanical_delivery_gate_v17.py", "tests/test_mechanical_authority_v15.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0024.yaml"],
+    "version_bump": ["Git/content-derived deployment identity; no manual runtime version label"],
+    "golden_regression": ["Architecture with recognized wet rooms and no trustworthy source fixture blocks"],
+    "semantic_diff": ["Source detections stay installed/detected; architecture-derived endpoints are explicitly designed/not-installed"],
+    "artifact_diff": ["Required plumbing systems gain plan-local routed, sized, and annotated endpoint content"],
+    "contract_diff": ["No external schema change; endpoint provenance is additive"],
+    "deployment_plan": ["merge after CI; wait for Railway success; retry PRJ-7253354 without charging"],
+    "migration": ["no schema migration required"],
+    "rollback_plan": ["revert the merged Git commit and retain paid project data for another in-place retry"]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 2, "score": 12, "rationale": "The change adds generated design endpoints to several downstream drawing stages, but preserves source-detection semantics and strict QA."},
+  "waiver": null
+}
