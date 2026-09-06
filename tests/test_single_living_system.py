@@ -20,7 +20,7 @@ def test_container_identity_is_deterministic_without_git_metadata():
         first = module.build_identity(); second = module.build_identity()
     assert first == second
     assert first["commit_sha"] == "abc123"
-    assert first["build_timestamp"] == "deploy-42"
+    assert first["build_timestamp"] == "commit:abc123"
 
 def test_no_new_parallel_runtime_versions_and_canonical_launchers():
     assert audit("HEAD")["status"] == "PASS"
