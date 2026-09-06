@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from importlib import import_module
 
-CONTRACT_REVISION = "electrical-release-contract/2"
+CONTRACT_REVISION = "electrical-release-contract/3"
 REQUIRED_CAPABILITIES = {
     "evidence_model": "cad_engine.electrical_v1.models",
     "architecture_reconstruction": "cad_engine.electrical_v1.architecture",
@@ -22,6 +22,7 @@ REQUIRED_CAPABILITIES = {
     "service_and_single_line_traceability": "cad_engine.electrical_v1.service",
     "project_details_and_legend": "cad_engine.electrical_v1.documentation",
     "construction_detail_and_evidence_qa": "cad_engine.electrical_v1.construction_qa",
+    "submission_titleblock_and_cross_sheet_qa": "cad_engine.electrical_v1.submission_quality",
     "independent_sheet_composition": "cad_engine.electrical_v1.composer",
     "preservation_first_cleanup": "cad_engine.electrical_v1.cleanup_policy",
     "north_from_architecture_evidence": "cad_engine.electrical_v1.orientation",
