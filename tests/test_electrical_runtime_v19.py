@@ -8,19 +8,19 @@ from app.electrical_review_fix import analyzer_needs_refresh, review_question_ht
 from app.electrical_basis_contract import normalize_answers
 from app.electrical_site_release_contract import release_contract_status as site_release_status
 from app import electrical_drawing_set
-from cad_engine.electrical_v1.production_v19 import build_engine_config
-from cad_engine.electrical_v1.release_contract_v19 import release_contract_status as cad_release_status
-import cad_engine.electrical_v1.production_v19 as production_v19
-import cad_engine.electrical_v1.release_contract_v19 as cad_contract
-import cad_engine.electrical_v1.runtime_support_v19 as runtime_support
-import cad_engine.electrical_api_v19 as electrical_api
+from cad_engine.electrical_v1.production import build_engine_config
+from cad_engine.electrical_v1.release_contract import release_contract_status as cad_release_status
+import cad_engine.electrical_v1.production as production
+import cad_engine.electrical_v1.release_contract as cad_contract
+import cad_engine.electrical_v1.runtime_support as runtime_support
+import cad_engine.electrical_api as electrical_api
 
 
 class FakeAuto:
     pass
 
 
-class ElectricalRuntimeV19Tests(unittest.TestCase):
+class ElectricalRuntimeTests(unittest.TestCase):
     def test_architecture_proxies_are_not_promoted_to_answers(self):
         fake = FakeAuto()
         def original(analysis, discipline, supplied_answers=None):
@@ -95,7 +95,7 @@ class ElectricalRuntimeV19Tests(unittest.TestCase):
         self.assertEqual(cfg['panel_rules'], {})
 
     def test_cad_runtime_has_no_web_app_dependency(self):
-        for module in (production_v19, cad_contract, runtime_support, electrical_api):
+        for module in (production, cad_contract, runtime_support, electrical_api):
             source = inspect.getsource(module)
             self.assertNotIn('from app', source, module.__name__)
             self.assertNotIn('import app', source, module.__name__)
