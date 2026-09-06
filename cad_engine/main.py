@@ -8,10 +8,13 @@ from .main_v18 import app
 from .build_identity import build_identity
 from .mechanical_release_contract_v19 import release_contract_status
 from .mechanical_authority_site_v19 import design_mechanical_authority_site
-from .electrical_api_v19 import register_electrical_v19
+from .electrical_api import register_electrical
 
 _base.design_mechanical_authority_site = design_mechanical_authority_site
-register_electrical_v19(app)
+# Backward import compatibility for shared queue/artifact QA. The implementation
+# remains owned by runtime_core/main_v15; this is not a second production path.
+design_dxf = _base.design_dxf
+register_electrical(app)
 
 
 @app.get("/version")
