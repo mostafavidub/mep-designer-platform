@@ -210,7 +210,14 @@ def register_panel_bridge(app, legacy, Job):
                 ]
                 unresolved_by_key = {question.get("key"): question for question in unanswered}
                 for key in basis_missing:
-                    unresolved_by_key[key] = mechanical_workflow._question_payload(key)
+                    # The production health wrapper installs the discipline dispatcher
+                    # here. Always pass the project so overlapping keys (for example
+                    # ``city``) keep the correct Mechanical/Electrical wording.
+                    try:
+                        unresolved_by_key[key] = mechanical_workflow._question_payload(key, project=project)
+                    except TypeError:
+                        # Backward compatibility for the native Mechanical workflow.
+                        unresolved_by_key[key] = mechanical_workflow._question_payload(key)
                 unresolved = list(unresolved_by_key.values())
                 if unresolved:
                     project.status = "asking"
