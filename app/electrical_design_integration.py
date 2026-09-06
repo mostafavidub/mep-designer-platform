@@ -175,12 +175,20 @@ def missing_from_error(error):
     found = []
     match = re.search(r"input_required\[([^\]]+)\]", text, re.I)
     tokens = [x.strip() for x in (match.group(1).split(",") if match else []) if x.strip()]
+    unmatched_tokens = []
     for token in tokens:
         mapped = DETAIL_RECOVERY_KEYS.get(token.lower())
         if mapped:
             found.append(mapped)
+        else:
+            unmatched_tokens.append(token)
+    # Structured detail tokens own their exact question mapping. Broad aliases
+    # such as "earthing", "mounting" or "height" must not reopen unrelated
+    # design-basis questions merely because those words occur inside a detail ID.
+    # For structured INPUT_REQUIRED lists inspect only unmapped tokens; retain
+    # free-text fallback for legacy/unstructured CAD errors.
+    evidence = unmatched_tokens if tokens else [text]
     for key, aliases in ERROR_ALIASES.items():
-        evidence = tokens + [text]
         if any(any(alias.lower() in item for alias in aliases) for item in evidence):
             found.append(key)
     return list(dict.fromkeys(found))
