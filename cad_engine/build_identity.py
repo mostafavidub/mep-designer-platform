@@ -62,7 +62,13 @@ def _build_timestamp() -> str:
 
 def build_identity() -> dict[str, object]:
     dependency_files = [ROOT / "requirements.txt", ROOT / "cad_engine" / "requirements.txt"]
-    rulebook_files = list((ROOT / "data" / "rulebook").glob("*"))
+    rulebook_root = ROOT / "data" / "rulebook"
+    # DOCX is a generated delivery artifact whose ZIP metadata can vary by
+    # process. Identity is derived from its authoritative, deterministic inputs.
+    rulebook_files = [
+        path for path in rulebook_root.glob("*")
+        if path.suffix.lower() in {".py", ".b64", ".txt"}
+    ]
     manufacturer_files = list((ROOT / "data" / "manufacturer").rglob("*")) if (ROOT / "data" / "manufacturer").exists() else []
     compliance_files = [ROOT / "standards" / "mechanical-design-governance-v1.json"]
     pmm_files = [ROOT / "app" / "project_mechanical_model.py", ROOT / "app" / "mechanical_basis_contract.py"]

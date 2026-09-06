@@ -28,5 +28,16 @@ def test_container_identity_never_uses_service_local_deployment_id():
     with patch.dict(module.os.environ, env, clear=True), patch.object(module, "_git", return_value=""):
         assert module._build_timestamp() == "commit:UNKNOWN"
 
+def test_generated_rulebook_docx_does_not_participate_in_release_identity():
+    from cad_engine import build_identity as module
+    generated = module.ROOT / "data" / "rulebook" / "MEP_Design_Rulebook.docx"
+    original = generated.read_bytes()
+    before = module.build_identity()["rulebook_hash"]
+    try:
+        generated.write_bytes(original + b"service-local-generated-metadata")
+        assert module.build_identity()["rulebook_hash"] == before
+    finally:
+        generated.write_bytes(original)
+
 def test_no_new_parallel_runtime_versions_and_canonical_launchers():
     assert audit("HEAD")["status"] == "PASS"

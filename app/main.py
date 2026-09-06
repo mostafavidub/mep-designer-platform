@@ -344,7 +344,9 @@ def system_health():
                 cad['build_identity']=version_response.json()
         except Exception: pass
     panel_identity=build_identity()
-    cad['identity_matches']=cad.get('build_identity') == panel_identity if cad.get('build_identity') else integrated_cad
+    remote_version=cad.get('build_identity') or {}
+    remote_identity=remote_version.get('build_identity', remote_version) if isinstance(remote_version, dict) else {}
+    cad['identity_matches']=remote_identity == panel_identity if remote_version else integrated_cad
     return {'status':'ok','cad_designer':cad,'build_identity':panel_identity,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
 @app.get('/sitemap.xml')
 def sitemap(request:Request):
