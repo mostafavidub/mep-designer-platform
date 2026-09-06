@@ -1,13 +1,19 @@
+import inspect
 import unittest
 from types import SimpleNamespace
 
 from app.electrical_runtime_patch import install as install_runtime
-from app.electrical_design_integration import missing_from_error
+from app.electrical_design_integration import missing_from_error, _ensure_approved_manifest
 from app.electrical_review_fix import analyzer_needs_refresh, review_question_html
 from app.electrical_basis_contract import normalize_answers
+from app.electrical_site_release_contract import release_contract_status as site_release_status
 from app import electrical_drawing_set
 from cad_engine.electrical_v1.production_v19 import build_engine_config
-from cad_engine.electrical_v1.release_contract_v19 import release_contract_status
+from cad_engine.electrical_v1.release_contract_v19 import release_contract_status as cad_release_status
+import cad_engine.electrical_v1.production_v19 as production_v19
+import cad_engine.electrical_v1.release_contract_v19 as cad_contract
+import cad_engine.electrical_v1.runtime_support_v19 as runtime_support
+import cad_engine.electrical_api_v19 as electrical_api
 
 
 class FakeAuto:
@@ -65,16 +71,42 @@ class ElectricalRuntimeV19Tests(unittest.TestCase):
         self.assertIn('E-000', html)
         self.assertIn(str(proposal['sheet_count']), html)
 
+    def test_public_design_never_silently_approves_manifest(self):
+        p = SimpleNamespace(
+            answers=normalize_answers({
+                'discipline':'electrical','location':'تهران','supply':'همه واحدها تک‌فاز',
+                'earthing':'ارت فونداسیون','main_panel':'اجازه پیشنهاد محل مناسب را دارید',
+                'dedicated_load_schedule':'ندارد','fire_alarm_requirement':'خارج از محدوده این پروژه',
+                'low_current_systems':'خارج از محدوده','lighting_design_basis':'Rule Book و استاندارد مصوب پروژه',
+                'codes':'ضابطه پروژه','heights':'مطابق پلان',
+            }),
+            analysis={'architectural_auto':{'levels':[{'name':'همکف'}],'room_counts':{'living':1}}},
+            status='ready_to_design', last_error=''
+        )
+        self.assertFalse(_ensure_approved_manifest(p))
+        self.assertEqual(p.status, 'drawing_set_review')
+        self.assertEqual(p.analysis['drawing_set']['status'], 'PROPOSED')
+        self.assertFalse(electrical_drawing_set.approved_manifest_is_valid(p.analysis['drawing_set']))
+
     def test_production_config_does_not_invent_voltage_or_sizing_tables(self):
         cfg = build_engine_config({'discipline':'electrical','supply':'همه واحدها تک‌فاز'}, {})
         self.assertNotIn('supply_voltage_v', cfg['design_basis'])
         self.assertEqual(cfg['sizing_tables'], {})
         self.assertEqual(cfg['panel_rules'], {})
 
-    def test_release_contract_imports_all_v19_capabilities(self):
-        status = release_contract_status()
-        self.assertEqual(status['status'], 'PASS', status)
-        self.assertEqual(status['passed_count'], status['required_count'])
+    def test_cad_runtime_has_no_web_app_dependency(self):
+        for module in (production_v19, cad_contract, runtime_support, electrical_api):
+            source = inspect.getsource(module)
+            self.assertNotIn('from app', source, module.__name__)
+            self.assertNotIn('import app', source, module.__name__)
+
+    def test_split_release_contracts_are_green(self):
+        cad = cad_release_status()
+        site = site_release_status()
+        self.assertEqual(cad['status'], 'PASS', cad)
+        self.assertEqual(site['status'], 'PASS', site)
+        self.assertEqual(cad['scope'], 'cad-runtime')
+        self.assertEqual(site['scope'], 'site-ui-panel-runtime')
 
 
 if __name__ == '__main__':
