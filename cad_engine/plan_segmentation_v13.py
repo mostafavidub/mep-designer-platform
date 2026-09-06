@@ -123,6 +123,34 @@ def _plans_from_authoritative_profiles(profiles):
     return plans
 
 
+def _promote_room_evidenced_floor_plans(plans, rooms):
+    """Recover untitled floor plans from architectural content, not guesswork.
+
+    Some consultant files use print frames but omit the Persian/English title
+    tokens understood by ``_classify``.  A frame is safe to promote only when
+    it is otherwise UNKNOWN and contains both wet-room and habitable-room
+    evidence.  Explicit elevations, sections, details, roof and furniture
+    plans remain excluded.
+    """
+    by_plan={}
+    for room in rooms or []:
+        pid=room.get("plan_id")
+        if pid:
+            by_plan.setdefault(pid,set()).add(room.get("type"))
+    promoted=[]
+    wet={"bathroom","toilet","kitchen"}
+    habitable={"bedroom","living","kitchen"}
+    for plan in plans:
+        types=by_plan.get(plan.get("plan_id"),set())
+        if (plan.get("drawing_type")=="UNKNOWN" and
+                types & wet and types & habitable):
+            plan["drawing_type"]="ARCH_FLOOR_PLAN"
+            plan["mechanical_role"]="PRIMARY_FLOOR"
+            plan["source"]="room_evidence_floor_recovery"
+            promoted.append(plan.get("plan_id"))
+    return promoted
+
+
 def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     plans=detect_print_plans(src)
     if plans and not any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in plans):
@@ -140,6 +168,10 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         p=owner(room.get("label_point")); room["plan_id"]=p["plan_id"] if p else None
     for item in recognition.get("detections") or []:
         p=owner(item.get("point")); item["plan_id"]=p["plan_id"] if p else None
+
+    if plans and not any(p.get("mechanical_role")=="PRIMARY_FLOOR" for p in plans):
+        promoted=_promote_room_evidenced_floor_plans(plans,architecture.get("rooms") or [])
+        architecture.setdefault("quality",{})["room_evidence_promoted_plan_ids"]=promoted
 
     doc=ezdxf.readfile(src); text_shafts=[]
     for e in doc.modelspace():

@@ -1,0 +1,31 @@
+{
+  "change_id": "SWCIS-2026-0017",
+  "summary": "Recover architectural floor plans with nonstandard titles from bounded room evidence.",
+  "requester": "mostafavidub",
+  "change_types": ["analysis", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "governance", "planner", "qa", "ui_api"],
+  "impact_notes": {
+    "cad_designer": "An UNKNOWN print frame becomes a primary floor only when it contains both wet-room and habitable-room evidence.",
+    "qa": "Explicit elevations, sections, details, roofs and furniture plans remain excluded; weak evidence remains fail-closed.",
+    "planner": "Recovered primary floors feed the existing project model, topology and annotation pipeline.",
+    "governance": "SWCIS closure.",
+    "deployment": "Deploy after CI and retry the preserved paid project without a second payment."
+  },
+  "evidence": {
+    "traceability": ["cad_engine/plan_segmentation_v13.py"],
+    "tests": ["tests/test_plan_segmentation_room_evidence.py"],
+    "docs": ["changes/SWCIS-2026-0017.yaml"],
+    "version_bump": ["Git/content-derived deployment identity"],
+    "migration": ["none"],
+    "golden_regression": ["full suite required before merge"],
+    "semantic_diff": ["room evidence recovers only otherwise UNKNOWN frames"],
+    "artifact_diff": ["nonstandard-title architectural floors can receive mechanical sheets"],
+    "numeric_diff": ["no sizing formula change"],
+    "contract_diff": ["no public contract change"],
+    "deployment_plan": ["merge after CI PASS; verify Railway health; retry preserved project"],
+    "rollback_plan": ["revert protected merge; preserved input and payment remain intact"]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "Promotion requires two independent architectural room classes and never overrides an explicit non-floor classification."},
+  "waiver": null
+}
