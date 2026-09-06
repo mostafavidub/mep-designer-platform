@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import re
 
-CONTRACT_VERSION = "electrical-design-basis-v19.0"
+CONTRACT_REVISION = "electrical-design-basis/1"
 SUPPLY_CONFIGURATIONS = {"single_phase", "three_phase", "mixed_single_units_three_phase_common"}
 EARTHING_VALUES = {"tn-s", "tn-c-s", "tt", "foundation_earth", "earth_electrode", "input_required"}
 PANEL_STRATEGIES = {
@@ -118,7 +118,7 @@ def _approval(strategy, raw, source="explicit_user_answer"):
     return {
         "status": "APPROVED", "strategy": strategy, "source": source,
         "raw_answer": _text(raw), "recorded_at": datetime.now(timezone.utc).isoformat(),
-        "contract_version": CONTRACT_VERSION,
+        "contract_revision": CONTRACT_REVISION,
     }
 
 
@@ -142,7 +142,7 @@ def normalize_answers(answers, *, answer_key=None, raw_answer=None):
         if answer_key in {"service_panel_location", "main_panel"} or existing.get("status") != "APPROVED":
             raw = raw_answer if answer_key else (out.get("main_panel") or strategy)
             out["service_panel_location_approval"] = _approval(strategy, raw)
-    out["_electrical_basis_contract"] = {"version": CONTRACT_VERSION, "status": "NORMALIZED"}
+    out["_electrical_basis_contract"] = {"contract_revision": CONTRACT_REVISION, "status": "NORMALIZED"}
     return out
 
 
