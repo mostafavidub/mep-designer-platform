@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0030",
+  "summary": "Supply the canonical null default for the unused architecture archive field in zero-copy in-process CAD requests.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "drawing_output", "test", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Directory-backed requests expose the same null archive field previously supplied by the typed model.",
+    "ui_api": "No public contract change.",
+    "manifest": "Not affected.",
+    "qa": "All canonical design and release gates remain unchanged.",
+    "versioning": "Git/content-derived identity remains unchanged.",
+    "migration": "No data or schema migration.",
+    "deployment": "The compatibility default is deployed before retrying the preserved paid project.",
+    "docs": "This change request records the compatibility default.",
+    "governance": "The field default restores parity with the canonical request model without bypassing validation."
+  },
+  "evidence": {
+    "tests": ["tests/test_cad_runtime_recovery.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0030.yaml"],
+    "version_bump": ["Git/content-derived deployment identity"],
+    "golden_regression": ["Directory-backed in-process request without archive payload"],
+    "semantic_diff": ["Missing optional archive field is normalized to null"],
+    "artifact_diff": ["not affected"],
+    "contract_diff": ["Matches existing DesignRequest default"],
+    "deployment_plan": ["deploy and retry PRJ-7253354"],
+    "migration": ["none"],
+    "rollback_plan": ["revert this commit; stored inputs remain intact"]
+  },
+  "risk": {"likelihood": 1, "severity": 2, "detectability": 1, "score": 2, "rationale": "Adds only the canonical optional-field default."},
+  "waiver": null
+}

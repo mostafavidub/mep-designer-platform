@@ -37,6 +37,7 @@ def test_constrained_production_calls_canonical_design_in_process(design):
     request = design.call_args.args[0]
     assert request.project_id == "98"
     assert request.plan_analysis == {}
+    assert request.architecture_archive_b64 is None
 
 
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")
