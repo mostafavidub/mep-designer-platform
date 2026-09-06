@@ -40,3 +40,16 @@ jobs:
           python -m unittest tests.test_architecture_topology_v1 -v
           python -m unittest tests.test_level_detection_v3 -v
           python -m unittest tests.test_system_typical_v1 -v
+      - name: Package exact acceptance runtime
+        if: success()
+        run: |
+          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile railway.json 2>/dev/null || \
+          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile
+      - name: Publish exact acceptance runtime
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electrical-acceptance-runtime-${{ github.sha }}
+          path: /tmp/electrical-acceptance-runtime.zip
+          if-no-files-found: error
+          retention-days: 7
