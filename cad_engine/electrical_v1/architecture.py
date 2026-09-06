@@ -186,6 +186,65 @@ def _infer_level_name(text: str, drawing_type: str, index: int) -> EvidenceValue
     return EvidenceValue.preliminary(f"LEVEL-{index}", "architectural_evidence", 0.35, "level identity inferred from eligible frame order")
 
 
+def _bounds_area(bounds: Tuple[float, float, float, float]) -> float:
+    x1, y1, x2, y2 = bounds
+    return max(0.0, x2 - x1) * max(0.0, y2 - y1)
+
+
+def _bounds_iou(a: Tuple[float, float, float, float], b: Tuple[float, float, float, float]) -> float:
+    ix1, iy1 = max(a[0], b[0]), max(a[1], b[1])
+    ix2, iy2 = min(a[2], b[2]), min(a[3], b[3])
+    intersection = max(0.0, ix2 - ix1) * max(0.0, iy2 - iy1)
+    if intersection <= 0:
+        return 0.0
+    union = _bounds_area(a) + _bounds_area(b) - intersection
+    return intersection / union if union > 0 else 0.0
+
+
+def _candidate_title_signature(candidate: Dict[str, Any]) -> Optional[Tuple[str, str]]:
+    hits = candidate.get("title_hits") or []
+    if not hits:
+        return None
+    title_entity, (drawing_type, _confidence) = max(hits, key=lambda x: (x[1][1], len(_norm(x[0].get("text")))))
+    title = _norm(title_entity.get("text"))
+    return (drawing_type, title) if title else None
+
+
+def _dedupe_frame_candidates(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Suppress nested print-frame aliases without merging distinct plans.
+
+    Architectural exports often contain both the actual plot boundary and a
+    slightly expanded helper/viewport boundary around the same plan.  When the
+    same strongest drawing title is present in two highly-overlapping bounds,
+    the smaller boundary is the safer ownership scope (and is consistent with
+    ``owning_frame``).  Identical titles at different coordinates are retained.
+    """
+    ordered = sorted(candidates, key=lambda x: (_bounds_area(x["bounds"]), x.get("area", 0.0)))
+    kept: List[Dict[str, Any]] = []
+    for candidate in ordered:
+        signature = _candidate_title_signature(candidate)
+        duplicate = False
+        if signature is not None:
+            c_area = _bounds_area(candidate["bounds"])
+            for existing in kept:
+                if _candidate_title_signature(existing) != signature:
+                    continue
+                e_area = _bounds_area(existing["bounds"])
+                smaller = min(c_area, e_area)
+                larger = max(c_area, e_area)
+                area_ratio = smaller / larger if larger > 0 else 0.0
+                iou = _bounds_iou(candidate["bounds"], existing["bounds"])
+                # Require both near-equal scale and strong spatial overlap.
+                # This prevents two repeated floor plans with the same title in
+                # different drawing locations from being collapsed together.
+                if area_ratio >= 0.65 and iou >= 0.72:
+                    duplicate = True
+                    break
+        if not duplicate:
+            kept.append(candidate)
+    return kept
+
+
 def _candidate_frames(polygons: List[Dict[str, Any]], texts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not polygons:
         return []
@@ -205,9 +264,7 @@ def _candidate_frames(polygons: List[Dict[str, Any]], texts: List[Dict[str, Any]
         large = poly["area"] >= max(median * 4.0, 1.0)
         if (large and ratio <= 8.0 and local_text) or title_hits:
             candidates.append({**poly, "local_text": local_text, "title_hits": title_hits})
-    # Remove nested candidates when a smaller candidate has the same strongest title evidence.
-    candidates.sort(key=lambda x: x["area"])
-    return candidates
+    return _dedupe_frame_candidates(candidates)
 
 
 def reconstruct_architecture(path: str | Path) -> ArchitecturalModel:
