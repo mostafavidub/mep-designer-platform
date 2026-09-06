@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from app import electrical_drawing_set
 from app.discipline_workflow_dispatcher import required_basis_questions
 from app.electrical_execution_score import score
-from app.electrical_standards_registry import validate_registry
+from app.electrical_rulebook import validate_rulebook
 from app.electrical_basis_contract import normalize_answers
 
 
@@ -23,7 +23,7 @@ def complete_answers():
     })
 
 
-class ElectricalPanelParityV19Tests(unittest.TestCase):
+class ElectricalPanelParityTests(unittest.TestCase):
     def test_panel_dispatcher_asks_electrical_not_mechanical_basis(self):
         p = project({'discipline':'electrical'}, {'architectural_auto': {'levels':[{'name':'همکف'}]}})
         missing = required_basis_questions(p)
@@ -59,8 +59,8 @@ class ElectricalPanelParityV19Tests(unittest.TestCase):
         self.assertFalse(result['execution_ready'])
         self.assertIn('FINAL_FILE_REOPEN', result['hard_blockers'])
 
-    def test_standards_registry_contains_no_project_fact_defaults(self):
-        self.assertEqual(validate_registry()['status'], 'PASS')
+    def test_rulebook_contains_no_project_fact_defaults(self):
+        self.assertEqual(validate_rulebook()['status'], 'PASS')
 
 
 if __name__ == '__main__':
