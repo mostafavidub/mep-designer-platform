@@ -1,7 +1,8 @@
 import unittest
 from types import SimpleNamespace
 
-from app import electrical_drawing_set
+from app import electrical_drawing_set, mechanical_workflow
+import app.discipline_workflow_dispatcher as dispatcher
 from app.discipline_workflow_dispatcher import required_basis_questions
 from app.electrical_execution_score import score
 from app.electrical_rulebook import validate_rulebook
@@ -30,6 +31,19 @@ class ElectricalPanelParityTests(unittest.TestCase):
         self.assertIn('supply_configuration', missing)
         self.assertIn('earthing_system', missing)
         self.assertNotIn('water_inlet_pressure', missing)
+
+    def test_dispatcher_normalize_answers_preserves_mechanical_contract(self):
+        raw = {'discipline':'mechanical', 'city':'تهران'}
+        self.assertEqual(dispatcher.normalize_answers(raw), mechanical_workflow.normalize_answers(raw))
+
+    def test_dispatcher_uses_project_context_for_overlapping_city_question(self):
+        mechanical = project({'discipline':'mechanical'})
+        electrical = project({'discipline':'electrical'})
+        mechanical_payload = dispatcher._question_payload('city', project=mechanical)
+        electrical_payload = dispatcher._question_payload('city', project=electrical)
+        self.assertEqual(mechanical_payload['source'], 'mechanical_basis_preflight')
+        self.assertNotEqual(mechanical_payload['question'], electrical_payload['question'])
+        self.assertIn('ضوابط محلی', electrical_payload['question'])
 
     def test_complete_panel_preflight_persists_approved_manifest(self):
         p = project(complete_answers(), {'architectural_auto': {'levels':[{'name':'همکف'}], 'room_counts':{'living':1}}})
