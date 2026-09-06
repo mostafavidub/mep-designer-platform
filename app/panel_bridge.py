@@ -197,6 +197,8 @@ def register_panel_bridge(app, legacy, Job):
                 if occupancy.strip():
                     restored_answers["occupancy"] = occupancy.strip()
                 restored_answers["panel_external_project_id"] = external_project_id
+                if discipline == "mechanical":
+                    restored_answers = mechanical_workflow.normalize_answers(restored_answers)
                 project.answers = restored_answers
                 basis_missing = mechanical_workflow.required_basis_questions(project)
                 unanswered = [

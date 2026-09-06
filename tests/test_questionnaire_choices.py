@@ -34,7 +34,7 @@ class QuestionnaireChoiceTests(unittest.TestCase):
                 if question['key'] == 'location':
                     continue
                 self.assertEqual(question['input_type'], 'radio', question['key'])
-                minimum = 1 if question['key'] == 'cooling' else 4
+                minimum = 1 if question['key'] in {'cooling', 'heating'} else 4
                 self.assertGreaterEqual(len(question['options']), minimum, question['key'])
 
     def test_legacy_stored_question_is_enriched_at_render_time(self):

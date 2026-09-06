@@ -369,9 +369,10 @@ def dynamic_questions(analysis, discipline, auto):
             else:
                 q.append(('fixture_schedule', 'سمبل تجهیزات بهداشتی با اطمینان تشخیص داده نشد. فقط تعدادها را کوتاه بنویسید؛ مثال: «سینک ۲، روشویی ۳، توالت ۳، دوش ۲».'))
         if auto.get('roof_scope_reliable'):
+            q.append(('rainfall_intensity', 'شدت بارندگی طراحی مورد تأیید پروژه/مرجع محلی چند mm/h است؟'))
             if not auto.get('roof_drain_count') or not auto.get('roof_area_m2'):
                 proposal = roof_geometry_proposal(auto)
-                q.append(('roof_drainage_geometry', f'پیشنهاد خودکار بام: {proposal}. شدت بارندگی از شهر پروژه تعیین می‌شود. پاسخ کوتاه: «تأیید» یا فقط عدد متفاوت مساحت/کف‌خواب.'))
+                q.append(('roof_drainage_geometry', f'پیشنهاد خودکار بام: {proposal}. پاسخ کوتاه: «تأیید» یا فقط عدد متفاوت مساحت/کف‌خواب.'))
 
         if not re.search(r'مبحث ۱۴|ضوابط شهرداری|نظام مهندسی|استاندارد محلی|municipal code|local code', text, re.I):
             q.append(('local_mechanical_code', 'آیا شهرداری/نظام مهندسی ضابطه خاصی مثل شدت بارندگی، نوع سیستم یا محدودیت مسیر ابلاغ کرده است؟ پاسخ کوتاه: «ندارد» یا فقط همان الزام.'))
