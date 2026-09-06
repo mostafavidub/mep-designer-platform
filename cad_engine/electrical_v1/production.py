@@ -19,6 +19,87 @@ def _negative(value):
     return any(x in text for x in ("ندارد", "خارج از محدوده", "خیر", "none", "not required"))
 
 
+def _build_detail_parameters(answers: dict) -> dict:
+    """Translate flat site/panel answers into the parametric detail contract.
+
+    No construction value is inferred here. Existing structured ``detail_parameters``
+    have priority; flat fields are only copied when the user explicitly supplied
+    them. This allows late CAD INPUT_REQUIRED recovery to ask one exact question,
+    resume the same project, and then satisfy the matching detail parameter.
+    """
+    explicit = {
+        str(detail_id): dict(values or {})
+        for detail_id, values in dict(answers.get("detail_parameters") or {}).items()
+        if isinstance(values, dict)
+    }
+    mapping = {
+        "D-EL-PANEL-MOUNT": {
+            "mounting_height": "detail_panel_mounting_height_mm",
+            "wall_type": "detail_wall_type",
+            "clearance": "detail_panel_clearance_mm",
+        },
+        "D-EL-METER": {
+            "mounting_height": "detail_meter_mounting_height_mm",
+            "service_type": "detail_service_type",
+        },
+        "D-EL-CONDUIT-SUPPORT": {
+            "support_spacing": "detail_conduit_support_spacing_mm",
+            "conduit_type": "detail_conduit_type",
+        },
+        "D-EL-WALL-PEN": {
+            "wall_type": "detail_wall_type",
+            "fire_rating": "detail_fire_rating",
+            "sleeve": "detail_sleeve_type",
+        },
+        "D-EL-EARTHING": {
+            "electrode_type": "detail_earthing_electrode_type",
+            "conductor": "detail_earthing_conductor",
+            "inspection_point": "detail_earthing_inspection_point",
+        },
+        "D-EL-LIGHT-MOUNT": {
+            "ceiling_type": "detail_ceiling_type",
+            "fixture_type": "detail_fixture_type",
+        },
+        "D-EL-SWITCH-OUTLET": {
+            "mounting_height": "detail_device_mounting_height_mm",
+            "wall_type": "detail_wall_type",
+        },
+        "D-EL-FIRE-DETECTOR": {
+            "ceiling_type": "detail_ceiling_type",
+            "clearance_basis": "detail_detector_clearance_basis",
+        },
+        "D-EL-EMERGENCY": {
+            "mounting": "detail_emergency_mounting",
+            "supply": "detail_emergency_supply",
+        },
+        "D-EL-JB": {
+            "box_size": "detail_junction_box_size",
+            "access": "detail_junction_box_access",
+        },
+        "D-EL-TERMINATION": {
+            "cable": "detail_service_cable",
+            "lug": "detail_lug_type",
+            "protection": "detail_termination_protection",
+        },
+        "D-EL-ISOLATOR": {
+            "rating": "detail_isolator_rating",
+            "mounting": "detail_isolator_mounting",
+            "clearance": "detail_isolator_clearance",
+        },
+    }
+    for detail_id, params in mapping.items():
+        target = explicit.setdefault(detail_id, {})
+        for parameter, answer_key in params.items():
+            if parameter in target:
+                continue
+            value = answers.get(answer_key)
+            if value not in (None, "", [], {}):
+                target[parameter] = value
+        if not target:
+            explicit.pop(detail_id, None)
+    return explicit
+
+
 def build_engine_config(answers: dict | None, plan_analysis: dict | None = None) -> dict[str, Any]:
     answers = dict(answers or {})
     explicit = dict(answers.get("_electrical_engine_config") or {})
@@ -79,7 +160,7 @@ def build_engine_config(answers: dict | None, plan_analysis: dict | None = None)
         "panel_rules": dict(answers.get("panel_rules") or {}),
         "service_inputs": dict(answers.get("service_inputs") or {}),
         "optional_system_inputs": dict(answers.get("optional_system_inputs") or {}),
-        "detail_parameters": dict(answers.get("detail_parameters") or {}),
+        "detail_parameters": _build_detail_parameters(answers),
         "content_density": dict(answers.get("content_density") or {}),
         "reference_similarity_threshold": float(answers.get("reference_similarity_threshold") or .60),
     }
