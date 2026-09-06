@@ -1,11 +1,14 @@
-"""Production adapter for the strict Electrical authority pipeline v19."""
+"""Production adapter for the strict Electrical authority pipeline v19.
+
+The dedicated CAD image contains only ``cad_engine``; therefore this module must
+remain self-contained and may not import the web ``app`` package.
+"""
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
-from app.electrical_basis_contract import canonical_earthing, canonical_supply
-from app.electrical_execution_score import score as execution_score
+from .runtime_support_v19 import canonical_earthing, canonical_supply, execution_score
 from .strict_pipeline_v15_2 import run_strict_electrical_pipeline_v15_2
 
 PIPELINE_AUTHORITY = "electrical-v19"
@@ -26,9 +29,11 @@ def build_engine_config(answers: dict | None, plan_analysis: dict | None = None)
     supply = canonical_supply(answers.get("supply_configuration") or answers.get("supply")) or {}
     earthing = canonical_earthing(answers.get("earthing_system") or answers.get("earthing"))
     design_basis = {}
+
     def put(key, value):
         if value not in (None, "", [], {}):
             design_basis[key] = value
+
     put("city", answers.get("city") or answers.get("location"))
     put("building_type", answers.get("building_type") or answers.get("occupancy") or auto.get("occupancy_inferred"))
     put("supply_voltage_v", supply.get("voltage_v"))
@@ -58,7 +63,7 @@ def build_engine_config(answers: dict | None, plan_analysis: dict | None = None)
         "voltage_drop_limits",
     ):
         put(key, answers.get(key))
-    config = {
+    return {
         "project_inputs": {
             "project_name": answers.get("project_name") or "EngiTools Electrical Project",
             "building_type": design_basis.get("building_type") or "unknown",
@@ -78,16 +83,15 @@ def build_engine_config(answers: dict | None, plan_analysis: dict | None = None)
         "content_density": dict(answers.get("content_density") or {}),
         "reference_similarity_threshold": float(answers.get("reference_similarity_threshold") or .60),
     }
-    return config
 
 
 def _score_gates(report):
     gates = dict(report.get("gates") or {})
     gates.setdefault("NO_FAKE_FINAL", {"status":"PASS"})
-    # Site/panel and runtime gates are injected by the production transaction;
-    # this adapter marks only its own CAD/runtime identity. Panel flow is scored
-    # by the web service before release.
     gates.setdefault("RUNTIME_RELEASE_IDENTITY", {"status":"PASS"})
+    # CAD cannot attest to authenticated panel recovery; the web transaction
+    # supplies this gate later. Keeping it UNKNOWN prevents a CAD-only score
+    # from falsely claiming end-to-end execution readiness.
     gates.setdefault("PANEL_FLOW_RECOVERY", {"status":"UNKNOWN"})
     return execution_score(gates)
 
