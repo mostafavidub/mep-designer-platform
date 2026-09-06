@@ -1,4 +1,8 @@
-"""Machine-readable production contract for the Electrical v19 workflow."""
+"""Machine-readable CAD-runtime contract for Electrical v19.
+
+The dedicated CAD Docker image copies only ``cad_engine``.  Site/UI capabilities
+are validated by ``app.electrical_site_release_contract`` in the web service.
+"""
 from __future__ import annotations
 
 from importlib import import_module
@@ -23,17 +27,9 @@ REQUIRED_CAPABILITIES = {
     "authority_reopen_qa": "cad_engine.electrical_v1.authority_qa",
     "strict_authority_pipeline": "cad_engine.electrical_v1.strict_pipeline_v15_2",
     "fail_closed_release_gate": "cad_engine.electrical_v1.release_gate",
+    "runtime_support": "cad_engine.electrical_v1.runtime_support_v19",
     "production_adapter": "cad_engine.electrical_v1.production_v19",
     "production_http_route": "cad_engine.electrical_api_v19",
-    "site_design_basis_contract": "app.electrical_basis_contract",
-    "site_question_workflow": "app.electrical_workflow",
-    "site_active_questionnaire_patch": "app.electrical_runtime_patch",
-    "site_drawing_set_contract": "app.electrical_drawing_set",
-    "site_drawing_set_review": "app.electrical_review_fix",
-    "site_panel_dispatcher": "app.discipline_workflow_dispatcher",
-    "site_panel_recovery_integration": "app.electrical_design_integration",
-    "standards_registry": "app.electrical_standards_registry",
-    "execution_score": "app.electrical_execution_score",
 }
 
 
@@ -47,6 +43,7 @@ def release_contract_status():
             checks[capability] = False
     return {
         "version": RELEASE_VERSION,
+        "scope": "cad-runtime",
         "status": "PASS" if all(checks.values()) else "FAIL",
         "required_count": len(checks),
         "passed_count": sum(checks.values()),
