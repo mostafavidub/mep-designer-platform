@@ -2,7 +2,7 @@ import unittest
 from types import SimpleNamespace
 
 from app.electrical_basis_contract import (
-    CONTRACT_VERSION, canonical_supply, canonical_earthing, canonical_panel_strategy,
+    CONTRACT_REVISION, canonical_supply, canonical_earthing, canonical_panel_strategy,
     normalize_answers, panel_location_approval, persisted_answer_is_valid,
 )
 from app.electrical_workflow import build_scope, required_basis_questions, reopen_basis_questions
@@ -20,7 +20,7 @@ class ElectricalBasisContractV19Tests(unittest.TestCase):
         self.assertIsNone(canonical_supply(''))
         self.assertEqual(canonical_supply('واحدها تک‌فاز و مشاعات سه‌فاز')['configuration'], 'mixed_single_units_three_phase_common')
         normalized = normalize_answers({'discipline':'electrical', 'supply':'همه انشعاب‌ها سه‌فاز'})
-        self.assertEqual(normalized['_electrical_basis_contract']['version'], CONTRACT_VERSION)
+        self.assertEqual(normalized['_electrical_basis_contract']['contract_revision'], CONTRACT_REVISION)
         self.assertEqual(normalized['supply_configuration']['configuration'], 'three_phase')
 
     def test_normalization_is_idempotent_for_retry_and_recovery(self):
