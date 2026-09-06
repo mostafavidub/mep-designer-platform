@@ -1,6 +1,6 @@
 import unittest
 
-from cad_engine.engineering_runner_v13 import _merge_browser_fixture_evidence
+from cad_engine.engineering_runner_v13 import _merge_browser_fixture_evidence, _discard_unlocated_native_fixtures
 
 
 class FixtureEvidenceResilienceTests(unittest.TestCase):
@@ -42,6 +42,14 @@ class FixtureEvidenceResilienceTests(unittest.TestCase):
         result=_merge_browser_fixture_evidence(arch,rec,evidence)
         self.assertEqual(result['detections'],[])
         self.assertEqual(result['quality']['browser_evidence_fallback_accepted'],0)
+
+    def test_native_fixture_in_incompatible_room_is_rejected_before_design(self):
+        arch=self._architecture();arch['rooms'].append({'id':'R-P','type':'parking','plan_id':'P1','label_point':(9000,7000)})
+        rec={'detections':[{'id':'MEP-1','category':'fixture','type':'wc','room_id':'R-P'},
+                           {'id':'MEP-2','category':'fixture','type':'sink','room_id':'R-K'}], 'quality':{}}
+        result=_discard_unlocated_native_fixtures(arch,rec)
+        self.assertEqual([x['id'] for x in result['detections']],['MEP-2'])
+        self.assertEqual(result['quality']['native_fixture_false_positives_rejected'],1)
 
 
 if __name__ == '__main__':
