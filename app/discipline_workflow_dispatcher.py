@@ -16,6 +16,24 @@ def _discipline(project):
     return (project.answers or {}).get("discipline", (project.analysis or {}).get("discipline", "mechanical"))
 
 
+def normalize_answers(answers, *, answer_key=None, raw_answer=None, project=None):
+    """Normalize answers with the discipline-specific basis contract.
+
+    The shared panel bridge historically calls ``mechanical_workflow.normalize_answers``.
+    At production startup that module reference is replaced by this dispatcher, so this
+    compatibility surface must remain available for both Mechanical and Electrical.
+    """
+    discipline = None
+    if project is not None:
+        discipline = _discipline(project)
+    if not discipline:
+        discipline = str((answers or {}).get("discipline") or "mechanical").strip().lower()
+    kwargs = {"answer_key": answer_key, "raw_answer": raw_answer}
+    if discipline == "electrical":
+        return electrical_workflow.normalize_answers(answers, **kwargs)
+    return mechanical_workflow.normalize_answers(answers, **kwargs)
+
+
 def _persist_electrical_manifest_if_ready(project, missing):
     if missing:
         return
@@ -39,11 +57,18 @@ def required_basis_questions(project):
 
 
 def _question_payload(key, project=None):
-    if project is not None and _discipline(project) == "electrical":
-        return electrical_workflow.question_payload(key)
+    # Project context is authoritative for overlapping keys such as ``city``.
+    if project is not None:
+        if _discipline(project) == "electrical":
+            return electrical_workflow.question_payload(key)
+        return mechanical_workflow._question_payload(key)
+    # Backward-compatible no-project calls prefer Mechanical for overlapping keys;
+    # Electrical-only keys still route to the Electrical questionnaire.
+    if key in mechanical_workflow.REQUIRED_BASIS_QUESTION_SPECS:
+        return mechanical_workflow._question_payload(key)
     if key in electrical_workflow.REQUIRED_BASIS_QUESTION_SPECS:
         return electrical_workflow.question_payload(key)
-    return mechanical_workflow._question_payload(key)
+    raise KeyError(key)
 
 
 def create_proposal(project):
