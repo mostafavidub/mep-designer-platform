@@ -15,6 +15,7 @@ COPY app ./app
 COPY cad_engine ./cad_engine
 COPY tests ./tests
 COPY data ./data
+COPY standards ./standards
 COPY start_services.sh ./start_services.sh
 RUN chmod +x ./start_services.sh
 ENV DATA_DIR=/data
