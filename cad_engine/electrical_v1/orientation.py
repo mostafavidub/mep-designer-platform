@@ -51,34 +51,29 @@ def _line_points(entity):
     return []
 
 
-def detect_north_for_frame(source: str | Path, bounds, *, radius_ratio: float = 0.10) -> Dict[str, Any] | None:
-    """Return architectural north only when a compass cluster is geometrically evidenced.
+def _detect_north_from_index(bounds, n_labels, line_points, *, radius_ratio: float = 0.10) -> Dict[str, Any] | None:
+    """Resolve north for one frame from a pre-indexed modelspace scan.
 
-    A solitary N label is intentionally insufficient. We require nearby line/polyline
-    geometry and derive the vector from that cluster centroid to the N label.
+    The source DXF may be tens of megabytes. Reading and rescanning it once per
+    architectural frame made real-project acceptance effectively quadratic in
+    practice. This helper keeps the evidence rule identical while reusing one
+    source parse and one entity index for every frame.
     """
-    doc = ezdxf.readfile(str(source)); msp = doc.modelspace()
-    n_labels = []
-    for entity in msp:
-        if entity.dxftype() not in {"TEXT", "MTEXT"}: continue
-        if _norm(_text(entity)) != "n": continue
-        p = _point(entity)
-        if _inside(p, bounds): n_labels.append(p)
-    if not n_labels: return None
-    x1, y1, x2, y2 = bounds; radius = max(math.hypot(x2-x1, y2-y1) * radius_ratio, 1e-6)
+    frame_labels = [p for p in n_labels if _inside(p, bounds)]
+    if not frame_labels:
+        return None
+    x1, y1, x2, y2 = bounds
+    radius = max(math.hypot(x2-x1, y2-y1) * radius_ratio, 1e-6)
+    frame_points = [p for p in line_points if _inside(p, bounds)]
     best = None
-    for n in n_labels:
-        nearby = []
-        for entity in msp:
-            if entity.dxftype() not in {"LINE", "LWPOLYLINE"}: continue
-            pts = _line_points(entity)
-            for p in pts:
-                if _inside(p, bounds) and math.dist(p, n) <= radius:
-                    nearby.append(p)
-        if len(nearby) < 3: continue
+    for n in frame_labels:
+        nearby = [p for p in frame_points if math.dist(p, n) <= radius]
+        if len(nearby) < 3:
+            continue
         cx = sum(p[0] for p in nearby) / len(nearby); cy = sum(p[1] for p in nearby) / len(nearby)
         vx, vy = n[0]-cx, n[1]-cy; length = math.hypot(vx, vy)
-        if length < 1e-9: continue
+        if length < 1e-9:
+            continue
         vx /= length; vy /= length
         candidate = {
             "vector": (vx, vy),
@@ -94,15 +89,40 @@ def detect_north_for_frame(source: str | Path, bounds, *, radius_ratio: float = 
     return best
 
 
+def _north_evidence_index(source: str | Path):
+    doc = ezdxf.readfile(str(source)); msp = doc.modelspace()
+    n_labels = []
+    line_points = []
+    for entity in msp:
+        etype = entity.dxftype()
+        if etype in {"TEXT", "MTEXT"}:
+            if _norm(_text(entity)) == "n":
+                p = _point(entity)
+                if p is not None:
+                    n_labels.append(p)
+        elif etype in {"LINE", "LWPOLYLINE"}:
+            line_points.extend(_line_points(entity))
+    return n_labels, line_points
+
+
+def detect_north_for_frame(source: str | Path, bounds, *, radius_ratio: float = 0.10) -> Dict[str, Any] | None:
+    """Return architectural north only when a compass cluster is geometrically evidenced."""
+    n_labels, line_points = _north_evidence_index(source)
+    return _detect_north_from_index(bounds, n_labels, line_points, radius_ratio=radius_ratio)
+
+
 def detect_project_north(source: str | Path, frames: Iterable[dict]) -> Dict[str, Any]:
     records = {}
     warnings = []
+    n_labels, line_points = _north_evidence_index(source)
     for frame in frames:
-        if not frame.get("eligible_for_electrical"): continue
+        if not frame.get("eligible_for_electrical"):
+            continue
         frame_id = frame.get("id")
-        north = detect_north_for_frame(source, frame.get("bounds"))
+        north = _detect_north_from_index(frame.get("bounds"), n_labels, line_points)
         records[frame_id] = north
-        if north is None: warnings.append(f"north_input_required:{frame_id}")
+        if north is None:
+            warnings.append(f"north_input_required:{frame_id}")
     return {
         "version": "electrical-architecture-north-v15.2",
         "status": "PASS",
