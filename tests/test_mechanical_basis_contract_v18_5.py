@@ -1,5 +1,5 @@
 from app.mechanical_basis_contract import (
-    canonical_city, canonical_cooling_system, canonical_shaft_strategy,
+    canonical_city, canonical_cooling_system, canonical_heating_system, canonical_shaft_strategy,
     normalize_answers, numeric, persisted_answer_is_valid, shaft_approval,
 )
 
@@ -36,3 +36,17 @@ def test_normalization_persists_the_same_cooling_authority_used_by_cad():
     answers = normalize_answers({}, answer_key='cooling_system', raw_answer='اسپلیت دیواری')
     assert answers['cooling_system'] == 'wall_mounted_split_ac'
     assert persisted_answer_is_valid(answers, 'cooling_system')
+
+
+def test_heating_contract_accepts_only_engine_supported_package_radiator():
+    assert canonical_heating_system({'heating': 'پکیج دیواری و رادیاتور'}) == 'package_radiator'
+    assert canonical_heating_system({'heating_system': 'package_radiator'}) == 'package_radiator'
+    for unsupported in ('موتورخانه مرکزی و رادیاتور', 'گرمایش از کف', 'هیت پمپ و فن کویل'):
+        assert canonical_heating_system({'heating': unsupported}) is None
+        assert not persisted_answer_is_valid({'heating': unsupported}, 'heating_system')
+
+
+def test_normalization_persists_supported_heating_system():
+    answers = normalize_answers({'heating': 'پکیج دیواری و رادیاتور'})
+    assert answers['heating_system'] == 'package_radiator'
+    assert persisted_answer_is_valid(answers, 'heating_system')

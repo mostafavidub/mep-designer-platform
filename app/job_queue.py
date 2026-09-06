@@ -884,7 +884,7 @@ def register_job_queue(app, legacy):
 def legacy_basis_missing(error):
     """Extract only approved user-input keys from legacy authority reports."""
     raw = str(error or '')
-    allowed = ('city', 'rainfall_intensity', 'cooling_system', 'gas_pressure')
+    allowed = ('city', 'rainfall_intensity', 'cooling_system', 'heating_system', 'gas_pressure')
     found = []
     for key in allowed:
         authority_match = re.search(r'design_basis_input_required:([^\]"\'}]+)', raw)

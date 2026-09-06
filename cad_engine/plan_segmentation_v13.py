@@ -151,12 +151,61 @@ def _promote_room_evidenced_floor_plans(plans, rooms):
     return promoted
 
 
+def _segment_overlaps(value, first, second, tolerance=.05):
+    low,high=sorted((float(first),float(second)))
+    return low-tolerance <= value <= high+tolerance
+
+
+def _recover_orthogonal_room_enclosures(architecture, plans):
+    """Recover a room boundary only from four bracketing wall faces.
+
+    Consultant DXFs often draw walls as LINE entities and omit a closed room
+    polyline.  A text label is sufficient to select a room, but not to invent
+    its geometry.  This fallback therefore accepts only an axis-aligned cell
+    for which real wall segments bracket the label on every side inside its
+    authoritative floor-plan bounds.
+    """
+    plan_bounds={p.get("plan_id"):p.get("bounds") for p in plans or []}
+    walls=architecture.get("walls") or []; recovered=[]
+    for room in architecture.get("rooms") or []:
+        if room.get("polygon") or not room.get("label_point") or not room.get("plan_id"):
+            continue
+        bounds=plan_bounds.get(room["plan_id"])
+        if not bounds:continue
+        x,y=map(float,room["label_point"]); horizontal=[];vertical=[]
+        for wall in walls:
+            try:(x1,y1),(x2,y2)=wall["start"],wall["end"]
+            except (KeyError,TypeError,ValueError):continue
+            if max(x1,x2)<bounds[0] or min(x1,x2)>bounds[2] or max(y1,y2)<bounds[1] or min(y1,y2)>bounds[3]:
+                continue
+            if abs(y1-y2)<=.02 and _segment_overlaps(x,x1,x2):horizontal.append((float((y1+y2)/2),wall))
+            if abs(x1-x2)<=.02 and _segment_overlaps(y,y1,y2):vertical.append((float((x1+x2)/2),wall))
+        below=[row for row in horizontal if row[0]<y-.05];above=[row for row in horizontal if row[0]>y+.05]
+        left=[row for row in vertical if row[0]<x-.05];right=[row for row in vertical if row[0]>x+.05]
+        if not (below and above and left and right):continue
+        bottom=max(below,key=lambda row:row[0]);top=min(above,key=lambda row:row[0])
+        west=max(left,key=lambda row:row[0]);east=min(right,key=lambda row:row[0])
+        x1,x2=west[0],east[0];y1,y2=bottom[0],top[0]
+        if not (.15 <= x2-x1 <= bounds[2]-bounds[0] and .15 <= y2-y1 <= bounds[3]-bounds[1]):continue
+        polygon=[(x1,y1),(x2,y1),(x2,y2),(x1,y2)]
+        room["polygon"]=polygon;room["area"]=(x2-x1)*(y2-y1)
+        room.setdefault("evidence",[]).append("four_sided_orthogonal_wall_enclosure")
+        recovered.append(room.get("id"))
+    architecture.setdefault("quality",{})["wall_enclosure_recovered_room_ids"]=recovered
+    architecture["quality"]["rooms_with_polygon"]=sum(bool(r.get("polygon")) for r in architecture.get("rooms") or [])
+    return recovered
+
+
 def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     plans=detect_print_plans(src)
-    if plans and not any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in plans):
-        authoritative=_plans_from_authoritative_profiles(authoritative_profiles)
-        if any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in authoritative):
-            plans=authoritative
+    authoritative=_plans_from_authoritative_profiles(authoritative_profiles)
+    if any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in authoritative):
+        # Browser analysis is sealed from this same upload and preserves every
+        # confirmed drawing region.  Prefer it even when the local title parser
+        # found *some* floors: repeated/consultant-specific titles can otherwise
+        # collapse distinct plans into one ``DUPLICATE_REFERENCE`` and make the
+        # approved drawing manifest disagree with generated boards/routes.
+        plans=authoritative
     # Legacy/single-plan drawings without office print frames remain valid.
     if not plans:
         bounds=architecture.get("bounds") or [0,0,0,0]
@@ -193,6 +242,8 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     architecture.setdefault("quality",{})["plan_count"]=len(plans)
     architecture["quality"]["primary_floor_count"]=len(architecture["primary_floor_plan_ids"])
     architecture["quality"]["excluded_frame_count"]=sum(1 for p in plans if p.get("mechanical_role") in {"EXCLUDE","DUPLICATE_REFERENCE"})
+
+    _recover_orthogonal_room_enclosures(architecture,plans)
 
     # Only canonical floor plans feed room/fixture driven mechanical design.
     primary=set(architecture["primary_floor_plan_ids"])

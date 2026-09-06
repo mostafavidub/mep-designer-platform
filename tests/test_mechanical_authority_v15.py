@@ -3,11 +3,38 @@ from pathlib import Path
 import ezdxf
 
 from cad_engine.mechanical_authority_v15 import (
-    build_design_overrides,
+    build_authority_model, build_design_overrides,
     _sheet_code,
     compose_authority_dxf,
     qa_authority_dxf,
 )
+
+
+def test_rejected_reused_roof_title_does_not_require_rainfall():
+    pipeline = {
+        'architecture': {
+            'primary_floor_plan_ids': ['P1'],
+            'plans': [
+                {'plan_id': 'P1', 'level': 'GROUND', 'mechanical_role': 'PRIMARY_FLOOR', 'bounds': [0, 0, 10, 10]},
+                {'plan_id': 'P2', 'level': 'ROOF', 'mechanical_role': 'ROOF_SUPPORT', 'bounds': [20, 0, 30, 10]},
+            ],
+            'rooms': [
+                {'plan_id': 'P1', 'type': 'living'},
+                {'plan_id': 'P1', 'type': 'kitchen'},
+            ],
+            'quality': {},
+        },
+        'recognition': {'detections': []},
+    }
+    answers = {
+        'city': 'تهران', 'cooling': 'اسپلیت دیواری',
+        'heating': 'پکیج دیواری و رادیاتور', 'gas': 'ساختمان گاز ندارد',
+        'water_inlet_pressure': '2.5 bar',
+        '_plan_analysis': {'architectural_auto': {'roof_scope_reliable': False}},
+    }
+    authority = build_authority_model(pipeline, answers)
+    assert authority['project']['roof_present'] is False
+    assert 'rainfall_intensity' not in authority['design_basis']['missing']
 from cad_engine.authority_architecture_v14 import (
     build_project_model,
     resolve_design_basis,

@@ -146,6 +146,12 @@ class QueueIntegrationContractTests(unittest.TestCase):
             ['gas_pressure'],
         )
 
+    def test_legacy_heating_failure_reopens_supported_heating_question(self):
+        self.assertEqual(
+            legacy_basis_missing('design_basis_input_required:heating_system,rainfall_intensity'),
+            ['rainfall_intensity', 'heating_system'],
+        )
+
     def test_object_storage_outage_does_not_block_local_analysis(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / 'architecture.dxf'

@@ -71,7 +71,7 @@ class UnifiedQuestionnaireV5Tests(unittest.TestCase):
                 self.assertEqual(rendered['options'], [])
             else:
                 self.assertEqual(rendered['input_type'], 'radio', key)
-                minimum = 1 if key == 'cooling' else 2
+                minimum = 1 if key in {'cooling', 'heating'} else 2
                 self.assertGreaterEqual(len(rendered['options']), minimum, key)
 
     def test_invalid_zip_is_rejected_without_internal_server_error(self):

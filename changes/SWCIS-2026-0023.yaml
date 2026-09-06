@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0023",
+  "summary": "Align the panel questionnaire and mechanical authority contract so unsupported heating selections and false roof evidence cannot fail after payment at the 20 percent engine stage.",
+  "requester": "mostafavidub",
+  "change_types": ["drawing_output", "schema", "ui_api", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "pmm", "qa", "questionnaire", "routing", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "The authority engine consumes the same canonical supported heating choice as preflight and rejects a reused roof title when architecture analysis marks roof scope unreliable.",
+    "qa": "Regression tests cover supported heating normalization, unsupported heating re-questioning, legacy recovery, and rejected roof rainfall behavior.",
+    "ui_api": "Panel and public questionnaire expose only the heating system the active engine can fully produce; reliable roof scope asks for confirmed rainfall before payment.",
+    "manifest": "No new sheet family is introduced; unreliable roof evidence can no longer force rainwater scope.",
+    "versioning": "Deployment identity remains Git/content-derived.",
+    "migration": "No schema migration is required.",
+    "docs": "This record documents the cross-layer input-contract correction.",
+    "governance": "All UI choices are constrained by active engine capabilities and the late input-recovery allow-list is synchronized.",
+    "deployment": "Deploy after full CI, retry the affected project without charging, then complete a fresh browser-only project through output download."
+  },
+  "evidence": {
+    "tests": ["tests/test_mechanical_basis_contract_v18_5.py", "tests/test_mechanical_workflow.py", "tests/test_unified_questionnaire_v5.py", "tests/test_mechanical_authority_v15.py", "tests/test_job_queue_and_artifact_qa.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0023.yaml"],
+    "version_bump": ["Git/content-derived deployment identity; no manual version label"],
+    "golden_regression": ["PRJ-4284151 unsupported heating plus rejected roof title"],
+    "semantic_diff": ["questionnaire/preflight/CAD authority share supported heating and roof reliability semantics"],
+    "artifact_diff": ["no artificial roof plan or rainfall dependency from rejected roof evidence"],
+    "contract_diff": ["heating_system is canonical, persisted, preflighted, and recoverable"],
+    "deployment_plan": ["merge after CI; wait for Railway success; retry affected paid project; create and finish a fresh project through browser UI"],
+    "migration": ["no database migration; existing answer aliases are normalized on the next panel submission or recovery"],
+    "rollback_plan": ["revert merge and retain affected project data for another in-place retry"]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 1, "score": 6, "rationale": "The change crosses questionnaire and CAD authority boundaries but is guarded by targeted and full-suite regression tests."},
+  "waiver": null
+}

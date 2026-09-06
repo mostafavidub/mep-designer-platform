@@ -110,10 +110,31 @@ def _discard_unlocated_native_fixtures(architecture, recognition):
 
 
 def _add_locked_design_endpoints(architecture, recognition, design_basis):
-    """Create design endpoints only where user basis and room evidence agree."""
+    """Create design endpoints only where user basis and room evidence agree.
+
+    Architectural wet-room labels are sufficient evidence for design intent even
+    when an uploaded drawing uses exploded or proprietary fixture symbols.  In
+    that case create explicit *designed* plumbing endpoints; never claim that
+    those fixtures were detected or installed in the source drawing.
+    """
     rows=list(recognition.get('detections') or []);existing={(r.get('plan_id'),r.get('room_id'),r.get('type')) for r in rows}
     for room in architecture.get('rooms') or []:
         room_type=room.get('type');candidates=[]
+        if room_type=='kitchen':
+            candidates.append(('sink','architectural_kitchen_design_endpoint',1.0))
+        elif room_type=='toilet':
+            candidates.extend((
+                ('wc','architectural_toilet_design_endpoint',1.0),
+                ('basin','architectural_toilet_design_endpoint',1.0),
+                ('floor_drain','architectural_toilet_design_endpoint',1.0),
+            ))
+        elif room_type=='bathroom':
+            candidates.extend((
+                ('wc','architectural_bathroom_design_endpoint',1.0),
+                ('basin','architectural_bathroom_design_endpoint',1.0),
+                ('shower','architectural_bathroom_design_endpoint',1.0),
+                ('floor_drain','architectural_bathroom_design_endpoint',1.0),
+            ))
         if room_type=='kitchen' and (design_basis or {}).get('gas_service') is True:
             candidates.append(('stove','locked_gas_service_plus_architectural_kitchen',12.0))
         if room_type in {'bathroom','toilet'}:
@@ -125,9 +146,12 @@ def _add_locked_design_endpoints(architecture, recognition, design_basis):
             if key in existing:continue
             point=_room_point(room)
             if not point:continue
-            rows.append({'id':f"DESIGN-{kind.upper()}-{len(rows)+1:03d}",'category':'equipment','type':kind,'point':point,
+            category='fixture' if kind in {'wc','basin','sink','shower','floor_drain'} else 'equipment'
+            evidence=(['reconstructed_architectural_room','design_endpoint_not_source_detection'] if category=='fixture'
+                      else ['user_locked_design_basis','reconstructed_architectural_room'])
+            rows.append({'id':f"DESIGN-{kind.upper()}-{len(rows)+1:03d}",'category':category,'type':kind,'point':point,
                          'room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':1.0,'status':'designed','installed':False,
-                         'evidence':['user_locked_design_basis','reconstructed_architectural_room'],'source':source,'design_load':design_load})
+                         'evidence':evidence,'source':source,'design_load':design_load})
             existing.add(key)
     recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
     return recognition

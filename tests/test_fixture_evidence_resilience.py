@@ -1,9 +1,32 @@
 import unittest
 
-from cad_engine.engineering_runner_v13 import _merge_browser_fixture_evidence
+from cad_engine.engineering_runner_v13 import _merge_browser_fixture_evidence, _discard_unlocated_native_fixtures, _add_locked_design_endpoints
 
 
 class FixtureEvidenceResilienceTests(unittest.TestCase):
+    def test_wet_room_labels_create_designed_not_detected_plumbing_endpoints(self):
+        arch={'rooms':[
+            {'id':'R-K','type':'kitchen','plan_id':'P1','label_point':(10,10)},
+            {'id':'R-T','type':'toilet','plan_id':'P1','label_point':(20,10)},
+            {'id':'R-B','type':'bathroom','plan_id':'P1','label_point':(30,10)},
+        ]}
+        result=_add_locked_design_endpoints(arch,{'detections':[]},{})
+        fixtures=[x for x in result['detections'] if x['category']=='fixture']
+        self.assertEqual({x['type'] for x in fixtures},{'sink','wc','basin','shower','floor_drain'})
+        self.assertTrue(all(x['status']=='designed' and x['installed'] is False for x in fixtures))
+        self.assertTrue(all('design_endpoint_not_source_detection' in x['evidence'] for x in fixtures))
+
+    def test_detected_fixture_is_not_duplicated_by_room_design_endpoint(self):
+        arch={'rooms':[{'id':'R-K','type':'kitchen','plan_id':'P1','label_point':(10,10)}]}
+        rec={'detections':[{'id':'F1','category':'fixture','type':'sink','room_id':'R-K','plan_id':'P1','point':(11,10)}]}
+        result=_add_locked_design_endpoints(arch,rec,{})
+        self.assertEqual(sum(x['type']=='sink' for x in result['detections']),1)
+
+    def test_non_wet_room_never_gets_synthetic_plumbing_fixture(self):
+        arch={'rooms':[{'id':'R-L','type':'living','plan_id':'P1','label_point':(10,10)}]}
+        result=_add_locked_design_endpoints(arch,{'detections':[]},{})
+        self.assertFalse(any(x['category']=='fixture' for x in result['detections']))
+
     def _architecture(self):
         return {
             'plans': [
@@ -42,6 +65,14 @@ class FixtureEvidenceResilienceTests(unittest.TestCase):
         result=_merge_browser_fixture_evidence(arch,rec,evidence)
         self.assertEqual(result['detections'],[])
         self.assertEqual(result['quality']['browser_evidence_fallback_accepted'],0)
+
+    def test_native_fixture_in_incompatible_room_is_rejected_before_design(self):
+        arch=self._architecture();arch['rooms'].append({'id':'R-P','type':'parking','plan_id':'P1','label_point':(9000,7000)})
+        rec={'detections':[{'id':'MEP-1','category':'fixture','type':'wc','room_id':'R-P'},
+                           {'id':'MEP-2','category':'fixture','type':'sink','room_id':'R-K'}], 'quality':{}}
+        result=_discard_unlocated_native_fixtures(arch,rec)
+        self.assertEqual([x['id'] for x in result['detections']],['MEP-2'])
+        self.assertEqual(result['quality']['native_fixture_false_positives_rejected'],1)
 
 
 if __name__ == '__main__':

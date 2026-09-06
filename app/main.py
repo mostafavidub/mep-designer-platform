@@ -15,7 +15,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 DATA_DIR = Path(os.getenv('DATA_DIR', '/data'))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-DB_URL = os.getenv('DATABASE_URL', f"sqlite:///{DATA_DIR/'mep.db'}")
+DB_URL = os.getenv('DATABASE_URL') or f"sqlite:///{DATA_DIR/'mep.db'}"
 RULEBOOK_PATH = os.getenv('RULEBOOK_PATH', str(DATA_DIR/'rulebook/MEP_Design_Rulebook.docx'))
 CAD_DESIGNER_URL = os.getenv('CAD_DESIGNER_URL', '').rstrip('/')
 SESSION_SECRET = os.getenv('SESSION_SECRET', 'dev-secret-change-me')
@@ -96,7 +96,7 @@ QUESTION_OPTIONS = {
     'elv': ['آنتن، تلفن و شبکه', 'آنتن، تلفن، شبکه و آیفون', 'سیستم کامل جریان ضعیف و دوربین مداربسته', 'فقط زیرساخت و لوله‌گذاری'],
     'fire_alarm': ['اعلام حریق متعارف مستقل', 'سیستم متعارف زون‌بندی‌شده', 'سیستم آدرس‌پذیر', 'طبق نظر آتش‌نشانی تعیین شود'],
     'earthing': ['چاه ارت و هم‌بندی اصلی', 'سیستم ارت فونداسیون', 'ارت مشترک به‌همراه هم‌بندی کامل', 'طبق گزارش خاک و نظر مشاور تعیین شود'],
-    'heating': ['پکیج دیواری و رادیاتور', 'موتورخانه مرکزی و رادیاتور', 'گرمایش از کف', 'سیستم هیت‌پمپ/فن‌کویل'],
+    'heating': ['پکیج دیواری و رادیاتور'],
     'cooling': ['اسپلیت دیواری'],
     'gas': ['ساختمان گاز ندارد', 'گاز برای پکیج و اجاق هر واحد', 'گاز مرکزی برای موتورخانه', 'محل ورود و کنتورها در پلان مشخص است'],
     'has_gas_system': ['بله', 'خیر'],
