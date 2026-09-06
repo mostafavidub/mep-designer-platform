@@ -32,8 +32,10 @@ run_cad_designer() {
   done
 }
 
-run_cad_designer &
-CAD_SUPERVISOR_PID=$!
-trap 'kill "$CAD_SUPERVISOR_PID" 2>/dev/null || true' EXIT INT TERM
+if [ "${COBUILT_CAD_IN_PROCESS:-0}" != "1" ]; then
+  run_cad_designer &
+  CAD_SUPERVISOR_PID=$!
+  trap 'kill "$CAD_SUPERVISOR_PID" 2>/dev/null || true' EXIT INT TERM
+fi
 
 exec uvicorn app.main_health:app --host 0.0.0.0 --port ${PORT:-8080}

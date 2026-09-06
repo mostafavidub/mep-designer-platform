@@ -323,6 +323,26 @@ def _cad_rejection_diagnostic(response):
 
 def _post_to_compatible_cad(payload):
     """Use the canonical CAD process shipped in this exact deployment."""
+    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1':
+        # Railway's constrained container must not load the CAD stack in a
+        # second Python interpreter.  Calling the same canonical route in the
+        # web process preserves validation/HTTP semantics while sharing memory.
+        from cad_engine import main as _canonical_entrypoint  # noqa: F401
+        from cad_engine.main_v15 import DesignRequest, design
+
+        class LocalResponse:
+            def __init__(self, status_code, body):
+                self.status_code = status_code
+                self.ok = status_code < 400
+                self._body = body
+
+            def json(self):
+                return self._body
+
+        try:
+            return LocalResponse(200, design(DesignRequest(**payload)))
+        except HTTPException as exc:
+            return LocalResponse(exc.status_code, {'detail': exc.detail})
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
     return requests.post(cobuilt + '/design', json=payload, timeout=3600)
 

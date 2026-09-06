@@ -9,6 +9,33 @@ def response(status, payload):
     return item
 
 
+@patch.dict(dxf_output.os.environ, {"COBUILT_CAD_IN_PROCESS": "1"})
+@patch("cad_engine.main_v15.design")
+def test_constrained_production_calls_canonical_design_in_process(design):
+    design.return_value = {"ok": True, "generated_files": ["result.dxf"]}
+
+    result = dxf_output._post_to_compatible_cad({
+        "project_id": "98",
+        "discipline": "mechanical",
+        "architecture_dir": "/tmp/input",
+        "answers": {},
+        "plan_analysis": {},
+        "rulebook_path": "/tmp/rulebook.docx",
+        "revision": 1,
+        "revision_instructions": "",
+        "output_scope": {
+            "discipline": "mechanical",
+            "systems": [],
+            "only_this_discipline": True,
+            "include_other_disciplines": False,
+        },
+    })
+
+    assert result.ok
+    assert result.json()["generated_files"] == ["result.dxf"]
+    design.assert_called_once()
+
+
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")
 @patch("app.dxf_output.requests.post")
 def test_design_uses_only_canonical_cobuilt_runtime(post):
