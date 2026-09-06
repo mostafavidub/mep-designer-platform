@@ -8,9 +8,10 @@ from .main_v18 import app
 from .build_identity import build_identity
 from .mechanical_release_contract_v19 import release_contract_status
 from .mechanical_authority_site_v19 import design_mechanical_authority_site
-from .runtime_core import design_dxf
+from .electrical_api_v19 import register_electrical_v19
 
 _base.design_mechanical_authority_site = design_mechanical_authority_site
+register_electrical_v19(app)
 
 
 @app.get("/version")
