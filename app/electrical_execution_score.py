@@ -56,7 +56,7 @@ def score(gates):
     hard_blockers = sorted(name for name in MANDATORY if _status(gates, name) not in {"PASS", "NOT_REQUIRED"})
     execution_ready = total >= 80 and not hard_blockers
     return {
-        "version": "electrical-execution-score-v19.0", "score": round(total, 1), "threshold": 80,
+        "score_schema_revision": "electrical-execution-score/1", "score": round(total, 1), "threshold": 80,
         "execution_ready": execution_ready, "hard_blockers": hard_blockers,
         "categories": categories, "rule": "score>=80 AND zero mandatory blockers",
     }
