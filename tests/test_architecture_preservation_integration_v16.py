@@ -9,7 +9,10 @@ from ezdxf.math import Matrix44
 from cad_engine.mechanical_authority_site_v16 import (
     evaluate_architecture_preservation,
     design_mechanical_authority_site,
+    _match_transformed_architecture,
+    _snapshot_in_source_coordinates,
 )
+from cad_engine.architecture_preservation_gate_v16 import validate_topology
 from cad_engine.mechanical_release_contract_v16 import release_contract_status
 from cad_engine.main_v16 import app
 
@@ -71,6 +74,30 @@ def transformed_output(src:Path,dst:Path,drop_layer=None):
 
 
 class ArchitecturePreservationIntegrationV16(unittest.TestCase):
+    def test_dense_topology_is_compared_in_source_coordinates(self):
+        before={'entities':[
+            {'semantic_class':'WALL','bbox':(0.0,0.0,10.0,0.0)},
+            {'semantic_class':'WALL','bbox':(10.001,0.0,20.0,0.0)},
+        ]}
+        target=(100.0,100.0,101.0,101.0)
+        after={'entities':[
+            {'semantic_class':'WALL','bbox':(100.0,100.0,100.5,100.0)},
+            {'semantic_class':'WALL','bbox':(100.50005,100.0,101.0,100.0)},
+        ]}
+        self.assertFalse(validate_topology(before,after)['pass'])
+        normalized=_snapshot_in_source_coordinates(after,(0.0,0.0,20.0,20.0),target)
+        self.assertTrue(validate_topology(before,normalized)['pass'])
+
+    def test_preserved_copy_order_avoids_dense_greedy_mismatch(self):
+        def rec(key,bbox):
+            return {'key':key,'criticality':'CRITICAL','entity_type':'LWPOLYLINE',
+                    'semantic_class':'UNKNOWN_GEOMETRY','layer':'0','bbox':bbox}
+        before={'entities':[rec('a',(0,0,1,1)),rec('b',(0.09,0,1.09,1))]}
+        after={'entities':[rec('x',(20,20,21,21)),rec('y',(20.09,20,21.09,21))]}
+        result=_match_transformed_architecture(before,after,(0,0,16,16),(20,20,36,36))
+        self.assertTrue(result['pass'],result)
+        self.assertEqual(result['strategy'],'exact_transformed_geometry')
+
     def test_release_contract_and_entrypoint_are_v16(self):
         status=release_contract_status()
         self.assertEqual(status['status'],'PASS',status)
