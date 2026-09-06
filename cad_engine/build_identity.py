@@ -50,10 +50,14 @@ def _build_timestamp() -> str:
     commit_time = _git("show", "-s", "--format=%cI", "HEAD")
     if commit_time:
         return commit_time
-    # Production images intentionally omit .git. Deployment metadata is shared
-    # by every process in one image and therefore cannot drift by startup time.
+    # Production images intentionally omit .git. A release can span multiple
+    # Railway services, whose deployment IDs differ despite identical source.
+    # Use the shared immutable commit before the service-local deployment ID.
+    commit_sha = _commit_sha()
+    if commit_sha != "UNKNOWN":
+        return f"commit:{commit_sha}"
     deployment = os.getenv("RAILWAY_DEPLOYMENT_ID", "").strip()
-    return deployment or f"commit:{_commit_sha()}"
+    return deployment or "commit:UNKNOWN"
 
 
 def build_identity() -> dict[str, object]:
