@@ -7,19 +7,21 @@ import ezdxf
 
 from .models import EngineeringStatus, EvidenceValue, SheetManifestItem
 
+MIN_PRINT_TEXT_HEIGHT = 0.90
+
 
 def append_detail_sheet(manifest: List[SheetManifestItem], details) -> None:
     if not details or any(s.family == "DETAILS" for s in manifest):
         return
     nums = []
-    for s in manifest:
+    for sheet in manifest:
         try:
-            nums.append(int(s.sheet_id.split("-")[-1]))
+            nums.append(int(sheet.sheet_id.split("-")[-1]))
         except Exception:
             pass
     sid = f"E-{(max(nums) if nums else 0) + 1:02d}"
     manifest.append(SheetManifestItem(
-        sid, "DETAILS", None, "Project-specific electrical details",
+        sid, "DETAILS", None, "Project-specific electrical construction details",
         ["parametric_details"], ["ENGITOOLS-E-DETAIL", "ENGITOOLS-E-DOC"], [],
         {"parametric_details": 1}, [],
     ))
@@ -40,7 +42,22 @@ def _fit_transform(bounds, paper, margins=(12, 18, 12, 12)):
 
 
 def _frame(architecture, frame_id):
-    return next((f for f in architecture.frames if f.id == frame_id), None) if architecture is not None else None
+    if architecture is None:
+        return None
+    return next((f for f in architecture.frames if f.id == frame_id), None)
+
+
+def _text(layout, value, point, *, height=1.0, layer="ENGITOOLS-E-DETAIL"):
+    """All generated construction text is kept above the visual-QA print floor."""
+    h = max(float(height), MIN_PRINT_TEXT_HEIGHT)
+    return layout.add_text(str(value), dxfattribs={"layer": layer, "height": h}).set_placement(point)
+
+
+def _rect(layout, x1, y1, x2, y2, layer="ENGITOOLS-E-DETAIL"):
+    return layout.add_lwpolyline(
+        [(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)],
+        dxfattribs={"layer": layer},
+    )
 
 
 def _draw_cover(doc, manifest, signatures, paper):
@@ -49,10 +66,10 @@ def _draw_cover(doc, manifest, signatures, paper):
             continue
         layout = doc.layouts.get(sheet.sheet_id)
         y = paper[1] - 28
-        layout.add_text("ELECTRICAL DRAWING INDEX", dxfattribs={"layer": "ENGITOOLS-E-DOC", "height": 2.5}).set_placement((18, y))
+        _text(layout, "ELECTRICAL DRAWING INDEX", (18, y), height=2.5, layer="ENGITOOLS-E-DOC")
         y -= 7
         for item in manifest:
-            layout.add_text(f"{item.sheet_id}  {item.purpose}", dxfattribs={"layer": "ENGITOOLS-E-DOC", "height": 1.2}).set_placement((18, y))
+            _text(layout, f"{item.sheet_id}  {item.purpose}", (18, y), height=1.2, layer="ENGITOOLS-E-DOC")
             y -= 4
         signatures.setdefault(sheet.sheet_id, {}).setdefault("signature", {})["sheet_index"] = len(manifest)
 
@@ -66,8 +83,8 @@ def _draw_panels(doc, manifest, topology, architecture, paper):
             continue
         frame_id = location.get("frame_id")
         if not frame_id:
-            frame = next((f for f in architecture.frames if f.level_id == panel.level_id and f.eligible_for_electrical), None)
-            frame_id = frame.id if frame else None
+            candidate = next((f for f in architecture.frames if f.level_id == panel.level_id and f.eligible_for_electrical), None)
+            frame_id = candidate.id if candidate else None
         frame = _frame(architecture, frame_id)
         if not frame:
             continue
@@ -79,12 +96,8 @@ def _draw_panels(doc, manifest, topology, architecture, paper):
             if "ET_EL_PNL_01" in doc.blocks:
                 layout.add_blockref("ET_EL_PNL_01", point, dxfattribs={"layer": "ENGITOOLS-E-POWER"})
             else:
-                layout.add_lwpolyline([
-                    (point[0] - 2, point[1] - 3), (point[0] + 2, point[1] - 3),
-                    (point[0] + 2, point[1] + 3), (point[0] - 2, point[1] + 3),
-                    (point[0] - 2, point[1] - 3),
-                ], dxfattribs={"layer": "ENGITOOLS-E-POWER"})
-            layout.add_text(panel.id, dxfattribs={"layer": "ENGITOOLS-E-ANNOTATION", "height": 1.3}).set_placement((point[0] + 3, point[1] + 2))
+                _rect(layout, point[0] - 2, point[1] - 3, point[0] + 2, point[1] + 3, "ENGITOOLS-E-POWER")
+            _text(layout, panel.id, (point[0] + 3, point[1] + 2), height=1.3, layer="ENGITOOLS-E-ANNOTATION")
 
 
 def _draw_grounding(doc, manifest, grounding, signatures, paper, architecture=None):
@@ -98,7 +111,7 @@ def _draw_grounding(doc, manifest, grounding, signatures, paper, architecture=No
         for element in elements:
             data = element.get("data")
             status = element.get("status")
-            layout.add_text(f"{element['kind']}: {data if data is not None else status}", dxfattribs={"layer": "ENGITOOLS-E-GROUNDING", "height": 1.3}).set_placement((18, y))
+            _text(layout, f"{element['kind']}: {data if data is not None else status}", (18, y), height=1.3, layer="ENGITOOLS-E-GROUNDING")
             y -= 5
             count += 1
             if element["kind"] == "earth_electrode" and isinstance(data, dict) and data.get("point"):
@@ -110,30 +123,22 @@ def _draw_grounding(doc, manifest, grounding, signatures, paper, architecture=No
                 else:
                     layout.add_circle(q, 2.0, dxfattribs={"layer": "ENGITOOLS-E-GROUNDING"})
                 label = "EARTH ELECTRODE" if frame else "EARTH ELECTRODE - PLAN COORDINATION INPUT"
-                layout.add_text(label, dxfattribs={"layer": "ENGITOOLS-E-ANNOTATION", "height": 1.1}).set_placement((q[0] + 3, q[1] + 1))
+                _text(layout, label, (q[0] + 3, q[1] + 1), height=1.1, layer="ENGITOOLS-E-ANNOTATION")
                 count += 1
         signatures.setdefault(sheet.sheet_id, {}).setdefault("signature", {})["grounding_elements"] = count
 
 
-def _param_text(detail: dict, name: str) -> str:
+def _parameter_value(detail: dict, name: str) -> str:
     value = (detail.get("parameters") or {}).get(name)
     if isinstance(value, dict):
         raw = value.get("value")
-        status = str(value.get("status") or "")
         if raw not in (None, ""):
             return str(raw)
-        return status or "PROJECT INPUT"
-    if value not in (None, ""):
-        return str(value)
-    return "PROJECT INPUT"
+        return str(value.get("status") or "PROJECT INPUT")
+    return str(value) if value not in (None, "") else "PROJECT INPUT"
 
 
-def _detail_rect(layout, x1, y1, x2, y2, layer="ENGITOOLS-E-DETAIL"):
-    layout.add_lwpolyline([(x1, y1), (x2, y1), (x2, y2), (x1, y2), (x1, y1)], dxfattribs={"layer": layer})
-
-
-def _detail_dim(layout, p1, p2, base, label):
-    """Prefer a real DIMENSION entity; keep a deterministic fallback."""
+def _dimension(layout, p1, p2, base, label):
     try:
         dim = layout.add_linear_dim(base=base, p1=p1, p2=p2, angle=0, dimstyle="Standard")
         dim.dimension.dxf.layer = "ENGITOOLS-E-DETAIL"
@@ -143,16 +148,16 @@ def _detail_dim(layout, p1, p2, base, label):
         layout.add_line(p1, (p1[0], base[1]), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line(p2, (p2[0], base[1]), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((p1[0], base[1]), (p2[0], base[1]), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        layout.add_text(str(label), dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.75}).set_placement(((p1[0] + p2[0]) / 2, base[1] + 1.0))
+        _text(layout, label, ((p1[0] + p2[0]) / 2, base[1] + 1), height=MIN_PRINT_TEXT_HEIGHT)
 
 
-def _draw_section_surface(layout, x, y, width, vertical=False):
+def _host_section(layout, x, y, width=22, *, vertical=False):
     if vertical:
         layout.add_line((x, y - 7), (x, y + 7), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((x + 2, y - 7), (x + 2, y + 7), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        for k in range(6):
-            yy = y - 6 + k * 2.2
-            layout.add_line((x, yy), (x + 2, yy + 1.2), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        for k in range(7):
+            yy = y - 6 + k * 2
+            layout.add_line((x, yy), (x + 2, yy + 1), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
     else:
         layout.add_line((x, y), (x + width, y), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((x, y - 2), (x + width, y - 2), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
@@ -161,40 +166,41 @@ def _draw_section_surface(layout, x, y, width, vertical=False):
             layout.add_line((xx - 1, y - 2), (xx + 1, y), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
 
 
-def _draw_detail_primitive(layout, detail: dict, kind: str, x: float, y: float, width: float, index: int):
-    """Materialize semantic detail primitives into constructability-oriented CAD geometry."""
+def _primitive(layout, detail: dict, kind: str, x: float, y: float, width: float, index: int):
     lane = index % 3
-    bx = x + 8 + lane * max((width - 24) / 3, 22)
-    by = y - 10 - (index // 3) * 13
+    bx = x + 7 + lane * max((width - 21) / 3, 22)
+    by = y - 12 - (index // 3) * 14
 
     if kind == "wall_section":
-        _draw_section_surface(layout, bx, by, 0, vertical=True)
-        layout.add_text("WALL / FINISH", dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.65}).set_placement((bx + 3, by + 5))
+        _host_section(layout, bx, by, vertical=True)
+        _text(layout, "WALL / FINISH", (bx + 3, by + 5))
     elif kind in {"ceiling_section", "mounting_surface"}:
-        _draw_section_surface(layout, bx, by + 4, 22, vertical=False)
-        layout.add_text("HOST / FINISH", dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.65}).set_placement((bx, by + 6))
+        _host_section(layout, bx, by + 4)
+        _text(layout, "HOST / FINISH", (bx, by + 6))
     elif kind in {"panel_box", "meter_box", "device_box", "junction_box", "isolator", "equipment"}:
-        _detail_rect(layout, bx, by - 5, bx + 16, by + 5)
-        _detail_rect(layout, bx + 2, by - 3, bx + 14, by + 3)
+        _rect(layout, bx, by - 5, bx + 16, by + 5)
+        _rect(layout, bx + 2, by - 3, bx + 14, by + 3)
         for q in range(4):
             layout.add_circle((bx + 4 + q * 3, by), 0.55, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        layout.add_text(kind.replace("_", " ").upper(), dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.65}).set_placement((bx, by + 6))
+        _text(layout, kind.replace("_", " ").upper(), (bx, by + 6))
     elif kind in {"luminaire", "detector", "emergency_light"}:
-        layout.add_circle((bx + 8, by), 4.0, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        layout.add_circle((bx + 8, by), 4, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_circle((bx + 8, by), 2.4, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx + 2, by + 5), (bx + 14, by + 5), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx + 8, by + 5), (bx + 8, by + 3.8), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, kind.replace("_", " ").upper(), (bx, by + 7))
     elif kind in {"conduit", "cable"}:
         layout.add_line((bx, by - 1), (bx + 20, by - 1), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx, by + 1), (bx + 20, by + 1), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         for q in range(5):
-            xx = bx + 2 + q * 4
-            layout.add_circle((xx, by), 0.55, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+            layout.add_circle((bx + 2 + q * 4, by), 0.55, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, kind.upper(), (bx, by + 4))
     elif kind in {"connection", "terminal", "lug"}:
         layout.add_line((bx, by), (bx + 8, by), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_circle((bx + 10, by), 2.2, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_circle((bx + 10, by), 0.7, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_lwpolyline([(bx + 12, by), (bx + 17, by + 2), (bx + 21, by + 2), (bx + 23, by)], dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, kind.upper(), (bx, by + 5))
     elif kind == "support":
         layout.add_line((bx, by + 5), (bx + 22, by + 5), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         for q in range(4):
@@ -202,33 +208,33 @@ def _draw_detail_primitive(layout, detail: dict, kind: str, x: float, y: float, 
             layout.add_arc((xx, by + 1), 2.2, 0, 180, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
             layout.add_line((xx - 2.2, by + 1), (xx - 2.2, by - 4), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
             layout.add_line((xx + 2.2, by + 1), (xx + 2.2, by - 4), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, "SUPPORT", (bx, by + 7))
     elif kind in {"sleeve", "firestop"}:
-        _detail_rect(layout, bx, by - 5, bx + 22, by + 5)
-        _detail_rect(layout, bx + 5, by - 4, bx + 17, by + 4)
+        _rect(layout, bx, by - 5, bx + 22, by + 5)
+        _rect(layout, bx + 5, by - 4, bx + 17, by + 4)
         for q in range(4):
             xx = bx + 7 + q * 3
             layout.add_line((xx, by - 6), (xx, by + 6), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        layout.add_text("SLEEVE / SEAL", dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.65}).set_placement((bx + 5, by + 7))
+        _text(layout, "SLEEVE / FIRESTOP", (bx + 2, by + 7))
     elif kind in {"earth", "electrode"}:
         layout.add_line((bx + 10, by + 6), (bx + 10, by - 1), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx + 3, by - 1), (bx + 17, by - 1), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx + 5, by - 3.5), (bx + 15, by - 3.5), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx + 7, by - 6), (bx + 13, by - 6), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        for q in range(5):
-            layout.add_line((bx + 2 + q * 4, by + 6), (bx + 4 + q * 4, by + 4), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, "EARTH", (bx + 14, by + 2))
     elif kind in {"clearance", "clearance_zone", "access_zone"}:
-        _detail_rect(layout, bx, by - 5, bx + 22, by + 5)
-        _detail_rect(layout, bx + 3, by - 3, bx + 19, by + 3)
+        _rect(layout, bx, by - 5, bx + 22, by + 5)
         layout.add_line((bx, by - 5), (bx + 22, by + 5), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
         layout.add_line((bx, by + 5), (bx + 22, by - 5), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, "KEEP CLEAR / ACCESS", (bx, by + 7))
     elif kind == "dimension":
-        name = str(detail.get("geometry", [])[index][1]) if len(detail.get("geometry", [])[index]) > 1 else "dimension"
-        label = f"{name} = {_param_text(detail, name)}"
-        _detail_dim(layout, (bx, by), (bx + 20, by), (bx + 10, by - 7), label)
+        name = str((detail.get("geometry") or [("dimension", "project_value")])[index][1]) if index < len(detail.get("geometry") or []) and len((detail.get("geometry") or [])[index]) > 1 else "project_value"
+        _dimension(layout, (bx, by), (bx + 18, by), (bx, by - 6), _parameter_value(detail, name))
     else:
-        layout.add_line((bx, by - 4), (bx + 20, by + 4), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        layout.add_line((bx, by + 4), (bx + 20, by - 4), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
-        layout.add_text(kind.upper(), dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.65}).set_placement((bx, by + 6))
+        # Unknown semantic primitives remain visible and non-silent instead of disappearing.
+        layout.add_circle((bx + 8, by), 3.5, dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        layout.add_line((bx + 3, by), (bx + 13, by), dxfattribs={"layer": "ENGITOOLS-E-DETAIL"})
+        _text(layout, kind.replace("_", " ").upper(), (bx, by + 5))
 
 
 def _draw_details(doc, manifest, details, signatures, paper):
@@ -239,34 +245,31 @@ def _draw_details(doc, manifest, details, signatures, paper):
     if sheet.sheet_id not in doc.layouts:
         return
     layout = doc.layouts.get(sheet.sheet_id)
-    cols = 3
+    cols = 2
     cell_w = (paper[0] - 30) / cols
-    cell_h = 58
+    cell_h = 66
     count = 0
     for i, detail in enumerate(details):
         col = i % cols
         row = i // cols
         x = 12 + col * cell_w
         y = paper[1] - 25 - row * cell_h
-        if y - cell_h < 15:
+        if y - cell_h < 19:
             break
-        _detail_rect(layout, x, y - cell_h + 5, x + cell_w - 5, y)
-        layout.add_text(detail["detail_id"], dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 1.8}).set_placement((x + 3, y - 5))
-        status = str(detail.get("status") or "")
+        _rect(layout, x, y - cell_h + 5, x + cell_w - 5, y)
+        _text(layout, detail.get("detail_id", f"DETAIL-{i + 1}"), (x + 3, y - 5), height=1.8)
+        status = str(detail.get("status") or "PRELIMINARY")
+        _text(layout, f"STATUS: {status}", (x + cell_w - 54, y - 5), height=1.0)
+        for index, primitive in enumerate(detail.get("geometry") or []):
+            kind = str(primitive[0] if isinstance(primitive, (tuple, list)) and primitive else primitive)
+            _primitive(layout, detail, kind, x, y, cell_w - 5, index)
+        params = detail.get("parameters") or {}
+        if params:
+            ptxt = " | ".join(f"{k}={_parameter_value(detail, k)}" for k in params)
+            _text(layout, ptxt[:150], (x + 3, y - cell_h + 9), height=0.95)
         missing = list(detail.get("missing") or [])
-        layout.add_text(f"STATUS: {status}", dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.8}).set_placement((x + 3, y - 8))
         if missing:
-            layout.add_text("INPUT: " + ", ".join(map(str, missing))[:80], dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.7}).set_placement((x + 3, y - 10.5))
-        geometry = list(detail.get("geometry") or [])
-        for primitive_index, primitive in enumerate(geometry):
-            kind = str(primitive[0]) if isinstance(primitive, (list, tuple)) and primitive else str(primitive)
-            _draw_detail_primitive(layout, detail, kind, x, y, cell_w, primitive_index)
-        ptxt = "; ".join(
-            f"{k}={_param_text(detail, k)}" for k in (detail.get("parameters") or {})
-        )
-        if ptxt:
-            layout.add_text(ptxt[:150], dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.7}).set_placement((x + 3, y - cell_h + 9))
-        layout.add_text("VERIFY PROJECT-SPECIFIC VALUES BEFORE CONSTRUCTION", dxfattribs={"layer": "ENGITOOLS-E-DETAIL", "height": 0.62}).set_placement((x + 3, y - cell_h + 6.5))
+            _text(layout, "INPUT REQUIRED: " + ", ".join(map(str, missing))[:120], (x + 3, y - cell_h + 5.5), height=0.95)
         count += 1
     signatures.setdefault(sheet.sheet_id, {}).setdefault("signature", {})["parametric_details"] = count
 
@@ -284,7 +287,7 @@ def _draw_detail_links(doc, manifest, links, paper):
         layout = doc.layouts.get(sheet_id)
         y = paper[1] - 22
         for did in sorted(set(detail_ids)):
-            layout.add_text(f"SEE DETAIL {detail_sheet} / {did}", dxfattribs={"layer": "ENGITOOLS-E-ANNOTATION", "height": 1.0}).set_placement((paper[0] - 92, y))
+            _text(layout, f"SEE DETAIL {detail_sheet} / {did}", (paper[0] - 92, y), height=1.0, layer="ENGITOOLS-E-ANNOTATION")
             y -= 3.2
 
 
@@ -296,23 +299,38 @@ def optimize_annotations(doc, manifest, paper):
         layout = doc.layouts.get(sheet.sheet_id)
         texts = [e for e in layout if e.dxftype() == "TEXT" and str(getattr(e.dxf, "layer", "")) == "ENGITOOLS-E-ANNOTATION"]
         occupied = []
-        for e in texts:
-            p = e.dxf.insert
-            h = max(float(e.dxf.height or 1), .8)
-            text = str(e.dxf.text or "")
-            w = max(h * .55 * len(text), h)
-            box = [float(p.x), float(p.y), float(p.x) + w, float(p.y) + h]
+        for entity in texts:
+            p = entity.dxf.insert
+            height = max(float(entity.dxf.height or 1), MIN_PRINT_TEXT_HEIGHT)
+            if float(entity.dxf.height or 0) < MIN_PRINT_TEXT_HEIGHT:
+                entity.dxf.height = MIN_PRINT_TEXT_HEIGHT
+            value = str(entity.dxf.text or "")
+            width = max(height * 0.55 * len(value), height)
+            box = [float(p.x), float(p.y), float(p.x) + width, float(p.y) + height]
             original = (float(p.x), float(p.y))
             attempts = 0
-            while any(max(0, min(box[2], b[2]) - max(box[0], b[0])) * max(0, min(box[3], b[3]) - max(box[1], b[1])) > .2 for b in occupied) and attempts < 8:
+            while any(max(0, min(box[2], b[2]) - max(box[0], b[0])) * max(0, min(box[3], b[3]) - max(box[1], b[1])) > 0.2 for b in occupied) and attempts < 8:
                 box = [box[0], box[1] + 3, box[2], box[3] + 3]
                 attempts += 1
             if attempts:
-                e.dxf.insert = (box[0], box[1])
+                entity.dxf.insert = (box[0], box[1])
                 layout.add_line(original, (box[0], box[1]), dxfattribs={"layer": "ENGITOOLS-E-ANNOTATION"})
                 moved += 1
             occupied.append(box)
     return moved
+
+
+def enforce_print_legibility(doc, manifest):
+    """Repair generated text, not the QA threshold: no output TEXT may be below 0.8 mm."""
+    changed = 0
+    for sheet in manifest:
+        if sheet.sheet_id not in doc.layouts:
+            continue
+        for entity in doc.layouts.get(sheet.sheet_id):
+            if entity.dxftype() == "TEXT" and float(entity.dxf.height or 0) < MIN_PRINT_TEXT_HEIGHT:
+                entity.dxf.height = MIN_PRINT_TEXT_HEIGHT
+                changed += 1
+    return changed
 
 
 def apply_postcomposition(path: str | Path, manifest, details, grounding, signatures, paper=(420.0, 297.0), *, architecture=None, topology=None, links=None):
@@ -323,5 +341,11 @@ def apply_postcomposition(path: str | Path, manifest, details, grounding, signat
     _draw_details(doc, manifest, details, signatures, paper)
     _draw_detail_links(doc, manifest, links or [], paper)
     moved = optimize_annotations(doc, manifest, paper)
+    legibility_repairs = enforce_print_legibility(doc, manifest)
     doc.saveas(str(path))
-    return {"status": "PASS", "annotations_moved_with_leaders": moved, "construction_detail_renderer": "geometry-rich/1"}
+    return {
+        "status": "PASS",
+        "annotations_moved_with_leaders": moved,
+        "print_legibility_repairs": legibility_repairs,
+        "minimum_text_height_mm": MIN_PRINT_TEXT_HEIGHT,
+    }
