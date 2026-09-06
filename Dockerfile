@@ -21,5 +21,5 @@ RUN chmod +x ./start_services.sh
 ENV DATA_DIR=/data
 ENV CAD_DESIGNER_URL=http://127.0.0.1:8081
 ENV COBUILT_CAD_IN_PROCESS=1
-ENV RULEBOOK_PATH=/app/data/rulebook/MEP_Design_Rulebook.docx
+ENV RULEBOOK_PATH=/data/rulebook/MEP_Design_Rulebook.docx
 CMD ["./start_services.sh"]
