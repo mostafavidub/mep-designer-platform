@@ -12,6 +12,12 @@ from . import artifact_storage
 from . import mechanical_workflow
 from . import mechanical_drawing_set
 from . import mechanical_review_fix
+from . import electrical_workflow
+from . import electrical_drawing_set
+from . import electrical_runtime_patch
+from . import electrical_design_integration
+from . import discipline_workflow_dispatcher
+from . import panel_bridge as panel_bridge_module
 from .artifact_delivery_fix import install as install_artifact_delivery_fix
 from .architecture_reconstruction_v1 import install as install_architecture_reconstruction_v1
 from .architecture_topology_v1 import install as install_architecture_topology_v1
@@ -53,6 +59,14 @@ install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 install_manifest_site_v12(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
+
+# Electrical v19 is installed on the same current analyzer/panel/runtime as
+# Mechanical. Architecture-derived estimates remain PRELIMINARY, missing basis
+# facts reopen exact questions, and the approved project-driven sheet manifest
+# is persisted before a job may enter CAD.
+electrical_runtime_patch.install(main_auto)
+electrical_design_integration.install(dxf_output, main_auto.legacy)
+
 register_seo_articles(app, main_auto.legacy)
 # The queue captures analyze_project_job at registration time, so the guard must
 # be installed immediately before it to protect the complete production analyzer.
@@ -60,6 +74,9 @@ install_analysis_workspace_guard(main_auto.legacy)
 DesignJob = register_job_queue(app, main_auto.legacy)
 register_gsc_routes(app)
 register_commercial_flow(app, main_auto.legacy)
+# Reuse the hardened shared panel bridge but dispatch engineering preflight by
+# discipline instead of treating every project as Mechanical.
+panel_bridge_module.mechanical_workflow = discipline_workflow_dispatcher
 register_panel_bridge(app, main_auto.legacy, DesignJob)
 
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
@@ -109,6 +126,11 @@ def integrated_system_health():
     status['object_storage'] = artifact_storage.healthcheck()
     status['build_identity'] = build_identity()
     status['mechanical_v19'] = release_contract_status()
+    try:
+        from cad_engine.electrical_v1.release_contract_v19 import release_contract_status as electrical_release_status
+        status['electrical_v19'] = electrical_release_status()
+    except Exception as exc:
+        status['electrical_v19'] = {'status': 'FAIL', 'error': type(exc).__name__}
     return status
 
 
