@@ -8,6 +8,7 @@ from ezdxf.math import Matrix44
 
 from cad_engine.mechanical_authority_site_v16 import (
     evaluate_architecture_preservation,
+    _entities_in_output_board,
     design_mechanical_authority_site,
     _match_transformed_architecture,
     _snapshot_in_source_coordinates,
@@ -138,6 +139,14 @@ class ArchitecturePreservationIntegrationV16(unittest.TestCase):
             self.assertEqual(result['status'],'FAIL')
             self.assertEqual(result['stage'],'architecture_preservation_gate')
             self.assertFalse(dst.exists(), 'failed output must not be deliverable')
+
+    def test_output_board_selects_large_block_by_insert_point(self):
+        doc=ezdxf.new('R2010')
+        block=doc.blocks.new('DISTANT_GEOMETRY')
+        block.add_line((0,0),(1000,1000))
+        inserted=doc.modelspace().add_blockref('DISTANT_GEOMETRY',(5,5),dxfattribs={'layer':'0'})
+        selected=_entities_in_output_board(doc,(0,0,10,10),{'0'})
+        self.assertIn(inserted,selected)
 
 
 if __name__=='__main__': unittest.main()

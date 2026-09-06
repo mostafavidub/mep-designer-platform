@@ -129,9 +129,15 @@ def design(req: DesignRequest):
             dxf_out=project_out/f"{idx:02d}_{safe_stem}_{discipline}.dxf"
 
             if discipline=="mechanical":
+                design_answers=dict(req.answers or {})
+                # Authority planning must see the same accepted architectural
+                # evidence as the engineering pipeline.  Without this bridge a
+                # rejected pseudo-roof was revived and rainfall was requested
+                # after payment even though roof scope was explicitly unreliable.
+                design_answers["_plan_analysis"]=dict(req.plan_analysis or {})
                 report=design_mechanical_authority_site(
                     src,dxf_out,
-                    answers=req.answers,
+                    answers=design_answers,
                     plan_analysis=req.plan_analysis,
                 )
                 if report.get("status")!="PASS":
@@ -215,6 +221,11 @@ def design(req: DesignRequest):
             zip_outputs(generated,package)
             for path in generated:
                 path.unlink(missing_ok=True)
+        elif generated:
+            # A remote web service cannot open the CAD container's ephemeral
+            # path. Package the single DXF as a compressed transfer envelope;
+            # the customer artifact remains the editable DXF after extraction.
+            zip_outputs(generated,package)
 
         return {
             "ok":True,

@@ -1,7 +1,26 @@
 from unittest.mock import Mock, patch
 import base64
+import io
+import shutil
+import zipfile
 
 from app import dxf_output
+
+
+def test_remote_single_dxf_transfer_is_materialized_for_validation():
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as bundle:
+        bundle.writestr('result_mechanical.dxf',b'0\nEOF\n')
+    root,archive,artifact=dxf_output._materialize_remote_cad_artifact({
+        'generated_files':['result_mechanical.dxf'],
+        'zip_path':'/remote/container/transfer.zip',
+        'zip_base64':base64.b64encode(buffer.getvalue()).decode('ascii'),
+    })
+    try:
+        assert archive.is_file()
+        assert artifact.read_bytes()==b'0\nEOF\n'
+    finally:
+        shutil.rmtree(root,ignore_errors=True)
 
 
 def response(status, payload):

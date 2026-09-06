@@ -1,0 +1,24 @@
+from cad_engine.routing_v13 import _open_space_route,route_topology
+
+def test_astar_is_bounded_for_oversized_export_frame():
+    route=_open_space_route((10.0,10.0),(14.0,14.0),(-5000.0,-5000.0,5000.0,5000.0),[])
+    assert route[0]==(10.0,10.0)
+    assert route[-1]==(14.0,14.0)
+    assert len(route)<=4
+
+def test_bounded_astar_retains_passage_around_wall_endpoint():
+    walls=[{'start':(12.0,9.0),'end':(12.0,13.0)}]
+    route=_open_space_route((10.0,10.0),(14.0,10.0),(-5000.0,-5000.0,5000.0,5000.0),walls)
+    assert route[0]==(10.0,10.0)
+    assert route[-1]==(14.0,10.0)
+    assert route!=[(10.0,10.0),(14.0,10.0)]
+
+def test_single_terminal_shaft_penetration_is_coordinated_not_a_wall_clash():
+    architecture={'plans':[{'plan_id':'P1','bounds':(0,0,20,20)}],
+                  'walls':[{'start':(9,0),'end':(9,20)}]}
+    topology={'nodes':[{'id':'F','point':(5,10),'plan_id':'P1','category':'fixture'},
+                       {'id':'S','point':(10,10),'plan_id':'P1','category':'vertical'}],
+              'edges':[{'id':'E1','from':'F','to':'S','system':'sanitary','plan_id':'P1'}]}
+    routed=route_topology(architecture,topology)
+    assert routed['quality']['wall_crossings']==0
+    assert routed['quality']['coordinated_terminal_penetrations']==1

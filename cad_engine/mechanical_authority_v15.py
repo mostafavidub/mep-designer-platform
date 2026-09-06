@@ -404,6 +404,15 @@ def _map_point(p,source_bounds,target_bounds):
         rx=(p[0]-sx1)/max(sx2-sx1,1e-9);ry=(p[1]-sy1)/max(sy2-sy1,1e-9)
         return tx1+rx*(tx2-tx1),ty1+ry*(ty2-ty1)
 
+def _airflow_endpoint(point,normal_angle,target,length=.85):
+    """Choose the wall normal that keeps the airflow arrow on its plan board."""
+    x1,y1,x2,y2=map(float,target);px,py=map(float,point)
+    candidates=[(px+length*math.cos(normal_angle),py+length*math.sin(normal_angle)),
+                (px-length*math.cos(normal_angle),py-length*math.sin(normal_angle))]
+    inside=[p for p in candidates if x1<=p[0]<=x2 and y1<=p[1]<=y2]
+    if inside:return max(inside,key=lambda p:min(p[0]-x1,x2-p[0],p[1]-y1,y2-p[1]))
+    return (min(max(candidates[0][0],x1+.02),x2-.02),min(max(candidates[0][1],y1+.02),y2-.02))
+
 
 def _find_plan_for_level(arch,level):
     return next((p for p in arch.get("plans") or [] if p.get("mechanical_role")=="PRIMARY_FLOOR" and p.get("level")==level),None)
@@ -561,7 +570,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             near=_nearest_wall(srcp,walls)
             if near:_,wallp,angle,_,_=near;p=_map_point(wallp,srcb,target);rot=math.degrees(angle)
             else:p=_map_point(srcp,srcb,target);rot=0
-            msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","rotation":rot,"lineweight":35});a=math.radians(rot+90);end=(p[0]+.85*math.cos(a),p[1]+.85*math.sin(a));_add_arrow(msp,p,end,"ENGITOOLS-M-HVAC-AIRFLOW");tag=e["id"].replace("AC-I","AC");cap=e.get("capacity_btu_h");tx=min(max(p[0]+1.05,target[0]+.2),target[2]-4.5);ty=min(max(p[1]+.85,target[1]+.5),target[3]-.4);msp.add_line(p,(tx-.10,ty-.10),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25});note=f"IDU | {tag} | WALL-MOUNTED SPLIT AC"+(f" | {cap} BTU/h PRELIM." if cap else "")+"\nCOOLING & HEATING | DRAIN DN25 S=1% MIN";t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.11});t.dxf.insert=(tx,ty);t.dxf.width=4.3;ac_units.append({"tag":tag,"odu_tag":tag.replace("AC","ODU"),"level":board.level,"sheet":board.code,"equipment_type":"WALL-MOUNTED SPLIT AC","mode":"COOLING & HEATING","capacity_status":"PRELIMINARY","refrigerant_size_source":"SELECTED MANUFACTURER TABLE","condensate_nominal_diameter_mm":25,"condensate_min_slope_percent":1.0,"block":True,"airflow":True,"callout":True,"refrigerant":True,"condensate":True,"odu_destination_note":True,"schedule_match":True})
+            msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","rotation":rot,"lineweight":35});a=math.radians(rot+90);end=_airflow_endpoint(p,a,target);_add_arrow(msp,p,end,"ENGITOOLS-M-HVAC-AIRFLOW");tag=e["id"].replace("AC-I","AC");cap=e.get("capacity_btu_h");tx=min(max(p[0]+1.05,target[0]+.2),target[2]-4.5);ty=min(max(p[1]+.85,target[1]+.5),target[3]-.4);msp.add_line(p,(tx-.10,ty-.10),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25});note=f"IDU | {tag} | WALL-MOUNTED SPLIT AC"+(f" | {cap} BTU/h PRELIM." if cap else "")+"\nCOOLING & HEATING | DRAIN DN25 S=1% MIN";t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.11});t.dxf.insert=(tx,ty);t.dxf.width=4.3;ac_units.append({"tag":tag,"odu_tag":tag.replace("AC","ODU"),"level":board.level,"sheet":board.code,"equipment_type":"WALL-MOUNTED SPLIT AC","mode":"COOLING & HEATING","capacity_status":"PRELIMINARY","refrigerant_size_source":"SELECTED MANUFACTURER TABLE","condensate_nominal_diameter_mm":25,"condensate_min_slope_percent":1.0,"block":True,"airflow":True,"callout":True,"refrigerant":True,"condensate":True,"odu_destination_note":True,"schedule_match":True})
         elif board.family=="HEATING" and kind=="radiator":
             p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.055});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":

@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI,Request
 from fastapi.responses import JSONResponse
 from .build_identity import build_identity
-from .version_manifest import CAD_API_VERSION,MECHANICAL_PIPELINE_VERSION
+from .version_manifest import CAD_API_VERSION,MECHANICAL_PIPELINE_VERSION,active_version_manifest
 
 app=FastAPI(title="EngiTools CAD Designer",version=CAD_API_VERSION)
 _design_lock=asyncio.Lock()
@@ -15,7 +15,7 @@ def health():
     return {"ok":True,"service":"cad-designer","version":CAD_API_VERSION,"mechanical_pipeline_version":MECHANICAL_PIPELINE_VERSION,"mechanical_mode":"authority-project-driven","electrical_mode":"rule-driven-preliminary"}
 
 @app.get("/version")
-def version(): return build_identity()
+def version(): return active_version_manifest()
 
 @app.get("/mechanical/status")
 def mechanical_status():

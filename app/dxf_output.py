@@ -5,6 +5,7 @@ import json
 import re
 import secrets
 import shutil
+import tempfile
 import uuid
 import zipfile
 from collections import Counter
@@ -384,10 +385,36 @@ def _attach_remote_architecture(payload, project_dir):
     return transferred
 
 
+def _materialize_remote_cad_artifact(data):
+    """Materialize a validated CAD transfer envelope on the web container."""
+    generated=list(data.get('generated_files') or [])
+    package_path=Path(data.get('zip_path') or '')
+    encoded=data.get('zip_base64') or ''
+    if not encoded:
+        artifact=(package_path.parent/generated[0]) if len(generated)==1 else package_path
+        return None,package_path,artifact
+    root=Path(tempfile.mkdtemp(prefix='engitools-cad-transfer-'))
+    try:
+        archive=root/'transfer.zip'
+        archive.write_bytes(base64.b64decode(encoded,validate=True))
+        with zipfile.ZipFile(archive) as bundle:
+            for member in bundle.infolist():
+                candidate=(root/member.filename).resolve()
+                if root.resolve() not in candidate.parents or member.is_dir():
+                    raise RuntimeError('بسته انتقال خروجی CAD معتبر نیست.')
+            bundle.extractall(root)
+        artifact=(root/generated[0]) if len(generated)==1 else archive
+        return root,archive,artifact
+    except Exception:
+        shutil.rmtree(root,ignore_errors=True)
+        raise
+
+
 def run_design_dxf(project_id, revision_id):
     db = legacy.Session()
     p = db.get(legacy.Project, project_id)
     r = db.get(legacy.Revision, revision_id)
+    transfer_root = None
     try:
         p.status = 'designing'
         r.status = 'processing'
@@ -522,7 +549,6 @@ def run_design_dxf(project_id, revision_id):
                 raise RuntimeError('فایل معماری خام نباید داخل بسته خروجی مکانیک قرار گیرد.')
 
         generated = data.get('generated_files') or []
-        package_path = Path(data.get('zip_path') or '')
         if not generated:
             raise RuntimeError('موتور CAD هیچ فایل DXF تولید نکرد.')
 
@@ -530,12 +556,11 @@ def run_design_dxf(project_id, revision_id):
         db.commit()
         # Validate and upload directly from the ephemeral CAD workspace.
         # No final-artifact copy is ever created on the persistent Volume.
+        transfer_root, package_path, dst = _materialize_remote_cad_artifact(data)
         if len(generated) == 1:
-            dst = package_path.parent / generated[0]
             if not dst.exists():
                 raise RuntimeError(f'فایل DXF تولیدشده پیدا نشد: {generated[0]}')
         else:
-            dst = package_path
             if not dst.exists():
                 raise RuntimeError('بسته DXF تولیدشده پیدا نشد.')
 
@@ -557,7 +582,11 @@ def run_design_dxf(project_id, revision_id):
         )
         if not durable_uri:
             raise RuntimeError('ذخیره خروجی نهایی در R2 تأیید نشد؛ فایل محلی نگهداری نشد.')
-        dst.unlink(missing_ok=True)
+        if transfer_root:
+            shutil.rmtree(transfer_root,ignore_errors=True)
+            transfer_root=None
+        else:
+            dst.unlink(missing_ok=True)
 
         # Reuse the existing artifact-path column for compatibility with the
         # current database schema; final artifacts live only in R2.
@@ -585,6 +614,8 @@ def run_design_dxf(project_id, revision_id):
         db.commit()
         _purge_processing_files(p.id, keep_output=True)
     finally:
+        if transfer_root:
+            shutil.rmtree(transfer_root,ignore_errors=True)
         db.close()
 
 

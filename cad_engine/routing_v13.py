@@ -25,13 +25,18 @@ def _route_candidates(start,end):
 def _inside(p,b,tol=1e-6):
     if not b:return True
     return b[0]-tol<=p[0]<=b[2]+tol and b[1]-tol<=p[1]<=b[3]+tol
-def _score(points,walls):
+def _score(points,walls,terminal_penetration=False):
     clashes=0
-    for a,b in zip(points,points[1:]):
+    penetrations=0
+    segments=list(zip(points,points[1:]))
+    for segment_index,(a,b) in enumerate(segments):
         for wall in walls:
-            if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])):clashes+=1
+            if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])):
+                if terminal_penetration and segment_index==len(segments)-1 and penetrations==0:
+                    penetrations+=1
+                else:clashes+=1
     length=sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(points,points[1:]))
-    return clashes,length
+    return clashes,length,penetrations
 
 def _wall_in_bounds(wall,bounds):
     if not bounds:return True
@@ -48,11 +53,26 @@ def _grid_axis(low,high,step,extras):
     rows.append(round(high,6));rows.extend(round(float(v),6) for v in extras if low<=float(v)<=high)
     return sorted(set(rows))
 
+def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
+    """Keep A* finite while retaining narrow passages beside real walls."""
+    values={round(low,6),round(high,6),round(start,6),round(end,6)}
+    for wall in walls:
+        for point in (wall['start'],wall['end']):
+            value=float(point[coordinate])
+            for candidate in (value-clearance,value,value+clearance):
+                if low<=candidate<=high:values.add(round(candidate,6))
+    return sorted(values)
+
 def _open_space_route(start,end,bounds,walls,step=.25):
     """Find an orthogonal route through real wall openings using bounded A*."""
     if not bounds:return None
-    xs=_grid_axis(bounds[0],bounds[2],step,(start[0],end[0]))
-    ys=_grid_axis(bounds[1],bounds[3],step,(start[1],end[1]))
+    direct=abs(start[0]-end[0])+abs(start[1]-end[1])
+    margin=min(25.0,max(2.0,direct*.5))
+    local=(max(bounds[0],min(start[0],end[0])-margin),max(bounds[1],min(start[1],end[1])-margin),
+           min(bounds[2],max(start[0],end[0])+margin),min(bounds[3],max(start[1],end[1])+margin))
+    walls=[wall for wall in walls if _wall_in_bounds(wall,local)]
+    xs=_sparse_axis(local[0],local[2],start[0],end[0],walls,0)
+    ys=_sparse_axis(local[1],local[3],start[1],end[1],walls,1)
     sx=xs.index(round(start[0],6));sy=ys.index(round(start[1],6))
     ex=xs.index(round(end[0],6));ey=ys.index(round(end[1],6));source=(sx,sy);target=(ex,ey)
     queue=[(abs(start[0]-end[0])+abs(start[1]-end[1]),0.0,source)]
@@ -97,17 +117,20 @@ def route_topology(architecture,topology):
         candidates=[pts for pts in _route_candidates(tuple(start['point']),tuple(end['point'])) if all(_inside(p,bounds) for p in pts)]
         if not candidates:
             rejected.append({'edge_id':edge['id'],'reason':'ROUTE_OUTSIDE_PLAN'});continue
-        ranked=sorted(((_score(points,plan_walls),points) for points in candidates),key=lambda x:(x[0][0],x[0][1]))
-        (clashes,length),points=ranked[0]
+        terminal_penetration=end.get('category')=='vertical'
+        ranked=sorted(((_score(points,plan_walls,terminal_penetration),points) for points in candidates),key=lambda x:(x[0][0],x[0][1]))
+        (clashes,length,penetrations),points=ranked[0]
         used_astar=False
         if clashes:
             open_route=_open_space_route(tuple(start['point']),tuple(end['point']),bounds,plan_walls)
             if open_route:
-                points=open_route;clashes,length=_score(points,plan_walls);used_astar=True
+                points=open_route;clashes,length,penetrations=_score(points,plan_walls,terminal_penetration);used_astar=True
         routes.append({'id':f'ROUTE-{len(routes)+1:03d}','edge_id':edge['id'],'system':edge['system'],'plan_id':pid,'points':points,
                        'length':round(length,3),'wall_crossings':clashes,
+                       'coordinated_terminal_penetrations':penetrations,
                        'routing':'orthogonal_open_space_astar' if used_astar else 'orthogonal_plan_isolated'})
     return {'version':'geometry-routing-v13.12','routes':routes,'rejected':rejected,
             'quality':{'routed_edges':len(routes),'wall_crossings':sum(r['wall_crossings'] for r in routes),
+                       'coordinated_terminal_penetrations':sum(r['coordinated_terminal_penetrations'] for r in routes),
                        'cross_plan_routes':0,'rejected_edges':len(rejected),
                        'all_orthogonal':all(all(a[0]==b[0] or a[1]==b[1] for a,b in zip(r['points'],r['points'][1:])) for r in routes)}}

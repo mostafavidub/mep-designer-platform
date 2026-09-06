@@ -153,6 +153,23 @@ def _add_locked_design_endpoints(architecture, recognition, design_basis):
                          'room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':1.0,'status':'designed','installed':False,
                          'evidence':evidence,'source':source,'design_load':design_load})
             existing.add(key)
+    # A wall-mounted gas package is a gas load even on a level without a
+    # kitchen. Create one traceable design endpoint per architectural plan so
+    # topology, routing and the P.22 table describe the same approved load.
+    if (design_basis or {}).get('gas_service') is True and (design_basis or {}).get('heating_system')=='package_radiator':
+        rooms=architecture.get('rooms') or []
+        for plan in architecture.get('plans') or []:
+            plan_id=plan.get('plan_id')
+            candidates=[r for r in rooms if r.get('plan_id')==plan_id and r.get('type') in {'living','kitchen'} and _room_point(r)]
+            if not candidates: continue
+            room=sorted(candidates,key=lambda r:(r.get('type')!='living',str(r.get('id') or '')))[0]
+            key=(plan_id,room.get('id'),'water_heater')
+            if key in existing: continue
+            rows.append({'id':f"DESIGN-WATER_HEATER-{len(rows)+1:03d}",'category':'equipment','type':'water_heater',
+                         'point':_room_point(room),'room_id':room.get('id'),'plan_id':plan_id,'confidence':1.0,
+                         'status':'designed','installed':False,'evidence':['user_locked_design_basis','reconstructed_architectural_room'],
+                         'source':'locked_package_radiator_gas_endpoint','design_load':24.0})
+            existing.add(key)
     recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
     return recognition
 
