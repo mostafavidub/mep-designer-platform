@@ -2,8 +2,8 @@ import unittest
 from types import SimpleNamespace
 
 from app.electrical_basis_contract import (
-    CONTRACT_VERSION, canonical_supply, normalize_answers, panel_location_approval,
-    persisted_answer_is_valid,
+    CONTRACT_VERSION, canonical_supply, canonical_earthing, canonical_panel_strategy,
+    normalize_answers, panel_location_approval, persisted_answer_is_valid,
 )
 from app.electrical_workflow import build_scope, required_basis_questions, reopen_basis_questions
 
@@ -22,6 +22,22 @@ class ElectricalBasisContractV19Tests(unittest.TestCase):
         normalized = normalize_answers({'discipline':'electrical', 'supply':'همه انشعاب‌ها سه‌فاز'})
         self.assertEqual(normalized['_electrical_basis_contract']['version'], CONTRACT_VERSION)
         self.assertEqual(normalized['supply_configuration']['configuration'], 'three_phase')
+
+    def test_normalization_is_idempotent_for_retry_and_recovery(self):
+        first = normalize_answers({
+            'discipline':'electrical',
+            'location':'تهران',
+            'supply':'واحدها تک‌فاز و مشاعات سه‌فاز',
+            'earthing':'ارت فونداسیون',
+            'main_panel':'اجازه پیشنهاد محل مناسب را دارید',
+        })
+        second = normalize_answers(first)
+        self.assertEqual(canonical_supply(second['supply_configuration'])['configuration'], 'mixed_single_units_three_phase_common')
+        self.assertEqual(canonical_earthing(second['earthing_system']), 'foundation_earth')
+        self.assertEqual(canonical_panel_strategy(second['service_panel_location']), 'proposal_authorized')
+        self.assertTrue(persisted_answer_is_valid(second, 'supply_configuration'))
+        self.assertTrue(persisted_answer_is_valid(second, 'earthing_system'))
+        self.assertTrue(persisted_answer_is_valid(second, 'service_panel_location'))
 
     def test_panel_proposal_requires_recorded_approval(self):
         answers = normalize_answers({'main_panel':'اجازه پیشنهاد محل مناسب را دارید'})
@@ -58,6 +74,8 @@ class ElectricalBasisContractV19Tests(unittest.TestCase):
             'codes':'ضابطه مصوب پروژه','heights':'ارتفاع و سقف کاذب مطابق پلان معماری است',
         })
         p = project(answers, {'architectural_auto': {'room_counts': {'kitchen':1}, 'levels':[{'name':'همکف'}]}})
+        self.assertEqual(required_basis_questions(p), [])
+        p.answers = normalize_answers(p.answers)
         self.assertEqual(required_basis_questions(p), [])
 
     def test_late_failure_reopens_exact_questions(self):
