@@ -3,6 +3,31 @@
 History lives in Git. Transitional implementation modules remain internal until
 their compatibility migration is complete; launchers must import only this path.
 """
+import ctypes
+import gc
+
+import ezdxf
+
+
+def install_ezdxf_memory_guard() -> None:
+    current = ezdxf.readfile
+    if getattr(current, "_engitools_memory_guard", False):
+        return
+
+    def guarded_readfile(*args, **kwargs):
+        gc.collect()
+        try:
+            ctypes.CDLL(None).malloc_trim(0)
+        except (AttributeError, OSError):
+            pass
+        return current(*args, **kwargs)
+
+    guarded_readfile._engitools_memory_guard = True
+    ezdxf.readfile = guarded_readfile
+
+
+install_ezdxf_memory_guard()
+
 from . import main_v15 as _base
 from .main_v18 import app
 from .build_identity import build_identity
