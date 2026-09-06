@@ -3,11 +3,15 @@ import unittest
 from types import SimpleNamespace
 
 from app.electrical_runtime_patch import install as install_runtime
-from app.electrical_design_integration import missing_from_error, _ensure_approved_manifest
+from app.electrical_design_integration import (
+    CONSTRUCTION_DETAIL_QUESTION_SPECS,
+    missing_from_error,
+    _ensure_approved_manifest,
+)
 from app.electrical_review_fix import analyzer_needs_refresh, review_question_html
 from app.electrical_basis_contract import normalize_answers
 from app.electrical_site_release_contract import release_contract_status as site_release_status
-from app import electrical_drawing_set
+from app import electrical_drawing_set, electrical_workflow
 from cad_engine.electrical_v1.production import build_engine_config
 from cad_engine.electrical_v1.release_contract import release_contract_status as cad_release_status
 import cad_engine.electrical_v1.production as production
@@ -49,6 +53,20 @@ class ElectricalRuntimeTests(unittest.TestCase):
         self.assertIn('supply_configuration', missing)
         self.assertIn('earthing_system', missing)
         self.assertIn('lighting_design_basis', missing)
+
+    def test_late_detail_inputs_map_to_exact_site_questions(self):
+        error = (
+            'INPUT_REQUIRED[D-EL-PANEL-MOUNT.mounting_height,'
+            'D-EL-PANEL-MOUNT.clearance,D-EL-EARTHING.conductor]:'
+        )
+        missing = missing_from_error(error)
+        self.assertEqual(
+            missing,
+            ['detail_panel_mounting_height_mm', 'detail_panel_clearance_mm', 'detail_earthing_conductor'],
+        )
+        for key in missing:
+            self.assertIn(key, CONSTRUCTION_DETAIL_QUESTION_SPECS)
+            self.assertEqual(electrical_workflow.question_payload(key)['key'], key)
 
     def test_analyzer_refresh_is_one_time_version_guard(self):
         self.assertFalse(analyzer_needs_refresh({'architecture_analyzer_version':'3.5-project-evidence-gate'}, True))
@@ -93,6 +111,45 @@ class ElectricalRuntimeTests(unittest.TestCase):
         self.assertNotIn('supply_voltage_v', cfg['design_basis'])
         self.assertEqual(cfg['sizing_tables'], {})
         self.assertEqual(cfg['panel_rules'], {})
+        self.assertEqual(cfg['detail_parameters'], {})
+
+    def test_production_config_maps_only_explicit_construction_inputs(self):
+        cfg = build_engine_config({
+            'discipline':'electrical',
+            'detail_panel_mounting_height_mm':'1500',
+            'detail_panel_clearance_mm':'1000',
+            'detail_wall_type':'masonry',
+            'detail_earthing_conductor':'1x6 Cu',
+        }, {})
+        panel = cfg['detail_parameters']['D-EL-PANEL-MOUNT']
+        self.assertEqual(panel['mounting_height'], '1500')
+        self.assertEqual(panel['clearance'], '1000')
+        self.assertEqual(panel['wall_type'], 'masonry')
+        self.assertNotIn('D-EL-METER', cfg['detail_parameters'])
+        self.assertEqual(cfg['detail_parameters']['D-EL-EARTHING']['conductor'], '1x6 Cu')
+
+    def test_api_missing_input_contract_preserves_detail_and_parameter(self):
+        report = {
+            'data': {'basis': {'values': {}}},
+            'gates': {
+                'CONSTRUCTION_DETAIL_AUTHORITY': {
+                    'warnings': [
+                        'detail_parameters_input_required:D-EL-PANEL-MOUNT:mounting_height,clearance',
+                        'detail_parameters_input_required:D-EL-EARTHING:conductor',
+                    ]
+                },
+                'DETAIL_COVERAGE': {'warnings': ['detail_not_final:D-EL-PANEL-MOUNT']},
+            },
+        }
+        missing = electrical_api._missing_inputs(report)
+        self.assertEqual(
+            missing,
+            [
+                'D-EL-PANEL-MOUNT.mounting_height',
+                'D-EL-PANEL-MOUNT.clearance',
+                'D-EL-EARTHING.conductor',
+            ],
+        )
 
     def test_api_does_not_overstate_pre_submission_report(self):
         state = electrical_api._aggregate_release_state([
