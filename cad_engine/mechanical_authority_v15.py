@@ -167,9 +167,10 @@ def build_design_overrides(answers: dict) -> dict:
     for profile in level_profiles:
         enriched=dict(profile)
         # A reused title that happens to say "roof" is not permission to add
-        # rainwater scope or request rainfall after the customer has paid.
+        # rainwater scope or to turn that rejected region into a floor.  The
+        # latter can make one oversized title region own the whole drawing.
         if enriched.get("roof") and not roof_scope_reliable:
-            enriched["roof"] = False
+            continue
         if not enriched.get("region_bounds"):
             enriched["region_bounds"]=bounds_by_name.get(str(enriched.get("name")))
         authoritative_level_profiles.append(enriched)

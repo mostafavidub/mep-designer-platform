@@ -40,7 +40,7 @@ def test_panel_transaction_carries_same_analysis_into_cad():
     assert "design_answers['_plan_analysis'] = p.analysis" in source
 
 
-def test_unreliable_reused_roof_title_is_not_forwarded_as_roof_authority():
+def test_unreliable_reused_roof_title_is_excluded_from_all_plan_authority():
     analysis = {"architectural_auto": {
         "roof_scope_reliable": False,
         "level_profiles": [
@@ -50,5 +50,6 @@ def test_unreliable_reused_roof_title_is_not_forwarded_as_roof_authority():
     }}
     overrides = build_design_overrides({"_plan_analysis": analysis})
     profiles = overrides["authoritative_level_profiles"]
+    assert len(profiles) == 1
+    assert profiles[0]["name"] == "طبقه اول"
     assert profiles[0]["roof"] is False
-    assert profiles[1]["roof"] is False
