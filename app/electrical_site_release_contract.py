@@ -1,9 +1,9 @@
-"""Machine-readable site/UI/panel contract for Electrical v19."""
+"""Machine-readable site/UI/panel contract for the active Electrical system."""
 from __future__ import annotations
 
 from importlib import import_module
 
-RELEASE_VERSION = "19.0.0"
+CONTRACT_REVISION = "electrical-site-contract/1"
 REQUIRED_CAPABILITIES = {
     "design_basis_contract": "app.electrical_basis_contract",
     "question_workflow": "app.electrical_workflow",
@@ -12,7 +12,7 @@ REQUIRED_CAPABILITIES = {
     "drawing_set_review": "app.electrical_review_fix",
     "panel_dispatcher": "app.discipline_workflow_dispatcher",
     "panel_recovery_integration": "app.electrical_design_integration",
-    "standards_registry": "app.electrical_standards_registry",
+    "rulebook": "app.electrical_rulebook",
     "execution_score": "app.electrical_execution_score",
 }
 
@@ -26,7 +26,7 @@ def release_contract_status():
         except Exception:
             checks[capability] = False
     return {
-        "version": RELEASE_VERSION,
+        "contract_revision": CONTRACT_REVISION,
         "scope": "site-ui-panel-runtime",
         "status": "PASS" if all(checks.values()) else "FAIL",
         "required_count": len(checks),
