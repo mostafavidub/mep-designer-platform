@@ -7,6 +7,7 @@ from pathlib import Path
 import ezdxf
 
 from cad_engine.electrical_v1.models import EngineeringStatus, EvidenceValue
+from cad_engine.electrical_v1.architecture import reconstruct_architecture
 from cad_engine.electrical_v1.strict_pipeline import run_strict_electrical_pipeline
 
 
@@ -24,6 +25,23 @@ def make_architecture(path: Path):
     if "DOOR" not in doc.blocks:
         b=doc.blocks.new("DOOR"); b.add_line((0,0),(800,0))
     msp.add_blockref("DOOR",(1000,4000),dxfattribs={"layer":"DOOR"})
+    doc.saveas(path)
+
+
+def make_nested_frame_architecture(path: Path, *, separated_copy: bool = False):
+    doc=ezdxf.new("R2013"); doc.header["$INSUNITS"]=4
+    msp=doc.modelspace()
+    # Real plot boundary plus a slightly expanded export/helper boundary.
+    msp.add_lwpolyline([(0,0),(12000,0),(12000,8000),(0,8000),(0,0)], close=True, dxfattribs={"layer":"SHEET_FRAME"})
+    msp.add_lwpolyline([(-500,-500),(12500,-500),(12500,8500),(-500,8500),(-500,-500)], close=True, dxfattribs={"layer":"VIEWPORT_HELPER"})
+    msp.add_text("Architectural Plan Ground",dxfattribs={"height":180,"layer":"TITLE"}).set_placement((400,400))
+    msp.add_lwpolyline([(1000,1000),(11000,1000),(11000,7000),(1000,7000),(1000,1000)], close=True, dxfattribs={"layer":"ROOM"})
+    msp.add_text("Living",dxfattribs={"height":180,"layer":"ROOM_NAME"}).set_placement((5500,3800))
+    if separated_copy:
+        # Same title is legitimate when it belongs to another non-overlapping plan.
+        dx=20000
+        msp.add_lwpolyline([(dx,0),(dx+12000,0),(dx+12000,8000),(dx,8000),(dx,0)], close=True, dxfattribs={"layer":"SHEET_FRAME"})
+        msp.add_text("Architectural Plan Ground",dxfattribs={"height":180,"layer":"TITLE"}).set_placement((dx+400,400))
     doc.saveas(path)
 
 
@@ -77,6 +95,26 @@ def fully_evidenced_config():
         },
         "reference_similarity_threshold":0.60,
     }
+
+
+class ArchitectureFrameDeduplicationTests(unittest.TestCase):
+    def test_nested_same_title_helper_frame_is_suppressed(self):
+        with tempfile.TemporaryDirectory() as td:
+            source=Path(td)/"nested.dxf"; make_nested_frame_architecture(source)
+            model=reconstruct_architecture(source)
+            eligible=[f for f in model.frames if f.eligible_for_electrical]
+            self.assertEqual(len(eligible),1,[(f.id,f.title,f.bounds) for f in eligible])
+            self.assertEqual(len(model.levels),1)
+            self.assertEqual(len(model.rooms),1)
+            self.assertEqual(model.rooms[0].frame_id,eligible[0].id)
+
+    def test_same_title_non_overlapping_plans_are_not_collapsed(self):
+        with tempfile.TemporaryDirectory() as td:
+            source=Path(td)/"separate.dxf"; make_nested_frame_architecture(source,separated_copy=True)
+            model=reconstruct_architecture(source)
+            eligible=[f for f in model.frames if f.eligible_for_electrical]
+            self.assertEqual(len(eligible),2,[(f.id,f.title,f.bounds) for f in eligible])
+            self.assertEqual(len(model.levels),2)
 
 
 class EvidenceModelTests(unittest.TestCase):
