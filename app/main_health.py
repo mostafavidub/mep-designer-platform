@@ -109,22 +109,22 @@ def integrated_system_health():
     status['build_identity'] = build_identity()
     status['mechanical_v19'] = release_contract_status()
     try:
-        from cad_engine.electrical_v1.release_contract_v19 import release_contract_status as electrical_cad_status
-        status['electrical_v19_cad_contract'] = electrical_cad_status()
+        from cad_engine.electrical_v1.release_contract import release_contract_status as electrical_cad_status
+        status['electrical_cad_contract'] = electrical_cad_status()
     except Exception as exc:
-        status['electrical_v19_cad_contract'] = {'status': 'FAIL', 'error': type(exc).__name__}
+        status['electrical_cad_contract'] = {'status': 'FAIL', 'error': type(exc).__name__}
     try:
         from .electrical_site_release_contract import release_contract_status as electrical_site_status
-        status['electrical_v19_site_contract'] = electrical_site_status()
+        status['electrical_site_contract'] = electrical_site_status()
     except Exception as exc:
-        status['electrical_v19_site_contract'] = {'status': 'FAIL', 'error': type(exc).__name__}
-    cad_ok = status['electrical_v19_cad_contract'].get('status') == 'PASS'
-    site_ok = status['electrical_v19_site_contract'].get('status') == 'PASS'
-    status['electrical_v19'] = {
-        'version': '19.0.0',
+        status['electrical_site_contract'] = {'status': 'FAIL', 'error': type(exc).__name__}
+    cad_ok = status['electrical_cad_contract'].get('status') == 'PASS'
+    site_ok = status['electrical_site_contract'].get('status') == 'PASS'
+    status['electrical'] = {
         'status': 'PASS' if cad_ok and site_ok else 'FAIL',
-        'cad_runtime': status['electrical_v19_cad_contract'].get('status'),
-        'site_runtime': status['electrical_v19_site_contract'].get('status'),
+        'cad_runtime': status['electrical_cad_contract'].get('status'),
+        'site_runtime': status['electrical_site_contract'].get('status'),
+        'build_identity': status['build_identity'],
     }
     return status
 
