@@ -198,10 +198,14 @@ def _recover_orthogonal_room_enclosures(architecture, plans):
 
 def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     plans=detect_print_plans(src)
-    if plans and not any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in plans):
-        authoritative=_plans_from_authoritative_profiles(authoritative_profiles)
-        if any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in authoritative):
-            plans=authoritative
+    authoritative=_plans_from_authoritative_profiles(authoritative_profiles)
+    if any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in authoritative):
+        # Browser analysis is sealed from this same upload and preserves every
+        # confirmed drawing region.  Prefer it even when the local title parser
+        # found *some* floors: repeated/consultant-specific titles can otherwise
+        # collapse distinct plans into one ``DUPLICATE_REFERENCE`` and make the
+        # approved drawing manifest disagree with generated boards/routes.
+        plans=authoritative
     # Legacy/single-plan drawings without office print frames remain valid.
     if not plans:
         bounds=architecture.get("bounds") or [0,0,0,0]

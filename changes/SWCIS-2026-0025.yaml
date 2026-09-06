@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0025",
+  "summary": "Use sealed current-upload level profiles as the authoritative plan scope even when the local title parser finds only a partial set, preventing approved floor plans and mechanical routes from diverging.",
+  "requester": "mostafavidub",
+  "change_types": ["drawing_output", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "pmm", "qa", "questionnaire", "routing", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Every confirmed region from the sealed upload analysis becomes a distinct mechanical plan scope; a partial local title match can no longer discard another confirmed floor.",
+    "equipment": "Design endpoints remain confined to the confirmed plan region that owns their architectural room evidence.",
+    "planner": "The CAD plan inventory now consumes the same confirmed level set used to build the approved drawing proposal.",
+    "routing": "Required routes are generated independently inside every confirmed primary plan instead of disappearing with a locally deduplicated title.",
+    "sizing": "The existing sizing rules apply to the recovered plan-local routes without changed thresholds.",
+    "detail_riser": "Riser and detail consumers receive the corrected multi-plan scope; their contracts do not change.",
+    "qa": "Regression tests cover duplicate local floor titles, distinct sealed plan regions, and rejection of unconfirmed profile overrides.",
+    "ui_api": "No API shape changes; the fix consumes already-sealed upload analysis passed through the current design request.",
+    "manifest": "Generated primary plan counts now remain aligned with the customer-approved manifest.",
+    "pmm": "The project mechanical model and CAD engine continue to share the same confirmed architecture-level evidence.",
+    "manufacturer_selector": "No manufacturer-selection behavior changes.",
+    "questionnaire": "No additional user question is introduced for plan identity already established by upload analysis.",
+    "versioning": "Deployment identity remains Git/content-derived.",
+    "migration": "No database or persisted-contract migration is required.",
+    "docs": "This change request records precedence of sealed upload evidence over partial local title parsing.",
+    "governance": "No QA check is weakened; the missing evidence is restored upstream before strict gates execute.",
+    "deployment": "Merge only after all CI gates pass, deploy the merged commit, then retry the affected paid project in place without charging."
+  },
+  "evidence": {
+    "tests": ["tests/test_authoritative_profile_plan_scope.py", "tests/test_fixture_evidence_resilience.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0025.yaml"],
+    "version_bump": ["Git/content-derived deployment identity; no manual runtime version label"],
+    "golden_regression": ["Multiple confirmed architectural regions whose local sheet titles are identical or consultant-specific"],
+    "semantic_diff": ["Confirmed sealed profiles override partial local title classification; candidate profiles never override detected architecture"],
+    "artifact_diff": ["All approved primary plan boards receive their plan-local mechanical routes and annotations"],
+    "contract_diff": ["No external schema change; precedence of existing sealed evidence is corrected"],
+    "deployment_plan": ["merge after CI; wait for Railway success; retry PRJ-7253354 without charging"],
+    "migration": ["no schema migration required"],
+    "rollback_plan": ["revert the merged Git commit and preserve paid project data for another in-place retry"]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 2, "score": 12, "rationale": "Plan scoping affects all downstream design stages, but only confirmed same-upload profiles can take precedence and destructive tests preserve fallback behavior."},
+  "waiver": null
+}
