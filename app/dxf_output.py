@@ -6,6 +6,7 @@ import shutil
 import uuid
 from collections import Counter
 from pathlib import Path
+from types import SimpleNamespace
 
 import requests
 from fastapi import HTTPException, Request
@@ -328,7 +329,7 @@ def _post_to_compatible_cad(payload):
         # second Python interpreter.  Calling the same canonical route in the
         # web process preserves validation/HTTP semantics while sharing memory.
         from cad_engine import main as _canonical_entrypoint  # noqa: F401
-        from cad_engine.main_v15 import DesignRequest, design
+        from cad_engine.main_v15 import design
 
         class LocalResponse:
             def __init__(self, status_code, body):
@@ -340,7 +341,12 @@ def _post_to_compatible_cad(payload):
                 return self._body
 
         try:
-            return LocalResponse(200, design(DesignRequest(**payload)))
+            # The web workflow has already built this trusted internal payload.
+            # Re-validating it through Pydantic recursively copied the complete
+            # architectural analysis (tens of MB) and exhausted Railway memory.
+            # The canonical route uses attribute access only, so a zero-copy
+            # request namespace retains the exact same route and QA behavior.
+            return LocalResponse(200, design(SimpleNamespace(**payload)))
         except HTTPException as exc:
             return LocalResponse(exc.status_code, {'detail': exc.detail})
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
