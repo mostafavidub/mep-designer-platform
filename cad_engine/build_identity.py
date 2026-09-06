@@ -56,8 +56,8 @@ def _build_timestamp() -> str:
     commit_sha = _commit_sha()
     if commit_sha != "UNKNOWN":
         return f"commit:{commit_sha}"
-    deployment = os.getenv("RAILWAY_DEPLOYMENT_ID", "").strip()
-    return deployment or "commit:UNKNOWN"
+    # A deployment id is service-local and cannot identify a shared release.
+    return f"commit:{commit_sha}"
 
 
 def build_identity() -> dict[str, object]:
