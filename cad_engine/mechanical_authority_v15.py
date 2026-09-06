@@ -696,10 +696,16 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         elif b.family=="GENERAL_NOTES":_draw_notes(doc,msp,b,authority)
         elif b.family=="EQUIPMENT_SCHEDULE":_draw_schedule(doc,msp,b,pipeline,authority)
         elif b.family=="COVER":_draw_notes(doc,msp,b,authority)
-    ext=bbox.extents(msp,fast=True)
-    if ext.has_data:
-        doc.header["$EXTMIN"]=tuple(map(float,ext.extmin));doc.header["$EXTMAX"]=tuple(map(float,ext.extmax));doc.header["$TILEMODE"]=1
-        try:vp=doc.viewports.get("*Active")[0];vp.dxf.center=((ext.extmin.x+ext.extmax.x)/2,(ext.extmin.y+ext.extmax.y)/2);vp.dxf.height=(ext.extmax.y-ext.extmin.y)*1.03
+    # Avoid a global recursive bbox cache over the full source plus every
+    # generated sheet.  Source architecture is already bounded by the
+    # reconstruction stage and generated content is constrained to boards.
+    envelopes=[tuple(arch.get("bounds") or ())]+[tuple(board.bounds) for board in boards.values()]
+    envelopes=[box for box in envelopes if len(box)==4 and all(math.isfinite(float(v)) for v in box)]
+    if envelopes:
+        min_x=min(float(box[0]) for box in envelopes);min_y=min(float(box[1]) for box in envelopes)
+        max_x=max(float(box[2]) for box in envelopes);max_y=max(float(box[3]) for box in envelopes)
+        doc.header["$EXTMIN"]=(min_x,min_y,0.0);doc.header["$EXTMAX"]=(max_x,max_y,0.0);doc.header["$TILEMODE"]=1
+        try:vp=doc.viewports.get("*Active")[0];vp.dxf.center=((min_x+max_x)/2,(min_y+max_y)/2);vp.dxf.height=(max_y-min_y)*1.03
         except Exception:pass
     doc.saveas(dst)
     return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records}

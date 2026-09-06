@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0041",
+  "summary": "Remove the global ezdxf geometry cache from architectural reconstruction and derive the routing envelope incrementally for large production drawings.",
+  "requester": "mostafavidub",
+  "change_types": ["runtime", "performance", "drawing_output", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Architectural bounds are accumulated from relevant primitives and final bounds from architecture plus board envelopes instead of allocating global nested-entity bbox caches.",
+    "ui_api": "No public API or UI contract changes.",
+    "manifest": "No release contract change beyond automatic commit identity.",
+    "qa": "All mechanical and artifact QA gates remain enabled and unchanged.",
+    "versioning": "Automatic build identity records the deployment.",
+    "migration": "No stored-data migration.",
+    "docs": "This change request records the production OOM correction.",
+    "governance": "The previously missing engineering-pipeline path classification is added; no output or acceptance criterion is removed.",
+    "deployment": "Deploy both services, verify identity parity, retry the preserved project, and verify a downloadable result through the panel."
+  },
+  "evidence": {
+    "tests": ["tests/test_architecture_reconstruction_memory.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0041.yaml"],
+    "version_bump": ["Automatic identity changes with Git commit"],
+    "golden_regression": ["Existing full-suite architecture, routing, and artifact regressions remain authoritative"],
+    "semantic_diff": ["Architecture bounds retain the primitive envelope; final bounds include the architecture and every generated board"],
+    "artifact_diff": ["Mechanical QA and artifact comparison remain unchanged"],
+    "contract_diff": ["No request or response contract change"],
+    "deployment_plan": ["deploy both services; verify identity_matches=true; retry PRJ-7253354; confirm ready state and downloadable artifact in the browser"],
+    "migration": ["none"],
+    "rollback_plan": ["revert incremental bounds calculation; stored projects remain intact"]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 1, "score": 6, "rationale": "Bounds are limited to reconstruction-relevant primitives; focused and full regression tests verify the downstream behavior."},
+  "waiver": null
+}
