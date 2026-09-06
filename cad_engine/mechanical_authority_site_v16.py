@@ -77,6 +77,12 @@ def _snapshot_selected(entities,plan_id):
         ex=_entity_ext(e)
         if not ex: continue
         cls,conf=classify_entity(e); crit=criticality_for(cls,conf); length,area=_measure(e)
+        control_points=[]
+        if e.dxftype()=="LWPOLYLINE":
+            try:
+                control_points=[(float(x),float(y),float(bulge)) for x,y,_,_,bulge in e.get_points("xyseb")]
+            except Exception:
+                control_points=[]
         records.append({
             "key":f"{plan_id}:E{i:05d}",
             "handle":str(getattr(e.dxf,"handle","") or ""),
@@ -85,6 +91,7 @@ def _snapshot_selected(entities,plan_id):
             "bbox":(float(ex.extmin.x),float(ex.extmin.y),float(ex.extmax.x),float(ex.extmax.y)),
             "length":round(length,6),"area":round(area,6),"text":_text(e),
             "semantic_class":cls,"confidence":conf,"criticality":crit,
+            "control_points":control_points,
         })
     return {"plan_id":plan_id,"entity_count":len(records),"entities":records}
 
@@ -123,6 +130,11 @@ def _expected_bbox(rec,srcb,target):
     )
 
 
+def _transform_point(point,srcb,target):
+    scale,dx,dy=_fit_parameters(srcb,target);sx1,sy1,_,_=map(float,srcb)
+    return dx+(float(point[0])-sx1)*scale,dy+(float(point[1])-sy1)*scale
+
+
 def _bbox_error(a,b):
     return max(abs(float(x)-float(y)) for x,y in zip(a,b))
 
@@ -131,6 +143,80 @@ def _match_transformed_architecture(before,after,srcb,target,tolerance=.08):
     """Match protected source entities to transformed copies without relying on handles."""
     expected=[r for r in before.get("entities",[]) if r.get("criticality") in PROTECTED]
     actual=[r for r in after.get("entities",[]) if r.get("criticality") in PROTECTED]
+    # First consume exact transformed geometry as a multiset. Repeated CAD
+    # primitives legitimately share class/layer and can defeat a greedy
+    # nearest-neighbour assignment even though every copy is present.
+    def geometry_key(rec,transform=False):
+        points=rec.get("control_points") or []
+        if points:
+            if transform:
+                mapped=[]
+                for x,y,bulge in points:
+                    px,py=_transform_point((x,y),srcb,target)
+                    mapped.append((round(px,6),round(py,6),round(float(bulge),9)))
+            else:
+                mapped=[(round(float(x),6),round(float(y),6),round(float(bulge),9)) for x,y,bulge in points]
+            geometry=("CONTROL_POINTS",tuple(mapped))
+        else:
+            box=_expected_bbox(rec,srcb,target) if transform else rec["bbox"]
+            geometry=("BBOX",tuple(round(float(v),6) for v in box))
+        return (
+            rec.get("entity_type"),rec.get("semantic_class"),rec.get("layer"),
+            geometry,
+        )
+    buckets={}
+    for index,rec in enumerate(actual):
+        buckets.setdefault(geometry_key(rec),[]).append((index,rec))
+    exact=[]
+    for rec in expected:
+        candidates=buckets.get(geometry_key(rec,True)) or []
+        if not candidates:
+            exact=[]
+            break
+        _,matched=candidates.pop()
+        exact.append({"source_key":rec["key"],"output_key":matched["key"],"bbox_error":0.0})
+    if exact and len(exact)==len(expected) and not any(buckets.values()):
+        return {
+            "pass":True,
+            "protected_source_count":len(expected),
+            "protected_output_count":len(actual),
+            "matched_count":len(exact),
+            "missing":[],
+            "extra_protected":[],
+            "matches":exact,
+            "strategy":"exact_transformed_geometry",
+        }
+    # The compositor appends an exact transformed copy of source entities in
+    # source order.  Prefer that preserved transaction order when it remains
+    # intact.  This avoids a greedy nearest-neighbour mismatch between dense,
+    # visually identical polylines while still checking every entity's class,
+    # layer and transformed geometry.  Any deletion/reordering falls through
+    # to the conservative spatial matcher below.
+    if len(expected)==len(actual):
+        ordered=[]
+        for src,dst in zip(expected,actual):
+            sc,dc=src.get("semantic_class"),dst.get("semantic_class")
+            compatible=(
+                dst.get("entity_type")==src.get("entity_type")
+                and dst.get("layer")==src.get("layer")
+                and (sc==dc or (str(sc).startswith("UNKNOWN") and str(dc).startswith("UNKNOWN")))
+            )
+            err=_bbox_error(_expected_bbox(src,srcb,target),dst["bbox"]) if compatible else math.inf
+            if not compatible or err>tolerance:
+                ordered=[]
+                break
+            ordered.append({"source_key":src["key"],"output_key":dst["key"],"bbox_error":round(err,6)})
+        if ordered:
+            return {
+                "pass":True,
+                "protected_source_count":len(expected),
+                "protected_output_count":len(actual),
+                "matched_count":len(ordered),
+                "missing":[],
+                "extra_protected":[],
+                "matches":ordered,
+                "strategy":"preserved_copy_order",
+            }
     used=set(); matches=[]; missing=[]
     for src in expected:
         eb=_expected_bbox(src,srcb,target)
@@ -158,7 +244,28 @@ def _match_transformed_architecture(before,after,srcb,target,tolerance=.08):
         "missing":missing,
         "extra_protected":protected_extra,
         "matches":matches,
+        "strategy":"conservative_spatial",
     }
+
+
+def _snapshot_in_source_coordinates(snapshot,srcb,target):
+    """Inverse-map copied output bboxes before topology comparison.
+
+    Topology tolerances describe source drawing units.  Applying the same
+    absolute tolerance after a board fit can merge distinct source nodes when
+    a large architectural plan is scaled down.  Inverse normalization keeps
+    the gate strict while comparing both graphs in the same coordinate space.
+    """
+    scale,dx,dy=_fit_parameters(srcb,target)
+    sx1,sy1,_,_=map(float,srcb)
+    normalized=deepcopy(snapshot)
+    for rec in normalized.get("entities",[]):
+        x1,y1,x2,y2=rec["bbox"]
+        rec["bbox"]=(
+            sx1+(x1-dx)/scale, sy1+(y1-dy)/scale,
+            sx1+(x2-dx)/scale, sy1+(y2-dy)/scale,
+        )
+    return normalized
 
 
 def _source_plan_for_row(arch,row):
@@ -215,7 +322,7 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         out_entities=_entities_in_output_board(out_doc,plan_area,source_layers)
         after=_snapshot_selected(out_entities,f"OUT-{row.get('code')}")
         match=_match_transformed_architecture(before,after,tuple(plan["bounds"]),plan_area)
-        topo=validate_topology(before,after)
+        topo=validate_topology(before,_snapshot_in_source_coordinates(after,tuple(plan["bounds"]),plan_area))
         # Small numerical tolerance around board safe area, but no clipping into title block.
         safe=(plan_area[0]-.12,plan_area[1]-.12,plan_area[2]+.12,plan_area[3]+.12)
         vis=validate_visibility(after,safe)

@@ -110,6 +110,25 @@ def test_gate_4_equipment_requires_all_linked_routes(tmp_path):
     assert "ENGITOOLS-M-HEAT-RETURN" in result["errors"][0]
 
 
+def test_gas_route_is_not_required_only_with_explicit_zero_load_evidence(tmp_path):
+    row=_rows(1)[0];row["family"]="GAS";board=next(iter(_boards([row]).values()));composition={"boards":{board.sheet:vars(board)}}
+    doc=ezdxf.new("R2010");doc.layers.add("ENGITOOLS-M-GAS-TABLE")
+    p=(board.plan_area[0]+1,board.plan_area[1]+1)
+    doc.modelspace().add_mtext("NO GAS APPLIANCE/LOAD DETECTED ON THIS APPROVED LEVEL",dxfattribs={"layer":"ENGITOOLS-M-GAS-TABLE","char_height":.1}).set_location(p)
+    path=tmp_path/"gas-no-load.dxf";doc.saveas(path)
+    result=validate_equipment_linkage(path,composition)
+    assert result["status"] == "PASS", result
+    assert result["boards"][0]["semantic"]["route_requirement"] == "NOT_APPLICABLE"
+
+    doc=ezdxf.readfile(path)
+    for entity in list(doc.modelspace()):doc.modelspace().delete_entity(entity)
+    doc.modelspace().add_mtext("GAS LOAD DETECTED BUT ROUTE IS MISSING",dxfattribs={"layer":"ENGITOOLS-M-GAS-TABLE","char_height":.1}).set_location(p)
+    doc.saveas(path)
+    result=validate_equipment_linkage(path,composition)
+    assert result["status"] == "FAIL"
+    assert "ENGITOOLS-M-GAS" in result["errors"][0]
+
+
 def _split_document(board, tiny=False):
     doc=ezdxf.new("R2010");msp=doc.modelspace()
     for i,layer in enumerate(("ENGITOOLS-M-HVAC-EQUIP","ENGITOOLS-M-HVAC-REFRIG","ENGITOOLS-M-HVAC-COND","ENGITOOLS-M-HVAC-CALLOUT","ENGITOOLS-M-HVAC-AIRFLOW"),start=1):doc.layers.add(layer,color=(i%6)+1)
