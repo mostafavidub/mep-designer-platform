@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0031",
+  "summary": "Deploy the canonical CAD engine as a dedicated private Railway service so large DXF processing has an independent memory budget from the public panel.",
+  "requester": "mostafavidub",
+  "change_types": ["drawing_output", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "A dedicated image launches only the canonical cad_engine.main entrypoint with ephemeral output storage.",
+    "ui_api": "The panel keeps its existing internal HTTP client contract and targets the Railway private service.",
+    "manifest": "Approved manifest behavior is unchanged and enforced by the canonical engine.",
+    "qa": "All locked engine and artifact release gates remain active.",
+    "versioning": "The dedicated service is built from the same Git revision and canonical entrypoint.",
+    "migration": "No database or project data migration; the CAD service is stateless.",
+    "docs": "This change request records the production topology and rollback.",
+    "governance": "The topology isolates resources without weakening design authority.",
+    "deployment": "Build cad_engine/Dockerfile on the existing web service, connect web-app through private DNS, verify health, and retry PRJ-7253354."
+  },
+  "evidence": {
+    "tests": ["tests/test_dedicated_cad_deployment.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0031.yaml"],
+    "version_bump": ["Git/content-derived deployment identity"],
+    "golden_regression": ["30 MB architecture DXF exceeds combined-process memory but runs with an isolated CAD budget"],
+    "semantic_diff": ["Process placement changes; canonical design code and request contract do not"],
+    "artifact_diff": ["Expected DXF and release QA unchanged"],
+    "contract_diff": ["Private HTTP contract unchanged"],
+    "deployment_plan": ["deploy dedicated CAD image; set private URL on web-app; verify both services; retry preserved project; verify download"],
+    "migration": ["none; stateless CAD workspace"],
+    "rollback_plan": ["restore COBUILT_CAD_IN_PROCESS=1 on web-app and remove the private CAD URL; project data remains on the web-app volume"]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "Deployment topology changes, but private health checks and a preserved paid-project retry provide direct production evidence."},
+  "waiver": null
+}
