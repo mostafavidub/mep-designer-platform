@@ -11,13 +11,8 @@ import tempfile
 from pathlib import Path
 
 import ezdxf
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from fastapi import FastAPI, HTTPException
 from ezdxf import bbox
-from ezdxf.addons.drawing import Frontend, RenderContext
-from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
 from .runtime_core import (
     SYSTEMS, DesignRequest, OUTPUT_ROOT, source_files,
@@ -56,6 +51,12 @@ def _in_bounds(entity, bounds):
 
 def render_mechanical_pages(dxf_path: Path, report: dict, out_dir: Path) -> list[Path]:
     """Render each generated authority board as one PDF page."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from ezdxf.addons.drawing import Frontend, RenderContext
+    from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+
     doc=ezdxf.readfile(dxf_path)
     msp=doc.modelspace()
     boards=(report.get("composition") or {}).get("boards") or {}

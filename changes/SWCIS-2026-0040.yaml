@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0040",
+  "summary": "Lazy-load PDF rendering dependencies so mechanical DXF design retains memory headroom for large architecture files on the CAD worker.",
+  "requester": "mostafavidub",
+  "change_types": ["runtime", "performance", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Matplotlib, drawing backend, and PDF merger are imported only when a PDF render is requested.",
+    "ui_api": "No public API or UI behavior changes.",
+    "manifest": "No release contract change beyond automatic commit identity.",
+    "qa": "Mechanical DXF QA remains fully enabled; optional rendering behavior is unchanged when called.",
+    "versioning": "Automatic build identity records the deployment.",
+    "migration": "No stored-data migration.",
+    "docs": "This change request records the memory optimization.",
+    "governance": "No output or acceptance criterion is removed.",
+    "deployment": "Deploy both services, verify identity parity, retry the preserved large project."
+  },
+  "evidence": {
+    "tests": ["tests/test_cad_lazy_render_dependencies.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0040.yaml"],
+    "version_bump": ["Automatic identity changes with Git commit"],
+    "golden_regression": ["Rendering dependencies remain inside rendering functions"],
+    "semantic_diff": ["Imports move from process startup to the existing PDF-only call paths"],
+    "artifact_diff": ["DXF and PDF formats remain unchanged"],
+    "contract_diff": ["No request or response contract change"],
+    "deployment_plan": ["deploy both services; verify identity_matches=true; retry PRJ-7253354 and inspect output files"],
+    "migration": ["none"],
+    "rollback_plan": ["revert lazy imports; stored projects remain intact"]
+  },
+  "risk": {"likelihood": 1, "severity": 3, "detectability": 1, "score": 3, "rationale": "Dependencies are imported unchanged at their only use sites and the full suite covers rendering paths."},
+  "waiver": null
+}
