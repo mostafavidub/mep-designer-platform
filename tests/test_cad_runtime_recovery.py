@@ -1,4 +1,5 @@
 from unittest.mock import Mock, patch
+import base64
 
 from app import dxf_output
 
@@ -91,3 +92,19 @@ def test_startup_requeues_only_exact_preserved_build_identity_failures():
     assert "Job.status == 'failed'" in source
     assert "failed_job.status = 'queued'" in source
     assert "failed_job.attempts = 0" in source
+
+
+@patch.dict(dxf_output.os.environ, {
+    "COBUILT_CAD_IN_PROCESS": "0",
+    "COBUILT_CAD_DESIGNER_URL": "http://web.railway.internal:8080",
+})
+def test_remote_cad_receives_preserved_architecture_archive(tmp_path):
+    expected = b"preserved-zip-bytes"
+    (tmp_path / "architecture.zip").write_bytes(expected)
+    original = {"architecture_dir": str(tmp_path / "input"), "project_id": "98"}
+
+    result = dxf_output._attach_remote_architecture(original, tmp_path)
+
+    assert original["architecture_dir"].endswith("input")
+    assert result["architecture_dir"] is None
+    assert base64.b64decode(result["architecture_archive_b64"]) == expected

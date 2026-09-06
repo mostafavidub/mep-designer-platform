@@ -1,0 +1,33 @@
+{
+  "change_id": "SWCIS-2026-0032",
+  "summary": "Transfer the panel's preserved architecture archive to the stateless private CAD service instead of passing a volume-local path that the isolated service cannot access.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "drawing_output", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "The stateless service receives the existing supported architecture_archive_b64 request field.",
+    "ui_api": "Users are no longer incorrectly asked to re-upload a file that remains preserved on the panel volume.",
+    "manifest": "Approved manifest and analysis payloads are unchanged.",
+    "qa": "Safe ZIP extraction and every locked downstream gate remain active.",
+    "versioning": "No version contract change.",
+    "migration": "No stored data migration.",
+    "docs": "This change request records cross-service input transport.",
+    "governance": "Only preserved input transport changes; architecture and design authority remain unchanged.",
+    "deployment": "Deploy web-app, verify private CAD health, retry the preserved project without re-upload or payment."
+  },
+  "evidence": {
+    "tests": ["tests/test_cad_runtime_recovery.py", "full suite required before merge"],
+    "docs": ["changes/SWCIS-2026-0032.yaml"],
+    "version_bump": ["Git/content-derived deployment identity"],
+    "golden_regression": ["Preserved architecture.zip transported to private CAD service"],
+    "semantic_diff": ["Local filesystem path is replaced by the byte-identical stored archive only for remote CAD targets"],
+    "artifact_diff": ["Input bytes preserved; expected output unchanged"],
+    "contract_diff": ["Uses the existing architecture_archive_b64 contract"],
+    "deployment_plan": ["deploy; retry PRJ-7253354; validate ready state and download"],
+    "migration": ["none"],
+    "rollback_plan": ["revert commit and return to co-located mode; stored project archive remains intact"]
+  },
+  "risk": {"likelihood": 1, "severity": 4, "detectability": 1, "score": 4, "rationale": "The byte-identical archive uses the engine's existing validated safe-extraction path."},
+  "waiver": null
+}

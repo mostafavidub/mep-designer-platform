@@ -1,9 +1,12 @@
 import os
+import base64
+import io
 import json
 import re
 import secrets
 import shutil
 import uuid
+import zipfile
 from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
@@ -354,6 +357,33 @@ def _post_to_compatible_cad(payload):
     return requests.post(cobuilt + '/design', json=payload, timeout=3600)
 
 
+def _attach_remote_architecture(payload, project_dir):
+    """Carry preserved inputs to a stateless CAD service over private HTTP."""
+    target = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').lower()
+    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1' or target.startswith(
+        ('http://127.0.0.1', 'http://localhost')
+    ):
+        return payload
+
+    project_dir = Path(project_dir)
+    archive = project_dir / 'architecture.zip'
+    if archive.is_file():
+        raw = archive.read_bytes()
+    else:
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as bundle:
+            for source in sorted((project_dir / 'input').rglob('*.dxf')):
+                if source.is_file() and '__MACOSX' not in source.parts and not source.name.startswith(('._', '.')):
+                    bundle.write(source, arcname=source.name)
+        raw = buffer.getvalue()
+    if not raw:
+        return payload
+    transferred = dict(payload)
+    transferred['architecture_dir'] = None
+    transferred['architecture_archive_b64'] = base64.b64encode(raw).decode('ascii')
+    return transferred
+
+
 def run_design_dxf(project_id, revision_id):
     db = legacy.Session()
     p = db.get(legacy.Project, project_id)
@@ -432,6 +462,7 @@ def run_design_dxf(project_id, revision_id):
                 db.commit()
         set_project_progress(p, 'engine_designing')
         db.commit()
+        payload = _attach_remote_architecture(payload, pdir)
         resp = _post_to_compatible_cad(payload)
         if not resp.ok:
             message = _cad_error_message(resp)
