@@ -6,8 +6,8 @@ from cad_engine.mechanical_release_contract_v19 import release_contract_status
 from starlette.middleware.gzip import GZipMiddleware
 
 from . import main_auto
-from . import unit_sanity  # patches dimension-based CAD unit sanity before project analysis
-from . import dxf_output  # patches design/download flow to deliver DXF artifacts
+from . import unit_sanity
+from . import dxf_output
 from . import artifact_storage
 from . import mechanical_workflow
 from . import mechanical_drawing_set
@@ -56,8 +56,6 @@ mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
 install_manifest_site_v12(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 
-# Electrical v19 shares the current analyzer/runtime but applies its own
-# evidence contract, review manifest, recovery rules and CAD authority route.
 electrical_runtime_patch.install(main_auto)
 electrical_design_integration.install(dxf_output, main_auto.legacy)
 electrical_review_fix.register_electrical_review_fix(app, main_auto.legacy)
@@ -111,10 +109,23 @@ def integrated_system_health():
     status['build_identity'] = build_identity()
     status['mechanical_v19'] = release_contract_status()
     try:
-        from cad_engine.electrical_v1.release_contract_v19 import release_contract_status as electrical_release_status
-        status['electrical_v19'] = electrical_release_status()
+        from cad_engine.electrical_v1.release_contract_v19 import release_contract_status as electrical_cad_status
+        status['electrical_v19_cad_contract'] = electrical_cad_status()
     except Exception as exc:
-        status['electrical_v19'] = {'status': 'FAIL', 'error': type(exc).__name__}
+        status['electrical_v19_cad_contract'] = {'status': 'FAIL', 'error': type(exc).__name__}
+    try:
+        from .electrical_site_release_contract import release_contract_status as electrical_site_status
+        status['electrical_v19_site_contract'] = electrical_site_status()
+    except Exception as exc:
+        status['electrical_v19_site_contract'] = {'status': 'FAIL', 'error': type(exc).__name__}
+    cad_ok = status['electrical_v19_cad_contract'].get('status') == 'PASS'
+    site_ok = status['electrical_v19_site_contract'].get('status') == 'PASS'
+    status['electrical_v19'] = {
+        'version': '19.0.0',
+        'status': 'PASS' if cad_ok and site_ok else 'FAIL',
+        'cad_runtime': status['electrical_v19_cad_contract'].get('status'),
+        'site_runtime': status['electrical_v19_site_contract'].get('status'),
+    }
     return status
 
 
