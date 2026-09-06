@@ -2,7 +2,7 @@ name: Electrical Project-Driven Tests
 
 on:
   push:
-    branches: [feature/electrical-project-driven-v1]
+    branches: [feature/electrical-project-driven-v1, feature/electrical-v19-panel-parity]
   pull_request:
     branches: [main]
 
@@ -30,6 +30,8 @@ jobs:
           python -m unittest tests.test_electrical_project_driven_v1 -v
           python -m unittest tests.test_electrical_authority_v15 -v
           python -m unittest tests.test_electrical_release_gate -v
+          python -m unittest tests.test_electrical_basis_contract_v19 -v
+          python -m unittest tests.test_electrical_panel_parity_v19 -v
           python -m unittest tests.test_architecture_reconstruction_v1 -v
           python -m unittest tests.test_architecture_topology_v1 -v
           python -m unittest tests.test_level_detection_v3 -v
