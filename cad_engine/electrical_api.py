@@ -1,6 +1,7 @@
 """Active production HTTP adapter for Electrical."""
 from __future__ import annotations
 
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -14,6 +15,7 @@ from .build_identity import build_identity
 
 
 def _missing_inputs(report):
+    """Return stable evidence keys, including exact detail-id.parameter tokens."""
     missing = []
     data = report.get("data") or {}
     basis = (data.get("basis") or {}).get("values") or {}
@@ -23,6 +25,19 @@ def _missing_inputs(report):
     for gate_name, gate in (report.get("gates") or {}).items():
         for warning in gate.get("warnings") or []:
             text = str(warning)
+            detail_match = re.search(r"detail_parameters_input_required:([^:]+):([^|;]+)", text)
+            if detail_match:
+                detail_id = detail_match.group(1).strip()
+                for parameter in detail_match.group(2).split(","):
+                    parameter = parameter.strip()
+                    if parameter:
+                        missing.append(f"{detail_id}.{parameter}")
+                continue
+            # ``detail_not_final`` only identifies a whole detail and is too
+            # coarse for user recovery; the construction gate above supplies the
+            # exact missing parameters, so do not send a useless generic key.
+            if text.startswith("detail_not_final:"):
+                continue
             if ":" in text and any(token in text for token in ("input_required", "unresolved", "not_final")):
                 tail = text.rsplit(":", 1)[-1].strip()
                 if tail and len(tail) < 80:
