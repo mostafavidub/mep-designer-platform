@@ -2,9 +2,9 @@
   "change_id": "SWCIS-2026-0017",
   "summary": "Recover architectural floor plans with nonstandard titles from bounded room evidence.",
   "requester": "mostafavidub",
-  "change_types": ["analysis", "test", "governance", "deployment"],
+  "change_types": ["analysis", "drawing_output", "test", "governance", "deployment"],
   "changed_rule_ids": [],
-  "impacted_modules": ["cad_designer", "deployment", "governance", "planner", "qa", "ui_api"],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "qa", "routing", "sizing", "ui_api", "versioning"],
   "impact_notes": {
     "cad_designer": "An UNKNOWN print frame becomes a primary floor only when it contains both wet-room and habitable-room evidence.",
     "qa": "Explicit elevations, sections, details, roofs and furniture plans remain excluded; weak evidence remains fail-closed.",
