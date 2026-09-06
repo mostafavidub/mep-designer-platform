@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import ezdxf
 
@@ -34,6 +35,26 @@ class ElectricalAuthorityTests(unittest.TestCase):
             sheet_bounds=(0.0, 0.0, 420.0, 297.0),
             text="پلان معماری طبقه همکف",
         ))
+
+    def test_project_north_reads_source_only_once_for_multiple_frames(self):
+        from cad_engine.electrical_v1.orientation import detect_project_north
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / "arch.dxf"
+            make_architecture(source)
+            frames = [
+                {"id":"F1","eligible_for_electrical":True,"bounds":(0,0,10000,8000)},
+                {"id":"F2","eligible_for_electrical":True,"bounds":(11000,0,21000,8000)},
+            ]
+            import cad_engine.electrical_v1.orientation as orientation
+            real_readfile = orientation.ezdxf.readfile
+            calls = []
+            def counted(*args, **kwargs):
+                calls.append(args[0] if args else None)
+                return real_readfile(*args, **kwargs)
+            with patch.object(orientation.ezdxf, "readfile", side_effect=counted):
+                report = detect_project_north(source, frames)
+            self.assertEqual(report["metrics"]["eligible_frames"], 2)
+            self.assertEqual(len(calls), 1, calls)
 
     def test_missing_north_is_reported_but_never_fabricated(self):
         with tempfile.TemporaryDirectory() as td:
