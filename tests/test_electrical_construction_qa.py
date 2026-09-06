@@ -11,6 +11,7 @@ from cad_engine.electrical_v1.construction_qa import (
     evidence_consistency_qa,
     plan_detail_link_qa,
 )
+from cad_engine.electrical_v1.construction_detail_render import upgrade_construction_details
 
 
 class ElectricalConstructionQATests(unittest.TestCase):
@@ -38,8 +39,9 @@ class ElectricalConstructionQATests(unittest.TestCase):
             "detail_id": "D-EL-PANEL-MOUNT",
             "geometry": [("wall_section",), ("panel_box",), ("dimension", "mounting_height"), ("clearance_zone",)],
             "parameters": {
-                "mounting_height": {"value": "PROJECT INPUT", "status": "FINAL", "source": "explicit_user_input"},
-                "clearance": {"value": "PROJECT INPUT", "status": "FINAL", "source": "explicit_user_input"},
+                "mounting_height": {"value": "1500 mm", "status": "FINAL", "source": "explicit_user_input"},
+                "wall_type": {"value": "masonry", "status": "FINAL", "source": "explicit_user_input"},
+                "clearance": {"value": "1000 mm", "status": "FINAL", "source": "explicit_user_input"},
             },
             "missing": list(missing or []),
             "status": status,
@@ -96,6 +98,44 @@ class ElectricalConstructionQATests(unittest.TestCase):
         self.assertEqual(result["status"], "FAIL")
         self.assertTrue(any("final_value_missing" in x for x in result["errors"]))
         self.assertTrue(any("final_source_missing" in x for x in result["errors"]))
+
+    def test_renderer_keeps_all_current_library_details_on_sheet(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "details.dxf"
+            doc = ezdxf.new("R2013")
+            doc.layers.add("ENGITOOLS-E-DETAIL")
+            doc.layers.add("ENGITOOLS-E-DOC")
+            doc.layouts.new("E-10")
+            doc.saveas(path)
+            ids = [
+                "D-EL-PANEL-MOUNT", "D-EL-METER", "D-EL-CONDUIT-SUPPORT", "D-EL-WALL-PEN",
+                "D-EL-EARTHING", "D-EL-LIGHT-MOUNT", "D-EL-SWITCH-OUTLET", "D-EL-FIRE-DETECTOR",
+                "D-EL-EMERGENCY", "D-EL-JB", "D-EL-TERMINATION", "D-EL-ISOLATOR",
+            ]
+            details = [{"detail_id": value, "status": "PRELIMINARY", "parameters": {}, "missing": []} for value in ids]
+            result = upgrade_construction_details(path, self._manifest(), details)
+            self.assertEqual(result["status"], "PASS", result)
+            self.assertEqual(result["rendered"], 12)
+            reopened = ezdxf.readfile(path)
+            texts = {
+                str(getattr(entity.dxf, "text", "") or "")
+                for entity in reopened.layouts.get("E-10")
+                if entity.dxftype() == "TEXT"
+            }
+            for detail_id in ids:
+                self.assertIn(detail_id, texts)
+
+    def test_renderer_fails_closed_if_detail_library_outgrows_sheet_capacity(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "too-many.dxf"
+            doc = ezdxf.new("R2013")
+            doc.layers.add("ENGITOOLS-E-DETAIL")
+            doc.layouts.new("E-10")
+            doc.saveas(path)
+            details = [{"detail_id": f"D-{i}", "status": "PRELIMINARY"} for i in range(13)]
+            result = upgrade_construction_details(path, self._manifest(), details)
+            self.assertEqual(result["status"], "FAIL")
+            self.assertTrue(any("capacity_exceeded" in error for error in result["errors"]))
 
 
 if __name__ == "__main__":
