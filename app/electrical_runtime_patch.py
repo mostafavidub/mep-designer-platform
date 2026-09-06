@@ -1,4 +1,4 @@
-"""Install Electrical v19 evidence rules on the active public/panel analyzer.
+"""Install active Electrical evidence rules on the public/panel analyzer.
 
 This keeps Mechanical behavior untouched while replacing unsafe Electrical
 auto-answers with preliminary analysis evidence and injecting only unresolved
@@ -12,10 +12,10 @@ from .electrical_basis_contract import normalize_answers
 from .electrical_workflow import question_payload, required_basis_questions
 
 UNSAFE_AUTO_PROJECT_FACTS = {
-    "design_load_kw",      # architecture proxy, not final connected/demand load
-    "cable_length_m",      # representative geometry route, not final circuit path
-    "power_factor",        # rule/calculation input requires provenance
-    "max_voltage_drop_pct",# applicable-rule value, not an architectural fact
+    "design_load_kw",
+    "cable_length_m",
+    "power_factor",
+    "max_voltage_drop_pct",
 }
 
 ALIASES = {
@@ -37,7 +37,7 @@ def _has_answer(answers, key):
 
 
 def install(main_auto):
-    if getattr(main_auto, "_electrical_v19_runtime_installed", False):
+    if getattr(main_auto, "_electrical_runtime_installed", False):
         return
     original = main_auto.build_unified_questionnaire
 
@@ -46,8 +46,6 @@ def install(main_auto):
         if discipline != "electrical":
             return auto, answers, unresolved
 
-        # Preserve architecture-derived proxies only inside analysis with an
-        # explicit PRELIMINARY status; never submit them as user/project facts.
         preliminary = {}
         for key, source_key in (
             ("estimated_connected_load_kw", "estimated_electrical_load_kw"),
@@ -63,8 +61,6 @@ def install(main_auto):
         for key in UNSAFE_AUTO_PROJECT_FACTS:
             answers.pop(key, None)
 
-        # Restore non-empty explicit submissions even when the legacy dynamic
-        # question list did not contain the new canonical key.
         for key, value in dict(supplied_answers or {}).items():
             if value is not None and str(value).strip():
                 answers[str(key)] = value
@@ -72,11 +68,8 @@ def install(main_auto):
 
         p = SimpleNamespace(answers=answers, analysis=analysis)
         missing = required_basis_questions(p)
-        legacy = {key: prompt for key, prompt in unresolved}
         final_questions = []
         seen = set()
-        # Keep useful architecture-specific legacy questions (e.g. emergency,
-        # elevator) unless the new basis contract supersedes the same fact.
         superseded = {alias for key in missing for alias in ALIASES.get(key, (key,))}
         for key, prompt in unresolved:
             if key in superseded or _has_answer(answers, key):
@@ -91,9 +84,9 @@ def install(main_auto):
         analysis["electrical_basis_preflight"] = {
             "status": "INPUT_REQUIRED" if missing else "PASS",
             "missing": missing,
-            "version": "electrical-design-basis-v19.0",
+            "contract_revision": "electrical-design-basis/1",
         }
         return auto, answers, final_questions
 
     main_auto.build_unified_questionnaire = build_unified_questionnaire
-    main_auto._electrical_v19_runtime_installed = True
+    main_auto._electrical_runtime_installed = True
