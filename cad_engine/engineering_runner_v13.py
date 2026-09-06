@@ -84,6 +84,31 @@ def _merge_browser_fixture_evidence(architecture, recognition, evidence):
     return recognition
 
 
+def _discard_unlocated_native_fixtures(architecture, recognition):
+    """Reject symbol matches that cannot be placed in a compatible room.
+
+    Blocks in legends and parking annotations can look like sanitary symbols.
+    They are not installed equipment unless their coordinate is backed by a
+    reconstructed compatible architectural space. Browser evidence is merged
+    afterwards and has its own bounded semantic fallback.
+    """
+    rooms={r.get('id'):r for r in architecture.get('rooms') or []};kept=[];rejected=[]
+    for item in recognition.get('detections') or []:
+        if item.get('category')!='fixture':kept.append(item);continue
+        room=rooms.get(item.get('room_id'))
+        if room and _compatible_room(item.get('type'),room.get('type')):
+            kept.append(item)
+        else:rejected.append(item.get('id'))
+    recognition['detections']=kept
+    recognition['fixtures']=[r for r in kept if r.get('category')=='fixture']
+    recognition['equipment']=[r for r in kept if r.get('category')=='equipment']
+    quality=dict(recognition.get('quality') or {})
+    quality['native_fixture_false_positives_rejected']=len(rejected)
+    quality['native_fixture_false_positive_ids']=rejected
+    recognition['quality']=quality
+    return recognition
+
+
 def _add_locked_design_endpoints(architecture, recognition, design_basis):
     """Create design endpoints only where user basis and room evidence agree."""
     rows=list(recognition.get('detections') or []);existing={(r.get('plan_id'),r.get('room_id'),r.get('type')) for r in rows}
@@ -111,6 +136,7 @@ def _add_locked_design_endpoints(architecture, recognition, design_basis):
 def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     architecture=reconstruct_architecture(src);recognition=recognize_fixtures_equipment(architecture)
     architecture,recognition=apply_plan_scopes(src,architecture,recognition,(project_overrides or {}).get('authoritative_level_profiles'))
+    recognition=_discard_unlocated_native_fixtures(architecture,recognition)
     recognition=_merge_browser_fixture_evidence(architecture,recognition,(project_overrides or {}).get('fixture_evidence'))
     recognition=_add_locked_design_endpoints(architecture,recognition,design_basis or {})
     requirements=derive_system_requirements(architecture,recognition,design_basis=design_basis)

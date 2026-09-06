@@ -1,5 +1,5 @@
 from cad_engine.mechanical_authority_v15 import build_design_overrides
-from cad_engine.plan_segmentation_v13 import _plans_from_authoritative_profiles
+from cad_engine.plan_segmentation_v13 import _plans_from_authoritative_profiles, _recover_orthogonal_room_enclosures
 
 
 def test_confirmed_browser_regions_bridge_into_cad_plan_scope():
@@ -53,3 +53,21 @@ def test_unreliable_reused_roof_title_is_excluded_from_all_plan_authority():
     assert len(profiles) == 1
     assert profiles[0]["name"] == "طبقه اول"
     assert profiles[0]["roof"] is False
+
+
+def test_label_only_room_recovers_only_from_four_real_wall_faces():
+    architecture={"rooms":[{"id":"R1","plan_id":"P1","label_point":(5,5),"polygon":None,"evidence":["room_text"]}],
+                  "walls":[{"start":(2,2),"end":(8,2)},{"start":(2,8),"end":(8,8)},
+                           {"start":(2,2),"end":(2,8)},{"start":(8,2),"end":(8,8)}],"quality":{}}
+    recovered=_recover_orthogonal_room_enclosures(architecture,[{"plan_id":"P1","bounds":[0,0,10,10]}])
+    assert recovered==["R1"]
+    assert architecture["rooms"][0]["polygon"]==[(2.0,2.0),(8.0,2.0),(8.0,8.0),(2.0,8.0)]
+    assert architecture["rooms"][0]["area"]==36
+
+
+def test_three_sided_room_is_not_invented():
+    architecture={"rooms":[{"id":"R1","plan_id":"P1","label_point":(5,5),"polygon":None}],
+                  "walls":[{"start":(2,2),"end":(8,2)},{"start":(2,8),"end":(8,8)},
+                           {"start":(2,2),"end":(2,8)}],"quality":{}}
+    assert _recover_orthogonal_room_enclosures(architecture,[{"plan_id":"P1","bounds":[0,0,10,10]}])==[]
+    assert architecture["rooms"][0]["polygon"] is None

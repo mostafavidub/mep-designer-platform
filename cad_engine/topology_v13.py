@@ -36,16 +36,11 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
     # wet rooms; keeping it local preserves the no-cross-plan contract.
     plan_ids=list(architecture.get('primary_floor_plan_ids') or [])
     for pid in plan_ids:
-        if any(s.get('plan_id')==pid for s in shafts):
-            continue
         wet=[r for r in architecture.get('rooms') or [] if r.get('plan_id')==pid and r.get('type') in ('bathroom','toilet','kitchen')]
         points=[tuple(r.get('label_point')) for r in wet if r.get('label_point')]
-        if points:
-            point=(sum(p[0] for p in points)/len(points),sum(p[1] for p in points)/len(points))
-        else:
-            plan=next((p for p in architecture.get('plans') or [] if p.get('plan_id')==pid),{})
-            b=plan.get('bounds') or architecture.get('bounds') or [0,0,0,0]
-            point=((b[0]+b[2])/2,(b[1]+b[3])/2)
+        plan=next((p for p in architecture.get('plans') or [] if p.get('plan_id')==pid),{})
+        b=plan.get('bounds') or architecture.get('bounds') or [0,0,0,0]
+        clusters=[points] if points else [[((b[0]+b[2])/2,(b[1]+b[3])/2)]]
         basis=design_basis or {}; approval=basis.get('mechanical_shaft_approval') or {}
         strategy=approval.get('strategy') or basis.get('mechanical_shaft_route')
         proposal_strategies={'propose_near_wet_core','propose_adjacent_to_stair','proposal_authorized'}
@@ -55,12 +50,23 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
         approved=strategy in proposal_strategies and (
             approval.get('status')=='APPROVED' or basis.get('mechanical_shaft_route') in proposal_strategies
         )
-        row={'id':f'SHAFT-PROPOSED-{len(shafts)+1:02d}','kind':'shaft','category':'vertical',
-             'point':point,'plan_id':pid,'source':'proposed_near_wet_core','provisional':not approved,
-             'proposal_approved':approved,
-             'approval':({**approval,'strategy':strategy,'plan_id':pid,'approved_point':point}
-                         if approved else {'status':'INPUT_REQUIRED','strategy':strategy,'plan_id':pid})}
-        shafts.append(row);nodes.append(row)
+        if any(s.get('plan_id')==pid for s in shafts) and not approved:
+            continue
+        # Once the customer has explicitly approved wet-core proposals, keep
+        # each reconstructed wet room connected to its own local riser point.
+        # This is required for multi-layout sheets where one broad plan bound
+        # contains several repeated floors and a single centroid would connect
+        # unrelated drawings through walls.
+        if approved and points:
+            clusters=[[point] for point in points]
+        for cluster in clusters:
+            point=(sum(p[0] for p in cluster)/len(cluster),sum(p[1] for p in cluster)/len(cluster))
+            row={'id':f'SHAFT-PROPOSED-{len(shafts)+1:02d}','kind':'shaft','category':'vertical',
+                 'point':point,'plan_id':pid,'source':'proposed_near_wet_core','provisional':not approved,
+                 'proposal_approved':approved,'cluster_radius':max((math.dist(point,p) for p in cluster),default=0),
+                 'approval':({**approval,'strategy':strategy,'plan_id':pid,'approved_point':point}
+                             if approved else {'status':'INPUT_REQUIRED','strategy':strategy,'plan_id':pid})}
+            shafts.append(row);nodes.append(row)
 
     project_systems=set(requirements.get('project_systems') or [])
     edges=[];system_graphs={};unresolved=[]
