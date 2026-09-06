@@ -9,10 +9,16 @@ from .authority_qa import normalized_semantic_duplicate_qa, reopened_file_author
 from .release_contract import release_contract_status
 from .documentation import SYMBOL_LIBRARY
 from .strict_pipeline import run_strict_electrical_pipeline
+from .submission_quality import (
+    apply_submission_titleblocks,
+    cross_sheet_traceability_qa,
+    submission_titleblock_qa,
+)
 
 NEW_GATES = (
     "PLAN_ISOLATION_AUTHORITY", "EQUIPMENT_REPRESENTATION_AUTHORITY",
     "DETAIL_REFERENCE_PARITY_AUTHORITY", "SEMANTIC_DUPLICATE_AUTHORITY",
+    "SUBMISSION_TITLEBLOCK_AUTHORITY", "CROSS_SHEET_TRACEABILITY_AUTHORITY",
     "FINAL_REOPEN_AUTHORITY", "SAFE_DRAWING_AREA_AUTHORITY",
     "ELECTRICAL_RELEASE_CONTRACT",
 )
@@ -159,22 +165,27 @@ def _safe_area_qa(path: Path, data: Dict[str, Any]) -> Dict[str, Any]:
 
 def run_authority_electrical_pipeline(source: str | Path, output: str | Path, config: Optional[Dict[str, Any]] = None):
     report = run_strict_electrical_pipeline(source, output, config)
-    report["pipeline_schema_revision"] = "electrical-authority/1"
+    report["pipeline_schema_revision"] = "electrical-authority/2"
     output = Path(output); data = report.get("data") or {}; gates = report.setdefault("gates", {}); paper = tuple((config or {}).get("paper_mm") or (420.0, 297.0))
     gates["PLAN_ISOLATION_AUTHORITY"] = _plan_isolation(data)
     if output.exists():
         materialized = _materialize_authority_graphics(output, data, paper)
+        submission = apply_submission_titleblocks(output, data, paper)
+        titleblock = submission_titleblock_qa(output, data.get("manifest") or [])
+        cross_sheet = cross_sheet_traceability_qa(data)
         equipment = _equipment_representation(output, data); detail = _detail_reference_parity(output, data)
         manifest_objs = [type("Sheet", (), row) for row in data.get("manifest") or []]
         duplicate = normalized_semantic_duplicate_qa(output, manifest_objs); reopen = reopened_file_authority_qa(output, manifest_objs, paper); safe = _safe_area_qa(output, data)
         gates["EQUIPMENT_REPRESENTATION_AUTHORITY"] = equipment; gates["DETAIL_REFERENCE_PARITY_AUTHORITY"] = detail
+        gates["SUBMISSION_TITLEBLOCK_AUTHORITY"] = _gate(titleblock["status"], titleblock.get("errors"), checked=(titleblock.get("metrics") or {}).get("checked", 0), drawn=submission.get("sheets", 0))
+        gates["CROSS_SHEET_TRACEABILITY_AUTHORITY"] = _gate(cross_sheet["status"], cross_sheet.get("errors"), **(cross_sheet.get("metrics") or {}))
         gates["SEMANTIC_DUPLICATE_AUTHORITY"] = _gate(duplicate["status"], duplicate.get("errors"), sheets=len(duplicate.get("sheets") or {}))
         gates["FINAL_REOPEN_AUTHORITY"] = _gate(reopen["status"], reopen.get("errors"), file_size_bytes=reopen.get("file_size_bytes"), layouts=reopen.get("layout_count"))
-        gates["SAFE_DRAWING_AREA_AUTHORITY"] = safe; report["authority_postcomposition"] = materialized
+        gates["SAFE_DRAWING_AREA_AUTHORITY"] = safe; report["authority_postcomposition"] = {**materialized, "submission_titleblocks": submission}
     else:
-        for name in ("EQUIPMENT_REPRESENTATION_AUTHORITY", "DETAIL_REFERENCE_PARITY_AUTHORITY", "SEMANTIC_DUPLICATE_AUTHORITY", "FINAL_REOPEN_AUTHORITY", "SAFE_DRAWING_AREA_AUTHORITY"):
+        for name in ("EQUIPMENT_REPRESENTATION_AUTHORITY", "DETAIL_REFERENCE_PARITY_AUTHORITY", "SUBMISSION_TITLEBLOCK_AUTHORITY", "CROSS_SHEET_TRACEABILITY_AUTHORITY", "SEMANTIC_DUPLICATE_AUTHORITY", "FINAL_REOPEN_AUTHORITY", "SAFE_DRAWING_AREA_AUTHORITY"):
             gates[name] = _gate("FAIL", ["output_file_missing"])
     contract = release_contract_status(); gates["ELECTRICAL_RELEASE_CONTRACT"] = _gate(contract["status"], [] if contract["status"] == "PASS" else ["release_contract_incomplete"], passed=contract["passed_count"], required=contract["required_count"])
     hard = [name for name,value in gates.items() if value.get("status") == "FAIL"]; incomplete = [name for name,value in gates.items() if value.get("status") not in {"PASS","NOT_REQUIRED"}]; accepted = not hard and not incomplete
-    previous = report.get("acceptance") or {}; report["acceptance"] = {**previous, "status":"PASS" if accepted else "NOT_ACCEPTED", "hard_fail_gates":hard, "incomplete_gates":incomplete, "real_project_acceptance":False, "production_release_allowed":False, "authority_contract_revision":"electrical-authority/1"}
+    previous = report.get("acceptance") or {}; report["acceptance"] = {**previous, "status":"PASS" if accepted else "NOT_ACCEPTED", "hard_fail_gates":hard, "incomplete_gates":incomplete, "real_project_acceptance":False, "production_release_allowed":False, "authority_contract_revision":"electrical-authority/2"}
     return report
