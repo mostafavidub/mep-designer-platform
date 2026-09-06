@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from .authority_qa import reopened_file_authority_qa
+from .construction_qa import construction_detail_qa, evidence_consistency_qa, plan_detail_link_qa
 from .orientation import detect_project_north, draw_north_on_final_file
 from .qa import visual_qa
 from .release_contract import release_contract_status
@@ -15,14 +16,18 @@ def run_acceptance_electrical_pipeline(source: str | Path, output: str | Path, c
 
     North direction is inherited from architectural evidence when present and is
     never fabricated when absent. Same-file visual/reopen/safe-area gates run
-    after the north graphic has been materialized.
+    after the north graphic has been materialized. Construction-detail depth,
+    plan-to-detail traceability and evidence-state consistency are also hard
+    release requirements; a DXF that merely reopens cannot pass by itself.
     """
     report = run_authority_electrical_pipeline(source, output, config)
-    report["acceptance_schema_revision"] = "electrical-acceptance/1"
+    report["acceptance_schema_revision"] = "electrical-acceptance/2"
     output = Path(output); data = report.get("data") or {}; gates = report.setdefault("gates", {})
     paper = tuple((config or {}).get("paper_mm") or (420.0, 297.0))
     frames = (data.get("architecture") or {}).get("frames") or []
     manifest = data.get("manifest") or []
+    details = data.get("details") or []
+    links = data.get("detail_links") or []
 
     orientation = detect_project_north(source, frames)
     draw = {"status":"NOT_REQUIRED", "arrows_drawn":0}
@@ -39,6 +44,15 @@ def run_acceptance_electrical_pipeline(source: str | Path, output: str | Path, c
     )
     report["north_orientation"] = {**orientation, "drawing": draw}
 
+    evidence = evidence_consistency_qa(data)
+    gates["EVIDENCE_CONSISTENCY_AUTHORITY"] = _gate(
+        evidence["status"], evidence.get("errors"), error_count=(evidence.get("metrics") or {}).get("error_count", 0)
+    )
+    link_qa = plan_detail_link_qa(manifest, details, links)
+    gates["PLAN_DETAIL_LINK_AUTHORITY"] = _gate(
+        link_qa["status"], link_qa.get("errors"), link_qa.get("incomplete"), **(link_qa.get("metrics") or {})
+    )
+
     if output.exists():
         manifest_objs = [type("Sheet", (), row) for row in manifest]
         reopen = reopened_file_authority_qa(output, manifest_objs, paper)
@@ -52,6 +66,13 @@ def run_acceptance_electrical_pipeline(source: str | Path, output: str | Path, c
             visual["status"], visual.get("errors"), visual.get("warnings"),
             sheets=len(visual.get("sheets") or {})
         )
+        detail_qa = construction_detail_qa(output, manifest, details, links)
+        gates["CONSTRUCTION_DETAIL_AUTHORITY"] = _gate(
+            detail_qa["status"], detail_qa.get("errors"), detail_qa.get("incomplete"), **(detail_qa.get("metrics") or {})
+        )
+        report["construction_detail_qa"] = detail_qa
+    else:
+        gates["CONSTRUCTION_DETAIL_AUTHORITY"] = _gate("FAIL", ["output_file_missing"])
 
     contract = release_contract_status()
     gates["ELECTRICAL_RELEASE_CONTRACT"] = _gate(
@@ -71,6 +92,6 @@ def run_acceptance_electrical_pipeline(source: str | Path, output: str | Path, c
         "incomplete_gates": incomplete,
         "real_project_acceptance": False,
         "production_release_allowed": False,
-        "acceptance_contract_revision": "electrical-acceptance/1",
+        "acceptance_contract_revision": "electrical-acceptance/2",
     }
     return report
