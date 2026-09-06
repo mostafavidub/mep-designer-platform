@@ -1,4 +1,5 @@
 import os
+import json
 import re
 import secrets
 import shutil
@@ -287,6 +288,39 @@ def _cad_error_message(response):
     return f'طراحی متوقف شد: {message}'
 
 
+def _cad_rejection_diagnostic(response):
+    """Return server-only structured QA evidence without project geometry."""
+    try:
+        payload = response.json()
+        detail = payload.get('detail') if isinstance(payload, dict) else None
+    except Exception:
+        detail = None
+    if not isinstance(detail, dict):
+        return {'status_code': response.status_code, 'detail_type': type(detail).__name__}
+    acceptance = detail.get('engineering_acceptance') or {}
+    pipeline = detail.get('pipeline_qa') or {}
+    authority = detail.get('authority_qa') or {}
+    return {
+        'status_code': response.status_code,
+        'code': detail.get('code'),
+        'stage': detail.get('stage'),
+        'missing_inputs': detail.get('missing_inputs') or [],
+        'engineering_acceptance': {
+            'status': acceptance.get('status'),
+            'errors': acceptance.get('errors') or [],
+            'metrics': acceptance.get('metrics') or {},
+        },
+        'pipeline_qa': {
+            'status': pipeline.get('status'),
+            'errors': pipeline.get('errors') or [],
+        },
+        'authority_qa': {
+            'status': authority.get('status'),
+            'errors': authority.get('errors') or [],
+        },
+    }
+
+
 def _post_to_compatible_cad(payload):
     """Use the canonical CAD process shipped in this exact deployment."""
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
@@ -374,6 +408,11 @@ def run_design_dxf(project_id, revision_id):
         resp = _post_to_compatible_cad(payload)
         if not resp.ok:
             message = _cad_error_message(resp)
+            print(
+                '[mechanical-design] CAD rejection diagnostic: '
+                + json.dumps(_cad_rejection_diagnostic(resp), ensure_ascii=True, sort_keys=True),
+                flush=True,
+            )
             print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}', flush=True)
             raise RuntimeError(message)
         data = resp.json()
