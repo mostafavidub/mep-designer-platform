@@ -34,6 +34,17 @@ EQUIPMENT_LOAD = {
     'water_heater': {'gas': 24.0},
 }
 
+# A route exists only after topology has accepted an architectural/design
+# endpoint for that system.  Proprietary symbols may still use a type outside
+# our named load tables.  Use a conservative single-endpoint floor instead of
+# emitting an impossible zero-load sized route; retain provenance for QA and
+# later schedule refinement.
+SYSTEM_ENDPOINT_MIN_LOAD = {
+    'cold_water': 1.0, 'hot_water': 1.0,
+    'sanitary': 1.0, 'vent': 1.0,
+    'gas': 12.0, 'exhaust': 150.0,
+}
+
 
 def _size(system, load, tables):
     for threshold, size in tables.get(system, []):
@@ -69,10 +80,14 @@ def size_networks(topology, routing, recognition, calculations, tables=None):
             load=float(item.get('design_load'))
         if system=='exhaust' and not load:
             load=150.0
+        inferred_minimum=bool(not load and system in SYSTEM_ENDPOINT_MIN_LOAD)
+        if inferred_minimum:
+            load=SYSTEM_ENDPOINT_MIN_LOAD[system]
         totals[system]=totals.get(system,0.0)+float(load or 0)
         size=_size(system,float(load or 0),tables)
         sized.append({'route_id':route['id'],'system':system,'downstream_load':round(float(load or 0),2),'size_mm':size,
-                      'slope_percent':2.0 if system=='sanitary' else None})
+                      'slope_percent':2.0 if system=='sanitary' else None,
+                      'load_source':'system_endpoint_minimum' if inferred_minimum else 'endpoint_design_load'})
     mains=[]
     for system,total in totals.items():
         mains.append({'system':system,'downstream_load':round(total,2),'size_mm':_size(system,total,tables),'role':'vertical_main'})

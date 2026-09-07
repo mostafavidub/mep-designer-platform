@@ -30,4 +30,12 @@ class Stage07SizingTests(unittest.TestCase):
         self.assertEqual(result['segments'][0]['downstream_load'],2.0)
         self.assertEqual(result['segments'][0]['size_mm'],50)
 
+    def test_accepted_proprietary_endpoint_never_produces_zero_load_route(self):
+        topology={'edges':[{'id':'CW-E1','from':'X1'}]}
+        routing={'routes':[{'id':'R1','edge_id':'CW-E1','system':'cold_water'}]}
+        recognition={'detections':[{'id':'X1','category':'equipment','type':'vendor_fixture','room_id':'W1'}]}
+        result=size_networks(topology,routing,recognition,{'rooms':[]})
+        self.assertEqual(result['segments'][0]['downstream_load'],1.0)
+        self.assertEqual(result['segments'][0]['load_source'],'system_endpoint_minimum')
+
 if __name__=='__main__': unittest.main()

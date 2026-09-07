@@ -233,12 +233,12 @@
     {
       "id":"GOV-2026-022",
       "status":"APPROVED",
-      "summary":"Assign project loads by recognized endpoint type even when proprietary source blocks drift in category, classify shaft-wall entry as a coordinated terminal penetration, and exclude non-blocking warnings from the customer-facing failure cause.",
+      "summary":"Assign traceable project loads by recognized endpoint type and a conservative system minimum for accepted proprietary endpoints, classify shaft-wall entry as a coordinated terminal penetration, and exclude non-blocking warnings from the customer-facing failure cause.",
       "affected_capabilities":["mechanical_network_sizing","mechanical_routing","customer_safe_errors","active_version_synchronization"],
       "affected_projects":["all","project-100"],
       "approval":{"status":"APPROVED","basis":"explicit user instruction after project 100 failed at pipeline QA while the UI incorrectly foregrounded north warnings"},
-      "verification":{"focused_regression":"must pass including category-drift sizing","full_regression":"562 PASS before production category-drift discovery; runtime guard executed separately because production image intentionally excludes git","runtime_version_guard":"PASS","production_retry":"first retry isolated category-dependent zero-load sizing; next retry must pass route sizing and wall-crossing acceptance","required_ci":"must_pass before deployment"},
-      "migration":{"forward":"Use traceable endpoint-type design loads when source category metadata is absent or inconsistent; preserve non-terminal wall clashes as failures and report only actual error arrays as the failure cause.","rollback":"Never restore category-dependent zero-load sizing, allow non-terminal wall crossings, or present warnings as failures."}
+      "verification":{"focused_regression":"must pass including category-drift and proprietary-endpoint minimum sizing","full_regression":"562 PASS before production proprietary endpoint discovery; runtime guard executed separately because production image intentionally excludes git","runtime_version_guard":"PASS","production_retry":"two retries isolated endpoint metadata variants; next retry must pass route sizing and wall-crossing acceptance","required_ci":"must_pass before deployment"},
+      "migration":{"forward":"Use traceable endpoint-type loads and a conservative per-system minimum when an already accepted endpoint has unknown source metadata; preserve non-terminal wall clashes as failures and report only actual error arrays as the failure cause.","rollback":"Never restore metadata-dependent zero-load sizing, allow non-terminal wall crossings, or present warnings as failures."}
     }
   ]
 }
