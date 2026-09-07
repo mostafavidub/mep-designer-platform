@@ -76,6 +76,74 @@ class ElectricalArchitectureEvidenceSafetyTests(unittest.TestCase):
             model = reconstruct_architecture(source)
             self.assertEqual([room.label for room in model.rooms], ["Living"])
 
+    def test_persian_ordinal_floor_title_beats_frame_order_fallback(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / "persian-levels.dxf"
+            doc = ezdxf.new("R2013")
+            doc.header["$INSUNITS"] = 4
+            msp = doc.modelspace()
+            # Two non-overlapping architectural frames; the second title is an
+            # explicit Persian ordinal and must resolve to LEVEL-1, not LEVEL-2.
+            msp.add_lwpolyline([(0, 0), (12000, 0), (12000, 8000), (0, 8000), (0, 0)], close=True, dxfattribs={"layer": "SHEET_FRAME"})
+            msp.add_text("پلان معماری طبقه همکف", dxfattribs={"height": 180}).set_placement((400, 400))
+            msp.add_lwpolyline([(20000, 0), (32000, 0), (32000, 8000), (20000, 8000), (20000, 0)], close=True, dxfattribs={"layer": "SHEET_FRAME"})
+            msp.add_text("پلان معماری طبقه اول", dxfattribs={"height": 180}).set_placement((20400, 400))
+            doc.saveas(source)
+            model = reconstruct_architecture(source)
+            names = [level.name.value for level in model.levels]
+            self.assertEqual(names, ["GROUND", "LEVEL-1"], names)
+            self.assertTrue(all(level.name.status == EngineeringStatus.FINAL for level in model.levels))
+
+    def test_fragmented_wall_faces_can_recover_unique_room(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / "fragmented-wall-room.dxf"
+            doc = ezdxf.new("R2013")
+            doc.header["$INSUNITS"] = 4
+            msp = doc.modelspace()
+            msp.add_lwpolyline([(0, 0), (12000, 0), (12000, 8000), (0, 8000), (0, 0)], close=True, dxfattribs={"layer": "SHEET_FRAME"})
+            msp.add_text("Architectural Plan Ground", dxfattribs={"height": 180}).set_placement((400, 400))
+            msp.add_text("Bedroom", dxfattribs={"height": 180}).set_placement((3000, 2500))
+            # Top wall has an opening centered on the label x-coordinate.  The
+            # old cross-label resolver cannot see an upper wall, while the
+            # coverage-based resolver can prove the fragmented enclosure.
+            segments = [
+                ((1000, 1000), (5000, 1000)),
+                ((1000, 4000), (2800, 4000)), ((3200, 4000), (5000, 4000)),
+                ((1000, 1000), (1000, 4000)), ((5000, 1000), (5000, 4000)),
+            ]
+            for a, b in segments:
+                msp.add_line(a, b, dxfattribs={"layer": "WALL"})
+            doc.saveas(source)
+            model = reconstruct_architecture(source)
+            self.assertEqual(len(model.rooms), 1)
+            room = model.rooms[0]
+            self.assertIsNotNone(room.polygon)
+            self.assertEqual(room.area_m2.status, EngineeringStatus.FINAL)
+            self.assertAlmostEqual(float(room.area_m2.value), 12.0, places=4)
+            self.assertEqual(room.area_m2.reference, "wall_supported_unique_room_enclosure")
+
+    def test_fragmented_shared_open_plan_is_not_partitioned_into_fake_rooms(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / "shared-open-plan.dxf"
+            doc = ezdxf.new("R2013")
+            doc.header["$INSUNITS"] = 4
+            msp = doc.modelspace()
+            msp.add_lwpolyline([(0, 0), (12000, 0), (12000, 8000), (0, 8000), (0, 0)], close=True, dxfattribs={"layer": "SHEET_FRAME"})
+            msp.add_text("Architectural Plan Ground", dxfattribs={"height": 180}).set_placement((400, 400))
+            msp.add_text("Living", dxfattribs={"height": 180}).set_placement((2500, 2500))
+            msp.add_text("Kitchen", dxfattribs={"height": 180}).set_placement((4000, 2500))
+            for a, b in [
+                ((1000, 1000), (5000, 1000)),
+                ((1000, 4000), (2200, 4000)), ((2600, 4000), (5000, 4000)),
+                ((1000, 1000), (1000, 4000)), ((5000, 1000), (5000, 4000)),
+            ]:
+                msp.add_line(a, b, dxfattribs={"layer": "WALL"})
+            doc.saveas(source)
+            model = reconstruct_architecture(source)
+            self.assertEqual(len(model.rooms), 2)
+            self.assertTrue(all(room.polygon is None for room in model.rooms), [(r.label, r.polygon) for r in model.rooms])
+            self.assertTrue(all(room.area_m2.status == EngineeringStatus.UNKNOWN for room in model.rooms))
+
     def test_unique_four_wall_cell_can_recover_room_enclosure(self):
         with tempfile.TemporaryDirectory() as td:
             source = Path(td) / "wall-cell.dxf"

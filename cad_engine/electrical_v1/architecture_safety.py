@@ -140,6 +140,142 @@ def _recover_orthogonal_room(
     return polygon if len(owned) == 1 else None
 
 
+
+
+def _cluster_axis_rows(rows, coordinate_tolerance: float):
+    """Group near-collinear wall fragments without relying on layer semantics."""
+    rows = sorted(rows, key=lambda row: row[0])
+    groups = []
+    for row in rows:
+        if not groups:
+            groups.append([row])
+            continue
+        current = groups[-1]
+        center = sum(item[0] * item[3] for item in current) / max(sum(item[3] for item in current), 1e-12)
+        if abs(row[0] - center) <= coordinate_tolerance:
+            current.append(row)
+        else:
+            groups.append([row])
+    clustered = []
+    for group in groups:
+        total = max(sum(item[3] for item in group), 1e-12)
+        center = sum(item[0] * item[3] for item in group) / total
+        clustered.append((center, [(item[1], item[2]) for item in group]))
+    return clustered
+
+
+def _interval_coverage(intervals, start: float, end: float, merge_tolerance: float) -> float:
+    if end <= start:
+        return 0.0
+    clipped = []
+    for a, b in intervals:
+        lo, hi = max(start, min(a, b)), min(end, max(a, b))
+        if hi > lo:
+            clipped.append((lo, hi))
+    if not clipped:
+        return 0.0
+    clipped.sort()
+    lo, hi = clipped[0]
+    total = 0.0
+    for a, b in clipped[1:]:
+        if a <= hi + merge_tolerance:
+            hi = max(hi, b)
+        else:
+            total += hi - lo
+            lo, hi = a, b
+    total += hi - lo
+    return min(1.0, total / (end - start))
+
+
+def _recover_wall_supported_room(
+    room: Room,
+    frame_bounds: Tuple[float, float, float, float],
+    line_entities: Iterable,
+    peer_points: List[Point],
+    scale_to_m: Optional[float],
+) -> Optional[Polygon]:
+    """Recover a unique orthogonal enclosure from fragmented wall evidence.
+
+    Door/window openings often split a wall into multiple LINE fragments, so a
+    segment does not necessarily cross the room-label coordinate.  The older
+    nearest-four-lines resolver intentionally fails in that case.  This second
+    pass groups near-collinear fragments, measures actual side coverage, and
+    promotes geometry only when one room label owns the candidate.  Shared/open
+    plan enclosures remain unresolved rather than being arbitrarily partitioned.
+    """
+    if not room.label_point or not scale_to_m:
+        return None
+    x, y = room.label_point
+    min_segment = 0.20 / scale_to_m
+    max_segment = 12.0 / scale_to_m
+    axis_deviation = 0.08 / scale_to_m
+    cluster_tolerance = 0.10 / scale_to_m
+    label_margin = 0.15 / scale_to_m
+    merge_tolerance = 0.10 / scale_to_m
+    min_span = 0.80 / scale_to_m
+
+    horizontal = []
+    vertical = []
+    for entity in line_entities:
+        geometry = entity.geometry or {}
+        try:
+            a = tuple(geometry["a"]); b = tuple(geometry["b"])
+            length = ((b[0]-a[0])**2 + (b[1]-a[1])**2) ** 0.5
+        except Exception:
+            continue
+        if not (min_segment <= length <= max_segment):
+            continue
+        dx, dy = abs(b[0]-a[0]), abs(b[1]-a[1])
+        # Permit slightly skewed CAD wall faces, but not diagonal annotation.
+        if dx >= min_segment and dy <= max(axis_deviation, 0.04 * dx):
+            horizontal.append(((a[1]+b[1])/2.0, min(a[0],b[0]), max(a[0],b[0]), length))
+        if dy >= min_segment and dx <= max(axis_deviation, 0.04 * dy):
+            vertical.append(((a[0]+b[0])/2.0, min(a[1],b[1]), max(a[1],b[1]), length))
+
+    h_rows = _cluster_axis_rows(horizontal, cluster_tolerance)
+    v_rows = _cluster_axis_rows(vertical, cluster_tolerance)
+    below = sorted((row for row in h_rows if row[0] < y-label_margin), key=lambda row: y-row[0])[:8]
+    above = sorted((row for row in h_rows if row[0] > y+label_margin), key=lambda row: row[0]-y)[:8]
+    left = sorted((row for row in v_rows if row[0] < x-label_margin), key=lambda row: x-row[0])[:8]
+    right = sorted((row for row in v_rows if row[0] > x+label_margin), key=lambda row: row[0]-x)[:8]
+    if not (below and above and left and right):
+        return None
+
+    frame_area_m2 = max(0.0, (frame_bounds[2]-frame_bounds[0]) * (frame_bounds[3]-frame_bounds[1])) * scale_to_m * scale_to_m
+    max_area_m2 = max(20.0, min(500.0, frame_area_m2 * 0.45))
+    candidates = []
+    for bottom in below:
+        for top in above:
+            for west in left:
+                for east in right:
+                    btm, tp, wst, est = bottom[0], top[0], west[0], east[0]
+                    width, height = est-wst, tp-btm
+                    if width < min_span or height < min_span:
+                        continue
+                    if not (frame_bounds[0] <= wst < est <= frame_bounds[2] and frame_bounds[1] <= btm < tp <= frame_bounds[3]):
+                        continue
+                    area_m2 = width * height * scale_to_m * scale_to_m
+                    if not (1.0 <= area_m2 <= max_area_m2):
+                        continue
+                    coverage = [
+                        _interval_coverage(bottom[1], wst, est, merge_tolerance),
+                        _interval_coverage(top[1], wst, est, merge_tolerance),
+                        _interval_coverage(west[1], btm, tp, merge_tolerance),
+                        _interval_coverage(east[1], btm, tp, merge_tolerance),
+                    ]
+                    # Every side needs material wall evidence.  This is what
+                    # keeps open-plan/shared zones from becoming fake rooms.
+                    if min(coverage) < 0.35 or sum(coverage)/4.0 < 0.55:
+                        continue
+                    polygon = [(wst, btm), (est, btm), (est, tp), (wst, tp)]
+                    owned = [point for point in peer_points if _inside(point, polygon)]
+                    if len(owned) != 1:
+                        continue
+                    score = (sum(coverage)/4.0) * 5.0 - 0.015 * area_m2
+                    candidates.append((score, polygon))
+    return max(candidates, key=lambda item: item[0])[1] if candidates else None
+
+
 def reconstruct_architecture_safe(path: str | Path) -> ArchitecturalModel:
     model = _base_reconstruct(path)
     units, scale_to_m, unit_issue = _effective_scale(model, path)
@@ -156,20 +292,33 @@ def reconstruct_architecture_safe(path: str | Path) -> ArchitecturalModel:
         by_frame.setdefault(room.frame_id, []).append(room)
 
     for room in model.rooms:
-        peers = [peer.label_point for peer in by_frame.get(room.frame_id, []) if peer.label_point]
+        peer_rooms = [peer for peer in by_frame.get(room.frame_id, []) if peer.label_point]
+        peers = [peer.label_point for peer in peer_rooms]
+        indoor_peers = [peer.label_point for peer in peer_rooms if str(peer.room_type.value or "") != "outdoor"]
         polygon = room.polygon
         if polygon and sum(1 for point in peers if _inside(point, polygon)) != 1:
             polygon = None
         frame = frames.get(room.frame_id)
+        recovery_reference = "unique_room_enclosure"
+        recovery_confidence = 0.90
         if polygon is None and frame is not None:
             polygon = _recover_orthogonal_room(room, frame.bounds, line_entities, peers, scale_to_m)
+        if polygon is None and frame is not None and str(room.room_type.value or "") != "outdoor":
+            # Outdoor labels are frequently placed just across/onto a facade
+            # line for readability.  A fully wall-supported indoor enclosure
+            # should therefore be unique among indoor functional labels; an
+            # outdoor annotation alone must not veto it.
+            polygon = _recover_wall_supported_room(room, frame.bounds, line_entities, indoor_peers, scale_to_m)
+            if polygon is not None:
+                recovery_reference = "wall_supported_unique_room_enclosure"
+                recovery_confidence = 0.82
         room.polygon = polygon
         if polygon and scale_to_m:
             room.area_m2 = EvidenceValue.final(
                 _area(polygon) * scale_to_m * scale_to_m,
                 "architectural_evidence",
-                0.90,
-                reference="unique_room_enclosure",
+                recovery_confidence,
+                reference=recovery_reference,
             )
         elif polygon:
             room.area_m2 = EvidenceValue.input_required("DXF unit required to convert room area")

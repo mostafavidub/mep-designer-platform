@@ -181,6 +181,18 @@ def _infer_level_name(text: str, drawing_type: str, index: int) -> EvidenceValue
         match = re.search(pattern, n)
         if match:
             return EvidenceValue.final(fmt.format(match.group(1)), "architectural_evidence", 0.9)
+    # Persian architectural titles frequently use ordinal words instead of
+    # digits (for example ``طبقه اول``).  Eligible-frame order must never
+    # override an explicit title because that can silently shift every panel,
+    # riser and sheet association by one level.
+    ordinal_levels = {
+        "اول": 1, "یکم": 1, "دوم": 2, "سوم": 3, "چهارم": 4,
+        "پنجم": 5, "ششم": 6, "هفتم": 7, "هشتم": 8, "نهم": 9,
+        "دهم": 10, "یازدهم": 11, "دوازدهم": 12,
+    }
+    ordinal = re.search(r"طبقه\s*(?:شماره\s*)?(اول|یکم|دوم|سوم|چهارم|پنجم|ششم|هفتم|هشتم|نهم|دهم|یازدهم|دوازدهم)", n)
+    if ordinal:
+        return EvidenceValue.final(f"LEVEL-{ordinal_levels[ordinal.group(1)]}", "architectural_evidence", 0.9)
     if "تیپ" in n or "typical" in n:
         return EvidenceValue.preliminary(f"TYPICAL-{index}", "architectural_evidence", 0.65, "exact repeated level range not parsed")
     return EvidenceValue.preliminary(f"LEVEL-{index}", "architectural_evidence", 0.35, "level identity inferred from eligible frame order")
