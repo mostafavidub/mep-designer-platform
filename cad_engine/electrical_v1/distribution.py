@@ -95,34 +95,34 @@ def build_service_sld(topology, service_inputs: Optional[Dict[str,Any]]=None):
 
 
 def build_electrical_riser(topology, project, feeder_inputs: Optional[Dict[str,Any]]=None):
-    """Render vertical distribution from the canonical MAIN -> panel feeder graph.
-
-    Floor panels are never chained merely because their levels are vertically
-    ordered.  The service topology already owns feeder source/destination facts;
-    the riser is only another representation of that same evidence.
-    """
+    """Render the riser from the canonical radial MAIN -> panel feeder graph."""
     if len(project.levels)<=1:
         return {"status":"NOT_REQUIRED","transitions":[]}
     panels={p.id:p for p in topology.get("panels",[])}
     feeders=list(topology.get("feeders") or [])
     if not panels:
-        return {"status":"PRELIMINARY","missing":["panel_topology"],"transitions":[]}
-    transitions=[]; missing=[]
+        return {"status":"PRELIMINARY","missing":[],"internal_dependencies":["panel_topology"],"transitions":[]}
     by_destination={str(f.get("destination")):f for f in feeders if isinstance(f,dict) and f.get("destination")}
+    transitions=[]; missing=[]; internal=[]
     for panel_id,panel in panels.items():
         feeder=by_destination.get(panel_id)
-        ok=bool(feeder and feeder.get("status")=="FINAL")
-        if not ok:
-            missing.append(f"feeder:{panel_id}")
+        has_data=bool(feeder and all(feeder.get(k) not in (None, "") for k in ("cable","breaker","route_length_m","tag")))
+        final=bool(has_data and feeder.get("status")=="FINAL")
+        if not has_data:
+            missing.append("riser_feeder_schedule")
+        elif not final:
+            internal.append(f"upstream:{panel_id}")
         transitions.append({
-            "from_level":None, "to_level":panel.level_id, "from_panel":"MAIN", "to_panel":panel_id,
+            "from_level":None,"to_level":panel.level_id,"from_panel":"MAIN","to_panel":panel_id,
             "cable":feeder.get("cable") if feeder else None,
             "protection":feeder.get("breaker") if feeder else None,
             "route_length_m":feeder.get("route_length_m") if feeder else None,
             "tag":feeder.get("tag") if feeder else None,
-            "representation":"RISER_ONLY", "status":"FINAL" if ok else "INPUT_REQUIRED",
+            "representation":"RISER_ONLY","status":"FINAL" if final else "INPUT_REQUIRED",
         })
-    return {"status":"PASS" if not missing else "PRELIMINARY","missing":missing,"transitions":transitions}
+    missing=list(dict.fromkeys(missing))
+    return {"status":"PASS" if not missing and not internal else "PRELIMINARY",
+            "missing":missing,"internal_dependencies":internal,"transitions":transitions}
 
 
 def grounding_model(requirements, inputs: Optional[Dict[str,Any]]=None):
