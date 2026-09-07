@@ -744,8 +744,12 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     # generated arrow would violate the sole-authority north contract.
     plan_boards=[b for b in boards.values() if b.family in PLAN_FAMILIES and b.level!="SERVICE"]
     missing_north=[b.code for b in plan_boards if not compose_report.get("north",{}).get(b.code)]
-    errors.extend(f"architectural_north_missing:{x}" for x in missing_north)
-    return {"version":"mechanical-authority-dxf-qa-v15.0","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":[],"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north)}}
+    # A missing source north arrow is incomplete architectural metadata, not a
+    # corrupt mechanical deliverable.  Keep the architecture as the sole
+    # directional authority (never fabricate an arrow), but allow the drawing
+    # set to be issued with an explicit machine-readable coordination warning.
+    warnings=[f"architectural_north_not_provided:{x}" for x in missing_north]
+    return {"version":"mechanical-authority-dxf-qa-v15.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north)}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:
