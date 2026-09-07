@@ -1,15 +1,33 @@
 """One-shot CAD worker invoked by the low-memory production service."""
 from __future__ import annotations
-import json,sys
+import ctypes,gc,json,sys
 from pathlib import Path
 from fastapi import HTTPException
 
 
+def _install_ezdxf_memory_guard() -> None:
+    """Install the canonical pre-read memory trim without importing main.py.
+
+    Importing the non-isolated canonical app would eagerly load the Mechanical
+    stack before an Electrical transaction. The disposable worker needs only
+    the same ezdxf guard, then it can lazily load the requested discipline.
+    """
+    import ezdxf
+    current=ezdxf.readfile
+    if getattr(current,"_engitools_memory_guard",False): return
+    def guarded_readfile(*args,**kwargs):
+        gc.collect()
+        try: ctypes.CDLL(None).malloc_trim(0)
+        except (AttributeError,OSError): pass
+        return current(*args,**kwargs)
+    guarded_readfile._engitools_memory_guard=True
+    ezdxf.readfile=guarded_readfile
+
+
 def main(request_path:str,response_path:str)->int:
-    from .main import install_ezdxf_memory_guard
     from .runtime_core import DesignRequest
 
-    install_ezdxf_memory_guard()
+    _install_ezdxf_memory_guard()
     request_data=json.loads(Path(request_path).read_text(encoding="utf-8"))
     # Accept the legacy raw-payload shape for local/backward compatibility while
     # the isolated shell uses an explicit operation envelope.
