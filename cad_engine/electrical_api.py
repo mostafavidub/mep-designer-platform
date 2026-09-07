@@ -38,6 +38,10 @@ def _missing_inputs(report):
     # Only project facts that have a direct user recovery path are read from the
     # design basis.  Do not dump all optional/unused basis fields to the customer.
     basis = (data.get("basis") or {}).get("values") or {}
+
+    def basis_unresolved(key):
+        value = basis.get(key) or {}
+        return isinstance(value, dict) and value.get("status") in {"INPUT_REQUIRED", "UNKNOWN"}
     for key in ("city", "building_type", "number_of_units", "earthing_system"):
         value = basis.get(key) or {}
         if isinstance(value, dict) and value.get("status") in {"INPUT_REQUIRED", "UNKNOWN"}:
@@ -111,7 +115,14 @@ def _missing_inputs(report):
             if text.startswith("switch_door_side_not_confirmed:"):
                 add("switch_door_relation_confirmed"); continue
             if text == "supply_voltage_or_phase_configuration_missing":
-                add("supply_configuration"); add("supply_voltage_v"); continue
+                # This calculation warning is intentionally coarse. Reopen only
+                # the basis fields that are still unresolved so a finalized
+                # voltage is not asked again merely because phase is missing.
+                if basis_unresolved("phase_configuration") or basis_unresolved("utility_service"):
+                    add("supply_configuration")
+                if basis_unresolved("supply_voltage_v"):
+                    add("supply_voltage_v")
+                continue
             if text == "power_factor_missing":
                 add("power_factor"); continue
             if text.startswith("service_or_feeder_input_required:"):
