@@ -14,4 +14,12 @@ class Stage07SizingTests(unittest.TestCase):
         self.assertEqual(seg['slope_percent'],2.0)
         self.assertTrue(result['quality']['sanitary_slopes_assigned'])
 
+    def test_native_gas_equipment_gets_project_design_load(self):
+        topology={'edges':[{'id':'GAS-E1','from':'G1'}]}
+        routing={'routes':[{'id':'R1','edge_id':'GAS-E1','system':'gas'}]}
+        recognition={'detections':[{'id':'G1','category':'equipment','type':'stove','room_id':'K1'}]}
+        result=size_networks(topology,routing,recognition,{'rooms':[{'room_id':'K1','gas_kw':0}]})
+        self.assertEqual(result['segments'][0]['downstream_load'],12.0)
+        self.assertEqual(result['segments'][0]['size_mm'],20)
+
 if __name__=='__main__': unittest.main()

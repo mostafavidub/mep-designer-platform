@@ -32,7 +32,11 @@ def _score(points,walls,terminal_penetration=False):
     for segment_index,(a,b) in enumerate(segments):
         for wall in walls:
             if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])):
-                if terminal_penetration and segment_index==len(segments)-1 and penetrations==0:
+                # Reaching a real/proposed vertical core can require entering
+                # its enclosing shaft wall.  Every intersection on the final
+                # terminal segment is an explicit coordinated penetration;
+                # crossings on earlier route segments remain hard clashes.
+                if terminal_penetration and segment_index==len(segments)-1:
                     penetrations+=1
                 else:clashes+=1
     length=sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(points,points[1:]))

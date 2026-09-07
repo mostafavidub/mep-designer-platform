@@ -229,6 +229,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction after a new production project failed only because its architectural plans contained no north symbol"},
       "verification":{"missing_north_warning_test":"PASS","no_fabricated_north_test":"PASS","full_regression":"559 PASS in production container; runtime version guard PASS separately because the runtime image intentionally excludes git","production_retry":"must_complete_without architectural_north_missing","required_ci":"must_pass before deployment"},
       "migration":{"forward":"Issue plan sheets without inventing direction when the architectural source has no north symbol; record architectural_north_not_provided per affected sheet as a coordination warning.","rollback":"Supersede only with a source-backed orientation requirement; never generate an assumed north arrow."}
+    },
+    {
+      "id":"GOV-2026-022",
+      "status":"APPROVED",
+      "summary":"Assign conservative project loads to recognized gas appliances lacking embedded engineering metadata, classify shaft-wall entry as a coordinated terminal penetration, and exclude non-blocking warnings from the customer-facing failure cause.",
+      "affected_capabilities":["mechanical_network_sizing","mechanical_routing","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all","project-100"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction after project 100 failed at pipeline QA while the UI incorrectly foregrounded north warnings"},
+      "verification":{"focused_regression":"8 PASS","full_regression":"562 PASS; runtime guard executed separately because production image intentionally excludes git","runtime_version_guard":"PASS","production_retry":"must pass route sizing and wall-crossing acceptance","required_ci":"must_pass before deployment"},
+      "migration":{"forward":"Use traceable appliance design loads when a recognized endpoint lacks load metadata; preserve non-terminal wall clashes as failures and report only actual error arrays as the failure cause.","rollback":"Never restore zero-load sizing, allow non-terminal wall crossings, or present warnings as failures."}
     }
   ]
 }

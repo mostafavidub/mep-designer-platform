@@ -48,6 +48,23 @@ class MechanicalErrorSurfaceTests(unittest.TestCase):
         self.assertEqual(diagnostic['engineering_acceptance']['metrics'], {'wall_crossings': 2})
         self.assertNotIn('project_geometry', str(diagnostic))
 
+    def test_customer_error_does_not_misreport_warning_as_failure(self):
+        class Rejection:
+            status_code = 422
+
+            def json(self):
+                return {'detail': {
+                    'stage': 'pipeline_qa',
+                    'pipeline_qa': {'status': 'FAIL', 'errors': ['route_sizing_without_project_load']},
+                    'engineering_acceptance': {'status': 'FAIL', 'errors': ['routing:route_crosses_architectural_wall']},
+                    'dxf_qa': {'status': 'PASS', 'errors': [], 'warnings': ['architectural_north_not_provided:M-101']},
+                }}
+
+        message = dxf_output._cad_error_message(Rejection())
+        self.assertIn('route_sizing_without_project_load', message)
+        self.assertIn('route_crosses_architectural_wall', message)
+        self.assertNotIn('architectural_north_not_provided', message)
+
 
 if __name__ == '__main__':
     unittest.main()
