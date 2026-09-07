@@ -44,7 +44,14 @@ async def _isolated_design(request:Request,operation:str):
     try: payload=await request.json()
     except Exception: return JSONResponse(status_code=400,content={"detail":"invalid JSON body"})
     async with _design_lock:
-        try: status_code,body=await asyncio.to_thread(_run_worker,payload,operation)
+        try:
+            # Keep the pre-Cloudflare Mechanical call shape stable for tests and
+            # callers that monkeypatch _run_worker(payload). Electrical supplies
+            # the explicit operation only on its dedicated route.
+            if operation == "design":
+                status_code,body=await asyncio.to_thread(_run_worker,payload)
+            else:
+                status_code,body=await asyncio.to_thread(_run_worker,payload,operation)
         except subprocess.TimeoutExpired: status_code,body=504,{"detail":{"message":"CAD worker timed out","code":"CAD_WORKER_TIMEOUT"}}
         except Exception as exc: status_code,body=500,{"detail":{"message":"CAD worker failed","code":"CAD_WORKER_FAILURE","error":str(exc)}}
     return JSONResponse(status_code=status_code,content=body)
