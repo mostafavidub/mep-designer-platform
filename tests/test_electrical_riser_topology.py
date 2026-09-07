@@ -5,6 +5,8 @@ from cad_engine.electrical_v1.distribution import build_electrical_riser
 from cad_engine.electrical_v1.production import build_engine_config
 from cad_engine.electrical_v1.service import build_service_feeders
 import cad_engine.electrical_api as electrical_api
+from app import electrical_cad_transport
+from app.electrical_design_integration import RECOVERY_QUESTION_SPECS
 
 
 class ElectricalRiserTopologyTests(unittest.TestCase):
@@ -52,6 +54,14 @@ class ElectricalRiserTopologyTests(unittest.TestCase):
         riser=build_electrical_riser(topology,project)
         self.assertEqual(riser["missing"],[])
         self.assertTrue(riser["internal_dependencies"])
+
+    def test_customer_feeder_question_describes_radial_main_panel_topology(self):
+        dummy=SimpleNamespace(_post_to_compatible_cad=lambda payload: None)
+        electrical_cad_transport.install(dummy)
+        question=RECOVERY_QUESTION_SPECS["riser_feeder_schedule"]["question"]
+        self.assertIn("تابلو اصلی",question)
+        self.assertIn("route_length_m",question)
+        self.assertNotIn("بین طبقات",question)
 
 
 if __name__=="__main__":
