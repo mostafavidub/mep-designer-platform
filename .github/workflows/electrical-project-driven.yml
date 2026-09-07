@@ -37,6 +37,7 @@ jobs:
           python -m unittest tests.test_electrical_basis_contract_v19 -v
           python -m unittest tests.test_electrical_panel_parity_v19 -v
           python -m unittest tests.test_electrical_runtime_v19 -v
+          python -m unittest tests.test_electrical_supply_recovery -v
           python -m unittest tests.test_electrical_cloudflare_transport -v
           python -m unittest tests.test_architecture_reconstruction_v1 -v
           python -m unittest tests.test_architecture_topology_v1 -v
