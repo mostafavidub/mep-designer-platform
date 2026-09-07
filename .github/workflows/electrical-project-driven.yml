@@ -37,6 +37,7 @@ jobs:
           python -m unittest tests.test_electrical_basis_contract_v19 -v
           python -m unittest tests.test_electrical_panel_parity_v19 -v
           python -m unittest tests.test_electrical_runtime_v19 -v
+          python -m unittest tests.test_electrical_cloudflare_transport -v
           python -m unittest tests.test_architecture_reconstruction_v1 -v
           python -m unittest tests.test_architecture_topology_v1 -v
           python -m unittest tests.test_level_detection_v3 -v
@@ -44,8 +45,8 @@ jobs:
       - name: Package exact acceptance runtime
         if: success()
         run: |
-          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile railway.json 2>/dev/null || \
-          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile
+          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile railway.json .github/cloudflare-cad 2>/dev/null || \
+          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile .github/cloudflare-cad
       - name: Publish exact acceptance runtime
         if: success()
         uses: actions/upload-artifact@v4
