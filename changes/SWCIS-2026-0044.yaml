@@ -10,6 +10,6 @@ impact_notes:
   migration: No stored-data migration; retrying a preserved failed project applies the correction.
 evidence:
   tests:
-    - 16 focused plan-contract, topology, and sizing tests pass in the production container.
+    - 17 focused plan-contract, semantic DXF, topology, and sizing tests pass in the production container.
     - Production project 100 is retried after deployment and must complete with a downloadable artifact.
   rollback: Revert this change; do not weaken the approved-manifest parity gate.

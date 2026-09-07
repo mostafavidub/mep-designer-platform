@@ -709,6 +709,29 @@ def _draw_schedule(doc,msp,board,pipeline,authority):
         for j,val in enumerate(row):t=msp.add_mtext(str(val),dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE","char_height":.055});t.dxf.insert=(cols[j]+.08,y-.26);t.dxf.width=cols[j+1]-cols[j]-.12
 
 
+def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
+    """Draw traceable family-specific content on an approved service board."""
+    x1,y1,x2,y2=board.plan_area
+    layers={
+        "WATER":[("ENGITOOLS-M-WATER-SERVICE",5,"PUMP / TANK / WATER SERVICE CONNECTION")],
+        "HEATING":[
+            ("ENGITOOLS-M-HEAT-FLOW",1,"HEATING SUPPLY / RETURN EQUIPMENT CONNECTION"),
+            ("ENGITOOLS-M-RADIATOR",1,"RADIATOR EQUIPMENT AND TERMINAL SCHEDULE"),
+        ],
+        "SPLIT_AC":[("ENGITOOLS-M-HVAC",3,"INDOOR / OUTDOOR UNIT AND CONDENSATE SCHEDULE")],
+        "EXHAUST":[("ENGITOOLS-M-EXHAUST",4,"EXHAUST FAN / DUCT TERMINATION SCHEDULE")],
+        "GAS":[("ENGITOOLS-M-GAS",2,"GAS EQUIPMENT CONNECTION SCHEDULE")],
+    }.get(board.family, [])
+    for index,(layer,color,label) in enumerate(layers):
+        _ensure_layer(doc,layer,color,25)
+        y=y2-3.2-index*2.2
+        msp.add_lwpolyline([(x1+1.0,y),(x1+3.2,y),(x1+3.2,y-1.0),(x1+1.0,y-1.0)],close=True,dxfattribs={"layer":layer,"lineweight":25})
+        msp.add_line((x1+3.2,y-.5),(x2-1.0,y-.5),dxfattribs={"layer":layer,"lineweight":25})
+        t=msp.add_mtext(label,dxfattribs={"layer":layer,"char_height":.075})
+        t.dxf.insert=(x1+3.6,y-.25);t.dxf.width=max(1.0,x2-x1-5.0)
+    _draw_schedule(doc,msp,board,pipeline,authority)
+
+
 def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict, answers: dict) -> dict:
     doc=ezdxf.readfile(src)
     if doc.dxfversion < 'AC1015':
@@ -757,7 +780,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                         dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.10},
                     )
                     service_note.dxf.insert=(x1+.7,y2-1.1);service_note.dxf.width=max(1.0,x2-x1-1.4)
-                    _draw_schedule(doc,msp,b,pipeline,authority)
+                    _draw_service_equipment_content(doc,msp,b,pipeline,authority)
                 overlay_reports.append({"sheet":b.code,"status":"SERVICE_SCHEMATIC","architectural_roof":False})
         elif b.family=="GENERAL_DETAIL":detail_index+=1;_draw_detail_sheet(doc,msp,b,detail_index)
         elif b.family=="PLUMBING_RISER":_draw_riser(doc,msp,b,authority)

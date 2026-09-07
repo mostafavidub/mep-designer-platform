@@ -1,5 +1,11 @@
+import ezdxf
+
 from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest
-from cad_engine.mechanical_authority_v15 import _append_approved_service_plan_boards, _layout_manifest
+from cad_engine.mechanical_authority_site_v15 import qa_semantic_sheet_content
+from cad_engine.mechanical_authority_v15 import (
+    Board, _append_approved_service_plan_boards, _draw_service_equipment_content,
+    _layout_manifest,
+)
 
 
 def _approved_17():
@@ -94,3 +100,17 @@ def test_approved_equipment_plans_are_materialized_as_distinct_service_boards():
     assert [row['code'] for row in service] == ['M-W-EQUIP','M-H-EQUIP','M-C-EQUIP']
     assert [row['family'] for row in service] == ['WATER','HEATING','SPLIT_AC']
     assert all(row['purpose'] == 'PLAN' for row in service)
+
+
+def test_service_equipment_boards_have_family_specific_semantic_content(tmp_path):
+    doc=ezdxf.new('R2010');msp=doc.modelspace();boards={};manifest=[]
+    for index,family in enumerate(('WATER','HEATING','SPLIT_AC')):
+        x1=index*30.0
+        board=Board(f'B{index}',f'M-{index}',family,'SERVICE',f'{family} equipment',(x1,0,x1+21,29.7),(x1+1,4,x1+20,28),(x1,0,x1+21,3),(x1,3,x1+21,4))
+        boards[board.sheet]=vars(board)
+        manifest.append({'old_sheet':board.sheet,'code':board.code,'family':family,'level':'SERVICE','purpose':'PLAN'})
+        _draw_service_equipment_content(doc,msp,board,{'hvac':{'equipment':[]}}, {})
+    path=tmp_path/'service-plans.dxf';doc.saveas(path)
+    result=qa_semantic_sheet_content(path,{'boards':boards,'manifest':manifest})
+    assert result['status']=='PASS'
+    assert result['missing_family_content']==[]
