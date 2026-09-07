@@ -92,6 +92,56 @@ APPROVED_FAMILY_SYSTEMS = {
     "GAS": {"gas"},
     "VENTILATION_EXHAUST": {"exhaust"},
 }
+
+APPROVED_TO_CAD_FAMILY = {
+    "WATER_SUPPLY": "WATER",
+    "SANITARY_VENT": "SANITARY_VENT",
+    "HEATING": "HEATING",
+    "COOLING": "SPLIT_AC",
+    "GAS": "GAS",
+    "VENTILATION_EXHAUST": "EXHAUST",
+    "ROOF_RAINWATER": "ROOF",
+}
+
+
+def _append_approved_service_plan_boards(manifest, approved_rows):
+    """Materialize every approved equipment/ventilation plan as a real board.
+
+    Reference-driven generation already creates floor plans and the sanitary
+    roof-coordination plan.  Equipment plans are separate customer deliverables,
+    so they must not disappear merely because their equipment is also shown on
+    a floor plan or schedule.
+    """
+    sheets = manifest.setdefault("sheets", [])
+    existing_approved_codes = {str(row.get("approved_code") or "").upper() for row in sheets}
+    for approved in approved_rows or []:
+        if not isinstance(approved, dict):
+            continue
+        drawing_type = str(approved.get("drawing_type") or "").strip().upper()
+        if drawing_type not in {"EQUIPMENT_PLAN", "VENTILATION_PLAN"}:
+            continue
+        approved_code = str(approved.get("code") or approved.get("sheet_code") or "").strip().upper()
+        if approved_code and approved_code in existing_approved_codes:
+            continue
+        family = APPROVED_TO_CAD_FAMILY.get(str(approved.get("family") or "").strip().upper())
+        if not family:
+            continue
+        sheets.append({
+            "sheet": None,
+            "family": family,
+            "level": "SERVICE",
+            "purpose": "PLAN",
+            "approved_code": approved_code,
+            "title": str(approved.get("label") or approved.get("title") or "EQUIPMENT / SERVICE PLAN"),
+            "approved_drawing_type": drawing_type,
+        })
+        existing_approved_codes.add(approved_code)
+    for index, row in enumerate(sheets):
+        row["sheet"] = f"M-{index:02d}"
+    counts = Counter(row["family"] for row in sheets)
+    manifest["sheet_count"] = len(sheets)
+    manifest["family_counts"] = dict(counts)
+    return manifest
 GAS_SIZES_IN = ["1/2","3/4","1","1-1/4","1-1/2","2","2-1/2","3","4"]
 GAS_DN = {"1/2":15,"3/4":20,"1":25,"1-1/4":32,"1-1/2":40,"2":50,"2-1/2":65,"3":80,"4":100}
 
@@ -284,6 +334,7 @@ def build_authority_model(pipeline, answers):
             row["sheet"]=f"M-{i:02d}"
         counts=Counter(row["family"] for row in manifest["sheets"])
         manifest["sheet_count"]=len(manifest["sheets"]);manifest["family_counts"]=dict(counts)
+    _append_approved_service_plan_boards(manifest, approved_rows)
     network=build_network_contract(req)
     calc=build_calculation_contract()
     qa=validate_authority_contract(project,basis,req,manifest,network,calc)
@@ -315,7 +366,7 @@ def _layout_manifest(authority):
     rows=[];family_ord=defaultdict(int)
     for i,row in enumerate(authority["manifest"]["sheets"],1):
         family=row["family"];family_ord[family]+=1;level=row.get("level") or "MULTI"
-        rows.append({**row,"old_sheet":row["sheet"],"code":_sheet_code(family,level,family_ord[family]),"title_fa":_title_fa(family,level),"ordinal":i})
+        rows.append({**row,"old_sheet":row["sheet"],"code":row.get("approved_code") or _sheet_code(family,level,family_ord[family]),"title_fa":row.get("title") or _title_fa(family,level),"ordinal":i})
     return rows
 
 
@@ -692,12 +743,21 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                             dxfattribs={"layer":layer,"char_height":.07},
                         )
                         label.dxf.insert=(x+.2,y2-2.2);label.dxf.width=5.2
-                t=msp.add_mtext(
-                    "VENT TERMINATION / ROOF COORDINATION SCHEMATIC\n"
-                    "NO AUTHORITATIVE ROOF ARCHITECTURE PROVIDED — FINAL OUTLET LOCATIONS REQUIRE ROOF COORDINATION",
-                    dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.11},
-                )
-                t.dxf.insert=(x1+.6,y2-1.0);t.dxf.width=max(1.0,x2-x1-1.2)
+                if b.family == "SANITARY_VENT":
+                    t=msp.add_mtext(
+                        "VENT TERMINATION / ROOF COORDINATION SCHEMATIC\n"
+                        "NO AUTHORITATIVE ROOF ARCHITECTURE PROVIDED — FINAL OUTLET LOCATIONS REQUIRE ROOF COORDINATION",
+                        dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.11},
+                    )
+                    t.dxf.insert=(x1+.6,y2-1.0);t.dxf.width=max(1.0,x2-x1-1.2)
+                else:
+                    service_note=msp.add_mtext(
+                        f"{b.title}\nAPPROVED EQUIPMENT / SERVICE DELIVERABLE\n"
+                        "FINAL EQUIPMENT SELECTION AND CONNECTIONS SHALL FOLLOW THE PROJECT SCHEDULE AND APPROVED DESIGN BASIS.",
+                        dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.10},
+                    )
+                    service_note.dxf.insert=(x1+.7,y2-1.1);service_note.dxf.width=max(1.0,x2-x1-1.4)
+                    _draw_schedule(doc,msp,b,pipeline,authority)
                 overlay_reports.append({"sheet":b.code,"status":"SERVICE_SCHEMATIC","architectural_roof":False})
         elif b.family=="GENERAL_DETAIL":detail_index+=1;_draw_detail_sheet(doc,msp,b,detail_index)
         elif b.family=="PLUMBING_RISER":_draw_riser(doc,msp,b,authority)

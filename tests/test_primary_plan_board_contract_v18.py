@@ -1,4 +1,5 @@
 from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest
+from cad_engine.mechanical_authority_v15 import _append_approved_service_plan_boards, _layout_manifest
 
 
 def _approved_17():
@@ -78,3 +79,18 @@ def test_duplicate_plan_board_id_blocks_release_even_when_count_matches():
     result=validate_approved_manifest(report,{'_approved_drawing_manifest':_approved_17()})
     assert result['status']=='FAIL'
     assert any(x.startswith('duplicate_generated_plan_board_ids:') for x in result['errors'])
+
+
+def test_approved_equipment_plans_are_materialized_as_distinct_service_boards():
+    approved = [
+        {'family':'water_supply','code':'M-W-EQUIP','label':'Water equipment','drawing_type':'equipment_plan'},
+        {'family':'heating','code':'M-H-EQUIP','label':'Heating equipment','drawing_type':'equipment_plan'},
+        {'family':'cooling','code':'M-C-EQUIP','label':'Cooling equipment','drawing_type':'equipment_plan'},
+    ]
+    manifest = {'sheets':[{'sheet':'M-00','family':'WATER','level':'LEVEL-01','purpose':'PLAN'}]}
+    _append_approved_service_plan_boards(manifest, approved)
+    rows = _layout_manifest({'manifest':manifest})
+    service = [row for row in rows if row['level'] == 'SERVICE']
+    assert [row['code'] for row in service] == ['M-W-EQUIP','M-H-EQUIP','M-C-EQUIP']
+    assert [row['family'] for row in service] == ['WATER','HEATING','SPLIT_AC']
+    assert all(row['purpose'] == 'PLAN' for row in service)
