@@ -16,6 +16,7 @@ from . import electrical_workflow
 from . import electrical_drawing_set
 from . import electrical_runtime_patch
 from . import electrical_design_integration
+from . import electrical_cad_transport
 from . import electrical_review_fix
 from . import discipline_workflow_dispatcher
 from . import panel_bridge as panel_bridge_module
@@ -58,6 +59,7 @@ mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 
 electrical_runtime_patch.install(main_auto)
 electrical_design_integration.install(dxf_output, main_auto.legacy)
+electrical_cad_transport.install(dxf_output)
 electrical_review_fix.register_electrical_review_fix(app, main_auto.legacy)
 
 register_seo_articles(app, main_auto.legacy)
