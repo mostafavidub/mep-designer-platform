@@ -715,10 +715,16 @@ def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
     layers={
         "WATER":[("ENGITOOLS-M-WATER-SERVICE",5,"PUMP / TANK / WATER SERVICE CONNECTION")],
         "HEATING":[
+            ("ENGITOOLS-M-PACKAGE",2,"HEATING PLANT / PACKAGE CONNECTION"),
             ("ENGITOOLS-M-HEAT-FLOW",1,"HEATING SUPPLY / RETURN EQUIPMENT CONNECTION"),
+            ("ENGITOOLS-M-HEAT-RETURN",1,"HEATING RETURN AND BALANCING CONNECTION"),
             ("ENGITOOLS-M-RADIATOR",1,"RADIATOR EQUIPMENT AND TERMINAL SCHEDULE"),
         ],
-        "SPLIT_AC":[("ENGITOOLS-M-HVAC",3,"INDOOR / OUTDOOR UNIT AND CONDENSATE SCHEDULE")],
+        "SPLIT_AC":[
+            ("ENGITOOLS-M-HVAC-EQUIP",3,"INDOOR / OUTDOOR UNIT EQUIPMENT SCHEDULE"),
+            ("ENGITOOLS-M-HVAC-REFRIG",3,"REFRIGERANT PIPE CONNECTION"),
+            ("ENGITOOLS-M-HVAC-COND",4,"CONDENSATE DRAIN CONNECTION"),
+        ],
         "EXHAUST":[("ENGITOOLS-M-EXHAUST",4,"EXHAUST FAN / DUCT TERMINATION SCHEDULE")],
         "GAS":[("ENGITOOLS-M-GAS",2,"GAS EQUIPMENT CONNECTION SCHEDULE")],
     }.get(board.family, [])
@@ -729,6 +735,18 @@ def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
         msp.add_line((x1+3.2,y-.5),(x2-1.0,y-.5),dxfattribs={"layer":layer,"lineweight":25})
         t=msp.add_mtext(label,dxfattribs={"layer":layer,"char_height":.075})
         t.dxf.insert=(x1+3.6,y-.25);t.dxf.width=max(1.0,x2-x1-5.0)
+    if board.family == "SPLIT_AC":
+        _ensure_ac_blocks(doc)
+        for layer,color in (("ENGITOOLS-M-HVAC-CALLOUT",2),("ENGITOOLS-M-HVAC-AIRFLOW",1)):
+            _ensure_layer(doc,layer,color,25)
+        p=(x1+2.1,y2-3.7)
+        msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","lineweight":35})
+        msp.add_line(p,(p[0]+4.0,p[1]),dxfattribs={"layer":"ENGITOOLS-M-HVAC-REFRIG","lineweight":25})
+        msp.add_line(p,(p[0],p[1]-2.0),dxfattribs={"layer":"ENGITOOLS-M-HVAC-COND","lineweight":25})
+        msp.add_line(p,(p[0]+1.2,p[1]+1.0),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25})
+        msp.add_line(p,(p[0]-1.0,p[1]),dxfattribs={"layer":"ENGITOOLS-M-HVAC-AIRFLOW","lineweight":25})
+        callout=msp.add_mtext("IDU | SERVICE EQUIPMENT PLAN | LINKED TO APPROVED SCHEDULE",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.075})
+        callout.dxf.insert=(p[0]+1.3,p[1]+1.1);callout.dxf.width=max(1.0,x2-p[0]-2.0)
     _draw_schedule(doc,msp,board,pipeline,authority)
 
 

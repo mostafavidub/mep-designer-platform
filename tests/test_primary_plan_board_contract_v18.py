@@ -2,6 +2,7 @@ import ezdxf
 
 from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest
 from cad_engine.mechanical_authority_site_v15 import qa_semantic_sheet_content
+from cad_engine.mechanical_release_hardening_v18 import validate_equipment_linkage
 from cad_engine.mechanical_authority_v15 import (
     Board, _append_approved_service_plan_boards, _draw_service_equipment_content,
     _layout_manifest,
@@ -114,3 +115,5 @@ def test_service_equipment_boards_have_family_specific_semantic_content(tmp_path
     result=qa_semantic_sheet_content(path,{'boards':boards,'manifest':manifest})
     assert result['status']=='PASS'
     assert result['missing_family_content']==[]
+    linkage=validate_equipment_linkage(path,{'boards':boards,'manifest':manifest})
+    assert linkage['status']=='PASS', linkage
