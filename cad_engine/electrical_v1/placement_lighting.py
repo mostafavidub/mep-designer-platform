@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .models import (
@@ -65,12 +66,17 @@ def resolve_quantities(requirements: List[EquipmentRequirement], project: Electr
 
     Lighting fixture count uses the lumen method when room area, target lux,
     luminaire lumens, utilization factor and maintenance factor are all known.
+    Explicit dedicated-appliance schedules are expanded to one requirement per
+    appliance so different nameplate loads are never averaged or copied between
+    unrelated equipment.
     """
     manufacturer_data=manufacturer_data or {}
     lighting=basis.get("lighting_basis"); socket_rules=basis.get("socket_power_requirements"); appliances=basis.get("dedicated_appliance_requirements")
+    expanded=[]
     for req in requirements:
         room=_room(project,req.room_id)
-        if not room: continue
+        if not room:
+            expanded.append(req); continue
         kind=str(room.room_type.value or "unknown")
         if req.equipment_type=="LIGHT_FIXTURE":
             fixture=manufacturer_data.get("luminaires",{}).get(kind) or manufacturer_data.get("luminaires",{}).get("default")
@@ -83,7 +89,7 @@ def resolve_quantities(requirements: List[EquipmentRequirement], project: Electr
                     req.quantity=EvidenceValue.final(count,"engineering_calculation",.95,"lumen_method")
                     if isinstance(fixture.get("input_power_w"),(int,float)):
                         req.load_w=EvidenceValue.final(float(fixture["input_power_w"]),"manufacturer_data",1.0)
-                    continue
+                    expanded.append(req); continue
             req.quantity=EvidenceValue.input_required("room area + target lux + luminaire lumens/CU/MF required")
         elif req.equipment_type=="GENERAL_SOCKET":
             cfg=socket_rules.value if _final(socket_rules) and isinstance(socket_rules.value,dict) else {}
@@ -96,18 +102,34 @@ def resolve_quantities(requirements: List[EquipmentRequirement], project: Electr
                 req.quantity=EvidenceValue.input_required(f"socket rule for {kind} required")
         elif req.equipment_type=="DEDICATED_APPLIANCE_OUTLET":
             cfg=appliances.value if _final(appliances) and isinstance(appliances.value,dict) else {}
-            items=cfg.get(kind)
+            items=cfg.get(kind, cfg.get("default"))
             if isinstance(items,list):
-                req.quantity=EvidenceValue.final(len(items),"project_design_basis",1.0)
-                req.basis.append("dedicated_appliance_requirements")
+                if not items:
+                    req.quantity=EvidenceValue.final(0,"project_design_basis",1.0,"explicit empty dedicated appliance schedule")
+                    expanded.append(req); continue
+                valid=[]
+                for item in items:
+                    if not isinstance(item,dict) or not isinstance(item.get("load_w"),(int,float)) or float(item["load_w"])<=0:
+                        valid=[]; break
+                    valid.append(item)
+                if valid:
+                    for index,item in enumerate(valid,1):
+                        target=req if index==1 else replace(req,id=f"{req.id}-A{index:02d}",basis=list(req.basis))
+                        target.quantity=EvidenceValue.final(1,"project_design_basis",1.0,"dedicated appliance schedule")
+                        target.load_w=EvidenceValue.final(float(item["load_w"]),"project_design_basis",1.0,str(item.get("name") or "dedicated appliance"))
+                        target.basis.append(f"appliance:{item.get('name') or index}")
+                        expanded.append(target)
+                    continue
+                req.quantity=EvidenceValue.input_required("dedicated appliance nameplate load required for every scheduled item")
             else:
                 req.quantity=EvidenceValue.input_required("dedicated appliance schedule required")
-    return requirements
+        expanded.append(req)
+    return expanded
 
 
 def place_equipment(requirements: List[EquipmentRequirement], project: ElectricalProjectModel,
                     architecture: ArchitecturalModel, placement_rules: Optional[Dict[str,Any]]=None) -> List[EquipmentPlacement]:
-    placement_rules=placement_rules or {}; out=[]
+    placement_rules=placement_rules or {}; out=[]; wall_slots={}
     for req in requirements:
         room=_room(project,req.room_id)
         if not room or not isinstance(req.quantity.value,int) or req.quantity.value<=0: continue
@@ -131,11 +153,13 @@ def place_equipment(requirements: List[EquipmentRequirement], project: Electrica
             segments=[(a,room.polygon[(i+1)%len(room.polygon)]) for i,a in enumerate(room.polygon)]
             segments=[x for x in segments if math.dist(*x)>1e-9]
             segments.sort(key=lambda x:math.dist(*x),reverse=True)
+            slot_key=(room.id,req.equipment_type); start=wall_slots.get(slot_key,0)
             for i in range(count):
                 if not segments: break
-                a,b=segments[i%len(segments)]; p=((a[0]+b[0])/2,(a[1]+b[1])/2); angle=math.degrees(math.atan2(b[1]-a[1],b[0]-a[0]))
-                out.append(EquipmentPlacement(req.id,f"EQ-{req.id}-{i+1}",req.level_id,frame,p,angle,"wall",f"ROOMSEG-{room.id}-{i%len(segments)}",room.id,
+                slot=(start+i)%len(segments); a,b=segments[slot]; p=((a[0]+b[0])/2,(a[1]+b[1])/2); angle=math.degrees(math.atan2(b[1]-a[1],b[0]-a[0]))
+                out.append(EquipmentPlacement(req.id,f"EQ-{req.id}-{i+1}",req.level_id,frame,p,angle,"wall",f"ROOMSEG-{room.id}-{slot}",room.id,
                                               EngineeringStatus.PRELIMINARY,{"distance_to_host":0.0,"orientation_deg":angle,"room_ownership":room.id,"clearance_rule_available":bool(placement_rules)}))
+            wall_slots[slot_key]=start+count
     return out
 
 

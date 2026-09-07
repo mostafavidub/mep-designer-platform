@@ -73,7 +73,9 @@ def calculate_currents_and_phase_balance(topology: Dict[str,Any], basis: Electri
     rules=rules or {}; errors=[]; warnings=[]; voltage=basis.get("supply_voltage_v"); cfg=basis.get("phase_configuration"); pf=basis.get("power_factor")
     if not (_final(voltage) and _final(cfg)):
         return {"status":"PRELIMINARY","errors":[],"warnings":["supply_voltage_or_phase_configuration_missing"],"phase_balance_pct":{}}
-    power_factor=float(pf.value) if _final(pf) and isinstance(pf.value,(int,float)) and pf.value>0 else 1.0
+    if not (_final(pf) and isinstance(pf.value,(int,float)) and 0 < float(pf.value) <= 1):
+        return {"status":"PRELIMINARY","errors":[],"warnings":["power_factor_missing"],"phase_balance_pct":{}}
+    power_factor=float(pf.value)
     three=any(t in str(cfg.value).lower() for t in ("3","three","سه")); phase_names=rules.get("phase_names") or ["L1","L2","L3"]
     for circuit in topology["circuits"]:
         if not _final(circuit.demand_load_w): continue

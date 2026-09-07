@@ -35,10 +35,12 @@ def finalize_placements(placements, requirements, project, architecture, rules: 
         if req.quantity.status!=EngineeringStatus.FINAL:
             warnings.append(f"quantity_not_final:{p.equipment_id}"); continue
         if p.host_type=="ceiling":
-            if room.polygon and _inside(p.point,room.polygon) and ceiling_confirmed:
-                p.status=EngineeringStatus.FINAL; p.qa["inside_room_polygon"]=True
-            else:
+            if not room.polygon or not _inside(p.point,room.polygon):
                 errors.append(f"ceiling_host_or_polygon_fail:{p.equipment_id}")
+            elif not ceiling_confirmed:
+                warnings.append("ceiling_layout_basis_missing")
+            else:
+                p.status=EngineeringStatus.FINAL; p.qa["inside_room_polygon"]=True
         elif p.host_type=="wall":
             if wall_tolerance_m is None or unit_scale is None:
                 warnings.append(f"wall_tolerance_basis_missing:{p.equipment_id}"); continue

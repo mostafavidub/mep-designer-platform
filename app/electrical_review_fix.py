@@ -2,7 +2,7 @@
 from html import escape
 
 from fastapi import Form, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from . import electrical_workflow, electrical_drawing_set
 
@@ -114,6 +114,27 @@ def register_electrical_review_fix(app, legacy):
             data = decorate_review_payload(legacy.flow_payload(project), drawing); db.close(); return JSONResponse(data)
         data = legacy.flow_payload(project); data["drawing_set"] = (project.analysis or {}).get("drawing_set"); db.close(); return JSONResponse(data)
 
+    def _approve_project(db, project):
+        drawing = electrical_drawing_set.approve_drawing_set((project.analysis or {}).get("drawing_set") or {})
+        analysis = dict(project.analysis or {})
+        analysis["drawing_set"] = drawing
+        analysis["electrical_drawing_set"] = drawing
+        project.analysis = analysis
+        project.status = "ready_to_design"
+        project.last_error = ""
+        db.commit(); db.refresh(project)
+        return drawing
+
+    def approve_electrical_drawing_set(pid: int, request: Request):
+        user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
+        if not project:
+            raise HTTPException(404)
+        if _discipline(project) != "electrical" or project.status != "drawing_set_review":
+            db.close(); raise HTTPException(409, "Electrical drawing-set review is not active")
+        _approve_project(db, project)
+        db.close()
+        return RedirectResponse(f"/projects/{pid}", status_code=303)
+
     def answer_json(pid: int, request: Request, answer: str = Form(...), expected_question_index: str = Form("")):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project:
@@ -123,11 +144,9 @@ def register_electrical_review_fix(app, legacy):
         normalized = str(answer or "").strip().replace("ي", "ی")
         if normalized not in ("تأیید", "تایید", "approve", "yes"):
             data = decorate_review_payload(legacy.flow_payload(project), (project.analysis or {}).get("drawing_set") or {}); db.close(); return JSONResponse(data, status_code=409)
-        drawing = electrical_drawing_set.approve_drawing_set((project.analysis or {}).get("drawing_set") or {})
-        analysis = dict(project.analysis or {}); analysis["drawing_set"] = drawing; analysis["electrical_drawing_set"] = drawing
-        project.analysis = analysis; project.status = "ready_to_design"
-        db.commit(); db.refresh(project)
+        drawing = _approve_project(db, project)
         data = legacy.flow_payload(project); data["drawing_set"] = drawing; db.close(); return JSONResponse(data)
 
     _replace_route(app, "/projects/{pid}/flow", "GET", project_flow)
     _replace_route(app, "/projects/{pid}/answer-json", "POST", answer_json)
+    _replace_route(app, "/projects/{pid}/approve-electrical-drawing-set", "POST", approve_electrical_drawing_set)

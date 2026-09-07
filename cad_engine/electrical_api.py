@@ -18,31 +18,137 @@ PIPELINE_AUTHORITY = "electrical-authority"
 
 
 def _missing_inputs(report):
-    """Return stable evidence keys, including exact detail-id.parameter tokens."""
+    """Return stable, user-actionable evidence keys for late recovery.
+
+    Raw authority diagnostics contain internal requirement IDs (``REQ-0001``),
+    system-family names and every unresolved design-basis field.  Those are useful
+    for engineering QA but are not a recovery contract.  This adapter collapses
+    them into the smallest semantic inputs that can actually change the next run.
+    Exact construction-detail ``detail-id.parameter`` tokens remain preserved.
+    """
     missing = []
     data = report.get("data") or {}
-    basis = (data.get("basis") or {}).get("values") or {}
-    for key, value in basis.items():
-        if isinstance(value, dict) and value.get("status") in {"INPUT_REQUIRED", "UNKNOWN"}:
+    gates = report.get("gates") or {}
+
+    def add(key):
+        key = str(key or "").strip()
+        if key and key not in missing:
             missing.append(key)
-    for gate in (report.get("gates") or {}).values():
+
+    # Only project facts that have a direct user recovery path are read from the
+    # design basis.  Do not dump all optional/unused basis fields to the customer.
+    basis = (data.get("basis") or {}).get("values") or {}
+    for key in ("city", "building_type", "number_of_units", "earthing_system"):
+        value = basis.get(key) or {}
+        if isinstance(value, dict) and value.get("status") in {"INPUT_REQUIRED", "UNKNOWN"}:
+            add("earthing_final_basis" if key == "earthing_system" else key)
+    voltage = basis.get("supply_voltage_v") or {}
+    if isinstance(voltage, dict) and voltage.get("status") in {"INPUT_REQUIRED", "UNKNOWN"}:
+        add("supply_voltage_v")
+    for key in ("phase_configuration", "utility_service"):
+        value = basis.get(key) or {}
+        if isinstance(value, dict) and value.get("status") in {"INPUT_REQUIRED", "UNKNOWN"}:
+            add("supply_configuration")
+
+    system_recovery = {
+        "HVAC_POWER": "hvac_electrical_loads",
+        "EMERGENCY_LIGHTING": "emergency_lighting",
+        "FIRE_ALARM": "fire_alarm_requirement",
+        "LIGHTNING_PROTECTION": "lightning_protection",
+        "GENERATOR": "generator",
+        "UPS": "ups",
+        "EV_CHARGING": "ev_charging",
+        "SOLAR_PV": "solar_pv",
+        "ELEVATOR_POWER": "elevator",
+        "PUMP_POWER": "pump",
+        "TELECOM": "low_current_systems",
+        "DATA": "low_current_systems",
+        "TV": "low_current_systems",
+        "INTERCOM": "low_current_systems",
+        "CCTV": "low_current_systems",
+        "ACCESS_CONTROL": "low_current_systems",
+    }
+    equipment_recovery = {
+        "LIGHT_FIXTURE": ("lighting_basis_values", "luminaire_schedule"),
+        "LIGHT_SWITCH": ("switch_control_requirements",),
+        "GENERAL_SOCKET": ("socket_power_requirements",),
+        "DEDICATED_APPLIANCE_OUTLET": ("dedicated_appliance_requirements",),
+    }
+    equipment_by_id = {
+        str(row.get("id")): str(row.get("equipment_type") or "")
+        for row in (data.get("equipment") or []) if isinstance(row, dict) and row.get("id")
+    }
+
+    for gate_name, gate in gates.items():
         for warning in gate.get("warnings") or []:
-            text = str(warning)
+            text = str(warning).strip()
             detail_match = re.search(r"detail_parameters_input_required:([^:]+):([^|;]+)", text)
             if detail_match:
                 detail_id = detail_match.group(1).strip()
                 for parameter in detail_match.group(2).split(","):
                     parameter = parameter.strip()
                     if parameter:
-                        missing.append(f"{detail_id}.{parameter}")
+                        add(f"{detail_id}.{parameter}")
                 continue
-            if text.startswith("detail_not_final:"):
+            if text.startswith("detail_not_final:") or text.startswith("plan_detail_reference_required:"):
+                # These are downstream document-state symptoms.  Exact missing
+                # detail parameters are emitted by CONSTRUCTION_DETAIL_AUTHORITY.
                 continue
-            if ":" in text and any(token in text for token in ("input_required", "unresolved", "not_final")):
-                tail = text.rsplit(":", 1)[-1].strip()
-                if tail and len(tail) < 80:
-                    missing.append(tail.split(".", 1)[0])
-    return list(dict.fromkeys(missing))
+            if text.startswith("scope_input_required:"):
+                add(system_recovery.get(text.split(":", 1)[1].strip()))
+                continue
+            if text.startswith(("quantity_not_final:", "design_not_final:")):
+                req_id = text.rsplit(":", 1)[-1].strip()
+                for key in equipment_recovery.get(equipment_by_id.get(req_id), ()):
+                    add(key)
+                continue
+            if text == "opening_clearance_rule_missing":
+                add("opening_clearance_m"); continue
+            if text == "wall_host_tolerance_missing":
+                add("wall_host_tolerance_m"); continue
+            if text == "ceiling_layout_basis_missing":
+                add("ceiling_layout_basis_confirmed"); continue
+            if text.startswith("switch_door_side_not_confirmed:"):
+                add("switch_door_relation_confirmed"); continue
+            if text == "supply_voltage_or_phase_configuration_missing":
+                add("supply_configuration"); add("supply_voltage_v"); continue
+            if text == "power_factor_missing":
+                add("power_factor"); continue
+            if text.startswith("service_or_feeder_input_required:"):
+                add(text.rsplit(":", 1)[-1].strip()); continue
+            if text.startswith("riser_input_required:"):
+                add("riser_feeder_schedule"); continue
+            if text.startswith("grounding_input_required:"):
+                item = text.rsplit(":", 1)[-1].strip()
+                add({
+                    "earth_electrode": "grounding_earth_electrode",
+                    "main_earth_bar": "grounding_main_earth_bar",
+                    "protective_conductors": "grounding_protective_conductors",
+                    "panel_grounding": "grounding_panel_grounding",
+                }.get(item))
+                continue
+            if text.startswith("optional_system_design_input_required:"):
+                system = text.rsplit(":", 1)[-1].strip()
+                add("fire_alarm_design_inputs" if system == "FIRE_ALARM" else "low_current_design_inputs")
+                continue
+            if text.startswith("panel_location_missing:"):
+                add("panel_locations"); continue
+            if text.startswith("load_unresolved:"):
+                # Demand calculation becomes actionable through the project
+                # circuit/demand rules rather than through an internal C-xxxx ID.
+                add("circuit_demand_rules"); continue
+            if text.startswith("cable_basis_missing:"):
+                add("installation_method"); add("conductor_material"); continue
+            if text.startswith("voltage_drop_inputs_missing:"):
+                add("voltage_drop_rules"); add("voltage_drop_limits"); continue
+            if text.startswith("voltage_drop_limit_missing:"):
+                add("voltage_drop_limits"); continue
+            if text.startswith("phase_balance_threshold_missing"):
+                add("phase_balance_threshold_pct"); continue
+            if text.startswith("panel_") and "_missing:" in text:
+                add("panel_design_rules"); continue
+
+    return missing
 
 
 def _aggregate_release_state(reports):

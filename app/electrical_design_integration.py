@@ -119,9 +119,48 @@ CONSTRUCTION_DETAIL_QUESTION_SPECS = {
     },
 }
 
+RECOVERY_QUESTION_SPECS = {
+    "building_type": {"question": "کاربری قطعی ساختمان را برای طراحی برق مشخص کنید.", "input_type": "text", "options": [], "unit": None},
+    "number_of_units": {"question": "تعداد کل واحدهای مستقل ساختمان را وارد کنید.", "input_type": "number", "options": [], "unit": "واحد"},
+    "earthing_final_basis": {"question": "برای صدور نقشه نهایی، سیستم ارت قطعی پروژه را طبق گزارش/مشاور تأیید کنید.", "input_type": "radio", "options": ["ارت فونداسیون", "چاه ارت / الکترود زمین", "TN-S", "TN-C-S", "TT"], "unit": None},
+    "supply_voltage_v": {"question": "ولتاژ نامی انشعاب/شبکه برق پروژه را طبق اطلاعات شرکت برق یا مدارک پروژه وارد کنید.", "input_type": "number", "options": [], "unit": "V"},
+    "hvac_electrical_loads": {"question": "آیا تجهیزات HVAC بار الکتریکی دارند؟ اگر دارند مشخصات/توان و فاز آن‌ها را بنویسید؛ اگر ندارند «ندارد» ثبت کنید.", "input_type": "text", "options": [], "unit": None},
+    "emergency_lighting": {"question": "آیا روشنایی اضطراری در Scope پروژه لازم است؟", "input_type": "radio", "options": ["نیاز ندارد", "نیاز دارد"], "unit": None},
+    "lightning_protection": {"question": "آیا حفاظت صاعقه در Scope پروژه لازم است؟", "input_type": "radio", "options": ["نیاز ندارد", "نیاز دارد"], "unit": None},
+    "generator": {"question": "آیا ژنراتور در پروژه وجود دارد/لازم است؟", "input_type": "radio", "options": ["ندارد", "دارد"], "unit": None},
+    "ups": {"question": "آیا UPS در پروژه وجود دارد/لازم است؟", "input_type": "radio", "options": ["ندارد", "دارد"], "unit": None},
+    "ev_charging": {"question": "آیا شارژر خودروی برقی در Scope پروژه وجود دارد؟", "input_type": "radio", "options": ["ندارد", "دارد"], "unit": None},
+    "solar_pv": {"question": "آیا سامانه خورشیدی/PV در Scope پروژه وجود دارد؟", "input_type": "radio", "options": ["ندارد", "دارد"], "unit": None},
+    "elevator": {"question": "وضعیت آسانسور را مشخص کنید؛ اگر وجود دارد مشخصات برق/نام‌پلاک را بنویسید و اگر ندارد «ندارد» ثبت کنید.", "input_type": "text", "options": [], "unit": None},
+    "pump": {"question": "وضعیت پمپ‌های برقی پروژه را مشخص کنید؛ اگر وجود دارند مشخصات برق/نام‌پلاک را بنویسید و اگر ندارند «ندارد» ثبت کنید.", "input_type": "text", "options": [], "unit": None},
+    "lighting_basis_values": {"question": "لوکس هدف فضاها را طبق مبنای تأییدشده وارد کنید. نمونه: default=150; bedroom=100; living=150", "input_type": "text", "options": [], "unit": "lux"},
+    "luminaire_schedule": {"question": "مشخصات چراغ تیپ/مصوب را وارد کنید. نمونه: lumens=1200; utilization_factor=0.60; maintenance_factor=0.80; input_power_w=12", "input_type": "text", "options": [], "unit": None},
+    "switch_control_requirements": {"question": "تعداد نقاط کنترل/کلید را طبق طرح تأییدشده وارد کنید. نمونه: default=1; stair=2", "input_type": "text", "options": [], "unit": None},
+    "socket_power_requirements": {"question": "قاعده پریز پروژه را از مرجع تأییدشده وارد کنید. نمونه: minimum_count=2; design_load_w_per_outlet=200; reference=مدرک/ضابطه پروژه", "input_type": "text", "options": [], "unit": None},
+    "dedicated_appliance_requirements": {"question": "بارهای اختصاصی را با توان نام‌پلاک ثبت کنید. نمونه: kitchen=oven@2500,dishwasher@1800. اگر هیچ بار اختصاصی ندارید «ندارد» بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "opening_clearance_m": {"question": "حداقل فاصله مجاز تجهیزات برق از بازشوها را طبق ضابطه/دیتیل پروژه وارد کنید.", "input_type": "number", "options": [], "unit": "m"},
+    "wall_host_tolerance_m": {"question": "تلرانس مجاز اتصال تجهیز به دیوار/Host را طبق معیار پروژه وارد کنید.", "input_type": "number", "options": [], "unit": "m"},
+    "ceiling_layout_basis_confirmed": {"question": "آیا مبنای جانمایی تجهیزات سقفی و سقف کاذب برای این پروژه تأیید شده است؟", "input_type": "radio", "options": ["بله", "خیر"], "unit": None},
+    "switch_door_relation_confirmed": {"question": "آیا سمت و رابطه کلیدها با بازشو/درها در طرح معماری تأیید شده است؟", "input_type": "radio", "options": ["بله", "خیر"], "unit": None},
+    "power_factor": {"question": "ضریب توان مبنای طراحی را طبق اطلاعات بار/مشخصات پروژه وارد کنید.", "input_type": "number", "options": [], "unit": None},
+    "service": {"question": "مشخصات سرویس ورودی برق پروژه را طبق مدارک شرکت برق/پروژه بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "meter": {"question": "نوع و آرایش کنتور/اندازه‌گیری پروژه را طبق مدارک تأییدشده بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "main_distribution": {"question": "مشخصات تابلو/توزیع اصلی بعد از کنتور را طبق طرح تأییدشده بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "riser_feeder_schedule": {"question": "مشخصات فیدر بین طبقات را از پایین به بالا، هر انتقال در یک خط بنویسید. نمونه: cable=...; protection=...; tag=...", "input_type": "text", "options": [], "unit": None},
+    "grounding_earth_electrode": {"question": "مشخصات الکترود/سیستم اتصال زمین اجرایی را طبق مدارک پروژه بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "grounding_main_earth_bar": {"question": "مشخصات شینه اصلی ارت (MEB/MET) پروژه را بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "grounding_protective_conductors": {"question": "مشخصات هادی‌های حفاظتی PE/هم‌بندی را طبق طرح و محاسبات تأییدشده بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "grounding_panel_grounding": {"question": "روش و مشخصات اتصال تابلوها به سیستم ارت را طبق مدارک پروژه بنویسید.", "input_type": "text", "options": [], "unit": None},
+    "installation_method": {"question": "روش نصب کابل/هادی را طبق پروژه مشخص کنید (مثلاً داخل لوله، سینی، دفنی یا روش مصوب دیگر).", "input_type": "text", "options": [], "unit": None},
+    "conductor_material": {"question": "جنس هادی مورد تأیید پروژه را مشخص کنید.", "input_type": "radio", "options": ["مس", "آلومینیوم"], "unit": None},
+    "voltage_drop_limits": {"question": "حد مجاز افت ولتاژ را طبق ضابطه/مشخصات پروژه وارد کنید. نمونه: default=3", "input_type": "text", "options": [], "unit": "%"},
+    "phase_balance_threshold_pct": {"question": "حد مجاز عدم‌تعادل فاز را طبق معیار پروژه وارد کنید.", "input_type": "number", "options": [], "unit": "%"},
+}
+
 # ``reopen_basis_questions`` and ``question_payload`` read this shared registry.
-# Adding on-demand construction questions here keeps the primary Electrical
-# workflow versionless and avoids duplicating answer persistence logic.
+# Construction and late engineering questions are added only after CAD proves
+# they are applicable; the primary questionnaire stays short and project-driven.
+electrical_workflow.REQUIRED_BASIS_QUESTION_SPECS.update(RECOVERY_QUESTION_SPECS)
 electrical_workflow.REQUIRED_BASIS_QUESTION_SPECS.update(CONSTRUCTION_DETAIL_QUESTION_SPECS)
 
 DETAIL_RECOVERY_KEYS = {
@@ -176,22 +215,44 @@ def missing_from_error(error):
     match = re.search(r"input_required\[([^\]]+)\]", text, re.I)
     tokens = [x.strip() for x in (match.group(1).split(",") if match else []) if x.strip()]
     unmatched_tokens = []
+    system_map = {
+        "hvac_power": "hvac_electrical_loads", "emergency_lighting": "emergency_lighting",
+        "fire_alarm": "fire_alarm_requirement", "lightning_protection": "lightning_protection",
+        "generator": "generator", "ups": "ups", "ev_charging": "ev_charging", "solar_pv": "solar_pv",
+        "elevator_power": "elevator", "pump_power": "pump", "telecom": "low_current_systems",
+        "data": "low_current_systems", "tv": "low_current_systems", "intercom": "low_current_systems",
+        "cctv": "low_current_systems", "access_control": "low_current_systems",
+    }
+    direct_aliases = {
+        "phase_configuration": "supply_configuration", "utility_service": "supply_configuration",
+        "lighting_basis": "lighting_basis_values", "earthing_system": "earthing_final_basis", "earth_electrode": "grounding_earth_electrode",
+        "main_earth_bar": "grounding_main_earth_bar", "protective_conductors": "grounding_protective_conductors",
+        "panel_grounding": "grounding_panel_grounding",
+    }
+    registry = electrical_workflow.REQUIRED_BASIS_QUESTION_SPECS
     for token in tokens:
-        mapped = DETAIL_RECOVERY_KEYS.get(token.lower())
+        lowered = token.lower()
+        mapped = DETAIL_RECOVERY_KEYS.get(lowered)
         if mapped:
-            found.append(mapped)
-        else:
-            unmatched_tokens.append(token)
-    # Structured detail tokens own their exact question mapping. Broad aliases
-    # such as "earthing", "mounting" or "height" must not reopen unrelated
-    # design-basis questions merely because those words occur inside a detail ID.
-    # For structured INPUT_REQUIRED lists inspect only unmapped tokens; retain
-    # free-text fallback for legacy/unstructured CAD errors.
+            found.append(mapped); continue
+        if re.fullmatch(r"req-\d+(?:-a\d+)?", lowered):
+            # Internal equipment IDs are diagnostics only. Their semantic causes
+            # are emitted separately by the CAD recovery contract.
+            continue
+        mapped = direct_aliases.get(lowered) or system_map.get(lowered)
+        if mapped:
+            found.append(mapped); continue
+        if lowered in registry:
+            found.append(lowered); continue
+        unmatched_tokens.append(token)
+
+    # Structured recovery tokens own their exact question mapping. Broad aliases
+    # remain only as compatibility for legacy/unstructured CAD failures.
     evidence = unmatched_tokens if tokens else [text]
     for key, aliases in ERROR_ALIASES.items():
         if any(any(alias.lower() in item for alias in aliases) for item in evidence):
             found.append(key)
-    return list(dict.fromkeys(found))
+    return list(dict.fromkeys(key for key in found if key in registry))
 
 
 def _ensure_approved_manifest(project):
