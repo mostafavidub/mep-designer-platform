@@ -17,6 +17,17 @@ from fastapi import HTTPException
 def install(dxf_output):
     if getattr(dxf_output, "_electrical_cad_transport_installed", False):
         return
+
+    # The legacy public key is kept for persisted projects, but the customer
+    # wording must describe the canonical radial MAIN -> floor-panel topology.
+    # The workflow registry and RECOVERY_QUESTION_SPECS share these spec dicts,
+    # so mutating the text here updates both browser and panel recovery payloads.
+    from .electrical_design_integration import RECOVERY_QUESTION_SPECS
+    RECOVERY_QUESTION_SPECS["riser_feeder_schedule"]["question"] = (
+        "مشخصات فیدر هر تابلوی طبقه از تابلو اصلی را وارد کنید؛ هر تابلو در یک خط. "
+        "نمونه: DB-LVL-001: cable=3x6 Cu; breaker=C32A; route_length_m=18; tag=P1"
+    )
+
     original_post = dxf_output._post_to_compatible_cad
 
     class LocalResponse:
