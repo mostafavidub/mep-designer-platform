@@ -71,6 +71,25 @@ def test_design_uses_only_canonical_cobuilt_runtime(post):
     post.assert_called_once()
     assert post.call_args.args[0] == "http://127.0.0.1:8081/design"
     assert post.call_args.kwargs["json"] == {"project_id": "preserved"}
+    assert post.call_args.kwargs["headers"] is None
+
+
+@patch.dict(dxf_output.os.environ, {
+    "COBUILT_CAD_IN_PROCESS": "0",
+    "COBUILT_CAD_DESIGNER_URL": "https://engitools-cad.example",
+    "COBUILT_CAD_SERVICE_TOKEN": "private-edge-token",
+})
+@patch("app.dxf_output.requests.post")
+def test_remote_cad_request_uses_private_edge_token(post):
+    post.return_value = response(200, {"status": "PASS"})
+
+    result = dxf_output._post_to_compatible_cad({"project_id": "protected"})
+
+    assert result.ok
+    assert post.call_args.args[0] == "https://engitools-cad.example/design"
+    assert post.call_args.kwargs["headers"] == {
+        "x-cad-service-token": "private-edge-token",
+    }
 
 
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")

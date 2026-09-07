@@ -355,7 +355,9 @@ def _post_to_compatible_cad(payload):
         except HTTPException as exc:
             return LocalResponse(exc.status_code, {'detail': exc.detail})
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
-    return requests.post(cobuilt + '/design', json=payload, timeout=3600)
+    token = os.getenv('COBUILT_CAD_SERVICE_TOKEN', '').strip()
+    headers = {'x-cad-service-token': token} if token else None
+    return requests.post(cobuilt + '/design', json=payload, headers=headers, timeout=3600)
 
 
 def _attach_remote_architecture(payload, project_dir):

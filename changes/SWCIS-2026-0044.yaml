@@ -1,0 +1,38 @@
+{
+  "change_id":"SWCIS-2026-0044",
+  "summary":"Move the memory-intensive canonical CAD service from Railway to an authenticated Cloudflare Container with production-sized memory, while retaining an explicit rollback target.",
+  "requester":"mostafavidub",
+  "change_types":["runtime","drawing_output","ui_api","test","governance","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"The same canonical cad_engine.main:app image runs in a Cloudflare Container; CAD calculations and locked gates do not change.",
+    "deployment":"A standard-2 Cloudflare Container supplies 6 GiB RAM and one vCPU, scales to zero, and replaces Railway as the primary CAD URL.",
+    "docs":"The deployment configuration documents authentication, sizing, health checks, deployment and rollback.",
+    "governance":"The Cloudflare deployment and its tests are tracked by this single change request.",
+    "manifest":"The existing /version response and build-identity comparison remain authoritative.",
+    "migration":"No stored-data migration; only the service endpoint and shared transport credential change.",
+    "qa":"Focused transport-authentication tests, full regression, container health and an end-to-end design transaction are release gates.",
+    "ui_api":"The panel attaches a private service token to remote CAD requests without exposing it to browsers.",
+    "versioning":"Executable identity continues to derive from the deployed Git commit.",
+    "routing":"not affected",
+    "sizing":"not affected",
+    "equipment":"not affected",
+    "manufacturer_selector":"not affected",
+    "detail_riser":"not affected"
+  },
+  "evidence":{
+    "tests":["tests/test_cad_runtime_recovery.py","full regression suite","Cloudflare /health and /version smoke tests","full remote /design transaction"],
+    "docs":[".github/cloudflare-cad/README.md","changes/SWCIS-2026-0044.yaml"],
+    "version_bump":["Automatic build identity changes with Git commit; no schema or contract version changes"],
+    "golden_regression":["Existing governed golden suite must remain PASS"],
+    "semantic_diff":["No calculation, routing, drawing, question, or QA semantics change; only execution location and authenticated transport change"],
+    "artifact_diff":["Remote generated DXF remains subject to the existing byte transfer, reopen, manifest and R2 validation path"],
+    "contract_diff":["POST /design gains a required private header at the Cloudflare edge; /health and /version retain their existing response contracts"],
+    "deployment_plan":["Deploy standard-2 Cloudflare Container","set a generated Worker secret and matching Railway panel variable","verify health, version identity and full design","switch COBUILT_CAD_DESIGNER_URL to Cloudflare"],
+    "migration":["none"],
+    "rollback_plan":["Restore COBUILT_CAD_DESIGNER_URL to http://web.railway.internal:8080 and redeploy the panel; no customer data rollback is required"]
+  },
+  "risk":{"likelihood":2,"severity":3,"detectability":1,"score":6,"rationale":"The execution environment changes, but the image, canonical entrypoint, API contract and artifact QA remain unchanged and are tested before traffic is switched."},
+  "waiver":null
+}
