@@ -108,6 +108,30 @@ def test_service_equipment_board_does_not_require_fabricated_north(tmp_path):
     assert not any(error.startswith('architectural_north_missing') for error in result['errors'])
 
 
+def test_plan_without_source_north_is_issued_with_coordination_warning(tmp_path):
+    path=tmp_path/'plan-without-north.dxf'
+    doc=ezdxf.new('R2010')
+    doc.modelspace().add_line((1,1),(2,1),dxfattribs={'layer':'ENGITOOLS-M-WATER'})
+    doc.saveas(path)
+    composition={
+        'copy_failures':[],
+        'north':{},
+        'boards':{'B1':{
+            'sheet':'B1','code':'M-101','title':'Sanitary plan',
+            'family':'SANITARY_VENT','level':'GROUND',
+            'bounds':(0,0,10,10),'plan_area':(0,0,8,8),
+            'subtitle_area':(0,8,8,9),'title_area':(0,9,10,10),
+        }},
+    }
+
+    result=qa_authority_dxf(path,composition)
+
+    assert result['status']=='PASS'
+    assert result['errors']==[]
+    assert result['warnings']==['architectural_north_not_provided:M-101']
+    assert result['metrics']['north_coordination_warnings']==1
+
+
 def test_one_source_north_is_shared_across_aligned_architectural_plans(tmp_path):
     from cad_engine.mechanical_authority_v15 import _shared_architectural_north
     path = tmp_path / 'aligned-plans.dxf'

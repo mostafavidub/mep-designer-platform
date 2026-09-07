@@ -219,6 +219,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction after project-85 R12 retained the gate but truncated its mismatch errors"},
       "verification":{"large_report_truncation_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_exact_manifest_error","required_ci":"must_pass_before_merge"},
       "migration":{"forward":"Serialize failed stage and failed_stage_qa.errors before all other diagnostic evidence.","rollback":"Never allow generic upstream data to truncate the cause of the active failed gate."}
+    },
+    {
+      "id":"GOV-2026-021",
+      "status":"APPROVED",
+      "summary":"Treat a missing source architectural north symbol as an explicit coordination warning instead of a terminal mechanical CAD failure, while continuing to prohibit fabricated north arrows.",
+      "affected_capabilities":["mechanical_release_qa","architecture_preservation","customer_safe_errors","active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction after a new production project failed only because its architectural plans contained no north symbol"},
+      "verification":{"missing_north_warning_test":"PASS","no_fabricated_north_test":"PASS","full_regression":"559 PASS in production container; runtime version guard PASS separately because the runtime image intentionally excludes git","production_retry":"must_complete_without architectural_north_missing","required_ci":"must_pass before deployment"},
+      "migration":{"forward":"Issue plan sheets without inventing direction when the architectural source has no north symbol; record architectural_north_not_provided per affected sheet as a coordination warning.","rollback":"Supersede only with a source-backed orientation requirement; never generate an assumed north arrow."}
     }
   ]
 }
