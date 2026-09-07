@@ -41,6 +41,15 @@ def canonical_city(answers):
     return parts[-1] if parts else None
 
 
+def _supply_voltage(text):
+    """Extract voltage from supply notation without mistaking 1/3-phase for volts."""
+    explicit = re.search(r"(?<![\w.])(\d+(?:[.,٫]\d+)?)\s*v(?:olt(?:s)?)?\b", text, re.I)
+    if explicit:
+        return numeric(explicit.group(1))
+    without_phase = re.sub(r"\b[13]\s*[- ]?ph(?:ase)?\b", " ", text, flags=re.I)
+    return numeric(without_phase)
+
+
 def canonical_supply(value):
     if isinstance(value, dict):
         configuration = str(value.get("configuration") or "").strip()
@@ -52,10 +61,10 @@ def canonical_supply(value):
         return None
     if text in SUPPLY_CONFIGURATIONS:
         return {"configuration": text, "voltage_v": None}
-    three = any(x in text for x in ("سه فاز", "سه‌فاز", "three phase", "3ph", "3 ph"))
-    single = any(x in text for x in ("تک فاز", "تک‌فاز", "single phase", "1ph", "1 ph"))
+    three = any(x in text for x in ("سه فاز", "سه‌فاز", "three phase", "3ph", "3 ph", "3-phase", "3 phase"))
+    single = any(x in text for x in ("تک فاز", "تک‌فاز", "single phase", "1ph", "1 ph", "1-phase", "1 phase"))
     mixed = any(x in text for x in ("مشاعات سه", "ترکیبی", "mixed"))
-    voltage = numeric(text)
+    voltage = _supply_voltage(text)
     if mixed:
         return {"configuration": "mixed_single_units_three_phase_common", "voltage_v": voltage}
     if three:
