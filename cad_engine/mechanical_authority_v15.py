@@ -126,6 +126,24 @@ def _append_approved_service_plan_boards(manifest, approved_rows):
         family = APPROVED_TO_CAD_FAMILY.get(str(approved.get("family") or "").strip().upper())
         if not family:
             continue
+        # The reference planner can already have produced the physical service
+        # board (for example WATER/SERVICE or SPLIT_AC/ROOF). Bind that board to
+        # the approved deliverable instead of appending a semantic duplicate.
+        candidate = next((
+            row for row in sheets
+            if row.get("family") == family
+            and str(row.get("purpose") or "PLAN").upper() == "PLAN"
+            and str(row.get("level") or "").upper() in {"SERVICE", "ROOF"}
+            and not row.get("approved_code")
+        ), None)
+        if candidate is not None:
+            candidate.update({
+                "approved_code": approved_code,
+                "title": str(approved.get("label") or approved.get("title") or candidate.get("title") or "EQUIPMENT / SERVICE PLAN"),
+                "approved_drawing_type": drawing_type,
+            })
+            existing_approved_codes.add(approved_code)
+            continue
         sheets.append({
             "sheet": None,
             "family": family,
@@ -136,6 +154,21 @@ def _append_approved_service_plan_boards(manifest, approved_rows):
             "approved_drawing_type": drawing_type,
         })
         existing_approved_codes.add(approved_code)
+    # A reference-derived roof/service coordination board is an implementation
+    # detail, not an additional customer deliverable. Keep it only when it was
+    # explicitly bound to an approved plan above. The canonical ROOF board is
+    # handled separately by build_authority_model.
+    plan_families = set(APPROVED_TO_CAD_FAMILY.values())
+    sheets[:] = [
+        row for row in sheets
+        if not (
+            row.get("family") in plan_families
+            and row.get("family") != "ROOF"
+            and str(row.get("purpose") or "PLAN").upper() == "PLAN"
+            and str(row.get("level") or "").upper() in {"SERVICE", "ROOF"}
+            and not row.get("approved_code")
+        )
+    ]
     for index, row in enumerate(sheets):
         row["sheet"] = f"M-{index:02d}"
     counts = Counter(row["family"] for row in sheets)
@@ -322,6 +355,16 @@ def build_authority_model(pipeline, answers):
         and str(row.get("drawing_type") or "").strip().upper()=="ROOF_PLAN"
         for row in approved_rows or []
     )
+    approved_roof_row=next((
+        row for row in approved_rows or []
+        if isinstance(row,dict)
+        and str(row.get("drawing_type") or "").strip().upper()=="ROOF_PLAN"
+    ),None)
+    canonical_roof=next((row for row in manifest.get("sheets") or [] if row.get("family")=="ROOF"),None)
+    if canonical_roof is not None and approved_roof_row is not None:
+        canonical_roof["approved_code"]=str(approved_roof_row.get("code") or approved_roof_row.get("sheet_code") or "").strip().upper()
+        canonical_roof["approved_drawing_type"]="ROOF_PLAN"
+        canonical_roof["title"]=str(approved_roof_row.get("label") or approved_roof_row.get("title") or canonical_roof.get("title"))
     if approved_roof_termination and not any(row.get("family")=="ROOF" for row in manifest.get("sheets") or []):
         # No authoritative roof architecture was proved. Preserve the approved
         # deliverable as an explicit engineering termination schematic rather
@@ -329,6 +372,8 @@ def build_authority_model(pipeline, answers):
         manifest["sheets"].append({
             "sheet":None,"family":"SANITARY_VENT","level":"SERVICE","purpose":"PLAN",
             "title":"VENT TERMINATION / ROOF COORDINATION SCHEMATIC — ROOF ARCHITECTURE NOT PROVIDED",
+            "approved_code":str((approved_roof_row or {}).get("code") or (approved_roof_row or {}).get("sheet_code") or "").strip().upper(),
+            "approved_drawing_type":"ROOF_PLAN",
         })
         for i,row in enumerate(manifest["sheets"]):
             row["sheet"]=f"M-{i:02d}"

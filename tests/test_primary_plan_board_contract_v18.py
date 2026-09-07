@@ -103,6 +103,26 @@ def test_approved_equipment_plans_are_materialized_as_distinct_service_boards():
     assert all(row['purpose'] == 'PLAN' for row in service)
 
 
+def test_existing_service_board_is_bound_and_unapproved_roof_support_is_removed():
+    approved = [
+        {'family':'water_supply','code':'M-W-EQUIP','label':'Water equipment','drawing_type':'equipment_plan'},
+    ]
+    manifest = {'sheets':[
+        {'sheet':'M-00','family':'WATER','level':'LEVEL-01','purpose':'PLAN'},
+        {'sheet':'M-01','family':'WATER','level':'SERVICE','purpose':'PLAN','title':'Water service'},
+        {'sheet':'M-02','family':'SPLIT_AC','level':'ROOF','purpose':'PLAN','title':'Automatic roof support'},
+    ]}
+    _append_approved_service_plan_boards(manifest, approved)
+    plans = [row for row in manifest['sheets'] if row.get('purpose') == 'PLAN']
+    assert len(plans) == 2
+    assert [row for row in plans if row['family'] == 'WATER' and row['level'] == 'SERVICE'] == [{
+        'sheet':'M-01','family':'WATER','level':'SERVICE','purpose':'PLAN',
+        'title':'Water equipment','approved_code':'M-W-EQUIP',
+        'approved_drawing_type':'EQUIPMENT_PLAN',
+    }]
+    assert not any(row['family'] == 'SPLIT_AC' and row['level'] == 'ROOF' for row in plans)
+
+
 def test_service_equipment_boards_have_family_specific_semantic_content(tmp_path):
     doc=ezdxf.new('R2010');msp=doc.modelspace();boards={};manifest=[]
     for index,family in enumerate(('WATER','HEATING','SPLIT_AC')):

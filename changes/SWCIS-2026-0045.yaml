@@ -1,0 +1,16 @@
+change_id: SWCIS-2026-0045
+status: APPROVED
+summary: Reconcile reference-generated service and roof boards with the workflow-approved plan manifest.
+reason: Production project 101 approved fourteen plan boards, while the reference planner emitted an additional unapproved split-AC roof coordination board and duplicated an existing water-service equipment board.
+impact_notes:
+  cad_designer: Existing service or roof boards are bound to their approved deliverable code instead of duplicated.
+  manifest: Unapproved automatic service and roof plan boards are removed before composition; canonical approved roof output remains.
+  qa: The fail-closed one-approved-plan-to-one-real-board count and identity gates remain unchanged.
+  ui_api: No response schema change.
+  migration: No stored-data migration; retrying the preserved failed project applies the correction.
+evidence:
+  tests:
+    - Regression coverage proves existing service-board binding and removal of an unapproved automatic roof-support board.
+    - Focused approved-manifest and architecture tests pass in the production container.
+    - Production project 101 must complete after deployment with a downloadable DXF artifact.
+  rollback: Revert this change; do not weaken the approved-manifest parity gate.
