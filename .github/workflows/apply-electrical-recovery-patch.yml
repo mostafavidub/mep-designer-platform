@@ -1,0 +1,43 @@
+name: Apply Electrical Recovery Patch
+
+on:
+  push:
+    branches: [feature/electrical-v19-panel-parity]
+    paths:
+      - '.tmp/electrical-recovery-patch/**'
+      - '.github/workflows/apply-electrical-recovery-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/electrical-v19-panel-parity
+          fetch-depth: 0
+      - name: Reconstruct and apply tested recovery patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/electrical-recovery-patch/part* | base64 -d | xz -d > /tmp/electrical-recovery.patch
+          git apply --check /tmp/electrical-recovery.patch
+          git apply /tmp/electrical-recovery.patch
+          python -m py_compile \
+            cad_engine/electrical_api.py \
+            cad_engine/electrical_v1/production.py \
+            cad_engine/electrical_v1/placement_lighting.py \
+            cad_engine/electrical_v1/power.py \
+            cad_engine/electrical_v1/geometry_acceptance.py \
+            app/electrical_design_integration.py \
+            app/electrical_review_fix.py \
+            tests/test_electrical_runtime_v19.py
+          rm -rf .tmp/electrical-recovery-patch
+          rm -f .github/workflows/apply-electrical-recovery-patch.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Harden Electrical semantic recovery and review flow'
+          git push origin HEAD:feature/electrical-v19-panel-parity
