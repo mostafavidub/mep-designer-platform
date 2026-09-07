@@ -1,11 +1,18 @@
 import ezdxf
-from cad_engine.mechanical_authority_v15 import _boards, _draw_titleblock, _draw_detail_sheet, _ensure_ac_blocks, _entity_should_copy, _north_from_architecture
+from cad_engine.mechanical_authority_v15 import _airflow_endpoint, _boards, _draw_titleblock, _draw_detail_sheet, _ensure_ac_blocks, _entity_should_copy, _north_from_architecture
 from cad_engine.mechanical_release_hardening_v18 import validate_layout_geometry, validate_titleblocks, validate_safe_zones, validate_equipment_linkage, validate_detail_library, validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate, validate_architectural_presentation
 
 
 def _rows(n=8):
     return [{"old_sheet":f"S{i}","code":f"M-{i:03d}","family":"WATER",
              "level":"GROUND","title_fa":f"Sheet {i}"} for i in range(n)]
+
+
+def test_airflow_arrow_turns_inward_at_plan_boundary():
+    endpoint=_airflow_endpoint((0.0,5.0),3.141592653589793,(0.0,0.0,10.0,10.0))
+    assert 0.0 <= endpoint[0] <= 10.0
+    assert 0.0 <= endpoint[1] <= 10.0
+    assert endpoint != (0.0,5.0)
 
 
 def test_gate_1_generated_boards_have_clear_safe_geometry():

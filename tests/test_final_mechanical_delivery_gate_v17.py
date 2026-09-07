@@ -10,7 +10,7 @@ from cad_engine.authority_architecture_v14 import (
 )
 from cad_engine.system_requirements_v13 import derive_system_requirements as derive_pipeline_requirements
 from cad_engine.engineering_runner_v13 import validate_pipeline
-from cad_engine.final_delivery_gate_v17 import sanitize_to_approved_boards, validate_final_delivery
+from cad_engine.final_delivery_gate_v17 import _contained, sanitize_to_approved_boards, validate_final_delivery
 from cad_engine.mechanical_authority_site_v17 import validate_approved_manifest, _release_input_errors
 
 
@@ -129,6 +129,12 @@ class FinalMechanicalDeliveryGateV17Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             path=Path(td)/'issued.dxf';doc=ezdxf.new('R2013');doc.saveas(path)
             qa=validate_final_delivery(path,{'composition':{'boards':{}}});self.assertEqual(qa['status'],'FAIL');self.assertIn('no_approved_board_bounds',qa['errors'])
+
+    def test_large_block_is_contained_by_its_insert_point(self):
+        doc=ezdxf.new('R2013');block=doc.blocks.new('REMOTE_GEOMETRY')
+        block.add_line((0,0),(1000,1000))
+        inserted=doc.modelspace().add_blockref('REMOTE_GEOMETRY',(5,5))
+        self.assertTrue(_contained(inserted,[(0,0,10,10)]))
 
 
 if __name__=='__main__':unittest.main()

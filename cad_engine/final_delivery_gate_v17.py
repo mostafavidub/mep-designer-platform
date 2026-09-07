@@ -33,6 +33,12 @@ def _point(e):
 
 
 def _contained(e,boards):
+    # INSERT blocks may contain remote construction geometry. Their insertion
+    # point is the authoritative placement, matching source-board selection
+    # and architecture-preservation checks.
+    if e.dxftype()=='INSERT':
+        p=_point(e)
+        return bool(p and any(b[0]-0.03 <= p[0] <= b[2]+0.03 and b[1]-0.03 <= p[1] <= b[3]+0.03 for b in boards))
     try:
         ex=bbox.extents([e],fast=True)
         if ex.has_data:return any(_contains_ext(ex,b) for b in boards)

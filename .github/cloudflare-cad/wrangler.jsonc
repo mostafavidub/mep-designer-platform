@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "engitools-cad-runtime",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "containers": [
+    {
+      "class_name": "CadRuntime",
+      "image": "../../cad_engine/Dockerfile",
+      "image_build_context": "../..",
+      "max_instances": 2,
+      "instance_type": "standard-2"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {"name": "CAD_RUNTIME", "class_name": "CadRuntime"}
+    ]
+  },
+  "migrations": [
+    {"tag": "v1", "new_sqlite_classes": ["CadRuntime"]}
+  ]
+}

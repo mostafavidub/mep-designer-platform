@@ -425,10 +425,9 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "exhaust_cfm":enrich_exhaust(doc,msp,pipeline,compose),
         "split_roof":enrich_split_roof(doc,msp,pipeline,compose),
     }
-    ext=bbox.extents(msp,fast=True)
-    if ext.has_data:
-        doc.header["$EXTMIN"]=tuple(map(float,ext.extmin))
-        doc.header["$EXTMAX"]=tuple(map(float,ext.extmax))
+    # Enrichment is drawn inside the board envelopes established by the
+    # composer.  Recomputing recursive extents here rebuilds the same large
+    # geometry cache without changing the drawing envelope.
     doc.saveas(dst)
 
     dxf_qa=qa_authority_dxf(dst,compose)

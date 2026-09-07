@@ -13,5 +13,6 @@ COPY data ./data
 COPY standards ./standards
 ENV CAD_OUTPUT_DIR=/tmp/engitools-cad-output
 ENV TMPDIR=/tmp/engitools-tmp
+ENV CAD_ISOLATED_SERVICE=1
 RUN mkdir -p /tmp/engitools-cad-output /tmp/engitools-tmp
 CMD ["sh", "-c", "uvicorn cad_engine.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

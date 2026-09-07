@@ -11,7 +11,6 @@ import math
 import re
 
 import ezdxf
-from ezdxf import bbox
 
 
 ROOM_ALIASES = {
@@ -145,6 +144,17 @@ def reconstruct_architecture(path):
     layer_names = {str(layer.dxf.name): _norm(layer.dxf.name) for layer in doc.layers}
 
     polygons, lines, inserts, texts = [], [], [], []
+    min_x = min_y = math.inf
+    max_x = max_y = -math.inf
+
+    def include_points(points):
+        nonlocal min_x, min_y, max_x, max_y
+        for x, y in points:
+            if not (math.isfinite(x) and math.isfinite(y)):
+                continue
+            min_x = min(min_x, x); min_y = min(min_y, y)
+            max_x = max(max_x, x); max_y = max(max_y, y)
+
     for e in msp:
         layer = str(getattr(e.dxf, "layer", "0") or "0")
         kind = e.dxftype()
@@ -152,19 +162,23 @@ def reconstruct_architecture(path):
             poly = _closed_polygon(e)
             if poly:
                 polygons.append({"layer": layer, "points": poly, "area": _polygon_area(poly)})
+                include_points(poly)
         elif kind == "LINE":
             try:
-                lines.append({"layer": layer, "start": (float(e.dxf.start.x), float(e.dxf.start.y)), "end": (float(e.dxf.end.x), float(e.dxf.end.y))})
+                start = (float(e.dxf.start.x), float(e.dxf.start.y)); end = (float(e.dxf.end.x), float(e.dxf.end.y))
+                lines.append({"layer": layer, "start": start, "end": end}); include_points((start, end))
             except Exception:
                 pass
         elif kind == "INSERT":
             p = _point(e)
             if p:
                 inserts.append({"name": str(e.dxf.name or ""), "layer": layer, "point": p})
+                include_points((p,))
         elif kind in {"TEXT", "MTEXT"}:
             p = _point(e); value = _entity_text(e).strip()
             if p and value:
                 texts.append({"text": value, "layer": layer, "point": p})
+                include_points((p,))
 
     rooms = []
     for t in texts:
@@ -200,9 +214,11 @@ def reconstruct_architecture(path):
                 walls.append({"layer": polygon["layer"], "start": start, "end": end,
                               "source": "closed_polyline_edge"})
 
-    ext = bbox.extents(msp, fast=True); bounds = None
-    if ext.has_data:
-        bounds = [float(ext.extmin.x), float(ext.extmin.y), float(ext.extmax.x), float(ext.extmax.y)]
+    # ezdxf.bbox.extents() expands every nested entity and retains a large
+    # geometry cache.  On real 25-35 MB architectural files that cache alone
+    # can exceed 500 MB.  The reconstruction already visits every primitive it
+    # uses, so derive the same routing envelope incrementally from those points.
+    bounds = None if min_x == math.inf else [min_x, min_y, max_x, max_y]
 
     return {"version": "architecture-reconstruction-v13.1", "units": int(doc.header.get("$INSUNITS", 0) or 0), "bounds": bounds,
             "rooms": rooms, "walls": walls, "doors": doors, "columns": columns,

@@ -92,6 +92,10 @@ def _snapshot_selected(entities,plan_id):
             "length":round(length,6),"area":round(area,6),"text":_text(e),
             "semantic_class":cls,"confidence":conf,"criticality":crit,
             "control_points":control_points,
+            "insertion_point":(
+                (float(e.dxf.insert.x),float(e.dxf.insert.y))
+                if e.dxftype()=="INSERT" else None
+            ),
         })
     return {"plan_id":plan_id,"entity_count":len(records),"entities":records}
 
@@ -107,7 +111,14 @@ def _entities_in_output_board(doc,plan_area,source_layers):
             continue
         ex=_entity_ext(e)
         if not ex: continue
-        cx=(ex.extmin.x+ex.extmax.x)/2; cy=(ex.extmin.y+ex.extmax.y)/2
+        # A block can contain distant construction geometry, so its expanded
+        # bbox center may lie outside the board even when the INSERT itself is
+        # an exact preserved architectural copy. Selection in the source uses
+        # the insertion point; apply the same rule after transformation.
+        if e.dxftype()=="INSERT":
+            cx=float(e.dxf.insert.x); cy=float(e.dxf.insert.y)
+        else:
+            cx=(ex.extmin.x+ex.extmax.x)/2; cy=(ex.extmin.y+ex.extmax.y)/2
         if plan_area[0]-.15<=cx<=plan_area[2]+.15 and plan_area[1]-.15<=cy<=plan_area[3]+.15:
             out.append(e)
     return out

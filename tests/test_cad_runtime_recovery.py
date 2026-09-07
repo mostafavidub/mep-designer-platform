@@ -1,7 +1,26 @@
 from unittest.mock import Mock, patch
 import base64
+import io
+import shutil
+import zipfile
 
 from app import dxf_output
+
+
+def test_remote_single_dxf_transfer_is_materialized_for_validation():
+    buffer=io.BytesIO()
+    with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as bundle:
+        bundle.writestr('result_mechanical.dxf',b'0\nEOF\n')
+    root,archive,artifact=dxf_output._materialize_remote_cad_artifact({
+        'generated_files':['result_mechanical.dxf'],
+        'zip_path':'/remote/container/transfer.zip',
+        'zip_base64':base64.b64encode(buffer.getvalue()).decode('ascii'),
+    })
+    try:
+        assert archive.is_file()
+        assert artifact.read_bytes()==b'0\nEOF\n'
+    finally:
+        shutil.rmtree(root,ignore_errors=True)
 
 
 def response(status, payload):
@@ -52,6 +71,25 @@ def test_design_uses_only_canonical_cobuilt_runtime(post):
     post.assert_called_once()
     assert post.call_args.args[0] == "http://127.0.0.1:8081/design"
     assert post.call_args.kwargs["json"] == {"project_id": "preserved"}
+    assert post.call_args.kwargs["headers"] is None
+
+
+@patch.dict(dxf_output.os.environ, {
+    "COBUILT_CAD_IN_PROCESS": "0",
+    "COBUILT_CAD_DESIGNER_URL": "https://engitools-cad.example",
+    "COBUILT_CAD_SERVICE_TOKEN": "private-edge-token",
+})
+@patch("app.dxf_output.requests.post")
+def test_remote_cad_request_uses_private_edge_token(post):
+    post.return_value = response(200, {"status": "PASS"})
+
+    result = dxf_output._post_to_compatible_cad({"project_id": "protected"})
+
+    assert result.ok
+    assert post.call_args.args[0] == "https://engitools-cad.example/design"
+    assert post.call_args.kwargs["headers"] == {
+        "x-cad-service-token": "private-edge-token",
+    }
 
 
 @patch.object(dxf_output.legacy, "CAD_DESIGNER_URL", "https://external-cad.example")

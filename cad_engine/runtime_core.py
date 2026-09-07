@@ -9,15 +9,9 @@ from pathlib import Path
 
 import ezdxf
 from app.dxf_input import read_input_dxf
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from pypdf import PdfReader, PdfWriter
 from ezdxf import bbox
-from ezdxf.addons.drawing import Frontend, RenderContext
-from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 
 app = FastAPI(title="EngiTools CAD Designer", version="0.2.0")
 
@@ -311,6 +305,12 @@ def design_dxf(src: Path, dst: Path, discipline: str, systems: list[str], revisi
     return {"room_labels":len(rooms),"placements":stats,"input_recovery":recovery}
 
 def render_pdf(dxf_path: Path, pdf_path: Path, discipline: str):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from ezdxf.addons.drawing import Frontend, RenderContext
+    from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+
     doc = ezdxf.readfile(dxf_path)
     msp = doc.modelspace()
     fig = plt.figure(figsize=(11.69,8.27))
@@ -324,6 +324,8 @@ def render_pdf(dxf_path: Path, pdf_path: Path, discipline: str):
     fig.savefig(pdf_path,format="pdf",bbox_inches="tight"); plt.close(fig)
 
 def merge_pdfs(paths: list[Path], out_path: Path):
+    from pypdf import PdfReader, PdfWriter
+
     writer = PdfWriter()
     for p in paths:
         for page in PdfReader(str(p)).pages:
@@ -377,4 +379,3 @@ def design(req: DesignRequest):
             "pdf_base64":base64.b64encode(merged.read_bytes()).decode("ascii"),
             "zip_base64":base64.b64encode(package.read_bytes()).decode("ascii"),
         }
-

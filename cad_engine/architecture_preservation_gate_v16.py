@@ -144,7 +144,10 @@ def validate_visibility(snapshot,safe_area,occluded_keys:Optional[set]=None):
     occluded_keys=occluded_keys or set(); clipped=[]; hidden=[]; sx1,sy1,sx2,sy2=safe_area
     for r in snapshot.get("entities",[]):
         if r.get("criticality")!="CRITICAL":continue
-        x1,y1,x2,y2=r["bbox"]
+        if r.get("entity_type")=="INSERT" and r.get("insertion_point"):
+            x1,y1=r["insertion_point"];x2,y2=x1,y1
+        else:
+            x1,y1,x2,y2=r["bbox"]
         if x1<sx1 or y1<sy1 or x2>sx2 or y2>sy2:clipped.append(r["key"])
         if r["key"] in occluded_keys:hidden.append(r["key"])
     return {"pass":not clipped and not hidden,"clipped":clipped,"hidden":hidden}
