@@ -19,15 +19,17 @@ def build_service_feeders(topology: Dict[str,Any], service_inputs: Optional[Dict
     if not service: missing.append("service")
     if not meter: missing.append("meter")
     if not main: missing.append("main_distribution")
+    feeder_input_missing=False
     for panel in topology.get("panels",[]):
         data=feeder_cfg.get(panel.id)
         required=("cable","breaker","route_length_m","tag")
         ok=isinstance(data,dict) and all(k in data for k in required)
-        if not ok: missing.append(f"feeder:{panel.id}")
+        if not ok: feeder_input_missing=True
         feeders.append({"id":f"F-{panel.id}","source":"MAIN","destination":panel.id,"demand_load_w":panel.demand_load_w.value,
                         "cable":data.get("cable") if isinstance(data,dict) else None,"breaker":data.get("breaker") if isinstance(data,dict) else None,
                         "route_length_m":data.get("route_length_m") if isinstance(data,dict) else None,"tag":data.get("tag") if isinstance(data,dict) else None,
                         "status":"FINAL" if ok and _final(panel.demand_load_w) else "INPUT_REQUIRED"})
+    if feeder_input_missing: missing.append("riser_feeder_schedule")
     topology["feeders"]=feeders; topology["service_nodes"]=nodes
     return {"status":"PASS" if not missing and all(f["status"]=="FINAL" for f in feeders) else "PRELIMINARY","missing":missing,"feeders":feeders,"nodes":nodes}
 
