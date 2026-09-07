@@ -1,7 +1,9 @@
-# EngiTools Electrical v19 — Execution Standard
+# EngiTools Electrical — Living Execution Standard
+
+> The historical filename is retained for repository continuity only. Electrical runtime/release identity is not manually versioned; deployed identity is Git/content-derived.
 
 ## Purpose
-This document is the release source-of-truth for the Electrical companion, public workflow, user panel and CAD authority pipeline. It adapts discipline-independent lessons from Mechanical v19 while preserving Electrical-specific engineering logic.
+This document is the release source-of-truth for the Electrical companion, public workflow, user panel and CAD authority pipeline. It adapts discipline-independent lessons from the Mechanical production architecture while preserving Electrical-specific engineering logic.
 
 ## Non-negotiable evidence rule
 No important engineering value may become FINAL because it is convenient, typical, or present as a UI default. FINAL values require one of: architectural evidence, explicit project design basis, engineering calculation from evidenced inputs, applicable rule with verified source/edition, manufacturer data, or explicit user input.
@@ -101,14 +103,18 @@ The Electrical companion and user panel use the same hardened runtime concepts a
 - exact INPUT_REQUIRED recovery;
 - progress/error states suitable for users rather than raw stack traces;
 - artifact identity and downloadable final file tied to the revision;
-- stale analyzer refresh only when version evidence requires it.
+- stale analyzer refresh only when build/content evidence requires it.
 
-## 13. CAD/runtime identity
-The web service routes Electrical jobs only to `/design-electrical-v19`. A successful CAD response must identify:
-- mode = `electrical-v19-authoritative`;
-- pipeline_authority = `electrical-v19`.
+## 13. CAD/runtime identity and isolated transport
+The web service routes Electrical jobs only to `/design-electrical`. A successful Electrical CAD response must identify:
+- mode = `electrical-authoritative`;
+- pipeline_authority = `electrical-authority`.
 
-CAD and site/UI release contracts are deliberately separate because the CAD Docker image contains only `cad_engine`. `/system_health` must report both contracts and composite Electrical v19 health.
+The canonical production entrypoint is `cad_engine.main:app`. In `CAD_ISOLATED_SERVICE=1` deployments, both `/design` and `/design-electrical` are exposed by the low-memory HTTP shell and executed in disposable child workers. The Electrical child operation is explicit and must not pass through Mechanical design logic. The long-lived isolated parent must not eagerly import the Electrical production stack.
+
+At the Cloudflare edge, both design mutation endpoints require `CAD_SERVICE_TOKEN` through the `x-cad-service-token` header. Health/version/status endpoints remain read-only. Because a remote CAD container does not share its filesystem with the web service, successful Electrical output must be returned in a compressed transfer envelope so the same editable DXF can be materialized by the web service.
+
+CAD and site/UI release contracts are deliberately separate. `/system_health` must report both contracts and composite Electrical health using automatic Git/content build identity rather than a manual release number.
 
 ## 14. QA and final-file rule
 Final acceptance is performed on the exact delivered file:
@@ -150,7 +156,8 @@ Do not merge/deploy until:
 - relevant shared regressions are green or proven no worse than base;
 - site and CAD release contracts PASS;
 - panel question/reload/retry/recovery tests PASS;
-- real raw project acceptance has been executed;
+- real raw project acceptance has been executed on the exact tested runtime;
+- isolated `/design-electrical` acceptance has been executed for the Cloudflare-equivalent path;
 - reference similarity PASS on that real output;
 - actual visual inspection PASS on that same output;
 - same-file reopen PASS;
