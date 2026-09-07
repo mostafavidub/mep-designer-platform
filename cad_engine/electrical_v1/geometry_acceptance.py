@@ -58,6 +58,24 @@ def finalize_placements(placements, requirements, project, architecture, rules: 
                     warnings.append(f"switch_door_side_not_confirmed:{p.equipment_id}"); continue
             if conflict: errors.append(f"door_window_conflict:{p.equipment_id}")
             else: p.status=EngineeringStatus.FINAL
+    # Placement QA must prove completeness, not only validate objects that
+    # happened to be created.  A missing door/polygon/host used to result in
+    # no EquipmentPlacement row at all and therefore could make this gate PASS
+    # while finalized requirements were silently absent from the drawing and
+    # from downstream load calculations.
+    actual_by_requirement={}
+    for placement in placements:
+        actual_by_requirement[placement.requirement_id]=actual_by_requirement.get(placement.requirement_id,0)+1
+    for req in requirements:
+        quantity=req.quantity
+        if quantity.status!=EngineeringStatus.FINAL or not isinstance(quantity.value,int) or isinstance(quantity.value,bool) or quantity.value<0:
+            continue
+        expected=int(quantity.value); actual=actual_by_requirement.get(req.id,0)
+        if actual<expected:
+            warnings.append(f"placement_count_unresolved:{req.id}:{actual}/{expected}")
+        elif actual>expected:
+            errors.append(f"placement_count_exceeds_requirement:{req.id}:{actual}/{expected}")
+
     preliminary=[p.equipment_id for p in placements if p.status!=EngineeringStatus.FINAL]
     status="FAIL" if errors else ("PRELIMINARY" if warnings or preliminary else "PASS")
     return {"status":status,"errors":errors,"warnings":warnings+[f"placement_not_final:{x}" for x in preliminary],"final":sum(p.status==EngineeringStatus.FINAL for p in placements),"total":len(placements)}
