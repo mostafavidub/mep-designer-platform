@@ -55,9 +55,12 @@ def size_networks(topology, routing, recognition, calculations, tables=None):
         system=route.get('system')
         item=item_by_id.get(edge.get('from'),{})
         load=0.0
-        if item.get('category')=='fixture':
-            load=FIXTURE_LOAD.get(item.get('type'),{}).get(system,0.0)
-        elif system in {'heating','cooling','condensate','gas'}:
+        # Size from the recognized endpoint type, not its presentation
+        # category. Proprietary architectural blocks can identify a valid WC,
+        # basin or appliance while labeling it as generic equipment; category
+        # drift must not turn a known project endpoint into a zero-load route.
+        load=FIXTURE_LOAD.get(item.get('type'),{}).get(system,0.0)
+        if not load and system in {'heating','cooling','condensate','gas'}:
             rc=room_calc.get(item.get('room_id'),{})
             load={'heating':rc.get('heating_w',0),'cooling':rc.get('cooling_w',0),'condensate':rc.get('cooling_w',0),'gas':rc.get('gas_kw',0)}[system]
             if not load:

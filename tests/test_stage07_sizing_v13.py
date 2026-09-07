@@ -22,4 +22,12 @@ class Stage07SizingTests(unittest.TestCase):
         self.assertEqual(result['segments'][0]['downstream_load'],12.0)
         self.assertEqual(result['segments'][0]['size_mm'],20)
 
+    def test_known_fixture_type_is_sized_even_when_source_category_drifted(self):
+        topology={'edges':[{'id':'VENT-E1','from':'F1'}]}
+        routing={'routes':[{'id':'R1','edge_id':'VENT-E1','system':'vent'}]}
+        recognition={'detections':[{'id':'F1','category':'equipment','type':'floor_drain','room_id':'B1'}]}
+        result=size_networks(topology,routing,recognition,{'rooms':[]})
+        self.assertEqual(result['segments'][0]['downstream_load'],2.0)
+        self.assertEqual(result['segments'][0]['size_mm'],50)
+
 if __name__=='__main__': unittest.main()
