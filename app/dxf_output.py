@@ -238,6 +238,23 @@ def _cad_error_message(response):
             return [str(value)] if value not in (None, '') else []
 
         evidence = collect(detail)
+        def collect_failures(value):
+            if isinstance(value, dict):
+                rows=[]
+                for key,child in value.items():
+                    # Warnings are useful diagnostics but must never be shown
+                    # as the reason a transaction failed.
+                    if key == 'warnings':
+                        continue
+                    if key in {'errors','failures','missing_inputs'}:
+                        rows.extend(collect(child))
+                    elif isinstance(child,(dict,list,tuple,set)):
+                        rows.extend(collect_failures(child))
+                return rows
+            if isinstance(value,(list,tuple,set)):
+                return [item for child in value for item in collect_failures(child)]
+            return []
+        failure_evidence = collect_failures(detail)
         missing = list(detail.get('missing_inputs') or [])
         for item in evidence:
             match = re.search(r'design_basis_input_required:([^\]"\'};]+)', item)
@@ -261,7 +278,7 @@ def _cad_error_message(response):
         failed_stage_qa = detail.get('failed_stage_qa')
         if isinstance(failed_stage_qa, dict):
             priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
-        failures = [item for item in evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate'))]
+        failures = [item for item in failure_evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate','cross','without'))]
         diagnostic = ' | '.join(dict.fromkeys(priority + failures))[:1600] or str(detail)[:1600]
         return f'CAD_QA_FAILURE: {diagnostic}'
     message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')

@@ -24,6 +24,16 @@ FIXTURE_LOAD = {
     'floor_drain': {'sanitary':2,'vent':2},
 }
 
+# Project design loads for gas-fired equipment.  Native architectural blocks
+# can identify an appliance without carrying engineering load metadata.  A
+# recognized endpoint must still receive the same conservative design load as
+# an endpoint created from the approved project basis; otherwise the topology
+# is valid but the following sizing stage incorrectly emits a zero-load route.
+EQUIPMENT_LOAD = {
+    'stove': {'gas': 12.0},
+    'water_heater': {'gas': 24.0},
+}
+
 
 def _size(system, load, tables):
     for threshold, size in tables.get(system, []):
@@ -50,6 +60,8 @@ def size_networks(topology, routing, recognition, calculations, tables=None):
         elif system in {'heating','cooling','condensate','gas'}:
             rc=room_calc.get(item.get('room_id'),{})
             load={'heating':rc.get('heating_w',0),'cooling':rc.get('cooling_w',0),'condensate':rc.get('cooling_w',0),'gas':rc.get('gas_kw',0)}[system]
+            if not load:
+                load=EQUIPMENT_LOAD.get(item.get('type'),{}).get(system,0.0)
         if item.get('design_load') is not None:
             load=float(item.get('design_load'))
         if system=='exhaust' and not load:
