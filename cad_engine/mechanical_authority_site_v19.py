@@ -1,7 +1,7 @@
 """Production adapter that makes v19 authoritative before legacy composition.
 
 The legacy composer remains transitional, but its exact generated DXF must pass
-the canonical generated-artifact integrity gate before any artifact is returned.
+all fail-closed release gates before any artifact is returned.
 """
 from __future__ import annotations
 import os
@@ -15,6 +15,7 @@ from .coordination_v19 import build_coordination_model
 from .mechanical_integrity import validate_generated_mechanical_integrity
 from .calculation_evidence_step8 import validate_calculation_evidence, apply_canonical_pressure
 from .required_scope_gate_step9 import validate_required_scope_support, validate_required_scope_artifact
+from .exact_dxf_gate_step10 import validate_exact_dxf_health
 from .version_manifest import active_version_manifest
 
 
@@ -127,6 +128,9 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         legacy["calculation_evidence_qa"]=calculation_evidence
         legacy["required_scope_qa"]=required_scope
         if legacy.get("status") != "PASS":
+            # Step 10 transaction rule: even a lower-layer generation failure
+            # must not leave a partial candidate at the release path.
+            _restore_or_remove_output(dst,backup)
             return legacy
 
         integrity=validate_generated_mechanical_integrity(dst,report=legacy,answers=answers)
@@ -155,9 +159,30 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
             _restore_or_remove_output(dst,backup)
             return legacy
 
+        # Step 10 is the final immutable-artifact health proof. It reopens the
+        # exact candidate, runs ezdxf audit without repair/save, proves the file
+        # hash is unchanged, and reopens it again. Any error rolls the release
+        # path back to the previous known artifact (or removes a new candidate).
+        exact_health=validate_exact_dxf_health(dst)
+        legacy["exact_dxf_health_qa"]=exact_health
+        result["phases"]["exact_dxf_health"]=exact_health
+        result["submission"]["exact_dxf_health"]=exact_health.get("status")
+        if exact_health.get("status") != "PASS":
+            legacy["status"]="FAIL"
+            legacy["stage"]="exact_dxf_health_gate"
+            legacy["submission_state"]="BLOCKED"
+            legacy["coordination_claim"]="NOT_RELEASED"
+            _restore_or_remove_output(dst,backup)
+            return legacy
+
         legacy["submission_state"]="PRE_SUBMISSION" if result["status"]=="PRE_SUBMISSION" else "SUBMISSION_READY"
         legacy["coordination_claim"]="NOT_COORDINATED" if result["status"]=="PRE_SUBMISSION" else "COORDINATED"
         return legacy
+    except Exception:
+        # Candidate generation/validation is transactional even for unexpected
+        # exceptions: never leave partial/corrupt bytes at the release path.
+        _restore_or_remove_output(dst,backup)
+        raise
     finally:
         if backup:
             backup.unlink(missing_ok=True)
