@@ -1,0 +1,25 @@
+{
+  "change_id": "SWCIS-2026-0047",
+  "summary": "Diagnose and repair the real-source architecture preservation failure without weakening release gates.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "drawing_output", "test", "documentation", "governance", "runtime"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "qa", "ui_api", "deployment", "docs", "governance", "manifest", "migration", "versioning"],
+  "impact_notes": {"cad_designer": "Investigating actual-source preserved-copy comparison.", "qa": "Preserve fail-closed architecture checks.", "ui_api": "Retain bounded geometry-free preservation rejection diagnostics."},
+  "evidence": {
+    "tests": "43 focused tests PASS: architecture reconstruction, coordinate isolation, level detection, Typical grouping, architecture preservation and web failure diagnostics. Actual-source compositor/v16 gate comparison: six failed visibility sheets before; zero after, PASS.",
+    "docs": "docs/ARCHITECTURE_FRAME_RECOVERY.md",
+    "traceability": "Existing accepted level -> source file/container -> enclosing frame -> CAD authoritative bounds -> preservation QA. No locked rule change.",
+    "version_bump": "Git build identity records the repair; no new runtime or schema version. SWCIS policy unchanged at 3.0.2.",
+    "migration": "No database schema migration. Existing saved analyses need reanalysis from their original source before the repaired frame provenance takes effect; new code alone cannot retroactively fix a stored analysis.",
+    "golden_regression": "PENDING: full real seven-project sealed regression is not available; do not deploy or claim release acceptance.",
+    "semantic_diff": "Frame-bounded levels exclude remote drawing regions; source frame geometry is preserved. Existing unframed behavior retained. Baselines not changed.",
+    "artifact_diff": "Actual-source before/after: identical input hash; visibility FAIL on six sheets before, preservation PASS on all after with zero critical/important/all missing. Exact hashes and limitations recorded in docs/ARCHITECTURE_FRAME_RECOVERY.md. No customer DXF committed.",
+    "numeric_diff": "Input pressures and rainfall are user-restated, unchanged. No new engineering numeric assumptions introduced.",
+    "contract_diff": "Additive architecture_print_frames and region_bounds_source metadata; additive server-only diagnostic summaries and failed_stage_qa mapping. Status codes unchanged.",
+    "deployment_plan": "BLOCKED pending real-source evidence, release regression, and complete canonical E2E. Preserve ephemeral staging database before any redeployment. No production merge.",
+    "rollback_plan": "Revert this isolated change via Git if regressions occur; preserve fail-closed architecture gates. Never disable gates to obtain PASS."
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 3, "score": 45, "rationale": "Architecture preservation must remain fail-closed; exact real-source evidence is pending."},
+  "waiver": null
+}

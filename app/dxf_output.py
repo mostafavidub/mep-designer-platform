@@ -322,7 +322,37 @@ def _cad_rejection_diagnostic(response):
     acceptance = detail.get('engineering_acceptance') or {}
     pipeline = detail.get('pipeline_qa') or {}
     authority = detail.get('authority_qa') or {}
+    preservation = {}
+    for key in ('architecture_preservation_qa', 'architecture_preservation_qa_after_v17'):
+        qa = detail.get(key)
+        if not isinstance(qa, dict):
+            continue
+        sheets = []
+        for row in qa.get('sheet_results') or []:
+            if not isinstance(row, dict) or row.get('status') == 'PASS':
+                continue
+            match = row.get('preservation_match') or {}
+            topology = row.get('topology') or {}
+            visibility = row.get('visibility') or {}
+            sheets.append({
+                'sheet': row.get('sheet'), 'status': row.get('status'),
+                'reason': row.get('reason'),
+                'source_count': row.get('source_architecture_count'),
+                'output_count': row.get('output_architecture_count'),
+                'match_pass': match.get('pass'),
+                'missing_count': len(match.get('missing') or []),
+                'topology_pass': topology.get('pass'),
+                'visibility_pass': visibility.get('pass'),
+            })
+        preservation[key] = {
+            'status': qa.get('status'), 'failures': qa.get('failures') or [],
+            'critical_missing_count': qa.get('critical_missing_count'),
+            'important_missing_count': qa.get('important_missing_count'),
+            'all_missing_count': qa.get('all_missing_count'),
+            'failed_sheet_count': len(sheets), 'failed_sheets': sheets[:50],
+        }
     return {
+        **preservation,
         'status_code': response.status_code,
         'code': detail.get('code'),
         'stage': detail.get('stage'),

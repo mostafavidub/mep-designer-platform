@@ -197,6 +197,11 @@ def reconstruct_dxf(path, base_result=None):
             "polygon_confidence": "high" if polygon else "label_only",
         })
 
+    # Keep explicit source sheet envelopes as evidence. Nearest-title ownership
+    # alone is unbounded and can assign remote details/construction geometry to
+    # an occupied floor, inflating its authoritative region across other sheets.
+    from cad_engine.plan_segmentation_v13 import detect_print_plans
+    result["architecture_print_frames"] = detect_print_plans(path)
     result["architecture_reconstruction_version"] = RECONSTRUCTION_VERSION
     result["architecture_primitives"] = primitives[:50000]
     result["architecture_primitive_counts"] = dict(layer_counts)
@@ -264,6 +269,19 @@ def enrich_auto(auto, analysis):
         source_file = str(profile.get("source_file") or "")
         source_type = str(profile.get("source_type") or "")
         source_name = str(profile.get("source_name") or "")
+        frame_candidates = []
+        for file in (analysis or {}).get("files") or []:
+            if source_file and str(file.get("file") or "") != source_file:
+                continue
+            if source_type not in ("", "layout") or source_name not in ("", "Model"):
+                continue
+            for frame in file.get("architecture_print_frames") or []:
+                role = "ROOF_SUPPORT" if profile.get("roof") else "PRIMARY_FLOOR"
+                if frame.get("mechanical_role") == role and _inside(frame.get("bounds"), title):
+                    frame_candidates.append(frame)
+        # Only an unambiguous, physically enclosing architectural sheet has
+        # authority. Do not guess between overlapping frames or promote details.
+        frame_bounds = frame_candidates[0]["bounds"] if len(frame_candidates) == 1 else None
         peer_profiles = [
             p for p in profiles if p is not profile and p.get("title_point")
             and (not source_file or str(p.get("source_file") or "") == source_file)
@@ -282,7 +300,9 @@ def enrich_auto(auto, analysis):
             p = tuple(room.get("label_point") or [])
             if len(p) != 2:
                 continue
-            if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
+            if frame_bounds and not _inside(frame_bounds, p):
+                continue
+            if not frame_bounds and other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
                 continue
             assigned_rooms.append(room)
         # Partition reconstructed primitives by the same nearest-title rule as
@@ -295,7 +315,9 @@ def enrich_auto(auto, analysis):
             p = tuple(primitive.get("centroid") or [])
             if len(p) != 2:
                 continue
-            if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
+            if frame_bounds and not _inside(frame_bounds, p):
+                continue
+            if not frame_bounds and other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
                 continue
             assigned_primitives.append(primitive)
         spatial_points = [tuple(r["label_point"]) for r in assigned_rooms]
@@ -303,7 +325,7 @@ def enrich_auto(auto, analysis):
             b = primitive.get("bounds") or []
             if len(b) == 4:
                 spatial_points.extend(((b[0], b[1]), (b[2], b[3])))
-        region = _expanded_bounds(spatial_points, pad_ratio=0.02)
+        region = list(frame_bounds) if frame_bounds else _expanded_bounds(spatial_points, pad_ratio=0.02)
         if region is None:
             # Roofs may have no room labels; use a bounded vicinity around title
             # rather than inventing a building polygon.
@@ -314,6 +336,7 @@ def enrich_auto(auto, analysis):
         region_rounded = [round(v, 6) for v in region]
         profile["level_authority_id"] = authority_id
         profile["region_bounds"] = region_rounded
+        profile["region_bounds_source"] = "source_print_frame" if frame_bounds else "reconstructed_primitives"
         profile["local_transform"] = transform
         level_rows.append({
             "name": profile.get("name"), "roof": bool(profile.get("roof")),

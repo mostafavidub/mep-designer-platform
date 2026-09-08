@@ -8,6 +8,45 @@ from app.architecture_reconstruction_v1 import reconstruct_dxf, enrich_auto
 
 
 class ArchitectureReconstructionV1Tests(unittest.TestCase):
+    def test_explicit_frame_prevents_remote_geometry_from_inflating_level(self):
+        profile = {'name': 'ground', 'title_point': [10, 1], 'source_file': 'a.dxf',
+                   'source_type': 'layout', 'source_name': 'Model'}
+        data = {'file': 'a.dxf', 'architecture_print_frames': [
+            {'bounds': [0, 0, 21, 30], 'mechanical_role': 'PRIMARY_FLOOR'}],
+            'architecture_primitives': [
+                {'kind': 'wall', 'centroid': [10, 10], 'bounds': [1, 2, 19, 25]},
+                {'kind': 'wall', 'centroid': [2000, 4000], 'bounds': [0, 0, 4000, 8000]}],
+            'architecture_rooms': [{'type': 'kitchen', 'label_point': [10, 10]}]}
+        result = enrich_auto({'level_profiles': [profile]}, {'files': [data]})
+        level = result['architecture_model']['levels'][0]
+        self.assertEqual(level['region_bounds'], [0, 0, 21, 30])
+        self.assertEqual(len(level['walls']), 1)
+        self.assertEqual(len(level['rooms']), 1)
+        self.assertEqual(profile['region_bounds_source'], 'source_print_frame')
+
+    def test_foreign_file_or_support_frame_cannot_bound_occupied_level(self):
+        for foreign, role in [('b.dxf', 'PRIMARY_FLOOR'), ('a.dxf', 'EXCLUDE')]:
+            with self.subTest(foreign=foreign, role=role):
+                profile = {'name': 'ground', 'title_point': [10, 1], 'source_file': 'a.dxf'}
+                result = enrich_auto({'level_profiles': [profile]}, {'files': [
+                    {'file': foreign, 'architecture_print_frames': [
+                        {'bounds': [0, 0, 21, 30], 'mechanical_role': role}]},
+                    {'file': 'a.dxf', 'architecture_primitives': [
+                        {'kind': 'wall', 'centroid': [10, 10], 'bounds': [1, 2, 19, 25]}]}]})
+                self.assertEqual(profile['region_bounds_source'], 'reconstructed_primitives')
+
+    def test_enclosing_frame_owns_room_even_when_adjacent_title_is_closer(self):
+        profiles = [{'name': 'first', 'title_point': [1, 1], 'source_file': 'a.dxf'},
+                    {'name': 'second', 'title_point': [22, 1], 'source_file': 'a.dxf'}]
+        result = enrich_auto({'level_profiles': profiles}, {'files': [{
+            'file': 'a.dxf', 'architecture_print_frames': [
+                {'bounds': [0, 0, 21, 30], 'mechanical_role': 'PRIMARY_FLOOR'},
+                {'bounds': [21, 0, 42, 30], 'mechanical_role': 'PRIMARY_FLOOR'}],
+            'architecture_rooms': [{'type': 'kitchen', 'label_point': [20, 10]}]}]})
+        first, second = result['architecture_model']['levels']
+        self.assertEqual(len(first['rooms']), 1)
+        self.assertEqual(len(second['rooms']), 0)
+
     def _write_architecture(self):
         tmp = tempfile.NamedTemporaryFile(suffix='.dxf', delete=False)
         tmp.close(); path = Path(tmp.name)
