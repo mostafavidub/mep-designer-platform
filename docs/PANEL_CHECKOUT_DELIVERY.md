@@ -7,6 +7,14 @@ Change: SWCIS-2026-panel-checkout. Governance: SWCIS 3.1.0.
 Prepare no longer queues a job. Only authoritative checkout queues after payment.
 Public handoff stores a hashed, expiring token bound on claim to one panel account.
 Phone-only login remains by explicit user instruction; phone ownership is NOT verified.
+The normalized phone in `panel_customer_profiles` is the returning-customer identity
+lookup. Login reuses that account, including its wallet and ownership, before it may
+create a new internal account. If historical duplication leaves exactly one account
+with project, checkout, ledger, activity, or non-zero wallet history, that established
+account wins. Multiple established accounts fail closed for explicit support
+reconciliation; login never guesses between two financially active identities.
+The admin account list applies the same resolution and shows one canonical row per
+phone, so an empty historical shell no longer appears as a second customer.
 Customer, admin and legacy admin-data readers use the same server Wallet records.
 Admin adjustments require the existing admin cookie at the Sites proxy, same-origin
 requests, the private bridge credential, a positive integer amount, a reason and an

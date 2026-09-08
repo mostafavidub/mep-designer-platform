@@ -144,9 +144,36 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
 
     def require_account(db, uid):
         user = db.query(legacy.User).filter(legacy.User.id == uid).with_for_update().first()
-        if not user or not user.email.endswith("@panel.local"):
+        if not user or not db.get(Profile, uid):
             raise HTTPException(401)
         return user
+
+    def account_history_score(db, uid):
+        """Identify the established owner without treating an empty shell as history."""
+        wallet = db.query(Wallet).filter(Wallet.user_id == uid).first()
+        return sum((
+            db.query(legacy.Project).filter(legacy.Project.user_id == uid).count(),
+            db.query(Checkout).filter(Checkout.user_id == uid).count(),
+            db.query(Ledger).filter(Ledger.user_id == uid).count(),
+            db.query(Activity).filter(Activity.user_id == uid).count(),
+            int(bool(wallet and wallet.balance)),
+        ))
+
+    def user_for_phone(db, phone):
+        """Resolve a returning phone to its profile-backed account before creating one."""
+        profiles = db.query(Profile).filter(Profile.phone == phone).order_by(Profile.user_id).all()
+        if profiles:
+            established = [p for p in profiles if account_history_score(db, p.user_id)]
+            if len(established) > 1:
+                raise HTTPException(409, "این شماره به چند حساب فعال متصل است؛ برای یکپارچه‌سازی حساب‌ها با پشتیبانی تماس بگیرید.")
+            if established:
+                return db.get(legacy.User, established[0].user_id)
+            generated_email = f"phone-{digest(phone)}@panel.local"
+            generated = db.query(legacy.User).filter(legacy.User.email == generated_email).first()
+            if generated and any(p.user_id == generated.id for p in profiles):
+                return generated
+            return db.get(legacy.User, profiles[0].user_id)
+        return db.query(legacy.User).filter(legacy.User.email == f"phone-{digest(phone)}@panel.local").first()
 
     def order_payload(db, order):
         project = db.get(legacy.Project, order.project_id)
@@ -221,7 +248,16 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 db.commit()
             elif body.get('action') != 'state':
                 raise HTTPException(400)
-            profiles = db.query(Profile).order_by(Profile.user_id).all()
+            profiles = []
+            for phone, in db.query(Profile.phone).distinct().order_by(Profile.phone).all():
+                try:
+                    profiles.append(db.get(Profile, user_for_phone(db, phone).id))
+                except HTTPException as exc:
+                    if exc.status_code != 409:
+                        raise
+                    # Keep genuinely active duplicates visible to administrators
+                    # so they can be reconciled; only empty shells are collapsed.
+                    profiles.extend(db.query(Profile).filter(Profile.phone == phone).order_by(Profile.user_id).all())
             accounts = [state(db, p.user_id) for p in profiles]
             return {'users': [{'id': account_id(p.user_id), 'mobile': p.phone, 'name': p.phone,
                                'wallet': a['balance'], 'active': True, 'admin': False, 'email': ''}
@@ -239,10 +275,11 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
         with legacy.Session() as db:
             begin(db)
             email = f"phone-{digest(phone)}@panel.local"
-            user = db.query(legacy.User).filter(legacy.User.email == email).first()
+            user = user_for_phone(db, phone)
             if not user:
                 user = legacy.User(email=email)
                 db.add(user); db.flush()
+            if not db.query(Wallet).filter(Wallet.user_id == user.id).first():
                 db.add(Wallet(user_id=user.id, balance=0))
             if not db.get(Profile, user.id):
                 db.add(Profile(user_id=user.id, phone=phone))
