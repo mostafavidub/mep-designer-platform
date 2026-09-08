@@ -1,0 +1,34 @@
+{
+  "change_id": "SWCIS-2026-0049",
+  "summary": "Keep every durable customer project visible in administration regardless of payment state.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "deployment", "manifest", "migration", "versioning"],
+  "impact_notes": {
+    "ui_api": "Admin account state returns all durable customer projects instead of hiding unpaid legacy projects.",
+    "qa": "Contract regression proves both paid and unpaid durable projects remain visible to administrators.",
+    "docs": "Change request records the admin visibility contract.",
+    "governance": "SWCIS 4.0.0 closure recorded.",
+    "deployment": "Deploy the backend after required checks and verify the admin project inventory.",
+    "manifest": "Automatic build identity remains authoritative; project payload schema is unchanged.",
+    "migration": "Verified not affected because no schema or stored rows change.",
+    "versioning": "Automatic Git build identity records this behavior-preserving patch."
+  },
+  "evidence": {
+    "traceability": ["No engineering Rule ID changes."],
+    "tests": ["Focused admin project visibility contract plus full repository regression."],
+    "docs": ["Change request records the non-destructive visibility correction."],
+    "version_bump": ["Automatic Git build identity."],
+    "migration": ["No schema or stored-row migration."],
+    "golden_regression": ["Full automated regression; CAD semantics unchanged."],
+    "semantic_diff": ["Admin inventory includes unpaid durable customer projects."],
+    "artifact_diff": ["No CAD artifact change."],
+    "numeric_diff": ["No engineering numeric change."],
+    "contract_diff": ["Admin project list no longer filters by the paid flag."],
+    "deployment_plan": ["Merge the protected change, deploy backend, and verify admin inventory."],
+    "rollback_plan": ["Redeploy the prior approved Git commit; stored project rows remain intact."]
+  },
+  "risk": {"likelihood": 1, "severity": 2, "detectability": 1, "score": 2, "rationale": "The change removes a presentation filter and does not mutate project rows or payment state."},
+  "waiver": null
+}

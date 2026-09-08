@@ -337,7 +337,10 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             return {'users': [{'id': account_id(p.user_id), 'mobile': p.phone, 'name': p.phone,
                                'wallet': a['balance'], 'active': True, 'admin': False, 'email': ''}
                               for p, a in zip(profiles, accounts)],
-                    'projects': [p for a in accounts for p in a['projects'] if p.get('paid')],
+                    # Administration is an inventory view, not a payment report.
+                    # Keep durable legacy/draft projects visible even when they
+                    # do not have a paid checkout record.
+                    'projects': [p for a in accounts for p in a['projects']],
                     'transactions': [t for a in accounts for t in a['transactions']]}
 
     @app.post("/internal/panel/customer/session")

@@ -60,6 +60,28 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_admin_inventory_includes_unpaid_durable_customer_projects(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-panel-token": "checkout-test-only-secret"}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    auth = {**headers, 'x-customer-session': login['session']}
+    project = {"id": f"PRJ-ADMIN-{uuid4().hex[:12]}", "title": "پروژه منتقل‌شده",
+               "service": "طراحی مکانیک", "status": "نیازمند اصلاح", "progress": 20,
+               "amount": 1540000, "paid": False}
+
+    imported = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [project]})
+    admin = browser.post('/internal/panel/admin/accounts', headers=headers, json={'action': 'state'})
+
+    assert imported.status_code == 200, imported.text
+    assert admin.status_code == 200, admin.text
+    visible = [row for row in admin.json()['projects'] if row['id'] == project['id']]
+    assert len(visible) == 1
+    assert visible[0]['owner'] == login['userId']
+    assert visible[0]['status'] == 'نیازمند اصلاح'
+
+
 def test_account_reconciliation_is_audited_and_idempotent(monkeypatch):
     phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
     with legacy.Session() as db:
