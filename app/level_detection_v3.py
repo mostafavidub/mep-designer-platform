@@ -5,13 +5,14 @@ proven room/typical logic, but only occupied-floor/roof evidence may become an
 active level. Detail, section, elevation, parking, slope, lintel and similar
 support drawings are retained as diagnostics and can never become a floor.
 """
+import hashlib
 import math
 import re
 from collections import defaultdict
 
 from . import auto_inference_v2 as v2
 
-LEVEL_DETECTION_VERSION = "multi-evidence-v3.1"
+LEVEL_DETECTION_VERSION = "multi-evidence-v3.2"
 
 NON_LEVEL_MARKERS = (
     "detail", "دیتیل", "section", "مقطع", "elevation", "نما",
@@ -91,6 +92,7 @@ def _collect_candidates(files):
     rows = []
     for file_info in files or []:
         labels = file_info.get("text_labels") or []
+        source_file = str(file_info.get("file") or "")
         title_points = defaultdict(list)
         for title_item in labels:
             if _explicit_level_title(title_item.get("text") or ""):
@@ -135,6 +137,7 @@ def _collect_candidates(files):
                 "basis": basis,
                 "source_type": source_type,
                 "source_name": item.get("source_name"),
+                "source_file": source_file,
                 "title_text": _norm(item.get("text")),
                 "title_point": [point[0], point[1]],
                 "nearby_room_labels": nearby,
@@ -155,6 +158,7 @@ def _placeholder_profile(candidate):
         "title_point": candidate.get("title_point"),
         "source_type": candidate.get("source_type"),
         "source_name": candidate.get("source_name"),
+        "source_file": candidate.get("source_file"),
         "room_counts": {},
         "recognized_room_labels": 0,
         "wet_fixture_candidate": False,
@@ -170,6 +174,19 @@ def _placeholder_profile(candidate):
         "level_detection_status": "confirmed-from-explicit-title",
     }
 
+
+
+def _authority_id(profile):
+    point = profile.get("title_point") or [None, None]
+    payload = "|".join((
+        _norm(profile.get("source_file")),
+        _norm(profile.get("source_type")),
+        _norm(profile.get("source_name")),
+        _norm(profile.get("name")),
+        str(point[0] if len(point) > 0 else ""),
+        str(point[1] if len(point) > 1 else ""),
+    ))
+    return "LVL-" + hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12].upper()
 
 def infer_architecture_facts(analysis, discipline):
     auto = v2.infer_architecture_facts(analysis, discipline)
@@ -204,6 +221,9 @@ def infer_architecture_facts(analysis, discipline):
         if candidate:
             evidence.append(candidate["basis"])
             profile["level_confidence"] = max(0.95, candidate["confidence"])
+            profile["source_file"] = candidate.get("source_file") or profile.get("source_file")
+            profile["source_type"] = candidate.get("source_type") or profile.get("source_type")
+            profile["source_name"] = candidate.get("source_name") or profile.get("source_name")
             if candidate.get("nearby_room_labels", 0) == 0:
                 profile["level_detection_status"] = "confirmed-from-explicit-title"
                 restored.append(candidate["name"])
@@ -211,6 +231,7 @@ def infer_architecture_facts(analysis, discipline):
             profile["level_confidence"] = 0.90 if profile.get("recognized_room_labels") else 0.65
         profile["level_evidence"] = evidence
         profile.setdefault("level_detection_status", "confirmed")
+        profile["level_authority_id"] = _authority_id(profile)
 
     weak = []
     for candidate in candidates:
@@ -218,6 +239,7 @@ def infer_architecture_facts(analysis, discipline):
             continue
         if candidate["active"]:
             new_profile = _placeholder_profile(candidate)
+            new_profile["level_authority_id"] = _authority_id(new_profile)
             profiles.append(new_profile)
             profile_map[candidate["name"]] = new_profile
             restored.append(candidate["name"])
