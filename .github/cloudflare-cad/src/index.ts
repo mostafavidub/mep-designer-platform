@@ -34,7 +34,8 @@ function sameSecret(left: string, right: string): boolean {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname === "/design") {
+    const protectedDesignPaths = new Set(["/design", "/design-electrical"]);
+    if (protectedDesignPaths.has(url.pathname)) {
       if (!env.CAD_SERVICE_TOKEN) {
         return Response.json({detail: "CAD edge authentication is not configured"}, {status: 503});
       }

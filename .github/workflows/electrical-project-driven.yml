@@ -1,0 +1,59 @@
+name: Electrical Project-Driven Tests
+
+on:
+  push:
+    branches: [feature/electrical-project-driven-v1, feature/electrical-v19-panel-parity]
+  pull_request:
+    branches: [main]
+
+jobs:
+  electrical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: sqlite:///./test_ci.db
+      CAD_DESIGNER_URL: http://127.0.0.1:9999
+      DATA_DIR: /tmp/engitools-electrical-ci
+      CAD_OUTPUT_DIR: /tmp/engitools-electrical-cad
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r cad_engine/requirements.txt
+          mkdir -p "$DATA_DIR" "$CAD_OUTPUT_DIR"
+      - name: Run electrical project-driven gates
+        run: |
+          python -m unittest tests.test_electrical_project_driven_v1 -v
+          python -m unittest tests.test_electrical_architecture_evidence_safety -v
+          python -m unittest tests.test_electrical_authority_v15 -v
+          python -m unittest tests.test_electrical_release_gate -v
+          python -m unittest tests.test_electrical_construction_qa -v
+          python -m unittest tests.test_electrical_submission_quality -v
+          python -m unittest tests.test_electrical_basis_contract_v19 -v
+          python -m unittest tests.test_electrical_panel_parity_v19 -v
+          python -m unittest tests.test_electrical_runtime_v19 -v
+          python -m unittest tests.test_electrical_supply_recovery -v
+          python -m unittest tests.test_electrical_riser_topology -v
+          python -m unittest tests.test_electrical_cloudflare_transport -v
+          python -m unittest tests.test_architecture_reconstruction_v1 -v
+          python -m unittest tests.test_architecture_topology_v1 -v
+          python -m unittest tests.test_level_detection_v3 -v
+          python -m unittest tests.test_system_typical_v1 -v
+      - name: Package exact acceptance runtime
+        if: success()
+        run: |
+          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile railway.json .github/cloudflare-cad 2>/dev/null || \
+          zip -qr /tmp/electrical-acceptance-runtime.zip cad_engine app standards data tests requirements.txt Dockerfile .github/cloudflare-cad
+      - name: Publish exact acceptance runtime
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: electrical-acceptance-runtime-${{ github.sha }}
+          path: /tmp/electrical-acceptance-runtime.zip
+          if-no-files-found: error
+          retention-days: 7

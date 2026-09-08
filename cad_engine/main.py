@@ -5,7 +5,11 @@ their compatibility migration is complete; launchers must import only this path.
 """
 import os
 
-if os.getenv("CAD_ISOLATED_SERVICE", "").strip().lower() in {"1", "true", "yes"}:
+_ISOLATED = os.getenv("CAD_ISOLATED_SERVICE", "").strip().lower() in {"1", "true", "yes"}
+
+if _ISOLATED:
+    # The isolated shell owns both Mechanical and Electrical HTTP routes. Heavy
+    # discipline-specific stacks are imported only inside the disposable worker.
     from .isolated_service import app
 else:
     import ctypes
@@ -38,3 +42,8 @@ else:
     @app.get("/mechanical/status")
     def mechanical_status():
         status=release_contract_status();status["production_entrypoint"]="cad_engine.main:app";status["build"]=build_identity();return status
+
+    # Electrical remains on the same canonical entrypoint in non-isolated
+    # deployments. In isolated mode the shell above exposes equivalent routes.
+    from .electrical_api import register_electrical
+    register_electrical(app)

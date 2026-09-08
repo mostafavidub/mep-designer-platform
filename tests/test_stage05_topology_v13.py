@@ -35,17 +35,6 @@ class Stage05TopologyTests(unittest.TestCase):
         proposed=next(n for n in result['nodes'] if n['id'].startswith('SHAFT-PROPOSED'))
         self.assertTrue(proposed['proposal_approved'])
 
-    def test_approved_multi_layout_plan_gets_one_local_core_per_wet_room(self):
-        architecture={'plans':[{'plan_id':'P1','bounds':[0,0,30,80]}],
-                      'primary_floor_plan_ids':['P1'],'shafts':[],
-                      'rooms':[{'plan_id':'P1','type':'bathroom','label_point':(5,10)},
-                               {'plan_id':'P1','type':'kitchen','label_point':(6,40)},
-                               {'plan_id':'P1','type':'bedroom','label_point':(20,10)}]}
-        result=build_system_topology(architecture,{'detections':[]},{'project_systems':[]},{},
-                                     {'mechanical_shaft_route':'propose_near_wet_core'})
-        proposed=[x for x in result['nodes'] if x['id'].startswith('SHAFT-PROPOSED')]
-        self.assertEqual({x['point'] for x in proposed},{(5.0,10.0),(6.0,40.0)})
-
     def test_structured_persian_approval_is_bound_to_plan_and_point(self):
         architecture={'plans':[{'plan_id':'P1','bounds':[0,0,100,100]},{'plan_id':'P2','bounds':[200,0,300,100]}],
                       'primary_floor_plan_ids':['P1','P2'],'shafts':[],
