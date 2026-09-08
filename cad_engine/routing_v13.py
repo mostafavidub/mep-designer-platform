@@ -1,6 +1,7 @@
 """Stage 6 — orthogonal routing constrained to the owning print plan."""
 from __future__ import annotations
 import heapq
+import math
 
 def _ccw(a,b,c): return (c[1]-a[1])*(b[0]-a[0])>(b[1]-a[1])*(c[0]-a[0])
 def _intersects(a,b,c,d):
@@ -8,14 +9,10 @@ def _intersects(a,b,c,d):
     return _ccw(a,c,d)!=_ccw(b,c,d) and _ccw(a,b,c)!=_ccw(a,b,d)
 def _route_candidates(start,end):
     x1,y1=start;x2,y2=end
-    if start==end:
-        # A local endpoint may coincide with the proposed vertical core. Keep
-        # the true endpoints and draw a measurable orthogonal connection loop.
-        d=.20
-        return (
-            [start,(x1+d,y1),(x1+d,y1+d),(x1,y1+d),end],
-            [start,(x1-d,y1),(x1-d,y1-d),(x1,y1-d),end],
-        )
+    # Never manufacture measurable geometry for a zero-span topology edge.
+    # A coincident endpoint/core needs real project coordinates (INPUT_REQUIRED)
+    # rather than the historical 0.2-unit closed loop workaround.
+    if start==end:return ()
     def clean(points):
         out=[]
         for p in points:
@@ -32,10 +29,9 @@ def _score(points,walls,terminal_penetration=False):
     for segment_index,(a,b) in enumerate(segments):
         for wall in walls:
             if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])):
-                # Reaching a real/proposed vertical core can require entering
-                # its enclosing shaft wall.  Every intersection on the final
-                # terminal segment is an explicit coordinated penetration;
-                # crossings on earlier route segments remain hard clashes.
+                # Reaching a real/approved vertical core can require entering
+                # its enclosing shaft wall. Intersections on the final segment
+                # are explicit coordinated penetrations; earlier crossings are clashes.
                 if terminal_penetration and segment_index==len(segments)-1:
                     penetrations+=1
                 else:clashes+=1
@@ -108,17 +104,32 @@ def _open_space_route(start,end,bounds,walls,step=.25):
             heapq.heappush(queue,(new+heuristic,new,nxt))
     return None
 
+def _valid_point(value):
+    try:
+        x,y=float(value[0]),float(value[1])
+        if not (math.isfinite(x) and math.isfinite(y)):return None
+        return x,y
+    except (TypeError,ValueError,IndexError):return None
+
 def route_topology(architecture,topology):
     node_by_id={n['id']:n for n in topology.get('nodes') or []}; walls=architecture.get('walls') or []
     plan_bounds={p['plan_id']:p['bounds'] for p in architecture.get('plans') or []};routes=[];rejected=[]
     for edge in topology.get('edges') or []:
         start=node_by_id.get(edge.get('from'));end=node_by_id.get(edge.get('to'));pid=edge.get('plan_id')
-        if not start or not end or not start.get('point') or not end.get('point'):continue
+        if not start or not end:
+            rejected.append({'edge_id':edge.get('id'),'reason':'MISSING_TOPOLOGY_NODE'});continue
+        start_point=_valid_point(start.get('point'));end_point=_valid_point(end.get('point'))
+        if start_point is None or end_point is None:
+            rejected.append({'edge_id':edge.get('id'),'reason':'INVALID_TOPOLOGY_POINT'});continue
         if start.get('plan_id')!=end.get('plan_id') or (pid and start.get('plan_id')!=pid):
             rejected.append({'edge_id':edge['id'],'reason':'CROSS_PLAN_TOPOLOGY'});continue
+        if end.get('category')=='vertical' and end.get('provisional') and not end.get('proposal_approved'):
+            rejected.append({'edge_id':edge['id'],'reason':'UNAPPROVED_VERTICAL_CORE'});continue
+        if abs(start_point[0]-end_point[0])+abs(start_point[1]-end_point[1]) <= 1e-9:
+            rejected.append({'edge_id':edge['id'],'reason':'DEGENERATE_TOPOLOGY_SPAN'});continue
         bounds=plan_bounds.get(pid)
         plan_walls=[w for w in walls if _wall_in_bounds(w,bounds)]
-        candidates=[pts for pts in _route_candidates(tuple(start['point']),tuple(end['point'])) if all(_inside(p,bounds) for p in pts)]
+        candidates=[pts for pts in _route_candidates(start_point,end_point) if all(_inside(p,bounds) for p in pts)]
         if not candidates:
             rejected.append({'edge_id':edge['id'],'reason':'ROUTE_OUTSIDE_PLAN'});continue
         terminal_penetration=end.get('category')=='vertical'
@@ -126,15 +137,16 @@ def route_topology(architecture,topology):
         (clashes,length,penetrations),points=ranked[0]
         used_astar=False
         if clashes:
-            open_route=_open_space_route(tuple(start['point']),tuple(end['point']),bounds,plan_walls)
+            open_route=_open_space_route(start_point,end_point,bounds,plan_walls)
             if open_route:
                 points=open_route;clashes,length,penetrations=_score(points,plan_walls,terminal_penetration);used_astar=True
         routes.append({'id':f'ROUTE-{len(routes)+1:03d}','edge_id':edge['id'],'system':edge['system'],'plan_id':pid,'points':points,
                        'length':round(length,3),'wall_crossings':clashes,
                        'coordinated_terminal_penetrations':penetrations,
                        'routing':'orthogonal_open_space_astar' if used_astar else 'orthogonal_plan_isolated'})
+    reasons={reason:sum(1 for row in rejected if row.get('reason')==reason) for reason in sorted({row.get('reason') for row in rejected})}
     return {'version':'geometry-routing-v13.12','routes':routes,'rejected':rejected,
             'quality':{'routed_edges':len(routes),'wall_crossings':sum(r['wall_crossings'] for r in routes),
                        'coordinated_terminal_penetrations':sum(r['coordinated_terminal_penetrations'] for r in routes),
-                       'cross_plan_routes':0,'rejected_edges':len(rejected),
+                       'cross_plan_routes':0,'rejected_edges':len(rejected),'rejection_reasons':reasons,
                        'all_orthogonal':all(all(a[0]==b[0] or a[1]==b[1] for a,b in zip(r['points'],r['points'][1:])) for r in routes)}}

@@ -17,6 +17,10 @@ REQUIRED_CAPABILITIES = {
     "blind_seal_before_reference":"cad_engine.submission_qa_v19",
     "seven_project_strict_golden_regression":"cad_engine.submission_qa_v19",
     "architecture_only_pre_submission_regression":"cad_engine.submission_qa_v19",
+    "generated_dxf_frame_level_identity_gate":"cad_engine.mechanical_integrity",
+    "generated_dxf_topology_equipment_reconciliation_gate":"cad_engine.mechanical_integrity",
+    "generated_dxf_calculation_detail_riser_gate":"cad_engine.mechanical_integrity",
+    "non_destructive_final_delivery_acceptance":"cad_engine.final_delivery_gate_step12",
     "production_v19_version_locked_adapter":"cad_engine.mechanical_authority_site_v19",
 }
 
