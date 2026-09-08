@@ -239,14 +239,20 @@ def install(workflow_module, planner_module):
         return original_make_family(definition, key, levels, groups)
 
     def predict_system_typical(scope):
-        token = _ACTIVE_GROUPS.set((scope or {}).get("system_typical_groups") or {})
+        current_scope = scope or {}
+        # Backward-compatibility is allowed only when the new contract is
+        # genuinely absent. An explicitly present empty mapping/list remains
+        # authoritative and fail-closed; absence must not be conflated with
+        # an explicit negative system-specific Typical decision.
+        active_groups = current_scope.get("system_typical_groups") if "system_typical_groups" in current_scope else None
+        token = _ACTIVE_GROUPS.set(active_groups)
         try:
             result = original_predict(scope)
             result["system_typical_groups_applied"] = {
                 family: [dict(group) for group in groups]
-                for family, groups in ((scope or {}).get("system_typical_groups") or {}).items()
+                for family, groups in (active_groups or {}).items()
             }
-            result["system_typical_version"] = (scope or {}).get("system_typical_version") or SYSTEM_TYPICAL_VERSION
+            result["system_typical_version"] = current_scope.get("system_typical_version") or SYSTEM_TYPICAL_VERSION
             return result
         finally:
             _ACTIVE_GROUPS.reset(token)
