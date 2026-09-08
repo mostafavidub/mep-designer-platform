@@ -13,6 +13,7 @@ from .mechanical_authority_site_v17 import design_mechanical_authority_site as _
 from .mechanical_pipeline_v19 import run_v19_pipeline
 from .coordination_v19 import build_coordination_model
 from .mechanical_integrity import validate_generated_mechanical_integrity
+from .calculation_evidence_step8 import validate_calculation_evidence, apply_canonical_pressure
 from .version_manifest import active_version_manifest
 
 
@@ -57,6 +58,20 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     contract_errors=_runtime_contract_errors(answers)
     if contract_errors:
         return {"status":"FAIL","stage":"v19_runtime_contract_gate","v19_qa":{"status":"FAIL","errors":contract_errors}}
+
+    # Step 8 runs before coordination or any CAD designer. A project pressure
+    # may enter calculations only when it is explicit, finite, positive and not
+    # tagged as an assumption/default/benchmark value. The canonical numeric
+    # aliases are written only after this contract passes.
+    calculation_evidence=validate_calculation_evidence(answers)
+    if calculation_evidence.get("status") in {"FAIL","INPUT_REQUIRED"}:
+        return {
+            "status":"FAIL","stage":"calculation_evidence_gate",
+            "calculation_evidence_qa":calculation_evidence,
+            "input_required":{"status":"INPUT_REQUIRED","missing_inputs":calculation_evidence.get("missing_inputs") or []},
+        }
+    answers=apply_canonical_pressure(answers,calculation_evidence)
+
     payload=_v19_payload(answers,plan_analysis)
     coordination=build_coordination_model(payload)
     missing_structure=coordination["status"]=="INPUT_REQUIRED" and set(coordination.get("missing_inputs") or {}) <= {"STRUCTURAL_MODEL","RCP_MODEL","SLAB","CEILING"}
@@ -68,6 +83,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
             "operating_profile":"ARCHITECTURE_ONLY_PRE_SUBMISSION",
             "phases":{
                 "coordination":coordination,
+                "calculation_evidence":calculation_evidence,
                 "manufacturer":{"status":"PRE_SUBMISSION","selection_type":"DESIGN_ENVELOPE","claim":"NOT_MANUFACTURER_CONFIRMED"},
                 "documentation":{"status":"PRE_SUBMISSION","source":"LEGACY_GRAPH_COMPOSER","claim":"REQUIRES_COORDINATION_REVALIDATION"},
                 "golden":{"status":"NOT_APPLICABLE_TO_PRE_SUBMISSION"},
@@ -78,6 +94,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         }
     else:
         result=run_v19_pipeline(payload)
+        (result.setdefault("phases", {}))["calculation_evidence"]=calculation_evidence
     if result["status"] not in {"PASS","PRE_SUBMISSION"}:
         missing=[]; coordination=(result.get("phases") or {}).get("coordination") or {}; model=coordination.get("model") or {}
         missing.extend(model.get("missing_inputs") or coordination.get("missing_inputs") or [])
@@ -85,12 +102,14 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         if result.get("blocked_at")=="documentation": missing.append("PARAMETRIC_NETWORK_DOCUMENTATION")
         if result.get("blocked_at")=="golden": missing.append("V19_RELEASE_GOLDEN_PASS")
         return {"status":"FAIL","stage":"v19_preflight_gate","v19_qa":result,
+                "calculation_evidence_qa":calculation_evidence,
                 "input_required":{"status":"INPUT_REQUIRED","missing_inputs":sorted(set(missing))}}
 
     backup=_snapshot_existing_output(dst)
     try:
         legacy=_design_v17(src,dst,answers=answers,plan_analysis=plan_analysis)
         legacy["v19_qa"]=result; legacy["executed_versions"]=active_version_manifest(); legacy["pipeline_authority"]="mechanical-v19"
+        legacy["calculation_evidence_qa"]=calculation_evidence
         if legacy.get("status") != "PASS":
             return legacy
 
