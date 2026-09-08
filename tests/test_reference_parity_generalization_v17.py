@@ -12,6 +12,35 @@ def ctx(pid, systems, levels=("GROUND","LEVEL-01","LEVEL-02"), use="residential"
     return ProjectContext(project_id=pid,building_use=use,levels=list(levels),active_systems=list(systems),routes=routes)
 
 class ReferenceParityV17Tests(unittest.TestCase):
+    def test_production_plan_ids_resolve_real_routes_without_mutation(self):
+        inputs={'architecture':{'plans':[{'plan_id':'P1','level':'طبقه اول'}]},
+                'routing':{'routes':[{'id':'R1','system':'cold_water','plan_id':'P1'}]},
+                'hvac':{'routes':[{'id':'H1','system':'heating_flow','plan_id':'P1'}]}}
+        report={'documentation_inputs':inputs,'composition':{'manifest':[
+            {'family':'WATER','level':'طبقه اول'}, {'family':'HEATING','level':'طبقه اول'}]}}
+        context=project_context_from_report(report)
+        package=build_documentation_package(context)
+        from cad_engine.documentation_enhancer_v17 import validate_riser_integrity
+        self.assertEqual(validate_riser_integrity(package,True)['status'],'PASS')
+        self.assertEqual(package['riser']['reconciliation']['mapped_branch_count'],2)
+        self.assertEqual([r['id'] for r in context.routes],['R1','H1'])
+        self.assertNotIn('level',inputs['routing']['routes'][0])
+
+    def test_unknown_or_ambiguous_plan_cannot_silently_drop_branch(self):
+        for plans in ([],[{'plan_id':'P2','level':'L1'},{'plan_id':'P2','level':'L2'}]):
+            with self.subTest(plans=plans):
+                report={'documentation_inputs':{'architecture':{'plans':plans},'routing':{'routes':[
+                    {'system':'water','level':'L1'}, {'system':'water','plan_id':'P2'}]}},
+                    'composition':{'manifest':[{'family':'WATER','level':'L1'}]}}
+                package=build_documentation_package(project_context_from_report(report))
+                self.assertEqual(package['status'],'FAIL')
+                self.assertEqual(len(package['riser']['reconciliation']['missing']),1)
+
+    def test_missing_production_routes_still_blocks_riser(self):
+        from cad_engine.documentation_enhancer_v17 import validate_riser_integrity
+        context=project_context_from_report({'composition':{'manifest':[{'family':'WATER','level':'L1'}]}})
+        self.assertEqual(validate_riser_integrity(build_documentation_package(context),True)['status'],'INPUT_REQUIRED')
+
     def setUp(self):
         self.p=ctx("P",["SANITARY_VENT","WATER","HEATING","GAS","SPLIT_AC","EXHAUST","RAINWATER"])
 

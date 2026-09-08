@@ -322,6 +322,17 @@ def _cad_rejection_diagnostic(response):
     acceptance = detail.get('engineering_acceptance') or {}
     pipeline = detail.get('pipeline_qa') or {}
     authority = detail.get('authority_qa') or {}
+    def qa_summary(qa, depth=0):
+        if not isinstance(qa, dict) or depth > 2:
+            return {}
+        result = {key: qa[key] for key in ('status', 'policy') if key in qa}
+        for key in ('errors', 'failures', 'missing_inputs'):
+            if isinstance(qa.get(key), list):
+                result[key] = [str(item)[:300] for item in qa[key][:30]]
+        for key in ('riser_integrity', 'detail_materialization'):
+            if isinstance(qa.get(key), dict):
+                result[key] = qa_summary(qa[key], depth + 1)
+        return result
     preservation = {}
     for key in ('architecture_preservation_qa', 'architecture_preservation_qa_after_v17'):
         qa = detail.get(key)
@@ -356,6 +367,7 @@ def _cad_rejection_diagnostic(response):
         'status_code': response.status_code,
         'code': detail.get('code'),
         'stage': detail.get('stage'),
+        'failed_stage_qa': qa_summary(detail.get('failed_stage_qa')),
         'missing_inputs': detail.get('missing_inputs') or [],
         'engineering_acceptance': {
             'status': acceptance.get('status'),

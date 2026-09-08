@@ -667,6 +667,16 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             if near:_,wallp,angle,_,_=near;p=_map_point(wallp,srcb,target);rot=math.degrees(angle)
             else:p=_map_point(srcp,srcb,target);rot=0
             msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","rotation":rot,"lineweight":35});a=math.radians(rot+90);end=_airflow_endpoint(p,a,target);_add_arrow(msp,p,end,"ENGITOOLS-M-HVAC-AIRFLOW");tag=e["id"].replace("AC-I","AC");cap=e.get("capacity_btu_h");tx=min(max(p[0]+1.05,target[0]+.2),target[2]-4.5);ty=min(max(p[1]+.85,target[1]+.5),target[3]-.4);msp.add_line(p,(tx-.10,ty-.10),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25});note=f"IDU | {tag} | WALL-MOUNTED SPLIT AC"+(f" | {cap} BTU/h PRELIM." if cap else "")+"\nCOOLING & HEATING | DRAIN DN25 S=1% MIN";t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.11});t.dxf.insert=(tx,ty);t.dxf.width=4.3;ac_units.append({"tag":tag,"odu_tag":tag.replace("AC","ODU"),"level":board.level,"sheet":board.code,"equipment_type":"WALL-MOUNTED SPLIT AC","mode":"COOLING & HEATING","capacity_status":"PRELIMINARY","refrigerant_size_source":"SELECTED MANUFACTURER TABLE","condensate_nominal_diameter_mm":25,"condensate_min_slope_percent":1.0,"block":True,"airflow":True,"callout":True,"refrigerant":True,"condensate":True,"odu_destination_note":True,"schedule_match":True})
+        elif board.family=="SPLIT_AC" and kind=="split_outdoor" and not _find_roof_plan(pipeline["architecture"]):
+            # Use the real plan-local proposed placement when no authoritative
+            # roof exists. Do not leave schedule equipment without geometry.
+            p=_map_point(srcp,srcb,target)
+            msp.add_blockref("ENGI_AC_OUTDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","lineweight":35})
+            tx=min(max(p[0]+.75,target[0]+.2),target[2]-3.0)
+            ty=min(max(p[1]+.65,target[1]+.8),target[3]-.3)
+            msp.add_line(p,(tx,ty),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT"})
+            t=msp.add_mtext(f"ODU | {e['id']} | SERVES {e.get('serves') or 'IDU'}\nPLAN-EDGE PROPOSAL — FINAL LOCATION REQUIRES COORDINATION",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.07})
+            t.dxf.insert=(tx,ty);t.dxf.width=2.8
         elif board.family=="HEATING" and kind=="radiator":
             p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.055});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":
@@ -795,24 +805,40 @@ def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
     _draw_schedule(doc,msp,board,pipeline,authority)
 
 
+def _new_composition_document(source_doc, plans):
+    """Import selected architecture into a resource-bearing block, not output modelspace.
+
+    The source remains immutable. Issued modelspace starts empty and receives
+    only composed boards, so delivery never needs to delete the original site
+    drawing or blank per-sheet layouts after generation.
+    """
+    from ezdxf.addons import Importer
+    doc=ezdxf.new(max(source_doc.dxfversion,'AC1015'))
+    doc.header['$INSUNITS']=source_doc.header.get('$INSUNITS',0)
+    source_block=doc.blocks.new_anonymous_block()
+    selected={}
+    for plan in plans:
+        for entity in _entities_in_bounds(source_doc.modelspace(),plan['bounds']):
+            selected[entity.dxf.handle]=entity
+    importer=Importer(source_doc,doc)
+    importer.import_entities(selected.values(),target_layout=source_block)
+    importer.finalize()
+    return doc,source_block
+
+
 def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict, answers: dict) -> dict:
-    doc=ezdxf.readfile(src)
-    if doc.dxfversion < 'AC1015':
-        doc.dxfversion = 'AC1015'
-    msp=doc.modelspace();manifest_rows=_layout_manifest(authority);boards=_boards(manifest_rows);arch=pipeline["architecture"];src_msp=doc.modelspace();project_name=_answer(answers,"project_name","name",default="پروژه تأسیسات مکانیکی")
-    existing_layouts=[l.name for l in doc.layouts]
-    for row in manifest_rows:
-        if row["code"] not in existing_layouts:
-            try:doc.layouts.new(row["code"])
-            except Exception:pass
-    shared_north=_shared_architectural_north(doc, arch.get("plans") or [])
+    source_doc=ezdxf.readfile(src)
+    arch=pipeline["architecture"]
+    doc,src_msp=_new_composition_document(source_doc,arch.get("plans") or [])
+    msp=doc.modelspace();manifest_rows=_layout_manifest(authority);boards=_boards(manifest_rows);project_name=_answer(answers,"project_name","name",default="پروژه تأسیسات مکانیکی")
+    shared_north=_shared_architectural_north(source_doc, arch.get("plans") or [])
     copy_failures=[];overlay_reports=[];detail_index=0;north_records={}
     for row in manifest_rows:
         b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
         if b.family in PLAN_FAMILIES:
             plan=_find_roof_plan(arch) if b.family=="ROOF" or b.level=="ROOF" else _find_plan_for_level(arch,b.level)
             if plan:
-                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
+                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(source_doc,plan) or shared_north;north_records[b.code]=north
                 if b.family=="ROOF" or (b.family=="SPLIT_AC" and b.level=="ROOF"):
                     overlay_reports.append({"sheet":b.code,"roof_outdoor_units":_draw_roof_hvac_equipment(doc,msp,b,pipeline)})
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
@@ -854,7 +880,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
     # Avoid a global recursive bbox cache over the full source plus every
     # generated sheet.  Source architecture is already bounded by the
     # reconstruction stage and generated content is constrained to boards.
-    envelopes=[tuple(arch.get("bounds") or ())]+[tuple(board.bounds) for board in boards.values()]
+    envelopes=[tuple(board.bounds) for board in boards.values()]
     envelopes=[box for box in envelopes if len(box)==4 and all(math.isfinite(float(v)) for v in box)]
     if envelopes:
         min_x=min(float(box[0]) for box in envelopes);min_y=min(float(box[1]) for box in envelopes)

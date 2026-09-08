@@ -17,6 +17,20 @@ class _Response:
 
 
 class MechanicalErrorSurfaceTests(unittest.TestCase):
+    def test_nested_documentation_failure_diagnostic_is_bounded(self):
+        class Rejection:
+            status_code=422
+            def json(self):
+                return {'detail':{'failed_stage_qa':{'status':'INPUT_REQUIRED',
+                    'riser_integrity':{'status':'INPUT_REQUIRED','missing_inputs':['PLAN_BRANCH:G1:GAS']},
+                    'documentation_package':{'private_geometry':'PRIVATE'},
+                    'errors':['x'*500]*100}}}
+        qa=dxf_output._cad_rejection_diagnostic(Rejection())['failed_stage_qa']
+        self.assertEqual(qa['riser_integrity']['missing_inputs'],['PLAN_BRANCH:G1:GAS'])
+        self.assertEqual(len(qa['errors']),30)
+        self.assertEqual(len(qa['errors'][0]),300)
+        self.assertNotIn('PRIVATE',str(qa))
+
     def test_preservation_diagnostic_reports_failed_sheet_without_source_geometry(self):
         class Rejection:
             status_code = 422

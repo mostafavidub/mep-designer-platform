@@ -8,6 +8,12 @@ from tools.swcis_validate import ROOT, classify, contracts, impact_errors, repos
 
 
 class SwcisGovernanceTests(unittest.TestCase):
+    def test_documentation_adapter_has_complete_impact_classification(self):
+        affected, types, unclassified = classify(['cad_engine/reference_parity_engine_v17.py'], contracts())
+        self.assertFalse(unclassified)
+        self.assertIn('drawing_output', types)
+        self.assertLessEqual({'detail_riser', 'qa', 'manifest', 'ui_api', 'deployment'}, affected)
+
     def _request(self, directory, body):
         path = Path(directory) / "request.yaml"
         path.write_text(json.dumps(body))
