@@ -14,12 +14,35 @@ def payload():
             "golden_result":{"status":"PASS"}}
 
 
+def pmm_v3():
+    return {"schema":"project-mechanical-model/v3","traceability_contract":{"policy":"NO_ORPHAN_ENGINEERING_OUTPUT"}}
+
+
 class MechanicalPipelineV19Tests(unittest.TestCase):
     def test_contract_loads_every_capability(self):
         status=release_contract_status(); self.assertEqual(status["status"],"PASS"); self.assertEqual(status["required_count"],status["passed_count"])
 
     def test_full_pipeline_passes_only_in_order(self):
         result=run_v19_pipeline(payload()); self.assertEqual(result["status"],"PASS"); self.assertTrue(result["submission"]["release_allowed"])
+
+    def test_pmm_v3_requires_calculation_rows_and_exact_output_identity(self):
+        value=payload(); value["project_mechanical_model"]=pmm_v3()
+        result=run_v19_pipeline(value)
+        self.assertEqual(result["blocked_at"],"documentation")
+        self.assertEqual(result["status"],"FAIL")
+        value["network_graph"]["edges"][0]["calc_id"]="CALC-WATER-1"
+        value["calculation_rows"]=[{"calc_id":"CALC-WATER-1"}]
+        result=run_v19_pipeline(value)
+        self.assertEqual(result["status"],"PASS")
+        self.assertTrue(result["phases"]["documentation"]["calculation_reconciliation"]["zero_mismatch"])
+
+    def test_pmm_v3_orphan_calculation_blocks_release(self):
+        value=payload(); value["project_mechanical_model"]=pmm_v3()
+        value["network_graph"]["edges"][0]["calc_id"]="CALC-WATER-1"
+        value["calculation_rows"]=[{"calc_id":"CALC-OTHER"}]
+        result=run_v19_pipeline(value)
+        self.assertEqual(result["blocked_at"],"documentation")
+        self.assertFalse(result["submission"]["release_allowed"])
 
     def test_missing_structural_rcp_stops_before_manufacturer(self):
         value=payload(); value.pop("coordination_inputs")
