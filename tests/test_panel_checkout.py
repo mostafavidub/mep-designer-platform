@@ -60,6 +60,77 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_phone_login_reuses_established_profile_account(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    with legacy.Session() as db:
+        user = legacy.User(email=f"returning-{uuid4().hex}@example.test")
+        db.add(user); db.flush()
+        uid = user.id
+        db.add(app.state.panel_checkout.Profile(user_id=uid, phone=phone))
+        db.add(app.state.commercial['Wallet'](user_id=uid, balance=7654321))
+        db.add(legacy.Project(user_id=uid, name='existing customer project'))
+        db.commit()
+
+    response = browser.post('/internal/panel/customer/session',
+                            headers={'x-panel-token': 'checkout-test-only-secret'},
+                            json={'phone': phone})
+
+    assert response.status_code == 200, response.text
+    assert response.json()['userId'] == f'CUST-{uid}'
+    assert response.json()['balance'] == 7654321
+    with legacy.Session() as db:
+        assert db.query(app.state.panel_checkout.Profile).filter_by(phone=phone).count() == 1
+
+
+def test_phone_login_and_admin_hide_empty_duplicate_account(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {'x-panel-token': 'checkout-test-only-secret'}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    with legacy.Session() as db:
+        established = legacy.User(email=f"established-{uuid4().hex}@example.test")
+        empty_duplicate = legacy.User(email=f"phone-{digest(phone)}@panel.local")
+        db.add_all((established, empty_duplicate)); db.flush()
+        established_uid = established.id
+        db.add_all((
+            app.state.panel_checkout.Profile(user_id=established.id, phone=phone),
+            app.state.panel_checkout.Profile(user_id=empty_duplicate.id, phone=phone),
+            app.state.commercial['Wallet'](user_id=established.id, balance=9000),
+            app.state.commercial['Wallet'](user_id=empty_duplicate.id, balance=0),
+            legacy.Project(user_id=established.id, name='retained project'),
+        ))
+        db.commit()
+
+    response = browser.post('/internal/panel/customer/session', headers=headers, json={'phone': phone})
+    admin = browser.post('/internal/panel/admin/accounts', headers=headers, json={'action': 'state'})
+
+    assert response.status_code == 200, response.text
+    assert response.json()['userId'] == f'CUST-{established_uid}'
+    assert [u['id'] for u in admin.json()['users'] if u['mobile'] == phone] == [f'CUST-{established_uid}']
+
+
+def test_phone_login_rejects_two_established_accounts(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    with legacy.Session() as db:
+        for balance in (10, 20):
+            user = legacy.User(email=f"duplicate-{uuid4().hex}@example.test")
+            db.add(user); db.flush()
+            db.add(app.state.panel_checkout.Profile(user_id=user.id, phone=phone))
+            db.add(app.state.commercial['Wallet'](user_id=user.id, balance=balance))
+        db.commit()
+
+    response = browser.post('/internal/panel/customer/session',
+                            headers={'x-panel-token': 'checkout-test-only-secret'},
+                            json={'phone': phone})
+
+    assert response.status_code == 409
+    assert 'چند حساب فعال' in response.json()['detail']
+
+
 def test_admin_adjustment_syncs_with_customer_and_is_idempotent(flow):
     browser, auth, uid, pid, token, order = flow
     body = {'action': 'wallet_adjustment', 'userId': f'CUST-{uid}', 'amount': 10000,
