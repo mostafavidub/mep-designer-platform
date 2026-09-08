@@ -83,6 +83,23 @@ def test_account_reconciliation_is_audited_and_idempotent(monkeypatch):
         assert len(activities) == 1
 
 
+def test_customer_projects_are_durable_across_sessions(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-panel-token": "checkout-test-only-secret"}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    auth = {**headers, 'x-customer-session': login['session']}
+    project = {"id": "PRJ-LEGACY-001", "owner": "USR-OLD", "title": "پروژه قدیمی",
+               "service": "طراحی مکانیک", "status": "در حال بررسی", "progress": 20, "amount": 1200000}
+
+    imported = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [project]})
+    assert imported.status_code == 200, imported.text
+    assert imported.json()['projects'][0]['owner'] == login['userId']
+    second_login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    assert [p['id'] for p in second_login['projects']] == ['PRJ-LEGACY-001']
+
+
 def test_phone_login_reuses_established_profile_account(monkeypatch):
     monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
     browser = TestClient(app, raise_server_exceptions=False)
