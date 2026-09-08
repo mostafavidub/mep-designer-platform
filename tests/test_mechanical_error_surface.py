@@ -17,6 +17,27 @@ class _Response:
 
 
 class MechanicalErrorSurfaceTests(unittest.TestCase):
+    def test_preservation_diagnostic_reports_failed_sheet_without_source_geometry(self):
+        class Rejection:
+            status_code = 422
+
+            def json(self):
+                return {'detail': {'stage': 'architecture_preservation_gate',
+                    'architecture_preservation_qa': {'status': 'FAIL',
+                        'failures': ['topology'], 'all_missing_count': 1,
+                        'sheet_results': [{'sheet': 'M-101', 'status': 'FAIL',
+                            'preservation_match': {'pass': False, 'missing': [
+                                {'source': {'bbox': [123, 456, 789, 1000], 'text': 'PRIVATE'}}]},
+                            'topology': {'pass': False}, 'visibility': {'pass': True}},
+                            {'sheet': 'M-102', 'status': 'PASS'}]}}}
+        diagnostic = dxf_output._cad_rejection_diagnostic(Rejection())
+        qa = diagnostic['architecture_preservation_qa']
+        self.assertEqual(qa['failed_sheet_count'], 1)
+        self.assertEqual(qa['failed_sheets'][0]['missing_count'], 1)
+        self.assertFalse(qa['failed_sheets'][0]['topology_pass'])
+        self.assertNotIn('PRIVATE', str(diagnostic))
+        self.assertNotIn('bbox', str(diagnostic))
+
     def test_active_dxf_flow_translates_422_instead_of_raise_for_status(self):
         message = dxf_output._cad_error_message(_Response())
         self.assertIn('فشار مبنای آب ورودی', message)
