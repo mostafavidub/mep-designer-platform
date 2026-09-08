@@ -60,6 +60,67 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_account_snapshot_exposes_one_revisioned_authoritative_progress(flow):
+    browser, auth, uid, pid, token, order = flow
+    fund(uid, order['amount'])
+    paid = pay(browser, auth, pid, order)
+    assert paid.status_code == 200, paid.text
+
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.status = 'ready'
+        project.current_revision = 1
+        project.analysis = {
+            **(project.analysis or {}),
+            'design_progress': {
+                'stage': 'completed',
+                'label': 'stale label',
+                'percent': 0,
+                'updated_at': '2026-09-09T00:00:00+00:00',
+            },
+        }
+        revision = db.query(legacy.Revision).filter_by(project_id=pid).one()
+        revision.revision_no = 1
+        revision.status = 'ready'
+        revision.pdf_path = '/tmp/authoritative-output.dxf'
+        db.commit()
+
+    first = browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['projects'][0]['engine']
+    second = browser.post('/internal/panel/admin/accounts', headers={'x-panel-token': 'checkout-test-only-secret'}, json={'action': 'state'}).json()
+    admin = next(row['engine'] for row in second['projects'] if row['id'] == order['id'])
+
+    for snapshot in (first, admin):
+        assert snapshot['state_revision'] == 1
+        assert snapshot['state_updated_at'] == '2026-09-09T00:00:00+00:00'
+        assert snapshot['progress'] == 100
+        assert snapshot['output_ready'] is True
+
+
+def test_imported_engine_project_is_rehydrated_from_server_not_stale_browser_payload(flow):
+    browser, auth, uid, pid, token, order = flow
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        from app.design_progress import set_project_progress
+        set_project_progress(project, 'engine_designing')
+        db.commit()
+    legacy_row = {
+        'id': f'PRJ-IMPORTED-{uuid4().hex[:8]}',
+        'title': 'نسخه محلی قدیمی',
+        'service': 'طراحی مکانیک',
+        'status': 'در حال پردازش',
+        'progress': 0,
+        'amount': 10,
+        'engineProjectId': pid,
+        'engineProjectToken': order['engine']['project_token'],
+    }
+    imported = browser.post('/internal/panel/customer/import', headers=auth, json={'projects': [legacy_row]})
+    assert imported.status_code == 200, imported.text
+    hydrated = next(row for row in imported.json()['projects'] if row['id'] == legacy_row['id'])
+    assert hydrated['engine']['engine_project_id'] == pid
+    assert hydrated['engine']['state_revision'] == 0
+    assert hydrated['engine']['progress'] == 20
+
+
 def test_admin_inventory_includes_unpaid_durable_customer_projects(monkeypatch):
     monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
     browser = TestClient(app, raise_server_exceptions=False)
