@@ -65,6 +65,31 @@ class LevelDetectionV3Tests(unittest.TestCase):
         self.assertEqual(v3._explicit_level_title('Mezzanine Floor Plan')[0], 'نیم طبقه')
         self.assertEqual(v3._explicit_level_title('Basement Plan')[0], 'زیرزمین')
 
+    def test_non_level_support_titles_are_never_level_authority(self):
+        for title in (
+            'پلان شیب بندی بام', 'پلان جانمایی پارکینگ', 'DETAIL-1',
+            'پلان نعل درگاه تیپ طبقات اول تا پنجم', 'Section A-A',
+        ):
+            self.assertIsNone(v3._explicit_level_title(title), title)
+
+    def test_slope_plan_does_not_create_phantom_roof_level(self):
+        analysis = {
+            'files': [{
+                'text_labels': [
+                    {'text': 'پلان معماری طبقه همکف', 'x': 0, 'y': 0, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'فروشگاه', 'x': 3, 'y': 4, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'توالت', 'x': 6, 'y': 4, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'پلان شیب بندی بام', 'x': 100, 'y': 0, 'source_type': 'layout', 'source_name': 'Model'},
+                ],
+                'fixture_counts': {}, 'roof_drain_count': 0,
+            }]
+        }
+        auto = v3.infer_architecture_facts(analysis, 'mechanical')
+        names = [x['name'] for x in auto['levels']]
+        self.assertNotIn('بام', names)
+        self.assertTrue(auto['rejected_non_level_titles'])
+        self.assertIn('non_level_support_drawings_rejected_from_level_authority', auto['level_detection_diagnostics'])
+
 
 if __name__ == '__main__':
     unittest.main()
