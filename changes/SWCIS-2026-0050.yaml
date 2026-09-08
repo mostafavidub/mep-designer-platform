@@ -2,7 +2,7 @@
   "change_id": "SWCIS-2026-0050",
   "summary": "Add a privacy-safe semantic truth set for project 10, make PMM the stable-ID source of truth, propagate identity into calculations, and enforce output reconciliation.",
   "requester": "project-owner",
-  "change_types": ["schema", "calculation", "drawing_output", "test", "documentation", "governance"],
+  "change_types": ["schema", "calculation", "drawing_output", "ui_api", "test", "documentation", "governance"],
   "changed_rule_ids": ["MEP-INPUT-001", "MEP-SIZE-001", "MEP-SUBMIT-001"],
   "impacted_modules": ["pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
   "impact_notes": {
@@ -17,7 +17,7 @@
     "detail_riser": "Riser/schedule identity contract consumes canonical calculation IDs.",
     "qa": "Add fail-closed truth, identity and cross-output reconciliation checks.",
     "manifest": "Automatic Git build identity remains authoritative.",
-    "ui_api": "No public field removal; additive PMM data only.",
+    "ui_api": "No public field removal; additive PMM v3 data remains JSON-safe and backward compatible.",
     "docs": "Document truth-set and traceability contracts.",
     "versioning": "Schema addition is backward compatible.",
     "migration": "Existing PMM v2 readers remain valid; v3 adds fields only.",
@@ -34,7 +34,7 @@
     "semantic_diff": ["Stable identities and evidence provenance become explicit; engineering formulas remain unchanged."],
     "artifact_diff": ["No customer DXF is committed; output reconciliation is metadata/QA only."],
     "numeric_diff": ["No numeric formula or design constant change."],
-    "contract_diff": ["PMM adds entity registry/traceability; calculations add calc_id/source_pmm_ids; documentation validates identity reconciliation."],
+    "contract_diff": ["PMM adds entity registry/traceability; calculations add calc_id/source_pmm_ids; documentation validates identity reconciliation; existing public PMM fields remain present."],
     "deployment_plan": ["Merge only after required CI passes; deploy canonical runtime only in a later approved release."],
     "rollback_plan": ["Revert the protected commit; additive fields have no destructive migration."]
   },
