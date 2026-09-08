@@ -55,7 +55,9 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt -r cad_engine/requirements.txt
-      - name: Run full legacy suite for visibility
+      - name: Install full-suite test runner
+        run: pip install pytest
+      - name: Run full unittest and pytest suite
         env:
           DATABASE_URL: sqlite:///./test_ci.db
           DATA_DIR: /tmp/engitools-ci-data
@@ -63,4 +65,4 @@ jobs:
           TMPDIR: /tmp/engitools-ci-tmp
           MPLBACKEND: Agg
           CAD_DESIGNER_URL: http://127.0.0.1:9999
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
+        run: python -m pytest tests -q
