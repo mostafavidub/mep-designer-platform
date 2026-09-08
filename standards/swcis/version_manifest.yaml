@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.0.0",
+  "standard_version": "4.1.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-09-04",
+  "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.1.0", "date": "2026-09-09", "summary": "Add explicit PMM source-of-truth classification, semantic reference-truth governance, and PMM-to-calculation-to-plan/riser/schedule traceability coverage without weakening release gates."},
     {"version": "4.0.0", "date": "2026-09-08", "summary": "Owner removes publication dependency on seven private reference projects; automated regressions and per-artifact engineering checks retained."},
     {"version": "3.1.0", "date": "2026-09-08", "summary": "Explicit sole-owner approval replaces mandatory independent review; automated, engineering and branch integrity gates retained."},
     {"version": "3.0.3", "date": "2026-09-08", "summary": "Classify existing app/static customer UI path and reconcile prose version; no gate removed or weakened."},
