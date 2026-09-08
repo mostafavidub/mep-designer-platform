@@ -25,6 +25,13 @@ class MechanicalPipelineV19Tests(unittest.TestCase):
         value=payload(); value.pop("coordination_inputs")
         result=run_v19_pipeline(value); self.assertEqual(result["blocked_at"],"coordination"); self.assertNotIn("manufacturer",result["phases"])
 
+    def test_known_invalid_equipment_geometry_stops_before_manufacturer(self):
+        value=payload(); value['equipment_entities']=[{'id':'AC-I-1','kind':'split_indoor','plan_id':'L1','point':[2,2]}]
+        result=run_v19_pipeline(value)
+        self.assertEqual(result['blocked_at'],'equipment_integrity')
+        self.assertEqual(result['status'],'INPUT_REQUIRED')
+        self.assertNotIn('manufacturer',result['phases'])
+
     def test_envelope_stops_before_documentation(self):
         value=payload(); value["manufacturer_catalogue"]=[]
         result=run_v19_pipeline(value); self.assertEqual(result["blocked_at"],"manufacturer"); self.assertNotIn("documentation",result["phases"])
