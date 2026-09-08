@@ -72,8 +72,8 @@ def _level_for(point, levels, row):
                 return exact[0]
         return None
 
-    # Coordinate isolation v1 should normally provide authority. This fallback
-    # is only for safe legacy single-file callers/tests.
+    # Coordinate isolation should normally provide authority. This fallback is
+    # only for safe legacy single-file callers/tests.
     candidate_levels = list(levels)
     files = {level_source_file(level) for level in levels if level_source_file(level)}
     if source_file:
@@ -105,7 +105,10 @@ def _level_for(point, levels, row):
         return None
     titled = [level for level in candidate_levels if level.get('title_point')]
     if titled:
-        ranked = sorted((math.dist(point, level['title_point']), level) for level in titled)
+        ranked = sorted(
+            ((math.dist(point, level['title_point']), level) for level in titled),
+            key=lambda item: item[0],
+        )
         if len(ranked) > 1 and abs(ranked[1][0] - ranked[0][0]) <= max(1e-6, ranked[0][0] * 0.01):
             return None
         if ranked[0][0] <= max(_region_diag(ranked[0][1]) * 1.5, 5.0):
