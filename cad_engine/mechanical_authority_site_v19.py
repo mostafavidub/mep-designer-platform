@@ -33,7 +33,10 @@ def _v19_payload(answers: dict, plan_analysis: dict) -> dict:
         "manufacturer_catalogue":contract.get("manufacturer_catalogue") or [],
         "detail_specs":contract.get("detail_specs") or [],
         "network_graph":contract.get("network_graph") or {},
-        "golden_result":{"status":os.getenv("MECHANICAL_V19_GOLDEN_STATUS","MISSING")},
+        # Step 11: release Golden evidence must be supplied explicitly by the
+        # v19 input contract. An environment variable or status-only PASS can
+        # no longer grant release authority.
+        "golden_result":contract.get("golden_result") or contract.get("golden_release_evidence"),
     }
 
 
@@ -116,7 +119,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         missing.extend(model.get("missing_inputs") or coordination.get("missing_inputs") or [])
         if result.get("blocked_at")=="manufacturer": missing.append("OFFICIAL_MANUFACTURER_DATASHEET")
         if result.get("blocked_at")=="documentation": missing.append("PARAMETRIC_NETWORK_DOCUMENTATION")
-        if result.get("blocked_at")=="golden": missing.append("V19_RELEASE_GOLDEN_PASS")
+        if result.get("blocked_at")=="golden": missing.append("SEVEN_PROJECT_GOLDEN_RELEASE_EVIDENCE")
         return {"status":"FAIL","stage":"v19_preflight_gate","v19_qa":result,
                 "calculation_evidence_qa":calculation_evidence,"required_scope_qa":required_scope,
                 "input_required":{"status":"INPUT_REQUIRED","missing_inputs":sorted(set(missing))}}
