@@ -72,11 +72,13 @@ class CalculationEvidenceStep8Tests(unittest.TestCase):
         self.assertEqual(result["stage"],"calculation_evidence_gate")
         self.assertEqual(result["calculation_evidence_qa"]["status"],"INPUT_REQUIRED")
 
+    @patch("cad_engine.mechanical_authority_site_v19.validate_exact_dxf_health")
     @patch("cad_engine.mechanical_authority_site_v19.validate_generated_mechanical_integrity")
     @patch("cad_engine.mechanical_authority_site_v19._design_v17")
-    def test_active_runtime_passes_only_canonical_project_pressure_to_designer(self,designer,integrity):
+    def test_active_runtime_passes_only_canonical_project_pressure_to_designer(self,designer,integrity,health):
         designer.return_value={"status":"PASS"}
         integrity.return_value={"status":"PASS","errors":[],"warnings":[],"exact_file_reopened":True}
+        health.return_value={"status":"PASS","errors":[],"first_reopen":True,"second_reopen":True,"audit_error_count":0,"read_only_hash_preserved":True}
         answers=_water_answers(_runtime_contract=active_version_manifest(),_v19_input_contract={},water_inlet_pressure_bar="2.75 bar")
         result=design_mechanical_authority_site(Path("architecture.dxf"),Path("mechanical.dxf"),answers=answers,plan_analysis={})
         self.assertEqual(result["status"],"PASS",result)
@@ -85,6 +87,7 @@ class CalculationEvidenceStep8Tests(unittest.TestCase):
         self.assertEqual(passed["water_pressure"],2.75)
         self.assertEqual(passed["_water_pressure_evidence"]["status"],"PROJECT_INPUT")
         self.assertEqual(result["calculation_evidence_qa"]["status"],"PASS")
+        self.assertEqual(result["exact_dxf_health_qa"]["status"],"PASS")
 
 
 if __name__=="__main__":
