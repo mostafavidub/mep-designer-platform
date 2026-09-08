@@ -90,6 +90,25 @@ class LevelDetectionV3Tests(unittest.TestCase):
         self.assertTrue(auto['rejected_non_level_titles'])
         self.assertIn('non_level_support_drawings_rejected_from_level_authority', auto['level_detection_diagnostics'])
 
+    def test_active_level_gets_stable_authority_id_and_source_file(self):
+        analysis = {
+            'files': [{
+                'file': 'architecture-a.dxf',
+                'text_labels': [
+                    {'text': 'پلان معماری طبقه همکف', 'x': 0, 'y': 0, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'آشپزخانه', 'x': 3, 'y': 4, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'توالت', 'x': 6, 'y': 4, 'source_type': 'layout', 'source_name': 'Model'},
+                ],
+                'fixture_counts': {}, 'roof_drain_count': 0,
+            }]
+        }
+        first = v3.infer_architecture_facts(analysis, 'mechanical')
+        second = v3.infer_architecture_facts(analysis, 'mechanical')
+        a = first['level_profiles'][0]; b = second['level_profiles'][0]
+        self.assertEqual(a['source_file'], 'architecture-a.dxf')
+        self.assertTrue(a['level_authority_id'].startswith('LVL-'))
+        self.assertEqual(a['level_authority_id'], b['level_authority_id'])
+
 
 if __name__ == '__main__':
     unittest.main()
