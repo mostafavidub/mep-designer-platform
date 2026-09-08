@@ -1,57 +1,43 @@
-"""Ordered v19 mechanical design pipeline. Later phases cannot run around gates."""
-from __future__ import annotations
+"""Ordered fail-closed orchestration for the v19 release phases."""
 from .coordination_v19 import build_coordination_model, route_25d
 from .equipment_representation_v14 import validate_equipment_integrity
 from .manufacturer_selector_v19 import select_equipment
-from .parametric_documentation_v19 import generate_parametric_documentation
+from .parametric_documentation_v19 import generate_detail, generate_riser_from_network, documentation_gate
 from .submission_qa_v19 import submission_gate, validate_golden_release_evidence
 
 
 def run_v19_pipeline(payload: dict) -> dict:
-    phases={}; blocked=None
-    coordination=build_coordination_model(payload)
-    phases["coordination"]=coordination
-    if coordination["status"]!="PASS":
-        blocked="coordination"
-        return _result(phases,blocked)
-    route=route_25d(payload.get("route_request") or {},coordination["model"] if "model" in coordination else coordination)
-    phases["routing_2_5d"]=route
-    if route["status"]!="PASS":
-        blocked="routing_2_5d"
-        return _result(phases,blocked)
-
-    # Step 5: if physical equipment entities are available at this boundary,
-    # they must be geometrically and relationally coherent before selection.
-    equipment_entities=payload.get("equipment_entities")
-    if equipment_entities is not None:
-        equipment_qa=validate_equipment_integrity(equipment_entities)
-        phases["equipment_integrity"]=equipment_qa
-        if equipment_qa["status"]!="PASS":
-            blocked="equipment_integrity"
-            return _result(phases,blocked)
-
-    selection=select_equipment(payload.get("equipment_requirements") or {},payload.get("manufacturer_catalogue") or [])
+    phases={}
+    model=build_coordination_model(payload)
+    route=route_25d(payload.get("route_request") or {},model) if model["status"] == "PASS" else {"status":"INPUT_REQUIRED","selected":None,"missing_inputs":model["missing_inputs"]}
+    phases["coordination"]={"status":"PASS" if model["status"] == route["status"] == "PASS" else route["status"],"model":model,"route":route}
+    if phases["coordination"]["status"] != "PASS": return _blocked(phases,"coordination")
+    # When physical equipment geometry is present, it is authoritative and must
+    # pass before a real manufacturer model can be selected. Absence of this
+    # optional geometry does not fabricate a layout; selection remains a generic
+    # calculation/catalogue operation and final artifact integrity still gates release.
+    if "equipment_entities" in payload:
+        integrity=validate_equipment_integrity(payload.get("equipment_entities") or [],
+                                               scope_bounds=payload.get("equipment_scope_bounds") or {},
+                                               require_split_pairs=bool(payload.get("require_split_pairs",True)))
+        phases["equipment_integrity"]=integrity
+        if integrity["status"] != "PASS": return _blocked(phases,"equipment_integrity")
+    selection=select_equipment(payload.get("equipment_requirements") or {},payload.get("manufacturer_catalogue") or [],route)
     phases["manufacturer"]=selection
-    if selection["status"]!="PASS":
-        blocked="manufacturer"
-        return _result(phases,blocked)
-    documentation=generate_parametric_documentation(payload.get("detail_specs") or [],payload.get("network_graph") or {})
-    phases["documentation"]=documentation
-    if documentation["status"]!="PASS":
-        blocked="documentation"
-        return _result(phases,blocked)
+    if selection["status"] != "PASS": return _blocked(phases,"manufacturer")
+    details=[generate_detail(x) for x in payload.get("detail_specs") or []]
+    riser=generate_riser_from_network(payload.get("network_graph") or {})
+    phases["documentation"]={**documentation_gate(details,riser),"details":details,"riser":riser}
+    if phases["documentation"]["status"] != "PASS": return _blocked(phases,"documentation")
 
-    # Step 11: never trust a caller-provided {status: PASS}. The pipeline
-    # independently verifies the locked seven-project evidence against the
-    # repository baseline and the exact current build identity.
-    golden=validate_golden_release_evidence(payload.get("golden_result"))
-    phases["golden"]=golden
-    if golden["status"]!="PASS":
-        blocked="golden"
-    return _result(phases,blocked)
-
-
-def _result(phases:dict,blocked:str|None)->dict:
+    # Step 11: a caller-provided status token is never Golden release evidence.
+    # Recompute the locked seven-project contract against the exact repository
+    # baseline and current build identity before submission_gate can release.
+    phases["golden"]=validate_golden_release_evidence(payload.get("golden_result"))
     gate=submission_gate(phases)
-    status="PASS" if gate["status"]=="PASS" else ("INPUT_REQUIRED" if blocked in {"coordination","equipment_integrity","manufacturer","documentation"} else "FAIL")
-    return {"version":"mechanical-pipeline-v19.1","status":status,"blocked_at":blocked,"phases":phases,"submission":gate}
+    return {"status":gate["status"],"blocked_at":None if gate["release_allowed"] else "golden","phases":phases,"submission":gate}
+
+
+def _blocked(phases: dict, name: str) -> dict:
+    return {"status":"INPUT_REQUIRED" if phases[name]["status"] in {"INPUT_REQUIRED","PRE_SUBMISSION"} else "FAIL",
+            "blocked_at":name,"phases":phases,"submission":{"status":"FAIL","release_allowed":False,"errors":[f"{name}:{phases[name]['status']}"]}}
