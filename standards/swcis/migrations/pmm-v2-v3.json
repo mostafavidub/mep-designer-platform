@@ -1,0 +1,39 @@
+{
+  "migration_id": "PMM-V2-V3-001",
+  "from_version": "project-mechanical-model/v2",
+  "to_version": "project-mechanical-model/v3",
+  "compatibility": "backward-compatible-additive",
+  "forward_plan": [
+    "Deploy readers that tolerate both v2 and v3 before requiring v3 traceability fields.",
+    "Generate v3 PMM snapshots with identity_registry and traceability_contract for new/recalculated proposals.",
+    "Keep all v2 fields unchanged while downstream consumers adopt canonical identities.",
+    "Enforce no-orphan output reconciliation only where calculation identities are supplied."
+  ],
+  "rollback_plan": [
+    "Revert the introducing Git commit/tag.",
+    "Existing v2-compatible consumers continue to read legacy PMM fields because no legacy field was removed.",
+    "Ignore additive v3 fields when rolling back; no stored customer drawing mutation is required."
+  ],
+  "data_validation": [
+    "PMM entity IDs are deterministic and unique.",
+    "Legacy drawing manifest and level fields are unchanged.",
+    "Calculation IDs are unique for room/system engineering identities.",
+    "Plan/Riser/Calculation/Schedule reconciliation fails closed on orphan or mismatched identities."
+  ],
+  "consumer_inventory": [
+    "questionnaire",
+    "planner",
+    "cad_designer",
+    "routing",
+    "sizing",
+    "equipment",
+    "manufacturer_selector",
+    "detail_riser",
+    "qa",
+    "manifest",
+    "ui_api",
+    "docs"
+  ],
+  "compatibility_order": "reader-before-writer",
+  "deprecation_window": "PMM v2 remains readable until a separately approved breaking migration removes compatibility; no removal is authorized by this migration."
+}
