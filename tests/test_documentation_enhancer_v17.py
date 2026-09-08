@@ -24,7 +24,22 @@ class DocumentationEnhancerV17Tests(unittest.TestCase):
                 {'system':'HEATING','level':'GROUND'},{'system':'HEATING','level':'L1'}])
             out=apply_documentation_enhancements(p,report,ctx)
             self.assertEqual(out['status'],'PASS'); self.assertEqual(len(out['written']),4); self.assertTrue(out['exact_file_reopened'])
+            self.assertEqual(out['riser_integrity']['status'],'PASS')
             reopened=ezdxf.readfile(p); walls=[e for e in reopened.modelspace() if e.dxf.layer=='WALL']
             self.assertEqual(len(walls),1); self.assertGreater(out['generated_entity_count'],4)
+
+    def test_zero_branch_riser_fails_closed_before_dxf_mutation(self):
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)/'x.dxf'; doc=ezdxf.new('R2010'); doc.modelspace().add_line((0,0),(1,0),dxfattribs={'layer':'WALL'}); doc.saveas(p)
+            before=p.read_bytes()
+            report={'composition':{'manifest':[{'old_sheet':'R','code':'M-151','family':'PLUMBING_RISER'}],
+                                   'boards':{'R':{'bounds':[0,0,21,29.7]}}}}
+            ctx=ProjectContext(project_id='X',levels=['GROUND','L1'],active_systems=['WATER'],routes=[])
+            out=apply_documentation_enhancements(p,report,ctx)
+            self.assertEqual(out['status'],'INPUT_REQUIRED')
+            self.assertFalse(out['exact_file_reopened'])
+            self.assertIn('CW1/HW1:WATER',out['riser_integrity']['zero_branch_risers'])
+            self.assertIn('PLAN_BRANCH:CW1/HW1:WATER',out['riser_integrity']['missing_inputs'])
+            self.assertEqual(before,p.read_bytes())
 
 if __name__=='__main__': unittest.main()
