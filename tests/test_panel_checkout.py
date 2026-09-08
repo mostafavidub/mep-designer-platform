@@ -60,6 +60,29 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_account_reconciliation_is_audited_and_idempotent(monkeypatch):
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    with legacy.Session() as db:
+        user = legacy.User(email=f"reconcile-{uuid4().hex}@example.test")
+        db.add(user); db.flush()
+        uid = user.id
+        db.add(app.state.panel_checkout.Profile(user_id=uid, phone=phone))
+        db.add(app.state.commercial['Wallet'](user_id=uid, balance=0))
+        db.commit()
+    entry = [{"user_id": uid, "phone": phone, "amount": 1000000,
+              "request_id": "legacy-wallet-20260909", "reason": "Verified legacy wallet transfer"}]
+    monkeypatch.setenv("PANEL_ACCOUNT_RECONCILIATIONS", __import__('json').dumps(entry))
+
+    app.state.panel_checkout.apply_account_reconciliations()
+    app.state.panel_checkout.apply_account_reconciliations()
+
+    with legacy.Session() as db:
+        wallet = db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one()
+        activities = db.query(app.state.panel_checkout.Activity).filter_by(user_id=uid, kind='account_reconciliation').all()
+        assert wallet.balance == 1000000
+        assert len(activities) == 1
+
+
 def test_phone_login_reuses_established_profile_account(monkeypatch):
     monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
     browser = TestClient(app, raise_server_exceptions=False)
