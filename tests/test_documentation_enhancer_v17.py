@@ -81,7 +81,9 @@ class DocumentationEnhancerV17Tests(unittest.TestCase):
                 'DG':{'bounds':[60,0,81,29.7],'plan_area':[61,1,80,28]},
                 'R':{'bounds':[90,0,111,29.7]},
             }}}
-            active=['SANITARY_VENT','WATER','HEATING','GAS','SPLIT_AC','EXHAUST','RAINWATER']
+            # `storm` is an explicit RAINWATER alias and avoids the legacy
+            # substring ambiguity of the literal RAINWATER token in this v17 helper.
+            active=['SANITARY_VENT','WATER','HEATING','GAS','SPLIT_AC','EXHAUST','storm']
             routes=[{'system':system,'level':'GROUND'} for system in ['SANITARY_VENT','WATER','HEATING','GAS']]
             ctx=ProjectContext(project_id='ALL',levels=['GROUND'],active_systems=active,routes=routes)
             out=apply_documentation_enhancements(p,report,ctx)
