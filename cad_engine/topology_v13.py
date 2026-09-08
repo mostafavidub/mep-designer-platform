@@ -9,9 +9,25 @@ SYSTEM_TARGETS={
  'exhaust':{'exhaust_fan','hood'},'gas':{'stove','water_heater'},
 }
 
+
 def _centroid(poly):
     if not poly:return None
     return (sum(p[0] for p in poly)/len(poly),sum(p[1] for p in poly)/len(poly))
+
+
+def _point(value):
+    try:
+        x,y=float(value[0]),float(value[1])
+        if not (math.isfinite(x) and math.isfinite(y)):return None
+        return x,y
+    except (TypeError,ValueError,IndexError):
+        return None
+
+
+def _unresolved(rows, system, endpoint, reason):
+    rows.append({'system':system,'endpoint_id':endpoint.get('id'),'plan_id':endpoint.get('plan_id'),
+                 'reason':reason,'status':'INPUT_REQUIRED'})
+
 
 def build_system_topology(architecture,recognition,requirements,calculations,design_basis=None):
     nodes=[]
@@ -21,7 +37,7 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
     shafts=[]
     plans=architecture.get('plans') or []
     for index,shaft in enumerate(architecture.get('shafts') or [],1):
-        point=shaft.get('point') or _centroid(shaft.get('polygon'))
+        point=_point(shaft.get('point') or _centroid(shaft.get('polygon')))
         if not point:continue
         plan_id=shaft.get('plan_id')
         if not plan_id:
@@ -31,13 +47,13 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
         row={'id':f'SHAFT-{index:02d}','kind':'shaft','category':'vertical','point':point,'plan_id':plan_id,
              'source':shaft.get('source','geometry')}
         shafts.append(row);nodes.append(row)
-    # Propose one local vertical core for each primary floor that has no
-    # explicit shaft.  The user-approved workflow permits a shaft proposal near
-    # wet rooms; keeping it local preserves the no-cross-plan contract.
+    # Propose local vertical cores for diagnostic/pre-submission purposes. A
+    # provisional proposal remains visible, but Step 4 never lets it become a
+    # routable network core until the proposal is explicitly approved.
     plan_ids=list(architecture.get('primary_floor_plan_ids') or [])
     for pid in plan_ids:
         wet=[r for r in architecture.get('rooms') or [] if r.get('plan_id')==pid and r.get('type') in ('bathroom','toilet','kitchen')]
-        points=[tuple(r.get('label_point')) for r in wet if r.get('label_point')]
+        points=[tuple(r.get('label_point')) for r in wet if _point(r.get('label_point'))]
         plan=next((p for p in architecture.get('plans') or [] if p.get('plan_id')==pid),{})
         b=plan.get('bounds') or architecture.get('bounds') or [0,0,0,0]
         clusters=[points] if points else [[((b[0]+b[2])/2,(b[1]+b[3])/2)]]
@@ -54,9 +70,6 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
             continue
         # Once the customer has explicitly approved wet-core proposals, keep
         # each reconstructed wet room connected to its own local riser point.
-        # This is required for multi-layout sheets where one broad plan bound
-        # contains several repeated floors and a single centroid would connect
-        # unrelated drawings through walls.
         if approved and points:
             clusters=[[point] for point in points]
         for cluster in clusters:
@@ -74,20 +87,33 @@ def build_system_topology(architecture,recognition,requirements,calculations,des
         allowed=SYSTEM_TARGETS.get(system,set()); endpoints=[n for n in nodes if n.get('kind') in allowed]
         graph_nodes=[n['id'] for n in endpoints]
         for endpoint in endpoints:
-            pid=endpoint.get('plan_id')
+            pid=endpoint.get('plan_id'); endpoint_point=_point(endpoint.get('point'))
+            if endpoint_point is None:
+                _unresolved(unresolved,system,endpoint,'INVALID_ENDPOINT_POINT');continue
             # Synthetic and legacy single-plan inputs legitimately omit a
-            # plan_id on both endpoints and shafts.  Equal missing identifiers
-            # still mean the same isolated plan; never reject that local shaft.
-            candidates=[s for s in shafts if s.get('plan_id')==pid]
+            # plan_id on both endpoints and shafts. Equal missing identifiers
+            # still mean the same isolated plan.
+            candidates=[s for s in shafts if s.get('plan_id')==pid and _point(s.get('point'))]
             if not candidates:
-                unresolved.append({'system':system,'endpoint_id':endpoint['id'],'plan_id':pid,'reason':'NO_LOCAL_SHAFT'})
-                continue
-            shaft=min(candidates,key=lambda s:math.dist(endpoint['point'],s['point']))
+                _unresolved(unresolved,system,endpoint,'NO_LOCAL_SHAFT');continue
+            approved_candidates=[s for s in candidates if not s.get('provisional') or s.get('proposal_approved')]
+            if not approved_candidates:
+                _unresolved(unresolved,system,endpoint,'UNAPPROVED_LOCAL_SHAFT');continue
+            # Coincident representative points do not prove a physical branch.
+            # The old router fabricated a tiny closed loop here; Step 4 instead
+            # requires real/distinct project geometry.
+            routable=[s for s in approved_candidates if math.dist(endpoint_point,_point(s.get('point'))) > 1e-9]
+            if not routable:
+                _unresolved(unresolved,system,endpoint,'DEGENERATE_LOCAL_CONNECTION');continue
+            shaft=min(routable,key=lambda s:math.dist(endpoint_point,_point(s.get('point'))))
             if shaft['id'] not in graph_nodes:graph_nodes.append(shaft['id'])
             edges.append({'id':f'{system.upper()}-E{len(edges)+1:03d}','system':system,'from':endpoint['id'],'to':shaft['id'],
                           'plan_id':pid,'load_source':endpoint['id'],'topology':'endpoint_to_local_vertical_core'})
         system_graphs[system]={'nodes':graph_nodes,'edges':[e['id'] for e in edges if e['system']==system]}
-    cross_plan=sum(1 for e in edges if next(n for n in nodes if n['id']==e['from']).get('plan_id')!=next(n for n in nodes if n['id']==e['to']).get('plan_id'))
+    node_by_id={n['id']:n for n in nodes}
+    cross_plan=sum(1 for e in edges if node_by_id[e['from']].get('plan_id')!=node_by_id[e['to']].get('plan_id'))
+    reason_counts={reason:sum(1 for row in unresolved if row.get('reason')==reason) for reason in sorted({row.get('reason') for row in unresolved})}
     return {'version':'mechanical-topology-v13.13','nodes':nodes,'edges':edges,'systems':system_graphs,'unresolved':unresolved,
             'quality':{'systems':len(system_graphs),'edges':len(edges),'provisional_shaft':any(s.get('provisional') for s in shafts),'cross_plan_edges':cross_plan,
-                       'unresolved_without_local_shaft':len(unresolved)}}
+                       'unresolved_without_local_shaft':len(unresolved),'input_required':len(unresolved),
+                       'unresolved_reasons':reason_counts}}
