@@ -1,4 +1,4 @@
-from app.coordinate_isolation_v1 import isolate_detections
+from app.coordinate_isolation import isolate_detections
 from app.fixture_context_v1 import enrich_fixture_context
 
 
