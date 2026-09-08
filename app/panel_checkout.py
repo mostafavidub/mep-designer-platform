@@ -125,6 +125,38 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     Wallet = app.state.commercial["Wallet"]
     pricing_for = app.state.commercial["service_pricing"]
 
+    def apply_account_reconciliations():
+        """Apply audited, idempotent wallet reconciliations configured for production."""
+        raw = os.environ.get("PANEL_ACCOUNT_RECONCILIATIONS", "").strip()
+        if not raw:
+            return
+        entries = json.loads(raw)
+        if not isinstance(entries, list):
+            raise RuntimeError("PANEL_ACCOUNT_RECONCILIATIONS must be a JSON list")
+        with legacy.Session() as db:
+            for entry in entries:
+                uid = int(entry["user_id"])
+                phone = re.sub(r"\D", "", str(entry["phone"]))
+                amount = int(entry["amount"])
+                request_id = str(entry["request_id"])
+                if amount <= 0 or not re.fullmatch(r"[A-Za-z0-9-]{16,80}", request_id):
+                    raise RuntimeError("Invalid account reconciliation entry")
+                profile = db.get(Profile, uid)
+                wallet = db.query(Wallet).filter(Wallet.user_id == uid).first()
+                if not profile or re.sub(r"\D", "", profile.phone) != phone or not wallet:
+                    raise RuntimeError(f"Account reconciliation target CUST-{uid} did not match")
+                key = f"RECON-{uid}-{request_id}"
+                if db.get(Activity, key):
+                    continue
+                wallet.balance += amount
+                db.add(Activity(id=key, user_id=uid, request_hash=digest(json.dumps(entry, sort_keys=True)),
+                                kind="account_reconciliation", amount=amount, balance_after=wallet.balance,
+                                description=str(entry.get("reason", "Account reconciliation"))[:500],
+                                actor="system-reconciliation", created_at=datetime.utcnow().isoformat()+'Z'))
+            db.commit()
+
+    apply_account_reconciliations()
+
     @app.middleware('http')
     async def freeze_claimed_drafts(request, call_next):
         match = re.fullmatch(r'/projects/(\d+)(?:/.*)?', request.url.path)
@@ -440,4 +472,5 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             db.commit()
             return {"project": order_payload(db, order), **state(db, uid)}
 
-    app.state.panel_checkout = SimpleNamespace(Handoff=Handoff, Checkout=Checkout, Ledger=Ledger, Activity=Activity, Profile=Profile, session_user=session_user)
+    app.state.panel_checkout = SimpleNamespace(Handoff=Handoff, Checkout=Checkout, Ledger=Ledger, Activity=Activity, Profile=Profile,
+                                               session_user=session_user, apply_account_reconciliations=apply_account_reconciliations)

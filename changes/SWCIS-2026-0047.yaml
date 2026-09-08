@@ -1,0 +1,21 @@
+{
+  "change_id": "SWCIS-2026-0047",
+  "summary": "Add an audited idempotent production account reconciliation for a verified legacy wallet transfer.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "No public API change; startup applies explicitly configured reconciliations only.",
+    "qa": "Idempotency coverage verifies one credit and one audit row across repeated execution.",
+    "migration": "Validated account, phone, amount, and request ID; execution is idempotent.",
+    "governance": "SWCIS 4.0.0 closure recorded.",
+    "deployment": "Set the exact reconciliation entry and deploy once; the audit key prevents repeats.",
+    "rule_book": "verified not affected", "pmm": "verified not affected", "questionnaire": "verified not affected", "planner": "verified not affected", "cad_designer": "verified not affected", "routing": "verified not affected", "sizing": "verified not affected", "equipment": "verified not affected", "manufacturer_selector": "verified not affected", "detail_riser": "verified not affected", "manifest": "verified not affected", "docs": "verified not affected", "versioning": "automatic Git build identity remains authoritative"
+  },
+  "evidence": {
+    "traceability": ["No engineering Rule ID changes."], "tests": ["586 repository tests passed including reconciliation idempotency."], "docs": ["No public contract or operator workflow change."], "version_bump": ["Automatic Git build identity."], "migration": ["Matching user ID and phone required; immutable audit activity prevents repeats."], "golden_regression": ["Full repository regression passed."], "semantic_diff": ["Explicitly configured legacy wallet transfers are applied once."], "artifact_diff": ["No CAD artifact change."], "numeric_diff": ["No engineering numeric change."], "contract_diff": ["No public API contract change."], "deployment_plan": ["Deploy protected commit with the owner-approved CUST-27 reconciliation entry and verify balance."], "rollback_plan": ["Revert code; preserve the audited credit because it is an approved balance transfer."]
+  },
+  "risk": {"likelihood": 1, "severity": 4, "detectability": 1, "score": 4, "rationale": "Exact identity validation and an idempotency key prevent wrong-target or repeated credit."},
+  "waiver": null
+}
