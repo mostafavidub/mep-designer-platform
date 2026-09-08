@@ -16,6 +16,7 @@ from .mechanical_integrity import validate_generated_mechanical_integrity
 from .calculation_evidence_step8 import validate_calculation_evidence, apply_canonical_pressure
 from .required_scope_gate_step9 import validate_required_scope_support, validate_required_scope_artifact
 from .exact_dxf_gate_step10 import validate_exact_dxf_health
+from .final_delivery_gate_step12 import validate_non_destructive_final_delivery
 from .version_manifest import active_version_manifest
 
 
@@ -175,6 +176,27 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
             legacy["stage"]="exact_dxf_health_gate"
             legacy["submission_state"]="BLOCKED"
             legacy["coordination_claim"]="NOT_RELEASED"
+            _restore_or_remove_output(dst,backup)
+            return legacy
+
+        # Step 12 is the last artifact-delivery acceptance. The legacy v17
+        # isolation pass may sanitize a candidate for backward compatibility,
+        # but v19 release is forbidden if any entity or layout had to be deleted
+        # to make the exact file look acceptable. The Step 12 validator itself
+        # is read-only and independently rechecks the exact final-delivery file.
+        final_delivery=validate_non_destructive_final_delivery(dst,legacy)
+        legacy["final_delivery_step12_qa"]=final_delivery
+        result["phases"]["final_delivery_step12"]=final_delivery
+        result["submission"]["final_delivery_step12"]=final_delivery.get("status")
+        if final_delivery.get("status") != "PASS":
+            legacy["status"]="FAIL"
+            legacy["stage"]="final_delivery_step12_gate"
+            legacy["submission_state"]="BLOCKED"
+            legacy["coordination_claim"]="NOT_RELEASED"
+            result["submission"]["release_allowed"]=False
+            missing=final_delivery.get("missing_inputs") or []
+            if missing:
+                legacy["input_required"]={"status":"INPUT_REQUIRED","missing_inputs":missing}
             _restore_or_remove_output(dst,backup)
             return legacy
 
