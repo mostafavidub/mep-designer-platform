@@ -14,6 +14,7 @@ from .mechanical_pipeline_v19 import run_v19_pipeline
 from .coordination_v19 import build_coordination_model
 from .mechanical_integrity import validate_generated_mechanical_integrity
 from .calculation_evidence_step8 import validate_calculation_evidence, apply_canonical_pressure
+from .required_scope_gate_step9 import validate_required_scope_support, validate_required_scope_artifact
 from .version_manifest import active_version_manifest
 
 
@@ -72,6 +73,18 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         }
     answers=apply_canonical_pressure(answers,calculation_evidence)
 
+    # Step 9 prevents explicit project scope from disappearing silently. The
+    # current production authority engine does not issue SEPTIC or FIRE_WATER,
+    # therefore those explicit requirements are blocked before any DXF write.
+    required_scope=validate_required_scope_support(answers)
+    if required_scope.get("status") in {"FAIL","INPUT_REQUIRED","UNSUPPORTED"}:
+        return {
+            "status":"FAIL","stage":"required_scope_preflight_gate",
+            "calculation_evidence_qa":calculation_evidence,
+            "required_scope_qa":required_scope,
+            "input_required":{"status":"INPUT_REQUIRED","missing_inputs":required_scope.get("unsupported_systems") or []},
+        }
+
     payload=_v19_payload(answers,plan_analysis)
     coordination=build_coordination_model(payload)
     missing_structure=coordination["status"]=="INPUT_REQUIRED" and set(coordination.get("missing_inputs") or {}) <= {"STRUCTURAL_MODEL","RCP_MODEL","SLAB","CEILING"}
@@ -84,6 +97,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
             "phases":{
                 "coordination":coordination,
                 "calculation_evidence":calculation_evidence,
+                "required_scope":required_scope,
                 "manufacturer":{"status":"PRE_SUBMISSION","selection_type":"DESIGN_ENVELOPE","claim":"NOT_MANUFACTURER_CONFIRMED"},
                 "documentation":{"status":"PRE_SUBMISSION","source":"LEGACY_GRAPH_COMPOSER","claim":"REQUIRES_COORDINATION_REVALIDATION"},
                 "golden":{"status":"NOT_APPLICABLE_TO_PRE_SUBMISSION"},
@@ -95,6 +109,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     else:
         result=run_v19_pipeline(payload)
         (result.setdefault("phases", {}))["calculation_evidence"]=calculation_evidence
+        result["phases"]["required_scope"]=required_scope
     if result["status"] not in {"PASS","PRE_SUBMISSION"}:
         missing=[]; coordination=(result.get("phases") or {}).get("coordination") or {}; model=coordination.get("model") or {}
         missing.extend(model.get("missing_inputs") or coordination.get("missing_inputs") or [])
@@ -102,7 +117,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         if result.get("blocked_at")=="documentation": missing.append("PARAMETRIC_NETWORK_DOCUMENTATION")
         if result.get("blocked_at")=="golden": missing.append("V19_RELEASE_GOLDEN_PASS")
         return {"status":"FAIL","stage":"v19_preflight_gate","v19_qa":result,
-                "calculation_evidence_qa":calculation_evidence,
+                "calculation_evidence_qa":calculation_evidence,"required_scope_qa":required_scope,
                 "input_required":{"status":"INPUT_REQUIRED","missing_inputs":sorted(set(missing))}}
 
     backup=_snapshot_existing_output(dst)
@@ -110,6 +125,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         legacy=_design_v17(src,dst,answers=answers,plan_analysis=plan_analysis)
         legacy["v19_qa"]=result; legacy["executed_versions"]=active_version_manifest(); legacy["pipeline_authority"]="mechanical-v19"
         legacy["calculation_evidence_qa"]=calculation_evidence
+        legacy["required_scope_qa"]=required_scope
         if legacy.get("status") != "PASS":
             return legacy
 
@@ -120,6 +136,20 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         if integrity.get("status") != "PASS":
             legacy["status"]="FAIL"
             legacy["stage"]="generated_dxf_integrity_gate"
+            legacy["submission_state"]="BLOCKED"
+            legacy["coordination_claim"]="NOT_RELEASED"
+            _restore_or_remove_output(dst,backup)
+            return legacy
+
+        # Defense in depth for Step 9. Today explicit septic/fire-water scope
+        # is already stopped upstream as unsupported. This exact-file proof is
+        # retained so future support cannot regress to text-only evidence.
+        scope_artifact=validate_required_scope_artifact(dst,answers)
+        legacy["required_scope_artifact_qa"]=scope_artifact
+        result["phases"]["required_scope_artifact"]=scope_artifact
+        if scope_artifact.get("status") == "FAIL":
+            legacy["status"]="FAIL"
+            legacy["stage"]="required_scope_artifact_gate"
             legacy["submission_state"]="BLOCKED"
             legacy["coordination_claim"]="NOT_RELEASED"
             _restore_or_remove_output(dst,backup)
