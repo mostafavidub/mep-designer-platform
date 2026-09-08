@@ -1,0 +1,43 @@
+{
+  "change_id": "SWCIS-2026-0050",
+  "summary": "Add a privacy-safe semantic truth set for project 10, make PMM the stable-ID source of truth, propagate identity into calculations, and enforce output reconciliation.",
+  "requester": "project-owner",
+  "change_types": ["schema", "calculation", "drawing_output", "test", "documentation", "governance"],
+  "changed_rule_ids": ["MEP-INPUT-001", "MEP-SIZE-001", "MEP-SUBMIT-001"],
+  "impacted_modules": ["pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "pmm": "Add deterministic entity IDs and trace links while retaining all existing PMM fields.",
+    "questionnaire": "Verified downstream consumer; no answer key is removed.",
+    "planner": "Verified downstream consumer; manifest semantics retained.",
+    "cad_designer": "Outputs gain reconciliation metadata only; no geometry rule is weakened.",
+    "routing": "Verified downstream consumer; route algorithms unchanged.",
+    "sizing": "Calculation rows gain canonical calc IDs and PMM source IDs; numeric formulas are unchanged.",
+    "equipment": "Verified downstream consumer; selection behavior unchanged.",
+    "manufacturer_selector": "Verified downstream consumer; selection behavior unchanged.",
+    "detail_riser": "Riser/schedule identity contract consumes canonical calculation IDs.",
+    "qa": "Add fail-closed truth, identity and cross-output reconciliation checks.",
+    "manifest": "Automatic Git build identity remains authoritative.",
+    "ui_api": "No public field removal; additive PMM data only.",
+    "docs": "Document truth-set and traceability contracts.",
+    "versioning": "Schema addition is backward compatible.",
+    "migration": "Existing PMM v2 readers remain valid; v3 adds fields only.",
+    "governance": "Classify project_mechanical_model.py under PMM/schema and govern semantic truth files.",
+    "deployment": "Deployment is blocked until protected checks and later release authorization pass."
+  },
+  "evidence": {
+    "traceability": ["Rule -> PMM -> calculation -> drawing/riser/schedule -> QA chain is covered by contract tests."],
+    "tests": ["Focused PMM, calculation traceability, documentation reconciliation and SWCIS tests; full CI required."],
+    "docs": ["REFERENCE_TRUTH_SET_STANDARD.md and PMM_TRACEABILITY_STANDARD.md."],
+    "version_bump": ["PMM schema v3 additive contract; SWCIS machine graph gains explicit project_mechanical_model coverage."],
+    "migration": ["Reader-before-writer additive migration; no stored field deletion."],
+    "golden_regression": ["Project-10 semantic truth set is held-out/reference evidence, not generation input; existing regression gates remain required."],
+    "semantic_diff": ["Stable identities and evidence provenance become explicit; engineering formulas remain unchanged."],
+    "artifact_diff": ["No customer DXF is committed; output reconciliation is metadata/QA only."],
+    "numeric_diff": ["No numeric formula or design constant change."],
+    "contract_diff": ["PMM adds entity registry/traceability; calculations add calc_id/source_pmm_ids; documentation validates identity reconciliation."],
+    "deployment_plan": ["Merge only after required CI passes; deploy canonical runtime only in a later approved release."],
+    "rollback_plan": ["Revert the protected commit; additive fields have no destructive migration."]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "PMM is upstream of most mechanical consumers, but changes are additive and formulas/geometry rules are unchanged."},
+  "waiver": null
+}
