@@ -7,7 +7,9 @@ polygons are only accepted when a closed polyline actually contains the room
 label point.
 """
 from collections import Counter
+import hashlib
 import math
+from pathlib import Path
 import re
 
 import ezdxf
@@ -16,7 +18,7 @@ from ezdxf import bbox
 from . import auto_inference as base_inference
 from .dxf_input import read_input_dxf
 
-RECONSTRUCTION_VERSION = "architecture-reconstruction-v1"
+RECONSTRUCTION_VERSION = "architecture-reconstruction-v1.1"
 
 LAYER_HINTS = {
     "wall": ("wall", "دیوار", "ديوار"),
@@ -146,6 +148,7 @@ def reconstruct_dxf(path, base_result=None):
         return result
 
     msp = doc.modelspace()
+    source_file = str(result.get("file") or Path(path).name)
     primitives = []
     closed_polygons = []
     layer_counts = Counter()
@@ -160,6 +163,7 @@ def reconstruct_dxf(path, base_result=None):
         if kind and b:
             row = {
                 "kind": kind, "entity_type": typ, "layer": layer, "block": block or None,
+                "source_file": source_file, "source_type": "layout", "source_name": "Model",
                 "bounds": [round(v, 6) for v in b], "centroid": [round(v, 6) for v in _centroid(b)],
             }
             primitives.append(row); layer_counts[kind] += 1
@@ -186,6 +190,7 @@ def reconstruct_dxf(path, base_result=None):
             "label": str(item.get("text") or ""),
             "label_point": [round(p[0], 6), round(p[1], 6)],
             "source_type": item.get("source_type"), "source_name": item.get("source_name"),
+            "source_file": source_file,
             "polygon": [[round(x, 6), round(y, 6)] for x, y in polygon["points"]] if polygon else None,
             "bounds": [round(v, 6) for v in polygon["bounds"]] if polygon else None,
             "area_drawing_units2": round(polygon["area"], 4) if polygon else None,
@@ -213,14 +218,39 @@ def _expanded_bounds(points, pad_ratio=0.22):
     return [b[0]-px, b[1]-py, b[2]+px, b[3]+py]
 
 
+
+def _stable_authority_id(profile):
+    existing = str(profile.get("level_authority_id") or "").strip()
+    if existing:
+        return existing
+    point = profile.get("title_point") or [None, None]
+    payload = "|".join((
+        str(profile.get("source_file") or ""), str(profile.get("source_type") or ""),
+        str(profile.get("source_name") or ""), str(profile.get("name") or ""),
+        str(point[0] if len(point) > 0 else ""), str(point[1] if len(point) > 1 else ""),
+    ))
+    return "LVL-" + hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12].upper()
+
+
+def _local_transform(title):
+    return {
+        "origin": [round(float(title[0]), 6), round(float(title[1]), 6)],
+        "translation": [round(-float(title[0]), 6), round(-float(title[1]), 6)],
+        "rotation_deg": 0.0,
+        "scale": 1.0,
+    }
+
 def enrich_auto(auto, analysis):
     auto = dict(auto or {})
     profiles = auto.get("level_profiles") or []
     all_rooms = []
     all_primitives = []
     for f in (analysis or {}).get("files") or []:
-        all_rooms.extend(f.get("architecture_rooms") or [])
-        all_primitives.extend(f.get("architecture_primitives") or [])
+        file_name = str(f.get("file") or "")
+        for room in f.get("architecture_rooms") or []:
+            row = dict(room); row.setdefault("source_file", file_name); all_rooms.append(row)
+        for primitive in f.get("architecture_primitives") or []:
+            row = dict(primitive); row.setdefault("source_file", file_name); all_primitives.append(row)
 
     # Assign semantic room labels to their closest canonical level title, then
     # derive a spatial envelope from those labels. The envelope prevents an
@@ -231,9 +261,24 @@ def enrich_auto(auto, analysis):
         if not title:
             continue
         title = tuple(float(v) for v in title)
-        other_titles = [tuple(float(v) for v in p.get("title_point")) for p in profiles if p is not profile and p.get("title_point")]
+        source_file = str(profile.get("source_file") or "")
+        source_type = str(profile.get("source_type") or "")
+        source_name = str(profile.get("source_name") or "")
+        peer_profiles = [
+            p for p in profiles if p is not profile and p.get("title_point")
+            and (not source_file or str(p.get("source_file") or "") == source_file)
+        ]
+        other_titles = [tuple(float(v) for v in p.get("title_point")) for p in peer_profiles]
+        room_pool = [r for r in all_rooms if not source_file or str(r.get("source_file") or "") == source_file]
+        primitive_pool = [r for r in all_primitives if not source_file or str(r.get("source_file") or "") == source_file]
+        same_container_rooms = [r for r in room_pool if (not source_type or str(r.get("source_type") or "") == source_type) and (not source_name or str(r.get("source_name") or "") == source_name)]
+        if same_container_rooms:
+            room_pool = same_container_rooms
+        same_container_primitives = [r for r in primitive_pool if (not source_name or str(r.get("source_name") or "") == source_name)]
+        if same_container_primitives:
+            primitive_pool = same_container_primitives
         assigned_rooms = []
-        for room in all_rooms:
+        for room in room_pool:
             p = tuple(room.get("label_point") or [])
             if len(p) != 2:
                 continue
@@ -246,7 +291,7 @@ def enrich_auto(auto, analysis):
         # shafts.  Nearest-title partitioning preserves the whole plan while
         # still preventing adjacent model-space plans from stealing entities.
         assigned_primitives = []
-        for primitive in all_primitives:
+        for primitive in primitive_pool:
             p = tuple(primitive.get("centroid") or [])
             if len(p) != 2:
                 continue
@@ -264,9 +309,18 @@ def enrich_auto(auto, analysis):
             # rather than inventing a building polygon.
             region = [title[0]-1, title[1]-1, title[0]+1, title[1]+1]
         by_kind = {k: [p for p in assigned_primitives if p.get("kind") == k] for k in LAYER_HINTS}
+        authority_id = _stable_authority_id(profile)
+        transform = _local_transform(title)
+        region_rounded = [round(v, 6) for v in region]
+        profile["level_authority_id"] = authority_id
+        profile["region_bounds"] = region_rounded
+        profile["local_transform"] = transform
         level_rows.append({
             "name": profile.get("name"), "roof": bool(profile.get("roof")),
-            "title_point": list(title), "region_bounds": [round(v, 6) for v in region],
+            "authority_id": authority_id,
+            "source_file": source_file or None, "source_type": source_type or None, "source_name": source_name or None,
+            "title_point": list(title), "region_bounds": region_rounded,
+            "local_transform": transform,
             "rooms": assigned_rooms,
             "walls": by_kind["wall"], "doors": by_kind["door"], "windows": by_kind["window"],
             "columns": by_kind["column"], "stairs": by_kind["stair"], "shafts": by_kind["shaft"],
@@ -280,6 +334,7 @@ def enrich_auto(auto, analysis):
         "level_count": len(level_rows),
         "room_count": sum(len(x["rooms"]) for x in level_rows),
         "primitive_count": sum(sum(x["counts"].values()) for x in level_rows),
+        "isolation_contract": "source-file + source-container + nearest-title + independent-local-transform",
     }
     return auto
 

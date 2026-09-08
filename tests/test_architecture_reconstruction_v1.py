@@ -89,8 +89,35 @@ class ArchitectureReconstructionV1Tests(unittest.TestCase):
             self.assertGreaterEqual(first['counts']['door'], 1)
             self.assertGreaterEqual(ground['counts']['shaft'], 1)
             self.assertEqual(first['counts']['shaft'], 0)
+            for row in model['levels']:
+                self.assertTrue(row['authority_id'].startswith('LVL-'))
+                self.assertEqual(len(row['region_bounds']), 4)
+                self.assertEqual(row['local_transform']['scale'], 1.0)
+                self.assertEqual(row['local_transform']['rotation_deg'], 0.0)
+            self.assertNotEqual(ground['authority_id'], first['authority_id'])
         finally:
             path.unlink(missing_ok=True)
+
+    def test_same_coordinates_in_different_source_files_do_not_cross_steal(self):
+        auto = {'level_profiles': [
+            {'name': 'L-A', 'title_point': [10, -2], 'roof': False, 'source_file': 'a.dxf', 'source_type': 'layout', 'source_name': 'Model'},
+            {'name': 'L-B', 'title_point': [10, -2], 'roof': False, 'source_file': 'b.dxf', 'source_type': 'layout', 'source_name': 'Model'},
+        ]}
+        analysis = {'files': [
+            {'file': 'a.dxf', 'architecture_rooms': [{'type': 'kitchen', 'label_point': [3, 3], 'source_file': 'a.dxf', 'source_type': 'layout', 'source_name': 'Model'}],
+             'architecture_primitives': [{'kind': 'shaft', 'centroid': [8, 5], 'bounds': [7, 4, 9, 6], 'source_file': 'a.dxf', 'source_name': 'Model'}]},
+            {'file': 'b.dxf', 'architecture_rooms': [{'type': 'bedroom', 'label_point': [3, 3], 'source_file': 'b.dxf', 'source_type': 'layout', 'source_name': 'Model'}],
+             'architecture_primitives': [{'kind': 'door', 'centroid': [8, 5], 'bounds': [7, 4, 9, 6], 'source_file': 'b.dxf', 'source_name': 'Model'}]},
+        ]}
+        enriched = enrich_auto(auto, analysis)
+        levels = {row['name']: row for row in enriched['architecture_model']['levels']}
+        self.assertEqual([r['type'] for r in levels['L-A']['rooms']], ['kitchen'])
+        self.assertEqual([r['type'] for r in levels['L-B']['rooms']], ['bedroom'])
+        self.assertEqual(levels['L-A']['counts']['shaft'], 1)
+        self.assertEqual(levels['L-A']['counts']['door'], 0)
+        self.assertEqual(levels['L-B']['counts']['shaft'], 0)
+        self.assertEqual(levels['L-B']['counts']['door'], 1)
+        self.assertNotEqual(levels['L-A']['authority_id'], levels['L-B']['authority_id'])
 
 
 if __name__ == '__main__':

@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0046",
+  "status": "APPROVED",
+  "summary": "Fail closed on non-level frame contamination, degenerate mechanical networks, collapsed equipment, riser contradictions, unsupported calculation facts and unmaterialized details.",
+  "reason": "User-directed remediation after blind comparison of production projects 102 and 103 showed mixed architectural frames, marker-only water/sanitary networks, duplicate equipment, missing ODU entities, zero-branch risers marked true and calculation/detail inconsistencies.",
+  "change_types": ["drawing_output", "ui_api", "test", "governance", "documentation", "deployment"],
+  "impacted_modules": [
+    "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector",
+    "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration",
+    "governance", "deployment"
+  ],
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 3, "score": 45},
+  "impact_notes": {
+    "architecture_inference": "Detail, section, elevation, parking, slope, lintel and similar support drawings cannot become occupied level authority; slope-only phantom roof profiles are rejected unless independent roof evidence exists.",
+    "cad_designer": "Exact generated DXF is reopened and validated after composition; the gate never edits geometry or invents project facts.",
+    "routing_sizing": "Marker-only or degenerate primary network geometry is release-blocking rather than presence-valid.",
+    "equipment": "IDU without ODU and severe coordinate collapse are release-blocking.",
+    "riser_schedule_detail": "Zero branches cannot pass reconciliation; schedule/equipment and detail-register/materialisation mismatches block release.",
+    "calculations": "Numeric utility pressure cannot be used when no traceable project pressure answer exists.",
+    "release": "A failed generated-artifact integrity gate restores the previous artifact or removes the unreleasable output.",
+    "ui_api": "Existing failure status/stage contract is preserved; new stage is generated_dxf_integrity_gate with generated_dxf_integrity_qa evidence.",
+    "migration": "No stored-data migration. Existing completed artifacts remain historical; regenerated artifacts must satisfy the new gate."
+  },
+  "evidence": {
+    "tests": "Focused regressions added in tests/test_level_detection_v3.py and tests/test_mechanical_integrity.py; full CI is mandatory before merge.",
+    "golden_regression": "Seven-project representative regression remains a mandatory release gate; no merge/deploy is allowed unless it passes.",
+    "semantic_diff": "Support drawings are no longer level authority; exact generated artifacts now fail closed on frame, topology, equipment, riser, calculation and detail contradictions.",
+    "artifact_diff": "Blind sealed post-generation proofs for projects 102 and 103 improved strict scores while retaining frame contamination as a hard blocker rather than deleting unknown architecture.",
+    "docs": "docs/GENERATED_MECHANICAL_INTEGRITY_GATE.md defines the exact artifact integrity contract and regression policy.",
+    "contract_diff": "Existing API status contract is preserved; generated_dxf_integrity_gate and generated_dxf_integrity_qa are additive failure diagnostics.",
+    "version_bump": "No parallel runtime version is introduced; Git commit SHA remains the build identity and the release capability registry is extended.",
+    "deployment_plan": "Do not merge or deploy until SWCIS, full unit/contract CI, seven-project golden regression, blind raw-architecture regeneration of projects 102 and 103, reference comparison, and production E2E upload-to-download all pass. Deployment uses the existing canonical Railway service after merge; no production runtime entrypoint is changed by this change.",
+    "rollback_plan": "If any post-merge or production verification fails, revert the PR/commit to the last known-good main and redeploy that known-good Railway build. The generated-artifact gate itself restores the previous safe artifact or removes the unreleasable new output on generation failure."
+  },
+  "rollback": "Revert only if replaced by an equally fail-closed exact-artifact gate; never restore presence-only mechanical release acceptance."
+}
