@@ -1,37 +1,42 @@
 {
   "change_id": "SWCIS-2026-0046",
   "status": "APPROVED",
-  "summary": "Fail closed on non-level frame contamination, degenerate mechanical networks, collapsed equipment, riser contradictions, unsupported calculation facts and unmaterialized details.",
-  "reason": "User-directed remediation after blind comparison of production projects 102 and 103 showed mixed architectural frames, marker-only water/sanitary networks, duplicate equipment, missing ODU entities, zero-branch risers marked true and calculation/detail inconsistencies.",
-  "change_types": ["drawing_output", "ui_api", "test", "governance", "documentation", "deployment"],
+  "summary": "Fail closed on non-level frame contamination, unsafe Typical consolidation, cross-file fixture/equipment coordinate contamination, degenerate mechanical networks, collapsed equipment, riser contradictions, unsupported calculation facts and unmaterialized details.",
+  "reason": "User-directed 12-step remediation after blind comparison of production projects 102 and 103 showed mixed architectural frames and additional integrity risks. Steps 1-3 now harden level authority, system-specific Typical grouping, and fixture/equipment coordinate ownership before later routing/design phases continue.",
+  "change_types": ["schema", "calculation", "drawing_output", "ui_api", "test", "governance", "documentation", "deployment"],
   "impacted_modules": [
-    "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector",
+    "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector",
     "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration",
     "governance", "deployment"
   ],
-  "risk": {"likelihood": 3, "severity": 5, "detectability": 3, "score": 45},
+  "risk": {"likelihood": 4, "severity": 5, "detectability": 3, "score": 60},
   "impact_notes": {
-    "architecture_inference": "Detail, section, elevation, parking, slope, lintel and similar support drawings cannot become occupied level authority; slope-only phantom roof profiles are rejected unless independent roof evidence exists. Each accepted level now carries stable source provenance, an authority id, independent region bounds and local transform; family-specific typical grouping may only consolidate levels when normalized fixture/equipment placement and shaft evidence agree.",
-    "questionnaire": "The latest-main UI/template paths are explicitly classified in the SWCIS graph as questionnaire/UI dependencies so impact analysis remains complete when the PR is reconciled with main; no questionnaire behavior is changed by the mechanical Step 2 implementation.",
+    "architecture_inference": "Detail, section, elevation, parking, slope, lintel and similar support drawings cannot become occupied level authority; slope-only phantom roof profiles are rejected unless independent roof evidence exists. Each accepted level carries stable source provenance, an authority id, independent region bounds and local transform.",
+    "typical_detection": "Family-specific Typical grouping may consolidate levels only when normalized fixture/equipment placement and shaft evidence agree. Absence of the new system-specific contract may use the legacy fallback for backward compatibility, while an explicitly present empty family decision remains authoritative and fail-closed.",
+    "coordinate_isolation": "Step 3 consumes the Step 2 authority_id/source_file/region_bounds/local_transform contract. Fixture and equipment detections are bound to their owning source file and Level Authority before room/context association; coordinate coincidence across DXF files is never evidence.",
+    "pmm": "Fixture rows may carry additive source_file, level_authority_id, level_local_position and coordinate_isolation_status provenance. Existing public fields are retained.",
+    "questionnaire": "The latest-main UI/template paths are explicitly classified in the SWCIS graph as questionnaire/UI dependencies; no questionnaire behavior is changed by Steps 1-3.",
     "cad_designer": "Exact generated DXF is reopened and validated after composition; the gate never edits geometry or invents project facts.",
-    "routing_sizing": "Marker-only or degenerate primary network geometry is release-blocking rather than presence-valid.",
-    "equipment": "IDU without ODU and severe coordinate collapse are release-blocking.",
+    "routing_sizing": "Marker-only or degenerate primary network geometry is release-blocking rather than presence-valid. Ambiguous multi-file fixture/equipment detections remain unassigned rather than contaminating downstream routing or calculations.",
+    "equipment": "IDU without ODU and severe coordinate collapse are release-blocking. Identical coordinates in separate DXF files remain separate records and cannot borrow a level from another source file.",
+    "fixture_context": "Room and wet-core association is evaluated only inside the already-authorized level. Duplicate level names from different source files cannot share room schedules.",
     "riser_schedule_detail": "Zero branches cannot pass reconciliation; schedule/equipment and detail-register/materialisation mismatches block release.",
     "calculations": "Numeric utility pressure cannot be used when no traceable project pressure answer exists.",
+    "qa": "Coordinate isolation exposes explicit assigned/unassigned statuses and diagnostics; uncertain provenance fails closed rather than becoming a silent guessed assignment.",
     "release": "A failed generated-artifact integrity gate restores the previous artifact or removes the unreleasable output.",
-    "ui_api": "Existing failure status/stage contract is preserved; new stage is generated_dxf_integrity_gate with generated_dxf_integrity_qa evidence.",
-    "migration": "No stored-data migration. Existing completed artifacts remain historical; regenerated artifacts must satisfy the new gate."
+    "ui_api": "Existing failure status/stage contract is preserved; Step 3 provenance fields are internal/additive and do not remove API fields.",
+    "migration": "No stored-data migration. Existing completed artifacts remain historical; regeneration is required when a historical project must benefit from the new authority/coordinate-isolation rules."
   },
   "evidence": {
-    "tests": "Step 2 adds focused regressions for stable level authority/provenance, cross-file level isolation, independent transforms, fail-closed family-specific typical grouping and 1-3/4-5 typical partitioning; full CI remains mandatory before merge.",
-    "golden_regression": "Seven-project representative regression remains a mandatory release gate; no merge/deploy is allowed unless it passes.",
-    "semantic_diff": "Support drawings are no longer level authority; accepted levels are isolated by source/container and system-specific Typical decisions no longer fall back to geometry-only equivalence.",
-    "artifact_diff": "Blind sealed post-generation proofs for projects 102 and 103 improved strict scores while retaining frame contamination as a hard blocker rather than deleting unknown architecture.",
-    "docs": "docs/GENERATED_MECHANICAL_INTEGRITY_GATE.md defines the exact artifact integrity contract and regression policy.",
-    "contract_diff": "Existing API status contract is preserved; generated_dxf_integrity_gate and generated_dxf_integrity_qa are additive failure diagnostics. Step 2 adds internal level_authority_id/source/region/local_transform and system_typical_groups metadata without removing existing fields.",
-    "version_bump": "No parallel runtime version is introduced; Git commit SHA remains the build identity and the release capability registry is extended.",
-    "deployment_plan": "Do not merge or deploy until SWCIS, full unit/contract CI, seven-project golden regression, blind raw-architecture regeneration of projects 102 and 103, reference comparison, and production E2E upload-to-download all pass. Deployment uses the existing canonical Railway service after merge; no production runtime entrypoint is changed by this change.",
-    "rollback_plan": "If any post-merge or production verification fails, revert the PR/commit to the last known-good main and redeploy that known-good Railway build. The generated-artifact gate itself restores the previous safe artifact or removes the unreleasable new output on generation failure."
+    "tests": "Focused regressions cover Step 2 stable level authority/provenance, cross-file level isolation, independent transforms, fail-closed family-specific Typical grouping and 1-3/4-5 partitioning; Step 3 adds overlapping coordinates in separate files, duplicate level names, cross-file authority rejection, fail-closed missing provenance, local-coordinate invariance, equipment record preservation and safe single-file legacy compatibility. Full CI remains mandatory before merge.",
+    "golden_regression": "Seven-project representative regression remains a mandatory release gate; no merge/deploy is allowed unless it passes. The final blind seven-project gate is not replaced by focused Steps 1-3 tests.",
+    "semantic_diff": "Support drawings are no longer level authority; accepted levels are isolated by source/container; system-specific Typical decisions do not fall back when explicitly present; fixture/equipment identity now follows source-file plus Level Authority ownership instead of cross-file nearest-coordinate inference.",
+    "artifact_diff": "Blind sealed post-generation proofs for projects 102 and 103 improved strict scores while retaining frame contamination as a hard blocker rather than deleting unknown architecture. Any output changes from corrected Step 3 authority remain subject to existing artifact/golden review before release.",
+    "docs": "docs/GENERATED_MECHANICAL_INTEGRITY_GATE.md defines the exact artifact integrity contract. Step 3 code contracts are documented in app/coordinate_isolation_v1.py and app/fixture_context_v1.py and mapped by the SWCIS dependency graph.",
+    "contract_diff": "Existing API status contract is preserved. Steps 1-2 add internal level_authority_id/source/region/local_transform and system_typical_groups metadata. Step 3 adds source_file, level_authority_id, level_local_position and coordinate_isolation_status provenance to successful detections/PMM consumers; ambiguous multi-file legacy assignments intentionally become unassigned/fail-closed.",
+    "version_bump": "No parallel runtime version is introduced; Git commit SHA remains the build identity. Coordinate isolation declares coordinate-isolation-v1 as an internal capability contract.",
+    "deployment_plan": "Do not merge or deploy until SWCIS, full unit/contract CI, seven-project golden regression, blind raw-architecture regeneration of projects 102 and 103, reference comparison, and production E2E upload-to-download all pass. Deployment uses the existing canonical Railway service after merge.",
+    "rollback_plan": "If a Step 3 regression is found, revert its commit set while retaining completed Step 2 authority/Typical fixes; never restore silent cross-file nearest-coordinate borrowing. For generated-artifact failures, restore the previous safe artifact or remove the unreleasable new output."
   },
-  "rollback": "Revert only if replaced by an equally fail-closed exact-artifact gate; never restore presence-only mechanical release acceptance."
+  "rollback": "Revert only if replaced by equally fail-closed authority, coordinate-isolation and exact-artifact gates; never restore geometry-only Typical or cross-file coordinate guessing."
 }
