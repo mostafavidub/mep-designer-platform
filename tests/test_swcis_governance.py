@@ -8,6 +8,13 @@ from tools.swcis_validate import ROOT, classify, contracts, impact_errors, repos
 
 
 class SwcisGovernanceTests(unittest.TestCase):
+    def test_private_reference_inventory_does_not_block_publication(self):
+        inventory = json.loads((ROOT / 'standards/test-suites/golden-regression.json').read_text())
+        self.assertEqual(inventory['required_project_contracts'], [])
+        self.assertEqual(inventory['optional_reference_projects'], [1, 3, 4, 6, 7, 8, 10])
+        self.assertIn('missing_authoritative_input', inventory['synthetic_cases'])
+        self.assertEqual(inventory['artifact_engineering_checks'], 'unchanged')
+
     def _request(self, directory, body):
         path = Path(directory) / "request.yaml"
         path.write_text(json.dumps(body))

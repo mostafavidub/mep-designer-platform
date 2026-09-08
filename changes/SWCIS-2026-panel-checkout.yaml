@@ -2,6 +2,7 @@
   "change_id": "SWCIS-2026-panel-checkout",
   "summary": "Preserve assistant drafts across login; atomic wallet checkout and admin adjustments with a shared ledger; explicitly labelled opt-in simulated bank payments",
   "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: owner explicitly removes deployment dependency on the seven private reference projects. Preserve automated regressions and per-artifact engineering checks.",
   "owner_release_authorization": "2026-09-08: owner explicitly approved publication and replacing independent review with owner approval, retaining automated checks and branch protection.",
   "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
   "changed_rule_ids": [],
