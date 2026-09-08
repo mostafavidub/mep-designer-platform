@@ -18,7 +18,7 @@ from types import SimpleNamespace
 
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import Integer, String, ForeignKey, text
+from sqlalchemy import Integer, String, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import mechanical_workflow
@@ -120,7 +120,15 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
         actor: Mapped[str] = mapped_column(String(100))
         created_at: Mapped[str] = mapped_column(String(40))
 
-    for model in (Handoff, Checkout, Ledger, Profile, Activity):
+    class PanelProject(legacy.Base):
+        __tablename__ = "panel_customer_projects"
+        id: Mapped[str] = mapped_column(String(80), primary_key=True)
+        user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+        payload: Mapped[str] = mapped_column(Text)
+        created_at: Mapped[str] = mapped_column(String(40))
+        updated_at: Mapped[str] = mapped_column(String(40))
+
+    for model in (Handoff, Checkout, Ledger, Profile, Activity, PanelProject):
         model.__table__.create(bind=legacy.engine, checkfirst=True)
     Wallet = app.state.commercial["Wallet"]
     pricing_for = app.state.commercial["service_pricing"]
@@ -231,10 +239,45 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                              "title": e.description, "amount": e.amount, "balanceAfter": e.balance_after,
                              "date": e.created_at, "status": "آزمایشی" if e.kind.startswith('demo_') else "موفق",
                              "category": e.kind, "actor": e.actor} for e in activities)
+        durable_projects = []
+        order_ids = {o.external_id for o in orders}
+        for row in db.query(PanelProject).filter(PanelProject.user_id == uid).order_by(PanelProject.created_at.desc()).all():
+            if row.id in order_ids:
+                continue
+            try:
+                project = json.loads(row.payload)
+            except (TypeError, ValueError):
+                continue
+            project.update(id=row.id, owner=account_id(uid))
+            durable_projects.append(project)
         return {"userId": account_id(uid), "balance": wallet.balance if wallet else 0,
                 "demoPayments": os.environ.get('PANEL_DEMO_PAYMENTS') == '1',
-                "projects": [order_payload(db, o) for o in orders],
+                "projects": [order_payload(db, o) for o in orders] + durable_projects,
                 "transactions": sorted(transactions, key=lambda e: e['date'], reverse=True)}
+
+    def import_projects(db, uid, rows):
+        if not isinstance(rows, list) or len(rows) > 100:
+            raise HTTPException(400, "فهرست پروژه‌ها معتبر نیست.")
+        now = datetime.utcnow().isoformat() + "Z"
+        allowed = {"title", "service", "area", "amount", "status", "progress", "date", "answers",
+                   "engineProjectId", "engineProjectToken", "quoteToken", "paid", "designStage",
+                   "designLabel", "designDetail", "designTimeline", "outputReady", "lastError"}
+        for item in rows:
+            if not isinstance(item, dict) or not re.fullmatch(r"[A-Za-z0-9_-]{3,80}", str(item.get("id", ""))):
+                raise HTTPException(400, "یکی از پروژه‌ها معتبر نیست.")
+            project_id = str(item["id"])
+            payload = {key: item[key] for key in allowed if key in item}
+            encoded = json.dumps(payload, ensure_ascii=False)
+            if len(encoded.encode()) > 20000:
+                raise HTTPException(400, "حجم اطلاعات پروژه بیش از حد مجاز است.")
+            row = db.get(PanelProject, project_id)
+            if row and row.user_id != uid:
+                raise HTTPException(409, "این پروژه متعلق به حساب دیگری است.")
+            if row:
+                row.payload = encoded
+                row.updated_at = now
+            else:
+                db.add(PanelProject(id=project_id, user_id=uid, payload=encoded, created_at=now, updated_at=now))
 
     def adjust(db, uid, body, *, demo=False):
         request_id = str(body.get('requestId', ''))
@@ -294,7 +337,7 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             return {'users': [{'id': account_id(p.user_id), 'mobile': p.phone, 'name': p.phone,
                                'wallet': a['balance'], 'active': True, 'admin': False, 'email': ''}
                               for p, a in zip(profiles, accounts)],
-                    'projects': [p for a in accounts for p in a['projects'] if p['paid']],
+                    'projects': [p for a in accounts for p in a['projects'] if p.get('paid')],
                     'transactions': [t for a in accounts for t in a['transactions']]}
 
     @app.post("/internal/panel/customer/session")
@@ -348,12 +391,16 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     async def customer(action: str, request: Request):
         uid = session_user(request)
         body = await request.json()
-        if action not in ("state", "claim", "quote", "pay", "topup"):
+        if action not in ("state", "import", "claim", "quote", "pay", "topup"):
             raise HTTPException(404)
         with legacy.Session() as db:
             begin(db)
             require_account(db, uid)
             if action == "state":
+                return state(db, uid)
+            if action == "import":
+                import_projects(db, uid, body.get("projects"))
+                db.commit()
                 return state(db, uid)
             if action == 'topup':
                 adjust(db, uid, {**body, 'kind': 'credit', 'reason': 'افزایش موجودی آزمایشی — بدون برداشت بانکی'}, demo=True)
@@ -472,5 +519,5 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             db.commit()
             return {"project": order_payload(db, order), **state(db, uid)}
 
-    app.state.panel_checkout = SimpleNamespace(Handoff=Handoff, Checkout=Checkout, Ledger=Ledger, Activity=Activity, Profile=Profile,
+    app.state.panel_checkout = SimpleNamespace(Handoff=Handoff, Checkout=Checkout, Ledger=Ledger, Activity=Activity, Profile=Profile, PanelProject=PanelProject,
                                                session_user=session_user, apply_account_reconciliations=apply_account_reconciliations)

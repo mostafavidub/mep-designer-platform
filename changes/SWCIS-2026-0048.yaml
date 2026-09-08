@@ -1,0 +1,21 @@
+{
+  "change_id": "SWCIS-2026-0048",
+  "summary": "Persist panel projects under their server-side customer identity so they remain available across browsers and devices.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "Authenticated customers can import bounded legacy project metadata; account state returns durable projects.",
+    "qa": "Cross-session persistence and ownership tests cover the new contract.",
+    "migration": "A new additive panel_customer_projects table stores browser-originated legacy projects under the canonical customer ID.",
+    "docs": "Durable project ownership replaces browser storage as the product source of truth.",
+    "governance": "SWCIS 4.0.0 closure recorded.", "deployment": "Deploy backend before the panel Site, then perform one login in the legacy browser.",
+    "rule_book": "verified not affected", "pmm": "verified not affected", "questionnaire": "verified not affected", "planner": "verified not affected", "cad_designer": "verified not affected", "routing": "verified not affected", "sizing": "verified not affected", "equipment": "verified not affected", "manufacturer_selector": "verified not affected", "detail_riser": "verified not affected", "manifest": "verified not affected", "versioning": "automatic Git build identity remains authoritative"
+  },
+  "evidence": {
+    "traceability": ["No engineering Rule ID changes."], "tests": ["Full repository regression plus cross-session project persistence."], "docs": ["Change request records durable ownership contract."], "version_bump": ["Automatic Git build identity."], "migration": ["Additive table; no destructive row changes."], "golden_regression": ["Full repository regression."], "semantic_diff": ["Project metadata follows the canonical customer account across sessions."], "artifact_diff": ["No CAD artifact change."], "numeric_diff": ["No engineering numeric change."], "contract_diff": ["Customer state includes all durable projects; authenticated import added."], "deployment_plan": ["Backend first, Site second, then legacy-browser login migrates existing local projects."], "rollback_plan": ["Revert code; retain additive project rows for forward recovery."]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 2, "score": 12, "rationale": "Ownership is session-derived, payloads are bounded and whitelisted, and conflicting IDs fail closed."},
+  "waiver": null
+}
