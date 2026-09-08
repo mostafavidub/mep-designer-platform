@@ -5,6 +5,13 @@ from .parametric_documentation_v19 import generate_detail, generate_riser_from_n
 from .submission_qa_v19 import submission_gate
 
 
+def _pmm_v3_traceability_required(payload: dict) -> bool:
+    pmm = payload.get("project_mechanical_model") or {}
+    return pmm.get("schema") == "project-mechanical-model/v3" and (
+        (pmm.get("traceability_contract") or {}).get("policy") == "NO_ORPHAN_ENGINEERING_OUTPUT"
+    )
+
+
 def run_v19_pipeline(payload: dict) -> dict:
     phases={}
     model=build_coordination_model(payload)
@@ -16,7 +23,13 @@ def run_v19_pipeline(payload: dict) -> dict:
     if selection["status"] != "PASS": return _blocked(phases,"manufacturer")
     details=[generate_detail(x) for x in payload.get("detail_specs") or []]
     riser=generate_riser_from_network(payload.get("network_graph") or {})
-    phases["documentation"]={**documentation_gate(details,riser),"details":details,"riser":riser}
+    require_traceability=_pmm_v3_traceability_required(payload)
+    calculation_rows=payload.get("calculation_rows")
+    if require_traceability and calculation_rows is None:
+        calculation_rows=[]
+    doc_gate=documentation_gate(details,riser,calculation_rows if require_traceability or calculation_rows is not None else None)
+    phases["documentation"]={**doc_gate,"details":details,"riser":riser,
+                             "pmm_traceability_required":require_traceability}
     if phases["documentation"]["status"] != "PASS": return _blocked(phases,"documentation")
     phases["golden"]=payload.get("golden_result") or {"status":"MISSING"}
     gate=submission_gate(phases)
