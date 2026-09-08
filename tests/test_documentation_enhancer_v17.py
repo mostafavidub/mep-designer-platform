@@ -89,9 +89,9 @@ class DocumentationEnhancerV17Tests(unittest.TestCase):
             out=apply_documentation_enhancements(p,report,ctx)
             self.assertEqual(out['status'],'PASS',out)
             selected=out['documentation_package']['details']['selected_details']
-            self.assertEqual(len(selected),19)
+            self.assertEqual(len(selected),20)
             qa=out['detail_materialization']; self.assertEqual(qa['status'],'PASS',qa)
-            self.assertEqual(qa['expected_count'],19); self.assertEqual(qa['materialized_count'],19)
+            self.assertEqual(qa['expected_count'],20); self.assertEqual(qa['materialized_count'],20)
             doc=ezdxf.readfile(p); all_text=[]
             for e in doc.modelspace():
                 if e.dxftype()=='TEXT': all_text.append(str(e.dxf.text or ''))

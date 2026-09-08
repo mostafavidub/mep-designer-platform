@@ -27,7 +27,7 @@ SYSTEM_ALIASES = {
 
 DETAIL_RULES = {
     "SANITARY_VENT": ["D-PL-01 CLEANOUT", "D-PL-02 FLOOR DRAIN", "D-PL-03 SLEEVE/PENETRATION", "D-PL-04 VENT ROOF TERMINATION"],
-    "WATER": ["D-PL-05 WATER ISOLATION VALVE", "D-GN-01 PIPE SUPPORT/HANGER"],
+    "WATER": ["D-PL-05 WATER ISOLATION VALVE", "D-GN-01 PIPE SUPPORT/HANGER", "D-WS-01 WATER SERVICE / PUMP"],
     "HEATING": ["D-HT-01 RADIATOR WALL", "D-HT-02 RADIATOR VALVES", "D-HT-03 BOILER HYDRAULIC", "D-HT-04 BOILER FLUE"],
     "GAS": ["D-GS-01 GAS MAIN SHUTOFF/METER", "D-GS-02 GAS APPLIANCE CONNECTION"],
     "SPLIT_AC": ["D-AC-01 INDOOR UNIT", "D-AC-02 OUTDOOR UNIT", "D-AC-03 REFRIGERANT PIPING", "D-AC-04 CONDENSATE DRAIN"],
@@ -225,7 +225,7 @@ def reconcile_plan_riser(context: ProjectContext, graph: dict[str, Any]) -> dict
     branch_edges=[e for e in graph["edges"] if e.get("type")=="PLAN_BRANCH"]; expected=[]
     for idx,r in enumerate(context.routes):
         c=canonical_system(r.get("system")); level=r.get("level") or r.get("floor")
-        if c in {"SANITARY_VENT","WATER","HEATING","GAS"} and level: expected.append((idx,c,level))
+        if c in {"SANITARY_VENT","WATER","HEATING","GAS"}: expected.append((idx,c,level))
     mapped={(int(e["from"].split(":")[1]),e["system"],e["level"]) for e in branch_edges}; missing=[x for x in expected if x not in mapped]
     riser_system_levels={(n["system"],n["level"]) for n in graph["nodes"]}; orphan=[e for e in branch_edges if (e["system"],e["level"]) not in riser_system_levels]
     return {"pass":not missing and not orphan,"expected_branch_count":len(expected),"mapped_branch_count":len(mapped),"missing":missing,"orphan":orphan}
@@ -356,8 +356,20 @@ def project_context_from_report(report: dict[str,Any], answers: dict[str,Any] | 
         c=canonical_system(row.get("family"))
         if c and c not in systems: systems.append(c)
     if any(r.get("family")=="ROOF" for r in manifest) and "RAINWATER" not in systems: systems.append("RAINWATER")
-    pipeline=report.get("pipeline") or report.get("engineering") or {}; routes=[]
-    for src in [pipeline.get("routing") or {}, pipeline.get("hvac") or {}]: routes.extend(src.get("routes") or [])
+    pipeline=report.get("documentation_inputs") or report.get("pipeline") or report.get("engineering") or {}; routes=[]
+    plans=(pipeline.get("architecture") or {}).get("plans") or []
+    plan_levels=defaultdict(set)
+    for plan in plans:
+        if plan.get("plan_id") and plan.get("level"):
+            plan_levels[plan["plan_id"]].add(plan["level"])
+    for src in [pipeline.get("routing") or {}, pipeline.get("hvac") or {}]:
+        for raw in src.get("routes") or []:
+            route=dict(raw)
+            if not (route.get("level") or route.get("floor")):
+                candidates=plan_levels.get(route.get("plan_id"),set())
+                if len(candidates)==1:
+                    route["level"]=next(iter(candidates))
+            routes.append(route)
     equipment=(pipeline.get("hvac") or {}).get("equipment") or []; fixtures=(pipeline.get("architecture") or {}).get("fixtures") or []
     return ProjectContext(project_id=project_id,building_use=answers.get("building_use","residential"),levels=levels or ["GROUND"],active_systems=systems,fixtures=list(fixtures),equipment=list(equipment),routes=list(routes),answers=answers)
 

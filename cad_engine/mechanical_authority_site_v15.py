@@ -446,6 +446,13 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "version":"mechanical-authority-site-pipeline-v15.1",
         "pipeline_qa":pipeline_qa,
         "engineering_acceptance":acceptance,
+        # Carry the actual engineering evidence into downstream documentation.
+        # Do not retain architecture text/entity caches in the delivery report.
+        "documentation_inputs": {
+            "architecture": {key: pipeline["architecture"].get(key) or [] for key in ("plans", "fixtures")},
+            "routing": {"routes": pipeline["routing"].get("routes") or []},
+            "hvac": {key: (pipeline.get("hvac") or {}).get(key) or [] for key in ("routes", "equipment")},
+        },
         "authority":authority,
         "composition":compose,
         "enrichment":enrich,

@@ -1,0 +1,54 @@
+{
+  "change_id": "SWCIS-2026-0048",
+  "summary": "Repair documentation route handoff, materialize declared equipment/details, and compose isolated output without post-generation deletion.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "runtime",
+    "drawing_output",
+    "ui_api",
+    "test",
+    "documentation",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "cad_designer",
+    "qa",
+    "ui_api",
+    "deployment",
+    "docs",
+    "governance",
+    "manifest",
+    "migration",
+    "versioning",
+    "detail_riser"
+  ],
+  "impact_notes": {
+    "cad_designer": "Generate only issued boards into an empty destination; immutable source-resource import; plan-local ODU when no authoritative roof.",
+    "qa": "Positive and destructive missing-evidence checks.",
+    "ui_api": "Bounded failed-stage diagnostics.",
+    "detail_riser": "Bind only actual route plan IDs to unambiguous authoritative levels; missing/ambiguous evidence remains blocking."
+  },
+  "evidence": {
+    "traceability": "Real pipeline route ID -> plan_id -> authoritative level -> riser branch -> exact-file documentation QA.",
+    "tests": "89 focused tests PASS. Canonical actual-source engine PASS / PRE_SUBMISSION including preservation, documentation, equipment/detail integrity, exact audit and Step12. Direct-call approved-manifest/population checks SKIPPED; live E2E still required.",
+    "docs": "docs/DOCUMENTATION_ROUTE_RECOVERY.md",
+    "version_bump": "SWCIS 3.0.3 adds classification for existing reference-parity adapter. Runtime identified by Git/content hashes.",
+    "migration": "Additive report-only documentation_inputs; no DB migration. Regenerate design from saved source and answers.",
+    "golden_regression": "PENDING: required real seven-project sealed Golden evidence unavailable; release remains blocked.",
+    "semantic_diff": "Restore declared ODU plan geometry and D-WS-01 detail. Preserve real route identities and exact architecture transforms. No sanitizer/gate weakening; original source is immutable.",
+    "artifact_diff": "Actual-source final candidate: 5,253 entities before/after isolation; zero entity/layout removals; zero audit errors; all preservation checks PASS. Input and exact output hashes in docs/DOCUMENTATION_ROUTE_RECOVERY.md. No customer geometry in Git.",
+    "numeric_diff": "No engineering numeric changes; user pressures/rainfall unchanged.",
+    "contract_diff": "Additive documentation_inputs and server diagnostics. Generated destination excludes original remote modelspace and never creates blank per-sheet layouts; approved modelspace boards retained. No questionnaire or HTTP status changes.",
+    "deployment_plan": "BLOCKED pending required canonical and release evidence. Publish reviewable isolated branch only; do not deploy this candidate while product gates are non-PASS.",
+    "rollback_plan": "Redeploy previously approved Git commit. Never disable or weaken locked gates."
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 4,
+    "detectability": 3,
+    "score": 36,
+    "rationale": "Missing route evidence blocks documentation; do not invent branches or weaken checks."
+  },
+  "waiver": null
+}

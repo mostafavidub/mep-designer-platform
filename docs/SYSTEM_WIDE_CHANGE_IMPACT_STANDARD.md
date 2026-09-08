@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 3.0.0
+**Canonical version:** 3.0.3
 
 **Status:** LOCKED
 
@@ -66,7 +66,7 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read SWCIS 2.0.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every SWCIS and product gate is PASS.
+> Before changing anything, read SWCIS 3.0.3 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every SWCIS and product gate is PASS.
 
 ## Administration and branch protection
 
