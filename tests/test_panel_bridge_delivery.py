@@ -61,6 +61,8 @@ def test_panel_bridge_golden_uses_persisted_design_progress():
 def test_panel_bridge_web_contract_exposes_output_only_when_ready():
     assert 'project.status == "ready"' in BRIDGE
     assert 'data["download_url"]' in BRIDGE
+    assert 'data["primary_action"]' in BRIDGE
+    assert '"label": "دانلود فایل خروجی"' in BRIDGE
     assert '@app.get("/internal/panel/projects/{pid}/output")' in BRIDGE
     assert "presigned_download" in BRIDGE
 

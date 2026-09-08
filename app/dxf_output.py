@@ -643,6 +643,7 @@ def flow_payload_dxf(p):
     ready = p.status == 'ready' and bool(p.current_revision)
     output_url = f'/projects/{p.id}/output/{p.current_revision}' if ready else None
     data['output_url'] = output_url
+    data['download_url'] = output_url
     data['output_format'] = 'DXF'
     # Temporary compatibility for the existing modal JS.
     data['pdf_url'] = output_url

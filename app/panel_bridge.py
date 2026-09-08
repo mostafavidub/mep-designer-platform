@@ -84,6 +84,16 @@ def register_panel_bridge(app, legacy, Job):
             if data["output_ready"]
             else None
         )
+        data["primary_action"] = (
+            {
+                "type": "download",
+                "label": "دانلود فایل خروجی",
+                "format": data.get("output_format") or "DXF",
+                "url": data["download_url"],
+            }
+            if data["output_ready"]
+            else None
+        )
         return data
 
     @app.post("/internal/panel/projects")

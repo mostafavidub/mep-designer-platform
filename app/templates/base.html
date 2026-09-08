@@ -45,6 +45,7 @@
   {% if page_path == '/electrical' %}<link rel="stylesheet" href="/static/electrical-hero-v1.css?v=20260826-hero2">{% endif %}
   <link rel="stylesheet" href="/static/account.css?v=20260902-1">
   <link rel="stylesheet" href="/static/admin-pricing.css?v=20260902-1">
+  {% block head_extra %}{% endblock %}
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
 </head>
