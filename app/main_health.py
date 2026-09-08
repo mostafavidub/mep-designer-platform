@@ -16,6 +16,7 @@ from .artifact_delivery_fix import install as install_artifact_delivery_fix
 from .architecture_reconstruction_v1 import install as install_architecture_reconstruction_v1
 from .architecture_topology_v1 import install as install_architecture_topology_v1
 from .fixture_detection_v2 import install as install_fixture_detection_v2
+from .coordinate_isolation_v1 import install as install_coordinate_isolation_v1
 from .fixture_context_v1 import install as install_fixture_context_v1
 from .fixture_gate_v1 import install as install_fixture_gate_v1
 from .level_detection_v3 import install as install_level_detection_v3
@@ -42,8 +43,10 @@ install_level_detection_v3(main_auto)
 # Step 1: reconstruct actual architecture and engineering topology.
 install_architecture_reconstruction_v1(main_auto)
 install_architecture_topology_v1(main_auto)
-# Step 2: detect fixtures/equipment then bind each detection to room/wet-core context.
+# Step 2: detect fixtures/equipment. Step 3 then binds every detection to its
+# source-file/Level Authority coordinate frame before room association.
 install_fixture_detection_v2(main_auto)
+install_coordinate_isolation_v1(main_auto)
 install_fixture_context_v1(main_auto)
 # Existing downstream guards remain after the stronger evidence model.
 install_fixture_gate_v1(main_auto, mechanical_workflow)
