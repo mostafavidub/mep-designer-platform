@@ -1,6 +1,6 @@
 """Ordered v19 mechanical design pipeline. Later phases cannot run around gates."""
 from __future__ import annotations
-from .coordination_v19 import build_coordination_model, route_with_2_5d
+from .coordination_v19 import build_coordination_model, route_25d
 from .equipment_representation_v14 import validate_equipment_integrity
 from .manufacturer_selector_v19 import select_equipment
 from .parametric_documentation_v19 import generate_parametric_documentation
@@ -14,7 +14,7 @@ def run_v19_pipeline(payload: dict) -> dict:
     if coordination["status"]!="PASS":
         blocked="coordination"
         return _result(phases,blocked)
-    route=route_with_2_5d(payload.get("route_request") or {},coordination["model"])
+    route=route_25d(payload.get("route_request") or {},coordination["model"] if "model" in coordination else coordination)
     phases["routing_2_5d"]=route
     if route["status"]!="PASS":
         blocked="routing_2_5d"
