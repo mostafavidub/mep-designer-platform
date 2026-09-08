@@ -1,0 +1,44 @@
+{
+  "schema": "reference-truth-set/1.0",
+  "project_id": 10,
+  "project_alias": "fasihi",
+  "purpose": "Held-out semantic engineering truth for regression and calibration after blind sealing; never a generation input.",
+  "privacy_policy": "No customer DXF bytes are stored in Git. Only reviewed semantic facts and externally verified hashes may be stored.",
+  "source": {
+    "reference_file_sha256": null,
+    "hash_status": "INPUT_REQUIRED",
+    "reason": "The exact reference binary is not present in the active repository runtime; do not invent or truncate a SHA256."
+  },
+  "facts": {
+    "domestic_water": {
+      "storage_tank_l": 500,
+      "pump_head_m": 17,
+      "pump_flow_gpm": 17.5
+    },
+    "cooling": {
+      "observed_split_capacities_btu_h": [9000, 12000, 30000]
+    },
+    "heating": {
+      "observed_radiator_sections": [14, 16, 20, 22],
+      "radiator_nominal_height_mm": 500,
+      "radiator_nominal_depth_mm": 90
+    },
+    "common_pipe_sizes_mm": [16, 20, 25, 32],
+    "sanitary": {
+      "observed_primary_drain_nominal_mm": 110,
+      "observed_slope_percent": 2
+    }
+  },
+  "evidence_status": {
+    "semantic_facts": "REFERENCE_REVIEWED",
+    "binary_hash": "INPUT_REQUIRED",
+    "generation_use": "FORBIDDEN_BEFORE_BLIND_SEAL"
+  },
+  "non_claims": [
+    "No official gas utility meter/regulator capacity or service-point authority is asserted.",
+    "No official local rainfall intensity is asserted.",
+    "No exact manufacturer brand/model is asserted from capacity-only labels.",
+    "No Structural/RCP coordination is asserted.",
+    "No licensed-engineer approval is asserted."
+  ]
+}
