@@ -1,8 +1,8 @@
 {
   "change_id": "SWCIS-2026-0050",
-  "summary": "Add a privacy-safe semantic truth set for project 10, make PMM the stable-ID source of truth, propagate identity into calculations, and enforce output reconciliation.",
+  "summary": "Add a privacy-safe semantic truth set for project 10, make PMM the stable-ID source of truth, propagate identity into calculations, enforce output reconciliation, and repair the required authority CI Docker context exposed by the protected suite.",
   "requester": "project-owner",
-  "change_types": ["rule", "schema", "calculation", "drawing_output", "ui_api", "test", "documentation", "governance", "release_identity"],
+  "change_types": ["rule", "schema", "calculation", "drawing_output", "ui_api", "test", "documentation", "governance", "release_identity", "deployment"],
   "changed_rule_ids": ["MEP-INPUT-001", "MEP-SIZE-001", "MEP-SUBMIT-001"],
   "impacted_modules": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
   "impact_notes": {
@@ -22,23 +22,23 @@
     "docs": "Document truth-set and traceability contracts.",
     "versioning": "Schema addition and SWCIS graph/traceability additions require coordinated minor-version update.",
     "migration": "Existing PMM v2 readers remain valid; v3 adds fields only with reader-before-writer migration contract.",
-    "governance": "Classify project_mechanical_model.py under PMM/schema and govern semantic truth files.",
-    "deployment": "Deployment is blocked until protected checks and later release authorization pass."
+    "governance": "Classify project_mechanical_model.py, semantic truth files, and the CI repair under the same fail-closed change request.",
+    "deployment": "Mechanical Authority CI now builds cad_engine/Dockerfile from repository root, matching its COPY contract. Production deployment remains blocked until protected checks and later release authorization pass."
   },
   "evidence": {
     "traceability": ["Rule -> PMM -> calculation -> drawing/riser/schedule -> QA chain is explicitly represented in rule_traceability_matrix.yaml and contract tests."],
-    "tests": ["Focused PMM, calculation traceability, documentation reconciliation, truth-set and SWCIS tests; full CI required."],
+    "tests": ["Focused PMM, calculation traceability, documentation reconciliation, truth-set and SWCIS tests; full protected CI required including Docker image build."],
     "docs": ["REFERENCE_TRUTH_SET_STANDARD.md and PMM_TRACEABILITY_STANDARD.md plus canonical SWCIS version reconciliation."],
     "version_bump": ["PMM schema v3 additive contract; SWCIS 4.1.0 minor bump for graph/path/traceability additions; executable release identity remains Git/content-derived."],
     "migration": ["Versioned reader-before-writer additive PMM v2->v3 migration; no stored field deletion."],
     "golden_regression": ["Project-10 semantic truth set is held-out/reference evidence, not generation input; existing regression gates remain required."],
     "semantic_diff": ["Stable identities and evidence provenance become explicit; engineering formulas remain unchanged."],
-    "artifact_diff": ["No customer DXF is committed; output reconciliation is metadata/QA only."],
+    "artifact_diff": ["No customer DXF is committed; output reconciliation is metadata/QA only; CI Docker build context is corrected without changing the Dockerfile image contract."],
     "numeric_diff": ["No numeric formula or design constant change."],
     "contract_diff": ["PMM adds entity registry/traceability; calculations add calc_id/source_pmm_ids; documentation validates identity reconciliation; existing public PMM fields remain present."],
-    "deployment_plan": ["Merge only after required CI passes; deploy canonical runtime only in a later approved release."],
-    "rollback_plan": ["Revert the protected commit; additive fields have no destructive migration."]
+    "deployment_plan": ["Build cad_engine/Dockerfile from repository root in CI; merge only after every required workflow passes; deploy canonical runtime only in a later approved release."],
+    "rollback_plan": ["Revert the protected commit; additive fields have no destructive migration; the prior CI command may be restored only if Dockerfile COPY paths are also reverted consistently."]
   },
-  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "PMM is upstream of most mechanical consumers, but changes are additive and formulas/geometry rules are unchanged."},
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "PMM is upstream of most mechanical consumers, but changes are additive and formulas/geometry rules are unchanged. CI Docker-context repair aligns existing Dockerfile COPY paths and is exercised by the required workflow."},
   "waiver": null
 }
