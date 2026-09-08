@@ -3,7 +3,7 @@
   "status": "APPROVED",
   "summary": "Fail closed on non-level frame contamination, degenerate mechanical networks, collapsed equipment, riser contradictions, unsupported calculation facts and unmaterialized details.",
   "reason": "User-directed remediation after blind comparison of production projects 102 and 103 showed mixed architectural frames, marker-only water/sanitary networks, duplicate equipment, missing ODU entities, zero-branch risers marked true and calculation/detail inconsistencies.",
-  "change_types": ["drawing_output", "ui_api", "test", "governance", "documentation"],
+  "change_types": ["drawing_output", "ui_api", "test", "governance", "documentation", "deployment"],
   "impacted_modules": [
     "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector",
     "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration",
@@ -28,7 +28,9 @@
     "artifact_diff": "Blind sealed post-generation proofs for projects 102 and 103 improved strict scores while retaining frame contamination as a hard blocker rather than deleting unknown architecture.",
     "docs": "docs/GENERATED_MECHANICAL_INTEGRITY_GATE.md defines the exact artifact integrity contract and regression policy.",
     "contract_diff": "Existing API status contract is preserved; generated_dxf_integrity_gate and generated_dxf_integrity_qa are additive failure diagnostics.",
-    "version_bump": "No parallel runtime version is introduced; Git commit SHA remains the build identity and the release capability registry is extended."
+    "version_bump": "No parallel runtime version is introduced; Git commit SHA remains the build identity and the release capability registry is extended.",
+    "deployment_plan": "Do not merge or deploy until SWCIS, full unit/contract CI, seven-project golden regression, blind raw-architecture regeneration of projects 102 and 103, reference comparison, and production E2E upload-to-download all pass. Deployment uses the existing canonical Railway service after merge; no production runtime entrypoint is changed by this change.",
+    "rollback_plan": "If any post-merge or production verification fails, revert the PR/commit to the last known-good main and redeploy that known-good Railway build. The generated-artifact gate itself restores the previous safe artifact or removes the unreleasable new output on generation failure."
   },
   "rollback": "Revert only if replaced by an equally fail-closed exact-artifact gate; never restore presence-only mechanical release acceptance."
 }
