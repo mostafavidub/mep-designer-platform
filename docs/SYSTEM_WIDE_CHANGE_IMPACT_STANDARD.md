@@ -1,10 +1,10 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.0.0
+**Canonical version:** 4.1.0
 
 **Status:** LOCKED
 
-**Effective:** 2026-09-04
+**Effective:** 2026-09-09
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
 
@@ -34,6 +34,18 @@ automatic build identity. Rollback redeploys an approved Git commit or tag.
 - `version_manifest.yaml`: canonical version and coordinated bump rules.
 
 All `.yaml` contracts use the JSON-compatible subset of YAML so the validator is deterministic and has no third-party parser dependency.
+
+## PMM and reference-truth governance
+
+The PMM implementation (`app/project_mechanical_model.py`) is an explicit `pmm`/schema-governed component. A PMM schema change therefore propagates through every transitive consumer and cannot be treated as an isolated application-file edit.
+
+Private held-out reference drawings remain outside Git. Reviewed semantic facts may be recorded under governed Golden/test artifacts only when their provenance and non-claims are explicit. A semantic reference truth set is comparison/calibration evidence after blind sealing; it must never become a hidden generation input. Missing exact source hashes remain `INPUT_REQUIRED` rather than being guessed.
+
+For upgraded mechanical traceability the required identity chain is:
+
+`PMM Entity ID -> Calculation ID -> Plan ID = Riser ID = Schedule ID -> QA`
+
+An orphan calculation, an output without a calculation, duplicate calculation identity, or identity divergence is a blocking engineering defect.
 
 ## Required workflow
 
@@ -68,7 +80,7 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read SWCIS 4.0.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private seven-project reference files are not publication prerequisites.
+> Before changing anything, read SWCIS 4.1.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private seven-project reference files are not publication prerequisites.
 
 ## Administration and branch protection
 
