@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 3.0.0
+**Canonical version:** 4.0.0
 
 **Status:** LOCKED
 
@@ -54,6 +54,8 @@ The comparison must inventory files, sheets, drawing families, entities, labels,
 
 ## Regression governance
 
+Owner-authorized publication policy, 2026-09-08: the seven private reference projects are optional comparison material, not publication prerequisites. Automated regression and synthetic negative tests remain mandatory. Missing optional reference files are not a failed publication gate and must not be represented as a successful comparison. Per-project engineering output checks remain unchanged. Live browser verification follows rollout.
+
 SWCIS defines how regression suites are selected, sealed, compared, and accepted; it does not contain project or customer identifiers. Concrete test-project inventories belong in versioned test-suite configuration outside `standards/swcis/`. Risk-selected representative tests and synthetic negative tests are mandatory. Required categories cover missing authoritative input, dependency or route conflict, external-data no-match, schema compatibility, and locked-semantic removal. Private source drawings never enter Git; only hashes, reproducibility metadata, and semantic baselines may be stored.
 
 ## Waivers
@@ -66,8 +68,8 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read SWCIS 2.0.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every SWCIS and product gate is PASS.
+> Before changing anything, read SWCIS 4.0.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private seven-project reference files are not publication prerequisites.
 
 ## Administration and branch protection
 
-CODEOWNERS provides the repository-level owner mapping currently possible. A GitHub administrator must configure the default branch to require pull requests, required CODEOWNER review, dismissal of stale approvals, no force pushes, no branch deletion, no administrator bypass, and the exact check `SWCIS Governance / swcis-governance`. CI configuration alone cannot enable repository branch-protection settings.
+CODEOWNERS provides the repository-level owner mapping. At the sole owner's explicit request on 2026-09-08, this single-owner repository accepts the owner's recorded release approval instead of an independent pull-request approval. This fulfils owner review in the workflow above; an additional person is not mandatory. Keep pull requests and mandatory `swcis-governance` checks, no force pushes, no branch deletion and no administrator bypass. This does not waive engineering evidence, failing tests, golden/E2E checks or waiver restrictions. CI configuration alone cannot enable branch protection.

@@ -47,6 +47,15 @@ def build_unified_questionnaire(analysis, discipline, supplied_answers=None):
         answers.pop('heating', None)
         answers.pop('cooling', None)
     proposed = dynamic_questions(analysis, discipline, auto)
+    if discipline == 'mechanical':
+        from types import SimpleNamespace
+        from . import mechanical_workflow
+        basis_project = SimpleNamespace(answers={**answers, **(supplied_answers or {})}, analysis=analysis)
+        known = {key for key, _ in proposed}
+        aliases = {'city': 'location', 'heating_system': 'heating', 'cooling_system': 'cooling'}
+        for key in mechanical_workflow.required_basis_questions(basis_project):
+            if key not in known and aliases.get(key) not in known:
+                proposed.append((key, mechanical_workflow._question_payload(key)['question']))
     question_keys = {key for key, _prompt in proposed}
     for key, value in dict(supplied_answers or {}).items():
         if key in question_keys and value is not None and str(value).strip():
@@ -529,11 +538,13 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
             discipline,
             {'occupancy': occupancy.strip()} if occupancy.strip() else {},
         )
+        from .mechanical_workflow import _question_payload
         return {
             'version': QUESTIONNAIRE_VERSION,
             'discipline': discipline,
             'source': 'engi-design-engine',
-            'questions': legacy.qlist(unresolved),
+            'questions': [_present_question(q) for q in legacy.qlist(unresolved)],
+            'conditional_questions': ([dict(_question_payload('gas_pressure'), depends_on='gas')] if discipline == 'mechanical' else []),
             'inferred_answers': {
                 key: str(value) for key, value in answers.items()
                 if isinstance(value, (str, int, float, bool))
