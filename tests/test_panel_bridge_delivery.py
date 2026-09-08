@@ -7,10 +7,12 @@ HEALTH = (ROOT / "app/main_health.py").read_text(encoding="utf-8")
 PROGRESS = (ROOT / "app/design_progress.py").read_text(encoding="utf-8")
 
 
-def test_panel_bridge_positive_queues_real_design_job():
-    assert 'Job(' in BRIDGE
-    assert 'job_type="design"' in BRIDGE
-    assert 'set_project_progress(project, "queued")' in BRIDGE
+def test_panel_bridge_prepares_but_only_paid_checkout_queues_real_design_job():
+    checkout = (ROOT / "app/panel_checkout.py").read_text(encoding="utf-8")
+    assert 'Job(' not in BRIDGE
+    assert 'job_type="design"' in checkout
+    assert 'set_project_progress(project, "queued")' in checkout
+    assert checkout.index('wallet.balance -= order.amount') < checkout.index('db.add(Job(')
     assert 'project_token(external_project_id, external_user_hash)' in BRIDGE
     assert 'existing.external_user_hash' in BRIDGE
     assert "register_panel_bridge(app, main_auto.legacy, DesignJob)" in HEALTH

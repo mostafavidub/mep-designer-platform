@@ -245,6 +245,14 @@ def ensure_required_basis_questions(p):
     return True
 
 
+def insert_gas_pressure_question(p, key, next_index):
+    if key != 'gas' or _negative((p.answers or {}).get('gas')) or _numeric((p.answers or {}).get('gas_pressure')) is not None:
+        return
+    questions = [q for q in p.questions or [] if q.get('key') != 'gas_pressure']
+    questions.insert(next_index, _question_payload('gas_pressure'))
+    p.questions = questions
+
+
 def reopen_basis_questions(p, missing):
     """Return a late authority failure to its exact unanswered questions."""
     allowed=[key for key in missing if key in REQUIRED_BASIS_QUESTION_SPECS]
@@ -370,6 +378,7 @@ def register_mechanical_workflow(app, legacy):
             if error:
                 analysis = dict(p.analysis or {}); analysis['answer_error'] = error; p.analysis = analysis; p.status = 'asking'; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
             p.answers = normalize_answers(p.answers or {}, answer_key=key, raw_answer=cleaned); p.current_question = idx + 1
+            insert_gas_pressure_question(p, key, idx + 1); qs = p.questions or []
             if p.current_question >= len(qs):
                 if _discipline(p) == 'mechanical': _advance_mechanical(p)
                 else: p.status = 'ready_to_design'
@@ -394,6 +403,7 @@ def register_mechanical_workflow(app, legacy):
         if error:
             data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); data['answer_error'] = error; db.close(); return JSONResponse(data)
         p.answers = normalize_answers(p.answers or {}, answer_key=key, raw_answer=cleaned_answer); p.current_question = idx + 1
+        insert_gas_pressure_question(p, key, idx + 1); qs = p.questions or []
         if p.current_question >= len(qs):
             if _discipline(p) == 'mechanical': _advance_mechanical(p)
             else: p.status = 'ready_to_design'

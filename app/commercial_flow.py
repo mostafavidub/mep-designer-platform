@@ -13,7 +13,7 @@ def register_commercial_flow(app, legacy):
         __tablename__ = "wallets"
         id: Mapped[int] = mapped_column(Integer, primary_key=True)
         user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
-        balance: Mapped[int] = mapped_column(Integer, default=8_500_000)
+        balance: Mapped[int] = mapped_column(Integer, default=0)
         updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     class ProjectQuote(legacy.Base):
@@ -78,7 +78,7 @@ def register_commercial_flow(app, legacy):
         db = legacy.Session()
         wallet = db.query(Wallet).filter(Wallet.user_id == user_id).first()
         if not wallet:
-            wallet = Wallet(user_id=user_id, balance=8_500_000)
+            wallet = Wallet(user_id=user_id, balance=0)
             db.add(wallet); db.commit(); db.refresh(wallet)
         data = {"balance": wallet.balance}
         db.close()

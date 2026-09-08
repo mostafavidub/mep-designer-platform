@@ -21,6 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from . import artifact_storage, dxf_output, mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
+from .panel_checkout import register_panel_checkout, session_user
 
 
 def register_panel_bridge(app, legacy, Job):
@@ -108,6 +109,8 @@ def register_panel_bridge(app, legacy, Job):
         file: UploadFile = File(...),
     ):
         authorized(request)
+        customer_id = session_user(request)
+        external_user_id = f"CUST-{customer_id}"
         if discipline not in legacy.DISCIPLINES:
             raise HTTPException(400, "Unknown discipline")
         try:
@@ -253,24 +256,9 @@ def register_panel_bridge(app, legacy, Job):
                     analysis["drawing_set"] = approved
                     project.analysis = analysis
                 project.status = "ready_to_design"
-                revision_no = (project.current_revision or 0) + 1
-                revision = legacy.Revision(
-                    project_id=project.id,
-                    revision_no=revision_no,
-                    status="queued",
-                )
-                db.add(revision)
-                db.flush()
-                job = Job(
-                    job_type="design",
-                    project_id=project.id,
-                    revision_id=revision.id,
-                    status="queued",
-                )
-                db.add(job)
-                project.status = "queued"
+                # Preparation never queues work. The atomic paid checkout owns
+                # debit, ledger and job creation, including replay protection.
                 project.last_error = ""
-                set_project_progress(project, "queued")
                 db.commit()
                 db.refresh(project)
                 data = status_payload(project)
@@ -335,4 +323,5 @@ def register_panel_bridge(app, legacy, Job):
         media_type = "application/dxf" if stored.suffix.lower() == ".dxf" else "application/zip"
         return FileResponse(stored, media_type=media_type, filename=stored.name)
 
+    register_panel_checkout(app, legacy, Job, PanelProjectLink, status_payload, project_token)
     return PanelProjectLink

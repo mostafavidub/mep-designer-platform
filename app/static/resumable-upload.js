@@ -5,7 +5,7 @@
   const modal=document.getElementById('projectModal'),modalBody=document.getElementById('modalBody'),modalTitle=document.getElementById('projectModalTitle'),modalBar=document.getElementById('modalProgressBar'),close=document.getElementById('modalClose');
   const discipline=(form.action.split('/').filter(Boolean).pop()||'mechanical');
   const CHUNK=512*1024;
-  let projectId=null,flowUrl=null,timer=null;
+  let projectId=null,flowUrl=null,timer=null,currentIndex=0,submitting=false;
 
   const setProgress=(value,text)=>{const v=Math.max(0,Math.min(100,Math.round(value)));bar.style.width=v+'%';pct.textContent=v+'%';if(text)status.textContent=text};
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -16,12 +16,21 @@
 
   const escapeHtml=value=>String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   const summary=d=>{const a=d.auto_summary||[];return a.length?`<div class="note-bar"><b>مواردی که خودکار به‌دست آمد:</b><ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''};
-  const answerControl=q=>q.input_type==='number'
+  const answerControl=q=>q.input_type==='radio'&&q.options?.length
+    ?`<select id="answer" required>${q.options.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('')}</select>`
+    :q.input_type==='number'
     ?`<div class="numeric-answer"><input id="answer" type="number" min="${escapeHtml(q.min||0.1)}" step="${escapeHtml(q.step||0.1)}" inputmode="decimal" required autofocus placeholder="مثال: 17.4"><span>${escapeHtml(q.unit||'')}</span></div>`
     :`<textarea id="answer" rows="4" required autofocus placeholder="پاسخ کوتاه و دقیق..."></textarea>`;
   const designProgress=d=>{const p=d.design_progress||{},recovery=d.design_recovery||{},current=recovery.current||{};const value=Math.max(0,Math.min(100,Number(p.percent)||0)),timeline=Array.isArray(p.timeline)?p.timeline:[];const steps=timeline.length?`<ol class="design-progress-steps">${timeline.map(x=>`<li class="${escapeHtml(x.state||'pending')}"><span></span>${escapeHtml(x.label||'')}</li>`).join('')}</ol>`:'';const retry=recovery.active?`<div class="note-bar" data-design-recovery><b>اصلاح خودکار در حال اجراست</b><br>تلاش ${escapeHtml((current.attempt||0)+1)} از ${escapeHtml(current.max_attempts||3)}</div>`:'';return `<div class="design-progress" aria-live="polite">${retry}<div class="design-progress-head"><b>${escapeHtml(p.label||'در حال آماده‌سازی طراحی')}</b><strong>${Math.round(value)}٪</strong></div><div class="progress"><span style="width:${value}%"></span></div>${p.detail?`<small class="muted">${escapeHtml(p.detail)}</small>`:''}${steps}</div>`};
   function render(d){
     if(!modalBody||!modalTitle||!modalBar)return;
+    currentIndex=d.current_index||0;
+    if(d.status==='ready_to_design'||d.status==='drawing_set_review'||d.question?.key==='_drawing_set_approval'){
+      modalTitle.textContent='ادامه در پنل کاربری';
+      modalBody.innerHTML='<div class="modal-ready"><h3>پاسخ‌ها ذخیره شد</h3><p>برای مشاهده قیمت و پرداخت وارد پنل می‌شوید. نیازی به بارگذاری دوباره فایل نیست.</p><button id="panelContinue" class="btn primary wide">ورود به پنل و پرداخت</button></div>';
+      document.getElementById('panelContinue').onclick=continueToPanel;
+      continueToPanel();return;
+    }
     modalBar.style.width=(d.progress||0)+'%';
     if(['uploading','analyzing'].includes(d.status)){modalTitle.textContent='در حال تحلیل پلان معماری';modalBody.innerHTML='<div class="modal-processing"><div class="analysis-loader"></div><div><b>در حال استخراج اطلاعات</b><p>فضاها، شفت‌ها و داده‌های قابل محاسبه بررسی می‌شوند.</p></div></div>';timer=setTimeout(loadFlow,1200);return}
     if(d.status==='asking'&&d.question){modalTitle.textContent=`فقط ${d.question_count} ابهام باقی مانده`;modalBody.innerHTML=summary(d)+`<div class="modal-question"><div class="modal-question-number">${d.current_index+1}</div><h3>${d.question.question}</h3><p class="muted">این مورد با اطمینان کافی از پلان به‌دست نیامد.</p>${d.answer_error?`<div class="modal-error"><b>پاسخ قابل قبول نیست</b><p>${escapeHtml(d.answer_error)}</p></div>`:''}<form id="answerForm">${answerControl(d.question)}<button class="btn primary wide" type="submit">ثبت و ادامه</button></form></div>`;document.getElementById('answerForm').onsubmit=submitAnswer;return}
@@ -42,7 +51,18 @@
     timer=setTimeout(loadFlow,1500);
   }
   async function loadFlow(){if(!flowUrl)return;try{const r=await fetch(flowUrl,{cache:'no-store'});if(!r.ok)throw new Error('flow');render(await r.json())}catch(_){timer=setTimeout(loadFlow,2000)}}
-  async function submitAnswer(e){e.preventDefault();const v=document.getElementById('answer').value.trim();if(!v)return;const fd=new FormData();fd.append('answer',v);const r=await fetch(`/projects/${projectId}/answer-json`,{method:'POST',body:fd});render(await r.json())}
+  async function submitAnswer(e){e.preventDefault();if(submitting)return;const v=document.getElementById('answer').value.trim();if(!v)return;submitting=true;let result;try{const fd=new FormData();fd.append('answer',v);fd.append('expected_question_index',String(currentIndex));const r=await fetch(`/projects/${projectId}/answer-json`,{method:'POST',body:fd});result=await r.json()}finally{submitting=false}render(result)}
+  async function continueToPanel(){
+    if(submitting)return;submitting=true;
+    const b=document.getElementById('panelContinue');if(b)b.disabled=true;
+    try{
+      const r=await fetch(`/projects/${projectId}/panel-handoff`,{method:'POST'}),d=await r.json();
+      if(r.status===409&&d.status==='asking'&&d.question){render(d);return;}
+      if(!r.ok)throw new Error(d.detail||d.error||'انتقال انجام نشد؛ دوباره تلاش کنید.');
+      window.location.assign(d.url);
+    }catch(e){const p=document.createElement('p');p.className='modal-error';p.textContent=e.message;modalBody.append(p);if(b)b.disabled=false;}
+    finally{submitting=false;}
+  }
   async function startDesign(){const b=document.getElementById('designBtn');b.disabled=true;b.textContent='در حال شروع...';const r=await fetch(`/projects/${projectId}/design-json`,{method:'POST'});render(await r.json());timer=setTimeout(loadFlow,1000)}
 
   async function sendChunk(url,blob,index,total,filename){

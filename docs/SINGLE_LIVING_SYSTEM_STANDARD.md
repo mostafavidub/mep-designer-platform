@@ -12,3 +12,5 @@ No merge is permitted without SWCIS impact closure, migration evidence where app
 Existing version-named internal modules are compatibility debt, not approved production entrypoints. They are inventoried by `tools/runtime_version_guard.py`; adding a new one under production paths fails CI. Each retirement must preserve behavior, include migration tests, and reduce that inventory. Archived compatibility snapshots may exist only under `archived_compatibility/` or test fixtures and must never be imported by production.
 
 `main` is deployable only after every required GitHub check is green and required reviews are complete. Rollback means deploying a prior approved Git commit/tag; copying or reactivating a historical runtime module is forbidden.
+
+For this single-owner repository, recorded owner approval fulfils the human review requirement under SWCIS 3.1.0. An independent reviewer is not required; automated and engineering gates remain mandatory.
