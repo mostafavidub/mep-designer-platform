@@ -218,12 +218,34 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     def order_payload(db, order):
         project = db.get(legacy.Project, order.project_id)
         link = db.query(Link).filter(Link.project_id == project.id).first()
-        data = status_payload(project)
-        data.update(engine_project_id=project.id, project_token=project_token(link.external_project_id, link.external_user_hash))
+        data = authoritative_engine_state(db, project, link)
         return {"id": order.external_id, "owner": account_id(order.user_id), "title": project.name,
                 "service": "طراحی برق" if (project.answers or {}).get("discipline") == "electrical" else "طراحی مکانیک",
                 "area": float(order.area or 0), "amount": order.amount, "paid": bool(order.paid),
                 "quoteToken": order.quote_token, "answers": {k: v for k, v in (project.answers or {}).items() if isinstance(v, (str, int, float, bool))}, "engine": data}
+
+    def authoritative_engine_state(db, project, link):
+        """Return one revisioned snapshot shared by customer and admin views."""
+        data = status_payload(project)
+        latest = (db.query(legacy.Revision)
+                  .filter(legacy.Revision.project_id == project.id)
+                  .order_by(legacy.Revision.revision_no.desc())
+                  .first())
+        state_revision = latest.revision_no if latest else (project.current_revision or 0)
+        updated_at = ((data.get("design_progress") or {}).get("updated_at")
+                      or (latest.created_at.isoformat() + "Z" if latest and latest.created_at else project.created_at.isoformat() + "Z"))
+        data.update(
+            engine_project_id=project.id,
+            project_token=project_token(link.external_project_id, link.external_user_hash),
+            state_revision=state_revision,
+            state_updated_at=updated_at,
+        )
+        if data.get("output_ready") or project.status == "ready":
+            data["output_ready"] = True
+            data["progress"] = 100
+            if data.get("design_progress"):
+                data["design_progress"]["percent"] = 100
+        return data
 
     def state(db, uid):
         require_account(db, uid)
@@ -249,6 +271,25 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             except (TypeError, ValueError):
                 continue
             project.update(id=row.id, owner=account_id(uid))
+            # Imported projects used to carry a browser snapshot forever. When
+            # they reference an engine project owned by this account, replace
+            # that snapshot with the same authoritative state used by checkout
+            # projects so account polling can never restore stale progress.
+            try:
+                engine_id = int(project.get("engineProjectId") or 0)
+            except (TypeError, ValueError):
+                engine_id = 0
+            supplied_token = str(project.get("engineProjectToken") or "")
+            if engine_id and supplied_token:
+                engine_project = db.get(legacy.Project, engine_id)
+                link = db.query(Link).filter(Link.project_id == engine_id).first()
+                if (engine_project and link
+                        and link.external_user_hash == digest(account_id(uid))
+                        and secrets.compare_digest(
+                            supplied_token,
+                            project_token(link.external_project_id, link.external_user_hash),
+                        )):
+                    project["engine"] = authoritative_engine_state(db, engine_project, link)
             durable_projects.append(project)
         return {"userId": account_id(uid), "balance": wallet.balance if wallet else 0,
                 "demoPayments": os.environ.get('PANEL_DEMO_PAYMENTS') == '1',

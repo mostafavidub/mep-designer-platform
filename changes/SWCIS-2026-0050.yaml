@@ -1,0 +1,34 @@
+{
+  "change_id": "SWCIS-2026-0050",
+  "summary": "Make persisted engine progress the single authoritative project state for customer and admin panels.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "deployment", "manifest", "migration", "versioning"],
+  "impact_notes": {
+    "ui_api": "Customer and admin account snapshots expose one normalized, revisioned engine progress record.",
+    "qa": "Regression covers monotonic progress, completed invariants, legacy backfill, and stale-response rejection contract.",
+    "docs": "Change request records the authoritative project-state contract.",
+    "governance": "SWCIS 4.0.0 closure recorded.",
+    "deployment": "Deploy backend before the panel and verify both live views against the same snapshot.",
+    "manifest": "Automatic build identity remains authoritative; response metadata is backward compatible.",
+    "migration": "Legacy project payloads are normalized on read without destructive row mutation.",
+    "versioning": "Automatic Git build identity records this backward-compatible fix."
+  },
+  "evidence": {
+    "traceability": ["No engineering Rule ID changes; only delivery-state projection changes."],
+    "tests": ["Focused state projection, monotonic merge, stale-response, and full repository regressions."],
+    "docs": ["Change request defines the single authoritative progress projection."],
+    "version_bump": ["Automatic Git build identity."],
+    "migration": ["Read-compatible normalization for existing checkout and durable project rows."],
+    "golden_regression": ["Full automated regression; CAD semantics unchanged."],
+    "semantic_diff": ["Project progress cannot regress within one engine revision and completed output is always 100 percent."],
+    "artifact_diff": ["No CAD artifact change."],
+    "numeric_diff": ["No engineering numeric change."],
+    "contract_diff": ["Panel snapshots include authoritative state version and update time while preserving existing fields."],
+    "deployment_plan": ["Merge protected backend change, deploy it, then publish the compatible panel and verify live calls."],
+    "rollback_plan": ["Redeploy prior approved Git commits; no destructive migration is introduced."]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 2, "score": 12, "rationale": "Concurrent polling previously allowed stale state to overwrite newer engine progress; tests cover ordering and terminal invariants."},
+  "waiver": null
+}
