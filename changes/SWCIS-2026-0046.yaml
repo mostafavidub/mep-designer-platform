@@ -3,7 +3,7 @@
   "status": "APPROVED",
   "summary": "Fail closed on non-level frame contamination, unsafe Typical consolidation, cross-file fixture/equipment coordinate contamination, degenerate mechanical networks, collapsed equipment, riser contradictions, unsupported calculation facts and unmaterialized details.",
   "reason": "User-directed 12-step remediation after blind comparison of production projects 102 and 103 showed mixed architectural frames and additional integrity risks. Steps 1-3 now harden level authority, system-specific Typical grouping, and fixture/equipment coordinate ownership before later routing/design phases continue.",
-  "change_types": ["schema", "calculation", "drawing_output", "ui_api", "test", "governance", "documentation", "deployment"],
+  "change_types": ["schema", "calculation", "drawing_output", "equipment", "ui_api", "test", "governance", "documentation", "deployment"],
   "impacted_modules": [
     "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector",
     "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration",
