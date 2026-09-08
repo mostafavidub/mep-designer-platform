@@ -46,6 +46,8 @@ def run_v19_pipeline(payload: dict) -> dict:
     # repository baseline and the exact current build identity.
     golden=validate_golden_release_evidence(payload.get("golden_result"))
     phases["golden"]=golden
+    if golden["status"]!="PASS":
+        blocked="golden"
     return _result(phases,blocked)
 
 
