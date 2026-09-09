@@ -1,8 +1,8 @@
 """The only production CAD entrypoint.
 
-History lives in Git. Production-facing imports, routes and engine identities are
-unversioned. Historical implementation modules are isolated behind compatibility
-boundaries and are never valid deployment entrypoints.
+Mechanical runtime history lives in Git. The deployed import closure, API routes,
+status identity and artifact authority are canonical and unversioned. Schema and
+contract revisions remain explicit metadata and do not select parallel engines.
 """
 import os
 
@@ -17,6 +17,7 @@ else:
         current = ezdxf.readfile
         if getattr(current, "_engitools_memory_guard", False):
             return
+
         def guarded_readfile(*args, **kwargs):
             gc.collect()
             try:
@@ -24,15 +25,16 @@ else:
             except (AttributeError, OSError):
                 pass
             return current(*args, **kwargs)
+
         guarded_readfile._engitools_memory_guard = True
         ezdxf.readfile = guarded_readfile
 
     install_ezdxf_memory_guard()
 
-    from .main_transport import app, transport_module
+    from .main_transport import app
     from .build_identity import build_identity
     from .mechanical_release_contract import release_contract_status
-        from .runtime_core import design_dxf
+    from .runtime_contract import runtime_contract
 
     @app.get("/version")
     def version():
@@ -45,5 +47,6 @@ else:
         status.pop("release_version", None)
         status["runtime_identity"] = "mechanical"
         status["production_entrypoint"] = "cad_engine.main:app"
+        status["runtime_contract"] = runtime_contract()
         status["build"] = build_identity()
         return status
