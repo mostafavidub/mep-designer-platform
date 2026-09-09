@@ -100,10 +100,11 @@ class MechanicalRuntimeV19Tests(unittest.TestCase):
 
     def test_site_stamps_request_and_rejects_any_non_v19_report(self):
         source=(Path(__file__).parents[1]/"app/dxf_output.py").read_text()
-        self.assertIn("design_answers['_runtime_contract'] = active_version_manifest()",source)
-        self.assertIn("design_answers['_v19_input_contract']",source)
-        self.assertIn("report.get('pipeline_authority') != 'mechanical-v19'",source)
-        self.assertIn("report.get('executed_versions') != active_versions",source)
+        self.assertIn("design_answers['_runtime_contract'] = runtime_contract()",source)
+        self.assertIn("design_answers['_canonical_input_contract']",source)
+        self.assertIn("report.get('pipeline_authority') != 'mechanical'",source)
+        self.assertIn("report.get('runtime_contract') != expected_contract",source)
+        self.assertNotIn("from cad_engine.main_v15 import design",source)
 
     def test_panel_and_progress_expose_active_runtime_phases(self):
         root=Path(__file__).parents[1]

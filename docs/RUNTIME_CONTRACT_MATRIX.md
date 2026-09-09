@@ -24,3 +24,11 @@ Historical `*_vNN.py` sources and historical test names may remain temporarily a
 ## Synchronization policy
 
 `cad_engine/runtime_contract.py`, `cad_engine/build_identity.py` and `standards/active-release.json` define the active runtime/build contract. The application Rule Book, deploy-time Rule Book generator, runtime health/status endpoints, launchers and this matrix are checked by the fail-closed **Runtime Contract Synchronization** gate.
+
+The panel must place this exact contract in `_runtime_contract`, use
+`_canonical_input_contract` for project engineering evidence, and call only
+`cad_engine.main_transport.design` for an in-process CAD request.  A successful
+response is accepted only when its build identity, report runtime contract and
+unversioned `mechanical` authority are identical to the request.  The retired
+`active_version_manifest`, `_v19_input_contract` and versioned design entrypoints
+are forbidden on this production transport path.
