@@ -1,4 +1,4 @@
-from cad_engine.calculation_book_v19 import build_calculation_book
+from cad_engine.calculation_book import build_calculation_book
 
 
 def check(equipment_id='IDU-1'):

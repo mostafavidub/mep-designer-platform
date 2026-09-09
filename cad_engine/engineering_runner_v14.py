@@ -4,10 +4,10 @@ from .architecture_reconstruction_v14 import reconstruct_architecture
 from .fixture_recognition_v14 import recognize_fixtures_equipment
 from .system_requirements_v14 import derive_system_requirements
 from .mechanical_calculations_v14 import calculate_mechanical_loads, calculate_water_service
-from .hvac_calculations_v19 import calculate_cooling_design, calculate_exhaust_design
-from .rainwater_calculations_v19 import design_roof_rainwater
-from .calculation_book_v19 import build_calculation_book
-from .annotation_solver_v19 import solve_annotations
+from .hvac_calculations import calculate_cooling_design, calculate_exhaust_design
+from .rainwater_calculations import design_roof_rainwater
+from .calculation_book import build_calculation_book
+from .annotation_solver import solve_annotations
 from .manufacturer_selector_v19 import (
  select_radiators, select_package, select_split_system, select_exhaust_fans,
 )

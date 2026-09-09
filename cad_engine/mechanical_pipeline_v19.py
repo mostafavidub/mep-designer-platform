@@ -1,14 +1,14 @@
 """Ordered fail-closed orchestration for the four v19 phases."""
 from .coordination_v19 import build_coordination_model, route_25d
 from .manufacturer_selector_v19 import select_equipment
-from .manufacturer_database_v19 import build_manufacturer_database
-from .calculation_book_v19 import build_calculation_book
-from .annotation_solver_v19 import solve_annotations
+from .manufacturer_database import build_manufacturer_database
+from .calculation_book import build_calculation_book
+from .annotation_solver import solve_annotations
 from .parametric_documentation_v19 import (generate_detail, generate_final_parametric_detail, generate_riser_from_network, documentation_gate,
                                            required_detail_families, generate_annotation_support)
 from .submission_qa_v19 import evaluate_submission_readiness, submission_gate
-from .engineering_feedback_v19 import process_engineer_redlines
-from .quality_acceptance_v19 import evaluate_quality_targets
+from .engineering_feedback import process_engineer_redlines
+from .quality_acceptance import evaluate_quality_targets
 
 
 def _pmm_v3_traceability_required(payload: dict) -> bool:

@@ -1,4 +1,4 @@
-from cad_engine.manufacturer_database_v19 import ingest_manufacturer_record, build_manufacturer_database
+from cad_engine.manufacturer_database import ingest_manufacturer_record, build_manufacturer_database
 
 
 def record(model='X24'):

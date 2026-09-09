@@ -1,4 +1,4 @@
-from cad_engine.hvac_calculations_v19 import calculate_cooling_design, calculate_exhaust_design
+from cad_engine.hvac_calculations import calculate_cooling_design, calculate_exhaust_design
 
 
 def cooling_basis():

@@ -1,6 +1,6 @@
 import unittest
 
-from cad_engine.quality_acceptance_v19 import evaluate_quality_targets
+from cad_engine.quality_acceptance import evaluate_quality_targets
 
 
 def metrics():

@@ -1,4 +1,4 @@
-from cad_engine.annotation_solver_v19 import solve_annotations
+from cad_engine.annotation_solver import solve_annotations
 
 
 def config(auto=True):
