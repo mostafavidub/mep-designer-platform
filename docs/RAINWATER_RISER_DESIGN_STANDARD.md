@@ -26,3 +26,17 @@ Allowed riser level types are `GROUND`, `FIRST`, `SECOND`, `ROOF`, `BASEMENT`
 and `MEZZANINE`. Detail sheets and identifiers beginning with `DETAIL` are
 forbidden from the riser level set. Dangling graph edges, missing execution data,
 invalid levels or identity mismatches block issue.
+## Final delivery integration
+
+The dedicated roof-rainwater sheet is generated from explicit roof boundary,
+catchment polygons, low points, drains, emergency overflows and stack nodes.
+Rainfall intensity and drain/downpipe capacity tables are project inputs; they
+are never inferred from a reference drawing. Missing catchment evidence is
+`INPUT_REQUIRED`, while invalid low points, slopes, stack references or capacity
+matches fail closed.
+
+M-151 is generated from the same Plan Graph used by calculations and schedules.
+Only typed architectural levels (`GROUND`, `FIRST`, `SECOND`, `ROOF`,
+`BASEMENT`, `MEZZANINE`) may enter riser topology. `DETAIL-*` identifiers are
+documentation views, never levels, and their presence makes the package
+non-issuable.

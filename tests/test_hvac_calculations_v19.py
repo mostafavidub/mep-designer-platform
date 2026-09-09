@@ -29,7 +29,7 @@ def test_cooling_design_never_invents_missing_orientation_or_ventilation():
 
 
 def test_exhaust_duty_uses_ach_or_minimum_and_full_duct_esp():
-    rooms=[{'id':'WC-1','room_type':'toilet','volume_m3':24,
+    rooms=[{'id':'WC-1','pmm_id':'PMM-WC-1','level_id':'GROUND','room_type':'toilet','volume_m3':24,
             'duct_path':{'duct_friction_pa':35,'fitting_loss_pa':20,'terminal_loss_pa':15}}]
     result=calculate_exhaust_design(rooms,{'toilet':{'ach':10,'minimum_cfm':70}})
     assert result['status']=='PASS'
@@ -38,7 +38,7 @@ def test_exhaust_duty_uses_ach_or_minimum_and_full_duct_esp():
 
 
 def test_exhaust_missing_room_criterion_is_input_required():
-    rooms=[{'id':'U1','room_type':'utility','volume_m3':20,
+    rooms=[{'id':'U1','pmm_id':'PMM-U1','level_id':'GROUND','room_type':'utility','volume_m3':20,
             'duct_path':{'duct_friction_pa':1,'fitting_loss_pa':1,'terminal_loss_pa':1}}]
     result=calculate_exhaust_design(rooms,{})
     assert result['status']=='INPUT_REQUIRED'

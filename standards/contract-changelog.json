@@ -329,6 +329,16 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 7, 8 and 9 after closing prerequisite gates"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
       "migration":{"forward":"Existing PMM v3 inputs remain readable; final issue requires the additive engineering and manufacturer evidence.","rollback":"Revert the protected commit; never downgrade missing final evidence to PASS."}
+    },
+    {
+      "id":"GOV-2026-024",
+      "status":"APPROVED",
+      "summary":"Complete steps 10-13 as one fail-closed final-design chain for Exhaust, roof rainwater, graph-derived riser and the official hash-only manufacturer database.",
+      "affected_capabilities":["exhaust","roof_rainwater","detail_riser","manufacturer_selector","mechanical_release_qa"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 10 through 13"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete Exhaust/Rainwater/Riser/Manufacturer database evidence.","rollback":"Revert the protected commit; never treat incomplete or unofficial evidence as final."}
     }
   ]
 }

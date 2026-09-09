@@ -33,3 +33,9 @@ The selected official fan must satisfy both airflow and ESP. Each schedule row
 retains its calculation ID, manufacturer/model and selected duty. Any applicable
 room without a compliant fan produces `UNSERVED_EXHAUST_ROOM` and fails the
 release gate; `unserved exhaust room = 0` is mandatory.
+
+M-171/M-172 are final only when each applicable room retains PMM, level and
+calculation identity, the entire duct-path ESP is declared, and the selected
+manufacturer fan has a revisioned official datasheet plus a fan-curve point
+that covers both the required CFM and ESP. Nominal airflow alone is not an
+acceptable selection basis.

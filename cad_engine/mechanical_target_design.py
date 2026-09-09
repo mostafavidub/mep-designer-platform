@@ -1,9 +1,12 @@
 """Fail-closed Heating, Gas and Split AC design packages for target sheets."""
 from __future__ import annotations
 
-from .hvac_calculations import calculate_heating_design, calculate_cooling_design
+from .hvac_calculations import calculate_heating_design, calculate_cooling_design, calculate_exhaust_design
 from .mechanical_execution_sizing import design_heating_network, design_gas_network
-from .mechanical_manufacturer_selector import select_radiators, select_package, select_split_system
+from .mechanical_manufacturer_selector import select_radiators, select_package, select_split_system, select_exhaust_fans
+from .rainwater_calculations import design_roof_rainwater
+from .mechanical_documentation import generate_riser_from_network
+from .manufacturer_database import build_manufacturer_database
 from .mechanical_submission_qa import validate_target_design_packages
 
 
@@ -46,11 +49,42 @@ def build_split_ac_package(payload):
             "cooling_load":cooling,"selection":selection}
 
 
+def build_exhaust_package(payload):
+    design=calculate_exhaust_design(payload.get("rooms") or [],payload.get("criteria") or {})
+    if design["status"]!="PASS":return _blocked("exhaust_duty",design)
+    selection=select_exhaust_fans(design,payload.get("fan_catalogue") or [])
+    if selection["status"]!="PASS":return _blocked("fan_selection",selection)
+    return {"status":"PASS","basis_status":"FINAL","sheets":["M-171","M-172"],
+            "exhaust_design":design,"fan_selection":selection}
+
+
+def build_rainwater_package(payload):
+    design=design_roof_rainwater(payload.get("roof") or {},payload.get("design_basis") or {})
+    if design["status"]!="PASS":return _blocked("roof_rainwater",design)
+    return {"status":"PASS","basis_status":"FINAL","sheets":["M-R-01"],"rainwater_design":design}
+
+
+def build_riser_package(payload):
+    riser=generate_riser_from_network(payload.get("network_graph") or {})
+    if riser["status"]!="PASS":return _blocked("plan_graph_riser",riser)
+    return {"status":"PASS","basis_status":"FINAL","sheets":["M-151"],"riser_design":riser}
+
+
+def build_manufacturer_database_package(payload):
+    database=build_manufacturer_database(payload.get("records") or [])
+    if database["status"]!="PASS":return _blocked("official_manufacturer_database",database)
+    return {"status":"PASS","basis_status":"FINAL","sheets":["M-181"],"database":database}
+
+
 def build_target_design_packages(payload):
     packages={
         "heating":build_heating_package(payload.get("heating") or {}),
         "gas":build_gas_package(payload.get("gas") or {}),
         "split_ac":build_split_ac_package(payload.get("split_ac") or {}),
+        "exhaust":build_exhaust_package(payload.get("exhaust") or {}),
+        "rainwater":build_rainwater_package(payload.get("rainwater") or {}),
+        "riser":build_riser_package(payload.get("riser") or {}),
+        "manufacturer_database":build_manufacturer_database_package(payload.get("manufacturer_database") or {}),
     }
     gate=validate_target_design_packages(packages)
     return {"status":gate["status"],"packages":packages,"gate":gate,
