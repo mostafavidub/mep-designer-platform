@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.13.0",
+  "standard_version": "4.14.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.14.0", "date": "2026-09-10", "summary": "Align runtime with the governed architecture-only Pre-Submission profile: materialize only after graph/size/identity preflight, preserve later input blockers, and forbid Submission Ready claims."},
     {"version": "4.13.0", "date": "2026-09-10", "summary": "Publish an explicit Rule Book network load, material, sizing, slope and plan-separation profile for architecture/owner-backed endpoints without reference-derived defaults."},
     {"version": "4.12.0", "date": "2026-09-09", "summary": "Complete fail-closed Mechanical construction-document delivery steps 14-19: parametric details, materialized CAD primitives, manifest-derived index, final schedule, annotation solving and submission QA."},
     {"version": "4.11.0", "date": "2026-09-09", "summary": "Complete fail-closed Exhaust, roof-rainwater, graph-derived riser and official manufacturer-database packages for steps 10-13 and require them in the final target-design gate."},
