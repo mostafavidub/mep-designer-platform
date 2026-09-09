@@ -4,9 +4,9 @@ from pathlib import Path
 
 import ezdxf
 
-from cad_engine.topology_authority_v19 import build_authoritative_topology_from_evidence
-from cad_engine.sizing_authority_v19 import design_authoritative_segments
-from cad_engine.mechanical_authority_materializer_v19 import materialize_authoritative_network
+from cad_engine.mechanical_network_topology import build_authoritative_topology_from_evidence
+from cad_engine.mechanical_segment_execution import design_authoritative_segments
+from cad_engine.mechanical_network_materializer import materialize_authoritative_network
 
 
 def pmm(levels, vertical=False):
