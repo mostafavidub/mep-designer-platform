@@ -1,7 +1,7 @@
 import os
 import shutil
 from cad_engine.build_identity import build_identity
-from cad_engine.mechanical_release_contract_v19 import release_contract_status
+from cad_engine.mechanical_release_contract import release_contract_status
 
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -22,7 +22,7 @@ from .level_detection_v3 import install as install_level_detection_v3
 from .system_typical_v1 import install as install_system_typical_v1
 from .manifest_contract_v2 import install as install_manifest_contract_v2
 from .project_mechanical_model import install as install_project_mechanical_model
-from .mechanical_site_manifest_v12 import install as install_manifest_site_v12
+from .mechanical_site_manifest import install as install_mechanical_site_manifest
 from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
 from .seo_runtime import register_seo_articles
@@ -51,7 +51,7 @@ install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
 install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_output)
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
-install_manifest_site_v12(mechanical_review_fix)
+install_mechanical_site_manifest(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)
 # The queue captures analyze_project_job at registration time, so the guard must
@@ -108,7 +108,7 @@ def integrated_system_health():
     status = main_auto.system_health()
     status['object_storage'] = artifact_storage.healthcheck()
     status['build_identity'] = build_identity()
-    status['mechanical_v19'] = release_contract_status()
+    status['mechanical'] = release_contract_status()
     return status
 
 
