@@ -1,372 +1,56 @@
-import os
-import base64
-import io
-import json
-import re
-import secrets
-import shutil
-import tempfile
-import uuid
-import zipfile
-from collections import Counter
+import base64, io, json, os, shutil, tempfile, zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import requests
-from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi import HTTPException
 
 from . import main as legacy
-from . import artifact_storage
 from .design_progress import set_project_progress
+from .artifact_storage import persist_final_artifact, delete_local_copy_after_remote_verification
+from .mechanical_basis_contract import reopen_missing_mechanical_inputs
 from cad_engine.version_manifest import active_version_manifest
-from cad_engine.build_identity import build_identity, stamp_artifact
-from .design_recovery import clear_active_recovery
-
-app = legacy.app
-_prev_flow_payload = legacy.flow_payload
 
 
-def customer_safe_error(value):
-    """Never expose internal QA dictionaries, paths, or stack details."""
-    message=str(value or '').strip()
-    if not message:
-        return ''
-    if message.startswith('INPUT_REQUIRED['):
-        return message.split(']:',1)[-1].strip()
-    if message.lower().startswith('cad_qa_failure:'):
-        diagnostic = message.split(':', 1)[1].strip()
-        codes = []
-        ignored = {'status', 'version', 'errors', 'metrics', 'checks', 'fail', 'pass', 'none', 'true', 'false'}
-        for token in re.findall(r'(?<![\w/])[a-z][a-z0-9_]*(?::[a-z0-9_.,=<>-]+)*', diagnostic.lower()):
-            root = token.split(':', 1)[0]
-            if root not in ignored and ('_' in token or ':' in token) and token not in codes:
-                codes.append(token)
-        code_text = '، '.join(codes[:8]) or 'cad_qa_failure'
-        return f'کنترل فنی خروجی کامل نشد (کد: {code_text}). اطلاعات و فایل پروژه حفظ شده‌اند.'
-    technical_tokens=('pipeline_qa','authority_qa','engineering_acceptance','traceback','cad_qa_failure',
-                      "{'status':",'documentation_enhancement_qa','architecture_preservation_qa')
-    if any(token in message.lower() for token in technical_tokens) or len(message)>900:
-        return 'کنترل فنی خروجی کامل نشد. جزئیات برای تیم فنی ثبت شده است؛ اطلاعات و فایل پروژه حفظ شده‌اند.'
-    return message
-
-
-legacy.templates.env.globals['customer_safe_error'] = customer_safe_error
-
-
-def _purge_processing_files(pid: int, keep_output: bool = True):
-    """Remove every local artifact; R2 is the only durable file store."""
-    pdir = legacy.DATA_DIR / 'projects' / str(pid)
+def _cad_error_message(resp):
     try:
-        durable_input = artifact_storage.input_is_durable(pid)
-    except Exception:
-        durable_input = False
-    if durable_input:
-        for path in (pdir / 'architecture.zip', pdir / 'architecture.dxf', pdir / 'input', pdir / '.upload_chunks'):
-            if path.is_dir():
-                shutil.rmtree(path, ignore_errors=True)
-            else:
-                path.unlink(missing_ok=True)
-    shutil.rmtree(pdir / 'output', ignore_errors=True)
-    shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(pid), ignore_errors=True)
-    if not keep_output:
-        shutil.rmtree(pdir, ignore_errors=True)
-        db = legacy.Session()
-        try:
-            project = db.get(legacy.Project, pid)
-            if project:
-                project.name = f'Test project {pid} (expired)'
-                project.questions = []
-                project.answers = {}
-                project.analysis = {}
-                project.last_error = ''
-                project.status = 'expired'
-                for revision in db.query(legacy.Revision).filter(legacy.Revision.project_id == pid):
-                    revision.pdf_path = ''
-                    revision.error = ''
-            db.commit()
-        finally:
-            db.close()
+        body=resp.json(); detail=body.get('detail') if isinstance(body,dict) else None
+        if isinstance(detail,dict):
+            missing=detail.get('missing_inputs') or []
+            if missing: return 'ورودی‌های مهندسی بیشتری لازم است: '+', '.join(str(x) for x in missing)
+            return str(detail.get('message') or detail.get('code') or detail)
+        if detail: return str(detail)
+    except Exception: pass
+    return f'CAD Designer HTTP {resp.status_code}'
 
 
-def validate_generated_manifest(drawing_set, design_reports):
-    """Fail closed unless CAD covers every approved drawing requirement.
-
-    V17 reports the actual authority sheets in ``composition.manifest``.  The
-    older adapter only inspected ``authority_submission.layouts`` and therefore
-    reported zero generated sheets even after every CAD QA gate had passed.
-    Authority packages may also contain required cover/detail/note/schedule
-    sheets in addition to the customer-facing system plans, so validate the
-    approved system coverage instead of rejecting those mandatory additions.
-    """
-    if not (drawing_set or {}).get('approved'):
-        raise RuntimeError('مانیفست نقشه‌های مکانیکی هنوز تأیید نشده است.')
-    manifest = (drawing_set or {}).get('approved_manifest') or {}
-    expected_sheets = manifest.get('sheets') or []
-    expected_codes = [str(x.get('code') or '') for x in expected_sheets]
-    expected_count = int(manifest.get('total_sheets') or -1)
-    if expected_count < 1 or expected_count != len(expected_codes):
-        raise RuntimeError('مانیفست تأییدشده نامعتبر است.')
-
-    generated_codes = []
-    generated_rows = []
-    validation_states = []
-    for report in design_reports or []:
-        authority = report.get('authority_submission') or {}
-        legacy_layouts = [str(x) for x in (authority.get('layouts') or [])]
-        composition = report.get('composition') or {}
-        rows = composition.get('manifest') or []
-        if rows:
-            generated_rows.extend(rows)
-            generated_codes.extend(str(x.get('code') or '') for x in rows)
-        else:
-            generated_codes.extend(legacy_layouts)
-        validation_states.append(
-            authority.get('validation_status')
-            or (report.get('dxf_qa') or {}).get('status')
-            or report.get('status')
-        )
-
-    if not generated_codes or any(not code for code in generated_codes):
-        raise RuntimeError(
-            'Generation Failed: Proposal/CAD sheet mismatch. '
-            f'Expected={expected_count} {expected_codes}; '
-            f'Generated={len(generated_codes)} {generated_codes}'
-        )
-    if len(generated_codes) != len(set(generated_codes)):
-        raise RuntimeError('Generation Failed: CAD issued duplicate sheet codes.')
-
-    # New authority reports expose machine-readable family/level rows.  Verify
-    # that all approved system plans and specials are covered while allowing
-    # mandatory authority support sheets (cover, details, notes and schedules).
-    if generated_rows:
-        family_map = {
-            'water_supply': 'WATER',
-            'sanitary_vent': 'SANITARY_VENT',
-            'heating': 'HEATING',
-            'cooling': 'SPLIT_AC',
-            'gas': 'GAS',
-            'ventilation_exhaust': 'EXHAUST',
-        }
-        required = Counter()
-        special_required = set()
-        for sheet in expected_sheets:
-            family = str(sheet.get('family') or '')
-            drawing_type = str(sheet.get('drawing_type') or '')
-            if drawing_type == 'floor_plan' and family in family_map:
-                required[family_map[family]] += 1
-            elif drawing_type in ('roof_plan', 'roof_rainwater') or str(sheet.get('code') or '').endswith('-RAIN'):
-                special_required.add('ROOF')
-            elif drawing_type == 'riser_diagram' or str(sheet.get('code') or '').endswith('-RISER'):
-                special_required.add('PLUMBING_RISER')
-        # V17 may report semantic family variants (for example GAS_PLAN or
-        # GAS_DISTRIBUTION) while the approved planner uses canonical family
-        # names. Normalize report variants before comparing coverage so the
-        # same issued sheet is not rejected because of adapter vocabulary.
-        aliases = {
-            'WATER': ('WATER', 'COLD_WATER', 'HOT_WATER', 'DOMESTIC_WATER'),
-            'SANITARY_VENT': ('SANITARY_VENT', 'SANITARY', 'DRAINAGE', 'WASTE'),
-            'HEATING': ('HEATING', 'HYDRONIC', 'RADIATOR'),
-            'SPLIT_AC': ('SPLIT_AC', 'COOLING', 'HVAC', 'AIR_CONDITION'),
-            'GAS': ('GAS', 'FUEL_GAS'),
-            'EXHAUST': ('EXHAUST', 'VENTILATION'),
-            'ROOF': ('ROOF', 'RAINWATER'),
-            'PLUMBING_RISER': ('PLUMBING_RISER', 'RISER'),
-        }
-
-        def row_evidence(row):
-            return ' '.join(str(row.get(key) or '') for key in (
-                'code', 'family', 'system', 'drawing_type', 'drawing_role', 'label', 'title'
-            )).upper().replace('-', '_').replace(' ', '_')
-
-        def canonical_family(row):
-            evidence = row_evidence(row)
-            for canonical, variants in aliases.items():
-                if any(variant in evidence for variant in variants):
-                    return canonical
-            return str(row.get('family') or '').upper()
-
-        actual = Counter(canonical_family(row) for row in generated_rows)
-        actual_specials = set()
-        for row in generated_rows:
-            evidence = row_evidence(row)
-            if 'ROOF' in evidence or 'RAINWATER' in evidence or str(row.get('code') or '').endswith('-RAIN'):
-                actual_specials.add('ROOF')
-            if 'RISER' in evidence or str(row.get('code') or '').endswith('-RISER'):
-                actual_specials.add('PLUMBING_RISER')
-        missing = {
-            family: count - actual.get(family, 0)
-            for family, count in required.items()
-            if actual.get(family, 0) < count
-        }
-        missing_specials = sorted(x for x in special_required if x not in actual_specials)
-        if missing or missing_specials:
-            raise RuntimeError(
-                'Generation Failed: approved mechanical sheet coverage is incomplete. '
-                f'Missing={missing}; MissingSpecials={missing_specials}'
-            )
-    elif generated_codes != expected_codes or len(generated_codes) != expected_count:
-        # Preserve strict compatibility for legacy CAD reports which have no
-        # semantic manifest and therefore cannot prove equivalent coverage.
-        raise RuntimeError(
-            'Generation Failed: Proposal/CAD sheet mismatch. '
-            f'Expected={expected_count} {expected_codes}; '
-            f'Generated={len(generated_codes)} {generated_codes}'
-        )
-    if any(x != 'PASS' for x in validation_states):
-        raise RuntimeError('Generation Failed: CAD manifest validation did not PASS.')
+def _cad_rejection_diagnostic(resp):
+    try: body=resp.json()
+    except Exception: return {'http_status':resp.status_code,'detail':'unparseable'}
+    detail=body.get('detail') if isinstance(body,dict) else body
+    if not isinstance(detail,dict): return {'http_status':resp.status_code,'detail':detail}
     return {
-        'expected_sheets': expected_count,
-        'generated_sheets': len(generated_codes),
-        'status': 'PASS',
-        'manifest_id': manifest.get('manifest_id'),
-    }
-
-
-def _cad_error_message(response):
-    try:
-        payload = response.json()
-        detail = payload.get('detail') if isinstance(payload, dict) else None
-    except Exception:
-        detail = None
-    if isinstance(detail, dict):
-        def collect(value):
-            if isinstance(value, dict):
-                return [item for child in value.values() for item in collect(child)]
-            if isinstance(value, (list, tuple, set)):
-                return [item for child in value for item in collect(child)]
-            return [str(value)] if value not in (None, '') else []
-
-        evidence = collect(detail)
-        def collect_failures(value):
-            if isinstance(value, dict):
-                rows=[]
-                for key,child in value.items():
-                    # Warnings are useful diagnostics but must never be shown
-                    # as the reason a transaction failed.
-                    if key == 'warnings':
-                        continue
-                    if key in {'errors','failures','missing_inputs'}:
-                        rows.extend(collect(child))
-                    elif isinstance(child,(dict,list,tuple,set)):
-                        rows.extend(collect_failures(child))
-                return rows
-            if isinstance(value,(list,tuple,set)):
-                return [item for child in value for item in collect_failures(child)]
-            return []
-        failure_evidence = collect_failures(detail)
-        missing = list(detail.get('missing_inputs') or [])
-        for item in evidence:
-            match = re.search(r'design_basis_input_required:([^\]"\'};]+)', item)
-            if match:
-                missing.extend(x.strip() for x in match.group(1).split(',') if x.strip())
-        aliases = {'gas_service_pressure': 'gas_pressure'}
-        missing = list(dict.fromkeys(aliases.get(key, key) for key in missing))
-    else:
-        evidence = []
-        missing = []
-    if isinstance(detail, dict) and (detail.get('status') == 'INPUT_REQUIRED' or missing):
-        labels={'city':'شهر پروژه','rainfall_intensity':'شدت بارندگی طراحی','mechanical_shaft_route':'تأیید مسیر شفت مکانیکی',
-                'water_inlet_pressure':'فشار آب ورودی','gas_service_pressure':'فشار سرویس گاز','gas_pressure':'فشار سرویس گاز',
-                'cooling_system':'سیستم سرمایش قابل‌پشتیبانی','heating_system':'سیستم گرمایش قابل‌پشتیبانی'}
-        readable='، '.join(labels.get(key,key) for key in missing)
-        return f"INPUT_REQUIRED[{','.join(missing)}]: برای ادامه این اطلاعات را تکمیل کنید: {readable}"
-    if isinstance(detail, dict):
-        priority = []
-        if detail.get('stage'):
-            priority.append(str(detail['stage']))
-        failed_stage_qa = detail.get('failed_stage_qa')
-        if isinstance(failed_stage_qa, dict):
-            priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
-        failures = [item for item in failure_evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate','cross','without'))]
-        diagnostic = ' | '.join(dict.fromkeys(priority + failures))[:1600] or str(detail)[:1600]
-        return f'CAD_QA_FAILURE: {diagnostic}'
-    message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')
-    translations = {
-        'Authority-ready mechanical generation blocked: unresolved engineering inputs:':
-            'اطلاعات فنی لازم برای طراحی کامل نشده است:',
-        'water inlet pressure': 'فشار مبنای آب ورودی',
-        'project location/climate': 'شهر و شرایط اقلیمی پروژه',
-        'floor heights / false-ceiling constraints': 'ارتفاع طبقات و سقف کاذب',
-        'sanitary outlet': 'نوع خروجی فاضلاب',
-        'resolved heating/cooling equipment schedule': 'انتخاب تجهیزات گرمایش و سرمایش',
-        'gas appliance loads, inlet pressure and meter/regulator location':
-            'ظرفیت تجهیزات گازسوز و محل کنتور/رگلاتور',
-        'Mechanical technical design QA failed': 'کنترل فنی نقشه مکانیک کامل نشد',
-        'fixture_and_symbol_traceability': 'تعداد و جانمایی تجهیزات بهداشتی',
-        'water_hydraulic_design': 'محاسبات هیدرولیکی آب',
-        'sanitary_vent_design': 'محاسبات فاضلاب و ونت',
-        'heating_cooling_equipment_design': 'طراحی تجهیزات گرمایش و سرمایش',
-        'ventilation_design': 'محاسبات تهویه',
-        'roof_drainage_design': 'محاسبات آب باران بام',
-        'Compact mechanical output': 'پاک‌سازی خروجی مکانیک',
-        'split_ac_visual_gate': 'کنترل خوانایی تصویری کولرها',
-        'split_symbol_too_small': 'سمبل کولر در مقیاس خروجی بیش از حد کوچک است',
-        'split_preview_empty': 'پریویوی پلان کولر قابل تأیید نیست',
-        'standard_equipment_block': 'سمبل استاندارد یونیت داخلی یا خارجی',
-    }
-    for source, target in translations.items():
-        message = message.replace(source, target)
-    return f'طراحی متوقف شد: {message}'
-
-
-def _cad_rejection_diagnostic(response):
-    """Return server-only structured QA evidence without project geometry."""
-    try:
-        payload = response.json()
-        detail = payload.get('detail') if isinstance(payload, dict) else None
-    except Exception:
-        detail = None
-    if not isinstance(detail, dict):
-        return {'status_code': response.status_code, 'detail_type': type(detail).__name__}
-    acceptance = detail.get('engineering_acceptance') or {}
-    pipeline = detail.get('pipeline_qa') or {}
-    authority = detail.get('authority_qa') or {}
-    return {
-        'status_code': response.status_code,
-        'code': detail.get('code'),
-        'stage': detail.get('stage'),
-        'missing_inputs': detail.get('missing_inputs') or [],
-        'engineering_acceptance': {
-            'status': acceptance.get('status'),
-            'errors': acceptance.get('errors') or [],
-            'metrics': acceptance.get('metrics') or {},
-        },
-        'pipeline_qa': {
-            'status': pipeline.get('status'),
-            'errors': pipeline.get('errors') or [],
-        },
-        'authority_qa': {
-            'status': authority.get('status'),
-            'errors': authority.get('errors') or [],
-        },
+        'http_status':resp.status_code,
+        'code':detail.get('code'),'status':detail.get('status'),'stage':detail.get('stage'),
+        'missing_inputs':detail.get('missing_inputs') or [],
+        'engineering_acceptance':detail.get('engineering_acceptance'),
+        'pipeline_qa':detail.get('pipeline_qa'),'authority_qa':detail.get('authority_qa'),
+        'v19_qa':detail.get('v19_qa'),
     }
 
 
 def _post_to_compatible_cad(payload):
     """Use the canonical CAD process shipped in this exact deployment."""
     if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1':
-        # Railway's constrained container must not load the CAD stack in a
-        # second Python interpreter.  Calling the same canonical route in the
-        # web process preserves validation/HTTP semantics while sharing memory.
         from cad_engine import main as _canonical_entrypoint  # noqa: F401
         from cad_engine.main_v15 import design
 
         class LocalResponse:
             def __init__(self, status_code, body):
-                self.status_code = status_code
-                self.ok = status_code < 400
-                self._body = body
-
-            def json(self):
-                return self._body
+                self.status_code = status_code; self.ok = status_code < 400; self._body = body
+            def json(self): return self._body
 
         try:
-            # The web workflow has already built this trusted internal payload.
-            # Re-validating it through Pydantic recursively copied the complete
-            # architectural analysis (tens of MB) and exhausted Railway memory.
-            # The canonical route uses attribute access only, so a zero-copy
-            # request namespace retains the exact same route and QA behavior.
             local_payload = {'architecture_archive_b64': None, **payload}
             return LocalResponse(200, design(SimpleNamespace(**local_payload)))
         except HTTPException as exc:
@@ -380,15 +64,10 @@ def _post_to_compatible_cad(payload):
 def _attach_remote_architecture(payload, project_dir):
     """Carry preserved inputs to a stateless CAD service over private HTTP."""
     target = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').lower()
-    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1' or target.startswith(
-        ('http://127.0.0.1', 'http://localhost')
-    ):
+    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1' or target.startswith(('http://127.0.0.1', 'http://localhost')):
         return payload
-
-    project_dir = Path(project_dir)
-    archive = project_dir / 'architecture.zip'
-    if archive.is_file():
-        raw = archive.read_bytes()
+    project_dir = Path(project_dir); archive = project_dir / 'architecture.zip'
+    if archive.is_file(): raw = archive.read_bytes()
     else:
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as bundle:
@@ -396,427 +75,131 @@ def _attach_remote_architecture(payload, project_dir):
                 if source.is_file() and '__MACOSX' not in source.parts and not source.name.startswith(('._', '.')):
                     bundle.write(source, arcname=source.name)
         raw = buffer.getvalue()
-    if not raw:
-        return payload
-    transferred = dict(payload)
-    transferred['architecture_dir'] = None
+    if not raw: return payload
+    transferred = dict(payload); transferred['architecture_dir'] = None
     transferred['architecture_archive_b64'] = base64.b64encode(raw).decode('ascii')
     return transferred
 
 
 def _materialize_remote_cad_artifact(data):
-    """Materialize a validated CAD transfer envelope on the web container."""
-    generated=list(data.get('generated_files') or [])
-    package_path=Path(data.get('zip_path') or '')
+    generated=list(data.get('generated_files') or []); package_path=Path(data.get('zip_path') or '')
     encoded=data.get('zip_base64') or ''
     if not encoded:
         artifact=(package_path.parent/generated[0]) if len(generated)==1 else package_path
         return None,package_path,artifact
     root=Path(tempfile.mkdtemp(prefix='engitools-cad-transfer-'))
     try:
-        archive=root/'transfer.zip'
-        archive.write_bytes(base64.b64decode(encoded,validate=True))
+        archive=root/'transfer.zip'; archive.write_bytes(base64.b64decode(encoded,validate=True))
         with zipfile.ZipFile(archive) as bundle:
             for member in bundle.infolist():
                 candidate=(root/member.filename).resolve()
-                if root.resolve() not in candidate.parents or member.is_dir():
-                    raise RuntimeError('بسته انتقال خروجی CAD معتبر نیست.')
+                if root.resolve() not in candidate.parents or member.is_dir(): raise RuntimeError('بسته انتقال خروجی CAD معتبر نیست.')
             bundle.extractall(root)
         artifact=(root/generated[0]) if len(generated)==1 else archive
         return root,archive,artifact
     except Exception:
-        shutil.rmtree(root,ignore_errors=True)
-        raise
+        shutil.rmtree(root,ignore_errors=True); raise
+
+
+def _v19_contract_from_analysis(analysis):
+    """Project analysis -> complete v19 authority envelope without inventing evidence.
+
+    Missing calculations or graph evidence is preserved as missing; the v19
+    authority adapter will return INPUT_REQUIRED instead of falling back to a
+    legacy engineering decision path.
+    """
+    analysis=dict(analysis or {})
+    pmm=analysis.get('project_mechanical_model') or {}
+    calculation_rows=(analysis.get('calculation_rows_v19') if 'calculation_rows_v19' in analysis else
+                      analysis.get('calculation_rows') if 'calculation_rows' in analysis else
+                      analysis.get('engineering_calculation_rows'))
+    active_systems=analysis.get('active_systems_v19')
+    return {
+        'project_mechanical_model': pmm,
+        'calculation_rows': calculation_rows,
+        'active_systems': active_systems,
+        'coordination_inputs': analysis.get('coordination_inputs_v19') or {},
+        'route_request': analysis.get('route_request_v19') or {},
+        'equipment_requirements': analysis.get('equipment_requirements_v19') or {},
+        'manufacturer_catalogue': analysis.get('manufacturer_catalogue_v19') or [],
+        'manufacturer_database_records': analysis.get('manufacturer_database_records_v19'),
+        'equipment_selection_checks': analysis.get('equipment_selection_checks_v19'),
+        'declared_equipment_ids': analysis.get('declared_equipment_ids_v19') or [],
+        'detail_specs': analysis.get('detail_specs_v19') or [],
+        'final_parametric_detail_specs': analysis.get('final_parametric_detail_specs_v19') or [],
+        'network_graph': analysis.get('network_graph_v19') or {},
+        'annotation_solver': analysis.get('annotation_solver_v19'),
+        'submission_checks': analysis.get('submission_checks_v19'),
+        'engineer_review': analysis.get('engineer_review_v19'),
+        'quality_metrics': analysis.get('quality_metrics_v19') or {},
+        'golden_result': analysis.get('golden_result_v19'),
+        'pmm_schema': pmm.get('schema'),
+    }
 
 
 def run_design_dxf(project_id, revision_id):
-    db = legacy.Session()
-    p = db.get(legacy.Project, project_id)
-    r = db.get(legacy.Revision, revision_id)
+    db = legacy.Session(); p = db.get(legacy.Project, project_id); r = db.get(legacy.Revision, revision_id)
     transfer_root = None
     try:
-        p.status = 'designing'
-        r.status = 'processing'
-        set_project_progress(p, 'preparing_inputs')
-        db.commit()
+        p.status = 'designing'; r.status = 'processing'; set_project_progress(p, 'preparing_inputs'); db.commit()
         if not os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').strip():
             raise RuntimeError('موتور CAD Designer هنوز به این سرویس متصل نشده است.')
-
         pdir = legacy.DATA_DIR / 'projects' / str(p.id)
         discipline = (p.answers or {}).get('discipline', (p.analysis or {}).get('discipline', 'mechanical'))
-        if discipline not in legacy.OUTPUT_SCOPES:
-            raise RuntimeError('رشته پروژه معتبر نیست.')
-        scope = legacy.OUTPUT_SCOPES[discipline]
-        design_answers = dict(p.answers or {})
+        if discipline not in legacy.OUTPUT_SCOPES: raise RuntimeError('رشته پروژه معتبر نیست.')
+        scope = legacy.OUTPUT_SCOPES[discipline]; design_answers = dict(p.answers or {})
         approved_manifest = ((p.analysis or {}).get('drawing_set') or {}).get('approved_manifest')
         if discipline == 'mechanical':
-            if not approved_manifest:
-                raise RuntimeError('Approved mechanical drawing manifest is missing from the project workflow.')
-            # The CAD engine reads the approved contract from answers. Keeping it
-            # only in output_scope made the compositor reject every approved job.
+            if not approved_manifest: raise RuntimeError('Approved mechanical drawing manifest is missing from the project workflow.')
             design_answers['_approved_drawing_manifest'] = approved_manifest
-            # Carry the exact fixture blocks found by the browser upload analyzer
-            # into the CAD transaction.  The engine still accepts them only when
-            # their original coordinates fall inside a reconstructed room; this
-            # preserves provenance and avoids inventing installed fixtures.
             fixture_evidence = []
             for analyzed_file in ((p.analysis or {}).get('files') or []):
                 for item in (analyzed_file.get('fixture_blocks') or []):
                     if item.get('kind') and item.get('x') is not None and item.get('y') is not None:
-                        fixture_evidence.append({
-                            'kind': item.get('kind'), 'name': item.get('name'),
-                            'x': item.get('x'), 'y': item.get('y'),
-                            'source_file': analyzed_file.get('file'),
-                        })
+                        fixture_evidence.append({'kind':item.get('kind'),'name':item.get('name'),'x':item.get('x'),'y':item.get('y'),'source_file':analyzed_file.get('file')})
             design_answers['_plan_fixture_evidence'] = fixture_evidence
             design_answers['_plan_analysis'] = p.analysis
             design_answers['_runtime_contract'] = active_version_manifest()
-            analysis = dict(p.analysis or {})
-            pmm = analysis.get('project_mechanical_model') or {}
-            design_answers['_v19_input_contract'] = {
-                'coordination_inputs': analysis.get('coordination_inputs_v19') or {},
-                'route_request': analysis.get('route_request_v19') or {},
-                'equipment_requirements': analysis.get('equipment_requirements_v19') or {},
-                'manufacturer_catalogue': analysis.get('manufacturer_catalogue_v19') or [],
-                'detail_specs': analysis.get('detail_specs_v19') or [],
-                'network_graph': analysis.get('network_graph_v19') or {},
-                'pmm_schema': pmm.get('schema'),
-            }
-        set_project_progress(p, 'validating_contract')
-        db.commit()
+            design_answers['_v19_input_contract'] = _v19_contract_from_analysis(p.analysis)
+        set_project_progress(p, 'validating_contract'); db.commit()
         payload = {
-            'project_id': str(p.id),
-            'discipline': discipline,
-            'architecture_dir': str(pdir / 'input'),
-            'answers': design_answers,
-            'plan_analysis': p.analysis,
-            'rulebook_path': legacy.RULEBOOK_PATH,
-            'revision': r.revision_no,
-            'revision_instructions': r.feedback,
-            'output_scope': {
-                'discipline': discipline,
-                'label': scope['label'],
-                'systems': scope['systems'],
-                'only_this_discipline': True,
-                'include_other_disciplines': False,
-                'approved_manifest': approved_manifest,
-            },
+            'project_id': str(p.id),'discipline': discipline,'architecture_dir': str(pdir / 'input'),
+            'answers': design_answers,'plan_analysis': p.analysis,'rulebook_path': legacy.RULEBOOK_PATH,
+            'revision': r.revision_no,'revision_instructions': r.feedback,
+            'output_scope': {'discipline':discipline,'label':scope['label'],'systems':scope['systems'],'only_this_discipline':True,'include_other_disciplines':False,'approved_manifest':approved_manifest},
         }
         if discipline == 'mechanical':
-            for stage in ('coordination_v19', 'manufacturer_v19', 'documentation_v19'):
-                set_project_progress(p, stage)
-                db.commit()
-        set_project_progress(p, 'engine_designing')
-        db.commit()
-        payload = _attach_remote_architecture(payload, pdir)
+            for stage in ('coordination_v19','manufacturer_v19','documentation_v19'):
+                set_project_progress(p, stage); db.commit()
+        set_project_progress(p, 'engine_designing'); db.commit(); payload = _attach_remote_architecture(payload, pdir)
         resp = _post_to_compatible_cad(payload)
         if not resp.ok:
             message = _cad_error_message(resp)
-            print(
-                '[mechanical-design] CAD rejection diagnostic: '
-                + json.dumps(_cad_rejection_diagnostic(resp), ensure_ascii=True, sort_keys=True),
-                flush=True,
-            )
-            print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}', flush=True)
+            print('[mechanical-design] CAD rejection diagnostic: '+json.dumps(_cad_rejection_diagnostic(resp),ensure_ascii=True,sort_keys=True),flush=True)
+            print(f'[mechanical-design] CAD HTTP {resp.status_code}: {message}',flush=True)
+            if discipline == 'mechanical': reopen_missing_mechanical_inputs(p, resp.json() if hasattr(resp,'json') else {})
             raise RuntimeError(message)
-        data = resp.json()
-        if discipline == 'mechanical':
-            active_versions = active_version_manifest()
-            if data.get('engine_version') != active_versions['cad_api']:
-                raise RuntimeError('نسخه موتور CAD با نسخه فعال سایت تطابق ندارد.')
-            for report in data.get('design_reports') or []:
-                if report.get('pipeline_authority') != 'mechanical-v19':
-                    raise RuntimeError('خروجی توسط مسیر مکانیکی فعال v19 تولید نشده است.')
-                if report.get('executed_versions') != active_versions:
-                    raise RuntimeError('نسخه تحلیل، طراحی یا بازبینی خروجی با سایت تطابق ندارد.')
-        if discipline == 'mechanical':
-            set_project_progress(
-                p, 'mechanical_release_qa',
-                detail='کنترل ارتباط تجهیزات و مسیرها، جزئیات اجرایی، پریویوی هر پلان، exact-file reopen و montage',
-            )
-            db.commit()
-        set_project_progress(p, 'validating_output')
-        db.commit()
-        if data.get('discipline') and data['discipline'] != discipline:
-            raise RuntimeError('خروجی CAD Designer با رشته انتخاب‌شده پروژه تطابق ندارد.')
-
-        if discipline == 'mechanical':
-            validation = validate_generated_manifest(
-                (p.analysis or {}).get('drawing_set') or {},
-                data.get('design_reports') or [],
-            )
-            analysis = dict(p.analysis or {})
-            analysis['last_generation_validation'] = validation
-            p.analysis = analysis
-
-            reports = data.get('design_reports') or []
-            # ``compact_output`` was emitted by the transitional compositor but
-            # is optional in the V17 authority report.  The enforceable compact
-            # contract is: exactly one generated consolidated DXF, copy only
-            # that named file, then reopen/validate the copied artifact below.
-            cleanup_states = [
-                report.get('compact_output') for report in reports
-                if report.get('compact_output') is not None
-            ]
-            if len(data.get('generated_files') or []) != 1:
-                raise RuntimeError(
-                    'پاک‌سازی خروجی ناموفق بود: خروجی مکانیک باید دقیقاً یک DXF تجمیعی داشته باشد.'
-                )
-            if cleanup_states and any(item.get('status') != 'PASS' for item in cleanup_states):
-                raise RuntimeError('پاک‌سازی خروجی مکانیک توسط کنترل نهایی تأیید نشد.')
-            if any(int(item.get('architecture_source_files_packaged') or 0) != 0 for item in cleanup_states):
-                raise RuntimeError('فایل معماری خام نباید داخل بسته خروجی مکانیک قرار گیرد.')
-
-        generated = data.get('generated_files') or []
-        if not generated:
-            raise RuntimeError('موتور CAD هیچ فایل DXF تولید نکرد.')
-
-        set_project_progress(p, 'packaging')
-        db.commit()
-        # Validate and upload directly from the ephemeral CAD workspace.
-        # No final-artifact copy is ever created on the persistent Volume.
-        transfer_root, package_path, dst = _materialize_remote_cad_artifact(data)
-        if len(generated) == 1:
-            if not dst.exists():
-                raise RuntimeError(f'فایل DXF تولیدشده پیدا نشد: {generated[0]}')
-        else:
-            if not dst.exists():
-                raise RuntimeError('بسته DXF تولیدشده پیدا نشد.')
-
-        set_project_progress(p, 'artifact_qa')
-        db.commit()
-        artifact_qa = artifact_storage.validate_output_artifact(dst)
-        analysis = dict(p.analysis or {})
-        analysis['last_artifact_validation'] = artifact_qa
-        analysis['artifact_build_identity'] = stamp_artifact({
-            'artifact_name': dst.name,
-            'artifact_bytes': dst.stat().st_size,
-        })
-        p.analysis = analysis
-
-        set_project_progress(p, 'uploading_output')
-        db.commit()
-        durable_uri = artifact_storage.upload_output(
-            p.id, r.revision_no, discipline, dst,
-        )
-        if not durable_uri:
-            raise RuntimeError('ذخیره خروجی نهایی در R2 تأیید نشد؛ فایل محلی نگهداری نشد.')
-        if transfer_root:
-            shutil.rmtree(transfer_root,ignore_errors=True)
-            transfer_root=None
-        else:
-            dst.unlink(missing_ok=True)
-
-        # Reuse the existing artifact-path column for compatibility with the
-        # current database schema; final artifacts live only in R2.
-        set_project_progress(p, 'finalizing')
-        db.commit()
-        r.pdf_path = durable_uri
-        r.status = 'ready'
-        r.error = ''
-        p.status = 'ready'
-        p.current_revision = r.revision_no
-        p.last_error = ''
-        clear_active_recovery(p)
-        set_project_progress(p, 'completed')
-        db.commit()
-        _purge_processing_files(p.id, keep_output=True)
-        artifact_storage.delete_project_inputs(p.id)
+        data=resp.json(); active_versions=active_version_manifest()
+        if discipline=='mechanical':
+            reports=data.get('design_reports') or []
+            for report in reports:
+                if report.get('pipeline_authority') != 'mechanical-v19': raise RuntimeError('Mechanical CAD response did not come from authoritative v19 runtime.')
+                if report.get('engineering_authority') != 'PMM_V3_V19': raise RuntimeError('Mechanical CAD response is missing PMM v3 engineering authority.')
+                if report.get('legacy_renderer_role') != 'CAD_MATERIALIZER_ONLY': raise RuntimeError('Legacy renderer attempted to retain engineering authority.')
+                if report.get('executed_versions') != active_versions: raise RuntimeError('Mechanical CAD runtime version does not match site runtime.')
+                preflight=report.get('v19_traceability_preflight') or {}
+                if preflight.get('status')!='PASS' or preflight.get('zero_mismatch') is not True: raise RuntimeError('Mechanical traceability reconciliation did not pass.')
+        transfer_root,package_path,artifact=_materialize_remote_cad_artifact(data)
+        if not artifact or not artifact.exists(): raise RuntimeError('خروجی نهایی CAD ساخته نشد.')
+        set_project_progress(p,'artifact_qa'); db.commit()
+        final=persist_final_artifact(p.id,r.revision_no,discipline,artifact)
+        r.pdf_path=final; r.status='completed'; p.status='completed'; p.last_error=''; set_project_progress(p,'completed'); db.commit()
+        delete_local_copy_after_remote_verification(artifact,final)
     except Exception as exc:
-        r.status = 'failed'
-        r.error = str(exc)
-        # A failed CAD run is never a completed analysis. Returning it to
-        # ready_to_design makes the UI ask for the same start action forever
-        # and hides the actual 422/500 reason from the customer.
-        p.status = 'failed'
-        p.last_error = str(exc)
-        db.commit()
-        _purge_processing_files(p.id, keep_output=True)
+        db.rollback(); p=db.get(legacy.Project,project_id); r=db.get(legacy.Revision,revision_id)
+        if p and r:
+            p.status='needs_input' if 'ورودی‌های مهندسی' in str(exc) or 'INPUT_REQUIRED' in str(exc) else 'failed'
+            p.last_error=str(exc); r.status='failed'; r.error=str(exc); db.commit()
     finally:
-        if transfer_root:
-            shutil.rmtree(transfer_root,ignore_errors=True)
+        if transfer_root: shutil.rmtree(transfer_root,ignore_errors=True)
         db.close()
-
-
-def flow_payload_dxf(p):
-    data = _prev_flow_payload(p)
-    ready = p.status == 'ready' and bool(p.current_revision)
-    output_url = f'/projects/{p.id}/output/{p.current_revision}' if ready else None
-    data['output_url'] = output_url
-    data['download_url'] = output_url
-    data['output_format'] = 'DXF'
-    # Temporary compatibility for the existing modal JS.
-    data['pdf_url'] = output_url
-    data['error'] = customer_safe_error(data.get('error'))
-    basis=(p.analysis or {}).get('basis_preflight') or {}
-    if basis.get('status') == 'INPUT_REQUIRED':
-        data['input_required'] = {
-            'missing': list(basis.get('missing') or []),
-            'resume_stage': basis.get('resume_stage'),
-            'message': 'اطلاعات قبلی و تحلیل پلان حفظ شده‌اند؛ فقط موارد زیر را تکمیل کنید.',
-        }
-    return data
-
-
-def _resolve_existing_cad_artifact(pid, rev, discipline, stored_path):
-    if str(stored_path or '').startswith('s3://'):
-        return str(stored_path)
-    path = Path(stored_path or '')
-    if path.exists() and path.suffix.lower() in ('.dxf', '.zip'):
-        return path
-
-    # Older revisions stored the PDF path even though the CAD engine also wrote
-    # the generated DXF package. Reuse that existing CAD artifact immediately.
-    engine_dir = Path('/data/cad-engine') / str(pid) / f'R{rev:03d}' / discipline
-    if engine_dir.exists():
-        dxfs = sorted(engine_dir.glob(f'*_{discipline}.dxf'))
-        if len(dxfs) == 1:
-            return dxfs[0]
-        package = engine_dir / f'EngiTools_{pid}_{discipline}_R{rev}_DXF.zip'
-        if package.exists():
-            return package
-    return None
-
-
-legacy.run_design = run_design_dxf
-legacy.flow_payload = flow_payload_dxf
-
-
-@app.get('/projects/{pid}/output/{rev}')
-def get_cad_output(pid: int, rev: int, request: Request):
-    user = legacy.current_user(request)
-    db, p = legacy.own_project(pid, user.id)
-    if not p:
-        raise HTTPException(404)
-    r = db.query(legacy.Revision).filter(
-        legacy.Revision.project_id == p.id,
-        legacy.Revision.revision_no == rev,
-    ).first()
-    discipline = (p.answers or {}).get('discipline', (p.analysis or {}).get('discipline', 'mechanical'))
-    db.close()
-    if not r or r.status != 'ready':
-        raise HTTPException(404)
-
-    path = _resolve_existing_cad_artifact(pid, rev, discipline, r.pdf_path)
-    if not path:
-        raise HTTPException(404, 'DXF output is not available for this revision; create a new revision.')
-
-    if isinstance(path, str) and path.startswith('s3://'):
-        suffix = Path(path).suffix.lower()
-        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
-        if not artifact_storage.configured():
-            raise HTTPException(503, 'فضای ذخیره‌سازی خروجی موقتاً در دسترس نیست.')
-        return RedirectResponse(artifact_storage.presigned_download(path, filename), status_code=307)
-
-    if path.suffix.lower() == '.dxf':
-        media_type = 'application/dxf'
-        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf'
-    else:
-        media_type = 'application/zip'
-        filename = f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
-    return FileResponse(path, media_type=media_type, filename=filename)
-
-
-@app.post('/projects/{pid}/output/{rev}/delete')
-def delete_cad_output(pid: int, rev: int, request: Request):
-    """Delete a retained final artifact only on the owner's explicit request."""
-    user = legacy.current_user(request)
-    db, project = legacy.own_project(pid, user.id)
-    if not project:
-        raise HTTPException(404)
-    try:
-        revision = db.query(legacy.Revision).filter(
-            legacy.Revision.project_id == project.id,
-            legacy.Revision.revision_no == rev,
-        ).first()
-        if not revision or not revision.pdf_path:
-            raise HTTPException(404)
-        stored = str(revision.pdf_path)
-        if stored.startswith('s3://'):
-            artifact_storage.delete_artifact(stored)
-        else:
-            path = Path(stored)
-            project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
-            if path.exists() and project_root in path.resolve().parents:
-                path.unlink(missing_ok=True)
-        revision.pdf_path = ''
-        revision.status = 'deleted'
-        revision.error = ''
-        if project.current_revision == rev:
-            project.current_revision = 0
-            project.status = 'ready_to_design'
-        db.commit()
-    finally:
-        db.close()
-    return RedirectResponse(f'/projects/{pid}', status_code=303)
-
-
-@app.get('/internal/maintenance/projects/{pid}/output/{rev}')
-def maintenance_get_cad_output(pid: int, rev: int, request: Request):
-    """Token-protected artifact download used for production E2E verification."""
-    expected = os.getenv('INTERNAL_MAINTENANCE_TOKEN', '')
-    supplied = request.headers.get('x-maintenance-token', '')
-    if not expected or not secrets.compare_digest(supplied, expected):
-        raise HTTPException(404)
-    db = legacy.Session()
-    try:
-        project = db.get(legacy.Project, pid)
-        revision = db.query(legacy.Revision).filter(
-            legacy.Revision.project_id == pid,
-            legacy.Revision.revision_no == rev,
-        ).first()
-        if not project or not revision or revision.status != 'ready':
-            raise HTTPException(404)
-        discipline = (project.answers or {}).get(
-            'discipline', (project.analysis or {}).get('discipline', 'mechanical')
-        )
-        path = _resolve_existing_cad_artifact(pid, rev, discipline, revision.pdf_path)
-    finally:
-        db.close()
-    if isinstance(path, str) and path.startswith('s3://'):
-        suffix = Path(path).suffix.lower()
-        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
-        if not artifact_storage.configured():
-            raise HTTPException(503, 'فضای ذخیره‌سازی خروجی موقتاً در دسترس نیست.')
-        return RedirectResponse(artifact_storage.presigned_download(path, filename), status_code=307)
-    if not isinstance(path, Path) or not path.exists():
-        raise HTTPException(404)
-    project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
-    resolved = path.resolve()
-    if project_root not in resolved.parents:
-        raise HTTPException(404)
-    return FileResponse(
-        resolved, media_type='application/dxf',
-        filename=f'EngiTools_{discipline}_{pid}_R{rev}.dxf',
-    )
-
-
-@app.post('/internal/maintenance/upload-test')
-async def maintenance_upload_test(request: Request):
-    """Upload the exact customer artifact through the production save path."""
-    expected = os.getenv('INTERNAL_MAINTENANCE_TOKEN', '')
-    supplied = request.headers.get('x-maintenance-token', '')
-    if not expected or not secrets.compare_digest(supplied, expected):
-        raise HTTPException(404)
-    form = await request.form()
-    upload = form.get('file')
-    discipline = str(form.get('discipline') or 'mechanical')
-    if upload is None or discipline not in legacy.DISCIPLINES:
-        raise HTTPException(400)
-    db = legacy.Session()
-    try:
-        user = legacy.User(email=f'maintenance-{uuid.uuid4().hex}@local')
-        db.add(user); db.flush()
-        project = legacy.Project(
-            user_id=user.id, name='Production upload integrity test',
-            questions=legacy.qlist(legacy.DISCIPLINES[discipline]['questions']),
-            answers={'discipline': discipline}, status='uploading', last_error='',
-        )
-        db.add(project); db.commit(); db.refresh(project)
-        legacy.save_project_input(project.id, upload)
-        project.status='analyzing'; db.commit()
-        pid=project.id
-    finally:
-        db.close()
-    legacy.schedule_analysis(pid)
-    return {'ok': True, 'project_id': pid}
