@@ -19,6 +19,27 @@ def _pmm(levels=None):
     }
 
 
+def _approved_analysis():
+    return {
+        "architectural_auto": {
+            "level_profiles": [{
+                "name": "GROUND",
+                "roof": False,
+                "room_counts": {"bathroom": 1},
+                "recognized_room_labels": 1,
+                "wet_fixture_candidate": True,
+                "sanitary_candidate": True,
+                "conditioned_candidate": True,
+                "ventilation_candidate": True,
+                "gas_candidate": False,
+            }],
+            "fixture_counts": {"toilet": 1},
+            "fixture_blocks_detected": 1,
+            "roof_drain_count": 0,
+        }
+    }
+
+
 def _pipeline(duplicate=False, cross_overlay=False):
     nodes = [
         {"id": "N1", "kind": "basin", "plan_id": "P1"},
@@ -54,6 +75,15 @@ class ProductionTruthGateV19Tests(unittest.TestCase):
         payload = _v19_payload({}, {"project_mechanical_model": pmm, "calculation_rows_v19": calculations})
         self.assertEqual(payload["project_mechanical_model"], pmm)
         self.assertEqual(payload["calculation_rows"], calculations)
+
+    def test_v19_payload_derives_pmm_from_approved_legacy_analysis(self):
+        answers = {"_approved_drawing_manifest": [{"code": "M-101", "family": "water_supply", "levels": ["GROUND"]}]}
+        payload = _v19_payload(answers, _approved_analysis())
+        pmm = payload["project_mechanical_model"]
+        self.assertEqual(pmm["schema"], "project-mechanical-model/v3")
+        self.assertTrue(pmm["valid"])
+        self.assertEqual(pmm["level_names"], ["GROUND"])
+        self.assertEqual(pmm["drawing_manifest_count"], 1)
 
     def test_valid_pipeline_builds_unique_traceability_rows(self):
         trace = build_pipeline_traceability(_pipeline())
