@@ -32,3 +32,13 @@ match or drawing/calculation mismatch is FAIL.
 
 Project-10/Fasihi values remain held-out semantic comparison facts and are never
 used as hidden defaults.
+
+## Target-sheet issue gate
+
+M-131/M-132 are final only when each room has a PMM identity, an envelope and
+outdoor-air heat-loss calculation, declared supply/return temperatures, an exact
+official radiator model/size and a non-preliminary package selection. M-141/M-142
+are final only when every segment carries Flow + Leq + DN + Calc ID and the
+package includes meter, regulator, service shutoff, appliance valves, riser,
+fittings, sleeves, flue and combustion-air evidence. Any absent value is
+`INPUT_REQUIRED`; no preliminary radiator may appear in an issued package.

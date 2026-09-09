@@ -1,8 +1,8 @@
-name: Architecture Preservation Gate v16
+name: Architecture Preservation Gate
 
 on:
   push:
-    branches: [architecture-preservation-gate-v16]
+    branches: [main]
   pull_request:
     branches: [main]
 

@@ -1,8 +1,8 @@
-"""Graph-native CAD materialization for authoritative v19 network segments.
+"""Graph-native CAD materialization for authoritative canonical network segments.
 
 The legacy renderer may create sheet frames, copied architecture and supporting
 content, but route entities inside approved plan boards are replaced here from
-the already-sized v19 graph. This module never computes topology or sizing.
+the already-sized canonical graph. This module never computes topology or sizing.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from ezdxf import bbox
 from .mechanical_network_topology import _typed_level
 
 
-APPID = "ENGITOOLS_V19"
+APPID = "ENGITOOLS_MECHANICAL"
 SYSTEM_FAMILY = {
     "cold_water": "WATER", "hot_water": "WATER",
     "sanitary": "SANITARY_VENT", "vent": "SANITARY_VENT",
@@ -221,7 +221,7 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
     if not drawable:
         return {"status": "INPUT_REQUIRED", "missing_inputs": ["DRAWABLE_AUTHORITY_SEGMENTS"]}
 
-    fd, backup_name = tempfile.mkstemp(prefix="engitools-v19-network-", suffix=".dxf")
+    fd, backup_name = tempfile.mkstemp(prefix="engitools-mechanical-network-", suffix=".dxf")
     Path(backup_name).unlink(missing_ok=True)
     backup = Path(backup_name)
     shutil.copy2(dst, backup)
@@ -278,7 +278,7 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
         return {"status": "PASS", "removed_legacy_entities": removed,
                 "materialized_segments": len(materialized), "expected_segments": len(expected),
                 "reopen_counts": dict(counts), "exact_file_reopened": True,
-                "identity_policy": "DXF_XDATA_EDGE_ID_EQUALS_V19_NETWORK_EDGE_ID"}
+                "identity_policy": "DXF_XDATA_EDGE_ID_EQUALS_NETWORK_EDGE_ID"}
     except Exception as exc:
         shutil.copy2(backup, dst)
         return {"status": "FAIL", "errors": ["NETWORK_MATERIALIZATION_EXCEPTION:" + str(exc)]}

@@ -4,8 +4,8 @@ import zipfile
 from pathlib import Path
 
 from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
-from app.mechanical_site_manifest_v12 import review_question_html_v12
-from data.rulebook.generate_rulebook_v4 import BENCHMARK, VERSION, build as build_rulebook
+from app.mechanical_site_manifest import review_question_html
+from data.rulebook.generate_rulebook import BENCHMARK, VERSION, build as build_rulebook
 
 
 class Stage12SiteRulebookContractTests(unittest.TestCase):
@@ -30,7 +30,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         manifest = proposal['drawing_manifest']
         self.assertEqual(manifest['total_sheets'], 29)
         self.assertFalse(any(sheet['code'] == 'M-W-RETURN' for sheet in manifest['sheets']))
-        html = review_question_html_v12(proposal)
+        html = review_question_html(proposal)
         self.assertIn('تعداد شیت‌های تحویلی مکانیک: 29 شیت', html)
         self.assertIn('Manifest ID:', html)
         self.assertIn(manifest['manifest_id'][:12], html)
@@ -51,7 +51,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         approved['drawing_manifest']['sheets'][0]['label'] = 'MUTATED AFTER APPROVAL'
         self.assertNotEqual(approved['approved_manifest']['sheets'][0]['label'], 'MUTATED AFTER APPROVAL')
 
-    def test_stage_12_runtime_rulebook_v4_contains_manifest_and_29_benchmark_contract(self):
+    def test_stage_12_runtime_rulebook_contains_manifest_and_29_benchmark_contract(self):
         self.assertEqual(VERSION, '5.0')
         self.assertEqual(BENCHMARK['base_architectural_views'], 4)
         self.assertEqual(BENCHMARK['approved_deliverables'], 29)
@@ -74,14 +74,15 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
             ):
                 self.assertIn(token, xml)
 
-    def test_stage_12_startup_installs_rulebook_v4_generator_not_legacy_v3_payload(self):
+    def test_stage_12_startup_installs_canonical_rulebook_generator_not_legacy_payload(self):
         startup = Path('start_services.sh').read_text(encoding='utf-8')
-        self.assertIn('generate_rulebook_v4.py', startup)
+        self.assertIn('generate_rulebook.py', startup)
+        self.assertNotIn('generate_rulebook_v', startup)
         self.assertNotIn('MEP_Design_Rulebook_v3.docx.b64', startup)
 
     def test_stage_12_main_app_installs_exact_manifest_review_before_review_routes(self):
         text = Path('app/main_health.py').read_text(encoding='utf-8')
-        install_pos = text.index('install_manifest_site_v12(mechanical_review_fix)')
+        install_pos = text.index('install_mechanical_site_manifest(mechanical_review_fix)')
         register_pos = text.index('mechanical_review_fix.register_mechanical_review_fix')
         self.assertLess(install_pos, register_pos)
 

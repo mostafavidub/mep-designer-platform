@@ -9,9 +9,10 @@ def test_mechanical_request_passes_plan_analysis_into_authority_answers():
     assert "answers=design_answers" in source
 
 
-def test_isolated_version_keeps_manifest_wrapper_for_panel_identity():
+def test_isolated_version_uses_automatic_build_identity():
     source=Path("cad_engine/isolated_service.py").read_text(encoding="utf-8")
-    assert "def version(): return active_version_manifest()" in source
+    assert "def version(): return build_identity()" in source
+    assert "active_version_manifest" not in source
 
 
 def test_package_radiator_creates_one_gas_endpoint_on_every_plan():
