@@ -1,0 +1,39 @@
+{
+  "change_id": "SWCIS-2026-0054",
+  "summary": "Add fail-closed graph-native topology extraction, explicit segment execution sizing/material contracts, and authoritative network CAD materialization for mechanical v19 without benchmark-derived defaults.",
+  "requester": "project-owner",
+  "change_types": ["schema", "routing", "calculation", "drawing_output", "test", "governance", "documentation", "release_identity", "deployment"],
+  "changed_rule_ids": ["MEP-INPUT-001", "MEP-SUBMIT-001"],
+  "impacted_modules": ["pmm", "routing", "sizing", "cad_designer", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "pmm": "PMM v3 preserves authoritative per-level region bounds already present in architecture analysis so route-grade evidence can be assigned to levels without guessing. This is additive and backward compatible.",
+    "routing": "Topology is generated from installed DXF fixture/equipment evidence, PMM typed levels, wet cores and real shafts. Provisional shafts, unknown multi-level assignments, DETAIL pseudo-levels, coincident synthetic loops and duplicate logical edges are forbidden.",
+    "sizing": "Every segment receives execution size, material and slope only from explicit project/system design basis or explicit segment design rows. Corpus/reference values and legacy DEFAULT_TABLES/FIXTURE_LOAD/sanitary 2 percent defaults are not authority inputs.",
+    "cad_designer": "The v19 network materializer replaces legacy plan-route entities inside affected approved plan boards with graph-native segments and identity-backed labels, then reopens the exact DXF and verifies one physical route per authoritative segment.",
+    "detail_riser": "The enriched graph continues to feed graph-native riser and calculation reconciliation using one stable Plan=Calc=Riser=Schedule identity per edge.",
+    "qa": "Adds duplicate-edge, level-assignment, explicit-basis, paired-system overlay, materialization-count and exact-file reopen gates.",
+    "manifest": "No customer sheet manifest change; only network entities inside existing approved plan boards are replaced.",
+    "ui_api": "No public API field removal. Optional internal _network_design_basis and _network_level_assignments inputs are consumed fail-closed when present; missing required authority inputs return INPUT_REQUIRED.",
+    "docs": "Documents topology/sizing/materialization authority and anti-overfitting rules.",
+    "versioning": "SWCIS moves from 4.6.0 to 4.7.0 for additive PMM geometry evidence plus authoritative routing/sizing/materialization behavior.",
+    "migration": "No stored-data migration is required. Existing PMM v3 snapshots without region bounds remain readable; multi-level route derivation simply returns INPUT_REQUIRED until authoritative bounds/assignments are available.",
+    "governance": "No reference corpus numeric sample is promoted to a design default. Development/validation/evaluation cohort separation remains unchanged.",
+    "deployment": "The stacked branch is deployed only to the isolated Railway staging service after all CI gates pass. Production main remains untouched unless separately authorized."
+  },
+  "evidence": {
+    "traceability": ["Stable edge identity is the single Plan ID, Calc ID, Riser ID and Schedule ID.", "Each execution segment records size_source and material_source and exact-file CAD entities carry the same edge/calc identity."],
+    "tests": ["multi-level assignment fail-closed", "no provisional shaft", "DETAIL level rejection", "duplicate topology edge rejection", "explicit sizing/material/slope basis", "paired-system overlay rejection", "one-to-one calculation reconciliation", "graph-native DXF exact reopen and exactly-once segment count"],
+    "docs": ["Mechanical network authority v19 standard"],
+    "version_bump": ["SWCIS 4.7.0 additive routing/sizing/materialization authority update"],
+    "migration": ["Additive PMM region_bounds field; old snapshots remain valid and fail closed only when route-grade level evidence is unavailable."],
+    "golden_regression": ["Reference corpus remains comparison-only. No Project 10 or other corpus numeric value is embedded in topology, sizing, material or slope defaults."],
+    "semantic_diff": ["Legacy route geometry may no longer survive in an approved plan board when an authoritative v19 execution graph is materialized; graph-native routes replace it after exact identity reconciliation."],
+    "artifact_diff": ["Affected plan boards contain exactly one graph-native route entity per authoritative edge, with size/material annotations sourced from explicit execution records."],
+    "numeric_diff": ["No numeric engineering default introduced. Segment sizes/slopes come only from explicit system basis or explicit segment rows."],
+    "contract_diff": ["Optional internal network design basis/level assignment contract added; missing required fields returns INPUT_REQUIRED rather than guessing."],
+    "deployment_plan": ["Create stacked branch from PR75 head, run all GitHub CI, deploy exact passing SHA to isolated web-app-authority-staging, verify /system_health and deployment commit identity. Do not deploy production."],
+    "rollback_plan": ["Redeploy the prior PR75 staging SHA or remove the isolated staging deployment. Production is unaffected."]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "The principal risk is intentionally blocking legacy-generated routes when route-grade level evidence or explicit execution basis is absent. Exact-file reopen and CI tests make this detectable before release."},
+  "waiver": null
+}
