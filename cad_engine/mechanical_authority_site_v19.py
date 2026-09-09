@@ -7,8 +7,8 @@ from .mechanical_authority_v15 import build_design_overrides
 from .engineering_runner_v13 import run_engineering_pipeline, validate_pipeline
 from .mechanical_pipeline_v19 import run_v19_pipeline
 from .coordination_v19 import build_coordination_model
-from .production_quality_truth_v19 import evaluate_production_truth
-from .production_quality_documentation_v19 import rebuild_production_documentation
+from .production_quality_truth import evaluate_production_truth
+from .production_quality_documentation import rebuild_production_documentation
 from .version_manifest import active_version_manifest
 
 
