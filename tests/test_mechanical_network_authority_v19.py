@@ -200,7 +200,7 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
     def test_versioned_rulebook_profile_materializes_explicit_endpoint_load(self):
         from app.mechanical_rulebook import network_design_basis
         graph = self.graph()
-        graph['nodes'].append({'id': 'F1', 'type': 'basin', 'category': 'fixture'})
+        graph['nodes'].append({'id': 'F1', 'kind': 'basin', 'category': 'fixture'})
         result = design_authoritative_segments(graph, design_basis=network_design_basis())
         self.assertEqual(result['status'], 'PASS')
         row = result['calculation_rows'][0]
@@ -209,6 +209,14 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
         self.assertEqual(row['size_mm'], 16.0)
         self.assertEqual(row['material'], 'PPR')
         self.assertIn('MECHANICAL_RULEBOOK/5.1', row['material_source'])
+
+    def test_unknown_canonical_endpoint_kind_remains_fail_closed(self):
+        from app.mechanical_rulebook import network_design_basis
+        graph = self.graph()
+        graph['nodes'].append({'id': 'F1', 'kind': 'unclassified_fixture', 'category': 'fixture'})
+        result = design_authoritative_segments(graph, design_basis=network_design_basis())
+        self.assertEqual(result['status'], 'INPUT_REQUIRED')
+        self.assertIn('ENDPOINT_LOAD:cold_water:F1', result['missing_inputs'])
 
     def test_paired_system_exact_overlay_requires_explicit_separation(self):
         graph = self.graph(paired=True)
