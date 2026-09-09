@@ -33,14 +33,17 @@ def test_visible_mechanical_workflow_names_are_unversioned():
         text = (workflows / filename).read_text(encoding="utf-8")
         assert text.splitlines()[0].strip() == f"name: {display}"
         assert not re.search(rf"name:\s*{re.escape(display)}\s+v\d+", text, re.I)
-    forbidden = (
+    for filename in (
         "mechanical-authority-v15.yml",
         "mechanical-network-authority-v19.yml",
-        "mechanical-governance-v1.yml",
         "mechanical-coordination-v19.yml",
-    )
-    for filename in forbidden:
+    ):
         assert not (workflows / filename).exists(), filename
+
+    sentinel = workflows / "mechanical-governance-v1.yml"
+    text = sentinel.read_text(encoding="utf-8")
+    assert "compatibility_artifact: true" in text
+    assert not re.search(r"^\s*(name|on|jobs)\s*:", text, re.M)
 
 
 def test_deployment_launchers_reference_only_canonical_entrypoint():
