@@ -4,7 +4,7 @@ from pathlib import Path
 
 import ezdxf
 
-from cad_engine.mechanical_network_topology import build_authoritative_topology_from_evidence, _typed_level
+from cad_engine.mechanical_network_topology import build_authoritative_topology_from_evidence, _assign_level, _typed_level
 from cad_engine.mechanical_segment_execution import design_authoritative_segments
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
 
@@ -40,6 +40,24 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         )
         self.assertEqual(result['status'], 'INPUT_REQUIRED')
         self.assertTrue(any(value.startswith('LEVEL_ASSIGNMENT_REQUIRED:') for value in result['missing_inputs']))
+
+    def test_unique_most_specific_nested_level_region_resolves_source_point(self):
+        levels = [
+            {'id': 'L0', 'name': 'Ground', 'type': 'GROUND', 'region_bounds': [0, 0, 20, 20]},
+            {'id': 'L1', 'name': 'First', 'type': 'FIRST', 'region_bounds': [0, 0, 10, 10]},
+        ]
+        level, error = _assign_level('MEP-1', (2, 2), levels, {})
+        self.assertIsNone(error)
+        self.assertEqual(level['type'], 'FIRST')
+
+    def test_equal_overlapping_level_regions_remain_ambiguous(self):
+        levels = [
+            {'id': 'L0', 'name': 'Ground', 'type': 'GROUND', 'region_bounds': [0, 0, 10, 10]},
+            {'id': 'L1', 'name': 'First', 'type': 'FIRST', 'region_bounds': [0, 0, 10, 10]},
+        ]
+        level, error = _assign_level('MEP-1', (2, 2), levels, {})
+        self.assertIsNone(level)
+        self.assertEqual(error, 'AMBIGUOUS_LEVEL_ASSIGNMENT:MEP-1')
 
     def test_detail_pseudo_level_is_rejected(self):
         result = build_authoritative_topology_from_evidence(

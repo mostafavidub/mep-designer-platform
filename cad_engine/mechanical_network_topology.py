@@ -153,6 +153,13 @@ def _assign_level(source_id, point, levels, assignments):
     if len(bounded) == 1:
         return bounded[0], None
     if len(bounded) > 1:
+        ranked = sorted((
+            ((float(row["region_bounds"][2]) - float(row["region_bounds"][0]))
+             * (float(row["region_bounds"][3]) - float(row["region_bounds"][1])), row)
+            for row in bounded
+        ), key=lambda item: item[0])
+        if ranked[0][0] < ranked[1][0]:
+            return ranked[0][1], None
         return None, "AMBIGUOUS_LEVEL_ASSIGNMENT:" + source_id
     if len(levels) == 1:
         return levels[0], None

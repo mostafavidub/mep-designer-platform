@@ -38,3 +38,7 @@ preserved as one source-backed identity (`TYPICAL_<first>_<last>`) through
 topology, riser documentation and target-board materialization. Unknown titles
 and detail pseudo-levels remain fail-closed; the runtime never invents separate
 floor geometry that the architectural source does not contain.
+
+When detected architectural plan regions are nested, a source point belongs to
+the unique smallest containing region (the most-specific source boundary). Equal
+minimum regions remain ambiguous and stop generation.
