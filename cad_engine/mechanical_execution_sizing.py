@@ -159,14 +159,15 @@ def design_heating_network(segments,radiators,design_basis):
          'identity_policy':'drawing DN = calculation DN; cumulative manufacturer-selected radiator load'}
 
 def design_gas_network(segments,appliances,design_basis):
- required_basis={'capacity_table','service_pressure_mbar','allowable_pressure_drop_mbar'}
+ required_basis={'capacity_table','service_pressure_mbar','allowable_pressure_drop_mbar',
+                 'meter','regulator','service_shutoff','riser','fittings','sleeves'}
  missing=sorted(required_basis-set(design_basis or {}))
  if missing:return {'status':'INPUT_REQUIRED','missing_inputs':missing,'segments':[],'components':[]}
  if not appliances or not segments:
   return {'status':'INPUT_REQUIRED','missing_inputs':['gas_appliances' if not appliances else 'gas_segments'],
           'segments':[],'components':[]}
- required_app={'id','manufacturer','model','thermal_input_kw','gas_consumption_m3h','datasheet',
-              'terminal_shutoff','flue','combustion_air'}
+ required_app={'id','pmm_id','manufacturer','model','thermal_input_kw','gas_consumption_m3h','datasheet',
+              'appliance_valve','flue','combustion_air'}
  by_id={};input_required=[]
  for app in appliances or []:
   absent=sorted(required_app-set(app))
@@ -192,14 +193,17 @@ def design_gas_network(segments,appliances,design_basis):
                'flow_m3h':round(flow,4),'equivalent_length_m':leq,'selected_dn_mm':float(selected['dn_mm']) if selected else None,
                'service_pressure_mbar':float(design_basis['service_pressure_mbar']),
                'allowable_pressure_drop_mbar':float(design_basis['allowable_pressure_drop_mbar']),
-               'calc_id':calc_id,'size_source':calc_id})
- components=[{'type':'METER','evidence':design_basis.get('meter')},{'type':'REGULATOR','evidence':design_basis.get('regulator')}]
+               'calc_id':calc_id,'size_source':calc_id,
+               'source_pmm_ids':sorted(by_id[x]['pmm_id'] for x in segment['downstream_appliance_ids']),
+               'status':'PASS' if selected else 'FAIL'})
+ components=[{'type':'METER','evidence':design_basis['meter']},{'type':'REGULATOR','evidence':design_basis['regulator']},
+             {'type':'SERVICE_SHUTOFF','evidence':design_basis['service_shutoff']},
+             {'type':'RISER','evidence':design_basis['riser']},{'type':'FITTINGS','evidence':design_basis['fittings']},
+             {'type':'SLEEVES','evidence':design_basis['sleeves']}]
  for app in by_id.values():
-  components.extend([{'type':'APPLIANCE_SHUTOFF','appliance_id':app['id'],'evidence':app['terminal_shutoff']},
+  components.extend([{'type':'APPLIANCE_VALVE','appliance_id':app['id'],'evidence':app['appliance_valve']},
                      {'type':'FLUE','appliance_id':app['id'],'evidence':app['flue']},
                      {'type':'COMBUSTION_AIR','appliance_id':app['id'],'evidence':app['combustion_air']}])
- if not design_basis.get('meter'):input_required.append('meter')
- if not design_basis.get('regulator'):input_required.append('regulator')
  status='FAIL' if errors else ('INPUT_REQUIRED' if input_required else 'PASS')
  return {'status':status,'errors':errors,'missing_inputs':sorted(input_required),'segments':rows,'components':components,
          'appliances':[by_id[key] for key in sorted(by_id)],

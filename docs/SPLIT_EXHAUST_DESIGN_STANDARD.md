@@ -16,6 +16,12 @@ condensate status and official revisioned datasheet hash. ODU selection checks
 connected ratio, total pipe length, elevation and service clearance. Missing or
 incompatible evidence remains `INPUT_REQUIRED` and cannot be issue-ready.
 
+M-161/M-162 require a room-level IDU row for every calculated room. Each row
+retains PMM and Calc identities, calculated load, selected capacity, margin,
+manufacturer/model, airflow, refrigerant sizes, route length, elevation,
+clearance and condensate status. The ODU must pass connected-ratio, combined
+route-length, elevation and site-clearance limits from its official record.
+
 ## Exhaust
 
 Every applicable WC, bathroom, utility, kitchen or enclosed service room must

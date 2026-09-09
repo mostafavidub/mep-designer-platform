@@ -22,6 +22,53 @@ SUBMISSION_ZERO_CHECKS = (
     "unreadable_annotations",
 )
 
+TARGET_DESIGN_SHEETS = {
+    "heating": ("M-131", "M-132"),
+    "gas": ("M-141", "M-142"),
+    "split_ac": ("M-161", "M-162"),
+}
+
+
+def validate_target_design_packages(packages: dict | None) -> dict:
+    """Block issue unless stages 7-9 contain complete final engineering evidence."""
+    if not isinstance(packages, dict):
+        return {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"],"sheets":{}}
+    errors=[]; sheet_status={}
+    for system,sheets in TARGET_DESIGN_SHEETS.items():
+        package=packages.get(system)
+        if not isinstance(package,dict):
+            errors.append(f"{system}:PACKAGE_MISSING");continue
+        if package.get("status") != "PASS":errors.append(f"{system}:STATUS_{package.get('status','MISSING')}")
+        if package.get("basis_status") in {"PRELIMINARY","PRE_SUBMISSION","PRELIMINARY_OVERRIDEABLE"}:
+            errors.append(f"{system}:PRELIMINARY_ONLY_FORBIDDEN")
+        declared=tuple(package.get("sheets") or ())
+        if declared != sheets:errors.append(f"{system}:SHEET_CONTRACT_MISMATCH")
+        sheet_status.update({sheet:"PASS" if declared==sheets and package.get("status")=="PASS" else "FAIL" for sheet in sheets})
+    heating=(packages.get("heating") or {})
+    if not (heating.get("room_heat_loss") and heating.get("radiator_selection") and
+            heating.get("heating_network") and heating.get("package_selection")):
+        errors.append("heating:FINAL_CHAIN_INCOMPLETE")
+    if any(row.get("selection_type")!="MANUFACTURER_MODEL" or row.get("status")!="PASS"
+           for row in (heating.get("radiator_selection") or {}).get("radiators") or []):
+        errors.append("heating:PRELIMINARY_OR_INVALID_RADIATOR")
+    gas=(packages.get("gas") or {}).get("gas_network") or {}
+    for row in gas.get("segments") or []:
+        if any(row.get(key) is None for key in ("flow_m3h","equivalent_length_m","selected_dn_mm","calc_id")):
+            errors.append(f"gas:SEGMENT_EVIDENCE_MISSING:{row.get('segment_id','UNKNOWN')}")
+    split=(packages.get("split_ac") or {}).get("selection") or {}
+    for row in split.get("idus") or []:
+        required=("calculated_load_btu_h","selected_capacity_btu_h","selection_margin_percent",
+                  "manufacturer","model","route_length_m","elevation_m","status","calc_id")
+        if any(row.get(key) is None for key in required) or row.get("status")!="PASS":
+            errors.append(f"split_ac:IDU_EVIDENCE_MISSING:{row.get('idu_id','UNKNOWN')}")
+    if not gas.get("segments"):errors.append("gas:NO_SEGMENTS")
+    if not split.get("idus") or not split.get("odu"):errors.append("split_ac:SELECTION_INCOMPLETE")
+    status="PASS" if not errors else ("INPUT_REQUIRED" if any(
+        token in value for value in errors for token in ("MISSING","INCOMPLETE","STATUS_INPUT_REQUIRED")
+    ) else "FAIL")
+    return {"status":status,"errors":sorted(set(errors)),"sheets":sheet_status,
+            "policy":"M-131/132 M-141/142 M-161/162 require final traced calculations and official manufacturer selections"}
+
 
 def _bytes(value: dict) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()

@@ -6,6 +6,8 @@ contract revisions remain explicit metadata and do not select parallel engines.
 """
 import os
 
+from .runtime_core import design_dxf
+
 if os.getenv("CAD_ISOLATED_SERVICE", "").strip().lower() in {"1", "true", "yes"}:
     from .isolated_service import app
 else:

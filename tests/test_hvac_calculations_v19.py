@@ -8,7 +8,7 @@ def cooling_basis():
 
 
 def cooling_room():
-    return {'id':'R1','zone_id':'Z1','area_m2':25,'orientation':'S','glazing_area_m2':4,
+    return {'id':'R1','pmm_id':'PMM-ROOM-R1','zone_id':'Z1','area_m2':25,'orientation':'S','glazing_area_m2':4,
             'external_wall_area_m2':18,'occupancy':3,'lighting_w':250,'equipment_w':400,
             'infiltration_m3h':40,'ventilation_m3h':60}
 

@@ -1,6 +1,6 @@
 import unittest
-from cad_engine.mechanical_pipeline_v19 import run_v19_pipeline
-from cad_engine.mechanical_release_contract_v19 import release_contract_status
+from cad_engine.mechanical_pipeline import run_pipeline as run_v19_pipeline
+from cad_engine.mechanical_release_contract import release_contract_status
 
 
 def payload():
@@ -100,6 +100,12 @@ class MechanicalPipelineV19Tests(unittest.TestCase):
         self.assertEqual(result["status"],"INPUT_REQUIRED")
         self.assertEqual(result["blocked_at"],"documentation")
         self.assertIn("DETAIL_FAMILY:sanitary_riser", result["phases"]["documentation"]["errors"])
+
+    def test_active_target_systems_require_final_design_packages(self):
+        value=payload(); value["active_systems"]={"heating":True,"gas":True,"split_ac":True}
+        result=run_v19_pipeline(value)
+        self.assertEqual(result["status"],"INPUT_REQUIRED")
+        self.assertEqual(result["blocked_at"],"target_design_packages")
 
     def test_annotation_support_blocks_unidentified_network_output(self):
         value=payload(); value["annotations"]=[]; value["enlarged_plans"]=[]

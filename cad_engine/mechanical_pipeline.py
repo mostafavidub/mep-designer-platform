@@ -6,9 +6,10 @@ from .calculation_book import build_calculation_book
 from .annotation_solver import solve_annotations
 from .mechanical_documentation import (generate_detail, generate_final_parametric_detail, generate_riser_from_network, documentation_gate,
                                            required_detail_families, generate_annotation_support)
-from .mechanical_submission_qa import evaluate_submission_readiness, submission_gate
+from .mechanical_submission_qa import evaluate_submission_readiness, submission_gate, validate_target_design_packages
 from .engineering_feedback import process_engineer_redlines
 from .quality_acceptance import evaluate_quality_targets
+from .mechanical_target_design import build_target_design_packages
 
 
 def _pmm_v3_traceability_required(payload: dict) -> bool:
@@ -20,6 +21,19 @@ def _pmm_v3_traceability_required(payload: dict) -> bool:
 
 def run_pipeline(payload: dict) -> dict:
     phases={}
+    target_packages=payload.get("target_design_packages")
+    if payload.get("target_design_inputs") is not None:
+        built=build_target_design_packages(payload.get("target_design_inputs") or {})
+        phases["target_design_build"]=built
+        if built["status"] != "PASS":return _blocked(phases,"target_design_build")
+        target_packages=built["packages"]
+    required_targets={"heating","gas","split_ac"}.intersection(
+        key for key,value in (payload.get("active_systems") or {}).items() if value
+    )
+    if target_packages is not None or required_targets:
+        phases["target_design_packages"]=validate_target_design_packages(target_packages)
+        if phases["target_design_packages"]["status"] != "PASS":
+            return _blocked(phases,"target_design_packages")
     if payload.get("manufacturer_database_records") is not None:
         database=build_manufacturer_database(payload.get("manufacturer_database_records") or [])
         phases["manufacturer_database"]=database
