@@ -2,7 +2,7 @@
   "change_id": "SWCIS-2026-0054",
   "summary": "Add fail-closed graph-native topology extraction, explicit segment execution sizing/material contracts, and authoritative network CAD materialization for mechanical v19 without benchmark-derived defaults.",
   "requester": "project-owner",
-  "change_types": ["schema", "routing", "calculation", "drawing_output", "test", "governance", "documentation", "release_identity", "deployment"],
+  "change_types": ["schema", "routing", "calculation", "drawing_output", "ui_api", "test", "governance", "documentation", "release_identity", "deployment"],
   "changed_rule_ids": ["MEP-INPUT-001", "MEP-SUBMIT-001"],
   "impacted_modules": ["pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
   "impact_notes": {
