@@ -27,7 +27,7 @@ def run_pipeline(payload: dict) -> dict:
         phases["target_design_build"]=built
         if built["status"] != "PASS":return _blocked(phases,"target_design_build")
         target_packages=built["packages"]
-    required_targets={"heating","gas","split_ac"}.intersection(
+    required_targets={"heating","gas","split_ac","exhaust","ventilation_exhaust","rainwater","roof_rainwater"}.intersection(
         key for key,value in (payload.get("active_systems") or {}).items() if value
     )
     if target_packages is not None or required_targets:

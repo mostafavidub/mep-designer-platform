@@ -253,22 +253,31 @@ def select_split_system(cooling_design: dict, idu_catalogue: list[dict], odu_cat
 def select_exhaust_fans(exhaust_design: dict, catalogue: list[dict]) -> dict:
     if exhaust_design.get('status')!='PASS':
         return {'status':'INPUT_REQUIRED','missing_inputs':['PASS_EXHAUST_DESIGN'],'fans':[],'unserved_room_ids':[]}
-    required={'manufacturer','model','airflow_cfm','esp_pa','dimensions_mm','sound_db','service_clearance_mm','datasheet'}
+    required={'manufacturer','model','airflow_cfm','esp_pa','dimensions_mm','sound_db','service_clearance_mm','fan_curve','datasheet'}
     valid=[];evaluations=[]
     for record in catalogue or []:
         absent,errors=_official_record(record,required)
         if absent or errors:evaluations.append({'model':record.get('model'),'errors':absent+errors})
+        elif not isinstance(record.get('fan_curve'),dict) or not record['fan_curve'].get('points'):
+            evaluations.append({'model':record.get('model'),'errors':['fan_curve.points']})
         else:valid.append(record)
     if not valid:return {'status':'INPUT_REQUIRED','missing_inputs':['OFFICIAL_EXHAUST_FAN_CATALOGUE'],
                          'fans':[],'unserved_room_ids':[],'evaluations':evaluations}
     fans=[];unserved=[]
     for room in exhaust_design.get('rooms') or []:
         candidates=[r for r in valid if float(r['airflow_cfm'])>=float(room['required_cfm']) and
-                    float(r['esp_pa'])>=float(room['required_esp_pa'])]
+                    float(r['esp_pa'])>=float(room['required_esp_pa']) and any(
+                    float(point[0])>=float(room['required_cfm']) and float(point[1])>=float(room['required_esp_pa'])
+                    for point in r['fan_curve']['points'])]
         if not candidates:unserved.append(room['room_id']);continue
         chosen=min(candidates,key=lambda r:(float(r['airflow_cfm']),float(r['esp_pa']),r['manufacturer'],r['model']))
         fans.append({'room_id':room['room_id'],'required_cfm':room['required_cfm'],'required_esp_pa':room['required_esp_pa'],
                      'manufacturer':chosen['manufacturer'],'model':chosen['model'],'selected_cfm':float(chosen['airflow_cfm']),
-                     'selected_esp_pa':float(chosen['esp_pa']),'calc_id':room['calc_id'],'datasheet':chosen['datasheet'],'status':'PASS'})
+                     'selected_esp_pa':float(chosen['esp_pa']),
+                     'flow_margin_percent':round((float(chosen['airflow_cfm'])/float(room['required_cfm'])-1)*100,2),
+                     'esp_margin_percent':round((float(chosen['esp_pa'])/float(room['required_esp_pa'])-1)*100,2),
+                     'fan_curve':chosen['fan_curve'],'calc_id':room['calc_id'],'pmm_id':room['pmm_id'],
+                     'level_id':room['level_id'],'datasheet':chosen['datasheet'],
+                     'selection_type':'MANUFACTURER_MODEL','status':'PASS'})
     return {'status':'PASS' if not unserved else 'FAIL','fans':fans,'unserved_room_ids':sorted(unserved),
             'errors':[f'UNSERVED_EXHAUST_ROOM:{x}' for x in sorted(unserved)]}

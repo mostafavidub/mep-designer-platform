@@ -39,6 +39,32 @@ def payload():
     odu={"manufacturer":"Synthetic Official","model":"ODU-12","nominal_capacity_btu_h":12000,
         "airflow_cfm":1200,"min_connected_ratio":0.8,"max_connected_ratio":1.3,
         "max_total_pipe_length_m":30,"max_elevation_m":12,"service_clearance_mm":500,"datasheet":dict(SHEET)}
+    fan={"manufacturer":"Synthetic Official","model":"EF-120","airflow_cfm":120,
+        "esp_pa":100,"dimensions_mm":{"w":300,"h":300,"d":200},"sound_db":35,
+        "service_clearance_mm":300,"fan_curve":{"points":[[120,100]]},"datasheet":dict(SHEET)}
+    roof={"roof_id":"ROOF-1","boundary":[[0,0],[20,0],[20,10],[0,10]],
+        "stacks":[{"id":"RW-1","point":[10,5]}],"catchments":[{"id":"C1",
+        "polygon":[[0,0],[10,0],[10,10],[0,10]],"low_point":[5,5],
+        "drain":{"id":"RD-1","point":[5,5]},"stack_id":"RW-1","slope_percent":2,
+        "emergency_overflow":{"id":"OF-1","point":[0,5]}}]}
+    rain_basis={"rainfall_intensity_mm_h":100,"runoff_coefficient":1.0,"minimum_slope_percent":2,
+        "drain_capacity_table":[{"dn_mm":75,"max_flow_lps":3}],
+        "downpipe_capacity_table":[{"dn_mm":90,"max_flow_lps":4}]}
+    riser_graph={"graph_id":"MEP-GRAPH-1","levels":[{"id":"GROUND","type":"GROUND"},
+        {"id":"ROOF","type":"ROOF"}],"nodes":[{"id":"N1","level":"GROUND"},{"id":"N2","level":"ROOF"}],
+        "edges":[{"id":"RW-E1","from":"N1","to":"N2","system":"rainwater","size":"DN90",
+        "material":"uPVC","levels":["GROUND","ROOF"],"calc_id":"CALC-RW-RISER-1",
+        "plan_id":"CALC-RW-RISER-1","riser_id":"CALC-RW-RISER-1","schedule_id":"CALC-RW-RISER-1"}]}
+    def db_record(model,equipment_type):
+        return {"manufacturer":"Synthetic Official","model":model,"equipment_type":equipment_type,
+          "capacity":{"declared":True},"dimensions_mm":{"declared":True},"weight_kg":1,
+          "connections":{"declared":True},"electrical":{"declared":True},"water_flow":{"not_applicable":True},
+          "gas_consumption":{"declared":True},"refrigerant":{"declared":True},
+          "piping_limits":{"declared":True},"clearances_mm":{"declared":True},"sound":{"declared":True},
+          "pressure":{"declared":True},"pump_curve":{"declared":True},"fan_curve":{"declared":True},
+          "official_document":{"source_type":"OFFICIAL_MANUFACTURER",
+          "official_url":SHEET["official_url"],"revision":SHEET["revision"],"sha256":SHEET["sha256"],
+          "retrieved_at":"2026-09-09"}}
     return {
       "heating":{"rooms":[heating_room],"design_basis":heating_basis,
         "radiator_catalogue":[radiator],"segments":[{"id":"H1","system":"heating_supply",
@@ -55,7 +81,15 @@ def payload():
         "sleeves":{"detail":"GS-1"}}},
       "split_ac":{"rooms":[cooling_room],"design_basis":cooling_basis,"idu_catalogue":[idu],
         "odu_catalogue":[odu],"routes":[{"room_id":"R1","length_m":18,"elevation_m":6,
-        "condensate_drain":True,"service_clearance_mm":400}],"odu_site":{"service_clearance_mm":700}}
+        "condensate_drain":True,"service_clearance_mm":400}],"odu_site":{"service_clearance_mm":700}},
+      "exhaust":{"rooms":[{"id":"WC-1","pmm_id":"PMM-WC-1","level_id":"GROUND",
+        "room_type":"toilet","volume_m3":20,"duct_path":{"duct_friction_pa":30,
+        "fitting_loss_pa":20,"terminal_loss_pa":10}}],"criteria":{"toilet":{"minimum_cfm":100,"ach":10}},
+        "fan_catalogue":[fan]},
+      "rainwater":{"roof":roof,"design_basis":rain_basis},
+      "riser":{"network_graph":riser_graph},
+      "manufacturer_database":{"records":[db_record("RAD-500","radiator"),db_record("PKG-24","package"),
+        db_record("IDU-12","split_idu"),db_record("ODU-12","split_odu"),db_record("EF-120","exhaust_fan")]}
     }
 
 
@@ -92,8 +126,40 @@ def test_preliminary_only_radiator_and_missing_segment_identity_are_rejected():
 def test_steps_7_9_semantic_golden_contract():
     result=build_target_design_packages(payload())
     baseline=json.loads(Path("standards/golden/mechanical-steps-7-9.baseline.json").read_text())
-    actual={"sheets":result["gate"]["sheets"],
+    actual={"sheets":{key:value for key,value in result["gate"]["sheets"].items()
+                       if key in {"M-131","M-132","M-141","M-142","M-161","M-162"}},
             "heating_radiator_fields":sorted(result["packages"]["heating"]["radiator_selection"]["radiators"][0]),
             "gas_segment_fields":sorted(result["packages"]["gas"]["gas_network"]["segments"][0]),
             "split_idu_fields":sorted(result["packages"]["split_ac"]["selection"]["idus"][0])}
     assert actual==baseline
+
+
+def test_steps_10_13_final_evidence_and_semantic_golden_contract():
+    result=build_target_design_packages(payload()); packages=result["packages"]
+    baseline=json.loads(Path("standards/golden/mechanical-steps-10-13.baseline.json").read_text())
+    actual={"sheets":{key:value for key,value in result["gate"]["sheets"].items()
+                       if key in {"M-171","M-172","M-R-01","M-151","M-181"}},
+      "exhaust_fan_fields":sorted(packages["exhaust"]["fan_selection"]["fans"][0]),
+      "rainwater_catchment_fields":sorted(packages["rainwater"]["rainwater_design"]["catchments"][0]),
+      "rainwater_segment_fields":sorted(packages["rainwater"]["rainwater_design"]["segments"][0]),
+      "riser_claim":packages["riser"]["riser_design"]["claim"],
+      "riser_level_policy":packages["riser"]["riser_design"]["level_policy"],
+      "manufacturer_policy":packages["manufacturer_database"]["database"]["policy"],
+      "manufacturer_record_count":packages["manufacturer_database"]["database"]["record_count"],
+      "private_documents_stored":packages["manufacturer_database"]["database"]["private_documents_stored"]}
+    assert actual==baseline
+
+
+def test_steps_10_13_destructive_inputs_fail_closed():
+    value=payload(); value["exhaust"]["fan_catalogue"][0].pop("fan_curve")
+    assert build_target_design_packages(value)["status"]=="INPUT_REQUIRED"
+    value=payload(); value["rainwater"]["roof"]["catchments"]=[]
+    assert build_target_design_packages(value)["status"]=="INPUT_REQUIRED"
+    value=payload(); value["riser"]["network_graph"]["levels"].append({"id":"DETAIL-1","type":"DETAIL"})
+    assert build_target_design_packages(value)["status"]=="FAIL"
+    value=payload(); value["manufacturer_database"]["records"][0]["official_document"]["source_type"]="RESELLER"
+    assert build_target_design_packages(value)["status"]=="FAIL"
+    value=payload(); value["manufacturer_database"]["records"]=value["manufacturer_database"]["records"][1:]
+    result=build_target_design_packages(value)
+    assert result["status"]=="FAIL"
+    assert any("UNREGISTERED_SELECTION" in error for error in result["gate"]["errors"])

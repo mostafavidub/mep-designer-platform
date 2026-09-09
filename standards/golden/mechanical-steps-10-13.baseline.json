@@ -1,0 +1,11 @@
+{
+  "exhaust_fan_fields": ["calc_id", "datasheet", "esp_margin_percent", "fan_curve", "flow_margin_percent", "level_id", "manufacturer", "model", "pmm_id", "required_cfm", "required_esp_pa", "room_id", "selected_cfm", "selected_esp_pa", "selection_type", "status"],
+  "manufacturer_policy": "OFFICIAL_MANUFACTURER_DOCUMENTATION_ONLY",
+  "manufacturer_record_count": 5,
+  "private_documents_stored": false,
+  "rainwater_catchment_fields": ["area_m2", "calc_id", "catchment_id", "design_flow_lps", "downpipe_dn_mm", "drain_dn_mm", "drain_id", "emergency_overflow", "low_point", "rainfall_intensity_mm_h", "slope_percent", "stack_id"],
+  "rainwater_segment_fields": ["calc_id", "from", "id", "plan_id", "riser_id", "schedule_id", "size_mm", "slope_percent", "system", "to"],
+  "riser_claim": "GRAPH_DERIVED",
+  "riser_level_policy": "DETAIL levels forbidden; typed architectural levels only",
+  "sheets": {"M-151": "PASS", "M-171": "PASS", "M-172": "PASS", "M-181": "PASS", "M-R-01": "PASS"}
+}

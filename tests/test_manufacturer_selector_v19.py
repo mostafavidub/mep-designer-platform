@@ -97,12 +97,13 @@ class ManufacturerSelectorV19Tests(unittest.TestCase):
         self.assertIn('COMPLIANT_IDU:Z1',result['missing_inputs'])
 
     def test_exhaust_selector_requires_both_flow_and_esp_and_zero_unserved_rooms(self):
-        design={'status':'PASS','rooms':[{'room_id':'WC','required_cfm':100,'required_esp_pa':80,'calc_id':'CALC-EXH-X'}]}
+        design={'status':'PASS','rooms':[{'room_id':'WC','pmm_id':'PMM-WC','level_id':'GROUND',
+                'required_cfm':100,'required_esp_pa':80,'calc_id':'CALC-EXH-X'}]}
         sheet={'official_url':'https://manufacturer.example/f.pdf','revision':'1','sha256':'f'*64}
         weak={'manufacturer':'Official','model':'F120-LP','airflow_cfm':120,'esp_pa':60,'dimensions_mm':{},
-              'sound_db':35,'service_clearance_mm':300,'datasheet':sheet}
+              'sound_db':35,'service_clearance_mm':300,'fan_curve':{'points':[[120,60]]},'datasheet':sheet}
         self.assertEqual(select_exhaust_fans(design,[weak])['status'],'FAIL')
-        good={**weak,'model':'F120','esp_pa':100}
+        good={**weak,'model':'F120','esp_pa':100,'fan_curve':{'points':[[120,100]]}}
         result=select_exhaust_fans(design,[weak,good])
         self.assertEqual(result['status'],'PASS',result)
         self.assertEqual(result['unserved_room_ids'],[])
