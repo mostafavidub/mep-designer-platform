@@ -2,6 +2,86 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-030",
+      "status":"APPROVED",
+      "summary":"Add privacy-safe independent-engineer redline triage and enforce the final quantitative quality targets without promoting project-specific findings into shared rules.",
+      "affected_capabilities":["mechanical_release_qa","engineering_feedback","quality_acceptance","active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 19 and 20"},
+      "verification":{"redline_classification_test":"must_pass","overfit_quarantine_test":"must_pass","reusable_finding_governance_test":"must_pass","quality_boundary_test":"must_pass","missing_metric_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Require hashed independent review evidence and measured quality metrics before acceptance.","rollback":"Revert additive consumers only; never promote project-only facts or accept open major redlines/missing quality evidence."}
+    },
+    {
+      "id":"GOV-2026-029",
+      "status":"APPROVED",
+      "summary":"Require explicit zero evidence for ten Submission Ready invariants and enforce a unique complete seven-project blind-generation, seal and post-seal comparison sequence.",
+      "affected_capabilities":["mechanical_release_qa","sealed_seven_project_regression","active_version_synchronization"],
+      "affected_projects":["all","project-1","project-3","project-4","project-6","project-7","project-8","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 17 and 18"},
+      "verification":{"ten_zero_gate_tests":"must_pass","blind_order_negative_test":"must_pass","exact_reopen_test":"must_pass","seven_project_golden":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Require explicit QA evidence and ordered regression metadata before granting Submission Ready.","rollback":"Revert additive consumers only; never treat missing evidence, reference leakage or a nonzero invariant as PASS."}
+    },
+    {
+      "id":"GOV-2026-028",
+      "status":"APPROVED",
+      "summary":"Add manufacturer-aware calculation-book selection checks with pump/fan curve verification and a priority, collision, print-scale and automatic-enlargement annotation solver.",
+      "affected_capabilities":["mechanical_network_sizing","manufacturer_selection","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 15 and 16"},
+      "verification":{"equipment_selection_coverage_test":"must_pass","manufacturer_limit_test":"must_pass","pump_fan_curve_test":"must_pass","annotation_collision_test":"must_pass","automatic_enlargement_test":"must_pass","unreadable_annotation_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Use additive calculation-book and optimized annotation records only when required identities, curves, geometry and scale inputs are complete.","rollback":"Revert additive consumers; never restore nominal equipment labels or colliding/unreadable annotations as proof of final design."}
+    },
+    {
+      "id":"GOV-2026-027",
+      "status":"APPROVED",
+      "summary":"Add a complete official-document, hash-only manufacturer record database and system-specific executable radiator, ODU and sanitary details bound to Plan, PMM, Calc and Catalogue identities.",
+      "affected_capabilities":["manufacturer_selection","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 13 and 14"},
+      "verification":{"official_record_completeness_test":"must_pass","nonofficial_source_test":"must_pass","stable_catalogue_identity_test":"must_pass","radiator_odu_sanitary_detail_test":"must_pass","dimension_mismatch_test":"must_pass","pipeline_fail_closed_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Admit final equipment and details only from complete official semantic records with stable identities; keep missing external records INPUT_REQUIRED.","rollback":"Revert additive registry/detail consumers; never restore reseller data, private binaries or label-only details as issue-ready output."}
+    },
+    {
+      "id":"GOV-2026-026",
+      "status":"APPROVED",
+      "summary":"Require real roof catchment/low-point/drain/overflow/downpipe calculations and reject detail-sheet contamination from plan-graph-derived typed-level risers.",
+      "affected_capabilities":["mechanical_network_sizing","mechanical_routing","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 11 and 12"},
+      "verification":{"catchment_rainfall_test":"must_pass","lowpoint_slope_capacity_test":"must_pass","rainwater_identity_test":"must_pass","detail_level_contamination_test":"must_pass","plan_graph_hash_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Use final rainwater and strict riser outputs only with complete project geometry, design basis and typed levels; otherwise preserve INPUT_REQUIRED/FAIL.","rollback":"Revert additive consumers; never restore invented drain locations or allow detail sheets into the riser level topology."}
+    },
+    {
+      "id":"GOV-2026-025",
+      "status":"APPROVED",
+      "summary":"Replace proxy split and exhaust outputs with explicit component cooling loads, zone diversity, official IDU/ODU route validation, exhaustive room coverage and fan selection against both airflow and ESP.",
+      "affected_capabilities":["mechanical_load_calculation","manufacturer_selection","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 9 and 10"},
+      "verification":{"component_load_test":"must_pass","idu_odu_route_test":"must_pass","connected_ratio_test":"must_pass","exhaust_scope_test":"must_pass","flow_esp_fan_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Use final split/exhaust outputs only when project basis, routes and official manufacturer evidence are complete; otherwise preserve INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Revert additive consumers; never use held-out reference capacities or legacy proxy CFM as final engineering inputs."}
+    },
+    {
+      "id":"GOV-2026-024",
+      "status":"APPROVED",
+      "summary":"Replace preliminary heating and gas issue data with exact evidence-backed radiator/package selection, cumulative heating-pipe sizing, and appliance-to-segment gas calculations carrying Flow, Leq, DN and Calc ID.",
+      "affected_capabilities":["manufacturer_selection","mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 7 and 8"},
+      "verification":{"radiator_temperature_match_test":"must_pass","package_combined_demand_test":"must_pass","cumulative_heating_test":"must_pass","gas_evidence_and_segment_identity_test":"must_pass","final_detail_propagation_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Use final heating/gas records only when project basis and official revisioned evidence are complete; otherwise retain INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Revert the additive consumers; never restore a preliminary radiator output or hidden gas-sizing default as issue-ready engineering."}
+    },
+    {
+      "id":"GOV-2026-023",
+      "status":"APPROVED",
+      "summary":"Require calculation-derived cold/hot-water segment diameters and reducers, plus explicit critical-path pump duty and evidence-basis tank capacity without hidden benchmark defaults.",
+      "affected_capabilities":["mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 5 and 6"},
+      "verification":{"positive_hydraulic_test":"must_pass","destructive_dn_mismatch_test":"must_pass","pump_tank_input_required_test":"must_pass","schedule_traceability_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Use additive hydraulic and water-service records when complete project basis is available; preserve legacy preliminary output only as PRE_SUBMISSION.","rollback":"Revert the additive consumer path; never substitute held-out project-10 values as defaults."}
+    },
+    {
       "id":"GOV-2026-022",
       "status":"APPROVED",
       "summary":"Adopt architecture-only PRE-SUBMISSION as the temporary production profile when Structural/RCP drawings are unavailable, while prohibiting coordinated or Submission Ready claims.",

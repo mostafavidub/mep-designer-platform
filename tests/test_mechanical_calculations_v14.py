@@ -1,5 +1,5 @@
 import unittest
-from cad_engine.mechanical_calculations_v14 import calculate_mechanical_loads
+from cad_engine.mechanical_calculations_v14 import calculate_mechanical_loads, calculate_water_service
 
 class MechanicalCalculationsV14Tests(unittest.TestCase):
  def test_room_loads_are_traceable_and_drive_selection_candidates(self):
@@ -36,5 +36,48 @@ class MechanicalCalculationsV14Tests(unittest.TestCase):
   out=calculate_mechanical_loads(arch,rec,req,pmm=pmm)
   self.assertEqual(out['rooms'][0]['source_pmm_ids'],['PMM-FIXTURE-ABC'])
   self.assertEqual(out['traceability']['pmm_schema'],'project-mechanical-model/v3')
+
+ def test_break_tank_pump_uses_critical_path_and_exposes_operating_point(self):
+  segments=[{'segment_id':'W1','calc_id':'CALC-W1','friction_head_m':2.2},
+            {'segment_id':'W2','calc_id':'CALC-W2','friction_head_m':1.8}]
+  basis={'service_mode':'break_tank_pump','design_flow_lps':1.1,'static_head_m':9,
+         'remote_residual_pressure_m':12,'meter_loss_m':1,'valve_loss_m':0.5,
+         'available_suction_head_m':1.5,'critical_path_segment_ids':['W1','W2'],
+         'occupants':5,'demand_l_per_person_day':80,'autonomy_days':1,'reserve_factor':1.25,
+         'selected_tank_volume_l':500}
+  result=calculate_water_service(basis,segments)
+  self.assertEqual(result['status'],'PASS',result)
+  self.assertEqual(result['tank']['required_volume_l'],500)
+  self.assertEqual(result['pump']['h_design_m'],25.0)
+  self.assertAlmostEqual(result['pump']['q_design_gpm'],17.435,places=3)
+  self.assertEqual(result['pump']['source_segment_calc_ids'],['CALC-W1','CALC-W2'])
+
+ def test_water_service_missing_external_basis_stays_input_required(self):
+  result=calculate_water_service({'service_mode':'break_tank_pump'},[])
+  self.assertEqual(result['status'],'INPUT_REQUIRED')
+  self.assertIn('occupants',result['missing_inputs'])
+  self.assertIn('critical_path_segment_ids',result['missing_inputs'])
+
+ def test_utility_pressure_is_subtracted_only_for_inline_booster(self):
+  segments=[{'segment_id':'W1','calc_id':'C1','friction_head_m':2}]
+  common={'design_flow_lps':1,'static_head_m':10,'remote_residual_pressure_m':10,
+          'meter_loss_m':1,'valve_loss_m':1,'critical_path_segment_ids':['W1']}
+  inline=calculate_water_service({**common,'service_mode':'inline_booster','utility_pressure_m':15},segments)
+  self.assertEqual(inline['pump']['h_design_m'],9)
+  tank=calculate_water_service({**common,'service_mode':'break_tank_pump','available_suction_head_m':0,
+       'occupants':2,'demand_l_per_person_day':100,'autonomy_days':1,'reserve_factor':1,
+       'selected_tank_volume_l':200,'utility_pressure_m':99},segments)
+  self.assertEqual(tank['pump']['h_design_m'],24)
+
+ def test_undersized_selected_tank_is_rejected(self):
+  segments=[{'segment_id':'W1','calc_id':'C1','friction_head_m':1}]
+  basis={'service_mode':'break_tank_pump','design_flow_lps':0.5,'static_head_m':5,
+         'remote_residual_pressure_m':10,'meter_loss_m':1,'valve_loss_m':1,
+         'available_suction_head_m':0,'critical_path_segment_ids':['W1'],
+         'occupants':5,'demand_l_per_person_day':100,'autonomy_days':1,'reserve_factor':1,
+         'selected_tank_volume_l':400}
+  result=calculate_water_service(basis,segments)
+  self.assertEqual(result['status'],'FAIL')
+  self.assertIn('SELECTED_TANK_BELOW_REQUIRED_VOLUME',result['errors'])
 
 if __name__=='__main__': unittest.main()

@@ -1,8 +1,14 @@
 """Ordered fail-closed orchestration for the four v19 phases."""
 from .coordination_v19 import build_coordination_model, route_25d
 from .manufacturer_selector_v19 import select_equipment
-from .parametric_documentation_v19 import generate_detail, generate_riser_from_network, documentation_gate
-from .submission_qa_v19 import submission_gate
+from .manufacturer_database_v19 import build_manufacturer_database
+from .calculation_book_v19 import build_calculation_book
+from .annotation_solver_v19 import solve_annotations
+from .parametric_documentation_v19 import (generate_detail, generate_final_parametric_detail, generate_riser_from_network, documentation_gate,
+                                           required_detail_families, generate_annotation_support)
+from .submission_qa_v19 import evaluate_submission_readiness, submission_gate
+from .engineering_feedback_v19 import process_engineer_redlines
+from .quality_acceptance_v19 import evaluate_quality_targets
 
 
 def _pmm_v3_traceability_required(payload: dict) -> bool:
@@ -14,6 +20,10 @@ def _pmm_v3_traceability_required(payload: dict) -> bool:
 
 def run_v19_pipeline(payload: dict) -> dict:
     phases={}
+    if payload.get("manufacturer_database_records") is not None:
+        database=build_manufacturer_database(payload.get("manufacturer_database_records") or [])
+        phases["manufacturer_database"]=database
+        if database["status"] != "PASS": return _blocked(phases,"manufacturer_database")
     model=build_coordination_model(payload)
     route=route_25d(payload.get("route_request") or {},model) if model["status"] == "PASS" else {"status":"INPUT_REQUIRED","selected":None,"missing_inputs":model["missing_inputs"]}
     phases["coordination"]={"status":"PASS" if model["status"] == route["status"] == "PASS" else route["status"],"model":model,"route":route}
@@ -21,16 +31,47 @@ def run_v19_pipeline(payload: dict) -> dict:
     selection=select_equipment(payload.get("equipment_requirements") or {},payload.get("manufacturer_catalogue") or [],route)
     phases["manufacturer"]=selection
     if selection["status"] != "PASS": return _blocked(phases,"manufacturer")
+    if payload.get("equipment_selection_checks") is not None:
+        book=build_calculation_book(payload.get("calculation_rows") or [],payload.get("equipment_selection_checks") or [],
+                                    payload.get("declared_equipment_ids") or [])
+        phases["calculation_book"]=book
+        if book["status"] != "PASS": return _blocked(phases,"calculation_book")
     details=[generate_detail(x) for x in payload.get("detail_specs") or []]
+    details.extend(generate_final_parametric_detail(x) for x in payload.get("final_parametric_detail_specs") or [])
     riser=generate_riser_from_network(payload.get("network_graph") or {})
     require_traceability=_pmm_v3_traceability_required(payload)
     calculation_rows=payload.get("calculation_rows")
     if require_traceability and calculation_rows is None:
         calculation_rows=[]
-    doc_gate=documentation_gate(details,riser,calculation_rows if require_traceability or calculation_rows is not None else None)
+    active_systems=payload.get("active_systems") or {}
+    mandatory_families=required_detail_families(active_systems)
+    annotation_support=None
+    if payload.get("annotation_solver") is not None:
+        request=payload.get("annotation_solver") or {}
+        layout=solve_annotations(request.get("plan") or {},request.get("requests") or [],request.get("config") or {})
+        phases["annotation_solver"]=layout
+        if layout["status"] != "PASS": return _blocked(phases,"annotation_solver")
+        identity_annotations=[{**row,"network_edge_id":row.get("source_id")} for row in layout["annotations"]]
+        annotation_support=generate_annotation_support(payload.get("network_graph") or {},identity_annotations,
+                                                       layout.get("enlarged_plans") or [])
+    elif "annotations" in payload or "enlarged_plans" in payload:
+        annotation_support=generate_annotation_support(payload.get("network_graph") or {},
+                                                       payload.get("annotations") or [],
+                                                       payload.get("enlarged_plans") or [])
+    doc_gate=documentation_gate(details,riser,calculation_rows if require_traceability or calculation_rows is not None else None,
+                                mandatory_families,annotation_support)
     phases["documentation"]={**doc_gate,"details":details,"riser":riser,
                              "pmm_traceability_required":require_traceability}
     if phases["documentation"]["status"] != "PASS": return _blocked(phases,"documentation")
+    phases["submission_quality"]=evaluate_submission_readiness(payload.get("submission_checks"))
+    if phases["submission_quality"]["status"] != "PASS": return _blocked(phases,"submission_quality")
+    phases["engineer_feedback"]=process_engineer_redlines(payload.get("engineer_review"))
+    if phases["engineer_feedback"]["status"] != "PASS": return _blocked(phases,"engineer_feedback")
+    quality_metrics=dict(payload.get("quality_metrics") or {})
+    if "major_redlines" not in quality_metrics:
+        quality_metrics["major_redlines"]=phases["engineer_feedback"].get("open_major_redlines")
+    phases["quality_targets"]=evaluate_quality_targets(quality_metrics)
+    if phases["quality_targets"]["status"] != "PASS": return _blocked(phases,"quality_targets")
     phases["golden"]=payload.get("golden_result") or {"status":"MISSING"}
     gate=submission_gate(phases)
     return {"status":gate["status"],"blocked_at":None if gate["release_allowed"] else "golden","phases":phases,"submission":gate}

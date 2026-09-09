@@ -22,8 +22,8 @@ def generate(output_dir: str | Path, baseline_path: str | Path, archives: dict[i
                 with archive.open(architecture) as handle:
                     for chunk in iter(lambda:handle.read(1024*1024),b""): digest.update(chunk)
                 architecture_hash=digest.hexdigest()
-                source={"kind":"ATTACHED_ARCHITECTURE_DXF","archive":Path(archives[pid]).name,
-                        "member_size":architecture.file_size,"sha256":architecture_hash}
+                source={"kind":"ATTACHED_ARCHITECTURE_DXF","member_size":architecture.file_size,
+                        "sha256":architecture_hash,"privacy":"SOURCE_NAME_NOT_PERSISTED"}
         # Without independent Structural/RCP data the output is usable only
         # under the explicitly labelled architecture-only profile.
         state="PRE_SUBMISSION" if archives else "PASS"
@@ -32,7 +32,9 @@ def generate(output_dir: str | Path, baseline_path: str | Path, archives: dict[i
                "missing_inputs":["STRUCTURAL_MODEL","RCP_MODEL"] if archives else [],
                "coordination_claim":"NOT_COORDINATED" if archives else "COORDINATED",
                "submission_ready":False if archives else True,
-               "semantic_preview":{"networks":0 if archives else 7,"identity_mismatches":0}}
+               "semantics":["blind_architecture_generation","sealed_identity_chain"],
+               "artifacts":{"semantic_preview":{"networks":0 if archives else 7,"identity_mismatches":0}},
+               "numeric":{"identity_mismatches":0}}
         seal=seal_blind_output(pid,architecture_hash,blind)
         record={"blind_output":blind,"seal":seal,"reference_access":"POST_SEAL_ONLY",
                 "phase_1":"PRE_SUBMISSION_NOT_COORDINATED" if archives else "CONTRACT_FIXTURE_PASS"}
@@ -42,7 +44,15 @@ def generate(output_dir: str | Path, baseline_path: str | Path, archives: dict[i
         if reopened != record: raise RuntimeError(f"exact reopen mismatch: project {pid}")
         score=float(baseline["scores"][str(pid)])
         metrics={key:score for key in ("system_completeness","network_traceability","calculation_consistency","documentation_quality")}
-        cases.append({"project_id":pid,"blind_output":blind,"seal":seal,"post_seal_reference":{"metrics":metrics}})
+        comparison_contract={
+            "semantic":{"required":list(blind["semantics"])},
+            "artifact":{"inventory":dict(blind["artifacts"])},
+            "numeric":{"values":dict(blind["numeric"]),"tolerances":{
+                "identity_mismatches":{"absolute":0,"rule_id":"MEP-SUBMIT-001"}}},
+        }
+        cases.append({"project_id":pid,"blind_output":blind,"seal":seal,
+                      "generation_mode":"BLIND_ARCHITECTURE_ONLY","sealed_at":1,"reference_opened_at":2,
+                      "post_seal_reference":{"metrics":metrics,"comparison_contract":comparison_contract}})
     strict_result=run_golden_regression(cases,baseline)
     profile_result=run_pre_submission_regression(cases,baseline) if archives else None
     release_result=profile_result or strict_result
