@@ -46,3 +46,24 @@ minimum regions remain ambiguous and stop generation.
 PMM level bounds come from the level profile when present; if that summary omits
 them, the exact same-name level in the source-backed architecture model supplies
 the already-detected bounds. Non-identical names are never matched.
+
+## Architecture-only owner input transport
+
+Questionnaire decisions explicitly supplied by the owner are reusable design
+criteria, but project geometry is not reusable. The panel transports the
+architecture model and high-confidence fixture detections created from the
+uploaded architecture into the canonical contract. A room labelled as a shaft
+with an enclosing architectural polygon is authoritative architecture evidence;
+it is not a provisional CAD-engine shaft.
+
+When fixture symbols are absent, an owner answer to the question requesting the
+actual fixture count may create `DESIGNED_FROM_OWNER_DECLARED_COUNT` endpoints
+at architecture-derived wet-core service points. Such endpoints remain marked
+not installed and retain both owner-answer and architecture provenance. Candidate
+symbol detections are never promoted. Mechanical reference drawings, observed
+reference routes and reference numeric values are forbidden inputs.
+
+Multiple titled viewports for the same physical level are represented by one
+typed topology level with traceable duplicate view names. This prevents a second
+roof viewport from becoming a fictitious extra storey while preserving explicit
+fixture-to-viewport level resolution.
