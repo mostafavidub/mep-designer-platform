@@ -9,7 +9,7 @@ The Mechanical product has one living executable runtime. Its executable identit
 | Executable build | Git commit SHA + content hashes from `cad_engine/build_identity.py` |
 | PMM schema | `project-mechanical-model/v3` |
 | Traceability policy | `NO_ORPHAN_ENGINEERING_OUTPUT` |
-| Mechanical Rule Book | `mechanical-rulebook/5.0` |
+| Mechanical Rule Book | `mechanical-rulebook/5.1` |
 | Fixture/equipment Rule Book | `2.4-fixture-equipment-approved-symbols` |
 | Mechanical site manifest contract | `12.1` |
 | Manufacturer catalogue schema | `manufacturer-catalogue/1` |
@@ -67,3 +67,10 @@ Multiple titled viewports for the same physical level are represented by one
 typed topology level with traceable duplicate view names. This prevents a second
 roof viewport from becoming a fictitious extra storey while preserving explicit
 fixture-to-viewport level resolution.
+
+Rule Book 5.1 publishes the network execution profile as explicit contract data:
+fixture/appliance load mappings, load units, pipe material and source, cumulative
+load-to-size tables, sanitary branch slope, and paired-plan separation offsets.
+The profile is applied only to endpoints already justified by architecture or an
+owner answer. It never creates a fixture, shaft, termination, level, or project
+load and contains no value learned from a mechanical reference drawing.

@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PMM_SCHEMA_REVISION = "project-mechanical-model/v3"
-RULEBOOK_SCHEMA_REVISION = "mechanical-rulebook/5.0"
+RULEBOOK_SCHEMA_REVISION = "mechanical-rulebook/5.1"
 MANUFACTURER_SCHEMA_REVISION = "manufacturer-catalogue/1"
 COMPLIANCE_PROFILE_REVISION = "mechanical-design-governance/1"
 
