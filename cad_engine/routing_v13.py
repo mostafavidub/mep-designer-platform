@@ -2,11 +2,16 @@
 from __future__ import annotations
 import heapq
 
+OVERLAY_SENSITIVE_SYSTEM_PAIRS={
+    frozenset(('sanitary','vent')),
+    frozenset(('cold_water','hot_water')),
+}
+
 def _ccw(a,b,c): return (c[1]-a[1])*(b[0]-a[0])>(b[1]-a[1])*(c[0]-a[0])
 def _intersects(a,b,c,d):
     if a==b or c==d:return False
     return _ccw(a,c,d)!=_ccw(b,c,d) and _ccw(a,b,c)!=_ccw(a,b,d)
-def _route_candidates(start,end):
+def _route_candidates(start,end,bounds=None):
     x1,y1=start;x2,y2=end
     if start==end:
         # A local endpoint may coincide with the proposed vertical core. Keep
@@ -21,7 +26,33 @@ def _route_candidates(start,end):
         for p in points:
             if not out or p!=out[-1]:out.append(p)
         return out
-    return clean([start,(x2,y1),end]),clean([start,(x1,y2),end])
+    rows=[clean([start,(x2,y1),end]),clean([start,(x1,y2),end])]
+    # Axis-aligned endpoints collapse both canonical L routes into one line.
+    # Generate additional project-scale doglegs so paired systems can remain
+    # geometrically distinct when, and only when, wall-clash safety is equal.
+    # These offsets are graphical route proposals, not construction clearances.
+    if bounds and len(bounds)==4 and (x1==x2 or y1==y2):
+        width=max(float(bounds[2])-float(bounds[0]),0.0);height=max(float(bounds[3])-float(bounds[1]),0.0)
+        positive=[value for value in (width,height) if value>0]
+        span=min(positive) if positive else 0.0
+        if span>0:
+            for fraction in (.0125,.025,.05,.10):
+                offset=span*fraction;setback=span*fraction
+                if y1==y2:
+                    direction=1.0 if x2>x1 else -1.0
+                    approach_x=x2-direction*setback
+                    for sign in (-1.0,1.0):
+                        yoff=y1+sign*offset
+                        candidate=clean([start,(x1,yoff),(approach_x,yoff),(approach_x,y2),end])
+                        if all(_inside(point,bounds) for point in candidate):rows.append(candidate)
+                if x1==x2:
+                    direction=1.0 if y2>y1 else -1.0
+                    approach_y=y2-direction*setback
+                    for sign in (-1.0,1.0):
+                        xoff=x1+sign*offset
+                        candidate=clean([start,(xoff,y1),(xoff,approach_y),(x2,approach_y),end])
+                        if all(_inside(point,bounds) for point in candidate):rows.append(candidate)
+    return rows
 def _inside(p,b,tol=1e-6):
     if not b:return True
     return b[0]-tol<=p[0]<=b[2]+tol and b[1]-tol<=p[1]<=b[3]+tol
@@ -33,7 +64,7 @@ def _score(points,walls,terminal_penetration=False):
         for wall in walls:
             if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])):
                 # Reaching a real/proposed vertical core can require entering
-                # its enclosing shaft wall.  Every intersection on the final
+                # its enclosing shaft wall. Every intersection on the final
                 # terminal segment is an explicit coordinated penetration;
                 # crossings on earlier route segments remain hard clashes.
                 if terminal_penetration and segment_index==len(segments)-1:
@@ -41,22 +72,18 @@ def _score(points,walls,terminal_penetration=False):
                 else:clashes+=1
     length=sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(points,points[1:]))
     return clashes,length,penetrations
-
 def _wall_in_bounds(wall,bounds):
     if not bounds:return True
     (x1,y1),(x2,y2)=wall['start'],wall['end']
     return max(x1,x2)>=bounds[0] and min(x1,x2)<=bounds[2] and max(y1,y2)>=bounds[1] and min(y1,y2)<=bounds[3]
-
 def _clear(a,b,walls):
     return not any(_intersects(a,b,tuple(w['start']),tuple(w['end'])) for w in walls)
-
 def _grid_axis(low,high,step,extras):
     rows=[];value=low
     while value < high:
         rows.append(round(value,6));value += step
     rows.append(round(high,6));rows.extend(round(float(v),6) for v in extras if low<=float(v)<=high)
     return sorted(set(rows))
-
 def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
     """Keep A* finite while retaining narrow passages beside real walls."""
     values={round(low,6),round(high,6),round(start,6),round(end,6)}
@@ -66,7 +93,6 @@ def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
             for candidate in (value-clearance,value,value+clearance):
                 if low<=candidate<=high:values.add(round(candidate,6))
     return sorted(values)
-
 def _open_space_route(start,end,bounds,walls,step=.25):
     """Find an orthogonal route through real wall openings using bounded A*."""
     if not bounds:return None
@@ -108,9 +134,33 @@ def _open_space_route(start,end,bounds,walls,step=.25):
             heapq.heappush(queue,(new+heuristic,new,nxt))
     return None
 
+def _geometry_key(points):
+    if len(points)<2:return None
+    normalized=tuple((round(float(p[0]),6),round(float(p[1]),6)) for p in points)
+    reverse=tuple(reversed(normalized))
+    return min(normalized,reverse)
+def _overlay_conflicts(system,plan_id,points,routes):
+    key=_geometry_key(points)
+    if key is None:return []
+    conflicts=[]
+    for route in routes:
+        if route.get('plan_id')!=plan_id or _geometry_key(route.get('points') or [])!=key:continue
+        other=route.get('system')
+        if other==system or frozenset((str(system),str(other))) in OVERLAY_SENSITIVE_SYSTEM_PAIRS:
+            conflicts.append(route)
+    return conflicts
+def _unique_scored_candidates(candidates,walls,terminal_penetration):
+    rows=[];seen=set()
+    for points in candidates:
+        key=_geometry_key(points)
+        if key is None or key in seen:continue
+        seen.add(key);rows.append((_score(points,walls,terminal_penetration),points,False))
+    return sorted(rows,key=lambda x:(x[0][0],x[0][1],_geometry_key(x[1])))
+
 def route_topology(architecture,topology):
     node_by_id={n['id']:n for n in topology.get('nodes') or []}; walls=architecture.get('walls') or []
     plan_bounds={p['plan_id']:p['bounds'] for p in architecture.get('plans') or []};routes=[];rejected=[]
+    deoverlap_reroutes=0;exact_overlay_rejections=0
     for edge in topology.get('edges') or []:
         start=node_by_id.get(edge.get('from'));end=node_by_id.get(edge.get('to'));pid=edge.get('plan_id')
         if not start or not end or not start.get('point') or not end.get('point'):continue
@@ -118,23 +168,52 @@ def route_topology(architecture,topology):
             rejected.append({'edge_id':edge['id'],'reason':'CROSS_PLAN_TOPOLOGY'});continue
         bounds=plan_bounds.get(pid)
         plan_walls=[w for w in walls if _wall_in_bounds(w,bounds)]
-        candidates=[pts for pts in _route_candidates(tuple(start['point']),tuple(end['point'])) if all(_inside(p,bounds) for p in pts)]
+        candidates=[pts for pts in _route_candidates(tuple(start['point']),tuple(end['point']),bounds) if all(_inside(p,bounds) for p in pts)]
         if not candidates:
             rejected.append({'edge_id':edge['id'],'reason':'ROUTE_OUTSIDE_PLAN'});continue
         terminal_penetration=end.get('category')=='vertical'
-        ranked=sorted(((_score(points,plan_walls,terminal_penetration),points) for points in candidates),key=lambda x:(x[0][0],x[0][1]))
-        (clashes,length,penetrations),points=ranked[0]
-        used_astar=False
-        if clashes:
+        ranked=_unique_scored_candidates(candidates,plan_walls,terminal_penetration)
+        if not ranked:
+            rejected.append({'edge_id':edge['id'],'reason':'NO_VALID_ROUTE_CANDIDATE'});continue
+        choices=list(ranked)
+        best_score,best_points,_=ranked[0]
+        if best_score[0]:
             open_route=_open_space_route(tuple(start['point']),tuple(end['point']),bounds,plan_walls)
             if open_route:
-                points=open_route;clashes,length,penetrations=_score(points,plan_walls,terminal_penetration);used_astar=True
-        routes.append({'id':f'ROUTE-{len(routes)+1:03d}','edge_id':edge['id'],'system':edge['system'],'plan_id':pid,'points':points,
+                astar_score=_score(open_route,plan_walls,terminal_penetration)
+                key=_geometry_key(open_route)
+                if key is not None and all(_geometry_key(row[1])!=key for row in choices):
+                    choices.append((astar_score,open_route,True))
+        choices=sorted(choices,key=lambda x:(x[0][0],x[0][1],_geometry_key(x[1])))
+        selected_score,selected_points,used_astar=choices[0]
+        conflicts=_overlay_conflicts(edge.get('system'),pid,selected_points,routes)
+        deoverlap_from=[]
+        if conflicts:
+            baseline_clashes=selected_score[0]
+            alternative=None
+            for score,points,is_astar in choices[1:]:
+                if score[0]!=baseline_clashes:continue
+                if _overlay_conflicts(edge.get('system'),pid,points,routes):continue
+                alternative=(score,points,is_astar);break
+            if alternative:
+                selected_score,selected_points,used_astar=alternative
+                deoverlap_reroutes+=1
+                deoverlap_from=sorted({str(row.get('system') or '') for row in conflicts})
+            else:
+                exact_overlay_rejections+=1
+                rejected.append({'edge_id':edge['id'],'reason':'EXACT_OVERLAY_NO_EQUAL_SAFETY_ALTERNATIVE',
+                                 'system':edge.get('system'),'conflicts_with':[row.get('id') for row in conflicts]})
+                continue
+        clashes,length,penetrations=selected_score
+        routes.append({'id':f'ROUTE-{len(routes)+1:03d}','edge_id':edge['id'],'system':edge['system'],'plan_id':pid,'points':selected_points,
                        'length':round(length,3),'wall_crossings':clashes,
                        'coordinated_terminal_penetrations':penetrations,
-                       'routing':'orthogonal_open_space_astar' if used_astar else 'orthogonal_plan_isolated'})
+                       'routing':'orthogonal_open_space_astar' if used_astar else 'orthogonal_plan_isolated',
+                       'route_choice':'deoverlap_equal_safety_alternative' if deoverlap_from else 'best_safety_then_length',
+                       'deoverlap_from_systems':deoverlap_from})
     return {'version':'geometry-routing-v13.12','routes':routes,'rejected':rejected,
             'quality':{'routed_edges':len(routes),'wall_crossings':sum(r['wall_crossings'] for r in routes),
                        'coordinated_terminal_penetrations':sum(r['coordinated_terminal_penetrations'] for r in routes),
                        'cross_plan_routes':0,'rejected_edges':len(rejected),
+                       'deoverlap_reroutes':deoverlap_reroutes,'exact_overlay_rejections':exact_overlay_rejections,
                        'all_orthogonal':all(all(a[0]==b[0] or a[1]==b[1] for a,b in zip(r['points'],r['points'][1:])) for r in routes)}}

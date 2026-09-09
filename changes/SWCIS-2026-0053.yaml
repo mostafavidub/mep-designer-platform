@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0053",
+  "summary": "Make PMM v3 truth/reconciliation effective in the production mechanical path and repair the generic route-origin/route-choice defects that produced duplicate fixture branches and exact hot/cold or sanitary/vent overlays without importing reference-project design values.",
+  "requester": "project-owner",
+  "change_types": ["drawing_output", "routing", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "cad_designer": "Production v19 runs a coordination-independent PMM/network truth gate before legacy composition, persists/derives PMM v3 from approved workflow evidence, and rebuilds support-sheet documentation from actual architectural levels and routed engineering content after composition.",
+    "routing": "Before routing changes are implemented, this change declares repair of two generic defects: multiple room-program fixture endpoints may not share one fabricated point, and an equally safe alternate orthogonal route must be preferred when an overlay-sensitive paired system would otherwise exactly duplicate an existing route. Proposed points remain explicitly proposed, never detected/installed facts.",
+    "sizing": "No sizing formula changes are planned; sizing consumes the repaired unique routes and remains traceable to route IDs.",
+    "equipment": "No equipment selection formula changes are planned; downstream equipment behavior is regression-verified as a routing consumer.",
+    "manufacturer_selector": "No manufacturer data or selection rule changes are planned; downstream contract remains regression-verified.",
+    "detail_riser": "Riser/documentation mapping consumes real architectural levels and repaired routed branches; zero-branch vertical systems and support-sheet pseudo-levels fail closed.",
+    "qa": "Regression coverage includes DETAIL-* contamination, missing PMM, duplicate same-system route geometry, hot/cold and sanitary/vent overlays, deterministic traceability identities, architecture-only pre-submission ordering, and proposed endpoint provenance/uniqueness.",
+    "manifest": "Automatic build identity remains unchanged; generated artifacts remain tied to the Git commit and existing manifest contract.",
+    "ui_api": "No public questionnaire or API field is removed; workflow-bound generation returns explicit INPUT_REQUIRED/FAIL when authoritative evidence is absent rather than silently releasing legacy output.",
+    "docs": "PMM traceability and SWCIS define the production truth-gate, architecture-only behavior, and proposed-routing non-claims.",
+    "versioning": "SWCIS remains the coordinated 4.6.0 release for this unmerged change; its history summary will cover both truth-gate enforcement and generic route de-overlap before merge.",
+    "migration": "No stored schema changes; existing v19 input contract and plan-analysis fields remain compatible and are propagated more completely.",
+    "governance": "Fail-closed production and routing evidence is added without weakening existing gates or using reference values as generation defaults.",
+    "deployment": "Mechanical hardening CI compiles and exercises production quality/routing behavior. This PR itself performs no staging or production deployment; rollout remains a separate owner-authorized step."
+  },
+  "evidence": {
+    "traceability": ["Existing PMM Engineering Traceability Standard remains authoritative; production adapter materializes topology -> route -> sizing calculation identities and reuses the calculation identity for plan/riser/schedule reconciliation."],
+    "tests": ["Pre-routing truth-gate head 4cbf286441bae5644cbb5274881dab835a6b047f: all 12 applicable workflows PASS, including production truth-gate regressions. Routing repair tests are required before final merge."],
+    "docs": ["docs/PMM_TRACEABILITY_STANDARD.md and docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md define the production truth-gate; proposed-routing provenance/non-claims will be reconciled before merge."],
+    "version_bump": ["SWCIS 4.5.0 -> 4.6.0 is already applied on this unmerged change and will be reconciled to the final scope before merge."],
+    "migration": ["No schema/storage migration; additive propagation of existing PMM/v19 contract fields and routing metadata only."],
+    "golden_regression": ["Mechanical reference corpus remains comparison-only. Synthetic regressions reproduce duplicate-origin and overlay failure classes without embedding reference project capacities, pipe sizes, coordinates, or routing geometry."],
+    "semantic_diff": ["Workflow-bound DXF can no longer release with missing/invalid PMM, topology-route-sizing mismatch, support-sheet pseudo-levels, exact duplicate same-system routes, or accidental exact hot/cold and sanitary/vent overlays. Proposed fixture endpoints are distinct design proposals with explicit provenance and may not be represented as detected/installed facts."],
+    "artifact_diff": ["No customer DXF bytes are committed. Generated documentation is rebuilt only on generated documentation layers and exact-file delivery QA is rerun; candidate artifacts are deleted/blocked on post-composition truth failure."],
+    "numeric_diff": ["No engineering load, sizing, equipment, pressure, airflow, pump, or capacity formula/constant is changed in SWCIS-2026-0053. Any route fanout scale is graphical/proposal geometry derived from the project geometry, not a reference engineering value."],
+    "contract_diff": ["Full project_mechanical_model and calculation_rows flow through production v19. Proposed endpoint/route metadata is additive and preserves legacy consumer fields."],
+    "deployment_plan": ["No deployment in this PR. After merge, staging deployment and live architecture-to-DXF verification require separate owner authorization."],
+    "rollback_plan": ["Revert the merged commit; no data migration or destructive schema change is involved."]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 2, "score": 30, "rationale": "The production boundary can block previously emitted invalid artifacts and route geometry changes affect multiple downstream drawing consumers; both behaviors are intentionally fail-closed and require full protected regression before merge."},
+  "waiver": null
+}

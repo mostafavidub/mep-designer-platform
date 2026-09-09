@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.5.0
+**Canonical version:** 4.6.0
 
 **Status:** LOCKED
 
@@ -47,6 +47,8 @@ For upgraded mechanical traceability the required identity chain is:
 
 An orphan calculation, an output without a calculation, duplicate calculation identity, or identity divergence is a blocking engineering defect.
 
+Workflow-bound production mechanical generation must additionally prove the coordination-independent PMM/network truth gate before legacy CAD composition may be released. The actual engineering chain `topology -> route -> sizing calculation` must reconcile without missing routes, missing sizing, invalid route geometry, duplicate same-system geometry, or exact sanitary/vent and hot/cold overlays. Support-sheet pseudo-levels such as `DETAIL-*`, `CALC-*`, `SCHEDULE-*`, and `SERVICE*` are forbidden from riser level semantics. Architecture-only work may remain `PRE_SUBMISSION` when Structural/RCP inputs are unavailable, but missing coordination does not bypass this truth gate. Post-composition documentation must be rebuilt from actual architectural levels and routed engineering content, then exact-file delivery QA must be rerun.
+
 ## Required workflow
 
 1. Create one `changes/<change-id>.yaml` from `.github/CHANGE_REQUEST_TEMPLATE.yaml` before implementation.
@@ -82,7 +84,7 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read SWCIS 4.5.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private reference files are not publication prerequisites and reference values are never hidden generation defaults.
+> Before changing anything, read SWCIS 4.6.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private reference files are not publication prerequisites and reference values are never hidden generation defaults.
 
 ## Administration and branch protection
 
