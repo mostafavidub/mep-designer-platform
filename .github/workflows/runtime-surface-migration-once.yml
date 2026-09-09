@@ -73,10 +73,30 @@ jobs:
           replacements = {
               'cad_engine/version_sync_gate.py': 'cad_engine/runtime_contract_sync_gate.py',
               'cad_engine.version_sync_gate': 'cad_engine.runtime_contract_sync_gate',
+              'cad_engine/version_manifest.py': 'cad_engine/runtime_contract.py',
               'data/rulebook/generate_rulebook_v4.py': 'data/rulebook/generate_rulebook.py',
               'docs/ACTIVE_VERSION_MATRIX.md': 'docs/RUNTIME_CONTRACT_MATRIX.md',
               '.github/workflows/mechanical-authority-v15.yml': '.github/workflows/mechanical-authority.yml',
+              'cad_engine/topology_v13.py': 'cad_engine/topology.py',
+              'cad_engine/authority_architecture_v14.py': 'cad_engine/authority_architecture.py',
+              'cad_engine/mechanical_authority_v15.py': 'cad_engine/mechanical_design_core.py',
+              'cad_engine/engineering_runner_v13.py': 'cad_engine/engineering_runner.py',
+              'cad_engine/routing_v13.py': 'cad_engine/routing.py',
+              'cad_engine/sizing_v13.py': 'cad_engine/sizing.py',
+              'cad_engine/documentation_enhancer_v17.py': 'cad_engine/documentation_enhancer.py',
+              'cad_engine/final_delivery_gate_v17.py': 'cad_engine/final_delivery_gate.py',
+              'cad_engine/mechanical_release_hardening_v18.py': 'cad_engine/mechanical_release_hardening.py',
+              'cad_engine/coordination_v19.py': 'cad_engine/mechanical_coordination.py',
+              'cad_engine/manufacturer_selector_v19.py': 'cad_engine/mechanical_manufacturer_selector.py',
+              'cad_engine/parametric_documentation_v19.py': 'cad_engine/mechanical_documentation.py',
+              'cad_engine/submission_qa_v19.py': 'cad_engine/mechanical_submission_qa.py',
+              'cad_engine/mechanical_pipeline_v19.py': 'cad_engine/mechanical_pipeline.py',
+              'cad_engine/main_v19.py': 'cad_engine/main.py',
+              'cad_engine/mechanical_authority_site_v19.py': 'cad_engine/mechanical_authority.py',
+              'cad_engine/main_v15.py': 'cad_engine/main_transport.py',
               'active_version_synchronization': 'runtime_contract_synchronization',
+              'production_v19_runtime_authority': 'mechanical_runtime_authority',
+              'runtime_version_parity': 'runtime_contract_parity',
           }
           for rel in ('standards/change-impact-matrix.json', 'standards/swcis/change_impact_matrix.yaml', '.github/workflows/mechanical-coordination.yml'):
               p = Path(rel)
@@ -116,7 +136,7 @@ jobs:
           rm -f tests/test_active_version_contract.py
           rm -f docs/ACTIVE_VERSION_MATRIX.md
           rm -f cad_engine/version_sync_gate.py
-          if grep -R --line-number --exclude='runtime-surface-migration-once.yml' --exclude='contract-changelog.json' --exclude-dir=.git -E 'version_sync_gate|ACTIVE_VERSION_MATRIX|generate_rulebook_v[0-9]+\.py|active_version_synchronization|production_v19_runtime_authority' .; then
+          if grep -R --line-number --exclude='runtime-surface-migration-once.yml' --exclude='contract-changelog.json' --exclude-dir=.git -E 'version_sync_gate|ACTIVE_VERSION_MATRIX|generate_rulebook_v[0-9]+\.py|active_version_synchronization|production_v19_runtime_authority|runtime_version_parity' .; then
             echo 'active version-era synchronization or capability reference remains' >&2
             exit 1
           fi
