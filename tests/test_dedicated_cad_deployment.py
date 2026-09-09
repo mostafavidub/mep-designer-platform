@@ -16,7 +16,8 @@ def test_panel_and_cad_images_include_the_same_governance_inputs():
     panel = Path("Dockerfile").read_text(encoding="utf-8")
     cad = Path("cad_engine/Dockerfile").read_text(encoding="utf-8")
 
-    for copy_line in ("COPY app ./app", "COPY cad_engine ./cad_engine", "COPY data ./data", "COPY standards ./standards"):
+    for copy_line in ("COPY app ./app", "COPY cad_engine ./cad_engine", "COPY data ./data", "COPY standards ./standards",
+                      "COPY requirements.txt ./requirements.txt", "COPY docs ./docs", "COPY README.md ./README.md"):
         assert copy_line in panel
         assert copy_line in cad
 

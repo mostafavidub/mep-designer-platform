@@ -8,14 +8,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
     && fc-cache -f -v \
     && rm -rf /var/lib/apt/lists/*
-COPY requirements.txt ./requirements-web.txt
+COPY requirements.txt ./requirements.txt
 COPY cad_engine/requirements.txt ./requirements-cad.txt
-RUN pip install --no-cache-dir -r requirements-web.txt -r requirements-cad.txt
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-cad.txt
 COPY app ./app
 COPY cad_engine ./cad_engine
 COPY tests ./tests
 COPY data ./data
 COPY standards ./standards
+COPY docs ./docs
+COPY README.md ./README.md
 COPY start_services.sh ./start_services.sh
 RUN chmod +x ./start_services.sh
 ENV DATA_DIR=/data
