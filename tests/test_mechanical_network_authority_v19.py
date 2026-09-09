@@ -4,7 +4,7 @@ from pathlib import Path
 
 import ezdxf
 
-from cad_engine.mechanical_network_topology import build_authoritative_topology_from_evidence
+from cad_engine.mechanical_network_topology import build_authoritative_topology_from_evidence, _typed_level
 from cad_engine.mechanical_segment_execution import design_authoritative_segments
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
 
@@ -28,6 +28,10 @@ def detection(item_id='MEP-1', point=(2.0, 2.0), ports=None, kind='basin', room=
 
 
 class TopologyAuthorityV19Tests(unittest.TestCase):
+    def test_explicit_typical_floor_ranges_are_source_backed_level_types(self):
+        self.assertEqual(_typed_level('طبقات اول تا سوم'), 'TYPICAL_1_3')
+        self.assertEqual(_typed_level('Typical floors 2 to 5'), 'TYPICAL_2_5')
+
     def test_multilevel_without_bounds_or_assignment_fails_closed(self):
         result = build_authoritative_topology_from_evidence(
             pmm([{'name': 'Ground'}, {'name': 'First'}]),

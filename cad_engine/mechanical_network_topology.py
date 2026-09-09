@@ -26,6 +26,10 @@ SOURCE_TYPES = {
     "exhaust": {"exhaust_fan"},
 }
 LEVEL_TYPES = {"GROUND", "FIRST", "SECOND", "ROOF", "BASEMENT", "MEZZANINE"}
+PERSIAN_ORDINALS = {
+    "اول": 1, "یکم": 1, "دوم": 2, "سوم": 3, "چهارم": 4, "پنجم": 5,
+    "ششم": 6, "هفتم": 7, "هشتم": 8, "نهم": 9, "دهم": 10,
+}
 
 
 def _norm(value):
@@ -37,6 +41,35 @@ def _norm(value):
 def _stable(prefix, payload):
     raw = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str)
     return prefix + "-" + sha256(raw.encode("utf-8")).hexdigest()[:14].upper()
+
+
+def _ordinal(value):
+    text = _norm(value)
+    if text in PERSIAN_ORDINALS:
+        return PERSIAN_ORDINALS[text]
+    match = re.fullmatch(r"(?:floor|level)?\s*(\d+)(?:st|nd|rd|th)?", text)
+    return int(match.group(1)) if match else None
+
+
+def _typical_level(text):
+    patterns = (
+        r"طبقات?\s+(\S+)\s+تا\s+(\S+)",
+        r"(?:typical\s+)?floors?\s+(\d+(?:st|nd|rd|th)?)\s+(?:to|through)\s+(\d+(?:st|nd|rd|th)?)",
+        r"(?:typical\s+)?floors?\s+(\d+)\s+(\d+)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if not match:
+            continue
+        start, end = _ordinal(match.group(1)), _ordinal(match.group(2))
+        if start and end and start <= end:
+            return f"TYPICAL_{start}_{end}"
+    return None
+
+
+def valid_level_type(value):
+    text = str(value or "").upper()
+    return text in LEVEL_TYPES or bool(re.fullmatch(r"TYPICAL_[1-9]\d*_[1-9]\d*", text))
 
 
 def _typed_level(name, roof=False):
@@ -51,6 +84,9 @@ def _typed_level(name, roof=False):
         return "MEZZANINE"
     if any(token in text for token in ("ground", "همکف")):
         return "GROUND"
+    typical = _typical_level(text)
+    if typical:
+        return typical
     if any(token in text for token in ("first", "طبقه اول", "طبقه 1", "level 1", "floor 1")):
         return "FIRST"
     if any(token in text for token in ("second", "طبقه دوم", "طبقه 2", "level 2", "floor 2")):
@@ -84,7 +120,7 @@ def _level_registry(pmm):
         if not name:
             errors.append("LEVEL_NAME_REQUIRED")
             continue
-        if level_type not in LEVEL_TYPES:
+        if not valid_level_type(level_type):
             errors.append("LEVEL_TYPE_REQUIRED:" + name)
             continue
         if level_type in seen_types:
