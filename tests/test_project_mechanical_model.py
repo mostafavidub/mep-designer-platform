@@ -44,6 +44,18 @@ class ProjectMechanicalModelTests(unittest.TestCase):
         self.assertFalse(model["valid"])
         self.assertIn("planner_total_does_not_match_manifest_count",model["diagnostics"])
 
+    def test_exact_architecture_level_bounds_fill_profile_omission(self):
+        analysis = self._analysis()
+        analysis['architectural_auto']['architecture_model'] = {'levels': [
+            {'name': 'Ground', 'region_bounds': [0, 0, 20, 20]},
+            {'name': 'Roof', 'region_bounds': [30, 0, 50, 20]},
+            {'name': 'Unmatched', 'region_bounds': [99, 99, 100, 100]},
+        ]}
+        model = build_project_mechanical_model(analysis, scope=self._scope(), proposal={})
+        self.assertEqual(model['levels'][0]['region_bounds'], [0, 0, 20, 20])
+        self.assertEqual(model['levels'][1]['region_bounds'], [30, 0, 50, 20])
+        self.assertNotIn('Unmatched', model['level_names'])
+
     def test_install_preserves_existing_proposal_behaviour(self):
         class FakeWorkflow:
             _pmm_v1_installed=False
