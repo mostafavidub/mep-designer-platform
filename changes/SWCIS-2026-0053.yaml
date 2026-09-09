@@ -2,7 +2,7 @@
   "change_id": "SWCIS-2026-0053",
   "summary": "Make PMM v3 and the v19 mechanical pipeline authoritative in the live generation path and demote legacy v17 to CAD materialization only after fail-closed traceability reconciliation.",
   "requester": "project-owner",
-  "change_types": ["schema", "drawing_output", "qa", "test", "governance", "release_identity", "deployment"],
+  "change_types": ["schema", "drawing_output", "qa", "test", "governance", "release_identity", "deployment", "documentation"],
   "changed_rule_ids": ["MEP-INPUT-001", "MEP-SUBMIT-001"],
   "impacted_modules": ["pmm", "cad_designer", "detail_riser", "qa", "ui_api", "versioning", "governance", "deployment", "docs", "manifest", "migration"],
   "impact_notes": {
@@ -14,14 +14,14 @@
     "versioning": "SWCIS moves from 4.5.0 to 4.6.0 because runtime gate and traceability behavior changes without a destructive schema migration.",
     "governance": "Adds direct tests proving missing PMM/calculation/network evidence and failed v19 reconciliation cannot invoke the legacy renderer.",
     "deployment": "Changes are restricted to the feature branch and isolated staging service. Production deployment is not authorized by this change.",
-    "docs": "The authoritative-runtime contract is documented in code comments and the SWCIS version history; no user-facing instruction changes are required.",
+    "docs": "The authoritative-runtime contract and isolated-staging acceptance criteria are documented; no customer workflow promise is weakened.",
     "manifest": "The SWCIS version manifest changes to 4.6.0; active CAD component versions remain Git-derived and unchanged.",
     "migration": "No stored-data migration is required. The runtime consumes the already-deployed additive PMM v3 representation and fails closed for projects lacking required authority evidence."
   },
   "evidence": {
     "traceability": ["PMM v3 policy NO_ORPHAN_ENGINEERING_OUTPUT is checked before CAD materialization.", "Calculation IDs are reconciled against graph-derived Plan/Riser/Schedule identities before renderer invocation."],
     "tests": ["Payload propagation", "missing-authority fail-closed", "v19 failure blocks renderer", "calculation reconciliation failure blocks renderer", "renderer-only success path", "runtime version mismatch blocks renderer"],
-    "docs": ["Code-level authority contract and SWCIS history entry"],
+    "docs": ["Code-level authority contract", "SWCIS history entry", "docs/MECHANICAL_AUTHORITY_STAGING.md isolated staging contract"],
     "version_bump": ["SWCIS 4.6.0 gate/traceability minor update"],
     "migration": ["No stored data migration; PMM v3 was already additive and deployed. Runtime now requires its existing authority contract for mechanical materialization."],
     "golden_regression": ["No benchmark numeric values are introduced into generation. Existing cross-project corpus remains comparison-only."],
