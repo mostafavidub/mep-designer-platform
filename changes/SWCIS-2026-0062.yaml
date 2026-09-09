@@ -1,0 +1,35 @@
+{
+  "change_id": "SWCIS-2026-0062",
+  "summary": "Make the deployed Railway image contain the complete canonical runtime synchronization evidence required by the new pre-payment gate.",
+  "requester": "project-owner",
+  "change_types": ["deployment", "release_identity", "test", "governance", "documentation"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["deployment", "versioning", "qa", "governance", "docs", "ui_api", "cad_designer", "manifest", "migration"],
+  "impact_notes": {
+    "deployment": "Retain requirements.txt at its canonical path and include README/docs in both runtime images.",
+    "versioning": "Dependency hashes in deployed build identity now reflect the same canonical files as CI.",
+    "qa": "Build both images and execute the runtime synchronization gate inside them.",
+    "governance": "Preserve fail-closed payment preflight rather than bypassing it in deployment.",
+    "docs": "Ship the runtime contract matrix because it is executable release evidence.",
+    "ui_api": "Mechanical payment can proceed only after the packaged evidence passes synchronization.",
+    "cad_designer": "Panel and CAD images retain equivalent canonical dependency evidence."
+    ,"manifest": "No drawing-manifest semantic change; release packaging closure retains manifest regression."
+    ,"migration": "No stored-data migration; rebuilt images replace incomplete packages."
+  },
+  "evidence": {
+    "traceability": ["repository contract evidence -> Docker build context -> deployed preflight -> payment authorization"],
+    "tests": ["Docker image runtime synchronization for panel and CAD", "full regression"],
+    "docs": ["Runtime contract matrix is included as required release evidence"],
+    "version_bump": ["No semantic revision bump; automatic Git identity advances"],
+    "migration": ["No data migration"],
+    "golden_regression": ["All existing generation gates remain mandatory"],
+    "semantic_diff": ["Deployment packaging becomes equivalent to repository/CI runtime evidence"],
+    "artifact_diff": ["Image gains canonical requirements path, README and docs without changing drawing semantics"],
+    "numeric_diff": ["No engineering numeric changes"],
+    "contract_diff": ["The same synchronization contract is now evaluable in the deployed image"],
+    "deployment_plan": ["Merge all-green main, sync Railway Staging, require identity_matches true and a successful payment preflight"],
+    "rollback_plan": ["Redeploy prior commit only for emergency; do not disable the fail-closed payment preflight"]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 1, "score": 10, "rationale": "Packaging affects every deployment, while deterministic image and live payment checks detect omission."},
+  "waiver": null
+}
