@@ -66,7 +66,7 @@ jobs:
               np.write_text(text, encoding='utf-8')
               op.unlink()
           PY
-      - name: Migrate synchronization references to runtime contract
+      - name: Migrate active capability and synchronization contracts
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -84,6 +84,31 @@ jobs:
               for old, new in replacements.items():
                   text = text.replace(old, new)
               p.write_text(text, encoding='utf-8')
+
+          registry = Path('standards/capability-registry.json')
+          text = registry.read_text(encoding='utf-8')
+          capability_replacements = {
+              'active_version_synchronization': 'runtime_contract_synchronization',
+              'single_version_authority': 'single_runtime_authority',
+              'cad_version_parity': 'cad_runtime_contract_parity',
+              'test_all_active_site_engine_rulebook_and_release_versions_are_synchronized': 'test_runtime_contract_is_fully_synchronized',
+              'test_version_gate_is_destructive_and_detects_release_drift': 'test_contract_gate_detects_entrypoint_drift',
+              'production_v19_runtime_authority': 'mechanical_runtime_authority',
+              'site_version_stamp': 'build_identity_stamp',
+              'v19_authority_before_renderer': 'authority_before_cad_shell',
+              'executed_version_response_validation': 'runtime_contract_response_validation',
+              'legacy_v17_renderer_only': 'cad_shell_only',
+          }
+          for old, new in capability_replacements.items():
+              text = text.replace(old, new)
+          registry.write_text(text, encoding='utf-8')
+
+          test = Path('tests/test_stage12_site_rulebook_contract.py')
+          text = test.read_text(encoding='utf-8')
+          text = text.replace('def test_stage_12_startup_installs_rulebook_v4_generator_not_legacy_v3_payload(self):', 'def test_stage_12_startup_installs_canonical_rulebook_generator_not_legacy_payload(self):')
+          text = text.replace("self.assertIn('generate_rulebook_v4.py', startup)", "self.assertIn('generate_rulebook.py', startup)")
+          text = text.replace("self.assertNotIn('MEP_Design_Rulebook_v3.docx.b64', startup)", "self.assertNotIn('MEP_Design_Rulebook_v3.docx.b64', startup)\n        self.assertNotIn('generate_rulebook_v', startup)")
+          test.write_text(text, encoding='utf-8')
           PY
       - name: Retire active version-era synchronization surfaces
         run: |
@@ -91,8 +116,8 @@ jobs:
           rm -f tests/test_active_version_contract.py
           rm -f docs/ACTIVE_VERSION_MATRIX.md
           rm -f cad_engine/version_sync_gate.py
-          if grep -R --line-number --exclude='runtime-surface-migration-once.yml' --exclude-dir=.git -E 'version_sync_gate|ACTIVE_VERSION_MATRIX|generate_rulebook_v[0-9]+\.py|active_version_synchronization' .; then
-            echo 'active version-era synchronization reference remains' >&2
+          if grep -R --line-number --exclude='runtime-surface-migration-once.yml' --exclude='contract-changelog.json' --exclude-dir=.git -E 'version_sync_gate|ACTIVE_VERSION_MATRIX|generate_rulebook_v[0-9]+\.py|active_version_synchronization|production_v19_runtime_authority' .; then
+            echo 'active version-era synchronization or capability reference remains' >&2
             exit 1
           fi
       - name: Commit canonical runtime and CI surfaces
