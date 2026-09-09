@@ -207,6 +207,27 @@ def _failure_missing(result: dict) -> list[str]:
     return sorted(set(missing))
 
 
+def _pipeline_blockers(result: dict) -> list[str]:
+    """Return actual blocked-phase evidence without inventing later failures."""
+    blocked = result.get("blocked_at")
+    phase = ((result.get("phases") or {}).get(blocked) or {}) if blocked else {}
+    found = []
+
+    def visit(value):
+        if isinstance(value, dict):
+            found.extend(str(item) for key in ("missing_inputs", "errors") for item in (value.get(key) or []))
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(phase)
+    if not found and blocked:
+        found.append("PIPELINE_INPUT_REQUIRED:" + str(blocked))
+    return sorted(set(found))
+
+
 def _restore_target(dst: Path, backup: Path | None):
     if backup and backup.exists():
         shutil.copy2(backup, dst)
@@ -239,8 +260,9 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                                    "missing_inputs": traceability.get("errors") or []}}
 
     result = run_pipeline(payload)
+    pre_submission = result.get("status") == "INPUT_REQUIRED"
     authority_errors = _result_authority_errors(result)
-    if authority_errors:
+    if result.get("status") == "FAIL" or (authority_errors and not pre_submission):
         missing = _failure_missing(result)
         missing.extend(authority_errors)
         return {"status": "FAIL", "stage": "authority_release_gate",
@@ -293,6 +315,9 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["engineering_authority"] = "PMM_V3"
     rendered["cad_materializer"] = "canonical-cad-shell+graph-native-network"
     rendered["cad_shell_role"] = "CAD_SHELL_ONLY"
-    rendered["submission_state"] = "SUBMISSION_READY"
-    rendered["coordination_claim"] = "COORDINATED"
+    rendered["submission_state"] = "PRE_SUBMISSION" if pre_submission else "SUBMISSION_READY"
+    rendered["submission_ready"] = not pre_submission
+    rendered["coordination_claim"] = "NOT_COORDINATED" if pre_submission else "COORDINATED"
+    rendered["manufacturer_claim"] = "NOT_MANUFACTURER_CONFIRMED" if pre_submission else "MANUFACTURER_CONFIRMED"
+    rendered["missing_inputs"] = _pipeline_blockers(result) if pre_submission else []
     return rendered

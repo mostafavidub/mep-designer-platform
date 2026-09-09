@@ -7,6 +7,13 @@ draft generation, but the output is permanently marked `PRE_SUBMISSION`,
 as Submission Ready. Malformed supplied data and real QA failures remain
 fail-closed.
 
+The production authority permits draft CAD materialization only after the
+PMM/network sizing and Plan/Riser/Calc/Schedule identity preflight has passed.
+If a later phase is `INPUT_REQUIRED`, the artifact preserves that phase's exact
+blockers and issues only the three non-submittable claims above. A `FAIL` at any
+phase, or any topology/sizing/identity preflight failure, still prevents
+artifact creation entirely.
+
 1. Structural/RCP coordination stores source-hashed beams, columns, slabs,
    ceilings, shafts, service zones and forbidden zones in a shared 3D datum.
    The 2.5D router compares orthogonal candidates across permitted elevations
