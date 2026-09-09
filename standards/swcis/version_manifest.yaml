@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.7.0",
+  "standard_version": "4.8.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.8.0", "date": "2026-09-09", "summary": "Remove release-number identity from active Mechanical runtime and CI surfaces and enforce one canonical unversioned Mechanical entrypoint/identity; historical version-labelled source remains compatibility debt only."},
     {"version": "4.7.0", "date": "2026-09-09", "summary": "Add fail-closed graph-native topology extraction, explicit segment sizing/material execution contracts, and exact-file v19 network materialization without benchmark-derived numeric defaults."},
     {"version": "4.6.0", "date": "2026-09-09", "summary": "Make PMM v3 and the v19 engineering pipeline mandatory runtime authority before mechanical CAD materialization; remove the architecture-only authority bypass and restrict legacy v17 to renderer-only compatibility after calculation/network reconciliation passes."},
     {"version": "4.5.0", "date": "2026-09-09", "summary": "Register the owner-supplied cross-project mechanical reference corpus, freeze anti-overfitting development/validation/evaluation cohorts, and verify Project 10 architecture/mechanical hashes without permitting reference values as hidden generation defaults."},

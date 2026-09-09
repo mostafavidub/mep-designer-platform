@@ -1,20 +1,21 @@
-name: Mechanical Network Authority v19
+name: Mechanical Network Authority
 
 on:
   push:
     branches:
-      - fix/mechanical-topology-sizing-materialization-0054
+      - refactor/mechanical-single-runtime-0055
   pull_request:
     paths:
       - 'app/project_mechanical_model.py'
-      - 'cad_engine/mechanical_authority_site_v19.py'
+      - 'cad_engine/mechanical_authority.py'
       - 'cad_engine/mechanical_network_topology.py'
       - 'cad_engine/mechanical_segment_execution.py'
       - 'cad_engine/mechanical_network_materializer.py'
-      - 'tests/test_mechanical_authority_runtime_v19.py'
       - 'tests/test_mechanical_network_authority_v19.py'
+      - 'tests/test_mechanical_authority_runtime_v19.py'
       - 'tests/test_mechanical_runtime_v19.py'
-      - '.github/workflows/mechanical-network-authority-v19.yml'
+      - 'tests/test_mechanical_single_runtime.py'
+      - '.github/workflows/mechanical-network-authority.yml'
 
 jobs:
   network-authority:
@@ -36,6 +37,6 @@ jobs:
       - name: Compile application and CAD engine
         run: python -m compileall -q app cad_engine
       - name: Run focused network authority regressions
-        run: python -m unittest -v tests.test_mechanical_network_authority_v19 tests.test_mechanical_authority_runtime_v19 tests.test_mechanical_runtime_v19
+        run: python -m unittest -v tests.test_mechanical_network_authority_v19 tests.test_mechanical_authority_runtime_v19 tests.test_mechanical_runtime_v19 tests.test_mechanical_single_runtime
       - name: Run full repository unit test suite
         run: python -m unittest discover -s tests -v
