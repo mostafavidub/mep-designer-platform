@@ -9,7 +9,6 @@ from __future__ import annotations
 from importlib import import_module
 
 
-RELEASE_VERSION = "15.2.0"
 
 # Capability names intentionally mirror the engineering workflow and the final
 # sheet/document QA decisions, not a particular project's sheet count.
@@ -25,13 +24,13 @@ REQUIRED_CAPABILITIES = {
     "pipe_sizing": "cad_engine.engineering_pipeline",
     "annotation_engine": "cad_engine.annotation",
     "detail_library": "cad_engine.detail_library",
-    "dynamic_project_details": "cad_engine.dynamic_detail_engine_v14",
-    "adaptive_project_sheet_manifest": "cad_engine.adaptive_sheet_planner_v13",
+    "dynamic_project_details": "cad_engine.dynamic_detail_engine",
+    "adaptive_project_sheet_manifest": "cad_engine.adaptive_sheet_planner",
     "authority_sheet_architecture": "cad_engine.mechanical_design_core",
-    "output_sanitization": "cad_engine.output_sanitizer_v13",
+    "output_sanitization": "cad_engine.output_sanitizer",
     "real_project_acceptance": "cad_engine.engineering_acceptance",
-    "plan_isolation_acceptance": "cad_engine.plan_isolation_acceptance_v13",
-    "semantic_sheet_qa": "cad_engine.semantic_sheet_qa_v14",
+    "plan_isolation_acceptance": "cad_engine.plan_isolation_acceptance",
+    "semantic_sheet_qa": "cad_engine.semantic_sheet_qa",
     "split_wall_hosting": "cad_engine.equipment_representation",
     "split_airflow_connections_callouts": "cad_engine.equipment_representation",
     "equipment_schedule_sync": "cad_engine.equipment_representation",
@@ -47,7 +46,7 @@ REQUIRED_CAPABILITIES = {
     "integrated_a4_frame_and_compact_titleblock": "cad_engine.mechanical_design_core",
     "drawing_safe_area_zero_title_overlap": "cad_engine.mechanical_design_core",
     "north_inherited_from_architecture": "cad_engine.mechanical_design_core",
-    "preservation_first_footer_cleanup": "cad_engine.sheet_cleanup_policy_v1",
+    "preservation_first_footer_cleanup": "cad_engine.sheet_cleanup_policy",
     "exact_final_file_reopen_qa": "cad_engine.mechanical_design_core",
     "site_production_orchestration": "cad_engine.mechanical_cad_base",
 }
@@ -62,8 +61,7 @@ def release_contract_status() -> dict:
         except Exception:
             checks[capability] = False
     return {
-        "version": RELEASE_VERSION,
-        "status": "PASS" if all(checks.values()) else "FAIL",
+                "status": "PASS" if all(checks.values()) else "FAIL",
         "required_count": len(REQUIRED_CAPABILITIES),
         "passed_count": sum(1 for v in checks.values() if v),
         "checks": checks,

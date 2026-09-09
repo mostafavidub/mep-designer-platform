@@ -1,11 +1,10 @@
 """Mechanical authority release contract canonical with preservation gate."""
 from __future__ import annotations
 from importlib import import_module
-from .mechanical_release_contract_base import REQUIRED_CAPABILITIES as V15_CAPABILITIES
+from .mechanical_release_contract_base import REQUIRED_CAPABILITIES as PRIOR_CAPABILITIES
 
-RELEASE_VERSION="16.0.0"
 REQUIRED_CAPABILITIES={
-    **V15_CAPABILITIES,
+    **PRIOR_CAPABILITIES,
     "architecture_source_snapshot":"cad_engine.architecture_preservation_gate",
     "architecture_semantic_classifier":"cad_engine.architecture_preservation_gate",
     "preservation_criticality_engine":"cad_engine.architecture_preservation_gate",
@@ -28,4 +27,4 @@ def release_contract_status()->dict:
             import_module(module_name); checks[capability]=True
         except Exception:
             checks[capability]=False
-    return {"version":RELEASE_VERSION,"status":"PASS" if all(checks.values()) else "FAIL","required_count":len(REQUIRED_CAPABILITIES),"passed_count":sum(checks.values()),"checks":checks}
+    return {"status":"PASS" if all(checks.values()) else "FAIL","required_count":len(REQUIRED_CAPABILITIES),"passed_count":sum(checks.values()),"checks":checks}

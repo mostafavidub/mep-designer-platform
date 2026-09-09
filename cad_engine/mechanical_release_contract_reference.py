@@ -1,11 +1,10 @@
 """Mechanical authority release contract canonical."""
 from __future__ import annotations
 from importlib import import_module
-from .mechanical_release_contract_preservation import REQUIRED_CAPABILITIES as V16_CAPABILITIES
+from .mechanical_release_contract_preservation import REQUIRED_CAPABILITIES as PRIOR_CAPABILITIES
 
-RELEASE_VERSION='17.0.0'
 REQUIRED_CAPABILITIES={
-    **V16_CAPABILITIES,
+    **PRIOR_CAPABILITIES,
     'reference_sheet_decomposition':'cad_engine.reference_parity_engine',
     'project_specific_detail_library':'cad_engine.reference_parity_engine',
     'detail_parameter_resolver':'cad_engine.reference_parity_engine',
@@ -37,4 +36,4 @@ def release_contract_status()->dict:
             import_module(module_name); checks[capability]=True
         except Exception:
             checks[capability]=False
-    return {'version':RELEASE_VERSION,'status':'PASS' if all(checks.values()) else 'FAIL','required_count':len(REQUIRED_CAPABILITIES),'passed_count':sum(checks.values()),'checks':checks}
+    return {'status':'PASS' if all(checks.values()) else 'FAIL','required_count':len(REQUIRED_CAPABILITIES),'passed_count':sum(checks.values()),'checks':checks}

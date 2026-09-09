@@ -190,7 +190,7 @@ def _failure_missing(result: dict) -> list[str]:
     if blocked == "documentation":
         missing.append("PARAMETRIC_NETWORK_DOCUMENTATION")
     if blocked == "golden":
-        missing.append("V19_RELEASE_GOLDEN_PASS")
+        missing.append("MECHANICAL_RELEASE_GOLDEN_PASS")
     return sorted(set(missing))
 
 
