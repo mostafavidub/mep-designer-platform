@@ -37,8 +37,8 @@ jobs:
             cad_engine/authority_architecture_v14.py \
             cad_engine/mechanical_authority_site_v17.py \
             cad_engine/mechanical_authority_site_v19.py \
-            cad_engine/production_truth_gate_v19.py \
-            cad_engine/production_documentation_truth_v19.py \
+            cad_engine/production_quality_truth_v19.py \
+            cad_engine/production_quality_documentation_v19.py \
             cad_engine/final_delivery_gate_v17.py
       - name: Run project-contract regressions
         run: |
