@@ -46,7 +46,7 @@ class SubmissionQAV19Tests(unittest.TestCase):
         self.assertEqual(run_golden_regression([case],{"scores":{"1":84.5}})["status"],"FAIL")
         self.assertFalse(submission_gate({"coordination":{"status":"INPUT_REQUIRED"},"manufacturer":{"status":"PASS"},"documentation":{"status":"PASS"},"golden":{"status":"PASS"}})["release_allowed"])
 
-    def test_submission_ready_requires_explicit_zero_for_all_ten_checks(self):
+    def test_submission_ready_requires_explicit_zero_for_every_hard_fail_check(self):
         self.assertEqual(evaluate_submission_readiness(None)["status"],"INPUT_REQUIRED")
         checks={name:0 for name in SUBMISSION_ZERO_CHECKS}
         self.assertTrue(evaluate_submission_readiness(checks)["submission_ready"])

@@ -12,6 +12,9 @@ def payload():
             "detail_specs":[{"geometry":{"type":"section","points":[[0,0],[1,1]]},"dimensions":{"pipe_mm":50},"fittings":["union"],"material":"PPR","clearance":{"service_mm":300},"tag":"DT-1"}],
             "network_graph":{"graph_id":"G","nodes":[{"id":"N1"},{"id":"N2"}],"edges":[{"id":"W-1","from":"N1","to":"N2","system":"water","size":"DN25","material":"PPR"}]},
             "submission_checks":{
+                "missing_required_systems":0,"orphan_fixtures":0,"unconnected_equipment":0,
+                "missing_segment_sizes":0,"reverse_gravity_slopes":0,"equipment_without_calculation":0,
+                "missing_mandatory_details":0,"missing_rainwater_systems":0,"invalid_riser_levels":0,
                 "route_warnings":0,"structural_clashes":0,"mep_clashes":0,
                 "unapproved_penetrations":0,"gravity_violations":0,
                 "equipment_without_manufacturer_basis":0,"manufacturer_limit_violations":0,
@@ -83,6 +86,13 @@ class MechanicalPipelineV19Tests(unittest.TestCase):
         result=run_v19_pipeline(value)
         self.assertEqual(result["blocked_at"],"submission_quality")
         self.assertEqual(result["status"],"FAIL")
+
+    def test_requested_construction_delivery_blocks_before_submission(self):
+        value=payload(); value["construction_delivery_inputs"]={}
+        result=run_v19_pipeline(value)
+        self.assertEqual(result["blocked_at"],"construction_delivery")
+        self.assertEqual(result["status"],"INPUT_REQUIRED")
+        self.assertNotIn("submission_quality",result["phases"])
 
     def test_engineer_feedback_and_quality_targets_block_in_order(self):
         value=payload(); value.pop("engineer_review")

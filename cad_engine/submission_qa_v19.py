@@ -10,14 +10,23 @@ GOLDEN_PROJECTS = (1, 3, 4, 6, 7, 8, 10)
 DEFAULT_THRESHOLDS = {"minimum_score": 70.0, "maximum_drop": 0.0, "required_pass_rate": 1.0}
 DIFF_KINDS = ("semantic", "artifact", "numeric")
 SUBMISSION_ZERO_CHECKS = (
+    "missing_required_systems",
+    "orphan_fixtures",
+    "unconnected_equipment",
+    "missing_segment_sizes",
+    "reverse_gravity_slopes",
     "route_warnings",
     "structural_clashes",
     "mep_clashes",
     "unapproved_penetrations",
     "gravity_violations",
+    "equipment_without_calculation",
     "equipment_without_manufacturer_basis",
     "manufacturer_limit_violations",
     "missing_details",
+    "missing_mandatory_details",
+    "missing_rainwater_systems",
+    "invalid_riser_levels",
     "plan_riser_schedule_mismatches",
     "unreadable_annotations",
 )
