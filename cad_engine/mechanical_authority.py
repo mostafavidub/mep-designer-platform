@@ -78,6 +78,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "manufacturer_database_records": _first_value(contract.get("manufacturer_database_records"), plan_analysis.get("manufacturer_database_records_canonical")),
         "target_design_inputs": _first_value(contract.get("target_design_inputs"), plan_analysis.get("target_design_inputs_canonical")),
         "target_design_packages": _first_value(contract.get("target_design_packages"), plan_analysis.get("target_design_packages_canonical")),
+        "construction_delivery_inputs": _first_value(contract.get("construction_delivery_inputs"), plan_analysis.get("construction_delivery_inputs_canonical")),
         "equipment_selection_checks": _first_value(contract.get("equipment_selection_checks"), plan_analysis.get("equipment_selection_checks_canonical")),
         "declared_equipment_ids": contract.get("declared_equipment_ids") or plan_analysis.get("declared_equipment_ids_canonical") or [],
         "detail_specs": contract.get("detail_specs") or plan_analysis.get("detail_specs_canonical") or [],

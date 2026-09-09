@@ -2,6 +2,16 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-031",
+      "status":"APPROVED",
+      "summary":"Complete Mechanical construction-document delivery steps 14-19 as one fail-closed package with plan-bound parametric details, actual CAD inventory, manifest/layout identity, public schedules, annotation solving and expanded submission QA.",
+      "affected_capabilities":["construction_document_delivery","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner request to execute and complete through step 19"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete construction-delivery evidence.","rollback":"Revert the protected commit; never infer missing CAD, schedule, detail, annotation or QA evidence."}
+    },
+    {
       "id":"GOV-2026-030",
       "status":"APPROVED",
       "summary":"Add privacy-safe independent-engineer redline triage and enforce the final quantitative quality targets without promoting project-specific findings into shared rules.",
