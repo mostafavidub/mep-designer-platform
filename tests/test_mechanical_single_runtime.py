@@ -13,10 +13,10 @@ def test_production_entrypoint_has_no_versioned_runtime_import_or_route():
 
 def test_canonical_mechanical_surfaces_exist():
     for path in (
+        "cad_engine/main_transport.py",
         "cad_engine/mechanical_authority.py",
         "cad_engine/mechanical_pipeline.py",
         "cad_engine/mechanical_release_contract.py",
-        "cad_engine/mechanical_governance.py",
     ):
         assert (ROOT / path).is_file(), path
 
