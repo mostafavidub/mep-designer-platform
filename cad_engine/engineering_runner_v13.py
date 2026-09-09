@@ -7,6 +7,7 @@ from .system_requirements_v13 import derive_system_requirements
 from .mechanical_calculations_v13 import calculate_mechanical_loads
 from .topology_v13 import build_system_topology,SYSTEM_TARGETS
 from .routing_v13 import route_topology
+from .routing_endpoints import propose_connection_point
 from .sizing_v13 import size_networks
 from .annotation_v13 import build_annotations
 from .detail_library_v13 import build_details_schedules
@@ -110,14 +111,17 @@ def _discard_unlocated_native_fixtures(architecture, recognition):
 
 
 def _add_locked_design_endpoints(architecture, recognition, design_basis):
-    """Create design endpoints only where user basis and room evidence agree.
+    """Create explicit proposed endpoints where room evidence proves design intent.
 
-    Architectural wet-room labels are sufficient evidence for design intent even
-    when an uploaded drawing uses exploded or proprietary fixture symbols.  In
-    that case create explicit *designed* plumbing endpoints; never claim that
-    those fixtures were detected or installed in the source drawing.
+    Proposed endpoints are routing/design coordinates, not claims about fixture
+    locations in the uploaded architecture. Distinct points are derived from the
+    project geometry so multiple logical fixtures cannot collapse onto one route
+    origin when no trustworthy source fixture coordinate exists.
     """
-    rows=list(recognition.get('detections') or []);existing={(r.get('plan_id'),r.get('room_id'),r.get('type')) for r in rows}
+    rows=list(recognition.get('detections') or [])
+    existing={(r.get('plan_id'),r.get('room_id'),r.get('type')) for r in rows}
+    plan_bounds={p.get('plan_id'):p.get('bounds') for p in architecture.get('plans') or [] if p.get('plan_id')}
+    proposed_count=0; unknown_room_boundary_count=0
     for room in architecture.get('rooms') or []:
         room_type=room.get('type');candidates=[]
         if room_type=='kitchen':
@@ -141,18 +145,23 @@ def _add_locked_design_endpoints(architecture, recognition, design_basis):
             candidates.append(('exhaust_fan','architectural_wet_room_exhaust_requirement',150.0))
         elif room_type=='kitchen':
             candidates.append(('hood','architectural_kitchen_exhaust_requirement',300.0))
-        for kind,source,design_load in candidates:
+        occupied=[r.get('point') for r in rows if r.get('plan_id')==room.get('plan_id') and r.get('room_id')==room.get('id') and r.get('point')]
+        for ordinal,(kind,source,design_load) in enumerate(candidates):
             key=(room.get('plan_id'),room.get('id'),kind)
             if key in existing:continue
-            point=_room_point(room)
-            if not point:continue
+            proposal=propose_connection_point(room,plan_bounds.get(room.get('plan_id')),ordinal,occupied)
+            if not proposal:continue
+            point=proposal['point'];occupied.append(point)
             category='fixture' if kind in {'wc','basin','sink','shower','floor_drain'} else 'equipment'
-            evidence=(['reconstructed_architectural_room','design_endpoint_not_source_detection'] if category=='fixture'
-                      else ['user_locked_design_basis','reconstructed_architectural_room'])
-            rows.append({'id':f"DESIGN-{kind.upper()}-{len(rows)+1:03d}",'category':category,'type':kind,'point':point,
-                         'room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':1.0,'status':'designed','installed':False,
-                         'evidence':evidence,'source':source,'design_load':design_load})
-            existing.add(key)
+            evidence=(['reconstructed_architectural_room','design_endpoint_not_source_detection','proposed_connection_point'] if category=='fixture'
+                      else ['user_locked_design_basis','reconstructed_architectural_room','proposed_connection_point'])
+            row={'id':f"DESIGN-{kind.upper()}-{len(rows)+1:03d}",'category':category,'type':kind,'point':point,
+                 'room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':1.0,'status':'designed','installed':False,
+                 'evidence':evidence,'source':source,'design_load':design_load,
+                 'placement_basis':proposal['placement_basis'],'location_authority':proposal['location_authority'],
+                 'room_boundary_known':proposal['room_boundary_known'],'requires_fixture_coordination':proposal['requires_fixture_coordination']}
+            rows.append(row);existing.add(key);proposed_count+=1
+            if not proposal['room_boundary_known']:unknown_room_boundary_count+=1
     # A wall-mounted gas package is a gas load even on a level without a
     # kitchen. Create one traceable design endpoint per architectural plan so
     # topology, routing and the P.22 table describe the same approved load.
@@ -165,12 +174,22 @@ def _add_locked_design_endpoints(architecture, recognition, design_basis):
             room=sorted(candidates,key=lambda r:(r.get('type')!='living',str(r.get('id') or '')))[0]
             key=(plan_id,room.get('id'),'water_heater')
             if key in existing: continue
+            occupied=[r.get('point') for r in rows if r.get('plan_id')==plan_id and r.get('room_id')==room.get('id') and r.get('point')]
+            proposal=propose_connection_point(room,plan_bounds.get(plan_id),len(occupied),occupied)
+            if not proposal:continue
             rows.append({'id':f"DESIGN-WATER_HEATER-{len(rows)+1:03d}",'category':'equipment','type':'water_heater',
-                         'point':_room_point(room),'room_id':room.get('id'),'plan_id':plan_id,'confidence':1.0,
-                         'status':'designed','installed':False,'evidence':['user_locked_design_basis','reconstructed_architectural_room'],
-                         'source':'locked_package_radiator_gas_endpoint','design_load':24.0})
-            existing.add(key)
+                         'point':proposal['point'],'room_id':room.get('id'),'plan_id':plan_id,'confidence':1.0,
+                         'status':'designed','installed':False,'evidence':['user_locked_design_basis','reconstructed_architectural_room','proposed_connection_point'],
+                         'source':'locked_package_radiator_gas_endpoint','design_load':24.0,
+                         'placement_basis':proposal['placement_basis'],'location_authority':proposal['location_authority'],
+                         'room_boundary_known':proposal['room_boundary_known'],'requires_fixture_coordination':proposal['requires_fixture_coordination']})
+            existing.add(key);proposed_count+=1
+            if not proposal['room_boundary_known']:unknown_room_boundary_count+=1
     recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
+    quality=dict(recognition.get('quality') or {})
+    quality['proposed_design_endpoints']=proposed_count
+    quality['proposed_endpoints_without_room_boundary']=unknown_room_boundary_count
+    recognition['quality']=quality
     return recognition
 
 
