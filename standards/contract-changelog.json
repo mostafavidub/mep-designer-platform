@@ -369,6 +369,16 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs and complete the eight-project Staging evaluation"},
       "verification":{"positive_typical_floor_tests":"must_pass","destructive_detail_level_test":"must_pass","payment_preflight_test":"must_pass","full_regression":"must_pass","staging_smoke":"must_pass before eight-project generation"},
       "migration":{"forward":"Fresh retries derive one TYPICAL_n_m identity from an explicit source range; no stored-data migration.","rollback":"Revert the protected commit; never infer levels from unknown or detail labels and never charge against an unsynchronized Mechanical runtime."}
+    },
+    {
+      "id":"GOV-2026-034",
+      "status":"APPROVED",
+      "summary":"Package canonical dependency, README and runtime-matrix evidence into panel and CAD images so the fail-closed pre-payment synchronization gate can execute in Railway.",
+      "affected_capabilities":["deployment","runtime_identity","commercial_payment_preflight"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs after live Staging preflight correctly rejected an incomplete image"},
+      "verification":{"image_contract_test":"must_pass","full_regression":"must_pass","live_payment_preflight":"must_pass before generation"},
+      "migration":{"forward":"Rebuild images with canonical release evidence paths.","rollback":"Do not bypass the preflight; redeploy only a complete prior image."}
     }
   ]
 }
