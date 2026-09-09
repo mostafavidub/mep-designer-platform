@@ -2,6 +2,16 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-032",
+      "status":"APPROVED",
+      "summary":"Repair panel-to-CAD Mechanical transport to use the single canonical runtime contract, canonical engineering input contract and unversioned production design entrypoint.",
+      "affected_capabilities":["active_version_synchronization","mechanical_release_qa","paid_generation"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to fix the Staging runtime-contract blocker and complete all eight Mechanical projects"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","live_staging_e2e":"must_pass before completion claim","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Retry preserved projects with the canonical contract after deploying the exact approved commit.","rollback":"Redeploy the prior approved Git commit; never weaken runtime_contract_gate."}
+    },
+    {
       "id":"GOV-2026-031",
       "status":"APPROVED",
       "summary":"Complete Mechanical construction-document delivery steps 14-19 as one fail-closed package with plan-bound parametric details, actual CAD inventory, manifest/layout identity, public schedules, annotation solving and expanded submission QA.",

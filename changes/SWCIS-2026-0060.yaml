@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0060",
+  "summary": "Repair the fail-closed panel-to-CAD Mechanical runtime-contract transport so the canonical unversioned runtime receives and verifies one identical contract before paid generation.",
+  "requester": "project-owner",
+  "change_types": ["drawing_output", "ui_api", "test", "governance", "documentation", "release_identity"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "detail_riser", "ui_api", "qa", "governance", "docs", "versioning", "manifest", "migration", "deployment"],
+  "impact_notes": {
+    "cad_designer": "Replace the obsolete version-manifest request and response checks with the canonical runtime contract and build identity.",
+    "detail_riser": "Verified not affected semantically; generation remains behind the unchanged authority and traceability gates.",
+    "ui_api": "Run the canonical contract preflight before paid CAD execution and retain actionable expected/actual diagnostics.",
+    "qa": "Add positive, destructive and transport regressions for exact canonical contract propagation.",
+    "governance": "Record the owner-authorized production-blocker repair without weakening any locked gate.",
+    "docs": "Document the preflight and single-contract transport behavior.",
+    "versioning": "No semantic contract revision changes; automatic Git build identity advances with the commit."
+    ,"manifest": "Verify the accepted response contract against the automatic build manifest without changing semantic revisions."
+    ,"migration": "No stored-data migration; existing paid projects remain retryable."
+    ,"deployment": "Panel and co-built CAD must deploy from the exact same all-green commit."
+  },
+  "evidence": {
+    "traceability": ["Panel request _runtime_contract -> CAD runtime_contract -> generated report runtime_contract -> build identity"],
+    "tests": ["positive exact-contract transport", "destructive stale-contract rejection", "panel/CAD response identity validation", "full regression"],
+    "docs": ["Runtime contract matrix and deployment runbook clarification"],
+    "version_bump": ["No SWCIS or schema bump: behavior-preserving repair to use the already-versioned canonical contract"],
+    "migration": ["No data migration; existing projects are retried with the current canonical contract"],
+    "golden_regression": ["Existing synthetic Mechanical golden regressions remain mandatory; private drawings remain external"],
+    "semantic_diff": ["No engineering output semantic change; previously unreachable canonical generation becomes reachable"],
+    "artifact_diff": ["Successful artifacts carry the same canonical runtime contract and automatic build identity returned by CAD"],
+    "numeric_diff": ["No calculation, sizing, material, slope, flow or capacity value changes"],
+    "contract_diff": ["Remove obsolete active_version_manifest transport; preserve fail-closed exact equality using runtime_contract"],
+    "deployment_plan": ["Deploy the exact all-green merged commit to panel and CAD worker; require health plus a real upload-to-download smoke test"],
+    "rollback_plan": ["Redeploy the previous approved Git commit; never bypass or weaken runtime_contract_gate"]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 1, "score": 10, "rationale": "The defect blocks every Mechanical generation, while exact contract tests and the live smoke test detect recurrence immediately."},
+  "waiver": null
+}
