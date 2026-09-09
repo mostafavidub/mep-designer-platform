@@ -15,9 +15,9 @@ import tempfile
 from .mechanical_authority_site_v17 import design_mechanical_authority_site as _design_v17
 from .mechanical_pipeline_v19 import run_v19_pipeline
 from .parametric_documentation_v19 import generate_riser_from_network, reconcile_calculation_outputs
-from .topology_authority_v19 import build_authoritative_topology
-from .sizing_authority_v19 import design_authoritative_segments
-from .mechanical_authority_materializer_v19 import materialize_authoritative_network
+from .mechanical_network_topology import build_authoritative_topology
+from .mechanical_segment_execution import design_authoritative_segments
+from .mechanical_network_materializer import materialize_authoritative_network
 from .version_manifest import active_version_manifest
 
 
@@ -93,6 +93,10 @@ def _v19_payload(answers: dict, plan_analysis: dict) -> dict:
 
 def _prepare_network_authority(src: Path, payload: dict) -> dict:
     pmm = payload.get("project_mechanical_model") or {}
+    if pmm.get("schema") != PMM_SCHEMA:
+        return {"status": "INPUT_REQUIRED", "missing_inputs": ["PROJECT_MECHANICAL_MODEL_V3"], "errors": []}
+    if (pmm.get("traceability_contract") or {}).get("policy") != PMM_POLICY:
+        return {"status": "INPUT_REQUIRED", "missing_inputs": ["PMM_NO_ORPHAN_TRACEABILITY_POLICY_REQUIRED"], "errors": []}
     existing = payload.get("network_graph") or {}
     if existing.get("nodes") and existing.get("edges"):
         topology = {"status": "PASS", "network": existing, "source": "SUPPLIED_NETWORK_GRAPH"}
