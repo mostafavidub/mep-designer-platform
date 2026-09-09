@@ -194,7 +194,7 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
         detail_overrides['levels']=levels or ['GROUND']
     details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
     hvac=design_project_hvac(architecture,project_overrides=project_overrides)
-    return {'version':'engineering-pipeline-v13.17','architecture':architecture,'recognition':recognition,'requirements':requirements,
+    return {'runtime_identity':'mechanical-pipeline','architecture':architecture,'recognition':recognition,'requirements':requirements,
             'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac,
             'design_basis':dict(design_basis or {})}
 
