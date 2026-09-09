@@ -1,0 +1,87 @@
+name: Runtime Surface Migration One-Time
+
+on:
+  push:
+    branches:
+      - refactor/mechanical-runtime-unversioned-0056
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: ${{ !startsWith(github.event.head_commit.message, '[surface-migration]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/mechanical-runtime-unversioned-0056
+          fetch-depth: 0
+      - name: Canonicalize application Rule Book source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/mechanical_rulebook.py')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION', 'from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_REVISION')
+          text = text.replace('RULEBOOK_VERSION = MECHANICAL_RULEBOOK_VERSION', 'RULEBOOK_VERSION = MECHANICAL_RULEBOOK_REVISION')
+          if 'cad_engine.version_manifest' in text or 'MECHANICAL_RULEBOOK_VERSION' in text:
+              raise SystemExit('legacy active version-manifest dependency remains in app/mechanical_rulebook.py')
+          p.write_text(text, encoding='utf-8')
+          PY
+      - name: Create canonical deploy-time Rule Book generator and launcher reference
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('data/rulebook/generate_rulebook_v4.py')
+          dst = Path('data/rulebook/generate_rulebook.py')
+          text = src.read_text(encoding='utf-8')
+          text = text.replace('from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION', 'from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_REVISION')
+          text = text.replace('VERSION = MECHANICAL_RULEBOOK_VERSION', 'VERSION = MECHANICAL_RULEBOOK_REVISION')
+          text = text.replace('Generate the production MEP Design Rule Book v5 DOCX.', 'Generate the production MEP Design Rule Book DOCX from the canonical semantic revision.')
+          dst.write_text(text, encoding='utf-8')
+          start = Path('start_services.sh')
+          s = start.read_text(encoding='utf-8').replace('data/rulebook/generate_rulebook_v4.py', 'data/rulebook/generate_rulebook.py')
+          if 'generate_rulebook_v' in s:
+              raise SystemExit('versioned Rule Book generator remains in production launcher')
+          start.write_text(s, encoding='utf-8')
+          PY
+      - name: Canonicalize remaining Mechanical CI workflow identities
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          migrations = [
+              ('.github/workflows/authority-v14.yml', '.github/workflows/authority-architecture.yml', 'Authority Architecture v14', 'Authority Architecture', 'authority-v14:', 'authority-architecture:'),
+              ('.github/workflows/architecture-preservation-v16.yml', '.github/workflows/architecture-preservation.yml', 'Architecture Preservation Gate v16', 'Architecture Preservation Gate', None, None),
+              ('.github/workflows/reference-parity-generalization-v17.yml', '.github/workflows/reference-parity-generalization.yml', 'Reference Parity Generalization v17', 'Reference Parity Generalization', None, None),
+          ]
+          for old, new, old_name, new_name, old_job, new_job in migrations:
+              op, np = Path(old), Path(new)
+              text = op.read_text(encoding='utf-8')
+              text = text.replace(f'name: {old_name}', f'name: {new_name}', 1)
+              if old_job and new_job:
+                  text = text.replace(old_job, new_job, 1)
+              # Release-numbered feature branches are history, not an active CI identity.
+              import re
+              text = re.sub(r'push:\n\s+branches:\s*\[[^\]]*v\d+[^\]]*\]', 'push:\n    branches: [main]', text, count=1)
+              np.write_text(text, encoding='utf-8')
+              op.unlink()
+          PY
+      - name: Retire active version-era synchronization surfaces
+        run: |
+          rm -f .github/workflows/active-version-sync.yml
+          rm -f tests/test_active_version_contract.py
+          rm -f docs/ACTIVE_VERSION_MATRIX.md
+          if grep -R --line-number --exclude='version_sync_gate.py' --exclude-dir=.git 'version_sync_gate' .; then
+            echo 'version_sync_gate still has active references' >&2
+            exit 1
+          fi
+          rm -f cad_engine/version_sync_gate.py
+      - name: Commit canonical runtime and CI surfaces
+        run: |
+          if git diff --quiet && git status --porcelain | grep -q '^$'; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m '[surface-migration] remove active version-era runtime and CI surfaces'
+          git push origin HEAD:refactor/mechanical-runtime-unversioned-0056
