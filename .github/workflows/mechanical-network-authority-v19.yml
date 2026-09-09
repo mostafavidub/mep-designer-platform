@@ -19,6 +19,11 @@ on:
 jobs:
   network-authority:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite:////tmp/engitools-network-authority-ci.db
+      DATA_DIR: /tmp/engitools-network-authority-data
+      CAD_OUTPUT_DIR: /tmp/engitools-network-authority-cad
+      TMPDIR: /tmp/engitools-network-authority-tmp
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,9 +38,4 @@ jobs:
       - name: Run focused network authority regressions
         run: python -m unittest -v tests.test_mechanical_network_authority_v19 tests.test_mechanical_authority_runtime_v19 tests.test_mechanical_runtime_v19
       - name: Run full repository unit test suite
-        env:
-          DATABASE_URL: sqlite:////tmp/engitools-network-authority-ci.db
-          DATA_DIR: /tmp/engitools-network-authority-data
-          CAD_OUTPUT_DIR: /tmp/engitools-network-authority-cad
-          TMPDIR: /tmp/engitools-network-authority-tmp
         run: python -m unittest discover -s tests -v
