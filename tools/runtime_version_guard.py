@@ -18,9 +18,9 @@ CANONICAL_MECHANICAL_WORKFLOWS = {
 FORBIDDEN_VISIBLE_WORKFLOWS = (
     ".github/workflows/mechanical-authority-v15.yml",
     ".github/workflows/mechanical-network-authority-v19.yml",
-    ".github/workflows/mechanical-governance-v1.yml",
     ".github/workflows/mechanical-coordination-v19.yml",
 )
+LEGACY_GOVERNANCE_SENTINEL = ".github/workflows/mechanical-governance-v1.yml"
 
 
 def _lines(*args: str) -> list[str]:
@@ -50,6 +50,13 @@ def audit(base: str) -> dict:
     for path in FORBIDDEN_VISIBLE_WORKFLOWS:
         if path in tracked_set:
             workflow_errors.append(f"versioned_visible_workflow:{path}")
+
+    sentinel = ROOT / LEGACY_GOVERNANCE_SENTINEL
+    if sentinel.is_file():
+        text = sentinel.read_text(encoding="utf-8")
+        if "compatibility_artifact: true" not in text or re.search(r"^\s*(name|on|jobs)\s*:", text, re.M):
+            workflow_errors.append("legacy_governance_sentinel_must_be_non_runnable")
+
     for path, expected_name in CANONICAL_MECHANICAL_WORKFLOWS.items():
         file = ROOT / path
         if not file.is_file():
