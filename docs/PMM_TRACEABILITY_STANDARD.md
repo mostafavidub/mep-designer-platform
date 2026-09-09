@@ -44,6 +44,12 @@ Support-sheet identifiers are never architectural levels. `DETAIL-*`, `CALC-*`, 
 
 The v19 production adapter may reuse the existing legacy composer only after this truth gate passes. After composition, generated v17 documentation-layer entities are rebuilt from the actual engineering pipeline, the exact file is reopened, and final-delivery QA is rerun. A failed post-composition reconciliation removes/blocks the candidate artifact rather than returning it to the web application.
 
+## Proposed endpoint and route provenance
+
+When the source architecture proves a semantic room role but does not contain a trustworthy installed fixture coordinate, the engine may create a routing connection point only as an explicit design proposal. Such rows must remain `installed=false`, carry `location_authority=PROPOSED_NOT_SOURCE_DETECTED`, and require fixture-location coordination. If a reconstructed room polygon exists, the proposed point is constrained to that polygon. If no room boundary is trustworthy, the fanout is derived only from the current plan geometry to keep logical endpoints distinct and is explicitly non-authoritative; it is not a construction clearance, fixture spacing, or source-detection claim.
+
+Routing must choose safety before graphical separation. If two same-system routes, or the paired systems hot/cold or sanitary/vent, would otherwise have exactly identical geometry, the router may choose an alternate orthogonal candidate only when it has the same wall-clash count as the best candidate. If no equal-safety non-overlapping candidate exists, routing fails closed instead of silently drawing coincident networks. Reference-project coordinates, pipe sizes, capacities, or routing shapes may never be used to force de-overlap.
+
 ## Compatibility
 
 PMM v3 is an additive schema change. Existing PMM fields are retained. Consumers that do not yet use the identity registry continue to read legacy fields, while upgraded consumers may enforce the new traceability chain. No destructive migration is introduced by this change.
