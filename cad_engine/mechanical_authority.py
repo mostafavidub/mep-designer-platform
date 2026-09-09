@@ -69,6 +69,10 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         active_systems = _active_systems_from_pmm(pmm)
     return {
         "project_mechanical_model": pmm,
+        "architecture_evidence": contract.get("architecture_evidence") or {},
+        "fixture_evidence": contract.get("fixture_evidence") or [],
+        "declared_fixture_schedule": contract.get("declared_fixture_schedule"),
+        "mechanical_shaft_route": contract.get("mechanical_shaft_route"),
         "calculation_rows": calculation_rows,
         "active_systems": active_systems or {},
         "coordination_inputs": contract.get("coordination_inputs") or plan_analysis.get("coordination_inputs_canonical") or {},
@@ -104,7 +108,13 @@ def _prepare_network_authority(src: Path, payload: dict) -> dict:
     if existing.get("nodes") and existing.get("edges"):
         topology = {"status": "PASS", "network": existing, "source": "SUPPLIED_NETWORK_GRAPH"}
     else:
-        topology = build_authoritative_topology(src, pmm, level_assignments=payload.get("network_level_assignments"))
+        topology = build_authoritative_topology(
+            src, pmm,
+            level_assignments=payload.get("network_level_assignments"),
+            architecture_evidence=payload.get("architecture_evidence"),
+            fixture_evidence=payload.get("fixture_evidence"),
+            declared_fixture_schedule=payload.get("declared_fixture_schedule"),
+        )
     if topology.get("status") != "PASS":
         return {"status": topology.get("status") or "INPUT_REQUIRED",
                 "missing_inputs": topology.get("missing_inputs") or [],
