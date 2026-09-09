@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0052",
+  "summary": "Register the owner-supplied cross-project mechanical reference corpus, freeze anti-overfitting cohorts, verify the Project 10 source pair hashes, and govern reference observations as non-authoritative engineering evidence.",
+  "requester": "project-owner",
+  "change_types": ["test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "qa": "Adds a privacy-safe cross-project reference inventory and tests that freeze cohorts, verify hashes, and prevent reference-value leakage into design rules.",
+    "manifest": "Verified reference identities are comparison metadata only; executable build identity is unchanged.",
+    "ui_api": "No runtime/API behavior changes; transitive QA impact reviewed and verified unaffected.",
+    "docs": "Adds the Mechanical Reference Corpus Standard and updates canonical SWCIS version references.",
+    "versioning": "Golden inventory change requires SWCIS minor bump from 4.4.0 to 4.5.0.",
+    "migration": "Golden-regression inventory advances additively from revision 2 to 3; existing optional_reference_projects remains for backward-compatible readers.",
+    "governance": "Concrete project inventories remain outside SWCIS machine contracts while SWCIS governs the selection/sealing/promotion policy.",
+    "deployment": "No production runtime or deployment artifact changes; deploy behavior is unaffected."
+  },
+  "evidence": {
+    "traceability": ["No engineering Rule ID is changed. Reference observations are explicitly marked non-authoritative and cannot self-promote into generation rules."],
+    "tests": ["tests/test_mechanical_reference_corpus.py", "tests/test_reference_truth_set.py", "SWCIS protected CI suite"],
+    "docs": ["docs/MECHANICAL_REFERENCE_CORPUS_STANDARD.md", "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump": ["SWCIS 4.5.0 because golden inventory changes are listed as a coordinated bump trigger."],
+    "migration": ["golden-regression-inventory/2 -> /3 is additive; optional_reference_projects is retained and cohort keys are added."],
+    "golden_regression": ["Nine complete architecture/mechanical pairs are hash-registered; Project 12 is reference-only; Project 11 is excluded; no unexecuted comparison is claimed PASS."],
+    "semantic_diff": ["Regression inventory gains development, validation, sealed-evaluation, reference-only, and excluded cohorts; generation leakage is explicitly forbidden."],
+    "artifact_diff": ["No generated customer CAD artifact is changed by this corpus-registration step."],
+    "numeric_diff": ["No engineering formula, constant, sizing threshold, or equipment-selection value is changed."],
+    "contract_diff": ["Golden inventory revision 3 adds cohort metadata while preserving optional_reference_projects for existing readers."],
+    "deployment_plan": ["No runtime deployment required for corpus registration. Merge only after protected CI is green."],
+    "rollback_plan": ["Revert the corpus/governance commit; no runtime data migration or customer artifact mutation is introduced."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 3,
+    "detectability": 1,
+    "score": 6,
+    "rationale": "The main risk is accidental reference leakage/overfitting; frozen disjoint cohorts and explicit non-authority tests make it readily detectable."
+  },
+  "waiver": null
+}
