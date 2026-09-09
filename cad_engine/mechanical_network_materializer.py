@@ -14,7 +14,7 @@ import tempfile
 import ezdxf
 from ezdxf import bbox
 
-from .topology_authority_v19 import _typed_level
+from .mechanical_network_topology import _typed_level
 
 
 APPID = "ENGITOOLS_V19"
