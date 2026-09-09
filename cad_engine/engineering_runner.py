@@ -1,0 +1,248 @@
+"""Engineering pipeline orchestration with strict print-plan isolation."""
+from __future__ import annotations
+import math
+from .engineering_pipeline import reconstruct_architecture,recognize_fixtures_equipment
+from .plan_segmentation import apply_plan_scopes
+from .system_requirements import derive_system_requirements
+from .mechanical_calculations import calculate_mechanical_loads
+from .topology import build_system_topology,SYSTEM_TARGETS
+from .routing import route_topology
+from .sizing import size_networks
+from .annotation import build_annotations
+from .detail_library import build_details_schedules
+from .project_hvac import design_project_hvac
+
+
+def _inside(point, polygon):
+    x,y=point; hit=False; j=len(polygon)-1
+    for i,(xi,yi) in enumerate(polygon):
+        xj,yj=polygon[j]
+        if ((yi>y)!=(yj>y)) and x < (xj-xi)*(y-yi)/((yj-yi) or 1e-12)+xi:
+            hit=not hit
+        j=i
+    return hit
+
+
+def _room_point(room):
+    p=room.get('label_point') or room.get('centroid') or room.get('point')
+    try:return float(p[0]),float(p[1])
+    except Exception:return None
+
+
+def _plan_for_point(architecture, point):
+    primary=set(architecture.get('primary_floor_plan_ids') or [])
+    plans=[p for p in architecture.get('plans') or [] if not primary or p.get('plan_id') in primary]
+    for plan in plans:
+        b=plan.get('bounds')
+        if b and b[0] <= point[0] <= b[2] and b[1] <= point[1] <= b[3]:return plan
+    return None
+
+
+def _compatible_room(kind, room_type):
+    allowed={'wc':{'toilet','bathroom'},'basin':{'toilet','bathroom'},'sink':{'kitchen'},
+             'shower':{'bathroom','toilet'},'floor_drain':{'bathroom','toilet','kitchen'}}
+    return room_type in allowed.get(kind,set())
+
+
+def _nearest_compatible_room(architecture, rooms, point, kind):
+    plan=_plan_for_point(architecture,point)
+    if not plan:return None
+    pid=plan.get('plan_id'); b=plan.get('bounds') or []
+    if len(b)!=4:return None
+    max_distance=math.hypot(b[2]-b[0],b[3]-b[1])*.18;candidates=[]
+    for room in rooms:
+        if room.get('plan_id') != pid or not _compatible_room(kind,room.get('type')):continue
+        rp=_room_point(room)
+        if not rp:continue
+        distance=math.dist(point,rp)
+        if distance <= max_distance:candidates.append((distance,room))
+    return min(candidates,key=lambda x:x[0])[1] if candidates else None
+
+
+def _merge_browser_fixture_evidence(architecture, recognition, evidence):
+    aliases={'faucet':'basin','basin':'basin','sink':'sink','toilet':'wc','wc':'wc',
+             'bath':'shower','bathtub':'shower','shower':'shower','floor_drain':'floor_drain'}
+    rows=list(recognition.get('detections') or []);rooms=list(architecture.get('rooms') or []);polygon_rooms=[r for r in rooms if r.get('polygon')]
+    accepted=0; fallback_accepted=0
+    for raw in evidence or []:
+        kind=aliases.get(str(raw.get('kind') or '').strip().lower())
+        try:point=(float(raw.get('x')),float(raw.get('y')))
+        except (TypeError,ValueError):continue
+        if not kind or any(r.get('type')==kind and ((r.get('point') or (0,0))[0]-point[0])**2+((r.get('point') or (0,0))[1]-point[1])**2 < 2500 for r in rows):continue
+        room=next((r for r in polygon_rooms if _inside(point,r['polygon'])),None);evidence_tags=['browser_upload_analyzer'];confidence=.90
+        if room:evidence_tags.append('coordinate_in_reconstructed_room')
+        else:
+            room=_nearest_compatible_room(architecture,rooms,point,kind)
+            if not room:continue
+            evidence_tags.extend(['strong_source_block','bounded_same_plan_semantic_room_fallback']);confidence=.84;fallback_accepted+=1
+        rows.append({'id':f"MEP-{len(rows)+1:03d}",'category':'fixture','type':kind,'point':point,'block':raw.get('name') or '',
+                     'layer':'ANALYZED-SOURCE-BLOCK','room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':confidence,
+                     'status':'detected','installed':True,'evidence':evidence_tags,'source_file':raw.get('source_file')});accepted+=1
+    recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
+    quality=dict(recognition.get('quality') or {});quality.update({'detected':len(rows),'room_assigned':sum(bool(r.get('room_id')) for r in rows),
+                    'browser_evidence_accepted':accepted,'browser_evidence_fallback_accepted':fallback_accepted});recognition['quality']=quality
+    return recognition
+
+
+def _discard_unlocated_native_fixtures(architecture, recognition):
+    """Reject symbol matches that cannot be placed in a compatible room.
+
+    Blocks in legends and parking annotations can look like sanitary symbols.
+    They are not installed equipment unless their coordinate is backed by a
+    reconstructed compatible architectural space. Browser evidence is merged
+    afterwards and has its own bounded semantic fallback.
+    """
+    rooms={r.get('id'):r for r in architecture.get('rooms') or []};kept=[];rejected=[]
+    for item in recognition.get('detections') or []:
+        if item.get('category')!='fixture':kept.append(item);continue
+        room=rooms.get(item.get('room_id'))
+        if room and _compatible_room(item.get('type'),room.get('type')):
+            kept.append(item)
+        else:rejected.append(item.get('id'))
+    recognition['detections']=kept
+    recognition['fixtures']=[r for r in kept if r.get('category')=='fixture']
+    recognition['equipment']=[r for r in kept if r.get('category')=='equipment']
+    quality=dict(recognition.get('quality') or {})
+    quality['native_fixture_false_positives_rejected']=len(rejected)
+    quality['native_fixture_false_positive_ids']=rejected
+    recognition['quality']=quality
+    return recognition
+
+
+def _add_locked_design_endpoints(architecture, recognition, design_basis):
+    """Create design endpoints only where user basis and room evidence agree.
+
+    Architectural wet-room labels are sufficient evidence for design intent even
+    when an uploaded drawing uses exploded or proprietary fixture symbols.  In
+    that case create explicit *designed* plumbing endpoints; never claim that
+    those fixtures were detected or installed in the source drawing.
+    """
+    rows=list(recognition.get('detections') or []);existing={(r.get('plan_id'),r.get('room_id'),r.get('type')) for r in rows}
+    for room in architecture.get('rooms') or []:
+        room_type=room.get('type');candidates=[]
+        if room_type=='kitchen':
+            candidates.append(('sink','architectural_kitchen_design_endpoint',1.0))
+        elif room_type=='toilet':
+            candidates.extend((
+                ('wc','architectural_toilet_design_endpoint',1.0),
+                ('basin','architectural_toilet_design_endpoint',1.0),
+                ('floor_drain','architectural_toilet_design_endpoint',1.0),
+            ))
+        elif room_type=='bathroom':
+            candidates.extend((
+                ('wc','architectural_bathroom_design_endpoint',1.0),
+                ('basin','architectural_bathroom_design_endpoint',1.0),
+                ('shower','architectural_bathroom_design_endpoint',1.0),
+                ('floor_drain','architectural_bathroom_design_endpoint',1.0),
+            ))
+        if room_type=='kitchen' and (design_basis or {}).get('gas_service') is True:
+            candidates.append(('stove','locked_gas_service_plus_architectural_kitchen',12.0))
+        if room_type in {'bathroom','toilet'}:
+            candidates.append(('exhaust_fan','architectural_wet_room_exhaust_requirement',150.0))
+        elif room_type=='kitchen':
+            candidates.append(('hood','architectural_kitchen_exhaust_requirement',300.0))
+        for kind,source,design_load in candidates:
+            key=(room.get('plan_id'),room.get('id'),kind)
+            if key in existing:continue
+            point=_room_point(room)
+            if not point:continue
+            category='fixture' if kind in {'wc','basin','sink','shower','floor_drain'} else 'equipment'
+            evidence=(['reconstructed_architectural_room','design_endpoint_not_source_detection'] if category=='fixture'
+                      else ['user_locked_design_basis','reconstructed_architectural_room'])
+            rows.append({'id':f"DESIGN-{kind.upper()}-{len(rows)+1:03d}",'category':category,'type':kind,'point':point,
+                         'room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':1.0,'status':'designed','installed':False,
+                         'evidence':evidence,'source':source,'design_load':design_load})
+            existing.add(key)
+    # A wall-mounted gas package is a gas load even on a level without a
+    # kitchen. Create one traceable design endpoint per architectural plan so
+    # topology, routing and the P.22 table describe the same approved load.
+    if (design_basis or {}).get('gas_service') is True and (design_basis or {}).get('heating_system')=='package_radiator':
+        rooms=architecture.get('rooms') or []
+        for plan in architecture.get('plans') or []:
+            plan_id=plan.get('plan_id')
+            candidates=[r for r in rooms if r.get('plan_id')==plan_id and r.get('type') in {'living','kitchen'} and _room_point(r)]
+            if not candidates: continue
+            room=sorted(candidates,key=lambda r:(r.get('type')!='living',str(r.get('id') or '')))[0]
+            key=(plan_id,room.get('id'),'water_heater')
+            if key in existing: continue
+            rows.append({'id':f"DESIGN-WATER_HEATER-{len(rows)+1:03d}",'category':'equipment','type':'water_heater',
+                         'point':_room_point(room),'room_id':room.get('id'),'plan_id':plan_id,'confidence':1.0,
+                         'status':'designed','installed':False,'evidence':['user_locked_design_basis','reconstructed_architectural_room'],
+                         'source':'locked_package_radiator_gas_endpoint','design_load':24.0})
+            existing.add(key)
+    recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
+    return recognition
+
+
+def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
+    architecture=reconstruct_architecture(src);recognition=recognize_fixtures_equipment(architecture)
+    architecture,recognition=apply_plan_scopes(src,architecture,recognition,(project_overrides or {}).get('authoritative_level_profiles'))
+    recognition=_discard_unlocated_native_fixtures(architecture,recognition)
+    recognition=_merge_browser_fixture_evidence(architecture,recognition,(project_overrides or {}).get('fixture_evidence'))
+    recognition=_add_locked_design_endpoints(architecture,recognition,design_basis or {})
+    requirements=derive_system_requirements(architecture,recognition,design_basis=design_basis)
+    calculations=calculate_mechanical_loads(architecture,recognition,requirements,design_basis=design_basis)
+    topology=build_system_topology(architecture,recognition,requirements,calculations,design_basis=design_basis);routing=route_topology(architecture,topology)
+    sizing=size_networks(topology,routing,recognition,calculations);annotations=build_annotations(routing,sizing,recognition,calculations,topology)
+    detail_overrides=dict(project_overrides or {})
+    if not detail_overrides.get('levels'):
+        primary=set(architecture.get('primary_floor_plan_ids') or []);levels=[]
+        for plan in architecture.get('plans') or []:
+            if primary and plan.get('plan_id') not in primary:continue
+            level=plan.get('level') or plan.get('plan_id')
+            if level and level not in levels:levels.append(level)
+        detail_overrides['levels']=levels or ['GROUND']
+    details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
+    hvac=design_project_hvac(architecture,project_overrides=project_overrides)
+    return {'version':'engineering-pipeline-v13.17','architecture':architecture,'recognition':recognition,'requirements':requirements,
+            'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac,
+            'design_basis':dict(design_basis or {})}
+
+
+def validate_pipeline(result):
+    errors=[];arch=result.get('architecture') or {};rec=result.get('recognition') or {};req=result.get('requirements') or {}
+    topology=result.get('topology') or {};routing=result.get('routing') or {};sizing=result.get('sizing') or {};annotations=result.get('annotations') or {};hvac=result.get('hvac') or {};basis=result.get('design_basis') or {}
+    if not arch.get('rooms'):errors.append('no_reconstructed_rooms')
+    if not req.get('project_systems'):errors.append('no_mechanical_system_requirements')
+    if arch.get('plans') and not arch.get('primary_floor_plan_ids'):errors.append('no_primary_mechanical_floor_plans')
+    if arch.get('plans') and (topology.get('quality') or {}).get('cross_plan_edges',0):errors.append('cross_plan_topology')
+    if (routing.get('quality') or {}).get('cross_plan_routes',0):errors.append('cross_plan_routes')
+    if hvac.get('status')=='FAIL':errors.append('project_hvac_geometry_invalid')
+    if (hvac.get('quality') or {}).get('cross_plan_routes',0):errors.append('cross_plan_hvac_routes')
+    if (hvac.get('quality') or {}).get('out_of_bounds',0):errors.append('hvac_route_out_of_plan')
+
+    route_rows=list(routing.get('routes') or []);route_ids={x.get('id') for x in route_rows if x.get('id')}
+    topology_rows=list(topology.get('edges') or []);topology_edge_ids={x.get('id') for x in topology_rows if x.get('id')};routed_edge_ids={x.get('edge_id') for x in route_rows if x.get('edge_id')}
+    if topology_edge_ids-routed_edge_ids:errors.append('unrouted_topology_edges')
+    if routing.get('rejected'):errors.append('rejected_project_routes')
+    if any(len(r.get('points') or [])<2 or float(r.get('length') or 0)<=0 or not r.get('system') or not r.get('plan_id') for r in route_rows):errors.append('invalid_project_route_geometry')
+
+    # A required routable system may not PASS with zero project endpoints/edges.
+    detections=list(rec.get('detections') or []);routable={'cold_water','hot_water','sanitary','vent','gas','exhaust'}
+    per_system={}
+    for system in sorted(set(req.get('project_systems') or []) & routable):
+        targets=SYSTEM_TARGETS.get(system,set());endpoints=[d for d in detections if d.get('type') in targets]
+        edge_count=sum(1 for e in topology_rows if e.get('system')==system);route_count=sum(1 for r in route_rows if r.get('system')==system)
+        per_system[system]={'endpoints':len(endpoints),'edges':edge_count,'routes':route_count}
+        if not endpoints:errors.append(f'missing_project_endpoint_evidence:{system}')
+        elif edge_count < len(endpoints) or route_count < len(endpoints):errors.append(f'insufficient_project_route_content:{system}')
+
+    sized_rows=list(sizing.get('segments') or []);sized_ids={x.get('route_id') for x in sized_rows if x.get('size_mm') is not None and float(x.get('size_mm') or 0)>0}
+    if route_ids-sized_ids:errors.append('unsized_routes')
+    if any(x.get('system')=='sanitary' and (x.get('slope_percent') is None or float(x.get('slope_percent') or 0)<=0) for x in sized_rows):errors.append('sanitary_route_without_slope')
+    if any(float(x.get('downstream_load') or 0)<=0 for x in sized_rows if x.get('system') in {'cold_water','hot_water','sanitary','vent','gas'}):errors.append('route_sizing_without_project_load')
+    annotated_ids={x.get('route_id') for x in annotations.get('annotations') or [] if x.get('route_id')}
+    if route_ids-annotated_ids:errors.append('unannotated_routes')
+
+    # Supported HVAC choices must produce actual room equipment and physical routes.
+    hvac_required=bool(basis.get('cooling_system') or basis.get('heating_system'))
+    if hvac_required and hvac.get('status')!='PASS':errors.append('selected_hvac_not_generated')
+    if hvac_required and not (hvac.get('equipment') or []):errors.append('selected_hvac_has_no_project_equipment')
+    if hvac_required and not (hvac.get('routes') or []):errors.append('selected_hvac_has_no_project_routes')
+
+    return {'status':'PASS' if not errors else 'FAIL','errors':sorted(set(errors)),
+            'metrics':{'plans':len(arch.get('plans') or []),'primary_floor_plans':len(arch.get('primary_floor_plan_ids') or []),'rooms':len(arch.get('rooms') or []),
+                       'detections':len(detections),'systems':len(req.get('project_systems') or []),'topology_edges':len(topology_edge_ids),'routes':len(route_ids),
+                       'routed_topology_edges':len(routed_edge_ids),'sized_routes':len(sized_ids),'annotated_routes':len(annotated_ids),
+                       'unresolved_local_shafts':len(topology.get('unresolved') or []),'hvac_equipment':len(hvac.get('equipment') or []),
+                       'hvac_routes':len(hvac.get('routes') or []),'system_content':per_system}}

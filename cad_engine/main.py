@@ -32,10 +32,7 @@ else:
     from .main_transport import app, transport_module
     from .build_identity import build_identity
     from .mechanical_release_contract import release_contract_status
-    from .mechanical_authority import design_mechanical_authority_site
-    from .runtime_core import design_dxf
-
-    transport_module.design_mechanical_authority_site = design_mechanical_authority_site
+        from .runtime_core import design_dxf
 
     @app.get("/version")
     def version():
