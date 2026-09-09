@@ -1,0 +1,34 @@
+{
+  "change_id": "SWCIS-2026-0053",
+  "summary": "Make PMM v3 and the v19 mechanical pipeline authoritative in the live generation path and demote legacy v17 to CAD materialization only after fail-closed traceability reconciliation.",
+  "requester": "project-owner",
+  "change_types": ["schema", "drawing_output", "qa", "test", "governance", "release_identity", "deployment"],
+  "changed_rule_ids": ["MEP-INPUT-001", "MEP-SUBMIT-001"],
+  "impacted_modules": ["pmm", "cad_designer", "detail_riser", "qa", "ui_api", "versioning", "governance", "deployment"],
+  "impact_notes": {
+    "pmm": "The existing additive PMM v3 schema becomes a mandatory runtime authority input. No PMM field is removed and no numeric engineering rule is changed.",
+    "cad_designer": "The v19 payload now carries the complete PMM, calculation rows, active systems and graph evidence. Legacy v17 is unreachable until PMM v3, calculation identities, network graph and v19 reconciliation pass.",
+    "detail_riser": "The graph-native v19 riser and calculation-output reconciliation execute before compatibility CAD materialization; DETAIL pseudo-level contamination and orphan identities block release.",
+    "qa": "Remove the architecture-only authority bypass that previously permitted a legacy-composed PRE_SUBMISSION artifact without v19 documentation reconciliation. Missing authoritative data now blocks materialization.",
+    "ui_api": "Public API fields are unchanged. Internal generation failures remain fail-closed INPUT_REQUIRED/FAIL responses.",
+    "versioning": "SWCIS moves from 4.5.0 to 4.6.0 because runtime gate and traceability behavior changes without a destructive schema migration.",
+    "governance": "Adds direct tests proving missing PMM/calculation/network evidence and failed v19 reconciliation cannot invoke the legacy renderer.",
+    "deployment": "Changes are restricted to the feature branch and isolated staging service. Production deployment is not authorized by this change."
+  },
+  "evidence": {
+    "traceability": ["PMM v3 policy NO_ORPHAN_ENGINEERING_OUTPUT is checked before CAD materialization.", "Calculation IDs are reconciled against graph-derived Plan/Riser/Schedule identities before renderer invocation."],
+    "tests": ["Payload propagation", "missing-authority fail-closed", "v19 failure blocks renderer", "calculation reconciliation failure blocks renderer", "renderer-only success path", "runtime version mismatch blocks renderer"],
+    "docs": ["Code-level authority contract and SWCIS history entry"],
+    "version_bump": ["SWCIS 4.6.0 gate/traceability minor update"],
+    "migration": ["No stored data migration; PMM v3 was already additive and deployed. Runtime now requires its existing authority contract for mechanical materialization."],
+    "golden_regression": ["No benchmark numeric values are introduced into generation. Existing cross-project corpus remains comparison-only."],
+    "semantic_diff": ["Legacy v17 changes role from engineering decision path to compatibility CAD materializer only after v19 authority PASS."],
+    "artifact_diff": ["Mechanical artifacts that lack PMM/calculation/network authority evidence are now blocked rather than emitted."],
+    "numeric_diff": ["None; formulas, default engineering numbers and sizing constants are unchanged."],
+    "contract_diff": ["Internal v19 runtime payload is expanded to carry PMM v3, calculations, active systems and governed evidence."],
+    "deployment_plan": ["Deploy feature branch to isolated staging service; verify commit identity, compile/unit tests and health; do not touch production until owner authorizes later release."],
+    "rollback_plan": ["Stop the isolated staging service or reset the feature branch. Production remains on the previously merged main commit and requires no rollback for this staging-only change."]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "The main behavioral risk is fail-closed generation blocking where upstream authority evidence is not yet populated. This is intentional and isolated to staging until later owner authorization."},
+  "waiver": null
+}
