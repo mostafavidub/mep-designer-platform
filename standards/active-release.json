@@ -1,11 +1,12 @@
 {
   "identity_policy": "git-commit-and-content-hashes",
   "production_cad_entrypoint": "cad_engine.main:app",
-  "pmm_schema_revision": "project-mechanical-model/v2",
+  "pmm_schema_revision": "project-mechanical-model/v3",
   "mechanical_rulebook_revision": "mechanical-rulebook/5.0",
   "manufacturer_schema_revision": "manufacturer-catalogue/1",
   "compliance_profile_revision": "mechanical-design-governance/1",
-  "version_source": "cad_engine/build_identity.py",
+  "build_identity_source": "cad_engine/build_identity.py",
+  "runtime_contract_source": "cad_engine/runtime_contract.py",
   "rollback_source": "approved-git-commit-or-tag",
   "historical_runtime_copies_allowed": false
 }
