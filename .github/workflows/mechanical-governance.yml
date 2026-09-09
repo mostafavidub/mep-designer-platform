@@ -1,4 +1,4 @@
-name: Mechanical Governance v1
+name: Mechanical Governance
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - 'tests/**'
       - 'AGENTS.md'
       - '.github/PULL_REQUEST_TEMPLATE.md'
-      - '.github/workflows/mechanical-governance-v1.yml'
+      - '.github/workflows/mechanical-governance.yml'
   push:
     branches: [main]
 
@@ -24,8 +24,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -r cad_engine/requirements.txt
       - run: pip install pytest matplotlib
-      - name: Validate ten-step governance and destructive tests
-        run: python -m pytest -q tests/test_mechanical_governance_v1.py tests/test_mechanical_release_hardening_v18.py tests/test_locked_design_endpoints_v18.py tests/test_route_sizing_hardening_v18.py
+      - name: Validate mechanical governance and destructive tests
+        run: python -m pytest -q tests/test_mechanical_governance_v1.py tests/test_mechanical_release_hardening_v18.py tests/test_locked_design_endpoints_v18.py tests/test_route_sizing_hardening_v18.py tests/test_mechanical_single_runtime.py
       - name: Reject missing or skipped locked capabilities
-        run: python -c "from cad_engine.mechanical_governance_v1 import validate_repository_governance as v; r=v(); assert r['status']=='PASS', r"
-
+        run: python -c "from cad_engine.mechanical_governance import validate_repository_governance as v; r=v(); assert r['status']=='PASS', r"

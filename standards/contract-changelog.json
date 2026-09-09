@@ -319,6 +319,16 @@
       "approval":{"status":"APPROVED","basis":"explicit user instruction after project 100 failed at pipeline QA while the UI incorrectly foregrounded north warnings"},
       "verification":{"focused_regression":"must pass including category-drift and proprietary-endpoint minimum sizing","full_regression":"562 PASS before production proprietary endpoint discovery; runtime guard executed separately because production image intentionally excludes git","runtime_version_guard":"PASS","production_retry":"two retries isolated endpoint metadata variants; next retry must pass route sizing and wall-crossing acceptance","required_ci":"must_pass before deployment"},
       "migration":{"forward":"Use traceable endpoint-type loads and a conservative per-system minimum when an already accepted endpoint has unknown source metadata; preserve non-terminal wall clashes as failures and report only actual error arrays as the failure cause.","rollback":"Never restore metadata-dependent zero-load sizing, allow non-terminal wall crossings, or present warnings as failures."}
+    },
+    {
+      "id":"GOV-2026-023",
+      "status":"APPROVED",
+      "summary":"Complete fail-closed final Heating, Gas and Split AC design packages for target sheets with exact manufacturer and PMM/calculation traceability.",
+      "affected_capabilities":["package_radiator","gas","split_ac","mechanical_network_sizing","mechanical_release_qa"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 7, 8 and 9 after closing prerequisite gates"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Existing PMM v3 inputs remain readable; final issue requires the additive engineering and manufacturer evidence.","rollback":"Revert the protected commit; never downgrade missing final evidence to PASS."}
     }
   ]
 }

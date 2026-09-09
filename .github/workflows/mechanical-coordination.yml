@@ -1,11 +1,12 @@
-name: Mechanical Coordination v19
+name: Mechanical Coordination
+
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
+
 jobs:
-  fail-closed-v19:
+  fail-closed:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -13,8 +14,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12', cache: pip}
       - run: pip install -r requirements.txt -r cad_engine/requirements.txt pytest
-      - name: Ordered v19 gates and full regression
-        env: {PYTHONPATH: '.:tests', MPLBACKEND: Agg, DATABASE_URL: 'sqlite:///./test_v19.db', DATA_DIR: /tmp/v19-data, CAD_OUTPUT_DIR: /tmp/v19-cad}
+      - name: Ordered mechanical gates and full regression
+        env: {PYTHONPATH: '.:tests', MPLBACKEND: Agg, DATABASE_URL: 'sqlite:///./test_mechanical.db', DATA_DIR: /tmp/mechanical-data, CAD_OUTPUT_DIR: /tmp/mechanical-cad}
         run: |
           pytest -q tests/test_coordination_v19.py
           pytest -q tests/test_manufacturer_selector_v19.py
@@ -23,6 +24,6 @@ jobs:
           pytest -q tests/test_calculation_book_v19.py tests/test_annotation_solver_v19.py
           pytest -q tests/test_golden_artifacts_v19.py
           pytest -q tests/test_engineering_feedback_v19.py tests/test_quality_acceptance_v19.py
-          pytest -q tests/test_mechanical_runtime_v19.py
+          pytest -q tests/test_mechanical_runtime_v19.py tests/test_mechanical_single_runtime.py tests/test_runtime_contract.py
           pytest -q
-          python -m cad_engine.version_sync_gate
+          python -m cad_engine.runtime_contract_sync_gate

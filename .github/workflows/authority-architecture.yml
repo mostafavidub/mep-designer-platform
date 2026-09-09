@@ -1,11 +1,11 @@
-name: Authority Architecture v14
+name: Authority Architecture
 on:
   pull_request:
     branches: [main]
   push:
-    branches: [authority-engine-v14]
+    branches: [main]
 jobs:
-  authority-v14:
+  authority-architecture:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

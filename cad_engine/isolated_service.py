@@ -5,21 +5,23 @@ from pathlib import Path
 from fastapi import FastAPI,Request
 from fastapi.responses import JSONResponse
 from .build_identity import build_identity
-from .version_manifest import CAD_API_VERSION,MECHANICAL_PIPELINE_VERSION,active_version_manifest
+from .runtime_contract import RUNTIME_IDENTITY,runtime_contract
 
-app=FastAPI(title="EngiTools CAD Designer",version=CAD_API_VERSION)
+app=FastAPI(title="EngiTools CAD Designer")
 _design_lock=asyncio.Lock()
 
 @app.get("/health")
 def health():
-    return {"ok":True,"service":"cad-designer","version":CAD_API_VERSION,"mechanical_pipeline_version":MECHANICAL_PIPELINE_VERSION,"mechanical_mode":"authority-project-driven","electrical_mode":"rule-driven-preliminary"}
+    return {"ok":True,"service":"cad-designer","runtime_identity":RUNTIME_IDENTITY,
+            "runtime_contract":runtime_contract(),"mechanical_mode":"authority-project-driven",
+            "electrical_mode":"rule-driven-preliminary"}
 
 @app.get("/version")
-def version(): return active_version_manifest()
+def version(): return build_identity()
 
 @app.get("/mechanical/status")
 def mechanical_status():
-    from .mechanical_release_contract_v19 import release_contract_status
+    from .mechanical_release_contract import release_contract_status
     status=release_contract_status();status["production_entrypoint"]="cad_engine.main:app";status["build"]=build_identity();return status
 
 def _run_worker(payload:dict)->tuple[int,dict]:

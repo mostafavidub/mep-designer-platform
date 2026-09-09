@@ -1,8 +1,10 @@
 """Project Mechanical Model (PMM).
 
-The PMM is the machine-readable mechanical source-of-truth snapshot.  Existing
+The PMM is the machine-readable mechanical source-of-truth snapshot. Existing
 planner/CAD fields remain backward compatible; v3 adds deterministic engineering
-identities and traceability metadata without changing design decisions.
+identities and traceability metadata. Route-grade level region bounds are kept
+when architecture analysis supplies them so downstream topology never has to
+guess a fixture/equipment level.
 """
 from copy import deepcopy
 from hashlib import sha256
@@ -39,6 +41,7 @@ def _level_rows(auto):
             rows.append({
                 "name": name,
                 "roof": bool(profile.get("roof")),
+                "region_bounds": deepcopy(profile.get("region_bounds")),
                 "room_counts": deepcopy(profile.get("room_counts") or {}),
                 "recognized_room_labels": int(profile.get("recognized_room_labels") or 0),
                 "wet_fixture_candidate": bool(profile.get("wet_fixture_candidate")),
@@ -60,12 +63,14 @@ def _level_rows(auto):
         if isinstance(item, dict):
             name = item.get("name")
             confidence = item.get("confidence")
+            region_bounds = deepcopy(item.get("region_bounds"))
         else:
             name = item
             confidence = None
+            region_bounds = None
         if name:
             rows.append({
-                "name": str(name), "roof": False, "room_counts": {},
+                "name": str(name), "roof": False, "region_bounds": region_bounds, "room_counts": {},
                 "level_confidence": confidence, "level_evidence": [],
             })
     return rows
@@ -216,6 +221,7 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
             "answers_present": sorted(str(key) for key in answers.keys()),
             "structural_rcp_policy": "authoritative-input-only",
             "manufacturer_policy": "official-datasheet-or-design-envelope",
+            "level_geometry_policy": "region_bounds_preserved_when_authoritatively_detected",
         },
     }
 
