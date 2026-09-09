@@ -9,7 +9,7 @@ from pathlib import Path
 from app.fixture_equipment_rulebook import RULEBOOK_VERSION as FIXTURE_RULEBOOK_VERSION
 from app.mechanical_rulebook import RULEBOOK_VERSION as APP_RULEBOOK_VERSION
 
-from .version_manifest import active_version_manifest
+from .runtime_contract import active_version_manifest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,7 +20,7 @@ def _generator_uses_active_rulebook_version(expected: str) -> bool:
     """Verify the generator contract without importing optional python-docx."""
     source = RULEBOOK_GENERATOR.read_text(encoding="utf-8")
     if (
-        "from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION" in source
+        "from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_VERSION" in source
         and "VERSION = MECHANICAL_RULEBOOK_VERSION" in source
     ):
         return True

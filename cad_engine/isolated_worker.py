@@ -6,8 +6,8 @@ from fastapi import HTTPException
 
 def main(request_path:str,response_path:str)->int:
     from .main import install_ezdxf_memory_guard
-    from . import main_v15 as base
-    from .mechanical_authority_site_v19 import design_mechanical_authority_site
+    from . import main_transport as base
+    from .mechanical_authority import design_mechanical_authority_site
     from .runtime_core import DesignRequest
     install_ezdxf_memory_guard();base.design_mechanical_authority_site=design_mechanical_authority_site
     payload=json.loads(Path(request_path).read_text(encoding="utf-8"))
