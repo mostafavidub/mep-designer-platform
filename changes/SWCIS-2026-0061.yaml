@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0061",
+  "summary": "Close live Staging generation preflight gaps exposed after canonical runtime transport repair, including source-backed typical-floor typing and truthful integrated runtime health.",
+  "requester": "project-owner",
+  "change_types": ["routing", "drawing_output", "ui_api", "test", "governance", "documentation", "release_identity"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["routing", "cad_designer", "detail_riser", "ui_api", "qa", "manifest", "equipment", "manufacturer_selector", "sizing", "versioning", "migration", "governance", "deployment", "docs"],
+  "impact_notes": {
+    "routing": "Accept an explicit architectural typical-floor range as one source-backed plan level identity instead of requesting an impossible single ordinal.",
+    "cad_designer": "Propagate the typed level consistently through topology, riser documentation and exact-board materialization.",
+    "detail_riser": "Treat a canonical TYPICAL_n_m level as a valid source plan/riser level.",
+    "ui_api": "Report integrated panel/CAD build equality truthfully and expose preflight failures before paid execution.",
+    "qa": "Add positive Persian/English typical-floor tests, destructive pseudo-level tests and health identity regression.",
+    "manifest": "Match typical-floor network levels to the same source-backed drawing manifest level.",
+    "equipment": "Retain equipment-to-level identity when the source plan is an explicit typical-floor range.",
+    "manufacturer_selector": "No selection rule changes; retain downstream selector regression because equipment identity is in the affected closure.",
+    "sizing": "No numeric sizing rule changes; retain downstream sizing regression because topology level identity is in the affected closure.",
+    "versioning": "No schema or rule revision changes; automatic Git identity advances.",
+    "migration": "No stored data migration; existing project analysis remains readable and fresh retries rebuild PMM.",
+    "governance": "Record owner-authorized blocker repair without weakening fail-closed gates.",
+    "deployment": "Deploy exact all-green commit to panel and CAD Staging, then execute a real smoke test.",
+    "docs": "Document canonical typical-floor identity and health comparison."
+  },
+  "evidence": {
+    "traceability": ["architecture level title -> canonical level type -> topology -> riser -> manifest plan board"],
+    "tests": ["positive typical floor range", "negative DETAIL pseudo-level", "health nested/direct identity", "full regression"],
+    "docs": ["Runtime contract matrix and topology level policy"],
+    "version_bump": ["No semantic revision bump: source-backed level interpretation and health defect repair"],
+    "migration": ["Fresh PMM rebuild on retry; no database changes"],
+    "golden_regression": ["Existing routing, riser, materialization and synthetic negative suites remain mandatory"],
+    "semantic_diff": ["Explicit typical-floor range becomes one canonical plan identity; unknown/detail labels still fail closed"],
+    "artifact_diff": ["Typical plan routes can materialize onto their matching approved typical-floor board"],
+    "numeric_diff": ["No engineering numeric default changes"],
+    "contract_diff": ["Health compares complete build identity dictionaries rather than a nested hash string to a dictionary"],
+    "deployment_plan": ["Merge all-green main, sync the Staging branch, verify deployed commit and run upload-to-output smoke test"],
+    "rollback_plan": ["Redeploy prior approved Git commit; never infer an unknown or detail pseudo-level"]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 1, "score": 15, "rationale": "Typical floor handling affects routing across multi-storey projects, but exact parser, topology, riser, board and live E2E checks expose errors."},
+  "waiver": null
+}

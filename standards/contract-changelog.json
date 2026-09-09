@@ -359,6 +359,16 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 10 through 13"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
       "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete Exhaust/Rainwater/Riser/Manufacturer database evidence.","rollback":"Revert the protected commit; never treat incomplete or unofficial evidence as final."}
+    },
+    {
+      "id":"GOV-2026-033",
+      "status":"APPROVED",
+      "summary":"Preserve explicit architectural typical-floor ranges through canonical topology, riser and board materialization; compare integrated build identities truthfully; block Mechanical payment when runtime synchronization preflight fails.",
+      "affected_capabilities":["mechanical_routing","detail_riser","approved_drawing_manifest","runtime_health","commercial_payment_preflight"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs and complete the eight-project Staging evaluation"},
+      "verification":{"positive_typical_floor_tests":"must_pass","destructive_detail_level_test":"must_pass","payment_preflight_test":"must_pass","full_regression":"must_pass","staging_smoke":"must_pass before eight-project generation"},
+      "migration":{"forward":"Fresh retries derive one TYPICAL_n_m identity from an explicit source range; no stored-data migration.","rollback":"Revert the protected commit; never infer levels from unknown or detail labels and never charge against an unsynchronized Mechanical runtime."}
     }
   ]
 }
