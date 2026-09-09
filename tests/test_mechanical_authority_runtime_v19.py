@@ -101,7 +101,8 @@ class MechanicalAuthorityRuntimeV19Tests(unittest.TestCase):
     @patch.object(authority, 'materialize_authoritative_network')
     @patch.object(authority, '_design_v17')
     @patch.object(authority, 'run_v19_pipeline')
-    def test_v17_is_shell_and_v19_network_materializer_runs_after_authority_pass(self, pipeline, renderer, materializer):
+    def test_v17_is_renderer_only_after_authority_pass(self, pipeline, renderer, materializer):
+        """Locked regression identity: v17 cannot decide network engineering after v19 PASS."""
         pipeline.return_value = self.passing_pipeline()
         renderer.return_value = {'status': 'PASS', 'composition': {}}
         materializer.return_value = {'status': 'PASS', 'materialized_segments': 1, 'exact_file_reopened': True}
