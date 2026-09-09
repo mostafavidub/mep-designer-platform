@@ -12,8 +12,8 @@ import json
 import math
 import re
 
-from .architecture_reconstruction_v14 import reconstruct_architecture
-from .fixture_recognition_v14 import recognize_fixtures_equipment
+from .architecture_reconstruction import reconstruct_architecture
+from .fixture_recognition import recognize_fixtures_equipment
 
 
 GRAPH_SCHEMA = "mechanical-network-graph/1"

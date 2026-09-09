@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PMM_SCHEMA_REVISION = "project-mechanical-model/v2"
+PMM_SCHEMA_REVISION = "project-mechanical-model/v3"
 RULEBOOK_SCHEMA_REVISION = "mechanical-rulebook/5.0"
 MANUFACTURER_SCHEMA_REVISION = "manufacturer-catalogue/1"
 COMPLIANCE_PROFILE_REVISION = "mechanical-design-governance/1"
@@ -50,26 +50,19 @@ def _build_timestamp() -> str:
     commit_time = _git("show", "-s", "--format=%cI", "HEAD")
     if commit_time:
         return commit_time
-    # Production images intentionally omit .git. A release can span multiple
-    # Railway services, whose deployment IDs differ despite identical source.
-    # Use the shared immutable commit before the service-local deployment ID.
     commit_sha = _commit_sha()
-    if commit_sha != "UNKNOWN":
-        return f"commit:{commit_sha}"
-    # A deployment id is service-local and cannot identify a shared release.
     return f"commit:{commit_sha}"
 
 
 def build_identity() -> dict[str, object]:
     dependency_files = [ROOT / "requirements.txt", ROOT / "cad_engine" / "requirements.txt"]
     rulebook_root = ROOT / "data" / "rulebook"
-    # DOCX is a generated delivery artifact whose ZIP metadata can vary by
-    # process. Identity is derived from its authoritative, deterministic inputs.
     rulebook_files = [
         path for path in rulebook_root.glob("*")
         if path.suffix.lower() in {".py", ".b64", ".txt"}
     ]
-    manufacturer_files = list((ROOT / "data" / "manufacturer").rglob("*")) if (ROOT / "data" / "manufacturer").exists() else []
+    manufacturer_root = ROOT / "data" / "manufacturer"
+    manufacturer_files = list(manufacturer_root.rglob("*")) if manufacturer_root.exists() else []
     compliance_files = [ROOT / "standards" / "mechanical-design-governance-v1.json"]
     pmm_files = [ROOT / "app" / "project_mechanical_model.py", ROOT / "app" / "mechanical_basis_contract.py"]
     identity = {

@@ -5,20 +5,20 @@ on:
     paths:
       - 'cad_engine/**'
       - 'app/main_health.py'
-      - 'docs/ACTIVE_VERSION_MATRIX.md'
+      - 'docs/RUNTIME_CONTRACT_MATRIX.md'
       - 'standards/active-release.json'
-      - 'tests/test_active_version_contract.py'
+      - 'tests/test_runtime_contract.py'
       - 'tests/test_mechanical_authority_v15.py'
       - 'tests/test_mechanical_single_runtime.py'
       - '.github/workflows/mechanical-authority.yml'
   push:
-    branches: [main, refactor/mechanical-single-runtime-0055]
+    branches: [main]
     paths:
       - 'cad_engine/**'
       - 'app/main_health.py'
-      - 'docs/ACTIVE_VERSION_MATRIX.md'
+      - 'docs/RUNTIME_CONTRACT_MATRIX.md'
       - 'standards/active-release.json'
-      - 'tests/test_active_version_contract.py'
+      - 'tests/test_runtime_contract.py'
       - 'tests/test_mechanical_authority_v15.py'
       - 'tests/test_mechanical_single_runtime.py'
       - '.github/workflows/mechanical-authority.yml'
@@ -36,7 +36,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -r cad_engine/requirements.txt
       - run: pip install pytest
-      - run: python -m py_compile cad_engine/main.py cad_engine/mechanical_authority.py cad_engine/mechanical_pipeline.py cad_engine/mechanical_release_contract.py cad_engine/version_manifest.py
+      - run: python -m py_compile cad_engine/main.py cad_engine/main_transport.py cad_engine/mechanical_authority.py cad_engine/mechanical_pipeline.py cad_engine/mechanical_release_contract.py cad_engine/runtime_contract.py
       - run: python -c "import cad_engine.main as m; assert m.mechanical_status()['runtime_identity'] == 'mechanical'"
-      - run: python -m pytest -q tests/test_mechanical_authority_v15.py tests/test_active_version_contract.py tests/test_mechanical_single_runtime.py
+      - run: python -m pytest -q tests/test_mechanical_authority_v15.py tests/test_runtime_contract.py tests/test_mechanical_single_runtime.py
       - run: docker build -f cad_engine/Dockerfile . -t engitools-cad:test

@@ -3,7 +3,7 @@ name: Mechanical Coordination
 on:
   pull_request:
   push:
-    branches: [main, refactor/mechanical-single-runtime-0055]
+    branches: [main]
 
 jobs:
   fail-closed:
@@ -24,6 +24,6 @@ jobs:
           pytest -q tests/test_calculation_book_v19.py tests/test_annotation_solver_v19.py
           pytest -q tests/test_golden_artifacts_v19.py
           pytest -q tests/test_engineering_feedback_v19.py tests/test_quality_acceptance_v19.py
-          pytest -q tests/test_mechanical_runtime_v19.py tests/test_mechanical_single_runtime.py
+          pytest -q tests/test_mechanical_runtime_v19.py tests/test_mechanical_single_runtime.py tests/test_runtime_contract.py
           pytest -q
-          python -m cad_engine.version_sync_gate
+          python -m cad_engine.runtime_contract_sync_gate
