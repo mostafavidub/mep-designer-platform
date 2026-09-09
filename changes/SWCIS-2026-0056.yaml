@@ -1,0 +1,35 @@
+{
+  "change_id": "SWCIS-2026-0056",
+  "summary": "Complete the Single Living System migration by removing release-numbered modules, labels, routes, XDATA identities and version-manifest semantics from the active Mechanical runtime import closure. Historical engine versions remain Git history only; schema and governance revisions remain explicit metadata.",
+  "requester": "project-owner",
+  "change_types": ["runtime", "drawing_output", "ui_api", "test", "governance", "documentation", "release_identity", "deployment"],
+  "changed_rule_ids": ["MEP-SUBMIT-001"],
+  "impacted_modules": ["cad_designer", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "cad_designer": "The complete reachable Mechanical runtime from cad_engine.main:app is canonical and unversioned; no reachable *_vNN implementation is permitted.",
+    "detail_riser": "Engineering behavior is preserved while version-labelled authority/pipeline/documentation implementation names are canonicalized.",
+    "qa": "Runtime guard is strengthened to inspect the transitive Python import closure and reject release-number identity in active Mechanical runtime labels and artifact XDATA.",
+    "manifest": "Runtime uses build identity and explicit schema/contract revisions rather than an active Mechanical version manifest.",
+    "ui_api": "Mechanical API mode/status fields use semantic names without v15/v17/v19 release identity.",
+    "docs": "Single Living System standard records that engine history exists only in Git and schema revisions are not engine versions.",
+    "versioning": "Mechanical runtime versions are removed; SWCIS revision is governance metadata only.",
+    "migration": "No stored project migration and no engineering numeric migration. Runtime module names and response metadata are migrated in place.",
+    "governance": "Legacy version-labelled workflow sentinel is retired after the governance contract points to the canonical workflow.",
+    "deployment": "Deploy only the exact all-green SHA to the isolated Railway staging project. Production is not authorized."
+  },
+  "evidence": {
+    "tests": ["transitive runtime import closure contains no *_vNN modules", "canonical endpoints contain no engine release-number identity", "Mechanical XDATA APPID is canonical and unversioned", "full repository regression passes"],
+    "docs": ["docs/SINGLE_LIVING_SYSTEM_STANDARD.md"],
+    "version_bump": ["SWCIS 4.9.0 governance update only; Mechanical runtime remains unversioned"],
+    "migration": ["No data migration required; code-path migration only"],
+    "golden_regression": ["No intended calculation, topology, sizing, equipment selection or reference-truth change"],
+    "semantic_diff": ["All active Mechanical engine version labels and module identities are replaced by canonical semantic identities"],
+    "artifact_diff": ["DXF engineering geometry is unchanged; XDATA APPID/identity-policy text changes from release-number identity to ENGITOOLS_MECHANICAL"],
+    "numeric_diff": ["No engineering numeric change"],
+    "contract_diff": ["Runtime contract consists of build identity, canonical entrypoint and explicit schema/policy revisions; it is not an engine version manifest"],
+    "deployment_plan": ["All CI must pass, then exact green SHA is deployed to isolated Railway staging and /health /version /system_health /mechanical/status are verified"],
+    "rollback_plan": ["Redeploy prior staging SHA c2c51251e74d4fe9d34f7ec6f81e5a188c4bdbb5. Production remains unchanged."]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "Large module-identity migration is behavior-preserving but touches the active runtime closure; transitive guard, full CI and isolated staging make regressions observable before release."},
+  "waiver": null
+}
