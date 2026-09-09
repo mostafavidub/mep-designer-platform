@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -61,6 +62,17 @@ class CommercialProjectFlowTests(unittest.TestCase):
         self.assertIn('disabled aria-disabled="true"', page.text)
         rejected = self.client.post(f'/projects/{pid}/pay/wallet')
         self.assertEqual(rejected.status_code, 409)
+
+    def test_mechanical_runtime_preflight_blocks_payment_without_marking_quote_paid(self):
+        pid = self._ready_project('mechanical')
+        with patch('app.commercial_flow.assert_runtime_contract_synchronized', side_effect=RuntimeError('mismatch')):
+            rejected = self.client.post(f'/projects/{pid}/pay/gateway')
+        self.assertEqual(rejected.status_code, 503)
+        commercial = app.state.commercial
+        db = legacy.Session()
+        quote = db.query(commercial['ProjectQuote']).filter(commercial['ProjectQuote'].project_id == pid).first()
+        self.assertTrue(quote is None or not quote.paid)
+        db.close()
 
     def test_admin_pricing_controls_area_formula(self):
         saved = self.client.post('/admin/pricing/electrical', data={

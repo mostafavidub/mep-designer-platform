@@ -34,6 +34,11 @@ class MechanicalSeoArticleTests(unittest.TestCase):
         self.assertIn('identity_matches', payload['cad_designer'])
         self.assertEqual(response.json().get('status'), 'ok')
 
+    def test_integrated_system_health_compares_complete_identity(self):
+        payload = self.client.get('/system_health').json()
+        if payload['cad_designer']['reachable']:
+            self.assertTrue(payload['cad_designer']['identity_matches'])
+
 
 if __name__ == '__main__':
     unittest.main()
