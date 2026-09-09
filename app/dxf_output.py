@@ -476,8 +476,16 @@ def run_design_dxf(project_id, revision_id):
             design_answers['_runtime_contract'] = runtime_contract()
             analysis = dict(p.analysis or {})
             pmm = analysis.get('project_mechanical_model') or {}
+            architectural_auto = analysis.get('architectural_auto') or {}
             design_answers['_canonical_input_contract'] = {
                 'project_mechanical_model': pmm,
+                # These are architecture-only facts produced before design.  They
+                # preserve level/room/shaft provenance that the CAD worker cannot
+                # reliably reconstruct from flattened DXF layers on its own.
+                'architecture_evidence': architectural_auto.get('architecture_model') or {},
+                'fixture_evidence': architectural_auto.get('fixture_detections') or [],
+                'declared_fixture_schedule': design_answers.get('fixture_schedule'),
+                'mechanical_shaft_route': design_answers.get('mechanical_shaft_route'),
                 'calculation_rows': analysis.get('calculation_rows_canonical'),
                 'active_systems': analysis.get('active_systems_canonical'),
                 'coordination_inputs': analysis.get('coordination_inputs_canonical') or {},
