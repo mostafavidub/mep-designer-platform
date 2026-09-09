@@ -1,0 +1,6 @@
+# Legacy compatibility artifact only.
+# This file is intentionally NOT a GitHub Actions workflow: it has no name,
+# no event trigger, and no jobs. The locked historical governance contract
+# still references this path during compatibility retirement.
+compatibility_artifact: true
+canonical_workflow: .github/workflows/mechanical-governance.yml
