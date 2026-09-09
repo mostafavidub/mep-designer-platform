@@ -1,8 +1,8 @@
 """The only production CAD entrypoint.
 
-History lives in Git. Production-facing mechanical imports and routes are
-unversioned; historical implementation modules are compatibility debt only and
-must never be configured as deployment entrypoints.
+History lives in Git. Production-facing imports, routes and engine identities are
+unversioned. Historical implementation modules are isolated behind compatibility
+boundaries and are never valid deployment entrypoints.
 """
 import os
 
@@ -29,17 +29,13 @@ else:
 
     install_ezdxf_memory_guard()
 
-    # The web/API transport is transitional compatibility code. Mechanical
-    # engineering authority is injected only from the canonical unversioned
-    # surface below. No versioned mechanical route is exposed here.
-    from . import main_v15 as _cad_transport
-    from .main_v18 import app
+    from .cad_transport import app, transport_module
     from .build_identity import build_identity
     from .mechanical_release_contract import release_contract_status
     from .mechanical_authority import design_mechanical_authority_site
     from .runtime_core import design_dxf
 
-    _cad_transport.design_mechanical_authority_site = design_mechanical_authority_site
+    transport_module.design_mechanical_authority_site = design_mechanical_authority_site
 
     @app.get("/version")
     def version():
