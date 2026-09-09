@@ -54,8 +54,8 @@ def customer_safe_error(value):
 legacy.templates.env.globals['customer_safe_error'] = customer_safe_error
 
 
-def _purge_processing_files(pid: int, keep_output: bool = True):
-    """Remove every local artifact; R2 is the only durable file store."""
+def _purge_processing_files(pid: int, keep_output: bool = True, preserve_local_output: bool = False):
+    """Remove transient workspaces while retaining the selected durable artifact."""
     pdir = legacy.DATA_DIR / 'projects' / str(pid)
     try:
         durable_input = artifact_storage.input_is_durable(pid)
@@ -67,7 +67,8 @@ def _purge_processing_files(pid: int, keep_output: bool = True):
                 shutil.rmtree(path, ignore_errors=True)
             else:
                 path.unlink(missing_ok=True)
-    shutil.rmtree(pdir / 'output', ignore_errors=True)
+    if not preserve_local_output:
+        shutil.rmtree(pdir / 'output', ignore_errors=True)
     shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(pid), ignore_errors=True)
     if not keep_output:
         shutil.rmtree(pdir, ignore_errors=True)
@@ -624,11 +625,11 @@ def run_design_dxf(project_id, revision_id):
 
         set_project_progress(p, 'uploading_output')
         db.commit()
-        durable_uri = artifact_storage.upload_output(
-            p.id, r.revision_no, discipline, dst,
-        )
+        durable_uri = artifact_storage.upload_output(p.id, r.revision_no, discipline, dst)
         if not durable_uri:
-            raise RuntimeError('ذخیره خروجی نهایی در R2 تأیید نشد؛ فایل محلی نگهداری نشد.')
+            durable_uri = artifact_storage.persist_local_output(
+                p.id, r.revision_no, discipline, dst, legacy.DATA_DIR,
+            )
         if transfer_root:
             shutil.rmtree(transfer_root,ignore_errors=True)
             transfer_root=None
@@ -648,7 +649,10 @@ def run_design_dxf(project_id, revision_id):
         clear_active_recovery(p)
         set_project_progress(p, 'completed')
         db.commit()
-        _purge_processing_files(p.id, keep_output=True)
+        _purge_processing_files(
+            p.id, keep_output=True,
+            preserve_local_output=not str(durable_uri).startswith('s3://'),
+        )
         artifact_storage.delete_project_inputs(p.id)
     except Exception as exc:
         r.status = 'failed'
