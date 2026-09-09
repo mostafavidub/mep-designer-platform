@@ -389,6 +389,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete all repairs after blind Staging project 3 exposed overlapping source regions"},
       "verification":{"nested_region_test":"must_pass","equal_region_negative_test":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
       "migration":{"forward":"Fresh topology rebuild resolves only a unique most-specific source boundary.","rollback":"Revert; never choose among equal minimum regions."}
+    },
+    {
+      "id":"GOV-2026-036","status":"APPROVED",
+      "summary":"Preserve exact architecture-model level bounds in PMM when profile summaries omit them, using strict same-name matching only.",
+      "affected_capabilities":["pmm","mechanical_routing","level_identity"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction after blind Staging project 3 proved valid architecture bounds were discarded by the PMM bridge"},
+      "verification":{"exact_match_test":"must_pass","nonmatch_negative":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
+      "migration":{"forward":"Fresh PMM rebuild copies existing exact-name bounds.","rollback":"Revert; never fuzzy-match level names or invent bounds."}
     }
   ]
 }
