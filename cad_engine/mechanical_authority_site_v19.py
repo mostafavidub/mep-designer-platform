@@ -2,6 +2,7 @@
 from __future__ import annotations
 import os
 from pathlib import Path
+from app.project_mechanical_model import build_project_mechanical_model
 from .mechanical_authority_site_v17 import design_mechanical_authority_site as _design_v17
 from .mechanical_authority_v15 import build_design_overrides
 from .engineering_runner_v13 import run_engineering_pipeline, validate_pipeline
@@ -17,9 +18,28 @@ def _runtime_contract_errors(answers: dict) -> list[str]:
     return [f"runtime_contract_mismatch:{key}" for key,value in active.items() if supplied.get(key)!=value]
 
 
+def _derived_pmm_from_approved_analysis(answers: dict, plan_analysis: dict) -> dict:
+    """Build the existing PMM v3 contract from the approved workflow snapshot.
+
+    Older workflow records may predate persisted PMM installation. Production may
+    derive the same deterministic PMM from the already-approved analysis and
+    drawing manifest, but it may not invent missing architecture evidence.
+    """
+    manifest=answers.get("_approved_drawing_manifest")
+    if manifest is None or not (plan_analysis.get("architectural_auto") or {}).get("level_profiles"):
+        return {}
+    rows=list(manifest or [])
+    return build_project_mechanical_model(
+        analysis=plan_analysis,
+        answers=answers,
+        scope={},
+        proposal={"drawing_manifest":rows,"total_plans":len(rows)},
+    )
+
+
 def _v19_payload(answers: dict, plan_analysis: dict) -> dict:
     contract=answers.get("_v19_input_contract") or {}
-    pmm=contract.get("project_mechanical_model") or plan_analysis.get("project_mechanical_model") or {}
+    pmm=contract.get("project_mechanical_model") or plan_analysis.get("project_mechanical_model") or _derived_pmm_from_approved_analysis(answers,plan_analysis)
     calculation_rows=contract.get("calculation_rows")
     if calculation_rows is None:
         calculation_rows=plan_analysis.get("calculation_rows_v19")
