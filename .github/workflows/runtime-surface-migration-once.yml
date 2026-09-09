@@ -50,6 +50,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           migrations = [
               ('.github/workflows/authority-v14.yml', '.github/workflows/authority-architecture.yml', 'Authority Architecture v14', 'Authority Architecture', 'authority-v14:', 'authority-architecture:'),
               ('.github/workflows/architecture-preservation-v16.yml', '.github/workflows/architecture-preservation.yml', 'Architecture Preservation Gate v16', 'Architecture Preservation Gate', None, None),
@@ -61,25 +62,42 @@ jobs:
               text = text.replace(f'name: {old_name}', f'name: {new_name}', 1)
               if old_job and new_job:
                   text = text.replace(old_job, new_job, 1)
-              # Release-numbered feature branches are history, not an active CI identity.
-              import re
               text = re.sub(r'push:\n\s+branches:\s*\[[^\]]*v\d+[^\]]*\]', 'push:\n    branches: [main]', text, count=1)
               np.write_text(text, encoding='utf-8')
               op.unlink()
+          PY
+      - name: Migrate synchronization references to runtime contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              'cad_engine/version_sync_gate.py': 'cad_engine/runtime_contract_sync_gate.py',
+              'cad_engine.version_sync_gate': 'cad_engine.runtime_contract_sync_gate',
+              'data/rulebook/generate_rulebook_v4.py': 'data/rulebook/generate_rulebook.py',
+              'docs/ACTIVE_VERSION_MATRIX.md': 'docs/RUNTIME_CONTRACT_MATRIX.md',
+              '.github/workflows/mechanical-authority-v15.yml': '.github/workflows/mechanical-authority.yml',
+              'active_version_synchronization': 'runtime_contract_synchronization',
+          }
+          for rel in ('standards/change-impact-matrix.json', 'standards/swcis/change_impact_matrix.yaml', '.github/workflows/mechanical-coordination.yml'):
+              p = Path(rel)
+              text = p.read_text(encoding='utf-8')
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              p.write_text(text, encoding='utf-8')
           PY
       - name: Retire active version-era synchronization surfaces
         run: |
           rm -f .github/workflows/active-version-sync.yml
           rm -f tests/test_active_version_contract.py
           rm -f docs/ACTIVE_VERSION_MATRIX.md
-          if grep -R --line-number --exclude='version_sync_gate.py' --exclude-dir=.git 'version_sync_gate' .; then
-            echo 'version_sync_gate still has active references' >&2
+          rm -f cad_engine/version_sync_gate.py
+          if grep -R --line-number --exclude='runtime-surface-migration-once.yml' --exclude-dir=.git -E 'version_sync_gate|ACTIVE_VERSION_MATRIX|generate_rulebook_v[0-9]+\.py|active_version_synchronization' .; then
+            echo 'active version-era synchronization reference remains' >&2
             exit 1
           fi
-          rm -f cad_engine/version_sync_gate.py
       - name: Commit canonical runtime and CI surfaces
         run: |
-          if git diff --quiet && git status --porcelain | grep -q '^$'; then exit 0; fi
+          if [ -z "$(git status --porcelain)" ]; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
