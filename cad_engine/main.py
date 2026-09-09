@@ -29,7 +29,7 @@ else:
 
     install_ezdxf_memory_guard()
 
-    from .cad_transport import app, transport_module
+    from .main_transport import app, transport_module
     from .build_identity import build_identity
     from .mechanical_release_contract import release_contract_status
     from .mechanical_authority import design_mechanical_authority_site
