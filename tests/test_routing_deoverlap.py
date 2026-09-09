@@ -9,6 +9,12 @@ def _key(point):
     return round(float(point[0]), 6), round(float(point[1]), 6)
 
 
+def _route_key(route):
+    points = tuple(_key(point) for point in route["points"])
+    reverse = tuple(reversed(points))
+    return min(points, reverse)
+
+
 class RoutingEndpointProposalTests(unittest.TestCase):
     def test_semantic_room_without_boundary_gets_distinct_proposed_not_detected_points(self):
         architecture = {
@@ -66,10 +72,10 @@ class RoutingDeoverlapTests(unittest.TestCase):
     def _architecture(self):
         return {"plans": [{"plan_id": "P1", "bounds": (0.0, 0.0, 100.0, 100.0)}], "walls": []}
 
-    def _topology(self, systems):
+    def _topology(self, systems, start=(20.0, 20.0), end=(80.0, 80.0)):
         nodes = [
-            {"id": "F1", "plan_id": "P1", "category": "fixture", "point": (20.0, 20.0)},
-            {"id": "S1", "plan_id": "P1", "category": "vertical", "point": (80.0, 80.0)},
+            {"id": "F1", "plan_id": "P1", "category": "fixture", "point": start},
+            {"id": "S1", "plan_id": "P1", "category": "vertical", "point": end},
         ]
         edges = [
             {"id": f"E{index}", "system": system, "from": "F1", "to": "S1", "plan_id": "P1"}
@@ -81,14 +87,25 @@ class RoutingDeoverlapTests(unittest.TestCase):
         result = route_topology(self._architecture(), self._topology(["cold_water", "hot_water"]))
         self.assertEqual(result["rejected"], [])
         self.assertEqual(len(result["routes"]), 2)
-        self.assertNotEqual(_key(result["routes"][0]["points"][1]), _key(result["routes"][1]["points"][1]))
+        self.assertNotEqual(_route_key(result["routes"][0]), _route_key(result["routes"][1]))
         self.assertEqual(result["quality"]["deoverlap_reroutes"], 1)
         self.assertEqual(result["routes"][1]["route_choice"], "deoverlap_equal_safety_alternative")
+
+    def test_axis_aligned_hot_and_cold_gain_project_scale_equal_safety_dogleg(self):
+        result = route_topology(
+            self._architecture(),
+            self._topology(["cold_water", "hot_water"], start=(20.0, 50.0), end=(80.0, 50.0)),
+        )
+        self.assertEqual(result["rejected"], [])
+        self.assertEqual(len(result["routes"]), 2)
+        self.assertNotEqual(_route_key(result["routes"][0]), _route_key(result["routes"][1]))
+        self.assertEqual([route["wall_crossings"] for route in result["routes"]], [0, 0])
+        self.assertEqual(result["quality"]["deoverlap_reroutes"], 1)
 
     def test_sanitary_and_vent_do_not_exactly_overlay(self):
         result = route_topology(self._architecture(), self._topology(["sanitary", "vent"]))
         self.assertEqual(result["rejected"], [])
-        keys = [tuple(_key(point) for point in route["points"]) for route in result["routes"]]
+        keys = [_route_key(route) for route in result["routes"]]
         self.assertEqual(len(set(keys)), 2)
         self.assertEqual(result["quality"]["deoverlap_reroutes"], 1)
 
