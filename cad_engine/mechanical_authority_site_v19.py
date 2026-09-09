@@ -7,8 +7,8 @@ from .mechanical_authority_v15 import build_design_overrides
 from .engineering_runner_v13 import run_engineering_pipeline, validate_pipeline
 from .mechanical_pipeline_v19 import run_v19_pipeline
 from .coordination_v19 import build_coordination_model
-from .production_truth_gate_v19 import evaluate_production_truth
-from .production_documentation_truth_v19 import rebuild_production_documentation
+from .production_quality_truth_v19 import evaluate_production_truth
+from .production_quality_documentation_v19 import rebuild_production_documentation
 from .version_manifest import active_version_manifest
 
 
@@ -84,7 +84,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     missing_structure=coordination["status"]=="INPUT_REQUIRED" and set(coordination.get("missing_inputs") or {}) <= {"STRUCTURAL_MODEL","RCP_MODEL","SLAB","CEILING"}
     if missing_structure:
         # Architecture-only work is permitted only after the production truth
-        # gate passes.  It can never inherit coordinated/submission-ready claims.
+        # gate passes. It can never inherit coordinated/submission-ready claims.
         result={
             "status":"PRE_SUBMISSION","blocked_at":None,
             "operating_profile":"ARCHITECTURE_ONLY_PRE_SUBMISSION",
