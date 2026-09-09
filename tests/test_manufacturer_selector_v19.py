@@ -1,5 +1,5 @@
 import unittest
-from cad_engine.manufacturer_selector_v19 import (
+from cad_engine.mechanical_manufacturer_selector import (
     ingest_datasheet, select_equipment, select_radiators, select_package,
     select_split_system, select_exhaust_fans,
 )
@@ -44,7 +44,7 @@ class ManufacturerSelectorV19Tests(unittest.TestCase):
                     "height_mm":500,"depth_mm":90,"section_width_mm":80,
                     "rated_supply_c":75,"rated_return_c":65,"rated_room_c":20,
                     "datasheet":{"official_url":"https://manufacturer.example/r.pdf","revision":"1","sha256":"d"*64}}]
-        result=select_radiators([{"room_id":"R1","radiator_id":"RAD-R1","heating_w":1950}],catalogue,
+        result=select_radiators([{"room_id":"R1","pmm_id":"PMM-R1","calc_id":"CALC-H1","radiator_id":"RAD-R1","heating_w":1950}],catalogue,
                                 {"supply_c":75,"return_c":65,"room_c":20})
         self.assertEqual(result["status"],"PASS")
         radiator=result["radiators"][0]
@@ -56,7 +56,7 @@ class ManufacturerSelectorV19Tests(unittest.TestCase):
         catalogue=[{"manufacturer":"Official","model":"R","output_w_per_section":130,"height_mm":500,
                     "depth_mm":90,"section_width_mm":80,"rated_supply_c":80,"rated_return_c":70,
                     "rated_room_c":20,"datasheet":{"official_url":"https://manufacturer.example/r.pdf","revision":"1","sha256":"d"*64}}]
-        result=select_radiators([{"room_id":"R1","heating_w":1000}],catalogue,{"supply_c":75,"return_c":65,"room_c":20})
+        result=select_radiators([{"room_id":"R1","pmm_id":"PMM-R1","calc_id":"CALC-H1","heating_w":1000}],catalogue,{"supply_c":75,"return_c":65,"room_c":20})
         self.assertEqual(result["status"],"INPUT_REQUIRED")
 
     def test_package_selection_checks_space_dhw_and_simultaneous_capacity(self):

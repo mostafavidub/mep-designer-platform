@@ -132,8 +132,11 @@ def select_radiators(room_loads: list[dict], catalogue: list[dict], design_tempe
                 "radiators":[],"evaluations":rejected}
     rows=[]
     for room in room_loads or []:
-        if room.get("heating_w") is None or not room.get("room_id"):
-            return {"status":"INPUT_REQUIRED","missing_inputs":["room_id/heating_w"],"radiators":[]}
+        required_room={"room_id","pmm_id","calc_id","heating_w"}
+        if required_room-set(room):
+            return {"status":"INPUT_REQUIRED","missing_inputs":sorted(required_room-set(room)),"radiators":[]}
+        if float(room["heating_w"]) <= 0:
+            return {"status":"FAIL","errors":[f"{room['room_id']}:NON_POSITIVE_HEAT_LOSS"],"radiators":[]}
         candidates=[]
         for record in valid:
             sections=math.ceil(float(room["heating_w"])/float(record["output_w_per_section"]))
@@ -142,8 +145,13 @@ def select_radiators(room_loads: list[dict], catalogue: list[dict], design_tempe
         rows.append({"radiator_id":room.get("radiator_id") or f"RAD-{room['room_id']}","room_id":room["room_id"],
                      "required_output_w":float(room["heating_w"]),"manufacturer":chosen["manufacturer"],"model":chosen["model"],
                      "sections":sections,"selected_output_w":sections*float(chosen["output_w_per_section"]),
+                     "selection_margin_percent":round((sections*float(chosen["output_w_per_section"])/float(room["heating_w"])-1)*100,2),
                      "dimensions_mm":{"width":sections*float(chosen["section_width_mm"]),"height":chosen["height_mm"],"depth":chosen["depth_mm"]},
-                     "datasheet":chosen["datasheet"],"status":"PASS"})
+                     "room_calc_id":room["calc_id"],"source_pmm_ids":[room["pmm_id"]],
+                     "design_water_temperatures_c":{"supply":float(design_temperatures["supply_c"]),
+                                                    "return":float(design_temperatures["return_c"]),
+                                                    "room":float(design_temperatures["room_c"])},
+                     "datasheet":chosen["datasheet"],"selection_type":"MANUFACTURER_MODEL","status":"PASS"})
     return {"status":"PASS","radiators":rows,"evaluations":rejected,"claim":"MANUFACTURER_CONFIRMED"}
 
 
@@ -193,26 +201,38 @@ def select_split_system(cooling_design: dict, idu_catalogue: list[dict], odu_cat
     if not valid_odus:missing.append('OFFICIAL_ODU_CATALOGUE')
     site=odu_site or {}
     if 'service_clearance_mm' not in site:missing.append('odu_site:service_clearance_mm')
-    route_by_zone={row.get('zone_id'):row for row in routes or []}; selections=[]
-    for zone in cooling_design.get('zones') or []:
-        route=route_by_zone.get(zone['zone_id'])
-        if not route:missing.append(f"route:{zone['zone_id']}");continue
+    duties=[]
+    if cooling_design.get('rooms'):
+        duties=[{'selection_id':row['room_id'],'room_id':row['room_id'],'zone_id':row['zone_id'],
+                 'design_load_btu_h':row['calculated_load_btu_h'],'calc_id':row.get('calc_id'),
+                 'source_pmm_ids':row.get('source_pmm_ids') or ([row['pmm_id']] if row.get('pmm_id') else [])}
+                for row in cooling_design['rooms']]
+    else:
+        duties=[{'selection_id':row['zone_id'],'room_id':None,'zone_id':row['zone_id'],
+                 'design_load_btu_h':row['design_load_btu_h'],'calc_id':row.get('calc_id'),
+                 'source_pmm_ids':row.get('source_pmm_ids') or []} for row in cooling_design.get('zones') or []]
+    route_by_id={(row.get('room_id') or row.get('zone_id')):row for row in routes or []}; selections=[]
+    for duty in duties:
+        selection_id=duty['selection_id']; route=route_by_id.get(selection_id)
+        if not route:missing.append(f"route:{selection_id}");continue
         for key in ('length_m','elevation_m','condensate_drain','service_clearance_mm'):
-            if key not in route:missing.append(f"route:{zone['zone_id']}:{key}")
-        candidates=[r for r in valid_idus if float(r['capacity_btu_h'])>=float(zone['design_load_btu_h'])]
+            if key not in route:missing.append(f"route:{selection_id}:{key}")
+        candidates=[r for r in valid_idus if float(r['capacity_btu_h'])>=float(duty['design_load_btu_h'])]
         candidates=[r for r in candidates if float(route.get('length_m',1e99))<=float(r['max_pipe_length_m'])
                     and float(route.get('elevation_m',1e99))<=float(r['max_elevation_m'])
                     and route.get('condensate_drain') is True
                     and float(route.get('service_clearance_mm',0))>=float(r['service_clearance_mm'])]
-        if not candidates:missing.append(f"COMPLIANT_IDU:{zone['zone_id']}");continue
+        if not candidates:missing.append(f"COMPLIANT_IDU:{selection_id}");continue
         chosen=min(candidates,key=lambda r:(float(r['capacity_btu_h']),r['manufacturer'],r['model']))
-        selections.append({'zone_id':zone['zone_id'],'calculated_load_btu_h':zone['design_load_btu_h'],
+        selections.append({'idu_id':f"IDU-{selection_id}",'room_id':duty['room_id'],'zone_id':duty['zone_id'],
+          'calculated_load_btu_h':duty['design_load_btu_h'],
           'selected_capacity_btu_h':float(chosen['capacity_btu_h']),
-          'selection_margin_percent':round((float(chosen['capacity_btu_h'])/float(zone['design_load_btu_h'])-1)*100,2),
+          'selection_margin_percent':round((float(chosen['capacity_btu_h'])/float(duty['design_load_btu_h'])-1)*100,2),
           'manufacturer':chosen['manufacturer'],'model':chosen['model'],'airflow_cfm':float(chosen['airflow_cfm']),
           'liquid_size_mm':float(chosen['liquid_size_mm']),'gas_size_mm':float(chosen['gas_size_mm']),
           'route_length_m':float(route['length_m']),'elevation_m':float(route['elevation_m']),
-          'condensate_drain':True,'datasheet':chosen['datasheet'],'status':'PASS'})
+          'condensate_drain':True,'calc_id':duty['calc_id'],'source_pmm_ids':duty['source_pmm_ids'],
+          'datasheet':chosen['datasheet'],'selection_type':'MANUFACTURER_MODEL','status':'PASS'})
     if missing:return {'status':'INPUT_REQUIRED','missing_inputs':sorted(set(missing)),'idus':selections,'odu':None,
                        'evaluations':evaluations}
     connected=sum(row['selected_capacity_btu_h'] for row in selections)
