@@ -1,24 +1,32 @@
 """Explicit execution sizing/material authority for v19 network segments.
 
-No fixture load, sizing table, material, slope, or route offset is supplied by
-this module. A segment is executable only when an explicit project/system basis
-or an explicit segment design row supplies the required engineering values.
+No fixture load, sizing table, material, slope percentage, or route offset is
+supplied by this module. Existing values carried by an authoritative supplied
+graph are accepted as explicit evidence; otherwise a project/system basis is
+required fail-closed.
 """
 from __future__ import annotations
 
 import math
+import re
 
 
 PAIRED_SYSTEMS = (("cold_water", "hot_water"), ("sanitary", "vent"),
                   ("heating_supply", "heating_return"),
                   ("refrigerant_liquid", "refrigerant_gas"))
+GRAVITY_SYSTEMS = {"sanitary", "roof_rainwater"}
 
 
 def _number(value):
     if isinstance(value, bool) or value is None:
         return None
-    try:
+    if isinstance(value, (int, float)):
         return float(value)
+    match = re.search(r"-?\d+(?:\.\d+)?", str(value))
+    if not match:
+        return None
+    try:
+        return float(match.group())
     except (TypeError, ValueError):
         return None
 
@@ -89,16 +97,6 @@ def _path_key(path):
     return tuple((round(float(p[0]), 6), round(float(p[1]), 6)) for p in path or [])
 
 
-def _material_row(row, cfg):
-    material = row.get("material") if row else None
-    source = row.get("material_source") if row else None
-    if material in (None, ""):
-        material = (cfg or {}).get("material")
-    if source in (None, ""):
-        source = (cfg or {}).get("material_source")
-    return material, source
-
-
 def design_authoritative_segments(network, design_basis=None, calculation_rows=None):
     """Enrich every graph edge with explicit execution data and stable identities."""
     if not isinstance(network, dict) or not network.get("nodes") or not network.get("edges"):
@@ -121,15 +119,24 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
     for edge in network.get("edges") or []:
         edge_id = edge.get("id")
         calc_id = edge.get("calc_id")
+        if not calc_id:
+            errors.append("NETWORK_EDGE_CALC_ID_REQUIRED:" + str(edge_id))
+            continue
         row = by_edge.get(edge_id) or by_calc.get(calc_id) or {}
         if row.get("calc_id") not in (None, "", calc_id):
             errors.append("CALC_ID_MISMATCH:" + str(edge_id))
             continue
         cfg = systems_basis.get(edge.get("system")) or {}
-        size = _number(row.get("size_mm") if "size_mm" in row else row.get("size"))
+
+        row_size = row.get("size_mm") if "size_mm" in row else row.get("size")
+        size = _number(row_size)
+        if size is None:
+            size = _number(edge.get("size_mm") if edge.get("size_mm") is not None else edge.get("size"))
         downstream_load = _number(row.get("downstream_load"))
         load_unit = row.get("load_unit")
-        size_source = row.get("size_source") or (calc_id if size is not None else None)
+        size_source = row.get("size_source") or edge.get("size_source")
+        if size is not None and not size_source:
+            size_source = "SUPPLIED_NETWORK_GRAPH" if edge.get("size") is not None or edge.get("size_mm") is not None else calc_id
 
         if size is None:
             endpoint_loads = cfg.get("endpoint_loads") if isinstance(cfg, dict) else None
@@ -153,17 +160,20 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
                 else:
                     size_source = "EXPLICIT_SYSTEM_SIZE_TABLE:" + str(edge.get("system"))
 
-        material, material_source = _material_row(row, cfg)
+        material = row.get("material") or edge.get("material") or cfg.get("material")
+        material_source = row.get("material_source") or edge.get("material_source") or cfg.get("material_source")
+        if material and not material_source:
+            material_source = "SUPPLIED_NETWORK_GRAPH" if edge.get("material") else None
         if not material:
             missing.append("MATERIAL:%s" % edge.get("system"))
         if not material_source:
             missing.append("MATERIAL_SOURCE:%s" % edge.get("system"))
 
-        slope = _number(row.get("slope_percent")) if "slope_percent" in row else None
-        requires_slope = row.get("requires_slope") if "requires_slope" in row else cfg.get("requires_slope")
+        slope = _number(row.get("slope_percent")) if "slope_percent" in row else _number(edge.get("slope_percent"))
+        requires_slope = row.get("requires_slope") if "requires_slope" in row else edge.get("requires_slope")
         if requires_slope is None:
-            missing.append("REQUIRES_SLOPE_DECLARATION:%s" % edge.get("system"))
-        elif bool(requires_slope) and slope is None:
+            requires_slope = cfg.get("requires_slope") if "requires_slope" in cfg else edge.get("system") in GRAVITY_SYSTEMS
+        if bool(requires_slope) and slope is None:
             slope = _number(cfg.get("slope_percent"))
             if slope is None:
                 missing.append("SLOPE_PERCENT:%s" % edge.get("system"))
@@ -176,18 +186,21 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
         enriched = dict(edge)
         enriched.update({
             "size": size, "size_mm": size, "material": material, "slope_percent": slope,
+            "requires_slope": bool(requires_slope),
             "size_source": size_source, "material_source": material_source,
             "plan_path": path, "fittings": _fittings(path),
             "plan_id": calc_id, "riser_id": calc_id, "schedule_id": calc_id,
         })
         enriched_edges.append(enriched)
+        row_source = "EXPLICIT_SEGMENT_ROW" if row and any(key in row for key in ("size", "size_mm", "material")) else (
+            "SUPPLIED_NETWORK_GRAPH" if edge.get("size") is not None or edge.get("size_mm") is not None else "EXPLICIT_SYSTEM_DESIGN_BASIS")
         output_rows.append({
             "calc_id": calc_id, "network_edge_id": edge_id, "system": edge.get("system"),
             "downstream_endpoint_ids": sorted(edge.get("endpoint_ids") or []),
             "downstream_load": downstream_load, "load_unit": load_unit,
             "size_mm": size, "material": material, "slope_percent": slope,
             "size_source": size_source, "material_source": material_source,
-            "source": "EXPLICIT_SEGMENT_ROW" if row else "EXPLICIT_SYSTEM_DESIGN_BASIS",
+            "source": row_source,
         })
         label = "DN%s | %s" % (("%g" % size) if size is not None else "?", material or "?")
         if slope is not None:
@@ -202,8 +215,6 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
         return {"status": "INPUT_REQUIRED", "missing_inputs": sorted(set(missing)), "errors": [],
                 "network": None, "calculation_rows": output_rows, "annotations": annotations}
 
-    # Reject exact duplicates after explicit offsets are applied. Cross-system paired
-    # overlays are INPUT_REQUIRED because the design must state a physical separation.
     geometry_rows = [row for row in enriched_edges if row.get("draw_on_plan") and len(row.get("plan_path") or []) >= 2]
     duplicate_same = []
     seen = {}
