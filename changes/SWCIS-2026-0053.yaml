@@ -1,0 +1,35 @@
+{
+  "change_id": "SWCIS-2026-0053",
+  "summary": "Make PMM v3 calculation/documentation reconciliation effective in the production mechanical generation path, including architecture-only pre-submission, so legacy DXF composition cannot be released with invalid riser levels or unreconciled identities.",
+  "requester": "project-owner",
+  "change_types": ["drawing_output", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "cad_designer": "Production authority adapter will carry the governed PMM/calculation/network contract into v19 and apply a fail-closed truth/reconciliation gate before and after legacy composition.",
+    "qa": "Add regression coverage for DETAIL-* contamination, missing/duplicate calculation identities and architecture-only pre-submission bypass behavior.",
+    "manifest": "Automatic build identity remains unchanged; generated artifacts remain tied to the Git commit and existing manifest contract.",
+    "ui_api": "No public questionnaire or API field is removed; missing governed traceability input remains explicit PRE_SUBMISSION/INPUT_REQUIRED rather than silently passing.",
+    "docs": "Document the production truth-gate boundary and architecture-only behavior.",
+    "versioning": "This changes a release-gate behavior and therefore requires a coordinated SWCIS minor version bump.",
+    "migration": "No stored schema changes; existing v19 input contract keys remain compatible and are only propagated more completely.",
+    "governance": "Add fail-closed production-path evidence without weakening any existing gate.",
+    "deployment": "No deployment in this change; merge only after protected CI is green, then staging rollout is a separate authorized step."
+  },
+  "evidence": {
+    "traceability": ["No Rule ID changes; existing PMM Engineering Traceability Standard remains authoritative."],
+    "tests": ["PLANNED: focused production-adapter tests for architecture-only PMM v3 traceability, invalid DETAIL levels, identity mismatch, and valid pre-submission flow; protected CI required."],
+    "docs": ["PLANNED: production truth-gate section in PMM traceability documentation and SWCIS reconciliation."],
+    "version_bump": ["PLANNED: SWCIS 4.5.0 -> 4.6.0 because release-gate semantics change."],
+    "migration": ["No schema/storage migration; additive propagation of existing v19 contract fields only."],
+    "golden_regression": ["Mechanical reference corpus remains comparison-only; this change adds a synthetic regression matching the observed invalid-riser production failure without embedding reference design numbers."],
+    "semantic_diff": ["Legacy DXF may no longer be releasable when PMM v3 truth/reconciliation is missing or invalid; PRE_SUBMISSION remains allowed only when non-coordination truth gates pass."],
+    "artifact_diff": ["No customer DXF bytes committed; artifact-level regression asserts invalid riser/detail contamination cannot survive the production authority boundary."],
+    "numeric_diff": ["No engineering formula or numeric design constant is changed in this step."],
+    "contract_diff": ["Existing _v19_input_contract fields are propagated through the production adapter instead of being dropped."],
+    "deployment_plan": ["No deployment in this PR. After merge, staging deployment and live generation verification require separate owner authorization."],
+    "rollback_plan": ["Revert the merged commit; no data migration or destructive schema change is involved."]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 2, "score": 20, "rationale": "The production authority boundary can block previously emitted invalid artifacts; this is intentionally fail-closed and is exercised by focused and protected regression tests."},
+  "waiver": null
+}
