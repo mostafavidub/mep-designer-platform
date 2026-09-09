@@ -1,15 +1,15 @@
-"""Project Mechanical Model (PMM) v1.
+"""Project Mechanical Model (PMM).
 
-This module adds a single, machine-readable snapshot of the mechanical design
-inputs without changing any existing planner or CAD decisions. The snapshot is
-stored in ``Project.analysis['project_mechanical_model']`` and is intentionally
-additive in v1 so existing production behaviour remains unchanged while later
-stages migrate to consume it as the contract.
+The PMM is the machine-readable mechanical source-of-truth snapshot.  Existing
+planner/CAD fields remain backward compatible; v3 adds deterministic engineering
+identities and traceability metadata without changing design decisions.
 """
 from copy import deepcopy
+from hashlib import sha256
+import json
 
 
-PMM_SCHEMA = "project-mechanical-model/v2"
+PMM_SCHEMA = "project-mechanical-model/v3"
 
 
 def _unique(values):
@@ -21,6 +21,11 @@ def _unique(values):
         if text and text not in out:
             out.append(text)
     return out
+
+
+def _stable_id(kind, payload):
+    raw = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"), default=str)
+    return f"PMM-{kind.upper()}-{sha256(raw.encode('utf-8')).hexdigest()[:16].upper()}"
 
 
 def _level_rows(auto):
@@ -105,13 +110,45 @@ def _shaft_rows(levels):
     return rows
 
 
-def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=None):
-    """Build a deterministic, JSON-safe PMM snapshot from already-approved inputs.
+def _identity_registry(levels, spaces, fixtures, equipment, shafts, manifest):
+    """Create deterministic IDs without mutating legacy PMM payload fields."""
+    rows = []
+    aliases = {}
 
-    v1 deliberately *does not* alter planner decisions. It mirrors the inputs
-    and the generated drawing manifest so consumers can migrate to the PMM in
-    later guarded steps without changing current production output.
-    """
+    def add(kind, payload, aliases_for_row=None):
+        entity_id = _stable_id(kind, payload)
+        rows.append({"entity_id": entity_id, "kind": kind, "fingerprint": deepcopy(payload)})
+        for alias in aliases_for_row or []:
+            if alias is not None and str(alias).strip():
+                aliases[str(alias)] = entity_id
+        return entity_id
+
+    for level in levels:
+        add("level", {"name": level.get("name"), "source_name": level.get("source_name")}, [level.get("name")])
+    for space in spaces:
+        add("space-group", {"level": space.get("level"), "type": space.get("type"), "count": space.get("count")})
+    for fixture in fixtures:
+        add("fixture-group", {"type": fixture.get("type"), "count": fixture.get("count")})
+    for index, item in enumerate(equipment or []):
+        payload = {"index": index, "id": item.get("id") if isinstance(item, dict) else None,
+                   "type": item.get("type") if isinstance(item, dict) else str(item)}
+        aliases_for_row = [item.get("id")] if isinstance(item, dict) else []
+        add("equipment", payload, aliases_for_row)
+    for shaft in shafts:
+        add("shaft-group", {"level": shaft.get("level"), "count": shaft.get("count")})
+    for index, sheet in enumerate(manifest or []):
+        if isinstance(sheet, dict):
+            payload = {"index": index, "code": sheet.get("code"), "family": sheet.get("family"), "levels": sheet.get("levels")}
+            aliases_for_row = [sheet.get("code"), sheet.get("id")]
+        else:
+            payload = {"index": index, "value": str(sheet)}
+            aliases_for_row = []
+        add("sheet", payload, aliases_for_row)
+    return {"schema": "pmm-identity-registry/1.0", "entities": rows, "alias_to_entity_id": aliases}
+
+
+def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=None):
+    """Build a deterministic, JSON-safe PMM snapshot from approved inputs."""
     analysis = analysis or {}
     answers = answers or {}
     scope = scope or {}
@@ -120,7 +157,12 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
 
     levels = _level_rows(auto)
     level_names = _unique(row.get("name") for row in levels)
+    spaces = _space_rows(levels)
+    fixtures = _fixture_rows(auto)
+    equipment = deepcopy(auto.get("equipment") or [])
+    shafts = _shaft_rows(levels)
     manifest = deepcopy(proposal.get("drawing_manifest") or proposal.get("deliverable_sheets") or [])
+    identity_registry = _identity_registry(levels, spaces, fixtures, equipment, shafts, manifest)
 
     model = {
         "schema": PMM_SCHEMA,
@@ -130,9 +172,9 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "level_names": level_names,
         "candidate_levels": deepcopy(auto.get("candidate_levels") or []),
         "restored_explicit_levels": deepcopy(auto.get("restored_explicit_levels") or []),
-        "spaces": _space_rows(levels),
-        "fixtures": _fixture_rows(auto),
-        "equipment": deepcopy(auto.get("equipment") or []),
+        "spaces": spaces,
+        "fixtures": fixtures,
+        "equipment": equipment,
         "coordination": deepcopy(analysis.get("coordination_v19") or {
             "status": "INPUT_REQUIRED", "missing_inputs": ["STRUCTURAL_MODEL", "RCP_MODEL"],
             "claim": "NOT_COORDINATED",
@@ -144,7 +186,7 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "documentation_identity": deepcopy(analysis.get("documentation_identity_v19") or {
             "status": "INPUT_REQUIRED", "required_identity": "Plan ID=Riser ID=Calc ID=Schedule ID",
         }),
-        "shafts": _shaft_rows(levels),
+        "shafts": shafts,
         "systems": {
             "conditioned_levels": deepcopy(scope.get("conditioned_levels") or []),
             "heated_levels": deepcopy(scope.get("heated_levels") or []),
@@ -160,6 +202,12 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "drawing_manifest": manifest,
         "drawing_manifest_count": len(manifest),
         "planner_total_plans": int(proposal.get("total_plans") or proposal.get("deliverable_sheet_count") or len(manifest)),
+        "identity_registry": identity_registry,
+        "traceability_contract": {
+            "required_chain": ["PMM_ENTITY_ID", "CALC_ID", "PLAN_ID", "RISER_ID", "SCHEDULE_ID", "QA"],
+            "policy": "NO_ORPHAN_ENGINEERING_OUTPUT",
+            "legacy_fields_preserved": True,
+        },
         "inputs": {
             "architectural_inference": auto.get("effective_level_inference"),
             "level_detection_version": auto.get("level_detection_version"),
@@ -178,12 +226,13 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         diagnostics.append("no_architecture_levels_in_pmm")
     if model["candidate_levels"]:
         diagnostics.append("unresolved_candidate_levels_present")
+    entity_ids = [row["entity_id"] for row in identity_registry["entities"]]
+    if len(entity_ids) != len(set(entity_ids)):
+        diagnostics.append("duplicate_pmm_entity_id")
     diagnostics.extend(auto.get("level_detection_diagnostics") or [])
     model["diagnostics"] = list(dict.fromkeys(diagnostics))
-    # Candidate levels are intentionally diagnostic, not a PMM-invalidating
-    # condition in this release. Only structural integrity failures invalidate.
     model["valid"] = not any(x in model["diagnostics"] for x in (
-        "planner_total_does_not_match_manifest_count", "no_architecture_levels_in_pmm"
+        "planner_total_does_not_match_manifest_count", "no_architecture_levels_in_pmm", "duplicate_pmm_entity_id"
     ))
     return model
 

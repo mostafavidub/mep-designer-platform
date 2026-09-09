@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from hashlib import sha256
 import json
+import math
 
 
 REQUIRED_FIELDS = {
@@ -99,3 +100,155 @@ def select_equipment(requirements: dict, catalogue: list[dict], route: dict) -> 
     chosen = min(passing, key=lambda x: (x["record"]["capacity_kw"], x["record"]["manufacturer"], x["record"]["model"]))
     return {"status": "PASS", "selection_type": "MANUFACTURER_MODEL", "record": chosen["record"],
             "evaluations": evaluations, "route_revalidated": True, "claim": "MANUFACTURER_CONFIRMED"}
+
+
+def _official_record(record: dict, required: set[str]) -> tuple[list[str], list[str]]:
+    missing = sorted(required - set(record))
+    sheet = record.get("datasheet") or {}
+    missing += [f"datasheet.{key}" for key in ("official_url", "revision", "sha256") if not sheet.get(key)]
+    errors = []
+    if sheet.get("sha256") and len(sheet["sha256"]) != 64: errors.append("datasheet.sha256")
+    return sorted(set(missing)), errors
+
+
+def select_radiators(room_loads: list[dict], catalogue: list[dict], design_temperatures: dict) -> dict:
+    required_temps = {"supply_c", "return_c", "room_c"}
+    if required_temps - set(design_temperatures or {}):
+        return {"status":"INPUT_REQUIRED","missing_inputs":sorted(required_temps-set(design_temperatures or {})),"radiators":[]}
+    required = {"manufacturer","model","output_w_per_section","height_mm","depth_mm","section_width_mm",
+                "rated_supply_c","rated_return_c","rated_room_c","datasheet"}
+    valid=[]; rejected=[]
+    for record in catalogue or []:
+        missing,errors=_official_record(record,required)
+        if missing or errors:
+            rejected.append({"model":record.get("model"),"status":"INPUT_REQUIRED" if missing else "FAIL",
+                             "errors":missing+errors})
+        elif any(float(record[f"rated_{key}"])!=float(design_temperatures[key])
+                 for key in ("supply_c","return_c","room_c")):
+            rejected.append({"model":record.get("model"),"status":"FAIL","errors":["design_temperature_mismatch"]})
+        else: valid.append(record)
+    if not valid:
+        return {"status":"INPUT_REQUIRED","missing_inputs":["OFFICIAL_RADIATOR_AT_DESIGN_TEMPERATURES"],
+                "radiators":[],"evaluations":rejected}
+    rows=[]
+    for room in room_loads or []:
+        if room.get("heating_w") is None or not room.get("room_id"):
+            return {"status":"INPUT_REQUIRED","missing_inputs":["room_id/heating_w"],"radiators":[]}
+        candidates=[]
+        for record in valid:
+            sections=math.ceil(float(room["heating_w"])/float(record["output_w_per_section"]))
+            candidates.append((sections*float(record["output_w_per_section"]),record["manufacturer"],record["model"],sections,record))
+        _,_,_,sections,chosen=min(candidates)
+        rows.append({"radiator_id":room.get("radiator_id") or f"RAD-{room['room_id']}","room_id":room["room_id"],
+                     "required_output_w":float(room["heating_w"]),"manufacturer":chosen["manufacturer"],"model":chosen["model"],
+                     "sections":sections,"selected_output_w":sections*float(chosen["output_w_per_section"]),
+                     "dimensions_mm":{"width":sections*float(chosen["section_width_mm"]),"height":chosen["height_mm"],"depth":chosen["depth_mm"]},
+                     "datasheet":chosen["datasheet"],"status":"PASS"})
+    return {"status":"PASS","radiators":rows,"evaluations":rejected,"claim":"MANUFACTURER_CONFIRMED"}
+
+
+def select_package(requirements: dict, catalogue: list[dict]) -> dict:
+    required_inputs={"space_heating_kw","dhw_kw","simultaneous_factor"}
+    missing=sorted(required_inputs-set(requirements or {}))
+    if missing: return {"status":"INPUT_REQUIRED","missing_inputs":missing,"selection":None}
+    design_combined=float(requirements["space_heating_kw"])+float(requirements["dhw_kw"])*float(requirements["simultaneous_factor"])
+    required={"manufacturer","model","space_heating_capacity_kw","dhw_capacity_kw","combined_capacity_kw",
+              "gas_consumption_m3h","dimensions_mm","connections","datasheet"}
+    passing=[]; evaluations=[]
+    for record in catalogue or []:
+        absent,errors=_official_record(record,required)
+        if absent or errors:
+            evaluations.append({"model":record.get("model"),"status":"INPUT_REQUIRED" if absent else "FAIL","errors":absent+errors}); continue
+        failures=[]
+        if float(record["space_heating_capacity_kw"])<float(requirements["space_heating_kw"]): failures.append("space_heating")
+        if float(record["dhw_capacity_kw"])<float(requirements["dhw_kw"]): failures.append("dhw")
+        if float(record["combined_capacity_kw"])<design_combined: failures.append("combined")
+        evaluations.append({"model":record["model"],"status":"FAIL" if failures else "PASS","errors":failures})
+        if not failures: passing.append(record)
+    if not passing:
+        return {"status":"INPUT_REQUIRED","missing_inputs":["COMPLIANT_OFFICIAL_PACKAGE"],"selection":None,"evaluations":evaluations}
+    chosen=min(passing,key=lambda x:(float(x["combined_capacity_kw"]),x["manufacturer"],x["model"]))
+    return {"status":"PASS","selection":{**chosen,"design_combined_kw":round(design_combined,3)},
+            "evaluations":evaluations,"claim":"MANUFACTURER_CONFIRMED"}
+
+
+def select_split_system(cooling_design: dict, idu_catalogue: list[dict], odu_catalogue: list[dict], routes: list[dict], odu_site: dict | None = None) -> dict:
+    """Select exact IDUs and a compatible ODU after route and condensate checks."""
+    if cooling_design.get('status')!='PASS':
+        return {'status':'INPUT_REQUIRED','missing_inputs':['PASS_COOLING_DESIGN'],'idus':[],'odu':None}
+    idu_required={'manufacturer','model','capacity_btu_h','airflow_cfm','liquid_size_mm','gas_size_mm',
+                  'max_pipe_length_m','max_elevation_m','service_clearance_mm','datasheet'}
+    odu_required={'manufacturer','model','nominal_capacity_btu_h','airflow_cfm','min_connected_ratio','max_connected_ratio',
+                  'max_total_pipe_length_m','max_elevation_m','service_clearance_mm','datasheet'}
+    valid_idus=[]; valid_odus=[]; missing=[]; evaluations=[]
+    for record in idu_catalogue or []:
+        absent,errors=_official_record(record,idu_required)
+        if absent or errors:evaluations.append({'type':'IDU','model':record.get('model'),'errors':absent+errors})
+        else:valid_idus.append(record)
+    for record in odu_catalogue or []:
+        absent,errors=_official_record(record,odu_required)
+        if absent or errors:evaluations.append({'type':'ODU','model':record.get('model'),'errors':absent+errors})
+        else:valid_odus.append(record)
+    if not valid_idus:missing.append('OFFICIAL_IDU_CATALOGUE')
+    if not valid_odus:missing.append('OFFICIAL_ODU_CATALOGUE')
+    site=odu_site or {}
+    if 'service_clearance_mm' not in site:missing.append('odu_site:service_clearance_mm')
+    route_by_zone={row.get('zone_id'):row for row in routes or []}; selections=[]
+    for zone in cooling_design.get('zones') or []:
+        route=route_by_zone.get(zone['zone_id'])
+        if not route:missing.append(f"route:{zone['zone_id']}");continue
+        for key in ('length_m','elevation_m','condensate_drain','service_clearance_mm'):
+            if key not in route:missing.append(f"route:{zone['zone_id']}:{key}")
+        candidates=[r for r in valid_idus if float(r['capacity_btu_h'])>=float(zone['design_load_btu_h'])]
+        candidates=[r for r in candidates if float(route.get('length_m',1e99))<=float(r['max_pipe_length_m'])
+                    and float(route.get('elevation_m',1e99))<=float(r['max_elevation_m'])
+                    and route.get('condensate_drain') is True
+                    and float(route.get('service_clearance_mm',0))>=float(r['service_clearance_mm'])]
+        if not candidates:missing.append(f"COMPLIANT_IDU:{zone['zone_id']}");continue
+        chosen=min(candidates,key=lambda r:(float(r['capacity_btu_h']),r['manufacturer'],r['model']))
+        selections.append({'zone_id':zone['zone_id'],'calculated_load_btu_h':zone['design_load_btu_h'],
+          'selected_capacity_btu_h':float(chosen['capacity_btu_h']),
+          'selection_margin_percent':round((float(chosen['capacity_btu_h'])/float(zone['design_load_btu_h'])-1)*100,2),
+          'manufacturer':chosen['manufacturer'],'model':chosen['model'],'airflow_cfm':float(chosen['airflow_cfm']),
+          'liquid_size_mm':float(chosen['liquid_size_mm']),'gas_size_mm':float(chosen['gas_size_mm']),
+          'route_length_m':float(route['length_m']),'elevation_m':float(route['elevation_m']),
+          'condensate_drain':True,'datasheet':chosen['datasheet'],'status':'PASS'})
+    if missing:return {'status':'INPUT_REQUIRED','missing_inputs':sorted(set(missing)),'idus':selections,'odu':None,
+                       'evaluations':evaluations}
+    connected=sum(row['selected_capacity_btu_h'] for row in selections)
+    odu_candidates=[]
+    for record in valid_odus:
+        ratio=connected/float(record['nominal_capacity_btu_h'])
+        if (float(record['min_connected_ratio'])<=ratio<=float(record['max_connected_ratio'])
+            and sum(row['route_length_m'] for row in selections)<=float(record['max_total_pipe_length_m'])
+            and max((row['elevation_m'] for row in selections),default=0)<=float(record['max_elevation_m'])
+            and float(site.get('service_clearance_mm',0))>=float(record['service_clearance_mm'])):
+            odu_candidates.append((float(record['nominal_capacity_btu_h']),record,ratio))
+    if not odu_candidates:return {'status':'INPUT_REQUIRED','missing_inputs':['COMPLIANT_ODU'],'idus':selections,'odu':None}
+    _,odu,ratio=min(odu_candidates,key=lambda x:(x[0],x[1]['manufacturer'],x[1]['model']))
+    return {'status':'PASS','idus':selections,'odu':{**odu,'connected_capacity_btu_h':connected,
+            'connected_ratio':round(ratio,4)},'claim':'MANUFACTURER_CONFIRMED'}
+
+
+def select_exhaust_fans(exhaust_design: dict, catalogue: list[dict]) -> dict:
+    if exhaust_design.get('status')!='PASS':
+        return {'status':'INPUT_REQUIRED','missing_inputs':['PASS_EXHAUST_DESIGN'],'fans':[],'unserved_room_ids':[]}
+    required={'manufacturer','model','airflow_cfm','esp_pa','dimensions_mm','sound_db','service_clearance_mm','datasheet'}
+    valid=[];evaluations=[]
+    for record in catalogue or []:
+        absent,errors=_official_record(record,required)
+        if absent or errors:evaluations.append({'model':record.get('model'),'errors':absent+errors})
+        else:valid.append(record)
+    if not valid:return {'status':'INPUT_REQUIRED','missing_inputs':['OFFICIAL_EXHAUST_FAN_CATALOGUE'],
+                         'fans':[],'unserved_room_ids':[],'evaluations':evaluations}
+    fans=[];unserved=[]
+    for room in exhaust_design.get('rooms') or []:
+        candidates=[r for r in valid if float(r['airflow_cfm'])>=float(room['required_cfm']) and
+                    float(r['esp_pa'])>=float(room['required_esp_pa'])]
+        if not candidates:unserved.append(room['room_id']);continue
+        chosen=min(candidates,key=lambda r:(float(r['airflow_cfm']),float(r['esp_pa']),r['manufacturer'],r['model']))
+        fans.append({'room_id':room['room_id'],'required_cfm':room['required_cfm'],'required_esp_pa':room['required_esp_pa'],
+                     'manufacturer':chosen['manufacturer'],'model':chosen['model'],'selected_cfm':float(chosen['airflow_cfm']),
+                     'selected_esp_pa':float(chosen['esp_pa']),'calc_id':room['calc_id'],'datasheet':chosen['datasheet'],'status':'PASS'})
+    return {'status':'PASS' if not unserved else 'FAIL','fans':fans,'unserved_room_ids':sorted(unserved),
+            'errors':[f'UNSERVED_EXHAUST_ROOM:{x}' for x in sorted(unserved)]}
