@@ -115,6 +115,7 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
     enriched_edges = []
     output_rows = []
     annotations = []
+    nodes_by_id = {row.get("id"): row for row in network.get("nodes") or [] if row.get("id")}
 
     for edge in network.get("edges") or []:
         edge_id = edge.get("id")
@@ -140,6 +141,13 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
 
         if size is None:
             endpoint_loads = cfg.get("endpoint_loads") if isinstance(cfg, dict) else None
+            load_by_type = cfg.get("endpoint_load_by_type") if isinstance(cfg, dict) else None
+            if not isinstance(endpoint_loads, dict) and isinstance(load_by_type, dict):
+                endpoint_loads = {}
+                for endpoint_id in edge.get("endpoint_ids") or []:
+                    endpoint_type = (nodes_by_id.get(endpoint_id) or {}).get("type")
+                    if endpoint_type in load_by_type:
+                        endpoint_loads[endpoint_id] = load_by_type[endpoint_type]
             size_table = cfg.get("size_table") if isinstance(cfg, dict) else None
             load_unit = cfg.get("load_unit") if isinstance(cfg, dict) else None
             if not isinstance(endpoint_loads, dict):

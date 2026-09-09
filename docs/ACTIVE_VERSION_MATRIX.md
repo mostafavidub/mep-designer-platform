@@ -9,7 +9,7 @@ Executable identity is automatic and sourced from `cad_engine/build_identity.py`
 | Production CAD entrypoint | `cad_engine.main:app` |
 | Mechanical pipeline | Git commit SHA |
 | Split-AC visual gate | `split-ac-visual-legibility-v18.1` |
-| Mechanical Rule Book | 5.0 |
+| Mechanical Rule Book | 5.1 |
 | Mechanical site manifest | 12.1 |
 | Fixture/equipment detection | `2.4-fixture-equipment-approved-symbols` |
 | Ten-step governance | `mechanical-governance-v1.0` |

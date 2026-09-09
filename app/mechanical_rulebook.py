@@ -55,6 +55,63 @@ VENTILATION = {
     'parking_ach': 6, 'default_parking_m3h_when_geometry_missing': 500,
 }
 
+# Governed office design basis used only after an architecture/owner-backed
+# endpoint exists in the canonical network.  These are explicit Rule Book
+# criteria, not project facts and not values learned from reference drawings.
+NETWORK_DESIGN_BASIS = {
+    'schema': 'mechanical-network-design-basis/1',
+    'source': 'MECHANICAL_RULEBOOK:MEP-SIZE-001',
+    'systems': {
+        'cold_water': {
+            'load_unit': 'WSFU', 'material': 'PPR',
+            'endpoint_load_by_type': {'wc': 2.5, 'basin': 1.0, 'sink': 1.5, 'shower': 2.0},
+            'size_table': [(1, 16), (3, 20), (6, 25), (12, 32), (999, 40)],
+            'plan_offset_xy': [0, 0],
+        },
+        'hot_water': {
+            'load_unit': 'WSFU', 'material': 'PPR',
+            'endpoint_load_by_type': {'basin': 1.0, 'sink': 1.5, 'shower': 2.0},
+            'size_table': [(1, 16), (3, 20), (6, 25), (12, 32), (999, 40)],
+            'plan_offset_xy': [20, 0],
+        },
+        'sanitary': {
+            'load_unit': 'DFU', 'material': 'uPVC',
+            'endpoint_load_by_type': {'wc': 4.0, 'basin': 1.0, 'sink': 2.0, 'shower': 2.0, 'floor_drain': 2.0},
+            'size_table': [(1, 50), (2, 63), (6, 75), (12, 90), (999, 110)],
+            'requires_slope': True, 'slope_percent': 2.0, 'plan_offset_xy': [0, 0],
+        },
+        'vent': {
+            'load_unit': 'DFU', 'material': 'uPVC',
+            'endpoint_load_by_type': {'wc': 4.0, 'basin': 1.0, 'sink': 2.0, 'shower': 2.0, 'floor_drain': 2.0},
+            'size_table': [(2, 50), (8, 63), (20, 75), (999, 90)],
+            'plan_offset_xy': [20, 0],
+        },
+        'gas': {
+            'load_unit': 'kW', 'material': 'threaded carbon steel',
+            'endpoint_load_by_type': {'stove': 12.0, 'water_heater': 24.0},
+            'size_table': [(12, 20), (30, 25), (60, 32), (9999, 40)],
+            'plan_offset_xy': [0, 0],
+        },
+    },
+}
+
+
+def network_design_basis():
+    """Return the serializable, provenance-complete office Rule Book profile."""
+    systems = {}
+    for name, raw in NETWORK_DESIGN_BASIS['systems'].items():
+        cfg = dict(raw)
+        cfg['material_source'] = f"MECHANICAL_RULEBOOK/{RULEBOOK_VERSION}:MEP-SIZE-001"
+        cfg['size_table'] = [
+            {'max_load': maximum, 'size_mm': size} for maximum, size in raw['size_table']
+        ]
+        systems[name] = cfg
+    return {
+        'schema': NETWORK_DESIGN_BASIS['schema'],
+        'source': f"MECHANICAL_RULEBOOK/{RULEBOOK_VERSION}:MEP-SIZE-001",
+        'systems': systems,
+    }
+
 PLAN_DETAIL_STANDARD = {
     'water_supply': ('fixture_connection', 'shared_trunk', 'cumulative_segment_size', 'branch_diameter', 'isolation_valve', 'junction_tag', 'flow_direction', 'riser_tag', 'decision_provenance'),
     'sanitary_vent': ('fixture_connection', 'shared_trunk', 'cumulative_segment_size', 'branch_diameter', 'slope_tag', 'cleanout', 'junction_tag', 'flow_direction', 'vent_tag', 'riser_tag', 'decision_provenance'),
