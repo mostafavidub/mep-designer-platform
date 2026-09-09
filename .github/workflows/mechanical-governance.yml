@@ -27,4 +27,4 @@ jobs:
       - name: Validate mechanical governance and destructive tests
         run: python -m pytest -q tests/test_mechanical_governance_v1.py tests/test_mechanical_release_hardening_v18.py tests/test_locked_design_endpoints_v18.py tests/test_route_sizing_hardening_v18.py tests/test_mechanical_single_runtime.py
       - name: Reject missing or skipped locked capabilities
-        run: python -c "from cad_engine.mechanical_governance import validate_repository_governance as v; r=v(); assert r['status']=='PASS', r"
+        run: python -c "from cad_engine.mechanical_governance_v1 import validate_repository_governance as v; r=v(); assert r['status']=='PASS', r"
