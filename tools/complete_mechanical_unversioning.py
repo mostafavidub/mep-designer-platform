@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Materialize the active Mechanical runtime into unversioned canonical modules.
 
-This is a one-time migration tool. It copies the exact currently-active implementation
-closure into canonical module names and rewrites imports without changing engineering
-logic. Historical *_vNN files are left untouched so Git history/tests can still explain
-prior releases, but cad_engine.main:app no longer reaches them.
+This one-time migration copies the exact active implementation closure into semantic
+module names and rewrites both Python imports and dynamic capability imports. Historical
+*_vNN files are not runtime dependencies after this migration; Git preserves their history.
 """
 from __future__ import annotations
 
@@ -14,11 +13,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CAD = ROOT / "cad_engine"
-
 VERSIONED = re.compile(r"_v\d+(?:_\d+)*$", re.I)
+DYNAMIC_MODULE = re.compile(r"cad_engine\.([A-Za-z_][A-Za-z0-9_]*)")
 
-# Colliding historical wrappers need semantic names. Everything else can safely drop
-# its release suffix because only one implementation from that family is reachable.
 SPECIAL = {
     "main_v15": "main_transport",
     "mechanical_authority_site_v19": "mechanical_authority",
@@ -44,6 +41,11 @@ SPECIAL = {
     "acceptance_v13": "engineering_acceptance",
     "authority_architecture_v14": "authority_architecture",
     "equipment_representation_v14": "equipment_representation",
+    # Both historical sizing/calculation generations are reachable for different
+    # semantic capabilities. Give them distinct semantic names instead of hiding
+    # their generation behind ambiguous aliases.
+    "sizing_v14": "mechanical_execution_sizing",
+    "mechanical_calculations_v14": "mechanical_calculation_traceability",
     "version_manifest": "runtime_contract",
 }
 ROOT_SOURCES = {
@@ -67,9 +69,9 @@ def target_module(source: str) -> str:
     return source
 
 
-def relative_modules(text: str) -> set[str]:
+def referenced_modules(text: str) -> set[str]:
     tree = ast.parse(text)
-    out: set[str] = set()
+    out: set[str] = set(DYNAMIC_MODULE.findall(text))
     for node in ast.walk(tree):
         if not isinstance(node, ast.ImportFrom) or node.level != 1:
             continue
@@ -100,7 +102,7 @@ def build_closure() -> tuple[set[str], dict[str, str]]:
             raise SystemExit(f"canonical module collision: {prior}, {source} -> {target}")
         owners[target] = source
         mapping[source] = target
-        for dep in relative_modules(path.read_text(encoding="utf-8")):
+        for dep in referenced_modules(path.read_text(encoding="utf-8")):
             dep_path = source_path(dep)
             if dep == "version_manifest":
                 mapping[dep] = "runtime_contract"
@@ -111,13 +113,15 @@ def build_closure() -> tuple[set[str], dict[str, str]]:
 
 
 def rewrite_imports(text: str, mapping: dict[str, str]) -> str:
-    # Relative Python imports.
     for source, target in sorted(mapping.items(), key=lambda item: -len(item[0])):
         if source == target:
             continue
         text = re.sub(rf"(?m)(from\s+\.){re.escape(source)}(?=\s+import\b)", rf"\1{target}", text)
-        text = re.sub(rf"(?m)(from\s+\.\s+import\s+[^\n]*\b){re.escape(source)}\b", lambda m: m.group(0).replace(source, target), text)
-        # Capability registries store import targets as strings.
+        text = re.sub(
+            rf"(?m)(from\s+\.\s+import\s+[^\n]*\b){re.escape(source)}\b",
+            lambda m: m.group(0).replace(source, target),
+            text,
+        )
         text = text.replace(f"cad_engine.{source}", f"cad_engine.{target}")
     return text
 
@@ -136,6 +140,7 @@ def semantic_runtime_cleanup(target: str, text: str) -> str:
         "v19_materialization_qa": "materialization_qa",
         "v19_traceability_preflight": "traceability_preflight",
         "v19_qa": "authority_pipeline_qa",
+        "V19_RELEASE_GOLDEN_PASS": "MECHANICAL_RELEASE_GOLDEN_PASS",
         "MECHANICAL_V19_GOLDEN_STATUS": "MECHANICAL_GOLDEN_STATUS",
         "mechanical-v19-authoritative": "mechanical-authoritative",
         "mechanical-v19": "mechanical",
@@ -165,7 +170,6 @@ def semantic_runtime_cleanup(target: str, text: str) -> str:
         text = text.replace(old, new)
 
     if target == "main_transport":
-        # Transport must call the canonical authority, not the historical base composer.
         text = re.sub(
             r"from \.mechanical_cad_base import design_mechanical_authority_site",
             "from .mechanical_authority import design_mechanical_authority_site",
@@ -187,10 +191,14 @@ def semantic_runtime_cleanup(target: str, text: str) -> str:
         text = text.replace('"active_versions": runtime_contract(),', '"runtime_contract": runtime_contract(),')
         text = text.replace('"engine_version":CAD_API_VERSION,', '"build":build_identity(),')
         text = text.replace('"engine_version": CAD_API_VERSION,', '"build": build_identity(),')
-    elif target == "mechanical_release_contract":
+
+    if target.startswith("mechanical_release_contract"):
         text = re.sub(r"(?m)^RELEASE_VERSION\s*=.*\n", "", text)
+        text = text.replace('"version": RELEASE_VERSION,\n', '')
+        text = text.replace("'version':RELEASE_VERSION,", "")
         text = text.replace('{"version":RELEASE_VERSION,', '{')
-        text = text.replace("{'version':RELEASE_VERSION,", "{")
+        text = text.replace("V16_CAPABILITIES", "PRIOR_CAPABILITIES")
+        text = text.replace("V15_CAPABILITIES", "PRIOR_CAPABILITIES")
     return text
 
 
@@ -226,8 +234,7 @@ def write_migration() -> dict:
     for source in sorted(sources):
         target = mapping[source]
         text = source_path(source).read_text(encoding="utf-8")
-        text = rewrite_imports(text, mapping)
-        text = semantic_runtime_cleanup(target, text)
+        text = semantic_runtime_cleanup(target, rewrite_imports(text, mapping))
         path = source_path(target)
         path.write_text(text, encoding="utf-8")
         written.append(path.name)
@@ -235,26 +242,20 @@ def write_migration() -> dict:
     (CAD / "runtime_contract.py").write_text(runtime_contract_text(), encoding="utf-8")
     written.append("runtime_contract.py")
 
-    # Existing canonical materializer participates in the runtime closure and must
-    # not stamp a historical release number into customer DXFs.
     materializer = CAD / "mechanical_network_materializer.py"
-    mtext = semantic_runtime_cleanup("mechanical_network_materializer", materializer.read_text(encoding="utf-8"))
-    materializer.write_text(mtext, encoding="utf-8")
+    materializer.write_text(
+        semantic_runtime_cleanup("mechanical_network_materializer", materializer.read_text(encoding="utf-8")),
+        encoding="utf-8",
+    )
 
-    # main.py is the only deployment entrypoint and should import the concrete
-    # canonical transport directly; no monkey-patching through historical modules.
-    main = CAD / "main.py"
-    text = main.read_text(encoding="utf-8")
-    text = text.replace("from .cad_transport import app, transport_module", "from .main_transport import app")
-    text = text.replace("\n    transport_module.design_mechanical_authority_site = design_mechanical_authority_site\n", "")
-    text = text.replace("from .mechanical_authority import design_mechanical_authority_site\n", "")
-    main.write_text(text, encoding="utf-8")
-
-    # The shell no longer advertises a release-numbered authority in startup logs.
+    # main.py is hand-maintained as the tiny deployment boundary. Do not regenerate it.
     start = ROOT / "start_services.sh"
     stext = start.read_text(encoding="utf-8")
-    stext = re.sub(r"# CAD designer: mechanical requests use the version-locked v19\.1 authority\n# adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP\.\n",
-                   "# CAD designer: mechanical requests use the single canonical fail-closed authority.\n", stext)
+    stext = re.sub(
+        r"# CAD designer: mechanical requests use the version-locked v19\.1 authority\n# adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP\.\n",
+        "# CAD designer: mechanical requests use the single canonical fail-closed authority.\n",
+        stext,
+    )
     start.write_text(stext, encoding="utf-8")
 
     return {"source_count": len(sources), "written": sorted(set(written)), "mapping": dict(sorted(mapping.items()))}
