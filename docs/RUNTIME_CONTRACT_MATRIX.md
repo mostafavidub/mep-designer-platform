@@ -42,3 +42,7 @@ floor geometry that the architectural source does not contain.
 When detected architectural plan regions are nested, a source point belongs to
 the unique smallest containing region (the most-specific source boundary). Equal
 minimum regions remain ambiguous and stop generation.
+
+PMM level bounds come from the level profile when present; if that summary omits
+them, the exact same-name level in the source-backed architecture model supplies
+the already-detected bounds. Non-identical names are never matched.
