@@ -8,13 +8,14 @@ import shutil
 import tempfile
 import uuid
 import zipfile
+import hashlib
 from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
 
 import requests
 from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 
 from . import main as legacy
 from . import artifact_storage
@@ -627,9 +628,16 @@ def run_design_dxf(project_id, revision_id):
         db.commit()
         durable_uri = artifact_storage.upload_output(p.id, r.revision_no, discipline, dst)
         if not durable_uri:
-            durable_uri = artifact_storage.persist_local_output(
-                p.id, r.revision_no, discipline, dst, legacy.DATA_DIR,
+            content = dst.read_bytes()
+            blob = legacy.ArtifactBlob(
+                project_id=p.id, revision_no=r.revision_no, discipline=discipline,
+                filename=dst.name,
+                media_type='application/dxf' if dst.suffix.lower() == '.dxf' else 'application/zip',
+                sha256=hashlib.sha256(content).hexdigest(), content=content,
             )
+            db.add(blob)
+            db.flush()
+            durable_uri = f'db://artifact/{blob.id}'
         if transfer_root:
             shutil.rmtree(transfer_root,ignore_errors=True)
             transfer_root=None
@@ -651,7 +659,7 @@ def run_design_dxf(project_id, revision_id):
         db.commit()
         _purge_processing_files(
             p.id, keep_output=True,
-            preserve_local_output=not str(durable_uri).startswith('s3://'),
+            preserve_local_output='://' not in str(durable_uri),
         )
         artifact_storage.delete_project_inputs(p.id)
     except Exception as exc:
@@ -691,7 +699,7 @@ def flow_payload_dxf(p):
 
 
 def _resolve_existing_cad_artifact(pid, rev, discipline, stored_path):
-    if str(stored_path or '').startswith('s3://'):
+    if str(stored_path or '').startswith(('s3://', 'db://artifact/')):
         return str(stored_path)
     path = Path(stored_path or '')
     if path.exists() and path.suffix.lower() in ('.dxf', '.zip'):
@@ -725,9 +733,28 @@ def get_cad_output(pid: int, rev: int, request: Request):
         legacy.Revision.revision_no == rev,
     ).first()
     discipline = (p.answers or {}).get('discipline', (p.analysis or {}).get('discipline', 'mechanical'))
-    db.close()
     if not r or r.status != 'ready':
+        db.close()
         raise HTTPException(404)
+
+    if str(r.pdf_path or '').startswith('db://artifact/'):
+        try:
+            blob_id = int(str(r.pdf_path).rsplit('/', 1)[-1])
+        except ValueError:
+            db.close()
+            raise HTTPException(404)
+        blob = db.get(legacy.ArtifactBlob, blob_id)
+        if not blob or blob.project_id != pid or blob.revision_no != rev:
+            db.close()
+            raise HTTPException(404)
+        content, media_type, stored_name = bytes(blob.content), blob.media_type, blob.filename
+        db.close()
+        suffix = Path(stored_name).suffix.lower()
+        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
+        return Response(content=content, media_type=media_type,
+                        headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+
+    db.close()
 
     path = _resolve_existing_cad_artifact(pid, rev, discipline, r.pdf_path)
     if not path:
@@ -766,6 +793,13 @@ def delete_cad_output(pid: int, rev: int, request: Request):
         stored = str(revision.pdf_path)
         if stored.startswith('s3://'):
             artifact_storage.delete_artifact(stored)
+        elif stored.startswith('db://artifact/'):
+            try:
+                blob = db.get(legacy.ArtifactBlob, int(stored.rsplit('/', 1)[-1]))
+            except ValueError:
+                blob = None
+            if blob and blob.project_id == pid and blob.revision_no == rev:
+                db.delete(blob)
         else:
             path = Path(stored)
             project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
@@ -803,8 +837,22 @@ def maintenance_get_cad_output(pid: int, rev: int, request: Request):
             'discipline', (project.analysis or {}).get('discipline', 'mechanical')
         )
         path = _resolve_existing_cad_artifact(pid, rev, discipline, revision.pdf_path)
+        blob_payload = None
+        if isinstance(path, str) and path.startswith('db://artifact/'):
+            try:
+                blob = db.get(legacy.ArtifactBlob, int(path.rsplit('/', 1)[-1]))
+            except ValueError:
+                blob = None
+            if blob and blob.project_id == pid and blob.revision_no == rev:
+                blob_payload = (bytes(blob.content), blob.media_type, blob.filename)
     finally:
         db.close()
+    if blob_payload:
+        content, media_type, stored_name = blob_payload
+        suffix = Path(stored_name).suffix.lower()
+        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
+        return Response(content=content, media_type=media_type,
+                        headers={'Content-Disposition': f'attachment; filename="{filename}"'})
     if isinstance(path, str) and path.startswith('s3://'):
         suffix = Path(path).suffix.lower()
         filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
