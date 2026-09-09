@@ -1,0 +1,128 @@
+name: Runtime Import Closure Fix One-Time
+
+on:
+  push:
+    branches:
+      - refactor/mechanical-runtime-unversioned-0056
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !startsWith(github.event.head_commit.message, '[closure-fix]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/mechanical-runtime-unversioned-0056
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rewrite all canonical Mechanical module references
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          cad = Path('cad_engine')
+          mapping = {
+              'acceptance_v13':'engineering_acceptance',
+              'adaptive_sheet_planner_v13':'adaptive_sheet_planner',
+              'annotation_v13':'annotation',
+              'architecture_preservation_gate_v16':'architecture_preservation_gate',
+              'architecture_reconstruction_v14':'architecture_reconstruction',
+              'authority_architecture_v14':'authority_architecture',
+              'coordination_v19':'mechanical_coordination',
+              'detail_library_v13':'detail_library',
+              'documentation_enhancer_v17':'documentation_enhancer',
+              'dynamic_detail_engine_v14':'dynamic_detail_engine',
+              'engineering_pipeline_v13':'engineering_pipeline',
+              'engineering_runner_v13':'engineering_runner',
+              'equipment_representation_v14':'equipment_representation',
+              'final_delivery_gate_v17':'final_delivery_gate',
+              'fixture_recognition_v14':'fixture_recognition',
+              'main_v15':'main_transport',
+              'manufacturer_selector_v19':'mechanical_manufacturer_selector',
+              'mechanical_authority_site_v15':'mechanical_cad_base',
+              'mechanical_authority_site_v16':'mechanical_cad_preservation',
+              'mechanical_authority_site_v17':'mechanical_cad_shell',
+              'mechanical_authority_site_v19':'mechanical_authority',
+              'mechanical_authority_v15':'mechanical_design_core',
+              'mechanical_calculations_v13':'mechanical_calculations',
+              'mechanical_calculations_v14':'mechanical_calculation_traceability',
+              'mechanical_pipeline_v19':'mechanical_pipeline',
+              'mechanical_release_contract_v15':'mechanical_release_contract_base',
+              'mechanical_release_contract_v16':'mechanical_release_contract_preservation',
+              'mechanical_release_contract_v17':'mechanical_release_contract_reference',
+              'mechanical_release_contract_v19':'mechanical_release_contract',
+              'mechanical_release_hardening_v18':'mechanical_release_hardening',
+              'output_sanitizer_v13':'output_sanitizer',
+              'parametric_documentation_v19':'mechanical_documentation',
+              'plan_isolation_acceptance_v13':'plan_isolation_acceptance',
+              'plan_segmentation_v13':'plan_segmentation',
+              'project_hvac_v13':'project_hvac',
+              'reference_parity_engine_v17':'reference_parity_engine',
+              'routing_v13':'routing',
+              'semantic_sheet_qa_v14':'semantic_sheet_qa',
+              'sheet_cleanup_policy_v1':'sheet_cleanup_policy',
+              'sizing_v13':'sizing',
+              'sizing_v14':'mechanical_execution_sizing',
+              'submission_qa_v19':'mechanical_submission_qa',
+              'system_requirements_v13':'system_requirements',
+              'topology_v13':'topology',
+              'version_manifest':'runtime_contract',
+          }
+
+          # Ensure every canonical target exists before rewriting references.
+          for source, target in mapping.items():
+              if source == 'version_manifest':
+                  continue
+              src = cad / f'{source}.py'
+              dst = cad / f'{target}.py'
+              if not dst.exists():
+                  if not src.exists():
+                      raise SystemExit(f'missing source for canonical target: {source}')
+                  dst.write_text(src.read_text(encoding='utf-8'), encoding='utf-8')
+
+          # Rewrite module identities in every canonical (non-versioned filename) Python file.
+          versioned_name = re.compile(r'_v\d+(?:_\d+)*\.py$', re.I)
+          for path in cad.glob('*.py'):
+              if versioned_name.search(path.name):
+                  continue
+              text = path.read_text(encoding='utf-8')
+              original = text
+              for source, target in sorted(mapping.items(), key=lambda kv: -len(kv[0])):
+                  text = text.replace(f'cad_engine.{source}', f'cad_engine.{target}')
+                  text = re.sub(rf'(?<![A-Za-z0-9_]){re.escape(source)}(?![A-Za-z0-9_])', target, text)
+              if path.name.startswith('mechanical_release_contract'):
+                  text = re.sub(r'(?m)^RELEASE_VERSION\s*=.*\n', '', text)
+                  text = text.replace("'version':RELEASE_VERSION,", '')
+                  text = text.replace('"version":RELEASE_VERSION,', '')
+                  text = text.replace("'version': RELEASE_VERSION,", '')
+                  text = text.replace('"version": RELEASE_VERSION,', '')
+              if text != original:
+                  path.write_text(text, encoding='utf-8')
+
+          # Assert no canonical file directly names a versioned Mechanical implementation.
+          leftovers = []
+          names = tuple(k for k in mapping if k != 'version_manifest')
+          for path in cad.glob('*.py'):
+              if versioned_name.search(path.name):
+                  continue
+              text = path.read_text(encoding='utf-8')
+              for name in names:
+                  if re.search(rf'(?<![A-Za-z0-9_]){re.escape(name)}(?![A-Za-z0-9_])', text):
+                      leftovers.append(f'{path}:{name}')
+          if leftovers:
+              raise SystemExit('versioned canonical references remain:\n' + '\n'.join(leftovers))
+          PY
+      - name: Commit closure migration
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add cad_engine
+          git commit -m '[closure-fix] eliminate versioned imports from canonical Mechanical closure'
+          git push origin HEAD:refactor/mechanical-runtime-unversioned-0056
