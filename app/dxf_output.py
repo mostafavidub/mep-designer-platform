@@ -19,8 +19,8 @@ from fastapi.responses import FileResponse, RedirectResponse
 from . import main as legacy
 from . import artifact_storage
 from .design_progress import set_project_progress
-from cad_engine.version_manifest import active_version_manifest
 from cad_engine.build_identity import build_identity, stamp_artifact
+from cad_engine.runtime_contract import runtime_contract
 from .design_recovery import clear_active_recovery
 
 app = legacy.app
@@ -350,7 +350,7 @@ def _post_to_compatible_cad(payload):
         # second Python interpreter.  Calling the same canonical route in the
         # web process preserves validation/HTTP semantics while sharing memory.
         from cad_engine import main as _canonical_entrypoint  # noqa: F401
-        from cad_engine.main_v15 import design
+        from cad_engine.main_transport import design
 
         class LocalResponse:
             def __init__(self, status_code, body):
@@ -470,17 +470,36 @@ def run_design_dxf(project_id, revision_id):
                         })
             design_answers['_plan_fixture_evidence'] = fixture_evidence
             design_answers['_plan_analysis'] = p.analysis
-            design_answers['_runtime_contract'] = active_version_manifest()
+            # The panel and CAD worker exchange the one canonical, unversioned
+            # Mechanical runtime contract.  The retired version-manifest shape
+            # cannot satisfy the fail-closed CAD contract gate.
+            design_answers['_runtime_contract'] = runtime_contract()
             analysis = dict(p.analysis or {})
             pmm = analysis.get('project_mechanical_model') or {}
-            design_answers['_v19_input_contract'] = {
-                'coordination_inputs': analysis.get('coordination_inputs_v19') or {},
-                'route_request': analysis.get('route_request_v19') or {},
-                'equipment_requirements': analysis.get('equipment_requirements_v19') or {},
-                'manufacturer_catalogue': analysis.get('manufacturer_catalogue_v19') or [],
-                'detail_specs': analysis.get('detail_specs_v19') or [],
-                'network_graph': analysis.get('network_graph_v19') or {},
-                'pmm_schema': pmm.get('schema'),
+            design_answers['_canonical_input_contract'] = {
+                'project_mechanical_model': pmm,
+                'calculation_rows': analysis.get('calculation_rows_canonical'),
+                'active_systems': analysis.get('active_systems_canonical'),
+                'coordination_inputs': analysis.get('coordination_inputs_canonical') or {},
+                'route_request': analysis.get('route_request_canonical') or {},
+                'equipment_requirements': analysis.get('equipment_requirements_canonical') or {},
+                'manufacturer_catalogue': analysis.get('manufacturer_catalogue_canonical') or [],
+                'manufacturer_database_records': analysis.get('manufacturer_database_records_canonical'),
+                'target_design_inputs': analysis.get('target_design_inputs_canonical'),
+                'target_design_packages': analysis.get('target_design_packages_canonical'),
+                'construction_delivery_inputs': analysis.get('construction_delivery_inputs_canonical'),
+                'equipment_selection_checks': analysis.get('equipment_selection_checks_canonical'),
+                'declared_equipment_ids': analysis.get('declared_equipment_ids_canonical') or [],
+                'detail_specs': analysis.get('detail_specs_canonical') or [],
+                'final_parametric_detail_specs': analysis.get('final_parametric_detail_specs_canonical') or [],
+                'network_graph': analysis.get('network_graph_canonical') or {},
+                'network_level_assignments': analysis.get('network_level_assignments_canonical'),
+                'network_design_basis': analysis.get('network_design_basis_canonical'),
+                'annotation_solver': analysis.get('annotation_solver_canonical'),
+                'submission_checks': analysis.get('submission_checks_canonical'),
+                'engineer_review': analysis.get('engineer_review_canonical'),
+                'quality_metrics': analysis.get('quality_metrics_canonical') or {},
+                'golden_result': analysis.get('golden_result_canonical'),
             }
         set_project_progress(p, 'validating_contract')
         db.commit()
@@ -521,14 +540,14 @@ def run_design_dxf(project_id, revision_id):
             raise RuntimeError(message)
         data = resp.json()
         if discipline == 'mechanical':
-            active_versions = active_version_manifest()
-            if data.get('engine_version') != active_versions['cad_api']:
-                raise RuntimeError('نسخه موتور CAD با نسخه فعال سایت تطابق ندارد.')
+            expected_contract = design_answers['_runtime_contract']
+            if data.get('build') != expected_contract['build_identity']:
+                raise RuntimeError('هویت ساخت موتور CAD با هویت ساخت فعال سایت تطابق ندارد.')
             for report in data.get('design_reports') or []:
-                if report.get('pipeline_authority') != 'mechanical-v19':
-                    raise RuntimeError('خروجی توسط مسیر مکانیکی فعال v19 تولید نشده است.')
-                if report.get('executed_versions') != active_versions:
-                    raise RuntimeError('نسخه تحلیل، طراحی یا بازبینی خروجی با سایت تطابق ندارد.')
+                if report.get('pipeline_authority') != 'mechanical':
+                    raise RuntimeError('خروجی توسط مسیر مکانیکی مرجع تولید نشده است.')
+                if report.get('runtime_contract') != expected_contract:
+                    raise RuntimeError('قرارداد تحلیل، طراحی یا بازبینی خروجی با سایت تطابق ندارد.')
         if discipline == 'mechanical':
             set_project_progress(
                 p, 'mechanical_release_qa',

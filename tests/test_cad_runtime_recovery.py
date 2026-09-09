@@ -30,7 +30,7 @@ def response(status, payload):
 
 
 @patch.dict(dxf_output.os.environ, {"COBUILT_CAD_IN_PROCESS": "1"})
-@patch("cad_engine.main_v15.design")
+@patch("cad_engine.main_transport.design")
 def test_constrained_production_calls_canonical_design_in_process(design):
     design.return_value = {"ok": True, "generated_files": ["result.dxf"]}
 
