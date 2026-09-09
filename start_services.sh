@@ -18,9 +18,9 @@ RULEBOOK_TARGET="${RULEBOOK_PATH:-/data/rulebook/MEP_Design_Rulebook.docx}"
 mkdir -p "$(dirname "$RULEBOOK_TARGET")"
 python data/rulebook/generate_rulebook_v4.py "$RULEBOOK_TARGET"
 
-# CAD designer: mechanical requests use the version-locked v19.1 authority
-# adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
-# Keep the co-built CAD runtime supervised.  Railway may reclaim a background
+# CAD designer: mechanical requests use the single canonical Mechanical
+# authority and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
+# Keep the co-built CAD runtime supervised. Railway may reclaim a background
 # child independently while leaving the public web process alive; without a
 # supervisor every later paid job then fails with a localhost connection error.
 run_cad_designer() {
