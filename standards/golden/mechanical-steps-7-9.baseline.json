@@ -1,0 +1,6 @@
+{
+  "gas_segment_fields": ["allowable_pressure_drop_mbar", "calc_id", "downstream_appliance_ids", "equivalent_length_m", "flow_m3h", "segment_id", "selected_dn_mm", "service_pressure_mbar", "size_source", "source_pmm_ids", "status"],
+  "heating_radiator_fields": ["datasheet", "design_water_temperatures_c", "dimensions_mm", "manufacturer", "model", "radiator_id", "required_output_w", "room_calc_id", "room_id", "sections", "selected_output_w", "selection_margin_percent", "selection_type", "source_pmm_ids", "status"],
+  "sheets": {"M-131": "PASS", "M-132": "PASS", "M-141": "PASS", "M-142": "PASS", "M-161": "PASS", "M-162": "PASS"},
+  "split_idu_fields": ["airflow_cfm", "calc_id", "calculated_load_btu_h", "condensate_drain", "datasheet", "elevation_m", "gas_size_mm", "idu_id", "liquid_size_mm", "manufacturer", "model", "room_id", "route_length_m", "selected_capacity_btu_h", "selection_margin_percent", "selection_type", "source_pmm_ids", "status", "zone_id"]
+}

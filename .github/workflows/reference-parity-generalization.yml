@@ -1,8 +1,8 @@
-name: Reference Parity Generalization v17
+name: Reference Parity Generalization
 
 on:
   push:
-    branches: [reference-parity-generalization-v17]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -200,11 +200,11 @@ jobs:
     needs: cad-documentation-integration
     runs-on: ubuntu-latest
     env:
-      CAD_OUTPUT_DIR: /tmp/engitools-v17-ci
+      CAD_OUTPUT_DIR: /tmp/engitools-reference-parity-ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: pip install -r cad_engine/requirements.txt
-      - run: python -c "from cad_engine.mechanical_release_contract_v17 import release_contract_status; s=release_contract_status(); print(s); assert s['status']=='PASS'"
-      - run: python -c "from cad_engine.main_v17 import app; print('main_v17 import PASS')"
+      - run: python -c "from cad_engine.mechanical_release_contract import release_contract_status; s=release_contract_status(); print(s); assert s['status']=='PASS'"
+      - run: python -c "from cad_engine.main import app; print('canonical Mechanical runtime import PASS')"

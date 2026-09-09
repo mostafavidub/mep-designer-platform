@@ -55,14 +55,16 @@ class MechanicalAuthorityRuntimeV19Tests(unittest.TestCase):
         self.assertTrue(payload['active_systems']['cold_water'])
         self.assertTrue(payload['active_systems']['cooling'])
 
+    @patch.object(authority, 'build_authoritative_topology')
     @patch.object(authority, '_design_v17')
     @patch.object(authority, 'run_v19_pipeline')
-    def test_missing_authority_inputs_block_renderer(self, pipeline, renderer):
+    def test_missing_authority_inputs_block_renderer(self, pipeline, renderer, topology):
+        topology.return_value = {'status': 'INPUT_REQUIRED', 'missing_inputs': ['PROJECT_MECHANICAL_MODEL_V3']}
         result = authority.design_mechanical_authority_site(Path('in.dxf'), Path('out.dxf'),
                                                              answers=self.answers(), plan_analysis={})
-        self.assertEqual(result['stage'], 'v19_authority_input_gate')
+        self.assertEqual(result['stage'], 'v19_network_authority_gate')
         self.assertEqual(result['input_required']['status'], 'INPUT_REQUIRED')
-        self.assertIn('PROJECT_MECHANICAL_MODEL_V3_REQUIRED', result['input_required']['missing_inputs'])
+        self.assertIn('PROJECT_MECHANICAL_MODEL_V3', result['input_required']['missing_inputs'])
         pipeline.assert_not_called()
         renderer.assert_not_called()
 
@@ -96,22 +98,42 @@ class MechanicalAuthorityRuntimeV19Tests(unittest.TestCase):
         self.assertIn('CALCULATION_OUTPUT_RECONCILIATION_NOT_PASS', result['input_required']['missing_inputs'])
         renderer.assert_not_called()
 
+    @patch.object(authority, 'materialize_authoritative_network')
     @patch.object(authority, '_design_v17')
     @patch.object(authority, 'run_v19_pipeline')
-    def test_v17_is_renderer_only_after_authority_pass(self, pipeline, renderer):
+    def test_v17_is_renderer_only_after_authority_pass(self, pipeline, renderer, materializer):
+        """Locked regression identity: v17 cannot decide network engineering after v19 PASS."""
         pipeline.return_value = self.passing_pipeline()
         renderer.return_value = {'status': 'PASS', 'composition': {}}
+        materializer.return_value = {'status': 'PASS', 'materialized_segments': 1, 'exact_file_reopened': True}
         result = authority.design_mechanical_authority_site(
             Path('in.dxf'), Path('out.dxf'),
             answers=self.answers(project_mechanical_model=self.pmm, calculation_rows=self.rows,
                                  network_graph=self.graph), plan_analysis={})
         renderer.assert_called_once()
+        materializer.assert_called_once()
         self.assertEqual(result['engineering_authority'], 'PMM_V3_V19')
         self.assertEqual(result['pipeline_authority'], 'mechanical-v19')
-        self.assertEqual(result['cad_materializer'], 'legacy-v17-renderer-only')
-        self.assertEqual(result['legacy_renderer_role'], 'CAD_MATERIALIZER_ONLY')
+        self.assertEqual(result['cad_materializer'], 'legacy-v17-shell+graph-native-v19-network')
+        self.assertEqual(result['legacy_renderer_role'], 'CAD_SHELL_ONLY')
         self.assertEqual(result['submission_state'], 'SUBMISSION_READY')
         self.assertTrue(result['v19_traceability_preflight']['zero_mismatch'])
+        self.assertTrue(result['v19_materialization_qa']['exact_file_reopened'])
+
+    @patch.object(authority, 'materialize_authoritative_network')
+    @patch.object(authority, '_design_v17')
+    @patch.object(authority, 'run_v19_pipeline')
+    def test_materialization_failure_blocks_submission(self, pipeline, renderer, materializer):
+        pipeline.return_value = self.passing_pipeline()
+        renderer.return_value = {'status': 'PASS', 'composition': {}}
+        materializer.return_value = {'status': 'FAIL', 'errors': ['SEGMENT_DUPLICATED']}
+        result = authority.design_mechanical_authority_site(
+            Path('in.dxf'), Path('out.dxf'),
+            answers=self.answers(project_mechanical_model=self.pmm, calculation_rows=self.rows,
+                                 network_graph=self.graph), plan_analysis={})
+        self.assertEqual(result['stage'], 'v19_network_materialization_gate')
+        self.assertEqual(result['input_required']['status'], 'FAIL')
+        self.assertIn('SEGMENT_DUPLICATED', result['input_required']['missing_inputs'])
 
     @patch.object(authority, '_design_v17')
     @patch.object(authority, 'run_v19_pipeline')

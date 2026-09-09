@@ -1,5 +1,5 @@
 import unittest
-from cad_engine.sizing_v14 import (
+from cad_engine.mechanical_execution_sizing import (
  size_networks, design_water_network, design_heating_network, design_gas_network,
 )
 
@@ -71,28 +71,30 @@ class SizingV14Tests(unittest.TestCase):
   self.assertTrue(all(row['size_source']==row['calc_id'] for row in result['segments']))
 
  def test_gas_segments_require_official_appliance_evidence_and_all_execution_fields(self):
-  app={'id':'PKG-1','manufacturer':'Official','model':'P24','thermal_input_kw':24,
-       'gas_consumption_m3h':2.73,'terminal_shutoff':{'id':'V-1'},'flue':{'diameter_mm':100},
+  app={'id':'PKG-1','pmm_id':'PMM-EQUIPMENT-PKG-1','manufacturer':'Official','model':'P24','thermal_input_kw':24,
+       'gas_consumption_m3h':2.73,'appliance_valve':{'id':'V-1'},'flue':{'diameter_mm':100},
        'combustion_air':{'area_cm2':150},
        'datasheet':{'official_url':'https://manufacturer.example/p.pdf','revision':'1','sha256':'f'*64}}
   segments=[{'id':'G-BR','downstream_appliance_ids':['PKG-1'],'equivalent_length_m':12}]
   basis={'service_pressure_mbar':21,'allowable_pressure_drop_mbar':2,
          'capacity_table':[{'max_equivalent_length_m':20,'dn_mm':15,'max_flow_m3h':2},
                            {'max_equivalent_length_m':20,'dn_mm':20,'max_flow_m3h':4}],
-         'meter':{'id':'GM-1'},'regulator':{'id':'GR-1'}}
+         'meter':{'id':'GM-1'},'regulator':{'id':'GR-1'},'service_shutoff':{'id':'SV-1'},
+         'riser':{'id':'R-1'},'fittings':{'schedule':'F-1'},'sleeves':{'detail':'S-1'}}
   result=design_gas_network(segments,[app],basis)
   self.assertEqual(result['status'],'PASS',result)
   row=result['segments'][0]
   self.assertEqual((row['flow_m3h'],row['equivalent_length_m'],row['selected_dn_mm']),(2.73,12.0,20.0))
   self.assertTrue(row['calc_id'].startswith('CALC-GAS-'))
-  self.assertEqual({x['type'] for x in result['components']},{'METER','REGULATOR','APPLIANCE_SHUTOFF','FLUE','COMBUSTION_AIR'})
+  self.assertEqual({x['type'] for x in result['components']},{'METER','REGULATOR','SERVICE_SHUTOFF','RISER','FITTINGS','SLEEVES','APPLIANCE_VALVE','FLUE','COMBUSTION_AIR'})
 
  def test_gas_design_fails_closed_for_missing_evidence_and_table_no_match(self):
   basis={'service_pressure_mbar':21,'allowable_pressure_drop_mbar':2,'capacity_table':[],
-         'meter':{'id':'GM'},'regulator':{'id':'GR'}}
+         'meter':{'id':'GM'},'regulator':{'id':'GR'},'service_shutoff':{'id':'SV'},
+         'riser':{'id':'R'},'fittings':{'schedule':'F'},'sleeves':{'detail':'S'}}
   self.assertEqual(design_gas_network([],[],basis)['status'],'INPUT_REQUIRED')
-  app={'id':'A','manufacturer':'M','model':'X','thermal_input_kw':10,'gas_consumption_m3h':9,
-       'terminal_shutoff':True,'flue':True,'combustion_air':True,
+  app={'id':'A','pmm_id':'PMM-EQUIPMENT-A','manufacturer':'M','model':'X','thermal_input_kw':10,'gas_consumption_m3h':9,
+       'appliance_valve':True,'flue':True,'combustion_air':True,
        'datasheet':{'official_url':'x','revision':'1','sha256':'a'*64}}
   result=design_gas_network([{'id':'G','downstream_appliance_ids':['A'],'equivalent_length_m':10}],[app],basis)
   self.assertEqual(result['status'],'FAIL')

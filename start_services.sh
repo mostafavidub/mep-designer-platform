@@ -3,7 +3,7 @@
 set -eu
 
 # Direct script execution changes Python's import root to data/rulebook. Keep
-# the application root importable for the shared active-version contract.
+# the application root importable for the shared runtime contract.
 export PYTHONPATH="$(pwd)${PYTHONPATH:+:$PYTHONPATH}"
 
 # CAD workspaces are regenerable and must never consume the persistent
@@ -16,11 +16,11 @@ python -c 'import os, shutil; from pathlib import Path; root=Path(os.environ["CA
 
 RULEBOOK_TARGET="${RULEBOOK_PATH:-/data/rulebook/MEP_Design_Rulebook.docx}"
 mkdir -p "$(dirname "$RULEBOOK_TARGET")"
-python data/rulebook/generate_rulebook_v4.py "$RULEBOOK_TARGET"
+python data/rulebook/generate_rulebook.py "$RULEBOOK_TARGET"
 
-# CAD designer: mechanical requests use the version-locked v19.1 authority
-# adapter and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
-# Keep the co-built CAD runtime supervised.  Railway may reclaim a background
+# CAD designer: mechanical requests use the single canonical fail-closed
+# authority and remain PRE_SUBMISSION/NOT_COORDINATED without Structural/RCP.
+# Keep the co-built CAD runtime supervised. Railway may reclaim a background
 # child independently while leaving the public web process alive; without a
 # supervisor every later paid job then fails with a localhost connection error.
 run_cad_designer() {
