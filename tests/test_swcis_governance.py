@@ -11,9 +11,15 @@ class SwcisGovernanceTests(unittest.TestCase):
     def test_private_reference_inventory_does_not_block_publication(self):
         inventory = json.loads((ROOT / 'standards/test-suites/golden-regression.json').read_text())
         self.assertEqual(inventory['required_project_contracts'], [])
-        self.assertEqual(inventory['optional_reference_projects'], [1, 3, 4, 6, 7, 8, 10])
+        self.assertEqual(inventory['optional_reference_projects'], [1, 3, 4, 5, 6, 7, 8, 9, 10])
+        self.assertEqual(inventory['development_reference_projects'], [1, 3, 5, 6, 8, 10])
+        self.assertEqual(inventory['validation_reference_projects'], [4, 7])
+        self.assertEqual(inventory['reference_sealed_evaluation_projects'], [9])
+        self.assertEqual(inventory['reference_only_projects'], [12])
+        self.assertEqual(inventory['excluded_projects'], [11])
         self.assertIn('missing_authoritative_input', inventory['synthetic_cases'])
         self.assertEqual(inventory['artifact_engineering_checks'], 'unchanged')
+        self.assertIn('Do not claim unexecuted comparisons passed', inventory['pass_policy'])
 
     def _request(self, directory, body):
         path = Path(directory) / "request.yaml"

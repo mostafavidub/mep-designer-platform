@@ -1,13 +1,16 @@
 {
-  "schema": "reference-truth-set/1.0",
+  "schema": "reference-truth-set/1.1",
   "project_id": 10,
   "project_alias": "fasihi",
-  "purpose": "Held-out semantic engineering truth for regression and calibration after blind sealing; never a generation input.",
-  "privacy_policy": "No customer DXF bytes are stored in Git. Only reviewed semantic facts and externally verified hashes may be stored.",
+  "cohort": "DEVELOPMENT_DEBUG_REFERENCE",
+  "purpose": "Reviewed semantic engineering truth for Project 10 debug/regression comparison. The reference may guide gap analysis after generation but is never a hidden generation input or a source of project-agnostic numeric defaults.",
+  "privacy_policy": "No customer DXF bytes or customer filenames are stored in Git. Only reviewed semantic facts and verified cryptographic hashes are stored.",
   "source": {
-    "reference_file_sha256": null,
-    "hash_status": "INPUT_REQUIRED",
-    "reason": "The exact reference binary is not present in the active repository runtime; do not invent or truncate a SHA256."
+    "pair_status": "COMPLETE_ARCHITECTURE_MECHANICAL_PAIR",
+    "hash_status": "VERIFIED",
+    "architecture_file_sha256": "08b2e3f2a16a90727e1ef44e8dbc96455a57a553a6f7ef6b2d0800dcadeb13ca",
+    "mechanical_reference_file_sha256": "f912a181c6b4250e2ba51c24f7332c70ffd5840bbb17252f6360e8ed0bd36b42",
+    "verified_from": "OWNER_SUPPLIED_CORPUS_2026-09-09"
   },
   "facts": {
     "domestic_water": {
@@ -31,14 +34,16 @@
   },
   "evidence_status": {
     "semantic_facts": "REFERENCE_REVIEWED",
-    "binary_hash": "INPUT_REQUIRED",
-    "generation_use": "FORBIDDEN_BEFORE_BLIND_SEAL"
+    "binary_hashes": "VERIFIED",
+    "generation_use": "FORBIDDEN_AS_HIDDEN_GENERATION_INPUT",
+    "strict_blind_claim": false
   },
   "non_claims": [
     "No official gas utility meter/regulator capacity or service-point authority is asserted.",
     "No official local rainfall intensity is asserted.",
     "No exact manufacturer brand/model is asserted from capacity-only labels.",
     "No Structural/RCP coordination is asserted.",
-    "No licensed-engineer approval is asserted."
+    "No licensed-engineer approval is asserted.",
+    "No repeated Project 10 numeric value is a project-agnostic engine default without independent rule authority."
   ]
 }

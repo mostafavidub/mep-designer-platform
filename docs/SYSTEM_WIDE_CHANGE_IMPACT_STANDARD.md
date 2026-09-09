@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.4.0
+**Canonical version:** 4.5.0
 
 **Status:** LOCKED
 
@@ -39,7 +39,7 @@ All `.yaml` contracts use the JSON-compatible subset of YAML so the validator is
 
 The PMM implementation (`app/project_mechanical_model.py`) is an explicit `pmm`/schema-governed component. A PMM schema change therefore propagates through every transitive consumer and cannot be treated as an isolated application-file edit.
 
-Private held-out reference drawings remain outside Git. Reviewed semantic facts may be recorded under governed Golden/test artifacts only when their provenance and non-claims are explicit. A semantic reference truth set is comparison/calibration evidence after blind sealing; it must never become a hidden generation input. Missing exact source hashes remain `INPUT_REQUIRED` rather than being guessed.
+Private reference drawings remain outside Git. Reviewed semantic facts and privacy-safe reference-corpus metadata may be recorded under governed Golden/test artifacts only when provenance, cryptographic identity, non-claims, and generation-leakage policy are explicit. A semantic reference truth set is comparison/calibration evidence; it must never become a hidden generation input. Missing exact source hashes remain `INPUT_REQUIRED` rather than being guessed.
 
 For upgraded mechanical traceability the required identity chain is:
 
@@ -66,9 +66,11 @@ The comparison must inventory files, sheets, drawing families, entities, labels,
 
 ## Regression governance
 
-Owner-authorized publication policy, 2026-09-08: the seven private reference projects are optional comparison material, not publication prerequisites. Automated regression and synthetic negative tests remain mandatory. Missing optional reference files are not a failed publication gate and must not be represented as a successful comparison. Per-project engineering output checks remain unchanged. Live browser verification follows rollout.
+Owner-authorized publication policy, 2026-09-08: private reference projects are optional comparison material, not publication prerequisites. Automated regression and synthetic negative tests remain mandatory. Missing optional reference files are not a failed publication gate and must not be represented as a successful comparison. Per-project engineering output checks remain unchanged. Live browser verification follows rollout.
 
 SWCIS defines how regression suites are selected, sealed, compared, and accepted; it does not contain project or customer identifiers. Concrete test-project inventories belong in versioned test-suite configuration outside `standards/swcis/`. Risk-selected representative tests and synthetic negative tests are mandatory. Required categories cover missing authoritative input, dependency or route conflict, external-data no-match, schema compatibility, and locked-semantic removal. Private source drawings never enter Git; only hashes, reproducibility metadata, and semantic baselines may be stored.
+
+The owner-supplied mechanical corpus registered on 2026-09-09 is governed by `docs/MECHANICAL_REFERENCE_CORPUS_STANDARD.md` and `standards/test-suites/mechanical-reference-corpus.json`. Its development/validation/evaluation split prevents future tuning leakage but does not create a retroactive claim of strict blindness because the supplied references were inspected for corpus classification. Reference recurrence is not engineering authority: no observed numeric value may become a global engine default without applicable code/standard/manufacturer authority or explicit authoritative project input. Evaluation-only references may be scored after a change is frozen but may not be used to tune that change.
 
 ## Waivers
 
@@ -80,7 +82,7 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read SWCIS 4.4.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private seven-project reference files are not publication prerequisites.
+> Before changing anything, read SWCIS 4.5.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private reference files are not publication prerequisites and reference values are never hidden generation defaults.
 
 ## Administration and branch protection
 

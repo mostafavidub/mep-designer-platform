@@ -1,1 +1,21 @@
-{"schema_revision":"golden-regression-inventory/2","required_project_contracts":[],"optional_reference_projects":[1,3,4,6,7,8,10],"synthetic_cases":["missing_authoritative_input","dependency_or_route_conflict","external_data_no_match","schema_compatibility","locked_semantic_removal"],"pass_policy":"Automated regressions and synthetic cases remain required. Private reference projects are optional and their absence does not block publication. Do not claim unexecuted comparisons passed.","owner_authorized_at":"2026-09-08","artifact_engineering_checks":"unchanged"}
+{
+  "schema_revision": "golden-regression-inventory/3",
+  "required_project_contracts": [],
+  "optional_reference_projects": [1, 3, 4, 5, 6, 7, 8, 9, 10],
+  "development_reference_projects": [1, 3, 5, 6, 8, 10],
+  "validation_reference_projects": [4, 7],
+  "reference_sealed_evaluation_projects": [9],
+  "reference_only_projects": [12],
+  "excluded_projects": [11],
+  "corpus_contract": "standards/test-suites/mechanical-reference-corpus.json",
+  "synthetic_cases": [
+    "missing_authoritative_input",
+    "dependency_or_route_conflict",
+    "external_data_no_match",
+    "schema_compatibility",
+    "locked_semantic_removal"
+  ],
+  "pass_policy": "Automated regressions and synthetic cases remain required. Private reference projects are optional comparison material and their absence does not block publication. Cohorts prevent future tuning leakage but, because the supplied references have been inspected for corpus classification, no project in this inventory is claimed strictly unseen. Do not claim unexecuted comparisons passed.",
+  "owner_authorized_at": "2026-09-09",
+  "artifact_engineering_checks": "unchanged"
+}
