@@ -26,6 +26,21 @@ class RoutingEndpointProposalTests(unittest.TestCase):
         self.assertTrue(all(row["room_boundary_known"] is False for row in rows))
         self.assertEqual(result["quality"]["proposed_endpoints_without_room_boundary"], len(rows))
 
+    def test_missing_plan_geometry_preserves_logical_endpoints_without_invented_offset(self):
+        architecture = {
+            "rooms": [
+                {"id": "K", "type": "kitchen", "plan_id": "P1", "label_point": (2.0, 2.0)},
+                {"id": "B", "type": "bathroom", "plan_id": "P1", "label_point": (5.0, 5.0)},
+            ]
+        }
+        result = _add_locked_design_endpoints(architecture, {"detections": []}, {"gas_service": True})
+        rows = result["detections"]
+        self.assertTrue({"stove", "hood", "exhaust_fan"}.issubset({row["type"] for row in rows}))
+        unresolved = [row for row in rows if row.get("placement_basis") == "ROOM_LABEL_ONLY_UNLOCATED_PROPOSAL"]
+        self.assertTrue(unresolved)
+        self.assertTrue(all(row["installed"] is False for row in unresolved))
+        self.assertTrue(all(row["location_authority"] == "PROPOSED_NOT_SOURCE_DETECTED" for row in unresolved))
+
     def test_polygon_backed_proposals_stay_inside_reconstructed_room(self):
         room = {
             "id": "R1",
