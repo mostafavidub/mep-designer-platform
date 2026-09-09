@@ -89,24 +89,40 @@ def _plan_fanout_candidates(anchor, bounds):
 
 
 def propose_connection_point(room: dict, plan_bounds, ordinal: int = 0, occupied=()) -> dict | None:
-    """Return a distinct, explicitly non-authoritative design connection point.
+    """Return an explicitly non-authoritative design connection point.
 
     If a reconstructed room polygon exists, the point is constrained to it. If
-    only a semantic room label is available, a small plan-relative fanout is
-    used and the result is marked as requiring fixture-location coordination.
+    only a semantic room label and plan bounds are available, a small
+    plan-relative fanout is used. If even plan geometry is unavailable, the room
+    label is retained as a deliberately unresolved proposal rather than inventing
+    a dimensional offset; downstream production truth checks then fail closed on
+    coincident route geometry until enough architecture exists to separate it.
     """
     anchor = _room_anchor(room)
     if anchor is None:
         return None
     occupied_keys = {_key(point) for point in occupied if point is not None}
-    polygon = room.get("polygon") or []
     candidates = _polygon_candidates(room, anchor)
     boundary_known = bool(candidates)
-    basis = "RECONSTRUCTED_ROOM_POLYGON_PROPOSAL" if boundary_known else "ROOM_LABEL_PLAN_RELATIVE_PROPOSAL"
-    if not candidates:
+    if boundary_known:
+        basis = "RECONSTRUCTED_ROOM_POLYGON_PROPOSAL"
+    else:
         candidates = _plan_fanout_candidates(anchor, plan_bounds)
+        basis = "ROOM_LABEL_PLAN_RELATIVE_PROPOSAL" if candidates else "ROOM_LABEL_ONLY_UNLOCATED_PROPOSAL"
+
     if not candidates:
-        candidates = [anchor]
+        # No room boundary or plan bounds means there is no defensible geometric
+        # scale from which to derive a distinct offset. Preserve the logical
+        # endpoint and its provenance; do not fabricate a coordinate.
+        return {
+            "point": anchor,
+            "placement_basis": basis,
+            "location_authority": "PROPOSED_NOT_SOURCE_DETECTED",
+            "room_boundary_known": False,
+            "requires_fixture_coordination": True,
+            "geometry_resolved": False,
+        }
+
     available = [point for point in candidates if _key(point) not in occupied_keys]
     if not available:
         return None
@@ -117,4 +133,5 @@ def propose_connection_point(room: dict, plan_bounds, ordinal: int = 0, occupied
         "location_authority": "PROPOSED_NOT_SOURCE_DETECTED",
         "room_boundary_known": boundary_known,
         "requires_fixture_coordination": True,
+        "geometry_resolved": True,
     }
