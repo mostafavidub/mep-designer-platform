@@ -7,6 +7,8 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
+from cad_engine.runtime_contract_sync_gate import assert_runtime_contract_synchronized
+
 
 def register_commercial_flow(app, legacy):
     class Wallet(legacy.Base):
@@ -42,6 +44,15 @@ def register_commercial_flow(app, legacy):
         "mechanical": {"minimum_price": 4_900_000, "price_per_m2": 28_000},
         "electrical": {"minimum_price": 4_200_000, "price_per_m2": 24_000},
     }
+
+    def assert_payment_preflight(project):
+        discipline = (project.answers or {}).get('discipline', (project.analysis or {}).get('discipline', 'mechanical'))
+        if discipline != 'mechanical':
+            return
+        try:
+            assert_runtime_contract_synchronized()
+        except Exception as exc:
+            raise HTTPException(503, 'نسخه طراحی مکانیکی هنوز برای اجرای ایمن آماده نیست؛ پرداخت انجام نشد.') from exc
 
     def service_pricing(discipline, db=None):
         owns_db = db is None
@@ -147,6 +158,8 @@ def register_commercial_flow(app, legacy):
     def pay_wallet(pid: int, request: Request):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project: raise HTTPException(404)
+        try: assert_payment_preflight(project)
+        except HTTPException: db.close(); raise
         quote_data = quote_for(project)
         if not quote_data: db.close(); raise HTTPException(409, "پروژه هنوز آماده قیمت‌گذاری نیست.")
         quote = db.query(ProjectQuote).filter(ProjectQuote.project_id == pid).first()
@@ -161,6 +174,8 @@ def register_commercial_flow(app, legacy):
     def pay_gateway(pid: int, request: Request):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project: raise HTTPException(404)
+        try: assert_payment_preflight(project)
+        except HTTPException: db.close(); raise
         quote_data = quote_for(project)
         if not quote_data: db.close(); raise HTTPException(409, "پروژه هنوز آماده قیمت‌گذاری نیست.")
         quote = db.query(ProjectQuote).filter(ProjectQuote.project_id == pid).first()

@@ -32,3 +32,9 @@ response is accepted only when its build identity, report runtime contract and
 unversioned `mechanical` authority are identical to the request.  The retired
 `active_version_manifest`, `_v19_input_contract` and versioned design entrypoints
 are forbidden on this production transport path.
+
+An architectural title that explicitly declares a typical-floor range is
+preserved as one source-backed identity (`TYPICAL_<first>_<last>`) through
+topology, riser documentation and target-board materialization. Unknown titles
+and detail pseudo-levels remain fail-closed; the runtime never invents separate
+floor geometry that the architectural source does not contain.
