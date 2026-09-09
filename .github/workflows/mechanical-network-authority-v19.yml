@@ -13,6 +13,7 @@ on:
       - 'cad_engine/mechanical_network_materializer.py'
       - 'tests/test_mechanical_authority_runtime_v19.py'
       - 'tests/test_mechanical_network_authority_v19.py'
+      - 'tests/test_mechanical_runtime_v19.py'
       - '.github/workflows/mechanical-network-authority-v19.yml'
 
 jobs:
@@ -26,11 +27,11 @@ jobs:
       - name: Install application and CAD dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt -r cad_engine/requirements.txt
+          python -m pip install pytest -r requirements.txt -r cad_engine/requirements.txt
       - name: Compile application and CAD engine
         run: python -m compileall -q app cad_engine
       - name: Run focused network authority regressions
-        run: python -m unittest -v tests.test_mechanical_network_authority_v19 tests.test_mechanical_authority_runtime_v19
+        run: python -m unittest -v tests.test_mechanical_network_authority_v19 tests.test_mechanical_authority_runtime_v19 tests.test_mechanical_runtime_v19
       - name: Run full repository unit test suite
         env:
           DATABASE_URL: sqlite:////tmp/engitools-network-authority-ci.db
