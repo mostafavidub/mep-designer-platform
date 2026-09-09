@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0063",
+  "summary":"Resolve nested architectural plan regions by their unique most-specific containing boundary while retaining ambiguity failures.",
+  "requester":"project-owner",
+  "change_types":["routing","drawing_output","test","governance","documentation","release_identity"],
+  "changed_rule_ids":[],
+  "impacted_modules":["routing","cad_designer","detail_riser","equipment","manufacturer_selector","sizing","manifest","ui_api","qa","governance","docs","versioning","migration","deployment"],
+  "impact_notes":{
+    "routing":"Choose a unique smallest containing region for source points when architectural plan boundaries are nested.",
+    "cad_designer":"Carry the resolved source level into network nodes.",
+    "detail_riser":"Retain downstream level identity regression.",
+    "equipment":"Equipment inherits only a geometry-resolved level.",
+    "manufacturer_selector":"No selection change; equipment-level downstream closure remains covered.",
+    "sizing":"No numeric changes; retain downstream regression.",
+    "manifest":"Resolved level must match the corresponding plan board.",
+    "ui_api":"No response schema change; user-visible missing-input status reflects the resolved topology result.",
+    "qa":"Positive nested-region and destructive equal-region tests.",
+    "governance":"Ambiguity remains fail-closed.",
+    "docs":"Document most-specific region policy.",
+    "versioning":"No semantic revision bump; Git identity advances.",
+    "migration":"Fresh retry rebuilds topology; no stored migration.",
+    "deployment":"Deploy all-green commit and rerun project 3."
+  },
+  "evidence":{
+    "traceability":["source point -> containing architectural bounds -> unique minimum area -> typed level"],
+    "tests":["nested unique region PASS","equal overlapping regions remain ambiguous","full regression"],
+    "docs":["Runtime contract topology policy"],
+    "version_bump":["No schema/rule revision change"],
+    "migration":["No data migration"],
+    "golden_regression":["Existing network and output suites mandatory"],
+    "semantic_diff":["Only uniquely most-specific nested region becomes resolvable"],
+    "artifact_diff":["Previously blocked source nodes can appear on their exact plan board"],
+    "numeric_diff":["No numeric defaults"],
+    "contract_diff":["No transport change"],
+    "deployment_plan":["Merge, sync Staging, rerun blind project 3"],
+    "rollback_plan":["Revert commit; never select between equal minimum regions"]
+  },
+  "risk":{"likelihood":3,"severity":5,"detectability":1,"score":15,"rationale":"Level resolution affects routing but is limited to strict unique containment and is exposed by topology/board E2E gates."},
+  "waiver":null
+}
