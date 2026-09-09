@@ -477,6 +477,7 @@ def run_design_dxf(project_id, revision_id):
             analysis = dict(p.analysis or {})
             pmm = analysis.get('project_mechanical_model') or {}
             architectural_auto = analysis.get('architectural_auto') or {}
+            from app.mechanical_rulebook import network_design_basis
             design_answers['_canonical_input_contract'] = {
                 'project_mechanical_model': pmm,
                 # These are architecture-only facts produced before design.  They
@@ -502,7 +503,7 @@ def run_design_dxf(project_id, revision_id):
                 'final_parametric_detail_specs': analysis.get('final_parametric_detail_specs_canonical') or [],
                 'network_graph': analysis.get('network_graph_canonical') or {},
                 'network_level_assignments': analysis.get('network_level_assignments_canonical'),
-                'network_design_basis': analysis.get('network_design_basis_canonical'),
+                'network_design_basis': analysis.get('network_design_basis_canonical') or network_design_basis(),
                 'annotation_solver': analysis.get('annotation_solver_canonical'),
                 'submission_checks': analysis.get('submission_checks_canonical'),
                 'engineer_review': analysis.get('engineer_review_canonical'),
