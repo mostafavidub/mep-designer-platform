@@ -379,6 +379,16 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs after live Staging preflight correctly rejected an incomplete image"},
       "verification":{"image_contract_test":"must_pass","full_regression":"must_pass","live_payment_preflight":"must_pass before generation"},
       "migration":{"forward":"Rebuild images with canonical release evidence paths.","rollback":"Do not bypass the preflight; redeploy only a complete prior image."}
+    },
+    {
+      "id":"GOV-2026-035",
+      "status":"APPROVED",
+      "summary":"Resolve source nodes in nested architectural plan regions using the unique smallest containing boundary while retaining equal-boundary ambiguity as fail-closed.",
+      "affected_capabilities":["mechanical_routing","level_identity","approved_drawing_manifest"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete all repairs after blind Staging project 3 exposed overlapping source regions"},
+      "verification":{"nested_region_test":"must_pass","equal_region_negative_test":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
+      "migration":{"forward":"Fresh topology rebuild resolves only a unique most-specific source boundary.","rollback":"Revert; never choose among equal minimum regions."}
     }
   ]
 }
