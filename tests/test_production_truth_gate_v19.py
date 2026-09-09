@@ -4,8 +4,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from cad_engine.mechanical_authority_site_v19 import _v19_payload, design_mechanical_authority_site
-from cad_engine.production_quality_truth_v19 import build_pipeline_traceability, evaluate_production_truth
-from cad_engine.production_quality_documentation_v19 import build_production_context
+from cad_engine.production_quality_truth import build_pipeline_traceability, evaluate_production_truth
+from cad_engine.production_quality_documentation import build_production_context
 from cad_engine.version_manifest import active_version_manifest
 
 
