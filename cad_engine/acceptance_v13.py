@@ -81,10 +81,6 @@ def evaluate_engineering_acceptance(pipeline):
 
     routing = pipeline.get("routing") or {}
     routes = routing.get("routes") or []
-    uncoordinated_routes = [
-        {key: route.get(key) for key in ("id", "system", "plan_id", "wall_crossings", "routing")}
-        for route in routes if (route.get("wall_crossings") or 0) > 0
-    ]
     route_errors = []
     if len(routes) != len(edges):
         route_errors.append("not_all_topology_edges_routed")
@@ -96,7 +92,6 @@ def evaluate_engineering_acceptance(pipeline):
         route_errors.append("degenerate_route")
     gates.append(_gate("routing", route_errors, {
         "routes": len(routes), "wall_crossings": sum(r.get("wall_crossings") or 0 for r in routes),
-        "uncoordinated_routes": uncoordinated_routes,
     }))
 
     sizing = pipeline.get("sizing") or {}
