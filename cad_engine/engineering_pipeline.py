@@ -298,11 +298,17 @@ def recognize_fixtures_equipment(architecture):
         point = room.get("label_point")
         if not point:
             continue
-        for kind in inferred_by_room.get(room.get("type"), ()):
+        for fixture_index,kind in enumerate(inferred_by_room.get(room.get("type"), ())):
             if any(row.get("type") == kind and row.get("room_id") == room.get("id") for row in rows):
                 continue
-            offset = 35.0 * (1 + len([r for r in rows if r.get("room_id") == room.get("id")]))
-            proposed = (float(point[0]) + offset, float(point[1]) + offset * 0.35)
+            polygon=room.get("polygon") or []
+            xs=[float(p[0]) for p in polygon];ys=[float(p[1]) for p in polygon]
+            room_scale=min(max(xs)-min(xs),max(ys)-min(ys)) if xs and ys else 0.0
+            offset=max(room_scale*.04,1e-3)
+            directions=((1,0),(0,1),(-1,0),(0,-1),(1,1),(-1,1),(-1,-1),(1,-1))
+            dx,dy=directions[fixture_index%len(directions)]
+            proposed=(float(point[0])+dx*offset,float(point[1])+dy*offset)
+            if polygon and not _inside(proposed,polygon):proposed=(float(point[0]),float(point[1]))
             rows.append({"id": f"MEP-{len(rows)+1:03d}", "category": "fixture",
                          "type": kind, "point": proposed, "block": "", "layer": "ROOM-PROGRAM",
                          "room_id": room.get("id"), "confidence": 0.62,

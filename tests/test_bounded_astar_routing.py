@@ -85,6 +85,7 @@ def test_canonical_router_treats_double_line_wall_as_one_terminal_assembly():
             {'start': (2, 0), 'end': (2, 4)},
             {'start': (2.2, 0), 'end': (2.2, 4)},
             {'start': (3, 0), 'end': (3, 4)},
+            {'start': (4.8, 0), 'end': (4.8, 4)},
         ],
     }
     topology = {
