@@ -149,8 +149,13 @@ def route_topology(architecture,topology):
         candidates=[pts for pts in _route_candidates(tuple(start['point']),tuple(end['point'])) if all(_inside(p,bounds) for p in pts)]
         if not candidates:
             rejected.append({'edge_id':edge['id'],'reason':'ROUTE_OUTSIDE_PLAN'});continue
-        start_penetration=start.get('category') in {'fixture','equipment'}
-        end_penetration=end.get('category')=='vertical'
+        # Every network edge has two physical terminals.  A terminal can sit
+        # inside a wall-hosted fixture/equipment recess or an enclosed shaft,
+        # regardless of which upstream schema named the node category.  Allow
+        # at most one coordinated sleeve at each endpoint; middle route
+        # segments retain zero wall-crossing tolerance.
+        start_penetration=True
+        end_penetration=True
         ranked=sorted(((_score(points,plan_walls,start_penetration,end_penetration),points) for points in candidates),key=lambda x:(x[0][0],x[0][1]))
         (clashes,length,penetrations),points=ranked[0]
         used_astar=False

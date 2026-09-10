@@ -66,8 +66,8 @@ def test_canonical_router_coordinates_both_endpoint_sleeves_without_waiving_midd
     }
     topology = {
         'nodes': [
-            {'id': 'F', 'point': (5, 10), 'plan_id': 'P1', 'category': 'fixture'},
-            {'id': 'S', 'point': (15, 10), 'plan_id': 'P1', 'category': 'vertical'},
+            {'id': 'F', 'point': (5, 10), 'plan_id': 'P1'},
+            {'id': 'S', 'point': (15, 10), 'plan_id': 'P1'},
         ],
         'edges': [{'id': 'E1', 'from': 'F', 'to': 'S', 'system': 'sanitary', 'plan_id': 'P1'}],
     }
