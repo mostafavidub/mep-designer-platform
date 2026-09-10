@@ -49,15 +49,15 @@ def _wall_in_bounds(wall,bounds):
 def _clear(a,b,walls):
     return not any(_intersects(a,b,tuple(w['start']),tuple(w['end'])) for w in walls)
 
-def _terminal_assembly_hit_indices(a,b,hit_walls,at_start,max_thickness=.50,max_egress=1.50):
+def _terminal_assembly_hit_indices(a,b,hit_walls,at_start,max_thickness=.50):
     offsets=[]
     for index,wall in enumerate(hit_walls):
-        (x1,y1),(x2,y2)=wall['start'],wall['end']
-        if a[1]==b[1] and x1==x2:
-            distance=abs(float(x1)-(a[0] if at_start else b[0]))
-        elif a[0]==b[0] and y1==y2:
-            distance=abs(float(y1)-(a[1] if at_start else b[1]))
-        else:continue
+        c,d=wall['start'],wall['end'];rx=float(b[0])-float(a[0]);ry=float(b[1])-float(a[1]);sx=float(d[0])-float(c[0]);sy=float(d[1])-float(c[1])
+        denominator=rx*sy-ry*sx
+        if abs(denominator)<1e-12:continue
+        t=((float(c[0])-float(a[0]))*sy-(float(c[1])-float(a[1]))*sx)/denominator
+        segment_length=abs(rx)+abs(ry)
+        distance=(t if at_start else 1.0-t)*segment_length
         offsets.append((distance,index))
     if not offsets:return set()
     offsets.sort()
@@ -65,20 +65,14 @@ def _terminal_assembly_hit_indices(a,b,hit_walls,at_start,max_thickness=.50,max_
     for item in offsets[1:]:
         if item[0]-cluster[0][0]<=max_thickness:cluster.append(item)
         else:break
-    if cluster[-1][0]>max_egress:return set()
     return {index for _,index in cluster}
 
 def _terminal_assembly_clear(a,b,walls,max_thickness=.50):
     """Treat nearby parallel wall faces as one terminal sleeve assembly."""
     hits=[w for w in walls if _intersects(a,b,tuple(w['start']),tuple(w['end']))]
     if not hits:return False
-    if a[0]==b[0]:
-        offsets=[float(w['start'][1]) for w in hits if w['start'][1]==w['end'][1]]
-    elif a[1]==b[1]:
-        offsets=[float(w['start'][0]) for w in hits if w['start'][0]==w['end'][0]]
-    else:return False
-    travel=abs(a[0]-b[0])+abs(a[1]-b[1])
-    return len(offsets)==len(hits) and travel<=1.50 and max(offsets)-min(offsets)<=max_thickness
+    allowed=_terminal_assembly_hit_indices(a,b,hits,False,max_thickness)
+    return len(allowed)==len(hits)
 
 def _grid_axis(low,high,step,extras):
     rows=[];value=low
@@ -89,7 +83,7 @@ def _grid_axis(low,high,step,extras):
 
 def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
     """Keep A* finite while retaining narrow passages beside real walls."""
-    values={round(low,6),round(high,6),round(start,6),round(end,6)}
+    values={float(low),float(high),float(start),float(end)}
     for wall in walls:
         for point in (wall['start'],wall['end']):
             value=float(point[coordinate])
@@ -137,8 +131,8 @@ def _open_space_route(start,end,bounds,walls,start_penetration=False,end_penetra
         if best:return best[1]
     xs=_sparse_axis(local[0],local[2],start[0],end[0],walls,0)
     ys=_sparse_axis(local[1],local[3],start[1],end[1],walls,1)
-    sx=xs.index(round(start[0],6));sy=ys.index(round(start[1],6))
-    ex=xs.index(round(end[0],6));ey=ys.index(round(end[1],6));source=(sx,sy);target=(ex,ey)
+    sx=xs.index(float(start[0]));sy=ys.index(float(start[1]))
+    ex=xs.index(float(end[0]));ey=ys.index(float(end[1]));source=(sx,sy);target=(ex,ey)
     queue=[(abs(start[0]-end[0])+abs(start[1]-end[1]),0.0,source)]
     cost={source:0.0};parent={};visited=set()
     while queue:
