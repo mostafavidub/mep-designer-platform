@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.23.0",
+  "standard_version": "4.24.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.24.0", "date": "2026-09-10", "summary": "Treat closely spaced parallel wall faces as one bounded terminal sleeve assembly while retaining fail-closed intermediate-wall routing."},
     {"version": "4.23.0", "date": "2026-09-10", "summary": "Apply endpoint sleeve semantics by edge geometry rather than optional upstream node-category labels."},
     {"version": "4.22.0", "date": "2026-09-10", "summary": "Route from enclosed fixtures to enclosed vertical cores through explicit endpoint portals while avoiding every intermediate wall."},
     {"version": "4.21.0", "date": "2026-09-10", "summary": "Expose non-coordinate route identity, system, plan and routing mode for fail-closed wall-crossing diagnostics."},
