@@ -1,4 +1,5 @@
 from cad_engine.routing_v13 import _open_space_route,route_topology
+from cad_engine.mechanical_network_topology import _orthogonal_path
 
 def test_astar_is_bounded_for_oversized_export_frame():
     route=_open_space_route((10.0,10.0),(14.0,14.0),(-5000.0,-5000.0,5000.0,5000.0),[])
@@ -22,3 +23,14 @@ def test_single_terminal_shaft_penetration_is_coordinated_not_a_wall_clash():
     routed=route_topology(architecture,topology)
     assert routed['quality']['wall_crossings']==0
     assert routed['quality']['coordinated_terminal_penetrations']==1
+
+
+def test_authoritative_topology_routes_around_wall_endpoint():
+    walls = [{'start': (12.0, 9.0), 'end': (12.0, 13.0)}]
+
+    route, metadata = _orthogonal_path((10.0, 10.0), (14.0, 10.0), walls, [])
+
+    assert route[0] == (10.0, 10.0)
+    assert route[-1] == (14.0, 10.0)
+    assert len(route) > 2
+    assert metadata == {'wall_crossings': 0, 'routing': 'ORTHOGONAL_OPEN_SPACE_ASTAR'}

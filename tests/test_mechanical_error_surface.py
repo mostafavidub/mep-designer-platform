@@ -65,6 +65,33 @@ class MechanicalErrorSurfaceTests(unittest.TestCase):
         self.assertIn('route_crosses_architectural_wall', message)
         self.assertNotIn('architectural_north_not_provided', message)
 
+    def test_preservation_failure_exposes_counts_and_reason_without_geometry(self):
+        class Rejection:
+            status_code = 422
+
+            def json(self):
+                return {'detail': {
+                    'stage': 'architecture_preservation_gate',
+                    'architecture_preservation_qa': {
+                        'critical_missing_count': 2,
+                        'important_missing_count': 1,
+                        'all_missing_count': 3,
+                        'sheet_results': [{
+                            'sheet': 'M-W-01',
+                            'preservation_match': {'missing': [
+                                {'reason': 'GEOMETRY_MISMATCH', 'expected_bbox': [1, 2, 3, 4]},
+                            ]},
+                        }],
+                    },
+                }}
+
+        message = dxf_output._cad_error_message(Rejection())
+
+        self.assertIn('critical_missing=2', message)
+        self.assertIn('important_missing=1', message)
+        self.assertIn('GEOMETRY_MISMATCH', message)
+        self.assertNotIn('expected_bbox', message)
+
 
 if __name__ == '__main__':
     unittest.main()
