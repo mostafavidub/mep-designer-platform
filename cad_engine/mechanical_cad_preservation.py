@@ -334,8 +334,14 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         after=_snapshot_selected(out_entities,f"OUT-{row.get('code')}")
         match=_match_transformed_architecture(before,after,tuple(plan["bounds"]),plan_area)
         topo=validate_topology(before,_snapshot_in_source_coordinates(after,tuple(plan["bounds"]),plan_area))
-        # Small numerical tolerance around board safe area, but no clipping into title block.
-        safe=(plan_area[0]-.12,plan_area[1]-.12,plan_area[2]+.12,plan_area[3]+.12)
+        # Visibility is assessed against the actual drawable sheet region, not
+        # only the fitting rectangle.  Architectural blocks/text may extend
+        # beyond their insertion-point region while remaining fully visible.
+        # The subtitle/title block remains excluded and independently guarded
+        # by the safe-zone release gate.
+        board_bounds=tuple(board["bounds"])
+        subtitle_area=tuple(board.get("subtitle_area") or (plan_area[0],plan_area[1],plan_area[2],plan_area[1]))
+        safe=(board_bounds[0],subtitle_area[3],board_bounds[2],board_bounds[3])
         vis=validate_visibility(after,safe)
         topology_ok=topology_ok and topo["pass"]
         visibility_ok=visibility_ok and vis["pass"]
