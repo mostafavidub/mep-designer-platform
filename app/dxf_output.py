@@ -347,7 +347,7 @@ def _cad_rejection_diagnostic(response):
 
 def _post_to_compatible_cad(payload):
     """Use the canonical CAD process shipped in this exact deployment."""
-    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1':
+    def call_in_process():
         # Railway's constrained container must not load the CAD stack in a
         # second Python interpreter.  Calling the same canonical route in the
         # web process preserves validation/HTTP semantics while sharing memory.
@@ -373,10 +373,21 @@ def _post_to_compatible_cad(payload):
             return LocalResponse(200, design(SimpleNamespace(**local_payload)))
         except HTTPException as exc:
             return LocalResponse(exc.status_code, {'detail': exc.detail})
+    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1':
+        return call_in_process()
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
     token = os.getenv('COBUILT_CAD_SERVICE_TOKEN', '').strip()
     headers = {'x-cad-service-token': token} if token else None
-    return requests.post(cobuilt + '/design', json=payload, headers=headers, timeout=3600)
+    try:
+        return requests.post(cobuilt + '/design', json=payload, headers=headers, timeout=3600)
+    except requests.exceptions.ConnectionError:
+        # A draining pre-deploy worker can still claim a database-backed job
+        # after its supervised localhost CAD child has stopped.  The canonical
+        # in-process entrypoint is part of the same image, so recover locally
+        # only for loopback targets.  Remote service failures remain visible.
+        if cobuilt.lower().startswith(('http://127.0.0.1', 'http://localhost')):
+            return call_in_process()
+        raise
 
 
 def _attach_remote_architecture(payload, project_dir):
