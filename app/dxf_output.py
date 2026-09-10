@@ -305,6 +305,18 @@ def _cad_error_message(response):
         failed_stage_qa = detail.get('failed_stage_qa')
         if isinstance(failed_stage_qa, dict):
             priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
+        acceptance = detail.get('engineering_acceptance') or {}
+        for gate in acceptance.get('gates') or []:
+            if gate.get('name') == 'routing' and gate.get('status') == 'FAIL':
+                for route in (gate.get('metrics') or {}).get('uncoordinated_routes') or []:
+                    priority.append(
+                        'UNCOORDINATED_ROUTE:'
+                        f'{route.get("id") or "unknown"}:'
+                        f'{route.get("system") or "unknown"}:'
+                        f'{route.get("plan_id") or "unknown"}:'
+                        f'{route.get("wall_crossings") or 0}:'
+                        f'{route.get("routing") or "unknown"}'
+                    )
         failures = [item for item in failure_evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate','cross','without'))]
         diagnostic = ' | '.join(dict.fromkeys(priority + failures))[:1600] or str(detail)[:1600]
         return f'CAD_QA_FAILURE: {diagnostic}'
