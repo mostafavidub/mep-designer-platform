@@ -124,6 +124,24 @@ def test_local_runtime_mismatch_does_not_loop(post):
     post.assert_called_once()
 
 
+@patch.dict(dxf_output.os.environ, {
+    "COBUILT_CAD_IN_PROCESS": "0",
+    "COBUILT_CAD_DESIGNER_URL": "http://127.0.0.1:8081",
+})
+@patch("cad_engine.main_transport.design")
+@patch("app.dxf_output.requests.post")
+def test_draining_worker_recovers_loopback_connection_in_process(post, design):
+    post.side_effect = dxf_output.requests.exceptions.ConnectionError("localhost stopped")
+    design.return_value = {"ok": True, "generated_files": ["result.dxf"]}
+
+    result = dxf_output._post_to_compatible_cad({"project_id": "preserved"})
+
+    assert result.ok
+    assert result.json()["generated_files"] == ["result.dxf"]
+    post.assert_called_once()
+    design.assert_called_once()
+
+
 def test_startup_requeues_only_exact_preserved_build_identity_failures():
     source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
     assert "runtime_contract_mismatch:build_identity" in source
