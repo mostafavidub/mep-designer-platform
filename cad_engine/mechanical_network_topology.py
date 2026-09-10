@@ -14,6 +14,7 @@ import re
 
 from .architecture_reconstruction import reconstruct_architecture
 from .fixture_recognition import recognize_fixtures_equipment
+from .routing import _open_space_route
 
 
 GRAPH_SCHEMA = "mechanical-network-graph/1"
@@ -263,6 +264,25 @@ def _orthogonal_path(start, end, walls, obstacles):
             wall_crossings += sum(1 for wall in walls or [] if _intersects(a, b, tuple(wall.get("start") or ()), tuple(wall.get("end") or ())))
         ranked.append((obstacle_hits, wall_crossings, tuple(points), points))
     best = min(ranked, key=lambda row: (row[0], row[1], row[2]))
+    if best[1] > 0:
+        wall_points = [tuple(point) for wall in walls or [] for point in (wall.get("start") or (), wall.get("end") or ()) if isinstance(point, (tuple, list)) and len(point) == 2]
+        xs = [start[0], end[0], *(point[0] for point in wall_points)]
+        ys = [start[1], end[1], *(point[1] for point in wall_points)]
+        span = max(max(xs) - min(xs), max(ys) - min(ys), 1.0)
+        margin = max(1.0, span * .02)
+        bounds = (min(xs) - margin, min(ys) - margin, max(xs) + margin, max(ys) + margin)
+        open_route = _open_space_route(start, end, bounds, walls or [])
+        if open_route:
+            obstacle_hits = sum(
+                1 for a, b in zip(open_route, open_route[1:]) for rect in rects
+                if _seg_hits_rect(a, b, rect)
+            )
+            wall_crossings = sum(
+                1 for a, b in zip(open_route, open_route[1:]) for wall in walls or []
+                if _intersects(a, b, tuple(wall.get("start") or ()), tuple(wall.get("end") or ()))
+            )
+            if obstacle_hits == 0 and wall_crossings == 0:
+                return open_route, {"wall_crossings": 0, "routing": "ORTHOGONAL_OPEN_SPACE_ASTAR"}
     if best[0]:
         return None, "ROUTE_INTERSECTS_STRUCTURAL_OBSTACLE"
     return best[3], {"wall_crossings": best[1], "routing": "ORTHOGONAL_PRE_COORDINATION"}

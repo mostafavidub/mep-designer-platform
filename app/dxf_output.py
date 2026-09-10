@@ -277,6 +277,26 @@ def _cad_error_message(response):
         priority = []
         if detail.get('stage'):
             priority.append(str(detail['stage']))
+        preservation = (
+            detail.get('architecture_preservation_qa_after_canonical')
+            or detail.get('architecture_preservation_qa')
+            or {}
+        )
+        if isinstance(preservation, dict) and preservation:
+            reasons = []
+            for sheet in preservation.get('sheet_results') or []:
+                if sheet.get('reason'):
+                    reasons.append(str(sheet['reason']))
+                for missing_item in (sheet.get('preservation_match') or {}).get('missing') or []:
+                    if missing_item.get('reason'):
+                        reasons.append(str(missing_item['reason']))
+            priority.append(
+                'architecture_preservation:'
+                f'critical_missing={int(preservation.get("critical_missing_count") or 0)},'
+                f'important_missing={int(preservation.get("important_missing_count") or 0)},'
+                f'all_missing={int(preservation.get("all_missing_count") or 0)},'
+                f'reasons={",".join(dict.fromkeys(reasons)) or "unspecified"}'
+            )
         failed_stage_qa = detail.get('failed_stage_qa')
         if isinstance(failed_stage_qa, dict):
             priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
