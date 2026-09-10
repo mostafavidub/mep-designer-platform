@@ -76,3 +76,26 @@ def test_canonical_router_coordinates_both_endpoint_sleeves_without_waiving_midd
     assert route['wall_crossings'] == 0
     assert route['coordinated_terminal_penetrations'] == 2
     assert route['routing'] == 'orthogonal_open_space_astar'
+
+
+def test_canonical_router_treats_double_line_wall_as_one_terminal_assembly():
+    architecture = {
+        'plans': [{'plan_id': 'P1', 'bounds': (0, 0, 10, 10)}],
+        'walls': [
+            {'start': (2, 0), 'end': (2, 4)},
+            {'start': (2.2, 0), 'end': (2.2, 4)},
+            {'start': (3, 0), 'end': (3, 4)},
+        ],
+    }
+    topology = {
+        'nodes': [
+            {'id': 'a', 'plan_id': 'P1', 'point': (1, 2)},
+            {'id': 'b', 'plan_id': 'P1', 'point': (5, 2)},
+        ],
+        'edges': [{'id': 'e1', 'from': 'a', 'to': 'b', 'plan_id': 'P1', 'system': 'cold_water'}],
+    }
+
+    routed = route_canonical_topology(architecture, topology)
+
+    assert routed['quality']['wall_crossings'] == 0
+    assert routed['routes'][0]['routing'] == 'orthogonal_open_space_astar'

@@ -30,10 +30,14 @@ def _score(points,walls,start_penetration=False,end_penetration=False):
     penetrations=0
     segments=list(zip(points,points[1:]))
     for segment_index,(a,b) in enumerate(segments):
-        hits=sum(1 for wall in walls if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])))
-        allowance=(1 if start_penetration and segment_index==0 else 0)+(1 if end_penetration and segment_index==len(segments)-1 else 0)
-        penetrations+=min(hits,allowance)
-        clashes+=max(0,hits-allowance)
+        hit_walls=[wall for wall in walls if _intersects(a,b,tuple(wall['start']),tuple(wall['end']))]
+        allowed=set()
+        if start_penetration and segment_index==0:
+            allowed.update(_terminal_assembly_hit_indices(a,b,hit_walls,True))
+        if end_penetration and segment_index==len(segments)-1:
+            allowed.update(_terminal_assembly_hit_indices(a,b,hit_walls,False))
+        penetrations+=int(bool(allowed))
+        clashes+=len(hit_walls)-len(allowed)
     length=sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(points,points[1:]))
     return clashes,length,penetrations
 
@@ -44,6 +48,37 @@ def _wall_in_bounds(wall,bounds):
 
 def _clear(a,b,walls):
     return not any(_intersects(a,b,tuple(w['start']),tuple(w['end'])) for w in walls)
+
+def _terminal_assembly_hit_indices(a,b,hit_walls,at_start,max_thickness=.50,max_egress=1.50):
+    offsets=[]
+    for index,wall in enumerate(hit_walls):
+        (x1,y1),(x2,y2)=wall['start'],wall['end']
+        if a[1]==b[1] and x1==x2:
+            distance=abs(float(x1)-(a[0] if at_start else b[0]))
+        elif a[0]==b[0] and y1==y2:
+            distance=abs(float(y1)-(a[1] if at_start else b[1]))
+        else:continue
+        offsets.append((distance,index))
+    if not offsets:return set()
+    offsets.sort()
+    cluster=[offsets[0]]
+    for item in offsets[1:]:
+        if item[0]-cluster[0][0]<=max_thickness:cluster.append(item)
+        else:break
+    if cluster[-1][0]>max_egress:return set()
+    return {index for _,index in cluster}
+
+def _terminal_assembly_clear(a,b,walls,max_thickness=.50):
+    """Treat nearby parallel wall faces as one terminal sleeve assembly."""
+    hits=[w for w in walls if _intersects(a,b,tuple(w['start']),tuple(w['end']))]
+    if not hits:return False
+    if a[0]==b[0]:
+        offsets=[float(w['start'][1]) for w in hits if w['start'][1]==w['end'][1]]
+    elif a[1]==b[1]:
+        offsets=[float(w['start'][0]) for w in hits if w['start'][0]==w['end'][0]]
+    else:return False
+    travel=abs(a[0]-b[0])+abs(a[1]-b[1])
+    return len(offsets)==len(hits) and travel<=1.50 and max(offsets)-min(offsets)<=max_thickness
 
 def _grid_axis(low,high,step,extras):
     rows=[];value=low
@@ -83,8 +118,7 @@ def _open_space_route(start,end,bounds,walls,start_penetration=False,end_penetra
             valid=[]
             for candidate in candidates:
                 if not _inside(candidate,bounds):continue
-                hits=sum(1 for wall in walls if _intersects(point,candidate,tuple(wall['start']),tuple(wall['end'])))
-                if hits==1:valid.append(candidate)
+                if _terminal_assembly_clear(point,candidate,walls):valid.append(candidate)
             return sorted(set(valid),key=lambda p:abs(p[0]-point[0])+abs(p[1]-point[1]))[:8]
         best=None
         for start_portal in portals(start,start_penetration):
