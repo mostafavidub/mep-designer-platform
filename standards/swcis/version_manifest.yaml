@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.16.0",
+  "standard_version": "4.17.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.17.0", "date": "2026-09-10", "summary": "Recover a loopback CAD connection loss through the canonical in-process runtime so draining workers cannot fail paid design jobs."},
     {"version": "4.16.0", "date": "2026-09-10", "summary": "Store validated fallback artifacts in the shared database so downloads remain available across separate web and worker instances."},
     {"version": "4.15.0", "date": "2026-09-10", "summary": "Require validated atomic local-volume output retention when object storage is unavailable, without deleting the retained artifact during transient cleanup."},
     {"version": "4.14.0", "date": "2026-09-10", "summary": "Align runtime with the governed architecture-only Pre-Submission profile: materialize only after graph/size/identity preflight, preserve later input blockers, and forbid Submission Ready claims."},
