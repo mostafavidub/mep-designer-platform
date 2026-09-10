@@ -1,5 +1,12 @@
-"""Stage 0/1 helper: detect, classify, deduplicate and scope print-frame drawings."""
+"""Detect, classify, deduplicate and safely scope architectural drawings.
+
+Frame detection is deliberately evidence based.  A rectangle is not a plan by
+itself: repeated sheet geometry, a print-layer name, drawing titles and useful
+content all contribute independently to an explainable confidence score.
+Uncertain rectangles are reported but never promoted to mechanical authority.
+"""
 from __future__ import annotations
+from collections import Counter
 import re
 import ezdxf
 
@@ -39,13 +46,20 @@ def _classify(text_blob):
         return "ELEVATION"
     if "برش" in s or re.search(r"\b[a-z]-[a-z]\b",s):
         return "SECTION"
-    if "پلان شیب بندی" in s or "پلان شیب‌بندی" in s:
+    if ("پلان شیب بندی" in s or "پلان شیب‌بندی" in s or
+            "پلان معماری پشت بام" in s or "پلان پشت بام" in s or
+            "roof plan" in s):
         return "ROOF_PLAN"
     if "پلان نعل درگاه" in s:
         return "LINTEL_PLAN"
     if "پلان مبلمان" in s:
         return "FURNITURE_PLAN"
-    if "پلان معماری" in s:
+    if "پلان جانمایی پارکینگ" in s or "parking plan" in s:
+        return "PARKING_PLAN"
+    if "پلان خرپشته" in s:
+        return "ROOF_PLAN"
+    if ("پلان معماری" in s or "architectural plan" in s or
+            "پلان نیم طبقه" in s or "پلان بالکن تجاری" in s):
         return "ARCH_FLOOR_PLAN"
     if "جزییات" in s or "جزئیات" in s or "detail" in s:
         return "DETAIL"
@@ -54,48 +68,157 @@ def _classify(text_blob):
 
 def _level(text_blob):
     s=_norm(text_blob)
+    if "زیرزمین" in s or "basement" in s: return "BASEMENT"
+    if "طبقه سوم" in s: return "LEVEL-03"
     if "طبقه دوم" in s: return "LEVEL-02"
     if "طبقه اول" in s: return "LEVEL-01"
-    if "طبقه همکف" in s: return "GROUND"
+    if "طبقه همکف" in s or re.search(r"\bground\b",s): return "GROUND"
+    if "نیم طبقه" in s or "بالکن تجاری" in s: return "MEZZANINE"
     if "بام" in s or "شیب بندی" in s or "شیب‌بندی" in s: return "ROOF"
     return None
 
 
-def detect_print_plans(src):
-    doc=ezdxf.readfile(src); msp=doc.modelspace(); frames=[]
-    for e in msp:
-        if e.dxftype()!="LWPOLYLINE" or not e.closed: continue
-        pts=[(float(x),float(y)) for x,y,*_ in e.get_points()]
-        if len(pts)<4: continue
-        xs=[x for x,y in pts]; ys=[y for x,y in pts]; w=max(xs)-min(xs); h=max(ys)-min(ys)
-        layer=str(getattr(e.dxf,"layer","") or "").lower()
-        if layer=="suport" and 20<=w<=22 and 28<=h<=31:
-            frames.append([min(xs),min(ys),max(xs),max(ys)])
-    frames=sorted(frames,key=lambda b:(-b[1],b[0]))
-    plans=[]
-    for i,b in enumerate(frames):
-        frame_text=[]; entity_count=0
-        for e in msp:
+def _levels(text_blob):
+    """Return every level explicitly represented by a drawing title."""
+    s=_norm(text_blob); result=[]
+    if "همکف" in s or re.search(r"\bground\b",s): result.append("GROUND")
+    names=(("اول","LEVEL-01"),("دوم","LEVEL-02"),("سوم","LEVEL-03"),
+           ("چهارم","LEVEL-04"),("پنجم","LEVEL-05"))
+    # Persian ranges such as "طبقات اول تا سوم" are common typical plans.
+    indices={word:i for i,(word,_) in enumerate(names)}
+    match=re.search(r"طبقات?\s+(اول|دوم|سوم|چهارم|پنجم)\s+تا\s+(اول|دوم|سوم|چهارم|پنجم)",s)
+    if match and indices[match.group(1)]<=indices[match.group(2)]:
+        result.extend(level for _,level in names[indices[match.group(1)]:indices[match.group(2)]+1])
+    else:
+        for word,level in names:
+            if f"طبقه {word}" in s: result.append(level)
+    if "نیم طبقه" in s or "بالکن تجاری" in s: result.append("MEZZANINE")
+    if "بام" in s or "شیب بندی" in s or "شیب‌بندی" in s: result.append("ROOF")
+    return list(dict.fromkeys(result))
+
+
+PRINT_LAYER_TOKENS=("suport","support","frame","sheet","border","کادر","قاب")
+
+
+def _rect_bounds(entity):
+    if entity.dxftype() not in {"LWPOLYLINE","POLYLINE"}: return None
+    try:
+        if entity.dxftype()=="LWPOLYLINE": pts=[(float(x),float(y)) for x,y,*_ in entity.get_points()]
+        else: pts=[(float(v.dxf.location.x),float(v.dxf.location.y)) for v in entity.vertices]
+    except Exception:return None
+    if len(pts)<4 or not bool(getattr(entity,"closed",False)):return None
+    if pts[0]==pts[-1]:pts=pts[:-1]
+    if len(pts)!=4:return None
+    xs=[p[0] for p in pts];ys=[p[1] for p in pts]
+    w=max(xs)-min(xs);h=max(ys)-min(ys)
+    if min(w,h)<=0:return None
+    # Accept axis-aligned rectangles, including small drafting inaccuracies.
+    tol=max(w,h)*.002
+    for a,b in zip(pts,pts[1:]+pts[:1]):
+        if abs(a[0]-b[0])>tol and abs(a[1]-b[1])>tol:return None
+    return [min(xs),min(ys),max(xs),max(ys)]
+
+
+def _same_bounds(a,b,tol=.025):
+    scale=max(1.0,a[2]-a[0],a[3]-a[1],b[2]-b[0],b[3]-b[1])
+    return max(abs(x-y) for x,y in zip(a,b))<=tol*scale
+
+
+def _contains(outer,inner,tol=1e-6):
+    return (outer[0]-tol<=inner[0] and outer[1]-tol<=inner[1] and
+            outer[2]+tol>=inner[2] and outer[3]+tol>=inner[3])
+
+
+def analyze_plan_frames(src):
+    """Return candidates plus an explainable, fail-closed separation decision."""
+    doc=ezdxf.readfile(src);msp=doc.modelspace();entities=list(msp)
+    raw=[]
+    for e in entities:
+        bounds=_rect_bounds(e)
+        if not bounds:continue
+        w=bounds[2]-bounds[0];h=bounds[3]-bounds[1];short,long=sorted((w,h))
+        ratio=long/short
+        if not (1.20<=ratio<=1.60):continue
+        raw.append({"bounds":bounds,"width":w,"height":h,"short":short,"long":long,
+                    "layer":str(getattr(e.dxf,"layer","") or ""),"handle":str(getattr(e.dxf,"handle","") or "")})
+    # Repetition is scale independent and captures non-standard office frames.
+    families=Counter((round(x["short"],1),round(x["long"],1)) for x in raw)
+    candidates=[]
+    for row in raw:
+        layer_hit=any(t in _norm(row["layer"]) for t in PRINT_LAYER_TOKENS)
+        family_count=families[(round(row["short"],1),round(row["long"],1))]
+        nested=sum(1 for other in raw if other is not row and _contains(row["bounds"],other["bounds"]) and
+                   .70<=((other["width"]*other["height"])/(row["width"]*row["height"]))<.98)
+        texts=[];count=0;graphic=0
+        for e in entities:
             p=_point(e)
-            if not p or not _inside(p,b): continue
-            entity_count += 1
+            if not p or not _inside(p,row["bounds"]):continue
+            count+=1
+            if e.dxftype() in {"LINE","LWPOLYLINE","POLYLINE","ARC","CIRCLE","INSERT","HATCH"}:graphic+=1
             if e.dxftype() in {"TEXT","MTEXT"}:
                 value=_text(e)
-                if value: frame_text.append(value)
-        blob="\n".join(frame_text)
+                if value:texts.append(value)
+        blob="\n".join(texts);drawing_type=_classify(blob);levels=_levels(blob)
+        title_hit=drawing_type!="UNKNOWN"
+        content_hit=graphic>=25 and len(texts)>=2
+        # Repeated geometry without either a print layer or a drawing title is
+        # normally an inner wall/room outline, not a sheet frame.
+        if not content_hit:continue
+        if not layer_hit and not (family_count>=2 and title_hit):continue
+        evidence={"print_layer":layer_hit,"repeated_geometry":family_count>=2,
+                  "nested_border":nested>0,"drawing_title":title_hit,"substantial_content":content_hit}
+        score=(30 if layer_hit else 0)+(20 if family_count>=2 else 0)+(10 if nested else 0)+(25 if title_hit else 0)+(15 if content_hit else 0)
+        candidates.append({**row,"title_text":texts,"entity_count":count,"graphic_entity_count":graphic,
+                           "drawing_type":drawing_type,"level":levels[0] if len(levels)==1 else None,
+                           "represented_levels":levels,"evidence":evidence,"confidence":score})
+    # Suppress inset wall borders when a stronger print-layer rectangle contains
+    # them.  They carry the same titles/content and otherwise look deceptively
+    # like a second sheet.
+    candidates=[row for row in candidates if not (
+        not row["evidence"]["print_layer"] and any(
+            other is not row and other["evidence"]["print_layer"] and
+            _contains(other["bounds"],row["bounds"]) and
+            .65<=((row["width"]*row["height"])/(other["width"]*other["height"]))<.98
+            for other in candidates))]
+    # Prefer one outer print frame when duplicate polylines share coordinates.
+    selected=[]
+    for row in sorted(candidates,key=lambda x:(x["bounds"][1],x["bounds"][0],-(x["width"]*x["height"]))):
+        duplicate=next((x for x in selected if _same_bounds(x["bounds"],row["bounds"])),None)
+        if duplicate:
+            if row["confidence"]>duplicate["confidence"]:selected[selected.index(duplicate)]=row
+            continue
+        selected.append(row)
+    high=[x for x in selected if x["confidence"]>=70]
+    uncertain=[x for x in selected if 45<=x["confidence"]<70]
+    return {"status":"PASS" if high and not uncertain else "INPUT_REQUIRED",
+            "source_units":int(doc.header.get('$INSUNITS',0) or 0),"candidates":selected,
+            "accepted_count":len(high),"uncertain_count":len(uncertain),
+            "rejected_low_confidence_count":len(selected)-len(high)-len(uncertain)}
+
+
+def detect_print_plans(src):
+    analysis=analyze_plan_frames(src)
+    frames=[x for x in analysis["candidates"] if x["confidence"]>=70]
+    frames=sorted(frames,key=lambda x:(-x["bounds"][1],x["bounds"][0]))
+    plans=[]
+    for i,frame in enumerate(frames):
+        b=frame["bounds"];frame_text=frame["title_text"];blob="\n".join(frame_text)
         arc=next((x for x in frame_text if re.search(r"arc\s*-\s*\d+",_norm(x))),None)
-        plans.append({"plan_id":f"PLAN-{i+1:02d}","bounds":b,"drawing_type":_classify(blob),
-                      "level":_level(blob),"title_text":frame_text,"arc_sheet":arc,
-                      "entity_count":entity_count,"mechanical_role":"EXCLUDE"})
+        plans.append({"plan_id":f"PLAN-{i+1:02d}","bounds":b,"drawing_type":frame["drawing_type"],
+                      "level":frame["level"] or _level(blob),"represented_levels":frame["represented_levels"],
+                      "title_text":frame_text,"arc_sheet":arc,"entity_count":frame["entity_count"],
+                      "frame_confidence":frame["confidence"],"frame_evidence":frame["evidence"],
+                      "frame_detection_status":"CONFIRMED","mechanical_role":"EXCLUDE"})
 
     # Canonical floor plans: prefer titled Arc sheets and richer geometry.
     floor_candidates=[p for p in plans if p["drawing_type"]=="ARCH_FLOOR_PLAN"]
     by_level={}
     for p in floor_candidates:
-        if not p.get("level"): continue
+        identities=p.get("represented_levels") or ([p["level"]] if p.get("level") else [])
+        if not identities: continue
         score=(1 if p.get("arc_sheet") else 0,p.get("entity_count",0))
-        if p["level"] not in by_level or score>by_level[p["level"]][0]:
-            by_level[p["level"]]=(score,p)
+        key=tuple(identities)
+        if key not in by_level or score>by_level[key][0]:by_level[key]=(score,p)
     for _,p in by_level.values():
         p["mechanical_role"]="PRIMARY_FLOOR"
     for p in plans:
