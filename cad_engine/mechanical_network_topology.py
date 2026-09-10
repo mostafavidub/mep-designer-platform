@@ -254,6 +254,17 @@ def _orthogonal_path(start, end, walls, obstacles):
     else:
         candidates = [[start, (end[0], start[1]), end], [start, (start[0], end[1]), end]]
     rects = [_bbox(item.get("points") or item.get("polygon")) for item in obstacles or []]
+    def terminal_penetrations(points):
+        counts = [
+            sum(1 for wall in walls or [] if _intersects(a, b, tuple(wall.get("start") or ()), tuple(wall.get("end") or ())))
+            for a, b in zip(points, points[1:])
+        ]
+        middle = counts[1:-1] if len(counts) > 2 else []
+        # One sleeve at either endpoint is a constructible terminal penetration;
+        # multiple or intermediate crossings remain hard routing clashes.
+        if not any(middle) and counts and counts[0] <= 1 and counts[-1] <= 1:
+            return counts[0] + (counts[-1] if len(counts) > 1 else 0)
+        return None
     ranked = []
     for raw in candidates:
         points = _clean(raw)
@@ -283,6 +294,14 @@ def _orthogonal_path(start, end, walls, obstacles):
             )
             if obstacle_hits == 0 and wall_crossings == 0:
                 return open_route, {"wall_crossings": 0, "routing": "ORTHOGONAL_OPEN_SPACE_ASTAR"}
+    if best[0] == 0:
+        penetrations = terminal_penetrations(best[3])
+        if penetrations is not None:
+            return best[3], {
+                "wall_crossings": 0,
+                "coordinated_terminal_penetrations": penetrations,
+                "routing": "ORTHOGONAL_WITH_TERMINAL_SLEEVES",
+            }
     if best[0]:
         return None, "ROUTE_INTERSECTS_STRUCTURAL_OBSTACLE"
     return best[3], {"wall_crossings": best[1], "routing": "ORTHOGONAL_PRE_COORDINATION"}
@@ -391,6 +410,7 @@ def _edge(system, from_node, to_node, role, endpoint_ids, levels, points=None, r
         "draw_on_plan": bool(points),
         "route_status": (route_meta or {}).get("routing") if points else "LOGICAL_ONLY",
         "wall_crossings": (route_meta or {}).get("wall_crossings", 0),
+        "coordinated_terminal_penetrations": (route_meta or {}).get("coordinated_terminal_penetrations", 0),
     }
 
 

@@ -283,10 +283,15 @@ def _cad_error_message(response):
             or {}
         )
         if isinstance(preservation, dict) and preservation:
-            reasons = []
+            reasons = list(preservation.get('failures') or [])
             for sheet in preservation.get('sheet_results') or []:
                 if sheet.get('reason'):
                     reasons.append(str(sheet['reason']))
+                if sheet.get('status') == 'FAIL':
+                    if not (sheet.get('topology') or {}).get('pass', True):
+                        reasons.append(f'TOPOLOGY_MISMATCH:{sheet.get("sheet") or "unknown"}')
+                    if not (sheet.get('visibility') or {}).get('pass', True):
+                        reasons.append(f'VISIBILITY_FAILURE:{sheet.get("sheet") or "unknown"}')
                 for missing_item in (sheet.get('preservation_match') or {}).get('missing') or []:
                     if missing_item.get('reason'):
                         reasons.append(str(missing_item['reason']))

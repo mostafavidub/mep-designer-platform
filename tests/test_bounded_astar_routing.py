@@ -34,3 +34,19 @@ def test_authoritative_topology_routes_around_wall_endpoint():
     assert route[-1] == (14.0, 10.0)
     assert len(route) > 2
     assert metadata == {'wall_crossings': 0, 'routing': 'ORTHOGONAL_OPEN_SPACE_ASTAR'}
+
+
+def test_authoritative_topology_records_one_terminal_sleeve_without_waiving_middle_crossings():
+    walls = [
+        {'start': (9.0, 9.0), 'end': (11.0, 9.0)},
+        {'start': (11.0, 9.0), 'end': (11.0, 11.0)},
+        {'start': (11.0, 11.0), 'end': (9.0, 11.0)},
+        {'start': (9.0, 11.0), 'end': (9.0, 9.0)},
+    ]
+
+    route, metadata = _orthogonal_path((10.0, 10.0), (14.0, 10.0), walls, [])
+
+    assert route == [(10.0, 10.0), (14.0, 10.0)]
+    assert metadata['wall_crossings'] == 0
+    assert metadata['coordinated_terminal_penetrations'] == 1
+    assert metadata['routing'] == 'ORTHOGONAL_WITH_TERMINAL_SLEEVES'
