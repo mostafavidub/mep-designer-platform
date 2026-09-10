@@ -292,8 +292,15 @@ def _orthogonal_path(start, end, walls, obstacles):
                 1 for a, b in zip(open_route, open_route[1:]) for wall in walls or []
                 if _intersects(a, b, tuple(wall.get("start") or ()), tuple(wall.get("end") or ()))
             )
-            if obstacle_hits == 0 and wall_crossings == 0:
-                return open_route, {"wall_crossings": 0, "routing": "ORTHOGONAL_OPEN_SPACE_ASTAR"}
+            penetrations = terminal_penetrations(open_route)
+            if obstacle_hits == 0 and penetrations is not None:
+                metadata = {
+                    "wall_crossings": 0,
+                    "routing": "ORTHOGONAL_OPEN_SPACE_ASTAR" if not penetrations else "ORTHOGONAL_OPEN_SPACE_ASTAR_WITH_TERMINAL_SLEEVES",
+                }
+                if penetrations:
+                    metadata["coordinated_terminal_penetrations"] = penetrations
+                return open_route, metadata
     if best[0] == 0:
         penetrations = terminal_penetrations(best[3])
         if penetrations is not None:
