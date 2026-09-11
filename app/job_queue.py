@@ -42,8 +42,9 @@ def queue_health():
     """Expose worker liveness without leaking job or project data."""
     with _QUEUE_STATE_LOCK:
         workers = {name: dict(value) for name, value in _QUEUE_STATE.items()}
+    started = any(worker['heartbeat_at'] for worker in workers.values())
     healthy = all(worker['alive'] for worker in workers.values())
-    return {'status': 'ok' if healthy else 'error', 'workers': workers}
+    return {'status': 'ok' if healthy else ('error' if started else 'starting'), 'workers': workers}
 
 
 def _record_worker_state(job_type, *, alive=None, error=None):
