@@ -133,17 +133,47 @@ def generate_riser_from_network(network: dict) -> dict:
             "network_edge_id": edge["id"], "from": edge["from"], "to": edge["to"], "system": edge["system"],
             "size": edge.get("size"), "material": edge.get("material"),
             "fittings": edge.get("fittings", []), "levels": edge.get("levels", []),
+            "role": edge.get("role"), "shaft_key": edge.get("shaft_key"),
+            "from_elevation_m": edge.get("from_elevation_m"), "to_elevation_m": edge.get("to_elevation_m"),
+            "vertical_offset_xy": edge.get("vertical_offset_xy"), "offset_declared": edge.get("offset_declared"),
+            "downstream_endpoint_ids": sorted(edge.get("endpoint_ids") or []),
+            "downstream_load": edge.get("downstream_load"), "load_unit": edge.get("load_unit"),
+            "size_source": edge.get("size_source"), "material_source": edge.get("material_source"),
         })
     mismatches = [row for row in rows if len({row["plan_id"], row["riser_id"], row["calc_id"], row["schedule_id"]}) != 1]
     missing_execution = [row["plan_id"] for row in rows if not row["size"] or not row["material"]]
-    status = "PASS" if not mismatches and not missing_execution else "FAIL"
+    vertical = [row for row in rows if row.get("role") == "vertical_riser"]
+    vertical_errors = []
+    for row in vertical:
+        rid = str(row.get("network_edge_id") or "UNKNOWN")
+        if len(row.get("levels") or []) != 2:
+            vertical_errors.append("VERTICAL_EDGE_MUST_JOIN_TWO_LEVELS:" + rid)
+        if row.get("from_elevation_m") is None or row.get("to_elevation_m") is None:
+            vertical_errors.append("VERTICAL_LEVEL_ELEVATIONS_REQUIRED:" + rid)
+        elif float(row["to_elevation_m"]) <= float(row["from_elevation_m"]):
+            vertical_errors.append("VERTICAL_LEVEL_ORDER_INVALID:" + rid)
+        offset = row.get("vertical_offset_xy")
+        if not isinstance(offset, (list, tuple)) or len(offset) != 2:
+            vertical_errors.append("VERTICAL_OFFSET_EVIDENCE_REQUIRED:" + rid)
+        elif any(abs(float(value)) > 1e-9 for value in offset) and not row.get("offset_declared"):
+            vertical_errors.append("UNDECLARED_VERTICAL_OFFSET:" + rid)
+        if not row.get("shaft_key"):
+            vertical_errors.append("VERTICAL_SHAFT_IDENTITY_REQUIRED:" + rid)
+        if not row.get("downstream_endpoint_ids"):
+            vertical_errors.append("VERTICAL_DOWNSTREAM_ENDPOINTS_REQUIRED:" + rid)
+        if row.get("downstream_load") is None or not row.get("load_unit"):
+            vertical_errors.append("VERTICAL_CUMULATIVE_LOAD_REQUIRED:" + rid)
+        if not row.get("size_source") or not row.get("material_source"):
+            vertical_errors.append("VERTICAL_EXECUTION_PROVENANCE_REQUIRED:" + rid)
+    status = "PASS" if not mismatches and not missing_execution and not vertical_errors else "FAIL"
     graph_hash=sha256(json.dumps({"nodes":nodes,"edges":edges,"levels":level_registry},sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return {
         "status": status,
         "riser": {"nodes": nodes, "segments": rows, "levels":level_registry,
                   "source_graph_id": network.get("graph_id"),"source_plan_graph_hash":graph_hash},
         "reconciliation": {"mismatch_count": len(mismatches), "mismatches": mismatches,
-                           "missing_execution_data": missing_execution, "zero_mismatch": not mismatches},
+                           "missing_execution_data": missing_execution, "vertical_errors": sorted(vertical_errors),
+                           "zero_mismatch": not mismatches and not vertical_errors},
         "claim": "GRAPH_DERIVED" if status == "PASS" else "NOT_ISSUABLE",
         "level_policy":"DETAIL levels forbidden; typed architectural levels only",
     }
