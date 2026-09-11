@@ -22,3 +22,8 @@ Automated visual QA does not replace engineering review. `PASS` means the render
 artifact satisfies the automated visual contract. A `SUBMISSION_READY` claim also
 requires reviewer identity, evidence SHA-256 and exact reviewed-sheet coverage.
 Pre-Submission artifacts may truthfully carry `INPUT_REQUIRED` for that human step.
+
+For bounded execution, the exact DXF is traversed by two shared render sessions
+(color and monochrome). Every full-sheet and content-zoom preview is a crop from
+one of those sessions; the renderer is not rerun once per crop, and both sessions
+are explicitly closed after the report is assembled.

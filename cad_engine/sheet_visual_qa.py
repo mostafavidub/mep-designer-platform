@@ -107,7 +107,7 @@ def _sheet_scale(board: dict) -> dict:
     return {"status": "PASS", "ratio": float(match.group(1)), "source": "board_metadata"}
 
 
-def _render_profile(doc, bounds, path: Path, profile: str) -> dict:
+def _render_profile(doc, bounds, path: Path, profile: str, sessions: dict | None = None) -> dict:
     from ezdxf.addons.drawing import Frontend, RenderContext
     from ezdxf.addons.drawing.config import BackgroundPolicy, ColorPolicy, Configuration
     from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
@@ -117,16 +117,20 @@ def _render_profile(doc, bounds, path: Path, profile: str) -> dict:
     import numpy as np
 
     config = PAPER_PROFILES[profile]
-    fig = plt.figure(figsize=(8.27, 11.69), dpi=config["dpi"], facecolor=config["background_hex"])
-    ax = fig.add_axes([.015, .015, .97, .97], facecolor=config["background_hex"])
-    ax.set_axis_off()
-    context = RenderContext(doc)
-    render_config = Configuration(
-        color_policy=(ColorPolicy.BLACK if profile == "monochrome" else ColorPolicy.COLOR),
-        background_policy=BackgroundPolicy.CUSTOM,
-        custom_bg_color=config["background_hex"],
-    )
-    Frontend(context, MatplotlibBackend(ax), config=render_config).draw_layout(doc.modelspace(), finalize=True)
+    sessions = sessions if sessions is not None else {}
+    if profile not in sessions:
+        fig = plt.figure(figsize=(8.27, 11.69), dpi=config["dpi"], facecolor=config["background_hex"])
+        ax = fig.add_axes([.015, .015, .97, .97], facecolor=config["background_hex"])
+        ax.set_axis_off()
+        context = RenderContext(doc)
+        render_config = Configuration(
+            color_policy=(ColorPolicy.BLACK if profile == "monochrome" else ColorPolicy.COLOR),
+            background_policy=BackgroundPolicy.CUSTOM,
+            custom_bg_color=config["background_hex"],
+        )
+        Frontend(context, MatplotlibBackend(ax), config=render_config).draw_layout(doc.modelspace(), finalize=True)
+        sessions[profile] = (fig, ax, plt, np)
+    fig, ax, plt, np = sessions[profile]
     ax.set_xlim(bounds[0], bounds[2]); ax.set_ylim(bounds[1], bounds[3]); ax.set_aspect("equal", adjustable="box")
     fig.canvas.draw()
     rgb = np.asarray(fig.canvas.buffer_rgba())[:, :, :3]
@@ -139,6 +143,12 @@ def _render_profile(doc, bounds, path: Path, profile: str) -> dict:
     return {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "size_bytes": path.stat().st_size, "ink_pixels": ink, "total_pixels": total,
             "ink_ratio": round(ratio, 6), "status": "PASS" if ink >= 100 and path.stat().st_size >= 1500 else "FAIL"}
+
+
+def _close_render_sessions(sessions: dict) -> None:
+    for fig, _ax, plt, _np in sessions.values():
+        plt.close(fig)
+    sessions.clear()
 
 
 def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Path | None = None,
@@ -160,6 +170,7 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
     if manifest_codes and Counter(manifest_codes) != Counter(board_codes):
         errors.append("manifest_board_identity_mismatch")
 
+    render_sessions = {}
     for key, board in boards.items():
         code = _board_code(key, board); family = str(board.get("family") or "").upper()
         bounds = tuple(map(float, board.get("bounds") or ()))
@@ -198,10 +209,10 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         try:
             safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", code)
             for profile in PAPER_PROFILES:
-                renders[profile] = _render_profile(doc, bounds, preview_dir / profile / f"{safe}.png", profile)
+                renders[profile] = _render_profile(doc, bounds, preview_dir / profile / f"{safe}.png", profile, render_sessions)
                 if renders[profile]["status"] != "PASS": local_errors.append(f"{profile}_render_empty")
             for zoom, crop in (("overview", bounds), ("content", plan_area)):
-                renders[zoom] = _render_profile(doc, crop, preview_dir / "zoom" / f"{safe}-{zoom}.png", "color")
+                renders[zoom] = _render_profile(doc, crop, preview_dir / "zoom" / f"{safe}-{zoom}.png", "color", render_sessions)
                 if renders[zoom]["status"] != "PASS": local_errors.append(f"{zoom}_render_empty")
         except Exception as exc:
             local_errors.append("sheet_render_failed")
@@ -231,6 +242,7 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
                        "signature": current_signature, "score": score,
                        "status": "PASS" if not local_errors else "FAIL", "errors": local_errors, "warnings": local_warnings})
 
+    _close_render_sessions(render_sessions)
     independent_review = (release_context or {}).get("independent_visual_review") or {}
     review_status = "PASS" if all(independent_review.get(key) for key in ("reviewer_id", "evidence_sha256", "reviewed_sheet_codes")) else "INPUT_REQUIRED"
     if review_status == "PASS" and set(independent_review["reviewed_sheet_codes"]) != set(board_codes):
