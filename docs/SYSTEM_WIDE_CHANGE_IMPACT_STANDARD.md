@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.26.0
+**Canonical version:** 4.27.0
 
 **Status:** LOCKED
 
@@ -82,7 +82,26 @@ Repository CI plus protected-branch settings can enforce repository changes. A r
 
 ## Short instruction for every future chat/Work
 
-> Before changing anything, read SWCIS 4.25.0 in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private reference files are not publication prerequisites and reference values are never hidden generation defaults.
+> Before changing anything, read the current SWCIS version in `docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md` and `standards/swcis/version_manifest.yaml`; create/update `changes/<id>.yaml`; run `python tools/swcis_validate.py --base <base-ref> --change-request changes/<id>.yaml`; implement the full affected-module closure; do not merge/deploy unless every applicable SWCIS and product gate is PASS. Private reference files are not publication prerequisites and reference values are never hidden generation defaults.
+
+## Calculation reasonableness release gate
+
+Every submission-ready mechanical artifact must pass an independent calculation
+reasonableness evaluation after graph-native sizing and plan/riser/schedule
+reconciliation and before CAD materialization.  The evaluation must verify:
+
+- explicit canonical units and drawing scale, with no cross-frame route length;
+- finite, system-specific physical and project/code limits;
+- an independent recomputation or identity-backed reconciliation for critical values;
+- conservation of branch/main loads and absence of orphan consumers;
+- exact calculation/plan/riser/schedule identities;
+- equipment capacity and permitted oversizing against calculated demand;
+- bounded sensitivity cases for area, endpoint, height, length and supply-pressure changes;
+- formula, input, unit, source, intermediate-result and engine-version provenance; and
+- calculation IDs covered by evidence from an independent mechanical-engineer review.
+
+`WARNING` may support preliminary design only. `INPUT_REQUIRED` and `FAIL` block
+submission-ready output, and no aggregate score may mask a critical failure.
 
 ## Administration and branch protection
 

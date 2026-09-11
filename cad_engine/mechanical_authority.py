@@ -19,6 +19,7 @@ from .mechanical_network_topology import build_authoritative_topology
 from .mechanical_segment_execution import design_authoritative_segments
 from .mechanical_network_materializer import materialize_authoritative_network
 from .runtime_contract import runtime_contract
+from .calculation_reasonableness import evaluate_calculation_reasonableness
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -95,6 +96,9 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "engineer_review": _first_value(contract.get("engineer_review"), plan_analysis.get("engineer_review_canonical")),
         "quality_metrics": contract.get("quality_metrics") or plan_analysis.get("quality_metrics_canonical") or {},
         "golden_result": contract.get("golden_result") or plan_analysis.get("golden_result_canonical") or {"status": os.getenv("MECHANICAL_GOLDEN_STATUS", "MISSING")},
+        "sensitivity_checks": _first_value(contract.get("sensitivity_checks"), plan_analysis.get("sensitivity_checks_canonical")),
+        "selected_equipment": _first_value(contract.get("selected_equipment"), plan_analysis.get("selected_equipment_canonical")),
+        "calculation_totals": _first_value(contract.get("calculation_totals"), plan_analysis.get("calculation_totals_canonical")),
     }
 
 
@@ -270,6 +274,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if result.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": sorted(set(missing))}}
 
+    reasonableness = evaluate_calculation_reasonableness(payload)
+    # A preliminary artifact may still be delivered truthfully for an earlier
+    # external-input blocker.  Only a submission-ready claim is stopped here.
+    if not pre_submission and reasonableness.get("status") != "PASS":
+        blockers = reasonableness.get("errors") or reasonableness.get("missing_inputs") or ["CALCULATION_REASONABLENESS_NOT_PASS"]
+        return {"status": "FAIL", "stage": "calculation_reasonableness_gate",
+                "network_authority_qa": network_authority, "traceability_preflight": traceability,
+                "authority_pipeline_qa": result, "calculation_reasonableness_qa": reasonableness,
+                "input_required": {"status": "INPUT_REQUIRED" if reasonableness.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
+
     # Preserve the pre-run artifact so a graph-materialization failure cannot
     # leave a legacy-only DXF behind after the canonical gate has rejected the run.
     backup = None
@@ -310,6 +325,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["materialization_qa"] = materialization
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
+    rendered["calculation_reasonableness_qa"] = reasonableness
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
