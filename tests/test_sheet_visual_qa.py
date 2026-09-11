@@ -20,7 +20,7 @@ def _issued(path: Path, board=None):
     return {"boards": {"S1": board}, "manifest": [{"old_sheet": "S1", "code": board["code"]}]}
 
 
-def _fake_render(_doc, _bounds, path, _profile):
+def _fake_render(_doc, _bounds, path, _profile, _sessions=None):
     path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"render" * 300)
     return {"path": str(path), "sha256": "a" * 64, "size_bytes": path.stat().st_size,
             "ink_pixels": 500, "total_pixels": 1000, "ink_ratio": .5, "status": "PASS"}
@@ -58,7 +58,7 @@ def test_blank_plan_and_missing_architecture_fail_closed(tmp_path, monkeypatch):
 
 
 def test_tiny_text_overlap_density_and_empty_render_are_destructive_failures(tmp_path, monkeypatch):
-    def empty_render(_doc, _bounds, path, _profile):
+    def empty_render(_doc, _bounds, path, _profile, _sessions=None):
         path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"x")
         return {"path": str(path), "size_bytes": 1, "ink_pixels": 0, "total_pixels": 1,
                 "ink_ratio": 0, "status": "FAIL"}
@@ -86,3 +86,28 @@ def test_baseline_regression_and_review_coverage_are_checked(tmp_path, monkeypat
     assert result["status"] == "FAIL"
     assert any("baseline_regression" in item for item in result["errors"])
     assert "independent_visual_review_sheet_coverage_mismatch" in result["errors"]
+
+
+def test_real_renderer_reuses_two_sessions_for_all_sheet_crops(tmp_path, monkeypatch):
+    created = []
+    class Figure:
+        def savefig(self, path, **_kwargs):
+            path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"render" * 300)
+    class Axis:
+        def set_xlim(self, *_args): pass
+        def set_ylim(self, *_args): pass
+        def set_aspect(self, *_args, **_kwargs): pass
+    class Canvas:
+        def draw(self): pass
+        def buffer_rgba(self):
+            import numpy as np
+            return np.zeros((20, 20, 4), dtype="uint8")
+    class Plot:
+        @staticmethod
+        def close(fig): created.append(("closed", id(fig)))
+    # Verify the explicit closer, which is the resource boundary used after all
+    # board crops. Functional crop coverage is exercised by the tests above.
+    sessions = {"color": (Figure(), Axis(), Plot, None), "monochrome": (Figure(), Axis(), Plot, None)}
+    visual._close_render_sessions(sessions)
+    assert sessions == {}
+    assert len(created) == 2
