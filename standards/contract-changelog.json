@@ -2,6 +2,15 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-039","status":"APPROVED",
+      "summary":"Unify all eighteen architecture reconstruction and preservation controls into a scored fail-closed exact-file release gate.",
+      "affected_capabilities":["architecture_preservation","all_sheet_visual_qa","mechanical_release_qa"],
+      "affected_projects":["all","project-4","project-6","project-8","project-10"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete all eighteen steps and publish them to Staging"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","staging_exact_build":"must_pass","four_project_evaluation":"run when private inputs are available; never claim pass without execution"},
+      "migration":{"forward":"Regenerate an artifact to obtain the additive eighteen-control report; all prior source uploads remain immutable.","rollback":"Revert and redeploy the preceding approved Git SHA; never bypass a failed architecture gate."}
+    },
+    {
       "id":"GOV-2026-031",
       "status":"APPROVED",
       "summary":"Require multilevel risers to preserve elevations, shaft correspondence, declared offsets, cumulative downstream loads and exact Plan/Riser/Calc/Schedule identity.",

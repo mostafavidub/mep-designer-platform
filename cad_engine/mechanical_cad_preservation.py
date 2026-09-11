@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
+import hashlib
 import math
 import shutil
 import tempfile
@@ -296,6 +297,7 @@ def _plan_mechanical(pipeline,pid):
 def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answers:dict|None=None)->dict:
     """Reopen exact final DXF and validate every generated plan board."""
     answers=dict(answers or {})
+    source_sha_before=hashlib.sha256(Path(src).read_bytes()).hexdigest()
     overrides=build_design_overrides(answers)
     pipeline=run_engineering_pipeline(src,design_basis=overrides,project_overrides=overrides)
     arch=pipeline["architecture"]
@@ -305,6 +307,7 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
     boards=compose.get("boards") or {}
     rows=compose.get("manifest") or []
     sheet_results=[]; all_missing=[]; topology_ok=True; visibility_ok=True
+    coordinate_evidence=[]
 
     for row in rows:
         if row.get("family") not in PLAN_FAMILIES:
@@ -330,6 +333,9 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         before=_snapshot_selected(src_entities,plan["plan_id"])
         source_layers={r["layer"] for r in before["entities"]}
         plan_area=tuple(board["plan_area"])
+        scale,dx,dy=_fit_parameters(tuple(plan["bounds"]),plan_area)
+        coordinate_evidence.append({"sheet":row.get("code"),"scale":scale,"offset":[dx,dy],
+                                    "source_bounds":list(plan["bounds"]),"target_bounds":list(plan_area)})
         out_entities=_entities_in_output_board(out_doc,plan_area,source_layers)
         after=_snapshot_selected(out_entities,f"OUT-{row.get('code')}")
         match=_match_transformed_architecture(before,after,tuple(plan["bounds"]),plan_area)
@@ -368,12 +374,33 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         final.setdefault("checks",{})["important_deleted_zero"]=False
     else:
         final.setdefault("checks",{})["important_deleted_zero"]=True
+    source_sha_after=hashlib.sha256(Path(src).read_bytes()).hexdigest()
+    detected_rooms=list(arch.get("rooms") or [])
+    detected_shafts=list(arch.get("shafts") or [])
+    plan_rows=[row for row in rows if row.get("family") in PLAN_FAMILIES and row.get("level")!="SERVICE"]
     return {
         "version":"architecture-preservation-gate-canonical.0",
         "status":final["status"],"action":final["action"],"checks":final["checks"],"failures":final.get("failures",[]),
         "critical_missing_count":len(diff["critical_deleted"]),"important_missing_count":len(important_missing),
         "all_missing_count":len(all_missing),"sheet_results":sheet_results,
         "exact_file_reopened":True,
+        "architecture_evidence":{
+            "source_sha256_before":source_sha_before,"source_sha256_after":source_sha_after,
+            "source_immutable":source_sha_before==source_sha_after,
+            "drawing_units":int(src_doc.header.get("$INSUNITS",0) or 0),
+            "coordinate_transforms":coordinate_evidence,
+            "plan_row_count":len(plan_rows),
+            "level_bindings_complete":all(any(r.get("sheet")==row.get("code") and r.get("reason")!="SOURCE_PLAN_NOT_FOUND" for r in sheet_results) for row in plan_rows),
+            "room_identity_complete":bool(detected_rooms) and all(
+                room.get("id") and room.get("type") and room.get("plan_id")
+                and room.get("polygon") and float(room.get("area") or 0)>0
+                for room in detected_rooms
+            ),
+            "shaft_evidence_complete":all(
+                shaft.get("plan_id") and shaft.get("polygon") and float(shaft.get("area") or 0)>0
+                for shaft in detected_shafts
+            ),
+        },
     }
 
 
