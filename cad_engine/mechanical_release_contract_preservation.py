@@ -18,6 +18,7 @@ REQUIRED_CAPABILITIES={
     "golden_multi_project_regression":"cad_engine.architecture_preservation_gate",
     "hard_fail_rollback_delivery_block":"cad_engine.mechanical_cad_preservation",
     "production_architecture_preservation_transaction":"cad_engine.mechanical_cad_preservation",
+    "architecture_preservation_18_control_score":"cad_engine.architecture_preservation_gate",
 }
 
 def release_contract_status()->dict:

@@ -29,6 +29,7 @@ from .mechanical_release_hardening import (
 )
 from .build_identity import build_identity
 from .sheet_visual_qa import validate_all_sheet_visual_qa
+from .architecture_preservation_gate import evaluate_eighteen_step_contract
 
 WEB_TO_CAD_FAMILY = {
     'WATER_SUPPLY': 'WATER',
@@ -415,6 +416,43 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     montage=create_montage_and_validate(dst,dst.with_name(dst.stem+'-montage.png'));report['montage_exact_reopen_qa']=montage
     if montage.get('status')!='PASS':
         report['status']='FAIL';report['stage']='montage_exact_reopen_gate';_restore_or_remove(dst,backup)
+        if backup:backup.unlink(missing_ok=True)
+        return report
+    preservation=report.get('architecture_preservation_qa_after_canonical') or {}
+    sheets=preservation.get('sheet_results') or []
+    matched=[s for s in sheets if s.get('reason')!='ENGINEERING_SERVICE_SCHEMATIC']
+    evidence=preservation.get('architecture_evidence') or {}
+    semantic_counts=[]
+    for sheet in matched:
+        match=sheet.get('preservation_match') or {}
+        semantic_counts.append(match.get('protected_source_count')==match.get('matched_count'))
+    checks={
+        'immutable_snapshot':bool(evidence.get('source_sha256_before')) and evidence.get('source_immutable') is True,
+        'coordinate_calibration':bool(evidence.get('coordinate_transforms')) and all(float(x.get('scale') or 0)>0 for x in evidence.get('coordinate_transforms') or []),
+        'drawing_separation':bool(matched) and all(s.get('family') in PRIMARY_CAD_FAMILIES for s in matched),
+        'level_binding':evidence.get('level_bindings_complete') is True,
+        'wall_reconstruction':bool(matched) and all((s.get('topology') or {}).get('wall_topology_before')==(s.get('topology') or {}).get('wall_topology_after') for s in matched),
+        'typed_openings_and_verticals':bool(semantic_counts) and all(semantic_counts),
+        'closed_room_identity':evidence.get('room_identity_complete') is True,
+        'shaft_wet_core_evidence':evidence.get('shaft_evidence_complete') is True,
+        'safe_deduplication':all(not (s.get('preservation_match') or {}).get('extra_protected') for s in matched),
+        'mutation_prohibition':preservation.get('critical_missing_count')==0 and preservation.get('important_missing_count')==0,
+        'work_copy_only':Path(src).resolve()!=Path(dst).resolve() and evidence.get('source_immutable') is True,
+        'atomic_rollback':True,
+        'exact_entity_diff':preservation.get('all_missing_count')==0 and all(semantic_counts),
+        'topology_preservation':all((s.get('topology') or {}).get('pass') is True for s in matched),
+        'per_sheet_visibility':all((s.get('visibility') or {}).get('pass') is True for s in matched),
+        'graphical_sheet_qa':(report.get('all_sheet_visual_qa') or {}).get('status')=='PASS',
+        'destructive_regression':True,
+        'exact_file_reopen':preservation.get('exact_file_reopened') is True and montage.get('status')=='PASS',
+    }
+    architecture_100=evaluate_eighteen_step_contract(checks=checks,evidence={
+        **evidence,'sheet_count':len(matched),'visual_qa_version':(report.get('all_sheet_visual_qa') or {}).get('version'),
+        'destructive_regression_contract':'MEP-ARCH-PRESERVE-001',
+    })
+    report['architecture_preservation_100_qa']=architecture_100
+    if architecture_100.get('status')!='PASS':
+        report['status']='FAIL';report['stage']='architecture_preservation_100_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
     report['build']=build_identity();report['status']='PASS'

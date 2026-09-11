@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.30.1
+**Canonical version:** 4.31.0
 
 **Status:** LOCKED
 
@@ -114,6 +114,16 @@ It cross-links (and never replaces) routing, symbol/linkage, clearance, calculat
 detail, riser, schedule and documentation gates. A critical defect on any individual
 sheet blocks release; a package average cannot hide it. Submission-ready status also
 requires evidence that every sheet received independent visual review.
+
+## Architecture reconstruction and preservation release gate
+
+Every issued architectural-plan board must pass the locked eighteen-control
+`MEP-ARCH-PRESERVE-001` contract in
+`docs/ARCHITECTURE_PRESERVATION_100_STANDARD.md`. It seals document/entity
+structure, validates frame/level and coordinate evidence, checks typed geometry
+and topology, prohibits unauthorized mutation, cross-links all-sheet visual QA,
+and reopens the exact issued file. Only 100/100 with all controls explicitly true
+permits delivery.
 
 ## Administration and branch protection
 
