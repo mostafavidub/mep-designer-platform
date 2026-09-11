@@ -12,6 +12,7 @@ from app.job_queue import (
     design_input_available,
     design_input_materializable,
     legacy_basis_missing,
+    queue_health,
 )
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
@@ -100,6 +101,20 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_queue_supervisor_is_fail_visible_and_keeps_polling_after_exception(self):
+        source = Path('app/job_queue.py').read_text(encoding='utf-8')
+        self.assertIn("_record_worker_state(job_type, alive=True, error=exc)", source)
+        self.assertIn("_finish(job_id, False, str(exc))", source)
+        self.assertIn("stop_event.wait(POLL_SECONDS)", source)
+        health = queue_health()
+        self.assertEqual(set(health['workers']), {'analysis', 'design'})
+        self.assertTrue(all('heartbeat_at' in row for row in health['workers'].values()))
+
+    def test_system_health_includes_fail_closed_queue_liveness(self):
+        source = Path('app/main_health.py').read_text(encoding='utf-8')
+        self.assertIn("status['job_queue'] = queue_health()", source)
+        self.assertIn("status['status'] = 'error'", source)
+
     def test_design_input_requires_a_local_or_durable_architecture_copy(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
