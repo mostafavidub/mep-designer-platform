@@ -57,6 +57,22 @@ def test_blank_plan_and_missing_architecture_fail_closed(tmp_path, monkeypatch):
     assert any("architecture_underlay_not_visible" in item for item in result["errors"])
 
 
+def test_service_schematic_does_not_require_architecture_underlay(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    board = _board(code="M-151", family="WATER")
+    board["level"] = "SERVICE"
+    path = tmp_path / "service.dxf"
+    doc = ezdxf.new("R2010"); msp = doc.modelspace()
+    doc.layers.add("ENGITOOLS-M-WATER")
+    msp.add_line((2, 5), (18, 5), dxfattribs={"layer": "ENGITOOLS-M-WATER"})
+    msp.add_text("RISER CW DN25", dxfattribs={"layer": "ENGITOOLS-M-WATER", "height": .1}).set_placement((5, 5.5))
+    doc.saveas(path)
+    composition = {"boards": {"S1": board}, "manifest": [{"old_sheet": "S1", "code": "M-151"}]}
+    result = visual.validate_all_sheet_visual_qa(path, composition, tmp_path / "previews")
+    assert result["status"] == "PASS", result
+    assert "architecture_underlay_not_visible" not in result["sheets"][0]["errors"]
+
+
 def test_tiny_text_overlap_density_and_empty_render_are_destructive_failures(tmp_path, monkeypatch):
     def empty_render(_doc, _bounds, path, _profile, _sessions=None):
         path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"x")
