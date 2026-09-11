@@ -151,6 +151,32 @@ def _close_render_sessions(sessions: dict) -> None:
     sessions.clear()
 
 
+def _render_board_inventory(doc, boards: dict, preview_dir: Path) -> tuple[dict, dict]:
+    """Create every crop with at most one resident full-DXF figure."""
+    rendered = {}; failures = {}
+    for profile in ("color", "monochrome"):
+        sessions = {}
+        try:
+            for key, board in boards.items():
+                code = _board_code(key, board); safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", code)
+                bounds = tuple(map(float, board.get("bounds") or ()))
+                plan_area = tuple(map(float, board.get("plan_area") or bounds))
+                if len(bounds) != 4 or bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
+                    continue
+                rendered.setdefault(code, {})[profile] = _render_profile(
+                    doc, bounds, preview_dir / profile / f"{safe}.png", profile, sessions)
+                if profile == "color":
+                    rendered[code]["overview"] = _render_profile(
+                        doc, bounds, preview_dir / "zoom" / f"{safe}-overview.png", profile, sessions)
+                    rendered[code]["content"] = _render_profile(
+                        doc, plan_area, preview_dir / "zoom" / f"{safe}-content.png", profile, sessions)
+        except Exception as exc:
+            failures[profile] = type(exc).__name__
+        finally:
+            _close_render_sessions(sessions)
+    return rendered, failures
+
+
 def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Path | None = None,
                                  baseline: dict | None = None, release_context: dict | None = None) -> dict:
     """Render and inspect every approved board; any critical defect fails release."""
@@ -170,7 +196,8 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
     if manifest_codes and Counter(manifest_codes) != Counter(board_codes):
         errors.append("manifest_board_identity_mismatch")
 
-    render_sessions = {}
+    render_inventory, render_failures = _render_board_inventory(doc, boards, preview_dir)
+
     for key, board in boards.items():
         code = _board_code(key, board); family = str(board.get("family") or "").upper()
         bounds = tuple(map(float, board.get("bounds") or ()))
@@ -205,18 +232,13 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         elif density > 22:
             local_warnings.append("visual_density_high")
 
-        renders = {}
-        try:
-            safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", code)
-            for profile in PAPER_PROFILES:
-                renders[profile] = _render_profile(doc, bounds, preview_dir / profile / f"{safe}.png", profile, render_sessions)
-                if renders[profile]["status"] != "PASS": local_errors.append(f"{profile}_render_empty")
-            for zoom, crop in (("overview", bounds), ("content", plan_area)):
-                renders[zoom] = _render_profile(doc, crop, preview_dir / "zoom" / f"{safe}-{zoom}.png", "color", render_sessions)
-                if renders[zoom]["status"] != "PASS": local_errors.append(f"{zoom}_render_empty")
-        except Exception as exc:
+        renders = render_inventory.get(code) or {}
+        if render_failures:
             local_errors.append("sheet_render_failed")
-            local_warnings.append(type(exc).__name__)
+            local_warnings.extend(f"{profile}:{detail}" for profile, detail in render_failures.items())
+        for profile in ("color", "monochrome", "overview", "content"):
+            if not renders.get(profile) or renders[profile].get("status") != "PASS":
+                local_errors.append(f"{profile}_render_empty")
 
         base = (baseline or {}).get(code) or {}
         current_signature = {
@@ -242,7 +264,6 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
                        "signature": current_signature, "score": score,
                        "status": "PASS" if not local_errors else "FAIL", "errors": local_errors, "warnings": local_warnings})
 
-    _close_render_sessions(render_sessions)
     independent_review = (release_context or {}).get("independent_visual_review") or {}
     review_status = "PASS" if all(independent_review.get(key) for key in ("reviewer_id", "evidence_sha256", "reviewed_sheet_codes")) else "INPUT_REQUIRED"
     if review_status == "PASS" and set(independent_review["reviewed_sheet_codes"]) != set(board_codes):
