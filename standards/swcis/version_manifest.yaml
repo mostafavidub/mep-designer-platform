@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.28.1",
+  "standard_version": "4.28.2",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.28.2", "date": "2026-09-11", "summary": "Raise generated mechanical annotation text to the visual minimum and measure collision against painted glyph bounds rather than empty MTEXT wrapping columns."},
     {"version": "4.28.1", "date": "2026-09-11", "summary": "Limit architectural-underlay visual checks to architectural plan boards, exempt intentional SERVICE schematics, and surface exact all-sheet visual failures through the API."},
     {"version": "4.28.0", "date": "2026-09-11", "summary": "Require fail-closed exact-file visual QA for every mechanical sheet with plot profiles, per-sheet scoring, baseline comparison and independent review evidence."},
     {"version": "4.27.0", "date": "2026-09-11", "summary": "Require an independent fail-closed calculation reasonableness gate covering units, geometry, physical limits, network conservation, output identity, equipment capacity, sensitivity and engineer review."},

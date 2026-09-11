@@ -17,7 +17,7 @@ import ezdxf
 from ezdxf import bbox
 
 
-VERSION = "all-sheet-visual-qa/3"
+VERSION = "all-sheet-visual-qa/4"
 PLAN_FAMILIES = {"ROOF", "SANITARY_VENT", "WATER", "HEATING", "GAS", "SPLIT_AC", "EXHAUST"}
 TEXT_TYPES = {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}
 MECHANICAL_PREFIXES = ("ENGITOOLS-M-", "ENGITOOLS-V17-DOCUMENTATION")
@@ -62,18 +62,39 @@ def _text_height(entity) -> float | None:
         return None
 
 
-def _overlap_count(text_entities) -> int:
+def _visual_text_box(entity):
+    """Approximate painted glyph bounds, not the MTEXT wrapping container.
+
+    ezdxf's MTEXT bbox commonly spans the declared column width even when the
+    string paints only a few glyphs.  Treating that empty wrapping space as ink
+    produced hundreds of false collisions on route labels.
+    """
+    center = _center(entity)
+    height = _text_height(entity)
+    text = _plain_text(entity)
+    if not center or not height or not text:
+        return None
+    lines = text.replace("\\P", "\n").splitlines() or [text]
+    estimated_width = max(1, max(len(line) for line in lines)) * height * .62
+    try:
+        declared_width = float(entity.dxf.width) if entity.dxftype() == "MTEXT" else estimated_width
+        width = min(estimated_width, declared_width) if declared_width > 0 else estimated_width
+    except Exception:
+        width = estimated_width
+    painted_height = max(height, len(lines) * height * 1.2)
+    return (center[0] - width / 2, center[1] - painted_height / 2,
+            center[0] + width / 2, center[1] + painted_height / 2)
+
+
+def _overlap_evidence(text_entities) -> list[dict]:
     boxes = []
     for entity in text_entities:
-        try:
-            ex = bbox.extents([entity], fast=True)
-            if ex.has_data:
-                boxes.append((float(ex.extmin.x), float(ex.extmin.y), float(ex.extmax.x), float(ex.extmax.y)))
-        except Exception:
-            continue
-    overlaps = 0
-    for index, first in enumerate(boxes):
-        for second in boxes[index + 1:]:
+        box = _visual_text_box(entity)
+        if box:
+            boxes.append((box, _plain_text(entity)[:80]))
+    overlaps = []
+    for index, (first, first_text) in enumerate(boxes):
+        for second, second_text in boxes[index + 1:]:
             ix = min(first[2], second[2]) - max(first[0], second[0])
             iy = min(first[3], second[3]) - max(first[1], second[1])
             if ix > 0 and iy > 0:
@@ -81,7 +102,8 @@ def _overlap_count(text_entities) -> int:
                 smaller = min(max((first[2] - first[0]) * (first[3] - first[1]), 1e-9),
                               max((second[2] - second[0]) * (second[3] - second[1]), 1e-9))
                 if intersection / smaller > 0.35:
-                    overlaps += 1
+                    overlaps.append({"first": first_text, "second": second_text,
+                                     "intersection_ratio": round(intersection / smaller, 3)})
     return overlaps
 
 
@@ -228,7 +250,8 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         minimum_height = min(heights) if heights else None
         if minimum_height is not None and minimum_height < 0.08:
             local_errors.append("plotted_text_below_minimum")
-        overlaps = _overlap_count(mechanical_texts)
+        overlap_evidence = _overlap_evidence(mechanical_texts)
+        overlaps = len(overlap_evidence)
         if overlaps:
             local_errors.append(f"annotation_overlap:{overlaps}")
         density = len(mechanical) / max((plan_area[2] - plan_area[0]) * (plan_area[3] - plan_area[1]), 1e-9)
@@ -265,6 +288,7 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
                        "architecture_entity_count": len(architecture), "mechanical_entity_count": len(mechanical),
                        "annotation_count": len(mechanical_texts), "minimum_text_height": minimum_height,
                        "annotation_overlap_count": overlaps, "visual_density": round(density, 3),
+                       "annotation_overlap_evidence": overlap_evidence[:20],
                        "render_profiles": renders, "baseline_status": baseline_status,
                        "signature": current_signature, "score": score,
                        "status": "PASS" if not local_errors else "FAIL", "errors": local_errors, "warnings": local_warnings})
