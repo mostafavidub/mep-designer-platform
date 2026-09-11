@@ -17,7 +17,7 @@ import ezdxf
 from ezdxf import bbox
 
 
-VERSION = "all-sheet-visual-qa/2"
+VERSION = "all-sheet-visual-qa/3"
 PLAN_FAMILIES = {"ROOF", "SANITARY_VENT", "WATER", "HEATING", "GAS", "SPLIT_AC", "EXHAUST"}
 TEXT_TYPES = {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}
 MECHANICAL_PREFIXES = ("ENGITOOLS-M-", "ENGITOOLS-V17-DOCUMENTATION")
@@ -216,7 +216,12 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         scale = _sheet_scale(board)
         if scale["status"] == "FAIL": local_errors.append("invalid_plot_scale")
         if not mechanical: local_errors.append("no_mechanical_visual_content")
-        if family in PLAN_FAMILIES and not architecture: local_errors.append("architecture_underlay_not_visible")
+        # SERVICE boards are intentional engineering schematics (risers,
+        # system diagrams and schedules), not floor plans.  Requiring a copied
+        # architectural underlay on those boards contradicts the preservation
+        # gate and falsely blocks otherwise valid releases.
+        is_architectural_plan = family in PLAN_FAMILIES and str(board.get("level") or "").upper() != "SERVICE"
+        if is_architectural_plan and not architecture: local_errors.append("architecture_underlay_not_visible")
         if family in PLAN_FAMILIES and not mechanical_texts: local_errors.append("mechanical_annotation_not_visible")
 
         heights = [height for height in (_text_height(entity) for entity in mechanical_texts) if height is not None]
