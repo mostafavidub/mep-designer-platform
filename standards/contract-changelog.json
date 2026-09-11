@@ -2,6 +2,16 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-031",
+      "status":"APPROVED",
+      "summary":"Require multilevel risers to preserve explicit elevations, stable shaft correspondence, declared offsets, cumulative downstream loads and exact Plan/Riser/Calc/Schedule identity.",
+      "affected_capabilities":["mechanical_routing","mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa"],
+      "affected_projects":["all","project-4","project-6","project-8"],
+      "approval":{"status":"APPROVED","basis":"explicit user instruction to implement, merge and deploy the complete riser improvement"},
+      "verification":{"positive_multilevel_test":"passed","destructive_shaft_test":"passed","destructive_elevation_load_offset_test":"passed","focused_tests":"passed","full_regression":"must_pass_before_merge","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Require explicit project evidence for vertical invariants and preserve incomplete outputs as INPUT_REQUIRED/FAIL.","rollback":"Redeploy the prior approved Git SHA; never restore assumed shafts, elevations, offsets or loads as issue-ready facts."}
+    },
+    {
       "id":"GOV-2026-030",
       "status":"APPROVED",
       "summary":"Add privacy-safe independent-engineer redline triage and enforce the final quantitative quality targets without promoting project-specific findings into shared rules.",

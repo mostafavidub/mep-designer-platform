@@ -26,3 +26,12 @@ Allowed riser level types are `GROUND`, `FIRST`, `SECOND`, `ROOF`, `BASEMENT`
 and `MEZZANINE`. Detail sheets and identifiers beginning with `DETAIL` are
 forbidden from the riser level set. Dangling graph edges, missing execution data,
 invalid levels or identity mismatches block issue.
+
+Every multilevel vertical segment additionally requires explicit architectural
+level elevations, one stable shaft alignment identity across consecutive floors,
+declared horizontal offsets, downstream endpoint identities, cumulative load and
+load unit, plus sizing/material provenance. The riser is generated from the same
+network rows used by plans, calculations and schedules. A missing elevation,
+ambiguous shaft match, undeclared offset, orphan endpoint, load mismatch or absent
+provenance is a blocking defect; it may never be replaced by a typical-floor or
+project-average assumption.
