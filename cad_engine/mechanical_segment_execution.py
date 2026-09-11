@@ -139,18 +139,31 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
         if size is not None and not size_source:
             size_source = "SUPPLIED_NETWORK_GRAPH" if edge.get("size") is not None or edge.get("size_mm") is not None else calc_id
 
+        endpoint_loads = cfg.get("endpoint_loads") if isinstance(cfg, dict) else None
+        load_by_type = cfg.get("endpoint_load_by_type") if isinstance(cfg, dict) else None
+        if not isinstance(endpoint_loads, dict) and isinstance(load_by_type, dict):
+            endpoint_loads = {}
+            for endpoint_id in edge.get("endpoint_ids") or []:
+                endpoint = nodes_by_id.get(endpoint_id) or {}
+                endpoint_type = endpoint.get("kind") or endpoint.get("type")
+                if endpoint_type in load_by_type:
+                    endpoint_loads[endpoint_id] = load_by_type[endpoint_type]
+        endpoint_ids = edge.get("endpoint_ids") or []
+        if edge.get("role") == "vertical_riser":
+            unknown_loads = [value for value in endpoint_ids
+                             if not isinstance(endpoint_loads, dict) or _number(endpoint_loads.get(value)) is None]
+            if unknown_loads:
+                missing.extend("ENDPOINT_LOAD:%s:%s" % (edge.get("system"), value) for value in unknown_loads)
+            else:
+                calculated_load = sum(float(endpoint_loads[value]) for value in endpoint_ids)
+                if downstream_load is not None and abs(downstream_load - calculated_load) > 1e-9:
+                    errors.append("VERTICAL_CUMULATIVE_LOAD_MISMATCH:%s" % edge_id)
+                downstream_load = calculated_load
+            load_unit = load_unit or (cfg.get("load_unit") if isinstance(cfg, dict) else None)
+            if not load_unit:
+                missing.append("LOAD_UNIT:%s" % edge.get("system"))
+
         if size is None:
-            endpoint_loads = cfg.get("endpoint_loads") if isinstance(cfg, dict) else None
-            load_by_type = cfg.get("endpoint_load_by_type") if isinstance(cfg, dict) else None
-            if not isinstance(endpoint_loads, dict) and isinstance(load_by_type, dict):
-                endpoint_loads = {}
-                for endpoint_id in edge.get("endpoint_ids") or []:
-                    endpoint = nodes_by_id.get(endpoint_id) or {}
-                    # Canonical topology names the endpoint classification
-                    # ``kind``; supplied graphs may use the older ``type``.
-                    endpoint_type = endpoint.get("kind") or endpoint.get("type")
-                    if endpoint_type in load_by_type:
-                        endpoint_loads[endpoint_id] = load_by_type[endpoint_type]
             size_table = cfg.get("size_table") if isinstance(cfg, dict) else None
             load_unit = cfg.get("load_unit") if isinstance(cfg, dict) else None
             if not isinstance(endpoint_loads, dict):
@@ -159,7 +172,6 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
                 missing.append("SIZE_TABLE:%s" % edge.get("system"))
             if not load_unit:
                 missing.append("LOAD_UNIT:%s" % edge.get("system"))
-            endpoint_ids = edge.get("endpoint_ids") or []
             unknown = [value for value in endpoint_ids if not isinstance(endpoint_loads, dict) or _number(endpoint_loads.get(value)) is None]
             if unknown:
                 missing.extend("ENDPOINT_LOAD:%s:%s" % (edge.get("system"), value) for value in unknown)
@@ -197,6 +209,7 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
         enriched = dict(edge)
         enriched.update({
             "size": size, "size_mm": size, "material": material, "slope_percent": slope,
+            "downstream_load": downstream_load, "load_unit": load_unit,
             "requires_slope": bool(requires_slope),
             "size_source": size_source, "material_source": material_source,
             "plan_path": path, "fittings": _fittings(path),

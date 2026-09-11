@@ -40,3 +40,10 @@ Only typed architectural levels (`GROUND`, `FIRST`, `SECOND`, `ROOF`,
 `BASEMENT`, `MEZZANINE`) may enter riser topology. `DETAIL-*` identifiers are
 documentation views, never levels, and their presence makes the package
 non-issuable.
+
+Every multilevel vertical segment additionally requires explicit architectural
+level elevations, one stable shaft alignment identity across consecutive floors,
+declared horizontal offsets, downstream endpoint identities, cumulative load and
+load unit, plus sizing/material provenance. Intermediate floors may not be
+skipped. Missing or conflicting evidence blocks issue and may not be replaced by
+a typical-floor or project-average assumption.

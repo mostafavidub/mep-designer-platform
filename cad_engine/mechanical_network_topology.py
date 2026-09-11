@@ -146,12 +146,19 @@ def _level_registry(pmm):
                 prior.setdefault("duplicate_view_names", []).append(name)
             continue
         seen_types.add(level_type)
+        elevation = row.get("elevation_m")
+        try:
+            elevation = float(elevation) if elevation is not None else None
+        except (TypeError, ValueError):
+            errors.append("INVALID_LEVEL_ELEVATION:" + name)
+            elevation = None
         registry.append({
             "id": _stable("LVL", {"name": name, "type": level_type}),
             "name": name,
             "type": level_type,
             "order": order,
             "region_bounds": _bounds(row.get("region_bounds")),
+            "elevation_m": elevation,
         })
     return registry, sorted(set(errors))
 
@@ -494,8 +501,11 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
             missing.append(error)
             continue
         node_id = _stable("SHAFT", {"level": level["id"], "point": [round(point[0], 6), round(point[1], 6)]})
+        shaft_key = shaft.get("vertical_alignment_key") or shaft.get("shaft_id")
         node = {"id": node_id, "kind": "shaft", "category": "vertical_core", "point": point,
                 "level": level["id"], "level_type": level["type"], "level_name": level["name"],
+                "elevation_m": level.get("elevation_m"), "shaft_key": shaft_key,
+                "footprint_bounds": _bbox(shaft.get("polygon")),
                 "source": shaft.get("source") or "ARCHITECTURAL_SHAFT_GEOMETRY"}
         nodes.append(node); node_by_id[node_id] = node; shaft_nodes_by_level.setdefault(level["id"], []).append(node)
 
@@ -595,7 +605,9 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
     if vertical_enabled:
         order = {row["id"]: row["order"] for row in levels}
         for system, level_ids in sorted(systems_by_level.items()):
-            involved = sorted(level_ids, key=lambda value: order[value])
+            terminal_orders = [order[value] for value in level_ids]
+            involved = [row["id"] for row in sorted(levels, key=lambda value: value["order"])
+                        if min(terminal_orders) <= row["order"] <= max(terminal_orders)]
             if len(involved) < 2:
                 continue
             selected = []
@@ -607,11 +619,23 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
                     selected = []
                     break
                 selected.append(shafts[0])
+            supplied_keys = [row.get("shaft_key") for row in selected]
+            if selected and any(supplied_keys) and (not all(supplied_keys) or len(set(supplied_keys)) != 1):
+                missing_route.append("VERTICAL_SHAFT_ALIGNMENT_KEY_MISMATCH:%s" % system)
+                selected = []
             for lower, upper in zip(selected, selected[1:]):
                 endpoint_ids = [node_id for (sys_name, lvl), values in endpoints_by_system_level.items()
-                                if sys_name == system and lvl in {lower["level"], upper["level"]}
+                                if sys_name == system and order[lvl] >= order[upper["level"]]
                                 for node_id in [node["id"] for node in values]]
                 add_edge(system, lower, upper, "vertical_riser", endpoint_ids, [lower["level"], upper["level"]], vertical=True)
+                edge = edges[-1]
+                edge["shaft_key"] = lower.get("shaft_key") or upper.get("shaft_key")
+                edge["from_elevation_m"] = lower.get("elevation_m")
+                edge["to_elevation_m"] = upper.get("elevation_m")
+                dx = round(float(upper["point"][0]) - float(lower["point"][0]), 6)
+                dy = round(float(upper["point"][1]) - float(lower["point"][1]), 6)
+                edge["vertical_offset_xy"] = [dx, dy]
+                edge["offset_declared"] = bool(dx or dy) and bool(edge.get("shaft_key"))
 
     if missing_route:
         return {"status": "INPUT_REQUIRED", "missing_inputs": sorted(set(missing_route)), "network": None,
