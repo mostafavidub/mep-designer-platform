@@ -1,0 +1,44 @@
+{
+  "change_id":"SWCIS-2026-0090",
+  "summary":"Unify the eighteen architecture reconstruction and preservation controls into an exact-file, scored, fail-closed release contract.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","test","governance","documentation","versioning","deployment","rule"],
+  "changed_rule_ids":["MEP-ARCH-PRESERVE-001"],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","planner","pmm","qa","questionnaire","routing","rule_book","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Every issued plan is checked by one eighteen-control architecture preservation contract.",
+    "deployment":"Protected merge, Staging synchronization and live exact-build verification are required.",
+    "docs":"The architecture preservation acceptance and scoring contract is documented.",
+    "governance":"A locked rule and approved changelog entry govern the new gate.",
+    "manifest":"The SWCIS manifest advances to 4.31.0.",
+    "migration":"No stored-data migration; existing outputs must be regenerated to receive the new evidence.",
+    "qa":"Positive, destructive, transform, metadata, topology and score regressions are mandatory.",
+    "versioning":"Backward-compatible release-gate capability addition: SWCIS 4.31.0."
+    ,"detail_riser":"No riser geometry changes; its architectural hosts remain protected."
+    ,"equipment":"No equipment selection change; host geometry preservation is verified."
+    ,"manufacturer_selector":"Not affected; catalogue authority is unchanged."
+    ,"planner":"Existing evidence-based frame and level outputs feed the new gate."
+    ,"pmm":"No schema change; existing rooms, shafts and typed levels are consumed."
+    ,"questionnaire":"No question or answer semantics change."
+    ,"routing":"No routing algorithm change; wall/shaft topology is protected."
+    ,"rule_book":"Adds locked preservation rule MEP-ARCH-PRESERVE-001 without numeric design defaults."
+    ,"sizing":"Not affected; no engineering calculation or unit conversion changes."
+    ,"ui_api":"Additive QA report is transported inside the existing output report."
+  },
+  "evidence":{
+    "traceability":["MEP-ARCH-PRESERVE-001 -> source snapshot -> plan/level evidence -> exact-file diff/topology/visibility -> score -> final delivery gate"],
+    "tests":["Focused eighteen-step preservation tests and full repository regression."],
+    "docs":["docs/ARCHITECTURE_PRESERVATION_100_STANDARD.md"],
+    "version_bump":["SWCIS 4.30.1 -> 4.31.0"],
+    "migration":["None; additive QA evidence and fail-closed final claim."],
+    "golden_regression":["Synthetic destructive corpus plus blind Staging rerun of projects 4, 6, 8 and 10 when their private inputs are available."],
+    "semantic_diff":["Architecture preservation becomes one scored eighteen-control contract; any critical failure blocks release and prevents a score of 100."],
+    "artifact_diff":["Customer geometry semantics are preserved; reports gain document metadata, exact differences, per-control evidence and rubric scores."],
+    "numeric_diff":["Score weights are 30 geometry/topology, 20 frame/level, 15 layers/blocks/text, 15 visibility, 10 unauthorized-change/collision, 10 reopen/diff."],
+    "contract_diff":["Adds locked MEP-ARCH-PRESERVE-001 and requires its PASS in final delivery."],
+    "deployment_plan":["Protected PR, synchronize approved main commit to Staging, verify health/build identity, then run the four private projects without mechanical references."],
+    "rollback_plan":["Revert the approved commit and redeploy the preceding approved Git SHA; never bypass the preservation gate."]
+  },
+  "risk":{"likelihood":3,"severity":5,"detectability":2,"score":30,"rationale":"An undetected architecture mutation can invalidate every mechanical sheet and its permit submission."},
+  "waiver":null
+}
