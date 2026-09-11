@@ -415,6 +415,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to perform the next step after Staging accepted a design job but returned no terminal state"},
       "verification":{"supervisor_test":"must_pass","health_contract_test":"must_pass","full_regression":"must_pass","staging_queue_smoke":"must_pass before project reruns"},
       "migration":{"forward":"Restart the deployed process so supervised consumers register fresh heartbeats; queued rows remain persistent.","rollback":"Redeploy the prior approved SHA; do not report healthy when consumers are unavailable."}
+    },
+    {
+      "id":"GOV-2026-038","status":"APPROVED",
+      "summary":"Replace the inherited legacy health route with the integrated queue-aware health authority.",
+      "affected_capabilities":["runtime_health","job_queue","deployment"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit owner instruction to complete the next Staging recovery step"},
+      "verification":{"route_authority_test":"must_pass","full_regression":"must_pass","live_queue_heartbeat":"must_pass"},
+      "migration":{"forward":"Restart only.","rollback":"Redeploy the prior SHA."}
     }
   ]
 }

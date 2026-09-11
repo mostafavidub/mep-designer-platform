@@ -103,16 +103,23 @@ async def performance_headers(request, call_next):
     return response
 
 
-@app.get('/system_health')
 def integrated_system_health():
-    status = main_auto.system_health()
+    status = main_auto.legacy.system_health()
     status['object_storage'] = artifact_storage.healthcheck()
     status['job_queue'] = queue_health()
-    if status['job_queue']['status'] != 'ok':
+    if status['job_queue']['status'] == 'error':
         status['status'] = 'error'
     status['build_identity'] = build_identity()
     status['mechanical'] = release_contract_status()
     return status
+
+
+# ``main_auto`` inherits the legacy /system_health route. Replace it instead of
+# registering a duplicate because Starlette dispatches the first matching route.
+for route in list(app.router.routes):
+    if getattr(route, 'path', None) == '/system_health' and 'GET' in (getattr(route, 'methods', None) or set()):
+        app.router.routes.remove(route)
+app.add_api_route('/system_health', integrated_system_health, methods=['GET'])
 
 
 @app.get('/storage_health')

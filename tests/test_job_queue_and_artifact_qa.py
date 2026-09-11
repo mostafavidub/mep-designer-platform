@@ -114,6 +114,8 @@ class QueueIntegrationContractTests(unittest.TestCase):
         source = Path('app/main_health.py').read_text(encoding='utf-8')
         self.assertIn("status['job_queue'] = queue_health()", source)
         self.assertIn("status['status'] = 'error'", source)
+        self.assertIn("app.router.routes.remove(route)", source)
+        self.assertIn("app.add_api_route('/system_health', integrated_system_health", source)
 
     def test_design_input_requires_a_local_or_durable_architecture_copy(self):
         with tempfile.TemporaryDirectory() as td:
