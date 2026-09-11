@@ -28,6 +28,7 @@ from .mechanical_release_hardening import (
     validate_architectural_presentation,
 )
 from .build_identity import build_identity
+from .sheet_visual_qa import validate_all_sheet_visual_qa
 
 WEB_TO_CAD_FAMILY = {
     'WATER_SUPPLY': 'WATER',
@@ -385,6 +386,10 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         ('split_ac_visual_qa',validate_split_ac_visual_legibility(dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews')),'split_ac_visual_gate'),
         ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),
         ('content_completeness_qa',validate_content_completeness(dst,report.get('composition') or {}),'content_completeness_gate'),
+        ('all_sheet_visual_qa',validate_all_sheet_visual_qa(
+            dst,report.get('composition') or {},dst.with_name(dst.stem+'-sheet-previews'),
+            release_context=(answers.get('_canonical_input_contract') or {}).get('visual_qa') or {}
+        ),'all_sheet_visual_gate'),
     )
     for key,gate,stage in hardening_gates:
         report[key]=gate
