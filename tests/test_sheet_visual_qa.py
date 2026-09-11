@@ -111,3 +111,21 @@ def test_real_renderer_reuses_two_sessions_for_all_sheet_crops(tmp_path, monkeyp
     visual._close_render_sessions(sessions)
     assert sessions == {}
     assert len(created) == 2
+
+
+def test_render_inventory_never_keeps_color_and_monochrome_sessions_together(tmp_path, monkeypatch):
+    active = set(); maximum = []
+    def render(_doc, _bounds, path, profile, sessions):
+        sessions.setdefault(profile, (object(), object(), object(), object()))
+        active.add(profile); maximum.append(len(active))
+        path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(b"render" * 300)
+        return {"path": str(path), "size_bytes": path.stat().st_size, "ink_pixels": 500,
+                "total_pixels": 1000, "ink_ratio": .5, "status": "PASS"}
+    def close(sessions):
+        active.difference_update(sessions); sessions.clear()
+    monkeypatch.setattr(visual, "_render_profile", render)
+    monkeypatch.setattr(visual, "_close_render_sessions", close)
+    inventory, failures = visual._render_board_inventory(object(), {"S1": _board()}, tmp_path)
+    assert failures == {}
+    assert maximum and max(maximum) == 1
+    assert {"color", "monochrome", "overview", "content"} == set(inventory["M-101"])
