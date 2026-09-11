@@ -2,9 +2,11 @@
 
 **Rule:** `MEP-VISUAL-QA-001`  
 **Status:** `LOCKED`  
-**Gate revision:** `all-sheet-visual-qa/3`
+**Gate revision:** `all-sheet-visual-qa/4`
 
 Architectural-underlay visibility is mandatory on architectural plan boards. Boards explicitly classified as `SERVICE` are engineering schematics and are instead checked for mechanical content, annotations, rendering, identity and their cross-linked engineering gates; they must not be failed merely because no floor-plan underlay is present.
+
+Annotation collision measurement uses estimated painted glyph bounds rather than the unused wrapping width of an MTEXT column. Mechanical annotations emitted by the canonical composer have a minimum model-space text height of `0.08`; smaller generated text is a hard failure.
 
 The release candidate is the exact generated DXF. QA reopens that file without
 mutation, reconciles every board with the approved manifest and creates retained
