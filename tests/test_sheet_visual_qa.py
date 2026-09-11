@@ -91,6 +91,20 @@ def test_tiny_text_overlap_density_and_empty_render_are_destructive_failures(tmp
     assert any("render_empty" in item for item in result["errors"])
 
 
+def test_mtext_empty_wrapping_width_is_not_counted_as_painted_overlap(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    path = tmp_path / "wrap.dxf"; composition = _issued(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    first = msp.add_mtext("A", dxfattribs={"layer": "ENGITOOLS-M-WATER", "char_height": .1})
+    first.dxf.insert = (3, 8); first.dxf.width = 12
+    second = msp.add_mtext("B", dxfattribs={"layer": "ENGITOOLS-M-WATER", "char_height": .1})
+    second.dxf.insert = (5, 8); second.dxf.width = 12
+    doc.saveas(path)
+    result = visual.validate_all_sheet_visual_qa(path, composition, tmp_path / "previews")
+    assert result["status"] == "PASS", result
+    assert result["sheets"][0]["annotation_overlap_count"] == 0
+
+
 def test_baseline_regression_and_review_coverage_are_checked(tmp_path, monkeypatch):
     monkeypatch.setattr(visual, "_render_profile", _fake_render)
     path = tmp_path / "issued.dxf"; composition = _issued(path)
