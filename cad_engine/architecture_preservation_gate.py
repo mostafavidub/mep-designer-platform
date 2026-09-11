@@ -98,7 +98,34 @@ def snapshot_architecture(doc_or_path,plan_id=None,plan_bounds=None):
         cls,conf=classify_entity(e); crit=criticality_for(cls,conf); length,area=_measure(e); handle=str(getattr(e.dxf,"handle","") or "")
         rec=EntityRecord(key=f"{plan_id or 'PLAN'}:{handle or _geom_signature(e)[:12]}",handle=handle,entity_type=e.dxftype(),layer=str(getattr(e.dxf,"layer","")),block=str(getattr(e.dxf,"name","")) if e.dxftype()=="INSERT" else None,plan_id=plan_id,bbox=(float(ex.extmin.x),float(ex.extmin.y),float(ex.extmax.x),float(ex.extmax.y)),length=round(length,6),area=round(area,6),text=_text(e),geometry_hash=_geom_signature(e),semantic_class=cls,confidence=conf,criticality=crit)
         records.append(asdict(rec))
-    payload={"plan_id":plan_id,"entity_count":len(records),"entities":records}; payload["snapshot_hash"]=sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False).encode()).hexdigest(); return payload
+    layouts=[]
+    for layout in doc.layouts:
+        layouts.append({"name":str(layout.name),"entity_count":len(layout)})
+    blocks=[]
+    for block in doc.blocks:
+        blocks.append({"name":str(block.name),"entity_count":len(block)})
+    xrefs=[]
+    for block in doc.blocks:
+        try:
+            if block.block.is_xref:
+                xrefs.append({"name":str(block.name),"path":str(block.block.dxf.xref_path or "")})
+        except Exception:
+            continue
+    ext=bbox.extents(doc.modelspace(),fast=True)
+    drawing_bounds=(float(ext.extmin.x),float(ext.extmin.y),float(ext.extmax.x),float(ext.extmax.y)) if ext.has_data else None
+    metadata={
+        "units":int(doc.header.get("$INSUNITS",0) or 0),
+        "measurement":int(doc.header.get("$MEASUREMENT",0) or 0),
+        "insertion_base":tuple(float(v) for v in doc.header.get("$INSBASE",(0,0,0))),
+        "drawing_bounds":drawing_bounds,
+        "layers":sorted(str(layer.dxf.name) for layer in doc.layers),
+        "blocks":sorted(blocks,key=lambda item:item["name"]),
+        "xrefs":sorted(xrefs,key=lambda item:item["name"]),
+        "layouts":sorted(layouts,key=lambda item:item["name"]),
+    }
+    metadata["metadata_hash"]=sha256(json.dumps(metadata,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+    payload={"plan_id":plan_id,"entity_count":len(records),"entities":records,"document":metadata}
+    payload["snapshot_hash"]=sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False).encode()).hexdigest(); return payload
 
 def build_dependency_graph(snapshot,mechanical):
     by_class=defaultdict(list)
@@ -123,13 +150,25 @@ def atomic_transform(doc,entity_handles:Iterable[str],matrix:Matrix44):
         except Exception as exc:failures.append({"handle":str(e.dxf.handle),"error":str(exc)})
     return {"status":"PASS" if not failures else "FAIL","transformed":len(targets)-len(failures),"failures":failures}
 
-def diff_snapshots(before,after,tolerance=1e-6):
+def diff_snapshots(before,after,tolerance=1e-6,compare_coordinates=True):
     b={r["key"]:r for r in before.get("entities",[])}; a={r["key"]:r for r in after.get("entities",[])}; deleted=[r for k,r in b.items() if k not in a]; added=[r for k,r in a.items() if k not in b]; changed=[]
     for k in b.keys()&a.keys():
         rb,ra=b[k],a[k]
-        if rb["semantic_class"]!=ra["semantic_class"] or abs(rb["length"]-ra["length"])>tolerance or abs(rb["area"]-ra["area"])>tolerance:changed.append({"key":k,"before":rb,"after":ra})
+        numeric_changed=(
+            abs(rb["length"]-ra["length"])>tolerance
+            or abs(rb["area"]-ra["area"])>tolerance
+            or (compare_coordinates and any(abs(float(x)-float(y))>tolerance for x,y in zip(rb["bbox"],ra["bbox"])))
+        )
+        fields=("semantic_class","entity_type","layer","block","text","geometry_hash")
+        field_changes=[field for field in fields if rb.get(field)!=ra.get(field)]
+        if numeric_changed or field_changes:
+            changed.append({"key":k,"before":rb,"after":ra,"changed_fields":field_changes + (["numeric_geometry"] if numeric_changed else [])})
     critical_deleted=[r for r in deleted if r.get("criticality")=="CRITICAL"]; important_deleted=[r for r in deleted if r.get("criticality")=="IMPORTANT"]
-    return {"deleted":deleted,"added":added,"changed":changed,"critical_deleted":critical_deleted,"important_deleted":important_deleted,"pass":not critical_deleted}
+    protected_changed=[item for item in changed if item["before"].get("criticality") in {"CRITICAL","IMPORTANT"}]
+    document_changed=before.get("document")!=after.get("document") if before.get("document") is not None and after.get("document") is not None else False
+    return {"deleted":deleted,"added":added,"changed":changed,"critical_deleted":critical_deleted,"important_deleted":important_deleted,
+            "protected_changed":protected_changed,"document_changed":document_changed,
+            "pass":not critical_deleted and not important_deleted and not protected_changed and not document_changed}
 
 def _endpoint_key(p,tol=1e-4):return (round(p[0]/tol)*tol,round(p[1]/tol)*tol)
 def wall_topology(snapshot):
@@ -159,8 +198,56 @@ def validate_mechanical_impact(snapshot,dependency_graph):
 def run_golden_regression(cases):
     results=[]
     for case in cases:
-        d=diff_snapshots(case["before"],case["after"]); t=validate_topology(case["before"],case["after"]); ok=d["pass"] and t["pass"]; results.append({"name":case.get("name"),"pass":ok,"critical_deleted":len(d["critical_deleted"]),"topology_pass":t["pass"]})
+        d=diff_snapshots(case["before"],case["after"],compare_coordinates=False); t=validate_topology(case["before"],case["after"]); ok=d["pass"] and t["pass"]; results.append({"name":case.get("name"),"pass":ok,"critical_deleted":len(d["critical_deleted"]),"topology_pass":t["pass"]})
     return {"pass":all(r["pass"] for r in results),"results":results}
 def finalize_gate(*,diff,topology,visibility,mechanical,regression):
     checks={"critical_deleted_zero":len(diff.get("critical_deleted",[]))==0,"topology_preserved":bool(topology.get("pass")),"visibility_preserved":bool(visibility.get("pass")),"mechanical_dependencies_preserved":bool(mechanical.get("pass")),"golden_regression_green":bool(regression.get("pass"))}; ok=all(checks.values()); failures=[k for k,v in checks.items() if not v]
     return {"status":"PASS" if ok else "FAIL","checks":checks,"failures":failures,"action":"COMMIT_OUTPUT" if ok else "ROLLBACK_AND_BLOCK_DELIVERY"}
+
+
+ARCHITECTURE_100_RUBRIC={
+    "geometry_topology":30,
+    "frame_level_binding":20,
+    "layers_blocks_text":15,
+    "underlay_visibility":15,
+    "unauthorized_change_collision":10,
+    "exact_reopen_diff":10,
+}
+
+
+def evaluate_eighteen_step_contract(*, checks:dict, evidence:dict|None=None):
+    """Score the complete architecture-preservation chain without averaging away a failure.
+
+    Every named control is mandatory.  Missing/unknown controls fail closed, and
+    any critical control failure prevents a 100 score and blocks delivery.
+    """
+    required=(
+        "immutable_snapshot","coordinate_calibration","drawing_separation","level_binding",
+        "wall_reconstruction","typed_openings_and_verticals","closed_room_identity","shaft_wet_core_evidence",
+        "safe_deduplication","mutation_prohibition","work_copy_only","atomic_rollback",
+        "exact_entity_diff","topology_preservation","per_sheet_visibility","graphical_sheet_qa",
+        "destructive_regression","exact_file_reopen",
+    )
+    normalized={name:bool(checks.get(name) is True) for name in required}
+    groups={
+        "geometry_topology":required[4:9]+("exact_entity_diff","topology_preservation"),
+        "frame_level_binding":required[1:4],
+        "layers_blocks_text":("immutable_snapshot","typed_openings_and_verticals","closed_room_identity"),
+        "underlay_visibility":("per_sheet_visibility","graphical_sheet_qa"),
+        "unauthorized_change_collision":("mutation_prohibition","work_copy_only","atomic_rollback"),
+        "exact_reopen_diff":("exact_file_reopen","exact_entity_diff","destructive_regression"),
+    }
+    category_scores={}
+    for category,names in groups.items():
+        weight=ARCHITECTURE_100_RUBRIC[category]
+        category_scores[category]=round(weight*sum(normalized[name] for name in names)/len(names),2)
+    score=round(sum(category_scores.values()),2)
+    failures=[name for name,value in normalized.items() if not value]
+    status="PASS" if not failures and score==100 else "FAIL"
+    return {
+        "version":"architecture-preservation-18/1",
+        "status":status,"score":score,"maximum_score":100,
+        "checks":normalized,"failures":failures,"category_scores":category_scores,
+        "rubric":dict(ARCHITECTURE_100_RUBRIC),"evidence":dict(evidence or {}),
+        "action":"COMMIT_OUTPUT" if status=="PASS" else "ROLLBACK_AND_BLOCK_DELIVERY",
+    }

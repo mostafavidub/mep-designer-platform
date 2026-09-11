@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.30.1",
+  "standard_version": "4.31.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version": "4.31.0", "date": "2026-09-11", "summary": "Require all eighteen architecture reconstruction and preservation controls to pass with an exact-file score of 100 before delivery."},
     {"version": "4.30.1", "date": "2026-09-11", "summary": "Replace the inherited health route so integrated queue liveness is the single served health authority."},
     {"version": "4.30.0", "date": "2026-09-11", "summary": "Supervise persistent analysis and design queue consumers, expose worker heartbeat and fail system health closed when a worker is unavailable."},
     {"version": "4.29.0", "date": "2026-09-11", "summary": "Require geometry-correlated, elevation-aware and load-accumulating multilevel mechanical risers with exact plan, calculation and schedule reconciliation."},
