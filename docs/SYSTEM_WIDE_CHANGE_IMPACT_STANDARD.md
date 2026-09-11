@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.27.0
+**Canonical version:** 4.28.0
 
 **Status:** LOCKED
 
@@ -102,6 +102,18 @@ reconciliation and before CAD materialization.  The evaluation must verify:
 
 `WARNING` may support preliminary design only. `INPUT_REQUIRED` and `FAIL` block
 submission-ready output, and no aggregate score may mask a critical failure.
+
+## All-sheet visual QA release gate
+
+Every approved mechanical board is reopened from the exact issued DXF and rendered
+independently in color, monochrome, overview and content-zoom profiles. The gate
+reconciles board identities with the approved manifest and checks frame/scale,
+architecture and mechanical visibility, plotted text, annotation overlap, visual
+density, plan/support-sheet content, baseline regression and exact-file immutability.
+It cross-links (and never replaces) routing, symbol/linkage, clearance, calculation,
+detail, riser, schedule and documentation gates. A critical defect on any individual
+sheet blocks release; a package average cannot hide it. Submission-ready status also
+requires evidence that every sheet received independent visual review.
 
 ## Administration and branch protection
 
