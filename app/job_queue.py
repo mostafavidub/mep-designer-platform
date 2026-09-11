@@ -26,6 +26,36 @@ MAX_ATTEMPTS = int(os.getenv('JOB_MAX_ATTEMPTS', '3'))
 RETRY_DELAY_SECONDS = int(os.getenv('JOB_RETRY_DELAY_SECONDS', '30'))
 STALE_AFTER_MINUTES = int(os.getenv('JOB_STALE_AFTER_MINUTES', '70'))
 
+_QUEUE_STATE_LOCK = threading.Lock()
+_QUEUE_STATE = {
+    job_type: {
+        'alive': False,
+        'heartbeat_at': None,
+        'last_error': '',
+        'error_count': 0,
+    }
+    for job_type in ('analysis', 'design')
+}
+
+
+def queue_health():
+    """Expose worker liveness without leaking job or project data."""
+    with _QUEUE_STATE_LOCK:
+        workers = {name: dict(value) for name, value in _QUEUE_STATE.items()}
+    healthy = all(worker['alive'] for worker in workers.values())
+    return {'status': 'ok' if healthy else 'error', 'workers': workers}
+
+
+def _record_worker_state(job_type, *, alive=None, error=None):
+    with _QUEUE_STATE_LOCK:
+        state = _QUEUE_STATE[job_type]
+        state['heartbeat_at'] = datetime.utcnow().isoformat() + 'Z'
+        if alive is not None:
+            state['alive'] = bool(alive)
+        if error is not None:
+            state['last_error'] = str(error)[:1200]
+            state['error_count'] += 1
+
 
 def backup_input_without_blocking(project_id: int, original: Path) -> str:
     """Copy an upload to object storage without blocking local analysis."""
@@ -437,15 +467,31 @@ def register_job_queue(app, legacy):
             shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(project_id), ignore_errors=True)
 
     def _worker(job_type):
+        _record_worker_state(job_type, alive=True)
         while not stop_event.is_set():
-            job_id = _claim(job_type)
-            if not job_id:
+            job_id = None
+            try:
+                _record_worker_state(job_type, alive=True)
+                job_id = _claim(job_type)
+                if not job_id:
+                    stop_event.wait(POLL_SECONDS)
+                    continue
+                if job_type == 'analysis':
+                    _run_analysis(job_id)
+                else:
+                    _run_design(job_id)
+            except Exception as exc:
+                # A transient database/storage/cleanup failure must not kill the
+                # only in-process queue consumer. The job remains recoverable by
+                # the persistent queue and the failure is visible in health.
+                _record_worker_state(job_type, alive=True, error=exc)
+                if job_id is not None:
+                    try:
+                        _finish(job_id, False, str(exc))
+                    except Exception as finish_exc:
+                        _record_worker_state(job_type, alive=True, error=finish_exc)
                 stop_event.wait(POLL_SECONDS)
-                continue
-            if job_type == 'analysis':
-                _run_analysis(job_id)
-            else:
-                _run_design(job_id)
+        _record_worker_state(job_type, alive=False)
 
     def _migrate_ready_outputs_to_object_storage():
         """Move legacy ready artifacts to R2, then reclaim their local workspaces."""

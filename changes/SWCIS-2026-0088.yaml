@@ -1,0 +1,34 @@
+{
+  "change_id": "SWCIS-2026-0088",
+  "summary": "Supervise persistent queue consumers and make worker liveness observable through fail-closed system health.",
+  "requester": "project-owner",
+  "change_types": ["runtime", "deployment", "ui_api", "test", "governance", "documentation"],
+  "changed_rule_ids": ["MEP-SUBMIT-001"],
+  "impacted_modules": ["deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "deployment": "Process startup creates supervised analysis and design consumers.",
+    "docs": "The canonical SWCIS version records the queue availability contract.",
+    "governance": "Queue availability becomes release-visible evidence.",
+    "manifest": "The SWCIS version manifest advances for the new release gate.",
+    "migration": "No data rewrite; a process restart activates supervision for existing rows.",
+    "qa": "Tests cover supervisor persistence and fail-closed health.",
+    "ui_api": "Integrated health exposes privacy-safe worker heartbeat and error count.",
+    "versioning": "SWCIS advances to 4.30.0; runtime identity remains Git-derived."
+  },
+  "evidence": {
+    "traceability": ["MEP-SUBMIT-001 requires an available generation path before issue."],
+    "tests": ["Queue supervisor and integrated-health contract tests plus full regression."],
+    "docs": ["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump": ["SWCIS 4.30.0; runtime identity unchanged."],
+    "migration": ["Restart only; persistent queued jobs remain in the database."],
+    "golden_regression": ["Complete automated suite and live Staging queue smoke."],
+    "semantic_diff": ["Worker death is observable and transient loop failures no longer terminate consumption."],
+    "artifact_diff": ["Not affected."],
+    "numeric_diff": ["Not affected."],
+    "contract_diff": ["System health fails closed until both queue consumers are alive."],
+    "deployment_plan": ["Merge protected green SHA, deploy to Staging, verify two heartbeats, then rerun projects."],
+    "rollback_plan": ["Redeploy the prior approved Staging Git SHA."]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 2, "score": 30, "rationale": "A dead consumer silently prevents every design completion."},
+  "waiver": null
+}
