@@ -407,6 +407,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction after blind Staging project 3 proved valid architecture bounds were discarded by the PMM bridge"},
       "verification":{"exact_match_test":"must_pass","nonmatch_negative":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
       "migration":{"forward":"Fresh PMM rebuild copies existing exact-name bounds.","rollback":"Revert; never fuzzy-match level names or invent bounds."}
+    },
+    {
+      "id":"GOV-2026-037","status":"APPROVED",
+      "summary":"Keep persistent queue consumers alive after transient claim failures and expose their heartbeat through fail-closed integrated health.",
+      "affected_capabilities":["deployment","job_queue","runtime_health","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to perform the next step after Staging accepted a design job but returned no terminal state"},
+      "verification":{"supervisor_test":"must_pass","health_contract_test":"must_pass","full_regression":"must_pass","staging_queue_smoke":"must_pass before project reruns"},
+      "migration":{"forward":"Restart the deployed process so supervised consumers register fresh heartbeats; queued rows remain persistent.","rollback":"Redeploy the prior approved SHA; do not report healthy when consumers are unavailable."}
     }
   ]
 }
