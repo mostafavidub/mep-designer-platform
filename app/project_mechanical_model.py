@@ -33,6 +33,11 @@ def _stable_id(kind, payload):
 def _level_rows(auto):
     profiles = auto.get("level_profiles") or []
     if profiles:
+        architecture_bounds = {
+            str(row.get("name") or "").strip(): deepcopy(row.get("region_bounds"))
+            for row in ((auto.get("architecture_model") or {}).get("levels") or [])
+            if str(row.get("name") or "").strip() and row.get("region_bounds") is not None
+        }
         rows = []
         for profile in profiles:
             name = str(profile.get("name") or "").strip()
@@ -41,7 +46,7 @@ def _level_rows(auto):
             rows.append({
                 "name": name,
                 "roof": bool(profile.get("roof")),
-                "region_bounds": deepcopy(profile.get("region_bounds")),
+                "region_bounds": deepcopy(profile.get("region_bounds") or architecture_bounds.get(name)),
                 "room_counts": deepcopy(profile.get("room_counts") or {}),
                 "recognized_room_labels": int(profile.get("recognized_room_labels") or 0),
                 "wet_fixture_candidate": bool(profile.get("wet_fixture_candidate")),

@@ -8,19 +8,20 @@ import shutil
 import tempfile
 import uuid
 import zipfile
+import hashlib
 from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
 
 import requests
 from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 
 from . import main as legacy
 from . import artifact_storage
 from .design_progress import set_project_progress
-from cad_engine.version_manifest import active_version_manifest
 from cad_engine.build_identity import build_identity, stamp_artifact
+from cad_engine.runtime_contract import runtime_contract
 from .design_recovery import clear_active_recovery
 
 app = legacy.app
@@ -54,8 +55,8 @@ def customer_safe_error(value):
 legacy.templates.env.globals['customer_safe_error'] = customer_safe_error
 
 
-def _purge_processing_files(pid: int, keep_output: bool = True):
-    """Remove every local artifact; R2 is the only durable file store."""
+def _purge_processing_files(pid: int, keep_output: bool = True, preserve_local_output: bool = False):
+    """Remove transient workspaces while retaining the selected durable artifact."""
     pdir = legacy.DATA_DIR / 'projects' / str(pid)
     try:
         durable_input = artifact_storage.input_is_durable(pid)
@@ -67,7 +68,8 @@ def _purge_processing_files(pid: int, keep_output: bool = True):
                 shutil.rmtree(path, ignore_errors=True)
             else:
                 path.unlink(missing_ok=True)
-    shutil.rmtree(pdir / 'output', ignore_errors=True)
+    if not preserve_local_output:
+        shutil.rmtree(pdir / 'output', ignore_errors=True)
     shutil.rmtree(Path(os.getenv('CAD_OUTPUT_DIR', '/tmp/engitools-cad-output')) / str(pid), ignore_errors=True)
     if not keep_output:
         shutil.rmtree(pdir, ignore_errors=True)
@@ -275,9 +277,46 @@ def _cad_error_message(response):
         priority = []
         if detail.get('stage'):
             priority.append(str(detail['stage']))
+        preservation = (
+            detail.get('architecture_preservation_qa_after_canonical')
+            or detail.get('architecture_preservation_qa')
+            or {}
+        )
+        if isinstance(preservation, dict) and preservation:
+            reasons = list(preservation.get('failures') or [])
+            for sheet in preservation.get('sheet_results') or []:
+                if sheet.get('reason'):
+                    reasons.append(str(sheet['reason']))
+                if sheet.get('status') == 'FAIL':
+                    if not (sheet.get('topology') or {}).get('pass', True):
+                        reasons.append(f'TOPOLOGY_MISMATCH:{sheet.get("sheet") or "unknown"}')
+                    if not (sheet.get('visibility') or {}).get('pass', True):
+                        reasons.append(f'VISIBILITY_FAILURE:{sheet.get("sheet") or "unknown"}')
+                for missing_item in (sheet.get('preservation_match') or {}).get('missing') or []:
+                    if missing_item.get('reason'):
+                        reasons.append(str(missing_item['reason']))
+            priority.append(
+                'architecture_preservation:'
+                f'critical_missing={int(preservation.get("critical_missing_count") or 0)},'
+                f'important_missing={int(preservation.get("important_missing_count") or 0)},'
+                f'all_missing={int(preservation.get("all_missing_count") or 0)},'
+                f'reasons={",".join(dict.fromkeys(reasons)) or "unspecified"}'
+            )
         failed_stage_qa = detail.get('failed_stage_qa')
         if isinstance(failed_stage_qa, dict):
             priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
+        acceptance = detail.get('engineering_acceptance') or {}
+        for gate in acceptance.get('gates') or []:
+            if gate.get('name') == 'routing' and gate.get('status') == 'FAIL':
+                for route in (gate.get('metrics') or {}).get('uncoordinated_routes') or []:
+                    priority.append(
+                        'UNCOORDINATED_ROUTE:'
+                        f'{route.get("id") or "unknown"}:'
+                        f'{route.get("system") or "unknown"}:'
+                        f'{route.get("plan_id") or "unknown"}:'
+                        f'{route.get("wall_crossings") or 0}:'
+                        f'{route.get("routing") or "unknown"}'
+                    )
         failures = [item for item in failure_evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate','cross','without'))]
         diagnostic = ' | '.join(dict.fromkeys(priority + failures))[:1600] or str(detail)[:1600]
         return f'CAD_QA_FAILURE: {diagnostic}'
@@ -345,12 +384,12 @@ def _cad_rejection_diagnostic(response):
 
 def _post_to_compatible_cad(payload):
     """Use the canonical CAD process shipped in this exact deployment."""
-    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1':
+    def call_in_process():
         # Railway's constrained container must not load the CAD stack in a
         # second Python interpreter.  Calling the same canonical route in the
         # web process preserves validation/HTTP semantics while sharing memory.
         from cad_engine import main as _canonical_entrypoint  # noqa: F401
-        from cad_engine.main_v15 import design
+        from cad_engine.main_transport import design
 
         class LocalResponse:
             def __init__(self, status_code, body):
@@ -371,10 +410,21 @@ def _post_to_compatible_cad(payload):
             return LocalResponse(200, design(SimpleNamespace(**local_payload)))
         except HTTPException as exc:
             return LocalResponse(exc.status_code, {'detail': exc.detail})
+    if os.getenv('COBUILT_CAD_IN_PROCESS', '').strip() == '1':
+        return call_in_process()
     cobuilt = os.getenv('COBUILT_CAD_DESIGNER_URL', 'http://127.0.0.1:8081').rstrip('/')
     token = os.getenv('COBUILT_CAD_SERVICE_TOKEN', '').strip()
     headers = {'x-cad-service-token': token} if token else None
-    return requests.post(cobuilt + '/design', json=payload, headers=headers, timeout=3600)
+    try:
+        return requests.post(cobuilt + '/design', json=payload, headers=headers, timeout=3600)
+    except requests.exceptions.ConnectionError:
+        # A draining pre-deploy worker can still claim a database-backed job
+        # after its supervised localhost CAD child has stopped.  The canonical
+        # in-process entrypoint is part of the same image, so recover locally
+        # only for loopback targets.  Remote service failures remain visible.
+        if cobuilt.lower().startswith(('http://127.0.0.1', 'http://localhost')):
+            return call_in_process()
+        raise
 
 
 def _attach_remote_architecture(payload, project_dir):
@@ -470,17 +520,45 @@ def run_design_dxf(project_id, revision_id):
                         })
             design_answers['_plan_fixture_evidence'] = fixture_evidence
             design_answers['_plan_analysis'] = p.analysis
-            design_answers['_runtime_contract'] = active_version_manifest()
+            # The panel and CAD worker exchange the one canonical, unversioned
+            # Mechanical runtime contract.  The retired version-manifest shape
+            # cannot satisfy the fail-closed CAD contract gate.
+            design_answers['_runtime_contract'] = runtime_contract()
             analysis = dict(p.analysis or {})
             pmm = analysis.get('project_mechanical_model') or {}
-            design_answers['_v19_input_contract'] = {
-                'coordination_inputs': analysis.get('coordination_inputs_v19') or {},
-                'route_request': analysis.get('route_request_v19') or {},
-                'equipment_requirements': analysis.get('equipment_requirements_v19') or {},
-                'manufacturer_catalogue': analysis.get('manufacturer_catalogue_v19') or [],
-                'detail_specs': analysis.get('detail_specs_v19') or [],
-                'network_graph': analysis.get('network_graph_v19') or {},
-                'pmm_schema': pmm.get('schema'),
+            architectural_auto = analysis.get('architectural_auto') or {}
+            from app.mechanical_rulebook import network_design_basis
+            design_answers['_canonical_input_contract'] = {
+                'project_mechanical_model': pmm,
+                # These are architecture-only facts produced before design.  They
+                # preserve level/room/shaft provenance that the CAD worker cannot
+                # reliably reconstruct from flattened DXF layers on its own.
+                'architecture_evidence': architectural_auto.get('architecture_model') or {},
+                'fixture_evidence': architectural_auto.get('fixture_detections') or [],
+                'declared_fixture_schedule': design_answers.get('fixture_schedule'),
+                'mechanical_shaft_route': design_answers.get('mechanical_shaft_route'),
+                'calculation_rows': analysis.get('calculation_rows_canonical'),
+                'active_systems': analysis.get('active_systems_canonical'),
+                'coordination_inputs': analysis.get('coordination_inputs_canonical') or {},
+                'route_request': analysis.get('route_request_canonical') or {},
+                'equipment_requirements': analysis.get('equipment_requirements_canonical') or {},
+                'manufacturer_catalogue': analysis.get('manufacturer_catalogue_canonical') or [],
+                'manufacturer_database_records': analysis.get('manufacturer_database_records_canonical'),
+                'target_design_inputs': analysis.get('target_design_inputs_canonical'),
+                'target_design_packages': analysis.get('target_design_packages_canonical'),
+                'construction_delivery_inputs': analysis.get('construction_delivery_inputs_canonical'),
+                'equipment_selection_checks': analysis.get('equipment_selection_checks_canonical'),
+                'declared_equipment_ids': analysis.get('declared_equipment_ids_canonical') or [],
+                'detail_specs': analysis.get('detail_specs_canonical') or [],
+                'final_parametric_detail_specs': analysis.get('final_parametric_detail_specs_canonical') or [],
+                'network_graph': analysis.get('network_graph_canonical') or {},
+                'network_level_assignments': analysis.get('network_level_assignments_canonical'),
+                'network_design_basis': analysis.get('network_design_basis_canonical') or network_design_basis(),
+                'annotation_solver': analysis.get('annotation_solver_canonical'),
+                'submission_checks': analysis.get('submission_checks_canonical'),
+                'engineer_review': analysis.get('engineer_review_canonical'),
+                'quality_metrics': analysis.get('quality_metrics_canonical') or {},
+                'golden_result': analysis.get('golden_result_canonical'),
             }
         set_project_progress(p, 'validating_contract')
         db.commit()
@@ -521,14 +599,14 @@ def run_design_dxf(project_id, revision_id):
             raise RuntimeError(message)
         data = resp.json()
         if discipline == 'mechanical':
-            active_versions = active_version_manifest()
-            if data.get('engine_version') != active_versions['cad_api']:
-                raise RuntimeError('نسخه موتور CAD با نسخه فعال سایت تطابق ندارد.')
+            expected_contract = design_answers['_runtime_contract']
+            if data.get('build') != expected_contract['build_identity']:
+                raise RuntimeError('هویت ساخت موتور CAD با هویت ساخت فعال سایت تطابق ندارد.')
             for report in data.get('design_reports') or []:
-                if report.get('pipeline_authority') != 'mechanical-v19':
-                    raise RuntimeError('خروجی توسط مسیر مکانیکی فعال v19 تولید نشده است.')
-                if report.get('executed_versions') != active_versions:
-                    raise RuntimeError('نسخه تحلیل، طراحی یا بازبینی خروجی با سایت تطابق ندارد.')
+                if report.get('pipeline_authority') != 'mechanical':
+                    raise RuntimeError('خروجی توسط مسیر مکانیکی مرجع تولید نشده است.')
+                if report.get('runtime_contract') != expected_contract:
+                    raise RuntimeError('قرارداد تحلیل، طراحی یا بازبینی خروجی با سایت تطابق ندارد.')
         if discipline == 'mechanical':
             set_project_progress(
                 p, 'mechanical_release_qa',
@@ -596,11 +674,18 @@ def run_design_dxf(project_id, revision_id):
 
         set_project_progress(p, 'uploading_output')
         db.commit()
-        durable_uri = artifact_storage.upload_output(
-            p.id, r.revision_no, discipline, dst,
-        )
+        durable_uri = artifact_storage.upload_output(p.id, r.revision_no, discipline, dst)
         if not durable_uri:
-            raise RuntimeError('ذخیره خروجی نهایی در R2 تأیید نشد؛ فایل محلی نگهداری نشد.')
+            content = dst.read_bytes()
+            blob = legacy.ArtifactBlob(
+                project_id=p.id, revision_no=r.revision_no, discipline=discipline,
+                filename=dst.name,
+                media_type='application/dxf' if dst.suffix.lower() == '.dxf' else 'application/zip',
+                sha256=hashlib.sha256(content).hexdigest(), content=content,
+            )
+            db.add(blob)
+            db.flush()
+            durable_uri = f'db://artifact/{blob.id}'
         if transfer_root:
             shutil.rmtree(transfer_root,ignore_errors=True)
             transfer_root=None
@@ -620,7 +705,10 @@ def run_design_dxf(project_id, revision_id):
         clear_active_recovery(p)
         set_project_progress(p, 'completed')
         db.commit()
-        _purge_processing_files(p.id, keep_output=True)
+        _purge_processing_files(
+            p.id, keep_output=True,
+            preserve_local_output='://' not in str(durable_uri),
+        )
         artifact_storage.delete_project_inputs(p.id)
     except Exception as exc:
         r.status = 'failed'
@@ -659,7 +747,7 @@ def flow_payload_dxf(p):
 
 
 def _resolve_existing_cad_artifact(pid, rev, discipline, stored_path):
-    if str(stored_path or '').startswith('s3://'):
+    if str(stored_path or '').startswith(('s3://', 'db://artifact/')):
         return str(stored_path)
     path = Path(stored_path or '')
     if path.exists() and path.suffix.lower() in ('.dxf', '.zip'):
@@ -693,9 +781,28 @@ def get_cad_output(pid: int, rev: int, request: Request):
         legacy.Revision.revision_no == rev,
     ).first()
     discipline = (p.answers or {}).get('discipline', (p.analysis or {}).get('discipline', 'mechanical'))
-    db.close()
     if not r or r.status != 'ready':
+        db.close()
         raise HTTPException(404)
+
+    if str(r.pdf_path or '').startswith('db://artifact/'):
+        try:
+            blob_id = int(str(r.pdf_path).rsplit('/', 1)[-1])
+        except ValueError:
+            db.close()
+            raise HTTPException(404)
+        blob = db.get(legacy.ArtifactBlob, blob_id)
+        if not blob or blob.project_id != pid or blob.revision_no != rev:
+            db.close()
+            raise HTTPException(404)
+        content, media_type, stored_name = bytes(blob.content), blob.media_type, blob.filename
+        db.close()
+        suffix = Path(stored_name).suffix.lower()
+        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
+        return Response(content=content, media_type=media_type,
+                        headers={'Content-Disposition': f'attachment; filename="{filename}"'})
+
+    db.close()
 
     path = _resolve_existing_cad_artifact(pid, rev, discipline, r.pdf_path)
     if not path:
@@ -734,6 +841,13 @@ def delete_cad_output(pid: int, rev: int, request: Request):
         stored = str(revision.pdf_path)
         if stored.startswith('s3://'):
             artifact_storage.delete_artifact(stored)
+        elif stored.startswith('db://artifact/'):
+            try:
+                blob = db.get(legacy.ArtifactBlob, int(stored.rsplit('/', 1)[-1]))
+            except ValueError:
+                blob = None
+            if blob and blob.project_id == pid and blob.revision_no == rev:
+                db.delete(blob)
         else:
             path = Path(stored)
             project_root = (legacy.DATA_DIR / 'projects' / str(pid)).resolve()
@@ -771,8 +885,22 @@ def maintenance_get_cad_output(pid: int, rev: int, request: Request):
             'discipline', (project.analysis or {}).get('discipline', 'mechanical')
         )
         path = _resolve_existing_cad_artifact(pid, rev, discipline, revision.pdf_path)
+        blob_payload = None
+        if isinstance(path, str) and path.startswith('db://artifact/'):
+            try:
+                blob = db.get(legacy.ArtifactBlob, int(path.rsplit('/', 1)[-1]))
+            except ValueError:
+                blob = None
+            if blob and blob.project_id == pid and blob.revision_no == rev:
+                blob_payload = (bytes(blob.content), blob.media_type, blob.filename)
     finally:
         db.close()
+    if blob_payload:
+        content, media_type, stored_name = blob_payload
+        suffix = Path(stored_name).suffix.lower()
+        filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'
+        return Response(content=content, media_type=media_type,
+                        headers={'Content-Disposition': f'attachment; filename="{filename}"'})
     if isinstance(path, str) and path.startswith('s3://'):
         suffix = Path(path).suffix.lower()
         filename = f'EngiTools_{discipline}_{pid}_R{rev}.dxf' if suffix == '.dxf' else f'EngiTools_{discipline}_{pid}_R{rev}_DXF.zip'

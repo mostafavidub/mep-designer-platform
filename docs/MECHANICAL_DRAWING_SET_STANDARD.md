@@ -1,6 +1,6 @@
 # Mechanical Drawing Set Planning Standard
 
-Rule Book version: 5.0 — Mechanical Pre-Submission pipeline v19.1 / Final Engineering QA
+Rule Book version: 5.1 — Mechanical Pre-Submission pipeline v19.1 / Final Engineering QA
 
 ## Governing principle
 
@@ -94,6 +94,17 @@ Heating supply and return must be connected networks. Cooling and condensate mus
 ### Split-AC visual contract
 
 Every conditioned-space indoor unit uses the standard labeled `ENGI_AC_INDOOR` block and has a readable IDU tag, capacity callout, leader, airflow arrow, refrigerant route and condensate route. Every roof outdoor unit uses the labeled `ENGI_AC_OUTDOOR` block and identifies its served IDU. Release QA checks exact block identity, linked counts, minimum plotted pixel dimensions and a separately rendered preview for every Split-AC sheet. Entity or layer presence by itself never proves visual completeness.
+
+### All-sheet visual contract
+
+The exact issued DXF is rendered board-by-board for every manifest entry, including
+plans, risers, calculations, details, schedules, notes and legends. Color,
+monochrome, full-board and content-zoom evidence is retained with a per-sheet score
+and machine-readable findings. Invalid identity, frame or scale; blank/illegible
+content; missing plan underlay; unreadable text; material annotation overlap;
+render disappearance; or baseline loss fails the individual sheet and therefore
+the release. Existing engineering gates remain authoritative for correctness and
+must be cross-linked rather than inferred from pixels.
 
 Ventilation requires an exhaust network, resolved airflow basis, make-up-air endpoints and safe discharge endpoints.
 

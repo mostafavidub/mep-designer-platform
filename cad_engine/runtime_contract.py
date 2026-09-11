@@ -11,10 +11,10 @@ PRODUCTION_CAD_ENTRYPOINT = "cad_engine.main:app"
 RUNTIME_IDENTITY = "mechanical"
 PMM_SCHEMA = "project-mechanical-model/v3"
 TRACEABILITY_POLICY = "NO_ORPHAN_ENGINEERING_OUTPUT"
-MECHANICAL_RULEBOOK_REVISION = "5.0"
+MECHANICAL_RULEBOOK_REVISION = "5.1"
 FIXTURE_EQUIPMENT_RULEBOOK_REVISION = "2.4-fixture-equipment-approved-symbols"
 SITE_MANIFEST_REVISION = "12.1"
-VISUAL_GATE_REVISION = "split-ac-visual-legibility/1"
+VISUAL_GATE_REVISION = "all-sheet-visual-qa/4"
 GOVERNANCE_CONTRACT_REVISION = "mechanical-design-governance/1"
 
 

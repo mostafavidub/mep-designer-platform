@@ -19,6 +19,7 @@ from .mechanical_network_topology import build_authoritative_topology
 from .mechanical_segment_execution import design_authoritative_segments
 from .mechanical_network_materializer import materialize_authoritative_network
 from .runtime_contract import runtime_contract
+from .calculation_reasonableness import evaluate_calculation_reasonableness
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -69,6 +70,10 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         active_systems = _active_systems_from_pmm(pmm)
     return {
         "project_mechanical_model": pmm,
+        "architecture_evidence": contract.get("architecture_evidence") or {},
+        "fixture_evidence": contract.get("fixture_evidence") or [],
+        "declared_fixture_schedule": contract.get("declared_fixture_schedule"),
+        "mechanical_shaft_route": contract.get("mechanical_shaft_route"),
         "calculation_rows": calculation_rows,
         "active_systems": active_systems or {},
         "coordination_inputs": contract.get("coordination_inputs") or plan_analysis.get("coordination_inputs_canonical") or {},
@@ -76,6 +81,9 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "equipment_requirements": contract.get("equipment_requirements") or plan_analysis.get("equipment_requirements_canonical") or {},
         "manufacturer_catalogue": contract.get("manufacturer_catalogue") or plan_analysis.get("manufacturer_catalogue_canonical") or [],
         "manufacturer_database_records": _first_value(contract.get("manufacturer_database_records"), plan_analysis.get("manufacturer_database_records_canonical")),
+        "target_design_inputs": _first_value(contract.get("target_design_inputs"), plan_analysis.get("target_design_inputs_canonical")),
+        "target_design_packages": _first_value(contract.get("target_design_packages"), plan_analysis.get("target_design_packages_canonical")),
+        "construction_delivery_inputs": _first_value(contract.get("construction_delivery_inputs"), plan_analysis.get("construction_delivery_inputs_canonical")),
         "equipment_selection_checks": _first_value(contract.get("equipment_selection_checks"), plan_analysis.get("equipment_selection_checks_canonical")),
         "declared_equipment_ids": contract.get("declared_equipment_ids") or plan_analysis.get("declared_equipment_ids_canonical") or [],
         "detail_specs": contract.get("detail_specs") or plan_analysis.get("detail_specs_canonical") or [],
@@ -88,6 +96,9 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "engineer_review": _first_value(contract.get("engineer_review"), plan_analysis.get("engineer_review_canonical")),
         "quality_metrics": contract.get("quality_metrics") or plan_analysis.get("quality_metrics_canonical") or {},
         "golden_result": contract.get("golden_result") or plan_analysis.get("golden_result_canonical") or {"status": os.getenv("MECHANICAL_GOLDEN_STATUS", "MISSING")},
+        "sensitivity_checks": _first_value(contract.get("sensitivity_checks"), plan_analysis.get("sensitivity_checks_canonical")),
+        "selected_equipment": _first_value(contract.get("selected_equipment"), plan_analysis.get("selected_equipment_canonical")),
+        "calculation_totals": _first_value(contract.get("calculation_totals"), plan_analysis.get("calculation_totals_canonical")),
     }
 
 
@@ -101,7 +112,13 @@ def _prepare_network_authority(src: Path, payload: dict) -> dict:
     if existing.get("nodes") and existing.get("edges"):
         topology = {"status": "PASS", "network": existing, "source": "SUPPLIED_NETWORK_GRAPH"}
     else:
-        topology = build_authoritative_topology(src, pmm, level_assignments=payload.get("network_level_assignments"))
+        topology = build_authoritative_topology(
+            src, pmm,
+            level_assignments=payload.get("network_level_assignments"),
+            architecture_evidence=payload.get("architecture_evidence"),
+            fixture_evidence=payload.get("fixture_evidence"),
+            declared_fixture_schedule=payload.get("declared_fixture_schedule"),
+        )
     if topology.get("status") != "PASS":
         return {"status": topology.get("status") or "INPUT_REQUIRED",
                 "missing_inputs": topology.get("missing_inputs") or [],
@@ -194,6 +211,27 @@ def _failure_missing(result: dict) -> list[str]:
     return sorted(set(missing))
 
 
+def _pipeline_blockers(result: dict) -> list[str]:
+    """Return actual blocked-phase evidence without inventing later failures."""
+    blocked = result.get("blocked_at")
+    phase = ((result.get("phases") or {}).get(blocked) or {}) if blocked else {}
+    found = []
+
+    def visit(value):
+        if isinstance(value, dict):
+            found.extend(str(item) for key in ("missing_inputs", "errors") for item in (value.get(key) or []))
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(phase)
+    if not found and blocked:
+        found.append("PIPELINE_INPUT_REQUIRED:" + str(blocked))
+    return sorted(set(found))
+
+
 def _restore_target(dst: Path, backup: Path | None):
     if backup and backup.exists():
         shutil.copy2(backup, dst)
@@ -226,14 +264,26 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                                    "missing_inputs": traceability.get("errors") or []}}
 
     result = run_pipeline(payload)
+    pre_submission = result.get("status") == "INPUT_REQUIRED"
     authority_errors = _result_authority_errors(result)
-    if authority_errors:
+    if result.get("status") == "FAIL" or (authority_errors and not pre_submission):
         missing = _failure_missing(result)
         missing.extend(authority_errors)
         return {"status": "FAIL", "stage": "authority_release_gate",
                 "network_authority_qa": network_authority, "authority_pipeline_qa": result,
                 "input_required": {"status": "INPUT_REQUIRED" if result.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": sorted(set(missing))}}
+
+    reasonableness = evaluate_calculation_reasonableness(payload)
+    # A preliminary artifact may still be delivered truthfully for an earlier
+    # external-input blocker.  Only a submission-ready claim is stopped here.
+    if not pre_submission and reasonableness.get("status") != "PASS":
+        blockers = reasonableness.get("errors") or reasonableness.get("missing_inputs") or ["CALCULATION_REASONABLENESS_NOT_PASS"]
+        return {"status": "FAIL", "stage": "calculation_reasonableness_gate",
+                "network_authority_qa": network_authority, "traceability_preflight": traceability,
+                "authority_pipeline_qa": result, "calculation_reasonableness_qa": reasonableness,
+                "input_required": {"status": "INPUT_REQUIRED" if reasonableness.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
 
     # Preserve the pre-run artifact so a graph-materialization failure cannot
     # leave a legacy-only DXF behind after the canonical gate has rejected the run.
@@ -275,11 +325,15 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["materialization_qa"] = materialization
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
+    rendered["calculation_reasonableness_qa"] = reasonableness
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
     rendered["cad_materializer"] = "canonical-cad-shell+graph-native-network"
     rendered["cad_shell_role"] = "CAD_SHELL_ONLY"
-    rendered["submission_state"] = "SUBMISSION_READY"
-    rendered["coordination_claim"] = "COORDINATED"
+    rendered["submission_state"] = "PRE_SUBMISSION" if pre_submission else "SUBMISSION_READY"
+    rendered["submission_ready"] = not pre_submission
+    rendered["coordination_claim"] = "NOT_COORDINATED" if pre_submission else "COORDINATED"
+    rendered["manufacturer_claim"] = "NOT_MANUFACTURER_CONFIRMED" if pre_submission else "MANUFACTURER_CONFIRMED"
+    rendered["missing_inputs"] = _pipeline_blockers(result) if pre_submission else []
     return rendered

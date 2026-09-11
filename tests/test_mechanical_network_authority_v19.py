@@ -4,7 +4,10 @@ from pathlib import Path
 
 import ezdxf
 
-from cad_engine.mechanical_network_topology import build_authoritative_topology_from_evidence
+from cad_engine.mechanical_network_topology import (
+    build_authoritative_topology_from_evidence, _architecture_from_evidence,
+    _recognition_from_evidence, _assign_level, _typed_level,
+)
 from cad_engine.mechanical_segment_execution import design_authoritative_segments
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
 
@@ -28,6 +31,63 @@ def detection(item_id='MEP-1', point=(2.0, 2.0), ports=None, kind='basin', room=
 
 
 class TopologyAuthorityV19Tests(unittest.TestCase):
+    def test_architecture_room_shaft_is_authoritative_not_provisional(self):
+        architecture = _architecture_from_evidence({"levels": [{
+            "name": "طبقه همکف", "rooms": [{"id": "R-S", "type": "shaft", "center": [8, 8],
+                                                   "polygon": [[7, 7], [9, 7], [9, 9], [7, 9]]}],
+            "wet_cores": [{"id": "W1", "center": [2, 2]}],
+        }]}, {"walls": [], "obstacles": []})
+        self.assertEqual(architecture["shafts"][0]["source"], "ARCHITECTURAL_SHAFT_ROOM")
+        result = build_authoritative_topology_from_evidence(
+            pmm([{"name": "طبقه همکف", "region_bounds": [0, 0, 10, 10]}]), architecture,
+            {"detections": [detection(point=(2, 2), ports=["cold_water"])]},
+        )
+        self.assertEqual(result["status"], "PASS")
+        self.assertNotIn("PROVISIONAL_SHAFT_FORBIDDEN", str(result))
+
+    def test_owner_declared_fixture_count_creates_designed_not_detected_endpoints(self):
+        architecture = {"wet_cores": [{"room_id": "W1", "centroid": (2, 2), "level": "Ground"}]}
+        recognition = _recognition_from_evidence([], {"detections": []}, architecture,
+                                                 "sink 2; toilet 1; bath 1")
+        self.assertEqual(len(recognition["detections"]), 4)
+        self.assertTrue(all(row["installed"] is False for row in recognition["detections"]))
+        self.assertTrue(all(row["design_status"] == "DESIGNED_FROM_OWNER_DECLARED_COUNT"
+                            for row in recognition["detections"]))
+
+    def test_candidate_fixture_evidence_is_not_promoted_to_installed(self):
+        recognition = _recognition_from_evidence(
+            [{"status": "candidate", "type": "toilet", "x": 2, "y": 2}],
+            {"detections": []}, {"wet_cores": []}, None,
+        )
+        self.assertEqual(recognition["detections"], [])
+
+    def test_duplicate_roof_views_are_consolidated_without_duplicate_level(self):
+        model = pmm([
+            {"name": "بام", "roof": True, "region_bounds": [0, 0, 10, 10]},
+            {"name": "پشت بام", "roof": True, "region_bounds": [20, 0, 30, 10]},
+        ])
+        result = build_authoritative_topology_from_evidence(
+            model, {"shafts": [{"centroid": (8, 8), "polygon": []}], "wet_cores": [], "walls": [], "obstacles": []},
+            {"detections": [{**detection(point=(22, 2), ports=["cold_water"]), "level": "پشت بام"}]},
+        )
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(len(result["network"]["levels"]), 1)
+
+    def test_single_active_plumbing_level_does_not_require_cross_level_shaft(self):
+        model = pmm([
+            {"name": "Ground", "region_bounds": [0, 0, 10, 10]},
+            {"name": "First", "region_bounds": [20, 0, 30, 10]},
+        ])
+        result = build_authoritative_topology_from_evidence(
+            model, {"shafts": [], "wet_cores": [{"centroid": (8, 8)}], "walls": [], "obstacles": []},
+            {"detections": [detection(point=(2, 2), ports=["cold_water"])]},
+        )
+        self.assertEqual(result["status"], "PASS")
+
+    def test_explicit_typical_floor_ranges_are_source_backed_level_types(self):
+        self.assertEqual(_typed_level('طبقات اول تا سوم'), 'TYPICAL_1_3')
+        self.assertEqual(_typed_level('Typical floors 2 to 5'), 'TYPICAL_2_5')
+
     def test_multilevel_without_bounds_or_assignment_fails_closed(self):
         result = build_authoritative_topology_from_evidence(
             pmm([{'name': 'Ground'}, {'name': 'First'}]),
@@ -36,6 +96,24 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         )
         self.assertEqual(result['status'], 'INPUT_REQUIRED')
         self.assertTrue(any(value.startswith('LEVEL_ASSIGNMENT_REQUIRED:') for value in result['missing_inputs']))
+
+    def test_unique_most_specific_nested_level_region_resolves_source_point(self):
+        levels = [
+            {'id': 'L0', 'name': 'Ground', 'type': 'GROUND', 'region_bounds': [0, 0, 20, 20]},
+            {'id': 'L1', 'name': 'First', 'type': 'FIRST', 'region_bounds': [0, 0, 10, 10]},
+        ]
+        level, error = _assign_level('MEP-1', (2, 2), levels, {})
+        self.assertIsNone(error)
+        self.assertEqual(level['type'], 'FIRST')
+
+    def test_equal_overlapping_level_regions_remain_ambiguous(self):
+        levels = [
+            {'id': 'L0', 'name': 'Ground', 'type': 'GROUND', 'region_bounds': [0, 0, 10, 10]},
+            {'id': 'L1', 'name': 'First', 'type': 'FIRST', 'region_bounds': [0, 0, 10, 10]},
+        ]
+        level, error = _assign_level('MEP-1', (2, 2), levels, {})
+        self.assertIsNone(level)
+        self.assertEqual(error, 'AMBIGUOUS_LEVEL_ASSIGNMENT:MEP-1')
 
     def test_detail_pseudo_level_is_rejected(self):
         result = build_authoritative_topology_from_evidence(
@@ -118,6 +196,27 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
         self.assertEqual(result['status'], 'INPUT_REQUIRED')
         self.assertIn('SIZE_TABLE:cold_water', result['missing_inputs'])
         self.assertIn('ENDPOINT_LOADS:cold_water', result['missing_inputs'])
+
+    def test_versioned_rulebook_profile_materializes_explicit_endpoint_load(self):
+        from app.mechanical_rulebook import network_design_basis
+        graph = self.graph()
+        graph['nodes'].append({'id': 'F1', 'kind': 'basin', 'category': 'fixture'})
+        result = design_authoritative_segments(graph, design_basis=network_design_basis())
+        self.assertEqual(result['status'], 'PASS')
+        row = result['calculation_rows'][0]
+        self.assertEqual(row['downstream_load'], 1.0)
+        self.assertEqual(row['load_unit'], 'WSFU')
+        self.assertEqual(row['size_mm'], 16.0)
+        self.assertEqual(row['material'], 'PPR')
+        self.assertIn('MECHANICAL_RULEBOOK/5.1', row['material_source'])
+
+    def test_unknown_canonical_endpoint_kind_remains_fail_closed(self):
+        from app.mechanical_rulebook import network_design_basis
+        graph = self.graph()
+        graph['nodes'].append({'id': 'F1', 'kind': 'unclassified_fixture', 'category': 'fixture'})
+        result = design_authoritative_segments(graph, design_basis=network_design_basis())
+        self.assertEqual(result['status'], 'INPUT_REQUIRED')
+        self.assertIn('ENDPOINT_LOAD:cold_water:F1', result['missing_inputs'])
 
     def test_paired_system_exact_overlay_requires_explicit_separation(self):
         graph = self.graph(paired=True)

@@ -1,5 +1,5 @@
 import unittest
-from cad_engine.parametric_documentation_v19 import (
+from cad_engine.mechanical_documentation import (
     generate_detail, generate_riser_from_network, documentation_gate,
     reconcile_calculation_outputs, required_detail_families,
     validate_detail_family_coverage, generate_annotation_support, generate_final_parametric_detail,
@@ -94,6 +94,10 @@ class ParametricDocumentationV19Tests(unittest.TestCase):
         self.assertNotEqual(first['riser']['source_plan_graph_hash'],second['riser']['source_plan_graph_hash'])
         invalid={**typed,"levels":typed['levels']+[{"id":"DETAIL-2","type":"DETAIL"}]}
         self.assertEqual(generate_riser_from_network(invalid)['status'],'FAIL')
+
+    def test_source_backed_typical_floor_level_is_valid_for_riser(self):
+        typical={**NETWORK,"levels":[{"id":"L1","type":"TYPICAL_1_3"},{"id":"L2","type":"ROOF"}]}
+        self.assertEqual(generate_riser_from_network(typical)['status'],'PASS')
 
     def test_mandatory_families_fail_closed_without_invented_detail_inputs(self):
         required = required_detail_families({"sanitary":True,"cooling":True})

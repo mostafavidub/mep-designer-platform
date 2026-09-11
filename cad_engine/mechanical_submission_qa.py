@@ -10,14 +10,23 @@ GOLDEN_PROJECTS = (1, 3, 4, 6, 7, 8, 10)
 DEFAULT_THRESHOLDS = {"minimum_score": 70.0, "maximum_drop": 0.0, "required_pass_rate": 1.0}
 DIFF_KINDS = ("semantic", "artifact", "numeric")
 SUBMISSION_ZERO_CHECKS = (
+    "missing_required_systems",
+    "orphan_fixtures",
+    "unconnected_equipment",
+    "missing_segment_sizes",
+    "reverse_gravity_slopes",
     "route_warnings",
     "structural_clashes",
     "mep_clashes",
     "unapproved_penetrations",
     "gravity_violations",
+    "equipment_without_calculation",
     "equipment_without_manufacturer_basis",
     "manufacturer_limit_violations",
     "missing_details",
+    "missing_mandatory_details",
+    "missing_rainwater_systems",
+    "invalid_riser_levels",
     "plan_riser_schedule_mismatches",
     "unreadable_annotations",
 )
@@ -26,11 +35,15 @@ TARGET_DESIGN_SHEETS = {
     "heating": ("M-131", "M-132"),
     "gas": ("M-141", "M-142"),
     "split_ac": ("M-161", "M-162"),
+    "exhaust": ("M-171", "M-172"),
+    "rainwater": ("M-R-01",),
+    "riser": ("M-151",),
+    "manufacturer_database": ("M-181",),
 }
 
 
 def validate_target_design_packages(packages: dict | None) -> dict:
-    """Block issue unless stages 7-9 contain complete final engineering evidence."""
+    """Block issue unless stages 7-13 contain complete final engineering evidence."""
     if not isinstance(packages, dict):
         return {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"],"sheets":{}}
     errors=[]; sheet_status={}
@@ -63,11 +76,54 @@ def validate_target_design_packages(packages: dict | None) -> dict:
             errors.append(f"split_ac:IDU_EVIDENCE_MISSING:{row.get('idu_id','UNKNOWN')}")
     if not gas.get("segments"):errors.append("gas:NO_SEGMENTS")
     if not split.get("idus") or not split.get("odu"):errors.append("split_ac:SELECTION_INCOMPLETE")
-    status="PASS" if not errors else ("INPUT_REQUIRED" if any(
+    exhaust=packages.get("exhaust") or {}
+    exhaust_design=exhaust.get("exhaust_design") or {}
+    fan_selection=exhaust.get("fan_selection") or {}
+    if exhaust_design.get("unserved_room_ids") or fan_selection.get("unserved_room_ids"):
+        errors.append("exhaust:UNSERVED_EXHAUST_ROOM")
+    if not exhaust_design.get("rooms") or not fan_selection.get("fans"):
+        errors.append("exhaust:DESIGN_OR_SELECTION_INCOMPLETE")
+    for row in fan_selection.get("fans") or []:
+        required=("required_cfm","required_esp_pa","manufacturer","model","selected_cfm",
+                  "selected_esp_pa","fan_curve","calc_id","pmm_id","level_id","status")
+        if any(row.get(key) is None for key in required) or row.get("status")!="PASS":
+            errors.append(f"exhaust:FAN_EVIDENCE_MISSING:{row.get('room_id','UNKNOWN')}")
+    rain=(packages.get("rainwater") or {}).get("rainwater_design") or {}
+    coverage=rain.get("coverage") or {}
+    if not rain.get("catchments") or not coverage.get("all_catchments_drained"):
+        errors.append("rainwater:CATCHMENT_PLAN_INCOMPLETE")
+    for row in rain.get("segments") or []:
+        if len({row.get("calc_id"),row.get("plan_id"),row.get("riser_id"),row.get("schedule_id")})!=1:
+            errors.append(f"rainwater:IDENTITY_MISMATCH:{row.get('id','UNKNOWN')}")
+    riser=(packages.get("riser") or {}).get("riser_design") or {}
+    if riser.get("claim")!="GRAPH_DERIVED" or not (riser.get("reconciliation") or {}).get("zero_mismatch"):
+        errors.append("riser:PLAN_RISER_MISMATCH")
+    invalid=(riser.get("reconciliation") or {}).get("invalid_levels") or []
+    if invalid:errors.append("riser:INVALID_LEVEL_TYPE:"+",".join(sorted(invalid)))
+    database=(packages.get("manufacturer_database") or {}).get("database") or {}
+    if database.get("policy")!="OFFICIAL_MANUFACTURER_DOCUMENTATION_ONLY" or database.get("private_documents_stored") is not False:
+        errors.append("manufacturer_database:OFFICIAL_HASH_ONLY_POLICY_MISSING")
+    records=database.get("records") or []
+    registered={(row.get("manufacturer"),row.get("model")) for row in records}
+    selected=[]
+    selected.extend((row.get("manufacturer"),row.get("model")) for row in
+                    (heating.get("radiator_selection") or {}).get("radiators") or [])
+    package_selection=(heating.get("package_selection") or {}).get("selection") or {}
+    selected.append((package_selection.get("manufacturer"),package_selection.get("model")))
+    selected.extend((row.get("manufacturer"),row.get("model")) for row in split.get("idus") or [])
+    odu=split.get("odu") or {}; selected.append((odu.get("manufacturer"),odu.get("model")))
+    selected.extend((row.get("manufacturer"),row.get("model")) for row in fan_selection.get("fans") or [])
+    selected.extend((row.get("manufacturer"),row.get("model")) for row in
+                    ((packages.get("gas") or {}).get("gas_network") or {}).get("appliances") or [])
+    for manufacturer,model in selected:
+        if manufacturer and model and (manufacturer,model) not in registered:
+            errors.append(f"manufacturer_database:UNREGISTERED_SELECTION:{manufacturer}:{model}")
+    explicit_failure=any((packages.get(system) or {}).get("status")=="FAIL" for system in TARGET_DESIGN_SHEETS)
+    status="PASS" if not errors else ("FAIL" if explicit_failure else ("INPUT_REQUIRED" if any(
         token in value for value in errors for token in ("MISSING","INCOMPLETE","STATUS_INPUT_REQUIRED")
-    ) else "FAIL")
+    ) else "FAIL"))
     return {"status":status,"errors":sorted(set(errors)),"sheets":sheet_status,
-            "policy":"M-131/132 M-141/142 M-161/162 require final traced calculations and official manufacturer selections"}
+            "policy":"Steps 7-13 require final traced plans, graph-derived riser and hash-only official manufacturer records"}
 
 
 def _bytes(value: dict) -> bytes:

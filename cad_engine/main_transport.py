@@ -164,6 +164,7 @@ def design(req: DesignRequest):
                         "equipment_linkage_gate":"equipment_linkage_qa",
                         "split_ac_visual_gate":"split_ac_visual_qa", "detail_library_gate":"detail_library_qa",
                         "content_completeness_gate":"content_completeness_qa",
+                        "all_sheet_visual_gate":"all_sheet_visual_qa",
                         "plan_board_population_gate":"plan_board_population_qa",
                         "architecture_preservation_after_sanitization":"architecture_preservation_qa_after_canonical",
                         "exact_file_final_delivery_gate":"exact_file_final_delivery_qa",

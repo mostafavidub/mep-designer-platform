@@ -640,7 +640,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     for r in all_routes:
         pts=[_map_point(tuple(p),srcb,target) for p in r.get("points") or []];_draw_route(msp,doc,pts,r.get("system"))
         if pts:
-            mid=pts[len(pts)//2];seg=size_by_route.get(r.get("id")) or {};txt=_annotation_text_for_segment({**r,**seg});layer=_route_layer(r.get("system"))[0];t=msp.add_mtext(txt,dxfattribs={"layer":layer,"char_height":.06});t.dxf.insert=(mid[0]+.08,mid[1]+.08);t.dxf.width=3.5
+            mid=pts[len(pts)//2];seg=size_by_route.get(r.get("id")) or {};txt=_annotation_text_for_segment({**r,**seg});layer=_route_layer(r.get("system"))[0];t=msp.add_mtext(txt,dxfattribs={"layer":layer,"char_height":.08});t.dxf.insert=(mid[0]+.08,mid[1]+.08);t.dxf.width=3.5
     # Every active plumbing plan must show its local vertical connection even
     # when that floor has no branch endpoint.  Use the topology shaft proposed
     # for this exact plan and keep each system on its authoritative layer.
@@ -656,7 +656,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             q=(p[0]+offset*.22,p[1]+offset*.16)
             msp.add_circle(q,.10,dxfattribs={"layer":layer,"lineweight":lw})
             msp.add_line((q[0]-.14,q[1]),(q[0]+.14,q[1]),dxfattribs={"layer":layer,"lineweight":lw})
-            t=msp.add_mtext(f"{riser_tags[system]} {system.upper()} RISER\nLOCAL VERTICAL CONNECTION",dxfattribs={"layer":layer,"char_height":.055})
+            t=msp.add_mtext(f"{riser_tags[system]} {system.upper()} RISER\nLOCAL VERTICAL CONNECTION",dxfattribs={"layer":layer,"char_height":.08})
             t.dxf.insert=(q[0]+.16,q[1]+.16);t.dxf.width=2.8
     equipment=[e for e in (pipeline.get("hvac",{}).get("equipment") or []) if e.get("plan_id")==pid];walls=[w for w in pipeline["architecture"].get("walls") or [] if _inside(tuple(w.get("start") or (0,0)),srcb,.5) or _inside(tuple(w.get("end") or (0,0)),srcb,.5)];_ensure_ac_blocks(doc);_ensure_layer(doc,"ENGITOOLS-M-HVAC-EQUIP",3,30);_ensure_layer(doc,"ENGITOOLS-M-HVAC-AIRFLOW",1,25);_ensure_layer(doc,"ENGITOOLS-M-HVAC-CALLOUT",2,18);_ensure_layer(doc,"ENGITOOLS-M-RADIATOR",3,25);_ensure_layer(doc,"ENGITOOLS-M-PACKAGE",2,30);ac_units=[]
     for e in equipment:
@@ -668,9 +668,9 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             else:p=_map_point(srcp,srcb,target);rot=0
             msp.add_blockref("ENGI_AC_INDOOR",p,dxfattribs={"layer":"ENGITOOLS-M-HVAC-EQUIP","rotation":rot,"lineweight":35});a=math.radians(rot+90);end=_airflow_endpoint(p,a,target);_add_arrow(msp,p,end,"ENGITOOLS-M-HVAC-AIRFLOW");tag=e["id"].replace("AC-I","AC");cap=e.get("capacity_btu_h");tx=min(max(p[0]+1.05,target[0]+.2),target[2]-4.5);ty=min(max(p[1]+.85,target[1]+.5),target[3]-.4);msp.add_line(p,(tx-.10,ty-.10),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25});note=f"IDU | {tag} | WALL-MOUNTED SPLIT AC"+(f" | {cap} BTU/h PRELIM." if cap else "")+"\nCOOLING & HEATING | DRAIN DN25 S=1% MIN";t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.11});t.dxf.insert=(tx,ty);t.dxf.width=4.3;ac_units.append({"tag":tag,"odu_tag":tag.replace("AC","ODU"),"level":board.level,"sheet":board.code,"equipment_type":"WALL-MOUNTED SPLIT AC","mode":"COOLING & HEATING","capacity_status":"PRELIMINARY","refrigerant_size_source":"SELECTED MANUFACTURER TABLE","condensate_nominal_diameter_mm":25,"condensate_min_slope_percent":1.0,"block":True,"airflow":True,"callout":True,"refrigerant":True,"condensate":True,"odu_destination_note":True,"schedule_match":True})
         elif board.family=="HEATING" and kind=="radiator":
-            p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.055});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
+            p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.08});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":
-            p=_map_point(srcp,srcb,target);msp.add_lwpolyline([(p[0]-.30,p[1]-.42),(p[0]+.30,p[1]-.42),(p[0]+.30,p[1]+.42),(p[0]-.30,p[1]+.42)],close=True,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});msp.add_circle(p,.13,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});t=msp.add_mtext(f"{e['id']} | WALL PACKAGE | {e.get('capacity_kw',0):.1f} kW\nHF/HR + GAS ISOLATION + FLUE",dxfattribs={"layer":"ENGITOOLS-M-PACKAGE","char_height":.055});t.dxf.insert=(p[0]+.42,p[1]+.42);t.dxf.width=3.8
+            p=_map_point(srcp,srcb,target);msp.add_lwpolyline([(p[0]-.30,p[1]-.42),(p[0]+.30,p[1]-.42),(p[0]+.30,p[1]+.42),(p[0]-.30,p[1]+.42)],close=True,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});msp.add_circle(p,.13,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});t=msp.add_mtext(f"{e['id']} | WALL PACKAGE | {e.get('capacity_kw',0):.1f} kW\nHF/HR + GAS ISOLATION + FLUE",dxfattribs={"layer":"ENGITOOLS-M-PACKAGE","char_height":.08});t.dxf.insert=(p[0]+.42,p[1]+.42);t.dxf.width=3.8
     if not all_routes and not equipment:
         # Preserve the approved plan without inventing terminals. The explicit
         # note is mechanical content and makes the evidence boundary visible
@@ -679,7 +679,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
         x1,y1,x2,y2=target
         note=msp.add_mtext(
             "APPROVED SERVICE PLAN — NO RELIABLE TERMINAL OR BRANCH ENDPOINT DETECTED ON THIS ARCHITECTURAL LEVEL",
-            dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.07},
+            dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.08},
         )
         note.dxf.insert=(x1+.25,y2-.35);note.dxf.width=max(1.0,x2-x1-.5)
     return {"routes":len(all_routes),"equipment":len(equipment),"split_contract":validate_split_representation(ac_units) if ac_units else None}
@@ -701,22 +701,22 @@ def _draw_roof_hvac_equipment(doc,msp,board,pipeline):
 def _draw_detail_sheet(doc,msp,board,index):
     _ensure_layer(doc,"ENGITOOLS-M-DETAIL",2,18);x1,y1,x2,y2=board.plan_area;titles=[("D-PL-01","SANITARY CLEANOUT / FLOOR DRAIN","Provide accessible cleanout; coordinate waterproofing."),("D-PL-02","VENT TERMINATION ABOVE ROOF","Terminate above roof; maintain separation from openings/intakes."),("D-HV-01","WALL-MOUNTED SPLIT AC","Indoor unit on wall; refrigerant pair + DN25 condensate."),("D-HT-01","RADIATOR CONNECTION","TRV on flow, lockshield on return; accessible air vent."),("D-GS-01","GAS APPLIANCE CONNECTION","Isolation valve accessible; final code/utility verification required."),("D-WS-01","WATER SERVICE / PUMP","Meter → storage → pump → check valve → distribution header.")];start=(index-1)*2;chosen=titles[start:start+2] or titles[:2]
     for i,(tag,title,note) in enumerate(chosen):
-        top=y2-1.0-i*8.7;msp.add_lwpolyline([(x1+.8,top),(x2-.8,top),(x2-.8,top-7.3),(x1+.8,top-7.3)],close=True,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});t=msp.add_mtext(f"{tag}  {title}",dxfattribs={"layer":"ENGITOOLS-M-DETAIL","char_height":.12});t.dxf.insert=(x1+1.1,top-.5);t.dxf.width=15;t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-DETAIL","char_height":.07});t.dxf.insert=(x1+1.1,top-1.4);t.dxf.width=15;y=top-4.0;cx=(x1+x2)/2
+        top=y2-1.0-i*8.7;msp.add_lwpolyline([(x1+.8,top),(x2-.8,top),(x2-.8,top-7.3),(x1+.8,top-7.3)],close=True,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});t=msp.add_mtext(f"{tag}  {title}",dxfattribs={"layer":"ENGITOOLS-M-DETAIL","char_height":.12});t.dxf.insert=(x1+1.1,top-.5);t.dxf.width=15;t=msp.add_mtext(note,dxfattribs={"layer":"ENGITOOLS-M-DETAIL","char_height":.08});t.dxf.insert=(x1+1.1,top-1.4);t.dxf.width=15;y=top-4.0;cx=(x1+x2)/2
         # Executable detail geometry: pipe, union, isolation valve, equipment
         # body, flow direction and two labelled connection points.
-        msp.add_line((x1+2,y),(x2-2,y),dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_circle((cx,y),.35,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_lwpolyline([(cx-.65,y-.35),(cx,y),(cx-.65,y+.35)],dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_lwpolyline([(cx+.65,y-.35),(cx,y),(cx+.65,y+.35)],dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_circle((cx-1.25,y),.12,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_circle((cx+1.25,y),.12,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_line((cx-1.25,y+.12),(cx-1.25,y+.65),dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_line((cx+1.25,y+.12),(cx+1.25,y+.65),dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});t=msp.add_mtext("ISOLATION / SERVICE VALVE   •   UNION   •   FLOW / RETURN OR DRAIN",dxfattribs={"layer":"ENGITOOLS-M-DETAIL","char_height":.055});t.dxf.insert=(x1+3,top-5.1);t.dxf.width=x2-x1-6
+        msp.add_line((x1+2,y),(x2-2,y),dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_circle((cx,y),.35,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_lwpolyline([(cx-.65,y-.35),(cx,y),(cx-.65,y+.35)],dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_lwpolyline([(cx+.65,y-.35),(cx,y),(cx+.65,y+.35)],dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_circle((cx-1.25,y),.12,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_circle((cx+1.25,y),.12,dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_line((cx-1.25,y+.12),(cx-1.25,y+.65),dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});msp.add_line((cx+1.25,y+.12),(cx+1.25,y+.65),dxfattribs={"layer":"ENGITOOLS-M-DETAIL"});t=msp.add_mtext("ISOLATION / SERVICE VALVE   •   UNION   •   FLOW / RETURN OR DRAIN",dxfattribs={"layer":"ENGITOOLS-M-DETAIL","char_height":.08});t.dxf.insert=(x1+3,top-5.1);t.dxf.width=x2-x1-6
 
 
 def _draw_riser(doc,msp,board,authority):
     _ensure_layer(doc,"ENGITOOLS-M-RISER",7,20);x1,y1,x2,y2=board.plan_area;levels=list(authority["project"].get("levels") or {})
     if not levels:return
     y_positions={lvl:y1+2.0+i*((y2-y1-4)/max(len(levels),1)) for i,lvl in enumerate(levels)}
-    for lvl,y in y_positions.items():msp.add_line((x1+.7,y),(x2-.7,y),dxfattribs={"layer":"ENGITOOLS-M-RISER"});t=msp.add_mtext(lvl,dxfattribs={"layer":"ENGITOOLS-M-RISER","char_height":.07});t.dxf.insert=(x1+.8,y+.1);t.dxf.width=2
+    for lvl,y in y_positions.items():msp.add_line((x1+.7,y),(x2-.7,y),dxfattribs={"layer":"ENGITOOLS-M-RISER"});t=msp.add_mtext(lvl,dxfattribs={"layer":"ENGITOOLS-M-RISER","char_height":.08});t.dxf.insert=(x1+.8,y+.1);t.dxf.width=2
     systems=[("S1","SANITARY",110),("V1","VENT",63),("CW1","COLD WATER",32),("HW1","HOT WATER",25),("HF1","HEATING FLOW",25),("HR1","HEATING RETURN",25)]
     if "gas" in authority["requirements"].get("project_systems",[]):systems.append(("G1","GAS",25))
     xs=[x1+3.2+i*2.15 for i in range(len(systems))]
     for (tag,name,dn),x in zip(systems,xs):
-        msp.add_line((x,min(y_positions.values())),(x,max(y_positions.values())+1.2),dxfattribs={"layer":"ENGITOOLS-M-RISER"});t=msp.add_mtext(f"{tag}\n{name}\nDN{dn}",dxfattribs={"layer":"ENGITOOLS-M-RISER","char_height":.055});t.dxf.insert=(x-.4,max(y_positions.values())+1.4);t.dxf.width=.9
+        msp.add_line((x,min(y_positions.values())),(x,max(y_positions.values())+1.2),dxfattribs={"layer":"ENGITOOLS-M-RISER"});t=msp.add_mtext(f"{tag}\n{name}\nDN{dn}",dxfattribs={"layer":"ENGITOOLS-M-RISER","char_height":.08});t.dxf.insert=(x-.4,max(y_positions.values())+1.4);t.dxf.width=.9
         for lvl,y in y_positions.items():
             if tag=="G1" and "gas" not in authority["requirements"]["by_level"].get(lvl,[]):continue
             msp.add_line((x,y+.35),(x+(-1 if int(abs(y)*10)%2 else 1)*.8,y+.35),dxfattribs={"layer":"ENGITOOLS-M-RISER"})
@@ -731,7 +731,7 @@ def _numeric(v):
 def _draw_calc(doc,msp,board,pipeline,authority):
     _ensure_layer(doc,"ENGITOOLS-M-CALC",7,18);x1,y1,x2,y2=board.plan_area;main=[s for s in pipeline["sizing"].get("segments") or [] if s.get("system")=="cold_water"];q=.12*math.sqrt(max(len(main),1)*3);basis=authority["design_basis"]["basis"];pressure=_numeric(basis.get("water_inlet_pressure"));static=9.6 if len(authority["project"].get("levels") or {})>=3 else 6.4;residual=15.0;friction=max(4.0,.25*(static+residual));gross=static+residual+friction;avail=(pressure*10.197) if pressure is not None else None;final=max(0,gross-avail) if avail is not None else None;direct_city=str(basis.get("water_service_mode") or "").lower()=="direct_city"
     lines=(["WATER SERVICE / DIRECT CITY PRESSURE CHECK",f"Peak demand Q ≈ {q:.2f} L/s (preliminary demand proxy)",f"Static head ≈ {static:.1f} m",f"Residual pressure target ≈ {residual:.1f} m",f"Friction + fittings allowance ≈ {friction:.1f} m",f"Required head ≈ {gross:.1f} m",f"Utility pressure head = {avail:.1f} m" if avail is not None else "Utility pressure = INPUT REQUIRED","Approved basis: no tank or booster pump."] if direct_city else ["WATER SERVICE / PUMP DUTY CALCULATION",f"Peak demand Q ≈ {q:.2f} L/s (preliminary demand proxy)",f"Static head ≈ {static:.1f} m",f"Residual pressure target ≈ {residual:.1f} m",f"Friction + fittings allowance ≈ {friction:.1f} m",f"Gross head ≈ {gross:.1f} m",f"Utility pressure head = {avail:.1f} m" if avail is not None else "Utility pressure = INPUT REQUIRED",f"Pump head ≈ {final:.1f} m" if final is not None else "Final pump duty = PENDING UTILITY PRESSURE"])
-    for i,line in enumerate(lines):t=msp.add_mtext(line,dxfattribs={"layer":"ENGITOOLS-M-CALC","char_height":.10 if i==0 else .075});t.dxf.insert=(x1+.8,y2-1.0-i*1.25);t.dxf.width=x2-x1-1.6
+    for i,line in enumerate(lines):t=msp.add_mtext(line,dxfattribs={"layer":"ENGITOOLS-M-CALC","char_height":.10 if i==0 else .08});t.dxf.insert=(x1+.8,y2-1.0-i*1.25);t.dxf.width=x2-x1-1.6
 
 
 def _draw_notes(doc,msp,board,authority):
@@ -739,19 +739,19 @@ def _draw_notes(doc,msp,board,authority):
     colw=(x2-x1-1.8)/2
     for i,(title,items) in enumerate(notes):
         col=i%2;row=i//2;x=x1+.6+col*(colw+.6);top=y2-.8-row*6.6;msp.add_lwpolyline([(x,top),(x+colw,top),(x+colw,top-5.5),(x,top-5.5)],close=True,dxfattribs={"layer":"ENGITOOLS-M-NOTES"});t=msp.add_mtext(title,dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.085});t.dxf.insert=(x+.2,top-.35);t.dxf.width=colw-.4
-        for j,item in enumerate(items):t=msp.add_mtext(item,dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.06});t.dxf.insert=(x+.2,top-1.2-j*1.05);t.dxf.width=colw-.4
+        for j,item in enumerate(items):t=msp.add_mtext(item,dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.08});t.dxf.insert=(x+.2,top-1.2-j*1.05);t.dxf.width=colw-.4
 
 
 def _draw_schedule(doc,msp,board,pipeline,authority):
     _ensure_layer(doc,"ENGITOOLS-M-SCHEDULE",7,18);x1,y1,x2,y2=board.plan_area;headers=["TAG","TYPE","LEVEL","CAPACITY / SIZE","STATUS"];cols=[x1+.5,x1+3.1,x1+8.0,x1+11.2,x1+15.6,x2-.5];top=y2-.8;rh=.72;msp.add_lwpolyline([(cols[0],top),(cols[-1],top),(cols[-1],top-rh),(cols[0],top-rh)],close=True,dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE"})
     for x in cols[1:-1]:msp.add_line((x,top),(x,top-rh),dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE"})
-    for i,h in enumerate(headers):t=msp.add_mtext(h,dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE","char_height":.06});t.dxf.insert=(cols[i]+.08,top-.28);t.dxf.width=cols[i+1]-cols[i]-.12
+    for i,h in enumerate(headers):t=msp.add_mtext(h,dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE","char_height":.08});t.dxf.insert=(cols[i]+.08,top-.28);t.dxf.width=cols[i+1]-cols[i]-.12
     rows=[]
     for e in pipeline.get("hvac",{}).get("equipment") or []:rows.append((e.get("id"),e.get("kind"),e.get("plan_id"),str(e.get("capacity_btu_h") or e.get("capacity_kw") or "PRELIM."),"PRELIMINARY"))
     for i,row in enumerate(rows[:24],1):
         y=top-rh*i;msp.add_lwpolyline([(cols[0],y),(cols[-1],y),(cols[-1],y-rh),(cols[0],y-rh)],close=True,dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE"})
         for x in cols[1:-1]:msp.add_line((x,y),(x,y-rh),dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE"})
-        for j,val in enumerate(row):t=msp.add_mtext(str(val),dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE","char_height":.055});t.dxf.insert=(cols[j]+.08,y-.26);t.dxf.width=cols[j+1]-cols[j]-.12
+        for j,val in enumerate(row):t=msp.add_mtext(str(val),dxfattribs={"layer":"ENGITOOLS-M-SCHEDULE","char_height":.08});t.dxf.insert=(cols[j]+.08,y-.26);t.dxf.width=cols[j+1]-cols[j]-.12
 
 
 def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
@@ -778,7 +778,7 @@ def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
         y=y2-3.2-index*2.2
         msp.add_lwpolyline([(x1+1.0,y),(x1+3.2,y),(x1+3.2,y-1.0),(x1+1.0,y-1.0)],close=True,dxfattribs={"layer":layer,"lineweight":25})
         msp.add_line((x1+3.2,y-.5),(x2-1.0,y-.5),dxfattribs={"layer":layer,"lineweight":25})
-        t=msp.add_mtext(label,dxfattribs={"layer":layer,"char_height":.075})
+        t=msp.add_mtext(label,dxfattribs={"layer":layer,"char_height":.08})
         t.dxf.insert=(x1+3.6,y-.25);t.dxf.width=max(1.0,x2-x1-5.0)
     if board.family == "SPLIT_AC":
         _ensure_ac_blocks(doc)
@@ -790,7 +790,7 @@ def _draw_service_equipment_content(doc, msp, board, pipeline, authority):
         msp.add_line(p,(p[0],p[1]-2.0),dxfattribs={"layer":"ENGITOOLS-M-HVAC-COND","lineweight":25})
         msp.add_line(p,(p[0]+1.2,p[1]+1.0),dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","lineweight":25})
         msp.add_line(p,(p[0]-1.0,p[1]),dxfattribs={"layer":"ENGITOOLS-M-HVAC-AIRFLOW","lineweight":25})
-        callout=msp.add_mtext("IDU | SERVICE EQUIPMENT PLAN | LINKED TO APPROVED SCHEDULE",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.075})
+        callout=msp.add_mtext("IDU | SERVICE EQUIPMENT PLAN | LINKED TO APPROVED SCHEDULE",dxfattribs={"layer":"ENGITOOLS-M-HVAC-CALLOUT","char_height":.08})
         callout.dxf.insert=(p[0]+1.3,p[1]+1.1);callout.dxf.width=max(1.0,x2-p[0]-2.0)
     _draw_schedule(doc,msp,board,pipeline,authority)
 
@@ -826,7 +826,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                         msp.add_circle((x,y2-2.4),.14,dxfattribs={"layer":layer,"lineweight":lw})
                         label=msp.add_mtext(
                             "S1 SANITARY STACK — COORDINATE TO APPROVED ROOF OUTLET" if system=="sanitary" else "V1 VENT TERMINATION — FINAL ROOF LOCATION REQUIRES COORDINATION",
-                            dxfattribs={"layer":layer,"char_height":.07},
+                            dxfattribs={"layer":layer,"char_height":.08},
                         )
                         label.dxf.insert=(x+.2,y2-2.2);label.dxf.width=5.2
                 if b.family == "SANITARY_VENT":

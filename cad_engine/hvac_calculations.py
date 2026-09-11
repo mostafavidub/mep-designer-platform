@@ -102,7 +102,7 @@ def calculate_cooling_design(rooms, design_basis):
 
 def calculate_exhaust_design(rooms, criteria):
     """Determine every applicable room duty and ESP without implicit room defaults."""
-    required_room={'id','room_type','volume_m3','duct_path'}; missing=[]; rows=[]
+    required_room={'id','pmm_id','level_id','room_type','volume_m3','duct_path'}; missing=[]; rows=[]
     if not rooms:missing.append('exhaust_rooms')
     for room in rooms or []:
         missing.extend(f"{room.get('id','UNKNOWN')}:{key}" for key in sorted(required_room-set(room)))
@@ -117,6 +117,9 @@ def calculate_exhaust_design(rooms, criteria):
         ach_cfm=float(rule.get('ach',0))*float(room['volume_m3'])*35.314667/60
         required=max(float(rule.get('minimum_cfm',0)),ach_cfm)
         path=room['duct_path']; esp=sum(float(path[key]) for key in ('duct_friction_pa','fitting_loss_pa','terminal_loss_pa'))
-        rows.append({'room_id':room['id'],'room_type':room['room_type'],'required_cfm':round(required,2),
-                     'required_esp_pa':round(esp,2),'calc_id':_id('CALC-EXH-',{'room':room,'rule':rule})})
+        rows.append({'room_id':room['id'],'pmm_id':room['pmm_id'],'level_id':room['level_id'],
+                     'room_type':room['room_type'],'required_cfm':round(required,2),
+                     'required_esp_pa':round(esp,2),'duct_path':dict(path),
+                     'calc_id':_id('CALC-EXH-',{'room':room,'rule':rule}),
+                     'source_pmm_ids':[room['pmm_id']]})
     return {'status':'PASS','rooms':rows,'unserved_room_ids':[],'coverage':1.0}

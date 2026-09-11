@@ -10,6 +10,7 @@ from .mechanical_submission_qa import evaluate_submission_readiness, submission_
 from .engineering_feedback import process_engineer_redlines
 from .quality_acceptance import evaluate_quality_targets
 from .mechanical_target_design import build_target_design_packages
+from .mechanical_pipeline_construction_delivery import build_construction_delivery
 
 
 def _pmm_v3_traceability_required(payload: dict) -> bool:
@@ -27,7 +28,7 @@ def run_pipeline(payload: dict) -> dict:
         phases["target_design_build"]=built
         if built["status"] != "PASS":return _blocked(phases,"target_design_build")
         target_packages=built["packages"]
-    required_targets={"heating","gas","split_ac"}.intersection(
+    required_targets={"heating","gas","split_ac","exhaust","ventilation_exhaust","rainwater","roof_rainwater"}.intersection(
         key for key,value in (payload.get("active_systems") or {}).items() if value
     )
     if target_packages is not None or required_targets:
@@ -77,6 +78,13 @@ def run_pipeline(payload: dict) -> dict:
     phases["documentation"]={**doc_gate,"details":details,"riser":riser,
                              "pmm_traceability_required":require_traceability}
     if phases["documentation"]["status"] != "PASS": return _blocked(phases,"documentation")
+    construction_inputs=payload.get("construction_delivery_inputs")
+    if construction_inputs is not None:
+        phases["construction_delivery"]=build_construction_delivery(construction_inputs or {})
+        if phases["construction_delivery"]["status"]!="PASS":return _blocked(phases,"construction_delivery")
+    elif any((payload.get("active_systems") or {}).values()):
+        phases["construction_delivery"]={"status":"INPUT_REQUIRED","missing_inputs":["CONSTRUCTION_DELIVERY_INPUTS"]}
+        return _blocked(phases,"construction_delivery")
     phases["submission_quality"]=evaluate_submission_readiness(payload.get("submission_checks"))
     if phases["submission_quality"]["status"] != "PASS": return _blocked(phases,"submission_quality")
     phases["engineer_feedback"]=process_engineer_redlines(payload.get("engineer_review"))

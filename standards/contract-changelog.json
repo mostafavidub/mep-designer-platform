@@ -4,12 +4,32 @@
     {
       "id":"GOV-2026-031",
       "status":"APPROVED",
-      "summary":"Require multilevel risers to preserve explicit elevations, stable shaft correspondence, declared offsets, cumulative downstream loads and exact Plan/Riser/Calc/Schedule identity.",
+      "summary":"Require multilevel risers to preserve elevations, shaft correspondence, declared offsets, cumulative downstream loads and exact Plan/Riser/Calc/Schedule identity.",
       "affected_capabilities":["mechanical_routing","mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa"],
       "affected_projects":["all","project-4","project-6","project-8"],
       "approval":{"status":"APPROVED","basis":"explicit user instruction to implement, merge and deploy the complete riser improvement"},
-      "verification":{"positive_multilevel_test":"passed","destructive_shaft_test":"passed","destructive_elevation_load_offset_test":"passed","focused_tests":"passed","full_regression":"must_pass_before_merge","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Require explicit project evidence for vertical invariants and preserve incomplete outputs as INPUT_REQUIRED/FAIL.","rollback":"Redeploy the prior approved Git SHA; never restore assumed shafts, elevations, offsets or loads as issue-ready facts."}
+      "verification":{"positive_multilevel_test":"must_pass","destructive_shaft_test":"must_pass","destructive_elevation_load_offset_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
+      "migration":{"forward":"Require explicit evidence and preserve incomplete output as INPUT_REQUIRED/FAIL.","rollback":"Redeploy the prior approved Git SHA; never restore assumed vertical facts."}
+    },
+    {
+      "id":"GOV-2026-032",
+      "status":"APPROVED",
+      "summary":"Repair panel-to-CAD Mechanical transport to use the single canonical runtime contract, canonical engineering input contract and unversioned production design entrypoint.",
+      "affected_capabilities":["active_version_synchronization","mechanical_release_qa","paid_generation"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to fix the Staging runtime-contract blocker and complete all eight Mechanical projects"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","live_staging_e2e":"must_pass before completion claim","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Retry preserved projects with the canonical contract after deploying the exact approved commit.","rollback":"Redeploy the prior approved Git commit; never weaken runtime_contract_gate."}
+    },
+    {
+      "id":"GOV-2026-031",
+      "status":"APPROVED",
+      "summary":"Complete Mechanical construction-document delivery steps 14-19 as one fail-closed package with plan-bound parametric details, actual CAD inventory, manifest/layout identity, public schedules, annotation solving and expanded submission QA.",
+      "affected_capabilities":["construction_document_delivery","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner request to execute and complete through step 19"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete construction-delivery evidence.","rollback":"Revert the protected commit; never infer missing CAD, schedule, detail, annotation or QA evidence."}
     },
     {
       "id":"GOV-2026-030",
@@ -339,6 +359,54 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 7, 8 and 9 after closing prerequisite gates"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
       "migration":{"forward":"Existing PMM v3 inputs remain readable; final issue requires the additive engineering and manufacturer evidence.","rollback":"Revert the protected commit; never downgrade missing final evidence to PASS."}
+    },
+    {
+      "id":"GOV-2026-024",
+      "status":"APPROVED",
+      "summary":"Complete steps 10-13 as one fail-closed final-design chain for Exhaust, roof rainwater, graph-derived riser and the official hash-only manufacturer database.",
+      "affected_capabilities":["exhaust","roof_rainwater","detail_riser","manufacturer_selector","mechanical_release_qa"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 10 through 13"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
+      "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete Exhaust/Rainwater/Riser/Manufacturer database evidence.","rollback":"Revert the protected commit; never treat incomplete or unofficial evidence as final."}
+    },
+    {
+      "id":"GOV-2026-033",
+      "status":"APPROVED",
+      "summary":"Preserve explicit architectural typical-floor ranges through canonical topology, riser and board materialization; compare integrated build identities truthfully; block Mechanical payment when runtime synchronization preflight fails.",
+      "affected_capabilities":["mechanical_routing","detail_riser","approved_drawing_manifest","runtime_health","commercial_payment_preflight"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs and complete the eight-project Staging evaluation"},
+      "verification":{"positive_typical_floor_tests":"must_pass","destructive_detail_level_test":"must_pass","payment_preflight_test":"must_pass","full_regression":"must_pass","staging_smoke":"must_pass before eight-project generation"},
+      "migration":{"forward":"Fresh retries derive one TYPICAL_n_m identity from an explicit source range; no stored-data migration.","rollback":"Revert the protected commit; never infer levels from unknown or detail labels and never charge against an unsynchronized Mechanical runtime."}
+    },
+    {
+      "id":"GOV-2026-034",
+      "status":"APPROVED",
+      "summary":"Package canonical dependency, README and runtime-matrix evidence into panel and CAD images so the fail-closed pre-payment synchronization gate can execute in Railway.",
+      "affected_capabilities":["deployment","runtime_identity","commercial_payment_preflight"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs after live Staging preflight correctly rejected an incomplete image"},
+      "verification":{"image_contract_test":"must_pass","full_regression":"must_pass","live_payment_preflight":"must_pass before generation"},
+      "migration":{"forward":"Rebuild images with canonical release evidence paths.","rollback":"Do not bypass the preflight; redeploy only a complete prior image."}
+    },
+    {
+      "id":"GOV-2026-035",
+      "status":"APPROVED",
+      "summary":"Resolve source nodes in nested architectural plan regions using the unique smallest containing boundary while retaining equal-boundary ambiguity as fail-closed.",
+      "affected_capabilities":["mechanical_routing","level_identity","approved_drawing_manifest"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete all repairs after blind Staging project 3 exposed overlapping source regions"},
+      "verification":{"nested_region_test":"must_pass","equal_region_negative_test":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
+      "migration":{"forward":"Fresh topology rebuild resolves only a unique most-specific source boundary.","rollback":"Revert; never choose among equal minimum regions."}
+    },
+    {
+      "id":"GOV-2026-036","status":"APPROVED",
+      "summary":"Preserve exact architecture-model level bounds in PMM when profile summaries omit them, using strict same-name matching only.",
+      "affected_capabilities":["pmm","mechanical_routing","level_identity"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction after blind Staging project 3 proved valid architecture bounds were discarded by the PMM bridge"},
+      "verification":{"exact_match_test":"must_pass","nonmatch_negative":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
+      "migration":{"forward":"Fresh PMM rebuild copies existing exact-name bounds.","rollback":"Revert; never fuzzy-match level names or invent bounds."}
     }
   ]
 }

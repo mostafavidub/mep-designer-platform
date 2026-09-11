@@ -29,3 +29,15 @@ Every detail carries Detail ID, source Plan ID, PMM ID, Calc ID and, where
 applicable, manufacturer Catalogue ID. Manufacturer dimensions must match the
 registered record. Empty components, label-only output or identity mismatch
 blocks final documentation.
+## Final selection registry
+
+M-181 and all final equipment packages require every selected manufacturer/model
+pair to exist in the canonical database. A record must contain capacity,
+dimensions, weight, connections, electrical data, water/gas/refrigerant data,
+piping limits, clearances, sound, pressure, pump/fan curves and an official
+manufacturer document with revision, retrieval date and SHA-256. Only semantic
+fields and the hash are stored; document binaries are not committed.
+
+Missing fields remain `INPUT_REQUIRED`. Reseller sources, invalid hashes,
+duplicate manufacturer/model/type records and selections absent from the
+database fail closed.

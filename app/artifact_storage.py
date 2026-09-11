@@ -90,6 +90,19 @@ def upload_output(project_id: int, revision: int, discipline: str, path: Path) -
     return f's3://{S3_BUCKET}/{key}'
 
 
+def persist_local_output(project_id: int, revision: int, discipline: str, path: Path, data_dir: Path) -> str:
+    """Atomically retain a validated output on the configured persistent volume."""
+    target_dir = Path(data_dir) / 'projects' / str(project_id) / 'output' / f'R{revision:03d}' / discipline
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / path.name
+    temporary = target.with_name('.uploading-' + target.name)
+    shutil.copy2(path, temporary)
+    validate_output_artifact(temporary)
+    temporary.replace(target)
+    validate_output_artifact(target)
+    return str(target.resolve())
+
+
 def _parse_uri(uri: str) -> tuple[str, str]:
     if not uri.startswith('s3://'):
         raise ValueError('Not an S3 artifact URI')

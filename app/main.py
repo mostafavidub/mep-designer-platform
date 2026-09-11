@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSON
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from sqlalchemy import create_engine, String, Integer, Text, DateTime, ForeignKey, JSON
+from sqlalchemy import create_engine, String, Integer, Text, DateTime, ForeignKey, JSON, LargeBinary
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 DATA_DIR = Path(os.getenv('DATA_DIR', '/data'))
@@ -58,6 +58,18 @@ class Revision(Base):
     feedback: Mapped[str] = mapped_column(Text, default='')
     pdf_path: Mapped[str] = mapped_column(Text, default='')
     error: Mapped[str] = mapped_column(Text, default='')
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+class ArtifactBlob(Base):
+    __tablename__ = 'artifact_blobs'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id'), index=True)
+    revision_no: Mapped[int] = mapped_column(Integer)
+    discipline: Mapped[str] = mapped_column(String(50))
+    filename: Mapped[str] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(100))
+    sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 class RuleCandidate(Base):
@@ -345,7 +357,8 @@ def system_health():
         except Exception: pass
     panel_identity=build_identity()
     remote_version=cad.get('build_identity') or {}
-    remote_identity=remote_version.get('build_identity', remote_version) if isinstance(remote_version, dict) else {}
+    nested_identity=remote_version.get('build_identity') if isinstance(remote_version, dict) else None
+    remote_identity=nested_identity if isinstance(nested_identity, dict) else remote_version
     cad['identity_matches']=remote_identity == panel_identity if remote_version else integrated_cad
     return {'status':'ok','cad_designer':cad,'build_identity':panel_identity,'rulebook_exists':Path(RULEBOOK_PATH).exists()}
 @app.get('/sitemap.xml')

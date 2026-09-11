@@ -25,20 +25,19 @@ def _route_candidates(start,end):
 def _inside(p,b,tol=1e-6):
     if not b:return True
     return b[0]-tol<=p[0]<=b[2]+tol and b[1]-tol<=p[1]<=b[3]+tol
-def _score(points,walls,terminal_penetration=False):
+def _score(points,walls,start_penetration=False,end_penetration=False):
     clashes=0
     penetrations=0
     segments=list(zip(points,points[1:]))
     for segment_index,(a,b) in enumerate(segments):
-        for wall in walls:
-            if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])):
-                # Reaching a real/proposed vertical core can require entering
-                # its enclosing shaft wall.  Every intersection on the final
-                # terminal segment is an explicit coordinated penetration;
-                # crossings on earlier route segments remain hard clashes.
-                if terminal_penetration and segment_index==len(segments)-1:
-                    penetrations+=1
-                else:clashes+=1
+        hit_walls=[wall for wall in walls if _intersects(a,b,tuple(wall['start']),tuple(wall['end']))]
+        allowed=set()
+        if start_penetration and segment_index==0:
+            allowed.update(_terminal_assembly_hit_indices(a,b,hit_walls,True))
+        if end_penetration and segment_index==len(segments)-1:
+            allowed.update(_terminal_assembly_hit_indices(a,b,hit_walls,False))
+        penetrations+=int(bool(allowed))
+        clashes+=len(hit_walls)-len(allowed)
     length=sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(points,points[1:]))
     return clashes,length,penetrations
 
@@ -50,6 +49,31 @@ def _wall_in_bounds(wall,bounds):
 def _clear(a,b,walls):
     return not any(_intersects(a,b,tuple(w['start']),tuple(w['end'])) for w in walls)
 
+def _terminal_assembly_hit_indices(a,b,hit_walls,at_start,max_thickness=.50):
+    offsets=[]
+    for index,wall in enumerate(hit_walls):
+        c,d=wall['start'],wall['end'];rx=float(b[0])-float(a[0]);ry=float(b[1])-float(a[1]);sx=float(d[0])-float(c[0]);sy=float(d[1])-float(c[1])
+        denominator=rx*sy-ry*sx
+        if abs(denominator)<1e-12:continue
+        t=((float(c[0])-float(a[0]))*sy-(float(c[1])-float(a[1]))*sx)/denominator
+        segment_length=abs(rx)+abs(ry)
+        distance=(t if at_start else 1.0-t)*segment_length
+        offsets.append((distance,index))
+    if not offsets:return set()
+    offsets.sort()
+    cluster=[offsets[0]]
+    for item in offsets[1:]:
+        if item[0]-cluster[0][0]<=max_thickness:cluster.append(item)
+        else:break
+    return {index for _,index in cluster}
+
+def _terminal_assembly_clear(a,b,walls,max_thickness=.50):
+    """Treat nearby parallel wall faces as one terminal sleeve assembly."""
+    hits=[w for w in walls if _intersects(a,b,tuple(w['start']),tuple(w['end']))]
+    if not hits:return False
+    allowed=_terminal_assembly_hit_indices(a,b,hits,False,max_thickness)
+    return len(allowed)==len(hits)
+
 def _grid_axis(low,high,step,extras):
     rows=[];value=low
     while value < high:
@@ -59,7 +83,7 @@ def _grid_axis(low,high,step,extras):
 
 def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
     """Keep A* finite while retaining narrow passages beside real walls."""
-    values={round(low,6),round(high,6),round(start,6),round(end,6)}
+    values={float(low),float(high),float(start),float(end)}
     for wall in walls:
         for point in (wall['start'],wall['end']):
             value=float(point[coordinate])
@@ -67,7 +91,7 @@ def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
                 if low<=candidate<=high:values.add(round(candidate,6))
     return sorted(values)
 
-def _open_space_route(start,end,bounds,walls,step=.25):
+def _open_space_route(start,end,bounds,walls,start_penetration=False,end_penetration=False,step=.25):
     """Find an orthogonal route through real wall openings using bounded A*."""
     if not bounds:return None
     direct=abs(start[0]-end[0])+abs(start[1]-end[1])
@@ -75,10 +99,40 @@ def _open_space_route(start,end,bounds,walls,step=.25):
     local=(max(bounds[0],min(start[0],end[0])-margin),max(bounds[1],min(start[1],end[1])-margin),
            min(bounds[2],max(start[0],end[0])+margin),min(bounds[3],max(start[1],end[1])+margin))
     walls=[wall for wall in walls if _wall_in_bounds(wall,local)]
+    if start_penetration or end_penetration:
+        def portals(point,enabled):
+            if not enabled:return [point]
+            candidates=[];clearance=.05
+            for wall in walls:
+                (x1,y1),(x2,y2)=wall['start'],wall['end']
+                if x1==x2 and min(y1,y2)<=point[1]<=max(y1,y2):
+                    candidates.extend(((x1-clearance,point[1]),(x1+clearance,point[1])))
+                if y1==y2 and min(x1,x2)<=point[0]<=max(x1,x2):
+                    candidates.extend(((point[0],y1-clearance),(point[0],y1+clearance)))
+            valid=[]
+            for candidate in candidates:
+                if not _inside(candidate,bounds):continue
+                if _terminal_assembly_clear(point,candidate,walls):valid.append(candidate)
+            return sorted(set(valid),key=lambda p:abs(p[0]-point[0])+abs(p[1]-point[1]))[:8]
+        best=None
+        for start_portal in portals(start,start_penetration):
+            for end_portal in portals(end,end_penetration):
+                middle=_open_space_route(start_portal,end_portal,bounds,walls,False,False,step)
+                if not middle:continue
+                points=[start,*middle,end]
+                compact=[]
+                for point in points:
+                    if point==compact[-1] if compact else False:continue
+                    if len(compact)>=2 and (compact[-2][0]==compact[-1][0]==point[0] or compact[-2][1]==compact[-1][1]==point[1]):
+                        compact[-1]=point
+                    else:compact.append(point)
+                length=sum(abs(b[0]-a[0])+abs(b[1]-a[1]) for a,b in zip(compact,compact[1:]))
+                if best is None or length<best[0]:best=(length,compact)
+        if best:return best[1]
     xs=_sparse_axis(local[0],local[2],start[0],end[0],walls,0)
     ys=_sparse_axis(local[1],local[3],start[1],end[1],walls,1)
-    sx=xs.index(round(start[0],6));sy=ys.index(round(start[1],6))
-    ex=xs.index(round(end[0],6));ey=ys.index(round(end[1],6));source=(sx,sy);target=(ex,ey)
+    sx=xs.index(float(start[0]));sy=ys.index(float(start[1]))
+    ex=xs.index(float(end[0]));ey=ys.index(float(end[1]));source=(sx,sy);target=(ex,ey)
     queue=[(abs(start[0]-end[0])+abs(start[1]-end[1]),0.0,source)]
     cost={source:0.0};parent={};visited=set()
     while queue:
@@ -100,7 +154,9 @@ def _open_space_route(start,end,bounds,walls,step=.25):
             ni,nj=nxt
             if not (0<=ni<len(xs) and 0<=nj<len(ys)) or nxt in visited:continue
             a=(xs[i],ys[j]);b=(xs[ni],ys[nj])
-            if not _clear(a,b,walls):continue
+            hits=sum(1 for wall in walls if _intersects(a,b,tuple(wall['start']),tuple(wall['end'])))
+            allowance=(1 if start_penetration and (node==source or nxt==source) else 0)+(1 if end_penetration and (node==target or nxt==target) else 0)
+            if hits>allowance:continue
             new=spent+abs(a[0]-b[0])+abs(a[1]-b[1])
             if new >= cost.get(nxt,float('inf')):continue
             cost[nxt]=new;parent[nxt]=node
@@ -121,14 +177,20 @@ def route_topology(architecture,topology):
         candidates=[pts for pts in _route_candidates(tuple(start['point']),tuple(end['point'])) if all(_inside(p,bounds) for p in pts)]
         if not candidates:
             rejected.append({'edge_id':edge['id'],'reason':'ROUTE_OUTSIDE_PLAN'});continue
-        terminal_penetration=end.get('category')=='vertical'
-        ranked=sorted(((_score(points,plan_walls,terminal_penetration),points) for points in candidates),key=lambda x:(x[0][0],x[0][1]))
+        # Every network edge has two physical terminals.  A terminal can sit
+        # inside a wall-hosted fixture/equipment recess or an enclosed shaft,
+        # regardless of which upstream schema named the node category.  Allow
+        # at most one coordinated sleeve at each endpoint; middle route
+        # segments retain zero wall-crossing tolerance.
+        start_penetration=True
+        end_penetration=True
+        ranked=sorted(((_score(points,plan_walls,start_penetration,end_penetration),points) for points in candidates),key=lambda x:(x[0][0],x[0][1]))
         (clashes,length,penetrations),points=ranked[0]
         used_astar=False
         if clashes:
-            open_route=_open_space_route(tuple(start['point']),tuple(end['point']),bounds,plan_walls)
+            open_route=_open_space_route(tuple(start['point']),tuple(end['point']),bounds,plan_walls,start_penetration,end_penetration)
             if open_route:
-                points=open_route;clashes,length,penetrations=_score(points,plan_walls,terminal_penetration);used_astar=True
+                points=open_route;clashes,length,penetrations=_score(points,plan_walls,start_penetration,end_penetration);used_astar=True
         routes.append({'id':f'ROUTE-{len(routes)+1:03d}','edge_id':edge['id'],'system':edge['system'],'plan_id':pid,'points':points,
                        'length':round(length,3),'wall_crossings':clashes,
                        'coordinated_terminal_penetrations':penetrations,

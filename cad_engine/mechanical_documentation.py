@@ -3,10 +3,16 @@ from __future__ import annotations
 
 from hashlib import sha256
 import json
+import re
 
 
 DETAIL_FIELDS = {"geometry", "dimensions", "fittings", "material", "clearance", "tag"}
 RISER_LEVEL_TYPES = {"GROUND", "FIRST", "SECOND", "ROOF", "BASEMENT", "MEZZANINE"}
+
+
+def _valid_riser_level_type(value):
+    text = str(value or "").upper()
+    return text in RISER_LEVEL_TYPES or bool(re.fullmatch(r"TYPICAL_[1-9]\d*_[1-9]\d*", text))
 FINAL_DETAIL_FIELDS={
     "radiator_connection": {"dimensions_mm","installation_height_mm","trv","lockshield","flow_connection",
                              "return_connection","pipe_dn_mm","wall_clearance_mm","sleeve"},
@@ -103,7 +109,7 @@ def generate_riser_from_network(network: dict) -> dict:
     for level in level_registry:
         if not level.get("id") or not level.get("type"):
             return {"status":"INPUT_REQUIRED","missing_inputs":["LEVEL_ID_AND_TYPE"],"riser":None}
-        if str(level.get("type")).upper() not in RISER_LEVEL_TYPES:invalid_levels.append(str(level.get("id")))
+        if not _valid_riser_level_type(level.get("type")):invalid_levels.append(str(level.get("id")))
     referenced_levels={str(value) for edge in edges for value in (edge.get("levels") or [])}
     referenced_levels.update(str(node.get("level")) for node in nodes if node.get("level") is not None)
     detail_contamination=sorted(value for value in referenced_levels if value.upper().startswith("DETAIL"))

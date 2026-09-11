@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0087",
+  "summary": "Make multilevel mechanical risers geometry-correlated, elevation-aware and load-accumulating with exact plan/riser/calculation/schedule reconciliation.",
+  "requester": "project-owner",
+  "change_types": ["rule", "drawing_output", "calculation", "routing", "documentation", "test", "governance", "deployment"],
+  "changed_rule_ids": ["MEP-ROUTE-001", "MEP-SIZE-001", "MEP-SUBMIT-001"],
+  "impacted_modules": ["rule_book", "pmm", "questionnaire", "cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "qa", "routing", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "rule_book": "Riser acceptance adds level elevation, shaft correspondence, offset and cumulative-load invariants.",
+    "pmm": "Existing PMM typed levels and identities remain authoritative; no schema change.",
+    "questionnaire": "Missing elevation, shaft identity or offset evidence surfaces fail closed.",
+    "cad_designer": "Risers are emitted only from the authoritative graph and execution rows.",
+    "planner": "Verified not affected.", "routing": "Vertical paths require architectural shaft correspondence.",
+    "sizing": "Every vertical segment carries explicit cumulative downstream load and provenance.",
+    "equipment": "Verified not affected.", "manufacturer_selector": "Verified not affected.",
+    "detail_riser": "Adds strict geometry, continuity, elevation, offset and identity reconciliation.",
+    "qa": "Adds zero-tolerance positive and destructive riser acceptance.",
+    "manifest": "Verified not affected; build identity remains automatic.",
+    "ui_api": "Existing fail-closed surfaces expose new diagnostics.",
+    "docs": "Riser contract is updated.", "versioning": "SWCIS advances to 4.29.0; runtime remains unversioned.",
+    "migration": "Additive validation; incomplete payloads remain INPUT_REQUIRED.",
+    "governance": "SWCIS evidence covers the transitive closure.",
+    "deployment": "Deploy only the exact merged green SHA to Staging."
+  },
+  "evidence": {
+    "traceability": ["MEP-ROUTE-001, MEP-SIZE-001 and MEP-SUBMIT-001 cover vertical topology through exact reconciliation."],
+    "tests": ["Positive, destructive, focused and full regression tests."],
+    "docs": ["docs/RAINWATER_RISER_DESIGN_STANDARD.md", "docs/PMM_TRACEABILITY_STANDARD.md"],
+    "version_bump": ["SWCIS 4.29.0; runtime identity unchanged."],
+    "migration": ["No data rewrite; missing evidence remains INPUT_REQUIRED."],
+    "golden_regression": ["Synthetic multilevel regression plus the complete automated suite."],
+    "semantic_diff": ["Adds shaft, elevation, offset, accumulated endpoint/load and zero-error evidence."],
+    "artifact_diff": ["One reconciled row is required per authoritative edge."],
+    "numeric_diff": ["Loads are summed only from explicit project/rulebook inputs; no default is introduced."],
+    "contract_diff": ["Issue-ready multilevel risers require explicit evidence for every vertical invariant."],
+    "deployment_plan": ["Merge protected PR after all checks PASS; deploy merged SHA to Staging and smoke-test."],
+    "rollback_plan": ["Redeploy the prior approved Staging Git SHA."]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 2, "score": 30, "rationale": "Riser defects are submission-critical and are made observable through fail-closed tests."},
+  "waiver": null
+}

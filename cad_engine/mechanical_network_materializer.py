@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from pathlib import Path
+import re
 import shutil
 import tempfile
 
@@ -95,6 +96,8 @@ def _source_extents(src):
 def _row_level_type(value):
     text = str(value or "").strip().upper()
     if text in {"GROUND", "FIRST", "SECOND", "ROOF", "BASEMENT", "MEZZANINE"}:
+        return text
+    if re.fullmatch(r"TYPICAL_[1-9]\d*_[1-9]\d*", text):
         return text
     return _typed_level(value, roof=text == "ROOF")
 
