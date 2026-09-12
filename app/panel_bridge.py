@@ -50,9 +50,11 @@ def register_panel_bridge(app, legacy, Job):
         return hmac.new(secret, message, hashlib.sha256).hexdigest()
 
     def linked_project(db, pid: int, request: Request):
-        link = db.query(PanelProjectLink).filter(PanelProjectLink.project_id == pid).first()
         supplied = request.headers.get("x-project-token", "")
-        if not link or not supplied or not secrets.compare_digest(link.access_token_hash, digest(supplied)):
+        supplied_hash = digest(supplied) if supplied else ""
+        links = db.query(PanelProjectLink).filter(PanelProjectLink.project_id == pid).all()
+        link = next((row for row in links if secrets.compare_digest(row.access_token_hash, supplied_hash)), None)
+        if not link:
             raise HTTPException(404)
         project = db.get(legacy.Project, pid)
         if not project:

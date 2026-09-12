@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-050","status":"APPROVED",
+      "summary":"Bind checkout status tokens to the exact external project link and accept any retained link whose stored token hash matches.",
+      "affected_capabilities":["panel_checkout","project_status","customer_project_reconnect"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner request to remove false processing and lost-project bugs on Staging"},
+      "verification":{"positive_test":"must_pass","duplicate_link_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"No schema change; existing retained links become readable by their own token.","rollback":"Revert and redeploy the previous approved SHA."}
+    },
+    {
       "id":"GOV-2026-049","status":"APPROVED",
       "summary":"Keep the no-roof sanitary rainwater and vent support deliverable in its truthful detail-sheet role instead of expanding approved roof-plan scope.",
       "affected_capabilities":["drawing_scope_review","mechanical_drawing_manifest","customer_checkout"],"affected_projects":["all"],
