@@ -1,4 +1,5 @@
 """HTTP + real SQLite tests; no customer drawings, payments or CAD jobs run."""
+import json
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse, parse_qs
 from uuid import uuid4
@@ -320,6 +321,55 @@ def test_demo_bank_queues_once_without_wallet_debit(flow, monkeypatch):
     with legacy.Session() as db:
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
         assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+
+
+def test_manifest_rejection_is_actionable_and_never_records_payment(flow, monkeypatch):
+    browser, auth, uid, pid, token, order = flow
+    import app.panel_checkout as checkout
+
+    proposal = {
+        'drawing_manifest': {
+            'scope_contract': {
+                'failures': ['required_system_omission_zero', 'ambiguity_fail_closed'],
+            },
+        },
+    }
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+    monkeypatch.setattr(checkout, 'unresolved_questions', lambda project: [])
+    monkeypatch.setattr(checkout.mechanical_workflow, 'create_proposal', lambda project: proposal)
+    monkeypatch.setattr(
+        checkout.mechanical_workflow,
+        'approve_drawing_set',
+        lambda value: (_ for _ in ()).throw(ValueError('manifest invalid')),
+    )
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.answers = {**(project.answers or {}), 'discipline': 'mechanical'}
+        checkout_order = db.query(app.state.panel_checkout.Checkout).filter_by(project_id=pid).one()
+        checkout_order.quote_token = digest(json.dumps(
+            [checkout_order.amount, project.answers, checkout_order.area],
+            sort_keys=True,
+            ensure_ascii=False,
+        ))
+        db.commit()
+        order['quoteToken'] = checkout_order.quote_token
+
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409, response.text
+    assert response.json()['status'] == 'drawing_set_review'
+    assert response.json()['drawingSetFailures'] == [
+        'required_system_omission_zero', 'ambiguity_fail_closed',
+    ]
+    assert 'دامنه نقشه‌ها هنوز تأیید نشده است' in response.json()['error']
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        checkout_order = db.query(app.state.panel_checkout.Checkout).filter_by(project_id=pid).one()
+        assert checkout_order.paid == 0
+        assert project.status == 'drawing_set_review'
+        assert project.analysis['drawing_set_validation']['status'] == 'INPUT_REQUIRED'
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+        assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+        assert db.query(app.state.panel_checkout.Activity).filter_by(user_id=uid).count() == 0
 
 
 def test_handoff_preserves_answers_and_replay_same_account(flow):

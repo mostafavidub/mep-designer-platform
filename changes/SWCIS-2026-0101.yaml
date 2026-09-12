@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0101",
+  "summary":"Replace the unhandled Mechanical drawing-manifest checkout exception with an actionable fail-closed review response and atomic no-payment behavior.",
+  "requester":"project-owner",
+  "change_types":["ui_api","runtime","test","governance","documentation","versioning","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"ui_api":"Returns a structured 409 review response containing exact failed drawing-scope controls.","qa":"Covers rejection without payment, activity, ledger, revision or design job while retaining the successful payment regression.","deployment":"Protected Staging rollout.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.39.1.","migration":"No schema change; existing failed proposals are recalculated on the next attempt.","governance":"GOV-2026-048 records atomic fail-closed checkout behavior.","versioning":"SWCIS 4.39.1."},
+  "evidence":{"tests":["Forty-four focused checkout and Mechanical workflow tests pass, including destructive no-payment assertions on manifest rejection."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-048 records structured drawing-scope review and atomic no-payment behavior."],"version_bump":["SWCIS 4.39.0 -> 4.39.1"],"migration":["No schema migration; rejected proposals retain failure evidence."],"semantic_diff":["Manifest rejection changes from HTTP 500 to an actionable drawing_set_review response; the locked 100/100 gate is unchanged."],"deployment_plan":["Protected Staging PR, merged-SHA deployment and live checkout verification."],"rollback_plan":["Revert and redeploy the previous Staging SHA; do not weaken the drawing-scope gate."]},
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"An unhandled rejection blocks checkout and hides the exact engineering control requiring correction."},
+  "waiver":null
+}

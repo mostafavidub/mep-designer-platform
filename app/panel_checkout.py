@@ -29,6 +29,19 @@ def digest(value):
     return hashlib.sha256(str(value).encode()).hexdigest()
 
 
+def drawing_manifest_error(proposal, exc):
+    """Turn a locked manifest rejection into an actionable customer message."""
+    manifest = (proposal or {}).get("drawing_manifest") or {}
+    contract = manifest.get("scope_contract") or {}
+    failures = [str(item) for item in contract.get("failures") or [] if item]
+    if failures:
+        detail = "، ".join(failures)
+        message = f"دامنه نقشه‌ها هنوز تأیید نشده است: {detail}. اطلاعات پروژه را بازبینی کنید."
+    else:
+        message = "مجموعه نقشه‌ها هنوز قابل تأیید نیست؛ اطلاعات پروژه را بازبینی و دوباره قیمت را دریافت کنید."
+    return message, failures, str(exc)
+
+
 def sign(value):
     secret = os.environ.get("PANEL_BRIDGE_TOKEN", "")
     if not secret:
@@ -547,8 +560,30 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 raise HTTPException(409, "موجودی کیف پول کافی نیست؛ هیچ مبلغی کسر نشد.")
             if (project.answers or {}).get("discipline") == "mechanical":
                 proposal = mechanical_workflow.create_proposal(project)
+                try:
+                    approved = mechanical_workflow.approve_drawing_set(proposal)
+                except ValueError as exc:
+                    message, failures, technical = drawing_manifest_error(proposal, exc)
+                    analysis = dict(project.analysis or {})
+                    analysis["drawing_set"] = proposal
+                    analysis["drawing_set_validation"] = {
+                        "status": "INPUT_REQUIRED",
+                        "failures": failures,
+                        "technical_error": technical,
+                    }
+                    project.analysis = analysis
+                    project.status = "drawing_set_review"
+                    project.last_error = message
+                    db.commit()
+                    return JSONResponse({
+                        "status": "drawing_set_review",
+                        "error": message,
+                        "drawingSetFailures": failures,
+                        "project": order_payload(db, order),
+                        **state(db, uid),
+                    }, status_code=409)
                 analysis = dict(project.analysis or {})
-                analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
+                analysis["drawing_set"] = approved
                 project.analysis = analysis
             if not demo:
                 wallet.balance -= order.amount

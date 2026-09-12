@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-048","status":"APPROVED",
+      "summary":"Return locked Mechanical drawing-manifest checkout rejection as an actionable review state instead of an internal server error, with atomic no-payment guarantees.",
+      "affected_capabilities":["panel_checkout","drawing_scope_review","mechanical_runtime_authority"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to fix the Staging checkout error"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"No schema migration; rejected projects retain their proposal and exact failed controls for review.","rollback":"Revert and redeploy the previous approved SHA; never bypass the locked drawing-manifest gate."}
+    },
+    {
       "id":"GOV-2026-047","status":"APPROVED",
       "summary":"Persist questionnaire answers through reanalysis, collapse legacy/canonical aliases to one semantic prompt, reopen only missing invalid inputs and prevent raw checkout approval exceptions.",
       "affected_capabilities":["questionnaire_design_basis_100","customer_checkout"],
