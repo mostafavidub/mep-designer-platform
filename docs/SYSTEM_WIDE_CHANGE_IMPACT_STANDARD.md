@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.35.0
+**Canonical version:** 4.36.0
 
 **Status:** LOCKED
 
@@ -168,6 +168,17 @@ documentation, all-sheet visual QA, exact-file technical QA, closed independent
 engineering review and an immutable release package. Only 100/100 with every
 control `PASS` permits a Submission Ready claim. Software acceptance never
 replaces the legally required responsible-engineer review, signature or stamp.
+
+## Architecture space and equipment recognition release gate
+
+Every Mechanical submission must bind its PMM to an architecture-only recognition
+report satisfying all eighteen controls in locked rule `MEP-ARCH-RECOG-001` and
+`docs/ARCHITECTURE_SPACE_EQUIPMENT_100_STANDARD.md`. The gate verifies the exact
+approved source, calibration, frame and level separation, typed geometry, closed
+spaces, multilingual labels, use classification, shafts, multi-signal fixture and
+equipment evidence, status/confidence, host/port identity, deduplication, semantic
+consistency and visual overlays. Mechanical reference drawings are forbidden as
+recognition inputs. Only 100/100 with every control `PASS` permits Submission Ready.
 
 ## Administration and branch protection
 
