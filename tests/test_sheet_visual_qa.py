@@ -109,6 +109,22 @@ def test_annotation_repair_preserves_content_and_resolves_readability(tmp_path, 
     assert not any("annotation_overlap" in item for item in result["errors"])
 
 
+def test_dense_annotation_repair_uses_full_board_fallback(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    path = tmp_path / "dense.dxf"; composition = _issued(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    # A cluster wider than the local radial search still has usable board area.
+    for index in range(12):
+        msp.add_text(f"RISER CALC DN{20 + index}", dxfattribs={
+            "layer": "ENGITOOLS-M-WATER", "height": .1}).set_placement((18.5, 27.5))
+    doc.saveas(path)
+    repair = visual.repair_sheet_annotations(path, composition)
+    result = visual.validate_all_sheet_visual_qa(path, composition, tmp_path / "previews-dense")
+    assert repair["status"] == "PASS", repair
+    assert repair["content_deleted"] == 0
+    assert not any("annotation_overlap" in item for item in result["errors"])
+
+
 def test_mtext_empty_wrapping_width_is_not_counted_as_painted_overlap(tmp_path, monkeypatch):
     monkeypatch.setattr(visual, "_render_profile", _fake_render)
     path = tmp_path / "wrap.dxf"; composition = _issued(path)

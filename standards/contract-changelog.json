@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-053","status":"APPROVED",
+      "summary":"Use complete-zone deterministic placement for dense riser/detail annotations after local placement candidates are exhausted.",
+      "affected_capabilities":["all_sheet_visual_qa","annotation_layout","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete quality-preserving output generation after live M-152 QA evidence"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_retry":"must_pass"},
+      "migration":{"forward":"Retry the durable project after deployment.","rollback":"Revert and preserve unchanged fail-closed visual QA."}
+    },
+    {
       "id":"GOV-2026-052","status":"APPROVED",
       "summary":"Require deterministic board-local annotation repair before visual QA and stop blind retries when consecutive failure fingerprints are identical.",
       "affected_capabilities":["all_sheet_visual_qa","annotation_layout","design_recovery","mechanical_generation"],"affected_projects":["all"],
