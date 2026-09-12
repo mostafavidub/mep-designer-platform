@@ -44,6 +44,7 @@ REQUIRED_CAPABILITIES = {
     "final_engineering_release_18_control_score":"cad_engine.final_engineering_release_gate",
     "architecture_space_equipment_recognition_18_control_score":"cad_engine.architecture_space_equipment_gate",
     "documentation_content_18_control_score":"cad_engine.documentation_content_gate",
+    "questionnaire_design_basis_18_control_score":"app.design_basis_questionnaire_gate",
 }
 
 def release_contract_status():
