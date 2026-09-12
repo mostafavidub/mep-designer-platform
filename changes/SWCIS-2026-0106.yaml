@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0106",
+  "summary":"Resolve the remaining dense M-152 annotation collisions using complete-zone placement.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","runtime","test","governance","documentation","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"cad_designer":"Dense labels scan the complete permitted zone after local candidates fail.","qa":"No text is deleted or shrunk and the same exact-file overlap gate remains authoritative.","deployment":"Protected Staging rollout and live retry.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.39.6.","migration":"No schema migration.","governance":"GOV-2026-053 records complete-zone fallback.","versioning":"SWCIS 4.39.6."},
+  "evidence":{"tests":["A dense 12-label cluster is relocated without deletion or remaining overlap."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-053 adds complete-zone placement after local candidates."],"version_bump":["SWCIS 4.39.5 -> 4.39.6"],"migration":["No DB schema migration; retry project 1."],"semantic_diff":["Only plotted positions and traceable leaders change; engineering text and QA thresholds do not."],"artifact_diff":["Text count remains invariant and collision count reaches zero in the dense regression."],"golden_regression":["Visual and recovery suites plus required CI must pass."],"deployment_plan":["Protected PR, merged-SHA Staging deployment and live retry."],"rollback_plan":["Revert and redeploy; failed visual QA remains blocked."]},
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"Dense service sheets require a wider placement search without compromising readability."},
+  "waiver":null
+}

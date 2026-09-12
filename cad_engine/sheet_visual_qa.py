@@ -165,6 +165,23 @@ def repair_sheet_annotations(path: Path, composition: dict) -> dict:
                 if (_box_inside(candidate, zone)
                         and not any(_boxes_overlap(candidate, other) for other in occupied)):
                     chosen = (dx, dy, candidate); break
+            # Dense riser/detail boards may have no free position near the
+            # original target. Scan the complete permitted zone before
+            # declaring the label unresolved; this is the schedule/callout
+            # fallback and never shrinks or drops engineering text.
+            if chosen is None:
+                width = box[2] - box[0]; height = box[3] - box[1]
+                available_x = max(0.0, zone[2] - zone[0] - width)
+                available_y = max(0.0, zone[3] - zone[1] - height)
+                for row in range(31):
+                    for column in range(17):
+                        left = zone[0] + available_x * column / 16
+                        bottom = zone[1] + available_y * row / 30
+                        candidate = (left, bottom, left + width, bottom + height)
+                        if not any(_boxes_overlap(candidate, other) for other in occupied):
+                            chosen = (left - box[0], bottom - box[1], candidate); break
+                    if chosen is not None:
+                        break
             if chosen is None:
                 unresolved.append(f"{code}:{getattr(entity.dxf, 'handle', 'UNKNOWN')}")
                 occupied.append(box); continue
