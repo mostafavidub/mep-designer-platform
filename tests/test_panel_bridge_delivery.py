@@ -26,6 +26,11 @@ def test_panel_bridge_negative_requires_both_service_and_project_tokens():
     assert 'status_code=409' in BRIDGE
 
 
+def test_project_token_is_matched_against_every_retained_link():
+    assert 'filter(PanelProjectLink.project_id == pid).all()' in BRIDGE
+    assert 'secrets.compare_digest(row.access_token_hash, supplied_hash)' in BRIDGE
+
+
 def test_panel_bridge_returns_exact_supplementary_questions_for_recovery():
     assert '"status": "asking"' in BRIDGE
     assert 'missing = mechanical_workflow.required_basis_questions(project)' in BRIDGE

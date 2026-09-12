@@ -60,7 +60,7 @@ install_analysis_workspace_guard(main_auto.legacy)
 DesignJob = register_job_queue(app, main_auto.legacy)
 register_gsc_routes(app)
 register_commercial_flow(app, main_auto.legacy)
-register_panel_bridge(app, main_auto.legacy, DesignJob)
+app.state.panel_bridge = register_panel_bridge(app, main_auto.legacy, DesignJob)
 
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 

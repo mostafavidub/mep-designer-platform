@@ -238,7 +238,14 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
 
     def order_payload(db, order):
         project = db.get(legacy.Project, order.project_id)
-        link = db.query(Link).filter(Link.project_id == project.id).first()
+        # A project can retain an older panel link after handoff/reconnect.  The
+        # checkout payload must use the link belonging to this exact order;
+        # otherwise the browser receives a valid-looking token for another
+        # external project identity and every status poll returns a hidden 404.
+        link = (db.query(Link)
+                .filter(Link.project_id == project.id, Link.external_project_id == order.external_id)
+                .first()
+                or db.query(Link).filter(Link.project_id == project.id).first())
         data = authoritative_engine_state(db, project, link)
         return {"id": order.external_id, "owner": account_id(order.user_id), "title": project.name,
                 "service": "طراحی برق" if (project.answers or {}).get("discipline") == "electrical" else "طراحی مکانیک",

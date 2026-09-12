@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.39.2",
+  "standard_version": "4.39.3",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.39.3","date":"2026-09-12","summary":"Resolve status access against the exact checkout project link and any matching retained link so reconnects cannot produce false Not Found responses."},
     {"version":"4.39.2","date":"2026-09-12","summary":"Classify the no-roof sanitary rainwater/vent support drawing as a detail sheet so it cannot create unsupported roof-plan scope."},
     {"version":"4.39.1","date":"2026-09-12","summary":"Convert Mechanical drawing-manifest checkout rejection from an internal server error into an actionable fail-closed review response without recording payment or queue state."},
     {"version":"4.39.0","date":"2026-09-12","summary":"Preserve every submitted questionnaire answer across reanalysis, deduplicate canonical aliases, reopen only genuinely invalid inputs and convert checkout approval failures into recoverable states."},

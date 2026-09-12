@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0103",
+  "summary":"Eliminate false project-status Not Found responses by binding checkout payloads and status lookup to the exact matching project link.",
+  "requester":"project-owner",
+  "change_types":["ui_api","runtime","test","governance","documentation","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"ui_api":"Status tokens are issued from the exact checkout link and validated against every retained link for that engine project.","qa":"Adds a duplicate-link status regression.","deployment":"Protected Staging rollout plus persistent Railway volume configuration.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.39.3.","migration":"No schema migration; Staging data root moves from ephemeral /tmp to mounted /data infrastructure.","governance":"GOV-2026-050 records exact link/token identity.","versioning":"SWCIS 4.39.3."},
+  "evidence":{"tests":["Checkout and status polling succeed when an engine project has retained legacy and current links."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-050 requires exact checkout link identity and matching-hash lookup."],"version_bump":["SWCIS 4.39.2 -> 4.39.3"],"migration":["No DB schema migration; Staging DATA_DIR and SQLite URL use the mounted persistent volume."],"semantic_diff":["A valid token for any retained project link now resolves; unrelated tokens still return 404."],"deployment_plan":["Protected PR, merged-SHA deployment, volume-backed restart and live status verification."],"rollback_plan":["Revert code and redeploy; preserve the volume to avoid data loss."]},
+  "risk":{"likelihood":3,"severity":4,"detectability":1,"score":12,"rationale":"A wrong retained link can hide a paid project and cause the panel to display stale processing state."},
+  "waiver":null
+}
