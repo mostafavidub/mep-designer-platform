@@ -22,6 +22,7 @@ from . import artifact_storage
 from .design_progress import set_project_progress
 from cad_engine.build_identity import build_identity, stamp_artifact
 from cad_engine.runtime_contract import runtime_contract
+from cad_engine.mechanical_release_scope import scope_contract_is_valid
 from .design_recovery import clear_active_recovery
 
 app = legacy.app
@@ -502,6 +503,8 @@ def run_design_dxf(project_id, revision_id):
         if discipline == 'mechanical':
             if not approved_manifest:
                 raise RuntimeError('Approved mechanical drawing manifest is missing from the project workflow.')
+            if not scope_contract_is_valid(approved_manifest):
+                raise RuntimeError('Mechanical drawing scope is stale or did not pass all eighteen controls at 100/100; recalculate and approve the drawing set.')
             # The CAD engine reads the approved contract from answers. Keeping it
             # only in output_scope made the compositor reject every approved job.
             design_answers['_approved_drawing_manifest'] = approved_manifest
