@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from . import artifact_storage
 from . import mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
-from .design_recovery import classify_recovery, get_recovery, record_recovery
+from .design_recovery import RecoveryDecision, classify_recovery, get_recovery, record_recovery, repeated_recovery_failure
 
 
 POLL_SECONDS = float(os.getenv('JOB_QUEUE_POLL_SECONDS', '2'))
@@ -336,6 +336,9 @@ def register_job_queue(app, legacy):
                 job.status = 'completed'
             else:
                 decision=classify_recovery(error,attempt=job.attempts,max_attempts=job.max_attempts)
+                project_for_fingerprint = db.get(legacy.Project, job.project_id)
+                if decision.recoverable and project_for_fingerprint and repeated_recovery_failure(project_for_fingerprint, error):
+                    decision = RecoveryDecision(False, 'stop', 'failed', 'repeated_failure_fingerprint')
             if not success and decision.recoverable:
                 if decision.strategy == 'reclaim_workspace':
                     _reclaim_failed_artifacts(job.project_id)

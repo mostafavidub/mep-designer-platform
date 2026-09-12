@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from hashlib import sha256
+import re
 
 
 @dataclass(frozen=True)
@@ -53,10 +55,24 @@ def classify_recovery(error: str, *, attempt: int, max_attempts: int) -> Recover
     return RecoveryDecision(False,"stop","failed","unrecognized_or_deterministic_failure")
 
 
+def failure_fingerprint(error: str) -> str:
+    """Stable identity for a deterministic QA failure, excluding volatile IDs."""
+    value = str(error or "").lower()
+    value = re.sub(r"\b(?:job|attempt|revision)[-_ ]?\d+\b", "", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return sha256(value.encode("utf-8")).hexdigest()
+
+
+def repeated_recovery_failure(project, error: str) -> bool:
+    history = ((project.analysis or {}).get("design_recovery") or {}).get("history") or []
+    return bool(history and history[-1].get("failure_fingerprint") == failure_fingerprint(error))
+
+
 def record_recovery(project, decision: RecoveryDecision, *, attempt: int, max_attempts: int, error: str):
     analysis=dict(project.analysis or {});recovery=dict(analysis.get("design_recovery") or {})
     history=list(recovery.get("history") or [])
-    entry={**asdict(decision),"attempt":attempt,"max_attempts":max_attempts,"error":str(error or "")[:1200],"at":datetime.now(timezone.utc).isoformat()}
+    entry={**asdict(decision),"attempt":attempt,"max_attempts":max_attempts,"error":str(error or "")[:1200],
+           "failure_fingerprint":failure_fingerprint(error),"at":datetime.now(timezone.utc).isoformat()}
     history.append(entry)
     recovery={"active":decision.recoverable,"current":entry,"history":history[-20:]}
     analysis["design_recovery"]=recovery;project.analysis=analysis

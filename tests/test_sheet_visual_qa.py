@@ -91,6 +91,24 @@ def test_tiny_text_overlap_density_and_empty_render_are_destructive_failures(tmp
     assert any("render_empty" in item for item in result["errors"])
 
 
+def test_annotation_repair_preserves_content_and_resolves_readability(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    path = tmp_path / "repair.dxf"; composition = _issued(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    for label in ("CW DN20", "CW DN25", "CW DN32"):
+        msp.add_text(label, dxfattribs={"layer": "ENGITOOLS-M-WATER", "height": .04}).set_placement((7, 8))
+    doc.saveas(path)
+    before = len(ezdxf.readfile(path).modelspace().query("TEXT MTEXT"))
+    repair = visual.repair_sheet_annotations(path, composition)
+    after = len(ezdxf.readfile(path).modelspace().query("TEXT MTEXT"))
+    result = visual.validate_all_sheet_visual_qa(path, composition, tmp_path / "previews")
+    assert repair["status"] == "PASS", repair
+    assert repair["moved"] >= 2 and repair["resized"] == 3
+    assert repair["content_deleted"] == 0 and after == before
+    assert not any("plotted_text_below_minimum" in item for item in result["errors"])
+    assert not any("annotation_overlap" in item for item in result["errors"])
+
+
 def test_mtext_empty_wrapping_width_is_not_counted_as_painted_overlap(tmp_path, monkeypatch):
     monkeypatch.setattr(visual, "_render_profile", _fake_render)
     path = tmp_path / "wrap.dxf"; composition = _issued(path)
