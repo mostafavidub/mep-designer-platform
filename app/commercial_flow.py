@@ -1,6 +1,7 @@
 """Customer dashboard, quotations, wallet and payment gate for project design."""
 
 from datetime import datetime
+import os
 
 from fastapi import Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -11,6 +12,20 @@ from cad_engine.runtime_contract_sync_gate import assert_runtime_contract_synchr
 
 
 def register_commercial_flow(app, legacy):
+    staging_demo_hosts = {
+        host.strip().lower()
+        for host in os.getenv(
+            "STAGING_DEMO_PAYMENT_HOSTS",
+            "web-app-staging-production.up.railway.app",
+        ).split(",")
+        if host.strip()
+    }
+
+    def staging_demo_payment_enabled(request):
+        forwarded = request.headers.get("x-forwarded-host", "").split(",")[0].strip()
+        host = (forwarded or request.headers.get("host", "")).split(":", 1)[0].lower()
+        return host in staging_demo_hosts
+
     class Wallet(legacy.Base):
         __tablename__ = "wallets"
         id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -174,14 +189,29 @@ def register_commercial_flow(app, legacy):
     def pay_gateway(pid: int, request: Request):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project: raise HTTPException(404)
+        if not staging_demo_payment_enabled(request):
+            db.close(); raise HTTPException(503, "درگاه بانکی هنوز متصل نیست؛ پرداختی انجام نشد.")
         try: assert_payment_preflight(project)
         except HTTPException: db.close(); raise
         quote_data = quote_for(project)
         if not quote_data: db.close(); raise HTTPException(409, "پروژه هنوز آماده قیمت‌گذاری نیست.")
         quote = db.query(ProjectQuote).filter(ProjectQuote.project_id == pid).first()
-        # The production PSP callback can replace this atomic confirmation without changing the UI contract.
-        quote.paid = True; quote.payment_method = "gateway"; quote.paid_at = datetime.utcnow()
-        db.commit(); db.close(); return RedirectResponse(f"/projects/{pid}?payment=success", 303)
+        if quote.paid:
+            db.close(); return RedirectResponse(f"/projects/{pid}", 303)
+        discipline = (project.answers or {}).get('discipline', (project.analysis or {}).get('discipline', 'mechanical'))
+        if discipline == 'mechanical':
+            drawing_set = dict((project.analysis or {}).get('drawing_set') or {})
+            if drawing_set and not drawing_set.get('approved'):
+                from . import mechanical_workflow
+                analysis = dict(project.analysis or {})
+                analysis['drawing_set'] = mechanical_workflow.approve_drawing_set(drawing_set)
+                project.analysis = analysis
+                project.status = 'ready_to_design'
+        # Explicit Staging simulation: no money is captured.
+        quote.paid = True; quote.payment_method = "staging_demo_gateway"; quote.paid_at = datetime.utcnow()
+        db.commit(); db.close()
+        queued = bool(app.state.enqueue_design_if_ready(pid))
+        return RedirectResponse(f"/projects/{pid}?payment=success&design={'queued' if queued else 'pending'}", 303)
 
     def replace_with_payment_guard(path, json_response=False):
         old = None
