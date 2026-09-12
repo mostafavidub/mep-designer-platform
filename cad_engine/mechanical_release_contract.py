@@ -39,6 +39,7 @@ REQUIRED_CAPABILITIES = {
     "quantitative_final_quality_acceptance_gate":"cad_engine.quality_acceptance",
     "architecture_only_pre_submission_regression":"cad_engine.mechanical_submission_qa",
     "production_canonical_authority_adapter":"cad_engine.mechanical_authority",
+    "topology_routing_18_control_score":"cad_engine.topology_routing_gate",
 }
 
 def release_contract_status():

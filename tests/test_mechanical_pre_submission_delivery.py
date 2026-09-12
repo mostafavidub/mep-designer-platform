@@ -12,6 +12,12 @@ def _traceability_pass():
     return {"status": "PASS", "zero_mismatch": True}
 
 
+def _routing_pass():
+    return {"contract_version": "topology-routing/1", "status": "PASS", "score": 100,
+            "release_allowed": True, "controls": [{"status": "PASS"}] * 18}
+
+
+@patch.object(authority, "evaluate_topology_routing", return_value=_routing_pass())
 @patch.object(authority, "materialize_authoritative_network", return_value={"status": "PASS"})
 @patch.object(authority, "_design_shell", return_value={"status": "PASS", "composition": {}})
 @patch.object(authority, "run_pipeline")
@@ -19,7 +25,7 @@ def _traceability_pass():
 @patch.object(authority, "_prepare_network_authority", return_value=_network_pass())
 @patch.object(authority, "_runtime_contract_errors", return_value=[])
 def test_external_input_blocker_delivers_truthful_pre_submission(
-    _contract, _network, _traceability, pipeline, renderer, materializer, tmp_path
+    _contract, _network, _traceability, pipeline, renderer, materializer, routing_gate, tmp_path
 ):
     pipeline.return_value = {
         "status": "INPUT_REQUIRED", "blocked_at": "target_design_packages",
@@ -29,6 +35,7 @@ def test_external_input_blocker_delivers_truthful_pre_submission(
     result = authority.design_mechanical_authority_site(Path("in.dxf"), tmp_path / "out.dxf", answers={}, plan_analysis={})
     renderer.assert_called_once()
     materializer.assert_called_once()
+    routing_gate.assert_called_once()
     assert result["status"] == "PASS"
     assert result["submission_state"] == "PRE_SUBMISSION"
     assert result["submission_ready"] is False
