@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.36.0
+**Canonical version:** 4.37.0
 
 **Status:** LOCKED
 
@@ -179,6 +179,15 @@ spaces, multilingual labels, use classification, shafts, multi-signal fixture an
 equipment evidence, status/confidence, host/port identity, deduplication, semantic
 consistency and visual overlays. Mechanical reference drawings are forbidden as
 recognition inputs. Only 100/100 with every control `PASS` permits Submission Ready.
+
+## Documentation-content release gate
+
+Every Mechanical submission must pass all eighteen controls in locked rule
+`MEP-DOC-CONTENT-001` and `docs/DOCUMENTATION_CONTENT_100_STANDARD.md`.
+Project-specific executable details, model-derived schedules, standards-backed
+notes and used-symbol-only legends must remain readable, coordinated and identical
+across plans, risers, calculations, sheets and the exact reopened output. Only
+100/100 with every control `PASS` permits Submission Ready.
 
 ## Administration and branch protection
 
