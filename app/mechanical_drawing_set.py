@@ -89,7 +89,7 @@ def _append_special(family, code, label, levels, reason, drawing_type="detail_sh
 def _append_family_roles(family, family_key, levels, roles):
     """Add authority-required non-floor drawing roles to one family."""
     type_by_suffix = {"RISER": "riser_diagram", "EQUIP": "equipment_plan", "RETURN": "schematic",
-                      "DETAIL": "detail_sheet", "RAIN": "roof_plan", "PARK": "ventilation_plan"}
+                      "DETAIL": "detail_sheet", "RAIN": "detail_sheet", "PARK": "ventilation_plan"}
     for suffix, label, reason in roles:
         sheet = _append_special(family, f"{family['code']}-{suffix}", label, levels, reason, type_by_suffix.get(suffix, "detail_sheet"))
         sheet['family'] = family_key; yield sheet

@@ -38,6 +38,14 @@ class SingleLevelAuthorityManifestTests(unittest.TestCase):
             self.assertEqual(len(primary), 1)
         self.assertFalse([x for x in proposal['drawing_manifest']['sheets'] if x.get('family') == 'gas'])
 
+    def test_sanitary_rain_detail_is_not_an_unapproved_roof_plan(self):
+        proposal = predict_drawing_set(scope())
+        rain_detail = next(x for x in proposal['drawing_manifest']['sheets'] if x.get('code') == 'M-S-RAIN')
+        self.assertEqual(rain_detail['drawing_type'], 'detail_sheet')
+        self.assertEqual(proposal['drawing_manifest']['scope_contract']['status'], 'PASS')
+        self.assertEqual(proposal['drawing_manifest']['scope_contract']['score'], 100)
+        self.assertNotIn('unsupported_system_zero', proposal['drawing_manifest']['scope_contract']['failures'])
+
     def test_enclosed_parking_adds_only_its_dedicated_ventilation_support(self):
         base = predict_drawing_set(scope(False))
         enclosed = predict_drawing_set(scope(True))

@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-049","status":"APPROVED",
+      "summary":"Keep the no-roof sanitary rainwater and vent support deliverable in its truthful detail-sheet role instead of expanding approved roof-plan scope.",
+      "affected_capabilities":["drawing_scope_review","mechanical_drawing_manifest","customer_checkout"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner request to inspect and fix the surfaced Staging error"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Recalculate unapproved drawing manifests on the next checkout attempt.","rollback":"Revert and redeploy the prior approved SHA; retain the locked unsupported-system gate."}
+    },
+    {
       "id":"GOV-2026-048","status":"APPROVED",
       "summary":"Return locked Mechanical drawing-manifest checkout rejection as an actionable review state instead of an internal server error, with atomic no-payment guarantees.",
       "affected_capabilities":["panel_checkout","drawing_scope_review","mechanical_runtime_authority"],"affected_projects":["all"],
