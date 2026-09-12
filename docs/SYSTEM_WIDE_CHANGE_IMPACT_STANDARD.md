@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.38.1
+**Canonical version:** 4.38.2
 
 **Status:** LOCKED
 

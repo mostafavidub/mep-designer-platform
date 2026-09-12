@@ -154,6 +154,17 @@ def register_commercial_flow(app, legacy):
         pricing = {key: service_pricing(key) for key in legacy.DISCIPLINES}
         return legacy.templates.TemplateResponse("new_project.html", {"request": request, "user": user, "wallet_balance": wallet_for(user.id)["balance"], "service_pricing": pricing})
 
+    @app.get("/start-project/{discipline}")
+    def start_project_get(discipline: str):
+        """Recover links/history that open a POST-only upload target directly."""
+        if discipline not in legacy.DISCIPLINES:
+            raise HTTPException(404)
+        return RedirectResponse(f"/{discipline}#start", status_code=303)
+
+    @app.get("/start-project")
+    def start_project_get_without_discipline():
+        return RedirectResponse("/panel/projects/new", status_code=303)
+
     @app.get("/admin/pricing")
     def admin_pricing(request: Request):
         services = [service_pricing(key) | {"title": legacy.DISCIPLINES[key]["title"], "icon": legacy.DISCIPLINES[key]["icon"]} for key in ("mechanical", "electrical")]
