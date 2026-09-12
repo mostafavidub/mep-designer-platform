@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
-from app.design_recovery import classify_recovery, clear_active_recovery, get_recovery, record_recovery
+from app.design_recovery import (classify_recovery, clear_active_recovery, get_recovery,
+                                 record_recovery, repeated_recovery_failure)
 
 
 def test_transient_and_transactional_failures_are_retried_with_allowlisted_actions():
@@ -38,6 +39,15 @@ def test_recovery_history_is_durable_and_clears_only_active_marker():
     clear_active_recovery(project)
     recovery=get_recovery(project)
     assert recovery["active"] is False and len(recovery["history"])==1
+
+
+def test_identical_consecutive_failure_is_not_retried_blindly():
+    project=SimpleNamespace(analysis={})
+    decision=classify_recovery("CAD artifact QA failed",attempt=1,max_attempts=3)
+    assert decision.recoverable
+    record_recovery(project,decision,attempt=1,max_attempts=3,error="CAD artifact QA failed")
+    assert repeated_recovery_failure(project,"CAD artifact QA failed") is True
+    assert repeated_recovery_failure(project,"CAD artifact QA failed on another sheet") is False
 
 
 def test_site_and_queue_expose_controlled_retry_state():

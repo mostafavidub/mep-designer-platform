@@ -26,6 +26,8 @@ PAPER_PROFILES = {
     "monochrome": {"background": (255, 255, 255), "background_hex": "#ffffff", "dpi": 160},
 }
 
+MINIMUM_MODEL_TEXT_HEIGHT = 0.10
+
 
 def _plain_text(entity) -> str:
     try:
@@ -105,6 +107,93 @@ def _overlap_evidence(text_entities) -> list[dict]:
                     overlaps.append({"first": first_text, "second": second_text,
                                      "intersection_ratio": round(intersection / smaller, 3)})
     return overlaps
+
+
+def repair_sheet_annotations(path: Path, composition: dict) -> dict:
+    """Resolve plotted text collisions without deleting content or lowering QA.
+
+    The pass is deterministic and board-local. It first restores the readable
+    text floor, then relocates only colliding mechanical annotations within the
+    same plan/sheet zone. A leader is added when relocation is material so the
+    engineering target remains visually traceable. Any unresolved collision is
+    reported and is still rejected by ``validate_all_sheet_visual_qa``.
+    """
+    path = Path(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    entities = list(msp); boards = (composition or {}).get("boards") or {}
+    moved = 0; resized = 0; leaders = 0; unresolved = []
+    for key, board in boards.items():
+        code = _board_code(key, board)
+        bounds = tuple(map(float, board.get("bounds") or ()))
+        plan_area = tuple(map(float, board.get("plan_area") or bounds))
+        if len(bounds) != 4:
+            continue
+        texts = [entity for entity in entities
+                 if entity.dxftype() in TEXT_TYPES
+                 and str(getattr(entity.dxf, "layer", "")).upper().startswith(MECHANICAL_PREFIXES)
+                 and _plain_text(entity).strip() and _inside(_center(entity), bounds)]
+        for entity in texts:
+            height = _text_height(entity)
+            if height is not None and height < MINIMUM_MODEL_TEXT_HEIGHT:
+                if entity.dxftype() == "MTEXT": entity.dxf.char_height = MINIMUM_MODEL_TEXT_HEIGHT
+                else: entity.dxf.height = MINIMUM_MODEL_TEXT_HEIGHT
+                resized += 1
+        texts.sort(key=lambda entity: (
+            0 if re.search(r"\b(?:DN\d+|S=|LOAD|CFM|CAPACITY|RISER)\b", _plain_text(entity), re.I) else 1,
+            str(getattr(entity.dxf, "handle", "")),
+        ))
+        occupied = []
+        for entity in texts:
+            box = _visual_text_box(entity)
+            center = _center(entity)
+            if not box or not center:
+                continue
+            zone = plan_area if _inside(center, plan_area) else bounds
+            collision = any(_boxes_overlap(box, other) for other in occupied)
+            if not collision:
+                occupied.append(box); continue
+            original_center = center; chosen = None
+            step = max(MINIMUM_MODEL_TEXT_HEIGHT * 1.8, 0.18)
+            offsets = []
+            for ring in range(1, 15):
+                distance = ring * step
+                offsets.extend(((distance, 0), (-distance, 0), (0, distance), (0, -distance),
+                                (distance, distance), (-distance, distance),
+                                (distance, -distance), (-distance, -distance)))
+            for dx, dy in offsets:
+                candidate = (box[0] + dx, box[1] + dy, box[2] + dx, box[3] + dy)
+                if (_box_inside(candidate, zone)
+                        and not any(_boxes_overlap(candidate, other) for other in occupied)):
+                    chosen = (dx, dy, candidate); break
+            if chosen is None:
+                unresolved.append(f"{code}:{getattr(entity.dxf, 'handle', 'UNKNOWN')}")
+                occupied.append(box); continue
+            dx, dy, candidate = chosen
+            entity.translate(dx, dy, 0); occupied.append(candidate); moved += 1
+            if abs(dx) + abs(dy) >= step * 2:
+                layer = str(getattr(entity.dxf, "layer", "0"))
+                msp.add_line(original_center, (original_center[0] + dx, original_center[1] + dy),
+                             dxfattribs={"layer": layer})
+                leaders += 1
+    doc.saveas(path)
+    return {"version": "annotation-layout-repair/1", "status": "PASS" if not unresolved else "FAIL",
+            "moved": moved, "resized": resized, "leaders_added": leaders,
+            "unresolved": unresolved, "content_deleted": 0,
+            "minimum_model_text_height": MINIMUM_MODEL_TEXT_HEIGHT}
+
+
+def _boxes_overlap(first, second, ratio=0.35):
+    ix = min(first[2], second[2]) - max(first[0], second[0])
+    iy = min(first[3], second[3]) - max(first[1], second[1])
+    if ix <= 0 or iy <= 0:
+        return False
+    smaller = min(max((first[2] - first[0]) * (first[3] - first[1]), 1e-9),
+                  max((second[2] - second[0]) * (second[3] - second[1]), 1e-9))
+    return (ix * iy) / smaller > ratio
+
+
+def _box_inside(box, bounds):
+    return box[0] >= bounds[0] and box[1] >= bounds[1] and box[2] <= bounds[2] and box[3] <= bounds[3]
 
 
 def _manifest_codes(composition: dict) -> list[str]:

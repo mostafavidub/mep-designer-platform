@@ -28,7 +28,7 @@ from .mechanical_release_hardening import (
     validate_architectural_presentation,
 )
 from .build_identity import build_identity
-from .sheet_visual_qa import validate_all_sheet_visual_qa
+from .sheet_visual_qa import repair_sheet_annotations, validate_all_sheet_visual_qa
 from .architecture_preservation_gate import evaluate_eighteen_step_contract
 
 WEB_TO_CAD_FAMILY = {
@@ -379,6 +379,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         report['status']='FAIL';report['stage']='final_delivery_isolation_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
+    report['annotation_layout_repair_qa']=repair_sheet_annotations(dst,report.get('composition') or {})
     hardening_gates=(
         ('titleblock_qa',validate_titleblocks(dst,report.get('composition') or {}),'titleblock_gate'),
         ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
