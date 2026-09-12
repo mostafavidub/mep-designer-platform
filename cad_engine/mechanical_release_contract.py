@@ -40,6 +40,7 @@ REQUIRED_CAPABILITIES = {
     "architecture_only_pre_submission_regression":"cad_engine.mechanical_submission_qa",
     "production_canonical_authority_adapter":"cad_engine.mechanical_authority",
     "topology_routing_18_control_score":"cad_engine.topology_routing_gate",
+    "equipment_selection_placement_18_control_score":"cad_engine.equipment_selection_placement_gate",
 }
 
 def release_contract_status():

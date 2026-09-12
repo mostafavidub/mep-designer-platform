@@ -21,6 +21,10 @@ from .mechanical_network_materializer import materialize_authoritative_network
 from .runtime_contract import runtime_contract
 from .calculation_reasonableness import evaluate_calculation_reasonableness
 from .topology_routing_gate import evaluate_topology_routing
+from .equipment_selection_placement_gate import (
+    evaluate_equipment_selection_placement,
+    exact_equipment_output_evidence,
+)
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -100,7 +104,21 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "sensitivity_checks": _first_value(contract.get("sensitivity_checks"), plan_analysis.get("sensitivity_checks_canonical")),
         "selected_equipment": _first_value(contract.get("selected_equipment"), plan_analysis.get("selected_equipment_canonical")),
         "calculation_totals": _first_value(contract.get("calculation_totals"), plan_analysis.get("calculation_totals_canonical")),
+        "equipment_placement_context": _first_value(contract.get("equipment_placement_context"), plan_analysis.get("equipment_placement_context_canonical")),
     }
+
+
+def _equipment_context(payload: dict, result: dict) -> dict:
+    supplied = dict(payload.get("equipment_placement_context") or {})
+    pmm = payload.get("project_mechanical_model") or {}
+    supplied.setdefault("rooms", pmm.get("rooms") or [])
+    supplied.setdefault("selected_equipment", payload.get("selected_equipment") or [])
+    supplied.setdefault("calculations", payload.get("calculation_rows") or [])
+    supplied.setdefault("routes", (payload.get("network_graph") or {}).get("edges") or [])
+    documentation = (result.get("phases") or {}).get("documentation") or {}
+    supplied.setdefault("schedules", documentation.get("equipment_schedule") or documentation.get("schedules") or [])
+    supplied.setdefault("risers", documentation.get("equipment_risers") or documentation.get("riser_equipment") or [])
+    return supplied
 
 
 def _prepare_network_authority(src: Path, payload: dict) -> dict:
@@ -295,6 +313,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if reasonableness.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": blockers}}
 
+    equipment_context = _equipment_context(payload, result)
+    equipment_preflight = evaluate_equipment_selection_placement(equipment_context)
+    if not pre_submission and equipment_preflight.get("preflight_allowed") is not True:
+        blockers = equipment_preflight.get("errors") or equipment_preflight.get("missing_inputs") or ["EQUIPMENT_SELECTION_PLACEMENT_PREFLIGHT_NOT_PASS"]
+        return {"status": "FAIL", "stage": "equipment_selection_placement_gate",
+                "network_authority_qa": network_authority, "traceability_preflight": traceability,
+                "authority_pipeline_qa": result, "calculation_reasonableness_qa": reasonableness,
+                "equipment_selection_placement_qa": equipment_preflight,
+                "input_required": {"status": "INPUT_REQUIRED" if equipment_preflight.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
+
     # Preserve the pre-run artifact so a graph-materialization failure cannot
     # leave a legacy-only DXF behind after the canonical gate has rejected the run.
     backup = None
@@ -341,6 +370,16 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "topology_routing_exact_output_gate",
                 "topology_routing_qa": final_topology_routing,
                 "input_required": {"status": "FAIL", "missing_inputs": final_topology_routing.get("errors") or []}}
+    expected_equipment_ids = sorted(_ids for _ids in {
+        row.get("equipment_id") or row.get("id") for row in equipment_context.get("selected_equipment") or []
+    } if _ids)
+    exact_equipment = exact_equipment_output_evidence(dst, expected_equipment_ids)
+    final_equipment = evaluate_equipment_selection_placement(equipment_context, exact_output=exact_equipment)
+    if not pre_submission and final_equipment.get("status") != "PASS":
+        _restore_target(dst, backup)
+        return {"status": "FAIL", "stage": "equipment_selection_placement_exact_output_gate",
+                "equipment_selection_placement_qa": final_equipment,
+                "input_required": {"status": "FAIL", "missing_inputs": final_equipment.get("errors") or final_equipment.get("missing_inputs") or []}}
     if backup:
         backup.unlink(missing_ok=True)
 
@@ -350,6 +389,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["traceability_preflight"] = traceability
     rendered["calculation_reasonableness_qa"] = reasonableness
     rendered["topology_routing_qa"] = final_topology_routing
+    rendered["equipment_selection_placement_qa"] = final_equipment
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"

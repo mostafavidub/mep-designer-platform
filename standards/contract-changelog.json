@@ -449,6 +449,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete the eighteen drawing-scope improvements and publish them to Staging"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
       "migration":{"forward":"Recalculate legacy 3.1 proposals as deterministic 3.2 manifests.","rollback":"Revert the protected commit; never approve an ambiguous or incomplete scope."}
+    },
+    {
+      "id":"GOV-2026-040","status":"APPROVED",
+      "summary":"Require calculated, catalogue-backed Mechanical equipment selection and architecture-hosted placement to satisfy eighteen controls at 100/100.",
+      "affected_capabilities":["manufacturer_selection","equipment_selection_placement_100","mechanical_release_qa"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen equipment selection and placement improvements"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Regenerate existing equipment selections and exact outputs to create the additive 100-point evidence.","rollback":"Revert the protected commit; never downgrade missing selection or placement evidence to PASS."}
     }
   ]
 }
