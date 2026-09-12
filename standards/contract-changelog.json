@@ -457,6 +457,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen equipment selection and placement improvements"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
       "migration":{"forward":"Regenerate existing equipment selections and exact outputs to create the additive 100-point evidence.","rollback":"Revert the protected commit; never downgrade missing selection or placement evidence to PASS."}
+    },
+    {
+      "id":"GOV-2026-041","status":"APPROVED",
+      "summary":"Require final Mechanical engineering and the exact issue package to satisfy eighteen system, coordination, documentation, review and immutability controls at 100/100.",
+      "affected_capabilities":["final_engineering_release_100","mechanical_release_qa","all_sheet_visual_qa","equipment_selection_placement_100"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen final engineering and issue-readiness improvements"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_health":"must_pass"},
+      "migration":{"forward":"Regenerate release evidence and exact package hashes before claiming Submission Ready.","rollback":"Revert the protected commit; never bypass a missing or failed final engineering control."}
     }
   ]
 }

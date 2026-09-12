@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+from hashlib import sha256
 
 from .mechanical_cad_shell import design_mechanical_authority_site as _design_shell
 from .mechanical_pipeline import run_pipeline
@@ -25,6 +26,7 @@ from .equipment_selection_placement_gate import (
     evaluate_equipment_selection_placement,
     exact_equipment_output_evidence,
 )
+from .final_engineering_release_gate import evaluate_final_engineering_release
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -105,6 +107,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "selected_equipment": _first_value(contract.get("selected_equipment"), plan_analysis.get("selected_equipment_canonical")),
         "calculation_totals": _first_value(contract.get("calculation_totals"), plan_analysis.get("calculation_totals_canonical")),
         "equipment_placement_context": _first_value(contract.get("equipment_placement_context"), plan_analysis.get("equipment_placement_context_canonical")),
+        "final_release_context": _first_value(contract.get("final_release_context"), plan_analysis.get("final_release_context_canonical")),
     }
 
 
@@ -118,6 +121,30 @@ def _equipment_context(payload: dict, result: dict) -> dict:
     documentation = (result.get("phases") or {}).get("documentation") or {}
     supplied.setdefault("schedules", documentation.get("equipment_schedule") or documentation.get("schedules") or [])
     supplied.setdefault("risers", documentation.get("equipment_risers") or documentation.get("riser_equipment") or [])
+    return supplied
+
+
+def _final_release_context(payload: dict, result: dict, equipment_qa: dict) -> dict:
+    supplied = dict(payload.get("final_release_context") or {})
+    phases = result.get("phases") or {}
+    supplied.setdefault("equipment_selection_placement_qa", equipment_qa)
+    supplied.setdefault("submission_quality", phases.get("submission_quality") or {})
+    supplied.setdefault("independent_review", payload.get("engineer_review"))
+    return supplied
+
+
+def _exact_release_evidence(dst: Path, context: dict, materialization: dict) -> dict:
+    supplied = dict(context.get("exact_release_package") or {})
+    artifacts = dict(supplied.get("artifacts") or {})
+    actual_cad_hash = sha256(dst.read_bytes()).hexdigest() if dst.exists() else ""
+    # CAD identity is always measured from the exact issued file. Other package
+    # members remain explicit inputs and are never inferred from filenames.
+    if artifacts.get("cad") and artifacts.get("cad") != actual_cad_hash:
+        supplied["cad_hash_mismatch"] = True
+    artifacts["cad"] = actual_cad_hash
+    supplied["artifacts"] = artifacts
+    supplied["reopened"] = bool(materialization.get("exact_file_reopened"))
+    supplied["immutable"] = bool(materialization.get("transactional_exact_output")) and not supplied.get("cad_hash_mismatch")
     return supplied
 
 
@@ -324,6 +351,16 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if equipment_preflight.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": blockers}}
 
+    final_release_context = _final_release_context(payload, result, equipment_preflight)
+    final_release_preflight = evaluate_final_engineering_release(final_release_context)
+    if not pre_submission and final_release_preflight.get("preflight_allowed") is not True:
+        blockers = final_release_preflight.get("errors") or final_release_preflight.get("missing_inputs") or ["FINAL_ENGINEERING_RELEASE_PREFLIGHT_NOT_PASS"]
+        return {"status": "FAIL", "stage": "final_engineering_release_gate",
+                "authority_pipeline_qa": result,
+                "final_engineering_release_qa": final_release_preflight,
+                "input_required": {"status": "INPUT_REQUIRED" if final_release_preflight.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
+
     # Preserve the pre-run artifact so a graph-materialization failure cannot
     # leave a legacy-only DXF behind after the canonical gate has rejected the run.
     backup = None
@@ -380,6 +417,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "equipment_selection_placement_exact_output_gate",
                 "equipment_selection_placement_qa": final_equipment,
                 "input_required": {"status": "FAIL", "missing_inputs": final_equipment.get("errors") or final_equipment.get("missing_inputs") or []}}
+    final_release_context["equipment_selection_placement_qa"] = final_equipment
+    exact_release = _exact_release_evidence(dst, final_release_context, materialization)
+    final_release = evaluate_final_engineering_release(final_release_context, exact_output=exact_release)
+    if not pre_submission and final_release.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "final_engineering_release_exact_output_gate",
+                "final_engineering_release_qa": final_release,
+                "input_required": {"status": "INPUT_REQUIRED" if final_release.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": final_release.get("errors") or final_release.get("missing_inputs") or []}}
     if backup:
         backup.unlink(missing_ok=True)
 
@@ -390,6 +438,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["calculation_reasonableness_qa"] = reasonableness
     rendered["topology_routing_qa"] = final_topology_routing
     rendered["equipment_selection_placement_qa"] = final_equipment
+    rendered["final_engineering_release_qa"] = final_release
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
