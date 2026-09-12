@@ -2,6 +2,15 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-045","status":"APPROVED",
+      "summary":"Use an explicitly labelled, no-debit gateway simulation on the exact Staging host and immediately enqueue design after confirmation.",
+      "affected_capabilities":["customer_checkout","design_progress_visibility"],
+      "affected_projects":["staging"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner request for temporary paid-state simulation and automatic analysis/design start"},
+      "verification":{"staging_host_success":"must_pass","non_staging_rejection":"must_pass","full_regression":"must_pass","staging_exact_build":"must_pass"},
+      "migration":{"forward":"No schema migration; existing unpaid quotes remain payable through the Staging simulation.","rollback":"Revert and redeploy the preceding approved SHA."}
+    },
+    {
       "id":"GOV-2026-040","status":"APPROVED",
       "summary":"Require all eighteen topology and routing controls to pass at exactly 100 before Mechanical CAD delivery.",
       "affected_capabilities":["topology_routing_100","mechanical_runtime_authority","parametric_detail_riser_identity","structural_rcp_25d_coordination"],

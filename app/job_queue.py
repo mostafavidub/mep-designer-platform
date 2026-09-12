@@ -715,6 +715,20 @@ def register_job_queue(app, legacy):
         data = legacy.flow_payload(project); db.close()
         return JSONResponse(data, status_code=200 if accepted else 409)
 
+    def enqueue_design_if_ready(project_id: int) -> bool:
+        """Queue a design from a trusted server-side workflow such as checkout."""
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, project_id)
+            if not project or not _prepare_design(db, project):
+                return False
+            _enqueue_design_record(db, project)
+            return True
+        finally:
+            db.close()
+
+    app.state.enqueue_design_if_ready = enqueue_design_if_ready
+
     async def feedback(pid: int, request: Request):
         form = await request.form(); feedback_text = str(form.get('feedback') or '').strip()
         if not feedback_text: raise HTTPException(422, 'شرح اصلاح الزامی است.')

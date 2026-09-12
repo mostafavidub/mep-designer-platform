@@ -42,7 +42,7 @@ class CommercialProjectFlowTests(unittest.TestCase):
         pid = self._ready_project()
         page = self.client.get(f'/projects/{pid}')
         self.assertIn('قیمت طراحی پروژه', page.text)
-        self.assertIn('پرداخت از درگاه بانکی', page.text)
+        self.assertIn('پرداخت آزمایشی Staging', page.text)
         self.assertIn('پرداخت از کیف پول', page.text)
         blocked = self.client.post(f'/projects/{pid}/design-json')
         self.assertEqual(blocked.status_code, 402)
@@ -66,7 +66,43 @@ class CommercialProjectFlowTests(unittest.TestCase):
     def test_mechanical_runtime_preflight_blocks_payment_without_marking_quote_paid(self):
         pid = self._ready_project('mechanical')
         with patch('app.commercial_flow.assert_runtime_contract_synchronized', side_effect=RuntimeError('mismatch')):
-            rejected = self.client.post(f'/projects/{pid}/pay/gateway')
+            rejected = self.client.post(
+                f'/projects/{pid}/pay/gateway',
+                headers={'host': 'web-app-staging-production.up.railway.app'},
+            )
+        self.assertEqual(rejected.status_code, 503)
+        commercial = app.state.commercial
+        db = legacy.Session()
+        quote = db.query(commercial['ProjectQuote']).filter(commercial['ProjectQuote'].project_id == pid).first()
+        self.assertTrue(quote is None or not quote.paid)
+        db.close()
+
+    def test_staging_demo_gateway_marks_paid_and_starts_design(self):
+        pid = self._ready_project('electrical')
+        queued = []
+        original = app.state.enqueue_design_if_ready
+        app.state.enqueue_design_if_ready = lambda project_id: queued.append(project_id) or True
+        try:
+            response = self.client.post(
+                f'/projects/{pid}/pay/gateway',
+                headers={'host': 'web-app-staging-production.up.railway.app'},
+                follow_redirects=False,
+            )
+        finally:
+            app.state.enqueue_design_if_ready = original
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers['location'], f'/projects/{pid}?payment=success&design=queued')
+        self.assertEqual(queued, [pid])
+        commercial = app.state.commercial
+        db = legacy.Session()
+        quote = db.query(commercial['ProjectQuote']).filter(commercial['ProjectQuote'].project_id == pid).one()
+        self.assertTrue(quote.paid)
+        self.assertEqual(quote.payment_method, 'staging_demo_gateway')
+        db.close()
+
+    def test_demo_gateway_is_closed_outside_staging(self):
+        pid = self._ready_project('electrical')
+        rejected = self.client.post(f'/projects/{pid}/pay/gateway')
         self.assertEqual(rejected.status_code, 503)
         commercial = app.state.commercial
         db = legacy.Session()
