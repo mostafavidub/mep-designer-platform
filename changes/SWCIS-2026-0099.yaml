@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0099",
+  "summary":"Recover direct browser GET requests to project-start POST targets by redirecting to the valid discipline upload page.",
+  "requester":"project-owner",
+  "change_types":["ui_api","test","governance","documentation","versioning","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"ui_api":"Adds GET recovery routes without altering POST upload semantics.","qa":"Covers valid, unspecified and unknown disciplines.","deployment":"Staging rollout.","docs":"Updates canonical version.","manifest":"Records 4.38.2.","migration":"No data migration.","governance":"Records route contract.","versioning":"SWCIS 4.38.2."},
+  "evidence":{"tests":["Direct mechanical GET redirects and renders upload; unknown discipline returns 404."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-046 records GET recovery behavior."],"version_bump":["SWCIS 4.38.1 -> 4.38.2"],"deployment_plan":["Protected Staging PR and live redirect verification."],"rollback_plan":["Revert and redeploy prior Staging SHA."]},
+  "risk":{"likelihood":1,"severity":2,"detectability":1,"score":2,"rationale":"Additive GET routes leave upload POST behavior unchanged."},
+  "waiver":null
+}

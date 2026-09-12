@@ -38,6 +38,21 @@ class CommercialProjectFlowTests(unittest.TestCase):
         self.assertIn('نام پروژه', new.text)
         self.assertIn('DXF یا ZIP', new.text)
 
+    def test_get_start_project_recovers_to_upload_page(self):
+        response = self.client.get('/start-project/mechanical', follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers['location'], '/mechanical#start')
+        page = self.client.get(response.headers['location'])
+        self.assertEqual(page.status_code, 200)
+        self.assertIn('آپلود و تحلیل', page.text)
+
+        missing = self.client.get('/start-project', follow_redirects=False)
+        self.assertEqual(missing.status_code, 303)
+        self.assertEqual(missing.headers['location'], '/panel/projects/new')
+
+        unknown = self.client.get('/start-project/unknown', follow_redirects=False)
+        self.assertEqual(unknown.status_code, 404)
+
     def test_quote_appears_and_design_is_payment_gated(self):
         pid = self._ready_project()
         page = self.client.get(f'/projects/{pid}')

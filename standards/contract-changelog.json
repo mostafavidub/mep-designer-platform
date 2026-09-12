@@ -2,6 +2,15 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-046","status":"APPROVED",
+      "summary":"Redirect GET navigation for project-start submission targets to the corresponding valid upload page instead of returning Method Not Allowed.",
+      "affected_capabilities":["customer_project_start"],
+      "affected_projects":["staging"],
+      "approval":{"status":"APPROVED","basis":"project-owner request to diagnose and resolve the visible Staging error"},
+      "verification":{"redirect_contract":"must_pass","valid_upload_page":"must_pass","unknown_discipline":"must_fail_closed","full_regression":"must_pass","staging_exact_build":"must_pass"},
+      "migration":{"forward":"No data migration.","rollback":"Revert and redeploy the preceding approved Staging SHA."}
+    },
+    {
       "id":"GOV-2026-045","status":"APPROVED",
       "summary":"Use an explicitly labelled, no-debit gateway simulation on the exact Staging host and immediately enqueue design after confirmation.",
       "affected_capabilities":["customer_checkout","design_progress_visibility"],
