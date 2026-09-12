@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.33.0
+**Canonical version:** 4.34.0
 
 **Status:** LOCKED
 
@@ -145,6 +145,16 @@ continuity, orthogonal routes, penetrations, applicable coordination,
 engineering constraints, constructability, equipment envelopes and exact
 Plan/Riser/Calculation/Schedule/CAD identity. Only an explicit 100/100 with all
 controls `PASS` allows delivery.
+
+## Equipment selection and placement release gate
+
+Every required Mechanical equipment item must pass all eighteen controls in
+locked rule `MEP-EQUIP-002` and
+`docs/EQUIPMENT_SELECTION_PLACEMENT_100_STANDARD.md`. Selection reconciles
+calculated demand with immutable official manufacturer evidence; placement must
+be architecture-hosted, accessible, safe, connected and identical across Plan,
+Riser, Schedule and the exact reopened DXF. Only 100/100 with all controls
+`PASS` permits a Submission Ready claim.
 
 ## Administration and branch protection
 
