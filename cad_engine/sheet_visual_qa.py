@@ -51,6 +51,14 @@ def _center(entity):
         return None
 
 
+def _anchor(entity):
+    try:
+        point = entity.dxf.insert
+        return float(point.x), float(point.y)
+    except Exception:
+        return _center(entity)
+
+
 def _inside(point, bounds) -> bool:
     return bool(point and len(bounds) == 4 and bounds[0] <= point[0] <= bounds[2] and bounds[1] <= point[1] <= bounds[3])
 
@@ -86,6 +94,18 @@ def _visual_text_box(entity):
     painted_height = max(height, len(lines) * height * 1.2)
     return (center[0] - width / 2, center[1] - painted_height / 2,
             center[0] + width / 2, center[1] + painted_height / 2)
+
+
+def _entity_box(entity):
+    """Return the complete DXF extent used by the final-delivery boundary gate."""
+    try:
+        ex = bbox.extents([entity], fast=True)
+        if ex.has_data:
+            return (float(ex.extmin.x), float(ex.extmin.y),
+                    float(ex.extmax.x), float(ex.extmax.y))
+    except Exception:
+        return None
+    return None
 
 
 def _overlap_evidence(text_entities) -> list[dict]:
@@ -131,7 +151,7 @@ def repair_sheet_annotations(path: Path, composition: dict) -> dict:
         texts = [entity for entity in entities
                  if entity.dxftype() in TEXT_TYPES
                  and str(getattr(entity.dxf, "layer", "")).upper().startswith(MECHANICAL_PREFIXES)
-                 and _plain_text(entity).strip() and _inside(_center(entity), bounds)]
+                 and _plain_text(entity).strip() and _inside(_anchor(entity), bounds)]
         for entity in texts:
             height = _text_height(entity)
             if height is not None and height < MINIMUM_MODEL_TEXT_HEIGHT:
@@ -145,14 +165,20 @@ def repair_sheet_annotations(path: Path, composition: dict) -> dict:
         occupied = []
         for entity in texts:
             box = _visual_text_box(entity)
+            entity_box = _entity_box(entity)
             center = _center(entity)
-            if not box or not center:
+            anchor = _anchor(entity)
+            if not box or not entity_box or not center:
                 continue
-            zone = plan_area if _inside(center, plan_area) else bounds
+            zone = plan_area if _inside(anchor, plan_area) else bounds
             collision = any(_boxes_overlap(box, other) for other in occupied)
-            if not collision:
+            boundary_violation = not _box_inside(entity_box, bounds)
+            if not collision and not boundary_violation:
                 occupied.append(box); continue
-            original_center = center; chosen = None
+            # The DXF insertion point is the engineering target.  A wide MTEXT
+            # wrapping box may have its geometric center outside the sheet, so
+            # leaders must start from the in-board anchor rather than that box.
+            original_center = anchor; chosen = None
             step = max(MINIMUM_MODEL_TEXT_HEIGHT * 1.8, 0.18)
             offsets = []
             for ring in range(1, 15):
@@ -162,7 +188,10 @@ def repair_sheet_annotations(path: Path, composition: dict) -> dict:
                                 (distance, -distance), (-distance, -distance)))
             for dx, dy in offsets:
                 candidate = (box[0] + dx, box[1] + dy, box[2] + dx, box[3] + dy)
+                entity_candidate = (entity_box[0] + dx, entity_box[1] + dy,
+                                    entity_box[2] + dx, entity_box[3] + dy)
                 if (_box_inside(candidate, zone)
+                        and _box_inside(entity_candidate, bounds)
                         and not any(_boxes_overlap(candidate, other) for other in occupied)):
                     chosen = (dx, dy, candidate); break
             # Dense riser/detail boards may have no free position near the
@@ -178,8 +207,12 @@ def repair_sheet_annotations(path: Path, composition: dict) -> dict:
                         left = zone[0] + available_x * column / 16
                         bottom = zone[1] + available_y * row / 30
                         candidate = (left, bottom, left + width, bottom + height)
-                        if not any(_boxes_overlap(candidate, other) for other in occupied):
-                            chosen = (left - box[0], bottom - box[1], candidate); break
+                        dx, dy = left - box[0], bottom - box[1]
+                        entity_candidate = (entity_box[0] + dx, entity_box[1] + dy,
+                                            entity_box[2] + dx, entity_box[3] + dy)
+                        if (_box_inside(entity_candidate, bounds)
+                                and not any(_boxes_overlap(candidate, other) for other in occupied)):
+                            chosen = (dx, dy, candidate); break
                     if chosen is not None:
                         break
             if chosen is None:
