@@ -432,6 +432,14 @@
       "approval":{"status":"APPROVED","basis":"explicit owner instruction to complete the next Staging recovery step"},
       "verification":{"route_authority_test":"must_pass","full_regression":"must_pass","live_queue_heartbeat":"must_pass"},
       "migration":{"forward":"Restart only.","rollback":"Redeploy the prior SHA."}
+    },
+    {
+      "id":"GOV-2026-039","status":"APPROVED",
+      "summary":"Require evidence-backed Mechanical drawing scope to satisfy eighteen deterministic controls at 100/100 before approval and generation.",
+      "affected_capabilities":["drawing_scope_100","approved_drawing_manifest","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete the eighteen drawing-scope improvements and publish them to Staging"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Recalculate legacy 3.1 proposals as deterministic 3.2 manifests.","rollback":"Revert the protected commit; never approve an ambiguous or incomplete scope."}
     }
   ]
 }

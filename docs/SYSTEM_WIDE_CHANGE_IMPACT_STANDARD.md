@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.31.0
+**Canonical version:** 4.32.0
 
 **Status:** LOCKED
 
@@ -124,6 +124,17 @@ structure, validates frame/level and coordinate evidence, checks typed geometry
 and topology, prohibits unauthorized mutation, cross-links all-sheet visual QA,
 and reopens the exact issued file. Only 100/100 with all controls explicitly true
 permits delivery.
+
+## Drawing scope release gate
+
+Before calculations, routing or CAD generation, the proposed Mechanical drawing
+set must pass all eighteen controls in locked rule `MEP-DRAWING-SCOPE-001` and
+`docs/DRAWING_SCOPE_100_STANDARD.md`. The gate inventories and classifies source
+drawings, binds levels and Typical groups, derives an evidence-backed
+level-by-system matrix, separates output roles, freezes a deterministic manifest,
+and requires exact output parity. Any ambiguity, unsupported addition, required
+omission, reference-derived generation input, missing control or score below
+100 blocks approval and generation.
 
 ## Administration and branch protection
 
