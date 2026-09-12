@@ -36,7 +36,7 @@
     "artifact_diff":["Manifest gains scope_contract, scope_matrix_id and scope_qa evidence; customer DXF geometry changes only through corrected sheet inclusion/exclusion."],
     "numeric_diff":["Scope score weights total 100: inventory 10, classification 10, level binding 10, typical evidence 5, system evidence 15, no unsupported systems 5, no omissions 5, drawing-role separation 5, matrix completeness 10, deterministic identity 5, exact reconciliation 5, cross-document identity 5, ambiguity fail-closed 3, pre-calculation gate 2, exact output parity 2, destructive regression 1, blind-seal ordering 1, exact reopen 1."],
     "contract_diff":["Adds locked MEP-DRAWING-SCOPE-001 and requires scope_qa.status PASS with score 100 for approval."],
-    "deployment_plan":["Protected PR to main, synchronize approved merge into Staging, verify CI/health/build identity, then submit a fresh architecture smoke project."],
+    "deployment_plan":["Protected PR to main, synchronize approved merge into Staging, enable Railway auto-deploy for the governed Staging branch, verify CI/health/build identity, then submit a fresh architecture smoke project."],
     "rollback_plan":["Revert the protected commit and redeploy the preceding approved Git SHA; never bypass the scope gate."]
   },
   "risk":{"likelihood":3,"severity":5,"detectability":2,"score":30,"rationale":"An incorrect sheet scope can omit an entire discipline or level while producing internally valid drawings."},
