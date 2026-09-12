@@ -27,6 +27,10 @@ from .equipment_selection_placement_gate import (
     exact_equipment_output_evidence,
 )
 from .final_engineering_release_gate import evaluate_final_engineering_release
+from .architecture_space_equipment_gate import (
+    evaluate_architecture_space_equipment,
+    exact_architecture_source_evidence,
+)
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -108,6 +112,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "calculation_totals": _first_value(contract.get("calculation_totals"), plan_analysis.get("calculation_totals_canonical")),
         "equipment_placement_context": _first_value(contract.get("equipment_placement_context"), plan_analysis.get("equipment_placement_context_canonical")),
         "final_release_context": _first_value(contract.get("final_release_context"), plan_analysis.get("final_release_context_canonical")),
+        "architecture_recognition_context": _first_value(contract.get("architecture_recognition_context"), plan_analysis.get("architecture_recognition_context_canonical")),
     }
 
 
@@ -329,6 +334,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if result.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": sorted(set(missing))}}
 
+    recognition_context = dict(payload.get("architecture_recognition_context") or {})
+    expected_architecture_hash = (recognition_context.get("source_identity") or {}).get("sha256")
+    recognition_exact = exact_architecture_source_evidence(src, expected_architecture_hash)
+    recognition_qa = evaluate_architecture_space_equipment(recognition_context, recognition_exact)
+    if not pre_submission and recognition_qa.get("status") != "PASS":
+        blockers = recognition_qa.get("errors") or recognition_qa.get("missing_inputs") or ["ARCHITECTURE_SPACE_EQUIPMENT_100_REQUIRED"]
+        return {"status": "FAIL", "stage": "architecture_space_equipment_gate",
+                "authority_pipeline_qa": result, "architecture_space_equipment_qa": recognition_qa,
+                "input_required": {"status": "INPUT_REQUIRED" if recognition_qa.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
+
     reasonableness = evaluate_calculation_reasonableness(payload)
     # A preliminary artifact may still be delivered truthfully for an earlier
     # external-input blocker.  Only a submission-ready claim is stopped here.
@@ -439,6 +455,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["topology_routing_qa"] = final_topology_routing
     rendered["equipment_selection_placement_qa"] = final_equipment
     rendered["final_engineering_release_qa"] = final_release
+    rendered["architecture_space_equipment_qa"] = recognition_qa
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
