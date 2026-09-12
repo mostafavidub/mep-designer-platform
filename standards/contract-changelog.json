@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-051","status":"APPROVED",
+      "summary":"Treat an architecture-backed wet core as a valid local plumbing scope termination so single-level projects do not fail with false NO_SYSTEM_TERMINATION input requests.",
+      "affected_capabilities":["topology_routing_100","mechanical_runtime_authority","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to fix the observed Staging generation failure"},
+      "verification":{"positive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Retry affected failed design jobs against the corrected topology gate.","rollback":"Revert and redeploy; retain fail-closed multi-level vertical continuity checks."}
+    },
+    {
       "id":"GOV-2026-050","status":"APPROVED",
       "summary":"Bind checkout status tokens to the exact external project link and accept any retained link whose stored token hash matches.",
       "affected_capabilities":["panel_checkout","project_status","customer_project_reconnect"],"affected_projects":["all"],
