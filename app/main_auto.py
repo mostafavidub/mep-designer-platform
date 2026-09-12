@@ -30,9 +30,14 @@ app = legacy.app
 def unanswered_questions(questions, answers):
     """Return only unresolved keys; submitted non-empty answers are final."""
     answers = answers or {}
+    aliases = {
+        'location': ('location', 'city'), 'city': ('city', 'location'),
+        'heating': ('heating', 'heating_system'), 'heating_system': ('heating_system', 'heating'),
+        'cooling': ('cooling', 'cooling_system'), 'cooling_system': ('cooling_system', 'cooling'),
+    }
     return [
         (key, prompt) for key, prompt in questions
-        if not str(answers.get(key) or '').strip()
+        if not any(str(answers.get(candidate) or '').strip() for candidate in aliases.get(key, (key,)))
     ]
 
 
@@ -43,9 +48,10 @@ def build_unified_questionnaire(analysis, discipline, supplied_answers=None):
     analysis['auto_summary'] = auto_summary(auto, discipline)
     answers = {'discipline': discipline}
     answers.update(canonical_auto_answers(auto, discipline))
+    answers.update(dict(supplied_answers or {}))
     if discipline == 'mechanical':
-        answers.pop('heating', None)
-        answers.pop('cooling', None)
+        from .mechanical_basis_contract import normalize_answers
+        answers = normalize_answers(answers)
     proposed = dynamic_questions(analysis, discipline, auto)
     if discipline == 'mechanical':
         from types import SimpleNamespace
@@ -56,11 +62,6 @@ def build_unified_questionnaire(analysis, discipline, supplied_answers=None):
         for key in mechanical_workflow.required_basis_questions(basis_project):
             if key not in known and aliases.get(key) not in known:
                 proposed.append((key, mechanical_workflow._question_payload(key)['question']))
-    question_keys = {key for key, _prompt in proposed}
-    for key, value in dict(supplied_answers or {}).items():
-        if key in question_keys and value is not None and str(value).strip():
-            if not (is_confirmation(value) and str(answers.get(key) or '').strip()):
-                answers[key] = value
     unresolved = unanswered_questions(proposed, answers)
     return auto, answers, unresolved
 

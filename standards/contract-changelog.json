@@ -2,6 +2,15 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-047","status":"APPROVED",
+      "summary":"Persist questionnaire answers through reanalysis, collapse legacy/canonical aliases to one semantic prompt, reopen only missing invalid inputs and prevent raw checkout approval exceptions.",
+      "affected_capabilities":["questionnaire_design_basis_100","customer_checkout"],
+      "affected_projects":["all","staging"],
+      "approval":{"status":"APPROVED","basis":"project-owner report of triple repeated questions and Internal Server Error after answering"},
+      "verification":{"answer_persistence":"must_pass","semantic_deduplication":"must_pass","minimal_reopen":"must_pass","checkout_no_500":"must_pass","full_regression":"must_pass","staging_exact_build":"must_pass"},
+      "migration":{"forward":"Existing persisted answers are reused; only genuinely missing or invalid basis fields reopen.","rollback":"Revert and redeploy the preceding approved Staging SHA."}
+    },
+    {
       "id":"GOV-2026-046","status":"APPROVED",
       "summary":"Redirect GET navigation for project-start submission targets to the corresponding valid upload page instead of returning Method Not Allowed.",
       "affected_capabilities":["customer_project_start"],

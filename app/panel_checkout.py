@@ -62,7 +62,11 @@ def unresolved_questions(project):
     if answers.get("discipline") == "mechanical":
         answers = mechanical_workflow.normalize_answers(answers)
     project.answers = answers
-    questions = {q["key"]: q for q in project.questions or [] if isinstance(q, dict) and q.get("key")}
+    aliases = {'location':'city', 'heating':'heating_system', 'cooling':'cooling_system'}
+    questions = {}
+    for question in project.questions or []:
+        if isinstance(question, dict) and question.get('key'):
+            questions[aliases.get(question['key'], question['key'])] = question
     if answers.get("discipline") == "mechanical":
         for key in mechanical_workflow.required_basis_questions(project):
             questions[key] = mechanical_workflow._question_payload(key)
@@ -70,7 +74,11 @@ def unresolved_questions(project):
     for key, question in questions.items():
         if key == 'gas_pressure' and mechanical_workflow._negative(answers.get('gas')):
             continue
-        value = answers.get(key)
+        candidates = {
+            'city': ('city', 'location'), 'heating_system': ('heating_system', 'heating'),
+            'cooling_system': ('cooling_system', 'cooling'),
+        }.get(key, (key,))
+        value = next((answers.get(candidate) for candidate in candidates if str(answers.get(candidate) or '').strip()), None)
         if value is None or not str(value).strip() or mechanical_workflow._basis_answer_error(key, str(value)):
             missing.append(_present_question(question))
     return missing

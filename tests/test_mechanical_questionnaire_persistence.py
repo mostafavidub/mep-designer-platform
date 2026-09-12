@@ -11,6 +11,21 @@ class MechanicalQuestionnairePersistenceTests(unittest.TestCase):
         answers = {'location': 'مشهد', 'heating': 'رادیاتور', 'cooling': '  '}
         self.assertEqual(unanswered_questions(questions, answers), [('cooling', 'system?')])
 
+    def test_canonical_aliases_are_one_question_and_never_reissued(self):
+        questions = [
+            ('location', 'city legacy?'), ('city', 'city canonical?'),
+            ('heating', 'heating legacy?'), ('heating_system', 'heating canonical?'),
+            ('cooling', 'cooling legacy?'), ('cooling_system', 'cooling canonical?'),
+            ('has_sauna', 'sauna?'), ('has_jacuzzi', 'jacuzzi?'),
+            ('has_fire_suppression', 'fire?'),
+        ]
+        answers = {
+            'city': 'مشهد', 'heating_system': 'package_radiator',
+            'cooling_system': 'wall_mounted_split_ac', 'has_sauna': 'خیر',
+            'has_jacuzzi': 'خیر', 'has_fire_suppression': 'خیر',
+        }
+        self.assertEqual(unanswered_questions(questions, answers), [])
+
     def test_current_v35_analyzer_never_refreshes_on_flow_poll(self):
         analysis = {'architecture_analyzer_version': '3.5-project-evidence-gate'}
         self.assertFalse(analyzer_needs_refresh(analysis, has_source=True))
