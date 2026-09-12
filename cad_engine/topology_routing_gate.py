@@ -150,6 +150,7 @@ def evaluate_topology_routing(network, calculation_rows=None, coordination=None,
             terminals = {
                 row.get("id") for row in nodes
                 if row.get("kind") in {"shaft", *SOURCE_KINDS}
+                or row.get("kind") == "wet_core"
                 or row.get("category") == "vertical_core"
             }
             if not _connected(endpoint.get("id"), system, adjacency, terminals):

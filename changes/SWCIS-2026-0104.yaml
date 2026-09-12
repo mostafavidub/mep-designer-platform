@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0104",
+  "summary":"Prevent false single-level plumbing termination failures at architecture-backed wet cores.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","routing","runtime","test","governance","documentation","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{"cad_output":"The topology gate accepts a real architectural wet core as a local scope termination; multi-level systems still require vertical continuity.","qa":"Adds a single-level regression for false NO_SYSTEM_TERMINATION errors.","deployment":"Protected Staging rollout and live retry.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.39.4.","migration":"No schema migration; retry the failed job.","governance":"GOV-2026-051 records the corrected scope boundary.","versioning":"SWCIS 4.39.4."},
+  "evidence":{"tests":["Single-level plumbing endpoints connected to an architecture-backed wet core do not emit NO_SYSTEM_TERMINATION."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-051 recognizes a wet core as the local scope boundary without weakening multi-level riser checks."],"version_bump":["SWCIS 4.39.3 -> 4.39.4"],"migration":["No DB schema migration; retry project 1 after deployment."],"semantic_diff":["False user-input requests become an executable topology path; genuine missing vertical authority remains fail-closed."],"artifact_diff":["Network graph retains identical nodes and edges; only the acceptance classification of an architecture-backed local wet-core boundary changes."],"golden_regression":["Topology, authority runtime and mechanical runtime regression suites must pass before merge."],"deployment_plan":["Protected PR, merged-SHA Staging deployment, live retry and output status verification."],"rollback_plan":["Revert and redeploy the prior SHA."]},
+  "risk":{"likelihood":3,"severity":4,"detectability":1,"score":12,"rationale":"A false topology boundary blocks every otherwise valid fixture connection in a paid design job."},
+  "waiver":null
+}

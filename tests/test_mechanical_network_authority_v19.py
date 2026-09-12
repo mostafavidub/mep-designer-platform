@@ -10,6 +10,7 @@ from cad_engine.mechanical_network_topology import (
 )
 from cad_engine.mechanical_segment_execution import design_authoritative_segments
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
+from cad_engine.topology_routing_gate import evaluate_topology_routing
 
 
 def pmm(levels, vertical=False):
@@ -71,6 +72,10 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
             {"detections": [{**detection(point=(22, 2), ports=["cold_water"]), "level": "پشت بام"}]},
         )
         self.assertEqual(result["status"], "PASS")
+        qa = evaluate_topology_routing(result["network"])
+        self.assertFalse(any(
+            value.startswith("NO_SYSTEM_TERMINATION:") for value in qa["errors"]
+        ))
         self.assertEqual(len(result["network"]["levels"]), 1)
 
     def test_single_active_plumbing_level_does_not_require_cross_level_shaft(self):
