@@ -473,6 +473,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen architecture space and equipment recognition improvements"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
       "migration":{"forward":"Reanalyze approved architectural sources to produce the additive recognition evidence.","rollback":"Revert the protected commit; never infer ambiguous spaces or equipment and never use mechanical references for generation."}
+    },
+    {
+      "id":"GOV-2026-043","status":"APPROVED",
+      "summary":"Require project-specific details, schedules, notes and legends to satisfy eighteen completeness, traceability, constructability, readability and exact-output controls at 100/100.",
+      "affected_capabilities":["documentation_content_100","construction_document_delivery","mechanical_release_qa"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen details, schedules, notes and legends improvements"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Regenerate documents and exact outputs to create documentation-content/1 evidence.","rollback":"Revert and redeploy the previous approved SHA; never treat missing or inconsistent documentation as PASS."}
     }
   ]
 }
