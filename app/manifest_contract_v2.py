@@ -8,6 +8,8 @@ import copy
 import hashlib
 import json
 
+from cad_engine.mechanical_release_scope import scope_contract_is_valid
+
 
 def _canonical_payload(manifest):
     manifest = copy.deepcopy(manifest or {})
@@ -36,7 +38,7 @@ def validate_manifest(manifest, expected_schema=None):
     if not codes or any(not code for code in codes) or len(codes) != len(set(codes)):
         return False
     stored = str(manifest.get("manifest_id") or "")
-    return bool(stored) and stored == manifest_digest(manifest)
+    return bool(stored) and stored == manifest_digest(manifest) and scope_contract_is_valid(manifest)
 
 
 def install(workflow_module, planner_module, dxf_module):

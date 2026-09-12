@@ -174,7 +174,15 @@ def build_scope(p):
     for group in (heating, cooling, wet_candidates, sanitary_candidates, ventilation, gas):
         for level in group:
             if level not in effective_union: effective_union.append(level)
-    return {
+    level_types = {}
+    for level in levels:
+        profile = next((row for row in (auto.get('level_profiles') or []) if str(row.get('name') or '') == level), {})
+        if profile.get('roof'): level_types[level] = 'roof'
+        elif profile.get('basement'): level_types[level] = 'basement'
+        elif profile.get('mezzanine'): level_types[level] = 'mezzanine'
+        elif profile.get('service'): level_types[level] = 'service'
+        else: level_types[level] = 'occupied'
+    scope = {
         'all_levels': list(levels), 'conditioned_levels': cooling, 'heated_levels': heating,
         'wet_fixture_levels': wet_candidates, 'sanitary_fixture_levels': sanitary_candidates,
         'ventilation_required_levels': ventilation, 'gas_consumer_levels': gas,
@@ -184,7 +192,18 @@ def build_scope(p):
         'central_water_equipment': _central_water_equipment(answers.get('water_source')),
         'hot_water_return_required': _hot_water_return_required(answers.get('hot_water_system')),
         'effective_level_source': 'architecture-level-profiles' if profiles_available else 'fallback-all-detected-levels',
+        'level_types': level_types,
+        'system_evidence': {
+            'water_supply':'architectural wet-fixture level evidence', 'sanitary_vent':'architectural sanitary level evidence',
+            'heating':'architectural conditioned level plus owner answer', 'cooling':'architectural conditioned level plus owner answer',
+            'ventilation_exhaust':'architectural ventilation level plus owner answer', 'gas':'architectural consumer level plus owner answer',
+            'roof_rainwater':'confirmed architectural roof evidence or owner answer',
+        },
+        'scope_ambiguities': list(auto.get('scope_ambiguities') or []),
+        'scope_stage':'pre_calculation', 'scope_contract_version':'drawing-scope/1',
+        'reference_inputs_used':False, 'exact_output_parity_required':True, 'exact_reopen_required':True,
     }
+    return scope
 
 
 def required_basis_questions(p):

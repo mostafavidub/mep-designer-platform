@@ -16,15 +16,26 @@ from app.job_queue import (
 )
 from app.dxf_input import read_input_dxf
 from app.dxf_output import validate_generated_manifest
-from app.manifest_contract_v2 import manifest_digest
+from app.mechanical_drawing_set import _build_manifest
 from cad_engine.main import design_dxf
 
 
 class ArtifactQualityGateTests(unittest.TestCase):
     def _approved_set(self, sheets):
-        manifest = {'schema_version': '3.1', 'discipline': 'mechanical',
-                    'total_sheets': len(sheets), 'sheets': sheets}
-        manifest['manifest_id'] = manifest_digest(manifest)
+        normalized = []
+        for row in sheets:
+            item = dict(row)
+            item.setdefault('levels', ['Ground'])
+            item.setdefault('special', item.get('drawing_type') != 'floor_plan')
+            normalized.append(item)
+        scope = {
+            'all_levels':['Ground'],
+            'wet_fixture_levels':['Ground'] if any(x.get('family') == 'water_supply' for x in normalized) else [],
+            'sanitary_fixture_levels':['Ground'] if any(x.get('family') == 'sanitary_vent' for x in normalized) else [],
+            'heated_levels':[], 'conditioned_levels':[], 'ventilation_required_levels':[], 'gas_consumer_levels':[],
+            'roof_exists':False, 'roof_level_name':'Roof', 'typical_groups':[],
+        }
+        manifest = _build_manifest(normalized, scope)
         return {'approved': True, 'drawing_manifest': dict(manifest),
                 'approved_manifest': dict(manifest),
                 'approved_manifest_id': manifest['manifest_id']}

@@ -24,4 +24,4 @@ def test_multilevel_direct_municipal_water_does_not_create_pump_or_tank_plan():
     plan_types={'floor_plan','roof_plan','equipment_plan','ventilation_plan'}
     plans=[s for s in proposal['deliverable_sheets'] if s.get('drawing_type') in plan_types]
     assert len(plans)==17
-    assert proposal['drawing_manifest']['schema_version']=='3.1'
+    assert proposal['drawing_manifest']['schema_version']=='3.2'

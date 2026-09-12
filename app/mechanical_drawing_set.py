@@ -9,8 +9,10 @@ import copy
 import hashlib
 import json
 
+from cad_engine.mechanical_release_scope import evaluate_drawing_scope, scope_contract_is_valid
 
-MANIFEST_SCHEMA_VERSION = "3.1"
+
+MANIFEST_SCHEMA_VERSION = "3.2"
 
 AUTHORITY_FAMILIES = {
     "water_supply": {"code": "M-W", "label": "آب سرد و گرم", "system": "water_supply"},
@@ -93,9 +95,11 @@ def _append_family_roles(family, family_key, levels, roles):
         sheet['family'] = family_key; yield sheet
 
 
-def _build_manifest(deliverables):
+def _build_manifest(deliverables, scope):
     sheets = copy.deepcopy(deliverables)
-    payload = {"schema_version": MANIFEST_SCHEMA_VERSION, "discipline": "mechanical", "total_sheets": len(sheets), "sheets": sheets}
+    scope_contract = evaluate_drawing_scope(scope, sheets)
+    payload = {"schema_version": MANIFEST_SCHEMA_VERSION, "discipline": "mechanical", "total_sheets": len(sheets), "sheets": sheets,
+               "scope_matrix_id": scope_contract["scope_matrix_id"], "scope_contract": scope_contract}
     canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     payload["manifest_id"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest(); return payload
 
@@ -105,13 +109,16 @@ def is_current_manifest(manifest):
     try: total = int(manifest.get("total_sheets") or -1)
     except (TypeError, ValueError): return False
     codes = [str(x.get("code") or "") for x in sheets]
-    return manifest.get("schema_version") == MANIFEST_SCHEMA_VERSION and total > 0 and total == len(sheets) and bool(codes) and all(codes) and len(codes) == len(set(codes))
+    canonical = copy.deepcopy(manifest); stored_id = str(canonical.pop("manifest_id", ""))
+    actual_id = hashlib.sha256(json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    return manifest.get("schema_version") == MANIFEST_SCHEMA_VERSION and total > 0 and total == len(sheets) and bool(codes) and all(codes) and len(codes) == len(set(codes)) and stored_id == actual_id and scope_contract_is_valid(manifest)
 
 
 def approve_drawing_set(proposal):
     proposal = copy.deepcopy(proposal or {}); manifest = proposal.get("drawing_manifest")
     if not manifest: raise ValueError("Drawing manifest is missing.")
     if not is_current_manifest(manifest): raise ValueError("Drawing manifest is stale or structurally invalid; recalculate the proposal.")
+    if not scope_contract_is_valid(manifest): raise ValueError("Drawing scope did not pass all eighteen controls at 100/100.")
     sheets = manifest.get("sheets") or []
     if int(manifest.get("total_sheets") or -1) != len(sheets): raise ValueError("Drawing manifest count is internally inconsistent.")
     codes = [str(x.get("code") or "") for x in sheets]
@@ -227,7 +234,7 @@ def predict_drawing_set(scope):
     families["roof_rainwater"] = {"code": "M-R", "label": "بام / آب باران", "systems": ["roof_drainage"],
                                    "effective_levels": systems["roof_drainage"]["levels"], "count": len(roof_sheets), "sheets": roof_sheets}
 
-    total = len(deliverables); manifest = _build_manifest(deliverables)
+    total = len(deliverables); manifest = _build_manifest(deliverables, scope)
     return {"approved": False, "approval_required": True, "systems": systems, "sheet_families": families,
             "deliverable_sheets": deliverables, "drawing_manifest": manifest, "approved_manifest": None,
             "total_plans": total, "deliverable_sheet_count": total, "system_scope_count": sum(item["count"] for item in systems.values()),
