@@ -31,6 +31,10 @@ from .architecture_space_equipment_gate import (
     evaluate_architecture_space_equipment,
     exact_architecture_source_evidence,
 )
+from .documentation_content_gate import (
+    evaluate_documentation_content,
+    exact_documentation_output_evidence,
+)
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -113,6 +117,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "equipment_placement_context": _first_value(contract.get("equipment_placement_context"), plan_analysis.get("equipment_placement_context_canonical")),
         "final_release_context": _first_value(contract.get("final_release_context"), plan_analysis.get("final_release_context_canonical")),
         "architecture_recognition_context": _first_value(contract.get("architecture_recognition_context"), plan_analysis.get("architecture_recognition_context_canonical")),
+        "documentation_content_context": _first_value(contract.get("documentation_content_context"), plan_analysis.get("documentation_content_context_canonical")),
     }
 
 
@@ -135,6 +140,19 @@ def _final_release_context(payload: dict, result: dict, equipment_qa: dict) -> d
     supplied.setdefault("equipment_selection_placement_qa", equipment_qa)
     supplied.setdefault("submission_quality", phases.get("submission_quality") or {})
     supplied.setdefault("independent_review", payload.get("engineer_review"))
+    return supplied
+
+
+def _documentation_context(payload: dict, result: dict) -> dict:
+    supplied = dict(payload.get("documentation_content_context") or {})
+    documentation = (result.get("phases") or {}).get("documentation") or {}
+    supplied.setdefault("details", documentation.get("details") or [])
+    supplied.setdefault("schedules", documentation.get("schedules") or documentation.get("equipment_schedule") or [])
+    supplied.setdefault("notes", documentation.get("notes") or documentation.get("general_notes") or [])
+    supplied.setdefault("legends", documentation.get("legends") or documentation.get("legend") or [])
+    supplied.setdefault("sheets", documentation.get("sheets") or [])
+    active = payload.get("active_systems") or {}
+    supplied.setdefault("active_systems", sorted(key for key, value in active.items() if value))
     return supplied
 
 
@@ -367,6 +385,16 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if equipment_preflight.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": blockers}}
 
+    documentation_context = _documentation_context(payload, result)
+    documentation_preflight = evaluate_documentation_content(documentation_context)
+    if not pre_submission and documentation_preflight.get("preflight_allowed") is not True:
+        blockers = documentation_preflight.get("errors") or documentation_preflight.get("missing_inputs") or ["DOCUMENTATION_CONTENT_PREFLIGHT_NOT_PASS"]
+        return {"status": "FAIL", "stage": "documentation_content_gate",
+                "authority_pipeline_qa": result,
+                "documentation_content_qa": documentation_preflight,
+                "input_required": {"status": "INPUT_REQUIRED" if documentation_preflight.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
+
     final_release_context = _final_release_context(payload, result, equipment_preflight)
     final_release_preflight = evaluate_final_engineering_release(final_release_context)
     if not pre_submission and final_release_preflight.get("preflight_allowed") is not True:
@@ -433,6 +461,18 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "equipment_selection_placement_exact_output_gate",
                 "equipment_selection_placement_qa": final_equipment,
                 "input_required": {"status": "FAIL", "missing_inputs": final_equipment.get("errors") or final_equipment.get("missing_inputs") or []}}
+    expected_details = sorted({row.get("detail_id") or row.get("id") for row in documentation_context.get("details") or [] if row.get("detail_id") or row.get("id")})
+    expected_schedules = sorted({row.get("schedule_id") or row.get("id") for row in documentation_context.get("schedules") or [] if row.get("schedule_id") or row.get("id")})
+    expected_notes = sorted({row.get("note_id") or row.get("id") for row in documentation_context.get("notes") or [] if row.get("note_id") or row.get("id")})
+    expected_symbols = sorted(set(documentation_context.get("used_symbols") or []))
+    exact_documentation = exact_documentation_output_evidence(
+        dst, expected_details, expected_schedules, expected_notes, expected_symbols)
+    final_documentation = evaluate_documentation_content(documentation_context, exact_output=exact_documentation)
+    if not pre_submission and final_documentation.get("status") != "PASS":
+        _restore_target(dst, backup)
+        return {"status": "FAIL", "stage": "documentation_content_exact_output_gate",
+                "documentation_content_qa": final_documentation,
+                "input_required": {"status": "FAIL", "missing_inputs": final_documentation.get("errors") or final_documentation.get("missing_inputs") or []}}
     final_release_context["equipment_selection_placement_qa"] = final_equipment
     exact_release = _exact_release_evidence(dst, final_release_context, materialization)
     final_release = evaluate_final_engineering_release(final_release_context, exact_output=exact_release)
@@ -456,6 +496,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["equipment_selection_placement_qa"] = final_equipment
     rendered["final_engineering_release_qa"] = final_release
     rendered["architecture_space_equipment_qa"] = recognition_qa
+    rendered["documentation_content_qa"] = final_documentation
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
