@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.34.0
+**Canonical version:** 4.35.0
 
 **Status:** LOCKED
 
@@ -155,6 +155,19 @@ calculated demand with immutable official manufacturer evidence; placement must
 be architecture-hosted, accessible, safe, connected and identical across Plan,
 Riser, Schedule and the exact reopened DXF. Only 100/100 with all controls
 `PASS` permits a Submission Ready claim.
+
+## Final engineering and issue-readiness release gate
+
+Every Mechanical package that claims Submission Ready must pass all eighteen
+controls in locked rule `MEP-FINAL-ISSUE-001` and
+`docs/FINAL_ENGINEERING_RELEASE_100_STANDARD.md`. The gate requires a governed
+submission checklist, complete drawing scope, the current approved architecture,
+cross-sheet and Plan/Riser/Calculation identity, system-specific HVAC, water,
+sanitary/vent and gas evidence, equipment, coordination, executable details,
+documentation, all-sheet visual QA, exact-file technical QA, closed independent
+engineering review and an immutable release package. Only 100/100 with every
+control `PASS` permits a Submission Ready claim. Software acceptance never
+replaces the legally required responsible-engineer review, signature or stamp.
 
 ## Administration and branch protection
 
