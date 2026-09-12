@@ -125,6 +125,23 @@ class CommercialProjectFlowTests(unittest.TestCase):
         self.assertTrue(quote is None or not quote.paid)
         db.close()
 
+    def test_staging_gateway_missing_basis_redirects_without_internal_error_or_payment(self):
+        pid = self._ready_project('mechanical')
+        response = self.client.post(
+            f'/projects/{pid}/pay/gateway',
+            headers={'host': 'web-app-staging-production.up.railway.app'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers['location'], f'/projects/{pid}?payment=input-required')
+        commercial = app.state.commercial
+        db = legacy.Session()
+        project = db.get(legacy.Project, pid)
+        quote = db.query(commercial['ProjectQuote']).filter(commercial['ProjectQuote'].project_id == pid).one()
+        self.assertEqual(project.status, 'asking')
+        self.assertFalse(quote.paid)
+        db.close()
+
     def test_admin_pricing_controls_area_formula(self):
         saved = self.client.post('/admin/pricing/electrical', data={
             'enabled': 'on', 'minimum_price': 3_000_000, 'price_per_m2': 20_000,

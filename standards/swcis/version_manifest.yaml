@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.38.2",
+  "standard_version": "4.39.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.39.0","date":"2026-09-12","summary":"Preserve every submitted questionnaire answer across reanalysis, deduplicate canonical aliases, reopen only genuinely invalid inputs and convert checkout approval failures into recoverable states."},
     {"version":"4.38.2","date":"2026-09-12","summary":"Recover direct GET navigation to POST-only project-start targets by redirecting to the correct upload surface."},
     {"version":"4.38.1","date":"2026-09-12","summary":"Restrict simulated gateway payment to the exact Staging host and queue design immediately without capturing money."},
     {"version":"4.38.0","date":"2026-09-12","summary":"Require questionnaire completeness and immutable project design basis to pass eighteen provenance, scope, unit, consistency, approval and release controls at 100/100."},

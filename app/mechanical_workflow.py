@@ -246,19 +246,10 @@ def _question_payload(key):
 def ensure_required_basis_questions(p):
     missing = required_basis_questions(p)
     if not missing: return False
-    qs = list(p.questions or [])
-    # Replace any legacy question with the fail-closed copy so obsolete text
-    # such as "unknown -> 2.5 bar default" can never reach the user.
-    for key in missing:
-        replacement = _question_payload(key); replaced = False
-        for i, q in enumerate(qs):
-            if isinstance(q, dict) and q.get('key') == key:
-                qs[i] = replacement; replaced = True
-        if not replaced: qs.append(replacement)
-    p.questions = qs
-    for i, q in enumerate(qs):
-        if q.get('key') in missing:
-            p.current_question = i; break
+    # A preflight reopen is a new, minimal queue. Historical answered prompts
+    # remain represented by answers and must never be walked a second time.
+    p.questions = [_question_payload(key) for key in missing]
+    p.current_question = 0
     p.status = 'asking'
     analysis = dict(p.analysis or {}); analysis['basis_preflight'] = {'status':'INPUT_REQUIRED','missing':missing}; p.analysis = analysis
     return True
@@ -290,14 +281,8 @@ def reopen_basis_questions(p, missing):
         else:
             answers.pop(key, None)
     p.answers=answers
-    questions=list(p.questions or [])
-    for key in allowed:
-        replacement=_question_payload(key)
-        indices=[i for i,q in enumerate(questions) if isinstance(q,dict) and q.get('key')==key]
-        if indices: questions[indices[0]]=replacement
-        else: questions.append(replacement)
-    p.questions=questions
-    p.current_question=next((i for i,q in enumerate(questions) if q.get('key') in allowed),len(questions))
+    p.questions=[_question_payload(key) for key in allowed]
+    p.current_question=0
     p.status='asking'
     analysis=dict(p.analysis or {})
     analysis['basis_preflight']={'status':'INPUT_REQUIRED','missing':allowed,'resume_stage':'authority_contract'}

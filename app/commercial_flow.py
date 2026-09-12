@@ -211,13 +211,22 @@ def register_commercial_flow(app, legacy):
             db.close(); return RedirectResponse(f"/projects/{pid}", 303)
         discipline = (project.answers or {}).get('discipline', (project.analysis or {}).get('discipline', 'mechanical'))
         if discipline == 'mechanical':
+            from . import mechanical_workflow
+            if mechanical_workflow.ensure_required_basis_questions(project):
+                db.commit(); db.close()
+                return RedirectResponse(f"/projects/{pid}?payment=input-required", 303)
+            mechanical_workflow.refresh_stale_proposal(project)
             drawing_set = dict((project.analysis or {}).get('drawing_set') or {})
             if drawing_set and not drawing_set.get('approved'):
-                from . import mechanical_workflow
-                analysis = dict(project.analysis or {})
-                analysis['drawing_set'] = mechanical_workflow.approve_drawing_set(drawing_set)
-                project.analysis = analysis
-                project.status = 'ready_to_design'
+                try:
+                    analysis = dict(project.analysis or {})
+                    analysis['drawing_set'] = mechanical_workflow.approve_drawing_set(drawing_set)
+                    project.analysis = analysis
+                    project.status = 'ready_to_design'
+                except ValueError as exc:
+                    project.last_error = f"مجموعه نقشه‌ها هنوز قابل تأیید نیست: {exc}"
+                    db.commit(); db.close()
+                    return RedirectResponse(f"/projects/{pid}?payment=design-set-review", 303)
         # Explicit Staging simulation: no money is captured.
         quote.paid = True; quote.payment_method = "staging_demo_gateway"; quote.paid_at = datetime.utcnow()
         db.commit(); db.close()
