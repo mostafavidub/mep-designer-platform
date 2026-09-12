@@ -3,6 +3,7 @@ from pathlib import Path
 import ezdxf
 
 from cad_engine import sheet_visual_qa as visual
+from cad_engine.final_delivery_gate import validate_final_delivery
 
 
 def _board(code="M-101", family="WATER"):
@@ -123,6 +124,21 @@ def test_dense_annotation_repair_uses_full_board_fallback(tmp_path, monkeypatch)
     assert repair["status"] == "PASS", repair
     assert repair["content_deleted"] == 0
     assert not any("annotation_overlap" in item for item in result["errors"])
+
+
+def test_annotation_repair_keeps_complete_mtext_extent_inside_issued_board(tmp_path):
+    path = tmp_path / "mtext-boundary.dxf"; composition = _issued(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    for label in ("RISER LOAD", "RISER CAPACITY"):
+        text = msp.add_mtext(label, dxfattribs={
+            "layer": "ENGITOOLS-M-WATER", "char_height": .1})
+        text.dxf.insert = (19.8, 28.8); text.dxf.width = 3.0
+    doc.saveas(path)
+    repair = visual.repair_sheet_annotations(path, composition)
+    exact = validate_final_delivery(path, {"composition": composition})
+    assert repair["status"] == "PASS", repair
+    assert exact["status"] == "PASS", exact
+    assert exact["outside_entity_count"] == 0
 
 
 def test_mtext_empty_wrapping_width_is_not_counted_as_painted_overlap(tmp_path, monkeypatch):
