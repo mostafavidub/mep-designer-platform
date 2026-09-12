@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.37.0
+**Canonical version:** 4.38.0
 
 **Status:** LOCKED
 
@@ -188,6 +188,16 @@ Project-specific executable details, model-derived schedules, standards-backed
 notes and used-symbol-only legends must remain readable, coordinated and identical
 across plans, risers, calculations, sheets and the exact reopened output. Only
 100/100 with every control `PASS` permits Submission Ready.
+
+## Questionnaire and immutable design-basis release gate
+
+Every Mechanical run must satisfy all eighteen controls in locked rule
+`MEP-BASIS-002` and `docs/QUESTIONNAIRE_DESIGN_BASIS_100_STANDARD.md`.
+Architecture facts, user answers and calculated values remain explicitly
+attributed; cross-project reuse requires owner authorization; numeric values carry
+units and bounds; system scope, dependencies and contradictions are checked. The
+approved summary is bound to architecture and rules revisions by a content hash.
+Only an immutable 100/100 basis permits a Submission Ready claim.
 
 ## Administration and branch protection
 

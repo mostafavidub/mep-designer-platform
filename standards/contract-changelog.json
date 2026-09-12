@@ -481,6 +481,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen details, schedules, notes and legends improvements"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
       "migration":{"forward":"Regenerate documents and exact outputs to create documentation-content/1 evidence.","rollback":"Revert and redeploy the previous approved SHA; never treat missing or inconsistent documentation as PASS."}
+    },
+    {
+      "id":"GOV-2026-044","status":"APPROVED",
+      "summary":"Require questionnaire completeness and immutable project design basis to satisfy eighteen controls at 100/100.",
+      "affected_capabilities":["questionnaire_design_basis_100","mechanical_basis_contract","mechanical_runtime_authority"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen questionnaire and design-basis improvements"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Revalidate, summarize and lock existing answers as questionnaire-design-basis/1.","rollback":"Revert and redeploy prior approved SHA; never silently reuse or invent design-basis facts."}
     }
   ]
 }

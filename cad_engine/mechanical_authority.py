@@ -35,6 +35,7 @@ from .documentation_content_gate import (
     evaluate_documentation_content,
     exact_documentation_output_evidence,
 )
+from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_basis
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -118,6 +119,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "final_release_context": _first_value(contract.get("final_release_context"), plan_analysis.get("final_release_context_canonical")),
         "architecture_recognition_context": _first_value(contract.get("architecture_recognition_context"), plan_analysis.get("architecture_recognition_context_canonical")),
         "documentation_content_context": _first_value(contract.get("documentation_content_context"), plan_analysis.get("documentation_content_context_canonical")),
+        "questionnaire_design_basis_context": _first_value(contract.get("questionnaire_design_basis_context"), plan_analysis.get("questionnaire_design_basis_context_canonical")),
     }
 
 
@@ -325,6 +327,13 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "runtime_contract_gate", "authority_pipeline_qa": {"status": "FAIL", "errors": contract_errors}}
 
     payload = _authority_payload(answers, plan_analysis)
+    questionnaire_qa = evaluate_questionnaire_design_basis(payload.get("questionnaire_design_basis_context"))
+    # Contradictory or tampered basis evidence can never reach calculation. Missing
+    # evidence may continue only far enough to produce a truthful Pre-Submission result.
+    if payload.get("questionnaire_design_basis_context") and questionnaire_qa.get("status") == "FAIL":
+        return {"status": "FAIL", "stage": "questionnaire_design_basis_gate",
+                "questionnaire_design_basis_qa": questionnaire_qa,
+                "input_required": {"status": "FAIL", "missing_inputs": questionnaire_qa.get("errors") or []}}
     network_authority = _prepare_network_authority(src, payload)
     if network_authority.get("status") != "PASS":
         required = network_authority.get("missing_inputs") or network_authority.get("errors") or ["NETWORK_AUTHORITY_INCOMPLETE"]
@@ -351,6 +360,11 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "network_authority_qa": network_authority, "authority_pipeline_qa": result,
                 "input_required": {"status": "INPUT_REQUIRED" if result.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": sorted(set(missing))}}
+    if not pre_submission and questionnaire_qa.get("status") != "PASS":
+        blockers = questionnaire_qa.get("errors") or questionnaire_qa.get("missing_inputs") or ["QUESTIONNAIRE_DESIGN_BASIS_100_REQUIRED"]
+        return {"status": "FAIL", "stage": "questionnaire_design_basis_gate",
+                "authority_pipeline_qa": result, "questionnaire_design_basis_qa": questionnaire_qa,
+                "input_required": {"status": "INPUT_REQUIRED", "missing_inputs": blockers}}
 
     recognition_context = dict(payload.get("architecture_recognition_context") or {})
     expected_architecture_hash = (recognition_context.get("source_identity") or {}).get("sha256")
@@ -497,6 +511,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["final_engineering_release_qa"] = final_release
     rendered["architecture_space_equipment_qa"] = recognition_qa
     rendered["documentation_content_qa"] = final_documentation
+    rendered["questionnaire_design_basis_qa"] = questionnaire_qa
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
