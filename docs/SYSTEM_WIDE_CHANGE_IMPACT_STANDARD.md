@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.32.0
+**Canonical version:** 4.33.0
 
 **Status:** LOCKED
 
@@ -135,6 +135,16 @@ level-by-system matrix, separates output roles, freezes a deterministic manifest
 and requires exact output parity. Any ambiguity, unsupported addition, required
 omission, reference-derived generation input, missing control or score below
 100 blocks approval and generation.
+
+## Topology and routing release gate
+
+Every Mechanical network must pass all eighteen controls in locked rule
+`MEP-ROUTE-001` and `docs/TOPOLOGY_ROUTING_100_STANDARD.md`. The gate reconciles
+typed and hosted endpoints, per-system connectivity, real shafts, vertical
+continuity, orthogonal routes, penetrations, applicable coordination,
+engineering constraints, constructability, equipment envelopes and exact
+Plan/Riser/Calculation/Schedule/CAD identity. Only an explicit 100/100 with all
+controls `PASS` allows delivery.
 
 ## Administration and branch protection
 

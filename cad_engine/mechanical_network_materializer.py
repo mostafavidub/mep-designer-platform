@@ -280,7 +280,9 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
             ], "exact_file_reopened": True, "reopen_counts": dict(counts)}
         return {"status": "PASS", "removed_legacy_entities": removed,
                 "materialized_segments": len(materialized), "expected_segments": len(expected),
+                "materialized_edge_ids": sorted(expected),
                 "reopen_counts": dict(counts), "exact_file_reopened": True,
+                "transactional_exact_output": True,
                 "identity_policy": "DXF_XDATA_EDGE_ID_EQUALS_NETWORK_EDGE_ID"}
     except Exception as exc:
         shutil.copy2(backup, dst)

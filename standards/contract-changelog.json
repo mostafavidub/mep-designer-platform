@@ -2,6 +2,15 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-040","status":"APPROVED",
+      "summary":"Require all eighteen topology and routing controls to pass at exactly 100 before Mechanical CAD delivery.",
+      "affected_capabilities":["topology_routing_100","mechanical_runtime_authority","parametric_detail_riser_identity","structural_rcp_25d_coordination"],
+      "affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute and complete all eighteen topology and routing steps"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_exact_build":"must_pass before deployment claim"},
+      "migration":{"forward":"Regenerate existing projects to attach topology-routing/1 evidence.","rollback":"Revert and redeploy the preceding approved Git SHA; never bypass the gate."}
+    },
+    {
       "id":"GOV-2026-039","status":"APPROVED",
       "summary":"Unify all eighteen architecture reconstruction and preservation controls into a scored fail-closed exact-file release gate.",
       "affected_capabilities":["architecture_preservation","all_sheet_visual_qa","mechanical_release_qa"],

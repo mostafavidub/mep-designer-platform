@@ -20,6 +20,7 @@ from .mechanical_segment_execution import design_authoritative_segments
 from .mechanical_network_materializer import materialize_authoritative_network
 from .runtime_contract import runtime_contract
 from .calculation_reasonableness import evaluate_calculation_reasonableness
+from .topology_routing_gate import evaluate_topology_routing
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -140,8 +141,17 @@ def _prepare_network_authority(src: Path, payload: dict) -> dict:
     # caller may still supply an annotation solver for placement, but not a
     # disconnected annotation identity set.
     payload["annotations"] = execution["annotations"]
+    topology_routing_qa = evaluate_topology_routing(
+        payload["network_graph"], calculation_rows=payload["calculation_rows"],
+        coordination=(payload.get("topology_routing_coordination") or {}),
+        equipment_routes=(payload.get("equipment_selection_checks") or []),
+    )
+    if topology_routing_qa.get("status") != "PASS":
+        return {"status": "FAIL", "errors": topology_routing_qa.get("errors") or ["TOPOLOGY_ROUTING_100_REQUIRED"],
+                "topology": topology, "execution": execution, "topology_routing_qa": topology_routing_qa}
     return {"status": "PASS", "topology": topology, "execution": execution,
-            "network_graph": payload["network_graph"], "calculation_rows": payload["calculation_rows"]}
+            "network_graph": payload["network_graph"], "calculation_rows": payload["calculation_rows"],
+            "topology_routing_qa": topology_routing_qa}
 
 
 def _authority_input_errors(payload: dict) -> list[str]:
@@ -318,6 +328,19 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "materialization_qa": materialization,
                 "input_required": {"status": "INPUT_REQUIRED" if materialization.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": materialization.get("missing_inputs") or materialization.get("errors") or []}}
+    final_topology_routing = evaluate_topology_routing(
+        payload["network_graph"], calculation_rows=payload["calculation_rows"],
+        coordination=(payload.get("topology_routing_coordination") or {}),
+        equipment_routes=(payload.get("equipment_selection_checks") or []),
+        exact_output={"edge_ids": materialization.get("materialized_edge_ids") or [],
+                      "reopened": materialization.get("exact_file_reopened"),
+                      "immutable": materialization.get("transactional_exact_output")},
+    )
+    if final_topology_routing.get("status") != "PASS":
+        _restore_target(dst, backup)
+        return {"status": "FAIL", "stage": "topology_routing_exact_output_gate",
+                "topology_routing_qa": final_topology_routing,
+                "input_required": {"status": "FAIL", "missing_inputs": final_topology_routing.get("errors") or []}}
     if backup:
         backup.unlink(missing_ok=True)
 
@@ -326,6 +349,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
     rendered["calculation_reasonableness_qa"] = reasonableness
+    rendered["topology_routing_qa"] = final_topology_routing
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
     rendered["engineering_authority"] = "PMM_V3"
