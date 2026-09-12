@@ -11,6 +11,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from fastapi import FastAPI, HTTPException
+from .mechanical_release_scope import scope_contract_is_valid
 from ezdxf.addons.drawing import Frontend, RenderContext
 from ezdxf.addons.drawing.config import BackgroundPolicy, ColorPolicy, Configuration
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
@@ -408,6 +409,8 @@ def design(req: engine.DesignRequest):
             raise HTTPException(409, 'Approved mechanical drawing manifest is required.')
         if not manifest:
             raise HTTPException(409, 'Approved mechanical drawing manifest is required.')
+        if not scope_contract_is_valid(manifest):
+            raise HTTPException(409, 'Mechanical drawing scope must pass all eighteen controls at 100/100.')
         calc['_approved_drawing_manifest'] = manifest
 
     project_out = engine.OUTPUT_ROOT / str(req.project_id) / f'R{req.revision:03d}' / discipline
