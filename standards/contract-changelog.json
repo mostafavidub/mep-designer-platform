@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-055","status":"APPROVED",
+      "summary":"Return the architecture-preservation 100 gate report as failed-stage evidence so a live rejection identifies its exact controls.",
+      "affected_capabilities":["architecture_preservation_100","cad_worker_diagnostics","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete generation and resolve the live Staging blocker without lowering quality"},
+      "verification":{"diagnostic_mapping":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_retry":"must_identify_exact_control"},
+      "migration":{"forward":"Retry the durable project after deployment.","rollback":"Revert diagnostic mapping; release gates remain unchanged."}
+    },
+    {
       "id":"GOV-2026-054","status":"APPROVED",
       "summary":"Keep the complete DXF extent of every relocated Mechanical annotation inside its approved sheet while retaining plotted-glyph collision checks.",
       "affected_capabilities":["all_sheet_visual_qa","annotation_layout","exact_file_final_delivery","mechanical_generation"],"affected_projects":["all"],

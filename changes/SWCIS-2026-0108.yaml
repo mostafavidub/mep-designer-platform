@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0108",
+  "summary":"Expose exact architecture-preservation 100 failures in worker diagnostics.",
+  "requester":"project-owner",
+  "change_types":["observability","runtime","drawing_output","ui_api","test","governance","documentation","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"cad_designer":"Both active CAD transports map the architecture-preservation 100 stage to its exact report.","qa":"No QA threshold or decision changes.","deployment":"Protected Staging rollout and live retry.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.39.8.","migration":"No schema migration.","governance":"GOV-2026-055 records exact failed-control diagnostics.","versioning":"SWCIS 4.39.8."},
+  "evidence":{"tests":["Transport mapping exposes architecture_preservation_100_qa as failed_stage_qa."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-055 adds diagnostic evidence only."],"version_bump":["SWCIS 4.39.7 -> 4.39.8"],"migration":["No DB schema migration; retry project 1."],"semantic_diff":["Release behavior and engineering artifacts are unchanged."],"artifact_diff":["Failure payload gains exact score, checks and failures."],"golden_regression":["Required CI must pass."],"deployment_plan":["Protected PR, merged-SHA Staging deployment and live retry."],"rollback_plan":["Revert diagnostic mapping; fail-closed QA remains active."]},
+  "risk":{"likelihood":1,"severity":2,"detectability":1,"score":2,"rationale":"Read-only failure evidence mapping with no release-decision change."},
+  "waiver":null
+}

@@ -169,6 +169,7 @@ def design(req: DesignRequest):
                         "architecture_preservation_after_sanitization":"architecture_preservation_qa_after_canonical",
                         "exact_file_final_delivery_gate":"exact_file_final_delivery_qa",
                         "montage_exact_reopen_gate":"montage_exact_reopen_qa",
+                        "architecture_preservation_100_gate":"architecture_preservation_100_qa",
                         "authority_preflight_gate":"authority_pipeline_qa",
                         "runtime_contract_gate":"authority_pipeline_qa",
                     }
