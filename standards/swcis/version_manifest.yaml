@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.35.0",
+  "standard_version": "4.36.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.36.0","date":"2026-09-12","summary":"Require architecture-only space and equipment recognition to pass eighteen source, geometry, semantic, identity and exact-reopen controls at 100/100."},
     {"version":"4.35.0","date":"2026-09-12","summary":"Require final Mechanical engineering and the exact issue package to pass eighteen system, coordination, documentation, review and immutability controls at 100/100."},
     {"version":"4.34.0","date":"2026-09-12","summary":"Require Mechanical equipment selection and placement to pass eighteen calculation, catalogue, spatial, connection and exact-output controls at 100/100."},
     {"version": "4.33.0", "date": "2026-09-12", "summary": "Require Mechanical topology and routing to pass eighteen deterministic graph, route, coordination, constructability and exact-output controls at 100/100."},

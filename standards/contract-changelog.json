@@ -465,6 +465,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen final engineering and issue-readiness improvements"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_health":"must_pass"},
       "migration":{"forward":"Regenerate release evidence and exact package hashes before claiming Submission Ready.","rollback":"Revert the protected commit; never bypass a missing or failed final engineering control."}
+    },
+    {
+      "id":"GOV-2026-042","status":"APPROVED",
+      "summary":"Require architecture-only space and equipment recognition to satisfy eighteen source, geometry, semantic, identity and exact-reopen controls at 100/100.",
+      "affected_capabilities":["architecture_space_equipment_recognition_100","architecture_preservation","mechanical_runtime_authority"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen architecture space and equipment recognition improvements"},
+      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Reanalyze approved architectural sources to produce the additive recognition evidence.","rollback":"Revert the protected commit; never infer ambiguous spaces or equipment and never use mechanical references for generation."}
     }
   ]
 }
