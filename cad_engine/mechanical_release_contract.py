@@ -41,6 +41,7 @@ REQUIRED_CAPABILITIES = {
     "production_canonical_authority_adapter":"cad_engine.mechanical_authority",
     "topology_routing_18_control_score":"cad_engine.topology_routing_gate",
     "equipment_selection_placement_18_control_score":"cad_engine.equipment_selection_placement_gate",
+    "final_engineering_release_18_control_score":"cad_engine.final_engineering_release_gate",
 }
 
 def release_contract_status():
