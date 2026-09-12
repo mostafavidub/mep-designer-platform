@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.39.7",
+  "standard_version": "4.39.8",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.39.8","date":"2026-09-12","summary":"Expose the exact failed controls and score from the architecture-preservation 100 gate in CAD worker diagnostics."},
     {"version":"4.39.7","date":"2026-09-12","summary":"Constrain relocated annotation DXF extents, not only painted glyph bounds, to the approved sheet so visual repair remains exact-delivery safe."},
     {"version":"4.39.6","date":"2026-09-12","summary":"Extend quality-preserving annotation placement to scan the complete permitted board zone when dense riser/detail labels cannot be resolved locally."},
     {"version":"4.39.5","date":"2026-09-12","summary":"Repair plotted Mechanical annotation collisions and minimum text height before exact-file visual QA, and stop consecutive identical recovery attempts by stable failure fingerprint."},
