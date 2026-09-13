@@ -21,7 +21,7 @@ from .auto_inference_v2 import (
     auto_summary,
     classify_room,
 )
-from .mechanical_rulebook import RULEBOOK_VERSION
+from .mechanical_rulebook import RULEBOOK_IDENTITY
 from .mechanical_rulebook import is_confirmation
 
 app = legacy.app
@@ -433,7 +433,7 @@ legacy.DISCIPLINES['mechanical']['questions'] = [
     ('water_source', 'اطلاعات قطعی ورودی آب/مخزن/پمپ، فقط در صورت وجود تصمیم قبلی'),
 ]
 
-QUESTIONNAIRE_VERSION = '5.1-single-source'
+QUESTIONNAIRE_IDENTITY = 'mechanical-design-questionnaire'
 
 
 def panel_analysis_payload(auto):
@@ -493,7 +493,7 @@ def questionnaire_schema(discipline: str):
             ('has_mechanical_ventilation', 'آیا طراحی تهویه مکانیکی و اگزاست در محدوده پروژه است؟'),
         ] + list(base)
     return {
-        'version': QUESTIONNAIRE_VERSION,
+        'identity': QUESTIONNAIRE_IDENTITY,
         'discipline': discipline,
         'questions': legacy.qlist(base),
         'source': 'engi-design-engine',
@@ -541,7 +541,7 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
         )
         from .mechanical_workflow import _question_payload
         return {
-            'version': QUESTIONNAIRE_VERSION,
+            'identity': QUESTIONNAIRE_IDENTITY,
             'discipline': discipline,
             'source': 'engi-design-engine',
             'questions': [_present_question(q) for q in legacy.qlist(unresolved)],
@@ -560,7 +560,7 @@ def system_health():
     result = {'ok': True, 'web': {
         'ok': True,
         'mode': 'architecture-first-v3.5-project-evidence-gate',
-        'mechanical_rulebook_version': RULEBOOK_VERSION,
+        'mechanical_rulebook_identity': RULEBOOK_IDENTITY,
         'questionnaire': 'short-answer-rulebook-proposals',
     }}
     try:

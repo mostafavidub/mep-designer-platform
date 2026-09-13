@@ -5,7 +5,7 @@ from pathlib import Path
 
 from app.mechanical_drawing_set import approve_drawing_set, predict_drawing_set
 from app.mechanical_site_manifest import review_question_html
-from data.rulebook.generate_rulebook import BENCHMARK, VERSION, build as build_rulebook
+from data.rulebook.generate_rulebook import BENCHMARK, RULEBOOK_IDENTITY, build as build_rulebook
 
 
 class Stage12SiteRulebookContractTests(unittest.TestCase):
@@ -52,7 +52,7 @@ class Stage12SiteRulebookContractTests(unittest.TestCase):
         self.assertNotEqual(approved['approved_manifest']['sheets'][0]['label'], 'MUTATED AFTER APPROVAL')
 
     def test_stage_12_runtime_rulebook_contains_manifest_and_29_benchmark_contract(self):
-        self.assertEqual(VERSION, '5.2')
+        self.assertEqual(RULEBOOK_IDENTITY, 'mechanical-rulebook')
         self.assertEqual(BENCHMARK['base_architectural_views'], 4)
         self.assertEqual(BENCHMARK['approved_deliverables'], 29)
         self.assertEqual(BENCHMARK['independent_issued_drawing_content'], 29)

@@ -628,6 +628,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen questionnaire and design-basis improvements"},
       "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
       "migration":{"forward":"Revalidate, summarize and lock existing answers as questionnaire-design-basis/1.","rollback":"Revert and redeploy prior approved SHA; never silently reuse or invent design-basis facts."}
+    },
+    {
+      "id":"GOV-2026-062","status":"APPROVED",
+      "summary":"Replace hand-maintained component version labels on all active Mechanical product surfaces with stable identities plus Git and content hashes.",
+      "affected_capabilities":["runtime_identity","rulebook_identity","questionnaire_identity","design_basis_identity","build_provenance"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to eliminate the versioning problem throughout the site and code"},
+      "verification":{"active_runtime_guard":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_health":"must_pass"},
+      "migration":{"forward":"New jobs emit stable identity keys; Git SHA and content hashes remain authoritative. Historical compatibility records are not rewritten.","rollback":"Redeploy the previous approved SHA; no customer project data migration is destructive."}
     }
   ]
 }

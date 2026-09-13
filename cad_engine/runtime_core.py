@@ -372,7 +372,7 @@ def design(req: DesignRequest):
         merged = project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}.pdf"; merge_pdfs(page_pdfs,merged)
         package = project_out/f"EngiTools_{req.project_id}_{discipline}_R{req.revision}_DXF.zip"; zip_outputs(generated,package)
         return {
-            "ok":True,"project_id":req.project_id,"discipline":discipline,"engine_version":"0.2.0",
+            "ok":True,"project_id":req.project_id,"discipline":discipline,"runtime_identity":"cad-designer",
             "mode":"rule-driven-preliminary","preliminary":True,"requires_professional_review":True,
             "systems":systems,"design_reports":reports,"generated_files":[p.name for p in generated],
             "pdf_path":str(merged),"zip_path":str(package),

@@ -495,10 +495,10 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                     order = Checkout(project_id=project.id, user_id=uid, external_id=external_id)
                     db.add(order)
                 db.commit()
-                from .main_auto import panel_analysis_payload, QUESTIONNAIRE_VERSION
+                from .main_auto import panel_analysis_payload, QUESTIONNAIRE_IDENTITY
                 payload = order_payload(db, order)
                 payload["analysis"] = {**panel_analysis_payload((project.analysis or {}).get("architectural_auto") or {}),
-                                       "questions": [], "inferredAnswers": payload['answers'], "questionnaireVersion": QUESTIONNAIRE_VERSION}
+                                       "questions": [], "inferredAnswers": payload['answers'], "questionnaireIdentity": QUESTIONNAIRE_IDENTITY}
                 return payload
             try:
                 pid = int(body.get("engineProjectId", 0))

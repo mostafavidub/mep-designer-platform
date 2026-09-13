@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from cad_engine.build_identity import build_identity
-from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_REVISION, PMM_SCHEMA, PRODUCTION_CAD_ENTRYPOINT, RUNTIME_IDENTITY, runtime_contract
+from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_IDENTITY, PMM_SCHEMA, PRODUCTION_CAD_ENTRYPOINT, RUNTIME_IDENTITY, runtime_contract
 from cad_engine.runtime_contract_sync_gate import assert_runtime_contract_synchronized, contract_synchronization_errors
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,7 +14,7 @@ def test_runtime_uses_automatic_git_build_identity():
     assert contract["runtime_identity"] == RUNTIME_IDENTITY == "mechanical"
     assert contract["production_cad_entrypoint"] == PRODUCTION_CAD_ENTRYPOINT == "cad_engine.main:app"
     assert contract["pmm_schema"] == PMM_SCHEMA == "project-mechanical-model/v3"
-    assert identity["rulebook_schema_revision"] == f"mechanical-rulebook/{MECHANICAL_RULEBOOK_REVISION}"
+    assert identity["rulebook_identity"] == MECHANICAL_RULEBOOK_IDENTITY == "mechanical-rulebook"
     assert contract["build_identity"] == identity
 
 

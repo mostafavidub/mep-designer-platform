@@ -13,7 +13,7 @@ from collections import defaultdict
 import math
 import re
 
-VERSION = "17.0.0"
+ENGINE_IDENTITY = "reference-parity"
 
 SYSTEM_ALIASES = {
     "SANITARY_VENT": {"sanitary", "vent", "waste", "sewer"},
@@ -393,7 +393,7 @@ def run_regression_suite(projects: list[ProjectContext]) -> dict[str,Any]:
 def acceptance_gate(projects: list[ProjectContext], unseen_projects: list[ProjectContext] | None=None) -> dict[str,Any]:
     benchmark=run_regression_suite(projects); unseen=run_regression_suite(unseen_projects or []) if unseen_projects else {"pass":True,"projects":[]}
     checks={"benchmark_regression":benchmark["pass"],"unseen_project_validation":unseen["pass"],"project_agnostic_rules":True,"traceable_completion_inputs":all(propose_completion_inputs(p) for p in projects+(unseen_projects or []))}
-    return {"version":VERSION,"status":"PASS" if all(checks.values()) else "FAIL","checks":checks,"benchmark":benchmark,"unseen":unseen}
+    return {"identity":ENGINE_IDENTITY,"status":"PASS" if all(checks.values()) else "FAIL","checks":checks,"benchmark":benchmark,"unseen":unseen}
 
 
 def project_context_from_report(report: dict[str,Any], answers: dict[str,Any] | None=None, project_id: str="project") -> ProjectContext:
@@ -421,4 +421,4 @@ def build_documentation_package(context: ProjectContext) -> dict[str,Any]:
     context_payload["network_graph"]={"graph_id":context.network_graph.get("graph_id"),"node_count":len(context.network_graph.get("nodes") or []),"edge_count":len(context.network_graph.get("edges") or [])}
     context_payload["calculation_rows"]={"count":len(context.calculation_rows)}
     context_payload["unified_engineering_model"]={"schema":context.unified_engineering_model.get("schema"),"status":context.unified_engineering_model.get("status"),"identity":context.unified_engineering_model.get("identity"),"totals":context.unified_engineering_model.get("totals")}
-    return {"version":VERSION,"context":context_payload,"completion_inputs":propose_completion_inputs(context),"details":details,"riser":{"graph":riser,"reconciliation":reconciliation,"geometry":compose_riser_geometry_model(context,riser)},"calculations":calculations,"general_notes":notes,"consistency":consistency,"status":"PASS" if reconciliation["pass"] and consistency["pass"] else "FAIL"}
+    return {"identity":ENGINE_IDENTITY,"context":context_payload,"completion_inputs":propose_completion_inputs(context),"details":details,"riser":{"graph":riser,"reconciliation":reconciliation,"geometry":compose_riser_geometry_model(context,riser)},"calculations":calculations,"general_notes":notes,"consistency":consistency,"status":"PASS" if reconciliation["pass"] and consistency["pass"] else "FAIL"}

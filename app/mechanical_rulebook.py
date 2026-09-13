@@ -7,10 +7,9 @@ explicit user answer and unresolved facts must remain unresolved.
 import math
 import re
 
-from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_REVISION
+from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_IDENTITY
 
-# This is a semantic Rule Book revision, not an executable Mechanical engine version.
-RULEBOOK_VERSION = MECHANICAL_RULEBOOK_REVISION
+RULEBOOK_IDENTITY = MECHANICAL_RULEBOOK_IDENTITY
 
 NETWORK_COMPOSITION_STANDARD = {
     'topology': 'shared trunk/branch split at every terminal junction',
@@ -101,14 +100,14 @@ def network_design_basis():
     systems = {}
     for name, raw in NETWORK_DESIGN_BASIS['systems'].items():
         cfg = dict(raw)
-        cfg['material_source'] = f"MECHANICAL_RULEBOOK/{RULEBOOK_VERSION}:MEP-SIZE-001"
+        cfg['material_source'] = f"MECHANICAL_RULEBOOK/{RULEBOOK_IDENTITY}:MEP-SIZE-001"
         cfg['size_table'] = [
             {'max_load': maximum, 'size_mm': size} for maximum, size in raw['size_table']
         ]
         systems[name] = cfg
     return {
         'schema': NETWORK_DESIGN_BASIS['schema'],
-        'source': f"MECHANICAL_RULEBOOK/{RULEBOOK_VERSION}:MEP-SIZE-001",
+        'source': f"MECHANICAL_RULEBOOK/{RULEBOOK_IDENTITY}:MEP-SIZE-001",
         'systems': systems,
     }
 
@@ -189,7 +188,7 @@ def automatic_answers(auto):
             f"{SANITARY['material']}; {SANITARY['branch_slope_pct']} percent branches; "
             f"{SANITARY['main_slope_pct']} percent mains"
         ),
-        'mechanical_rulebook_version': RULEBOOK_VERSION,
+        'mechanical_rulebook_identity': RULEBOOK_IDENTITY,
         'questionnaire_evidence_version': '2.0',
     }
 

@@ -1,29 +1,34 @@
-"""Compatibility facade for automatic build identity and semantic revisions."""
+"""Compatibility facade for stable runtime identities and build provenance.
+
+New code must import :mod:`runtime_contract` or :mod:`build_identity` directly.
+This module remains only so older stored jobs can be read without selecting a
+parallel Mechanical implementation.
+"""
 
 from .build_identity import build_identity
 
-PLATFORM_RELEASE = build_identity()["commit_sha"]
-CAD_API_VERSION = PLATFORM_RELEASE
-MECHANICAL_PIPELINE_VERSION = PLATFORM_RELEASE
-MECHANICAL_VISUAL_GATE_VERSION = "all-sheet-visual-qa/4"
-MECHANICAL_RULEBOOK_VERSION = "5.2"
-MECHANICAL_SITE_MANIFEST_VERSION = "12.1"
-FIXTURE_EQUIPMENT_RULEBOOK_VERSION = "2.4-fixture-equipment-approved-symbols"
-GOVERNANCE_VERSION = "mechanical-governance-v1.0"
+PLATFORM_BUILD = build_identity()["commit_sha"]
+CAD_API_IDENTITY = "cad-designer"
+MECHANICAL_RUNTIME_IDENTITY = "mechanical"
+MECHANICAL_VISUAL_GATE_IDENTITY = "all-sheet-visual-qa"
+MECHANICAL_RULEBOOK_IDENTITY = "mechanical-rulebook"
+MECHANICAL_SITE_MANIFEST_IDENTITY = "mechanical-site-manifest"
+FIXTURE_EQUIPMENT_RULEBOOK_IDENTITY = "fixture-equipment-rulebook"
+GOVERNANCE_IDENTITY = "mechanical-governance"
 PRODUCTION_CAD_ENTRYPOINT = "cad_engine.main:app"
 
 
 def active_version_manifest():
     identity = build_identity()
     return {
-        "platform_release": PLATFORM_RELEASE,
-        "cad_api": CAD_API_VERSION,
-        "mechanical_pipeline": MECHANICAL_PIPELINE_VERSION,
-        "mechanical_visual_gate": MECHANICAL_VISUAL_GATE_VERSION,
-        "mechanical_rulebook": MECHANICAL_RULEBOOK_VERSION,
-        "mechanical_site_manifest": MECHANICAL_SITE_MANIFEST_VERSION,
-        "fixture_equipment_rulebook": FIXTURE_EQUIPMENT_RULEBOOK_VERSION,
-        "governance": GOVERNANCE_VERSION,
+        "platform_build": PLATFORM_BUILD,
+        "cad_api_identity": CAD_API_IDENTITY,
+        "mechanical_runtime_identity": MECHANICAL_RUNTIME_IDENTITY,
+        "mechanical_visual_gate_identity": MECHANICAL_VISUAL_GATE_IDENTITY,
+        "mechanical_rulebook_identity": MECHANICAL_RULEBOOK_IDENTITY,
+        "mechanical_site_manifest_identity": MECHANICAL_SITE_MANIFEST_IDENTITY,
+        "fixture_equipment_rulebook_identity": FIXTURE_EQUIPMENT_RULEBOOK_IDENTITY,
+        "governance_identity": GOVERNANCE_IDENTITY,
         "production_cad_entrypoint": PRODUCTION_CAD_ENTRYPOINT,
         "build_identity": identity,
     }

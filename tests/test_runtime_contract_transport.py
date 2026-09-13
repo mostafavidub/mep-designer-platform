@@ -23,9 +23,9 @@ def test_exact_contract_passes_and_one_stale_field_fails_closed():
     assert _runtime_contract_errors({"_runtime_contract": current}) == []
 
     stale = dict(current)
-    stale["site_manifest_revision"] = "stale"
+    stale["site_manifest_identity"] = "stale"
     assert _runtime_contract_errors({"_runtime_contract": stale}) == [
-        "runtime_contract_mismatch:site_manifest_revision"
+        "runtime_contract_mismatch:site_manifest_identity"
     ]
 
 

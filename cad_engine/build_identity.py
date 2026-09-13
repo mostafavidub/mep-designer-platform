@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PMM_SCHEMA_REVISION = "project-mechanical-model/v3"
-RULEBOOK_SCHEMA_REVISION = "mechanical-rulebook/5.2"
+RULEBOOK_IDENTITY = "mechanical-rulebook"
 MANUFACTURER_SCHEMA_REVISION = "manufacturer-catalogue/1"
 COMPLIANCE_PROFILE_REVISION = "mechanical-design-governance/1"
 
@@ -71,7 +71,7 @@ def build_identity() -> dict[str, object]:
         "production_entrypoint": "cad_engine.main:app",
         "pmm_schema_revision": PMM_SCHEMA_REVISION,
         "pmm_schema_hash": _sha256(pmm_files),
-        "rulebook_schema_revision": RULEBOOK_SCHEMA_REVISION,
+        "rulebook_identity": RULEBOOK_IDENTITY,
         "rulebook_hash": _sha256(rulebook_files),
         "manufacturer_schema_revision": MANUFACTURER_SCHEMA_REVISION,
         "manufacturer_db_hash": _sha256(manufacturer_files),

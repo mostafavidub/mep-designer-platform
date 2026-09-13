@@ -262,6 +262,13 @@ def write_migration() -> dict:
 
 
 if __name__ == "__main__":
+    canonical = [CAD / name for name in ("main_transport.py", "mechanical_authority.py", "mechanical_pipeline.py")]
+    if all(path.is_file() for path in canonical):
+        raise SystemExit(
+            "Migration already completed: canonical runtime files exist. "
+            "Use tools/runtime_version_guard.py; regeneration is intentionally disabled "
+            "because it could overwrite newer engineering and QA controls."
+        )
     report = write_migration()
     print(f"canonicalized {report['source_count']} active versioned modules")
     for source, target in report["mapping"].items():
