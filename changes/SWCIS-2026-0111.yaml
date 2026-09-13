@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0111",
+  "summary":"Stop treating rainwater detail codes as roof plans.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","runtime","ui_api","test","governance","documentation","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"cad_designer":"Roof coverage is required only by roof_plan or roof_rainwater drawing types.","qa":"Detail-sheet coverage remains enforced by the approved-manifest and documentation gates.","deployment":"Protected Staging rollout and live retry.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.40.1.","migration":"No schema migration.","governance":"GOV-2026-058 records type-based roof coverage.","versioning":"SWCIS 4.40.1."},
+  "evidence":{"tests":["M-S-RAIN detail_sheet passes without a fabricated ROOF sheet; true roof_plan coverage test remains enforced."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-058 removes only suffix-based roof inference."],"version_bump":["SWCIS 4.40.0 -> 4.40.1"],"migration":["No DB schema migration; retry project 1."],"semantic_diff":["Drawing type remains authoritative; no approved scope or generated artifact changes."],"artifact_diff":["A detail sheet is no longer rejected for lacking an unapproved roof plan."],"golden_regression":["Detail and true-roof coverage tests plus required CI must pass."],"deployment_plan":["Protected PR, merged-SHA Staging deployment and live retry."],"rollback_plan":["Revert and redeploy; approved-manifest and detail gates remain fail closed."]},
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"The change removes a code-name heuristic while retaining authoritative drawing-type and detail validation."},
+  "waiver":null
+}

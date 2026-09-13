@@ -158,7 +158,7 @@ def validate_generated_manifest(drawing_set, design_reports):
             drawing_type = str(sheet.get('drawing_type') or '')
             if drawing_type == 'floor_plan' and family in family_map:
                 required[family_map[family]] += 1
-            elif drawing_type in ('roof_plan', 'roof_rainwater') or str(sheet.get('code') or '').endswith('-RAIN'):
+            elif drawing_type in ('roof_plan', 'roof_rainwater'):
                 special_required.add('ROOF')
             elif drawing_type == 'riser_diagram' or str(sheet.get('code') or '').endswith('-RISER'):
                 special_required.add('PLUMBING_RISER')
