@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0115",
+  "summary":"Remove hand-maintained version identities from every active Mechanical product surface without changing engineering behavior.",
+  "requester":"project-owner",
+  "change_types":["ui_api","runtime","documentation","versioning","migration","test","governance","drawing_output","equipment","release_identity","rule","schema"],
+  "changed_rule_ids":[],
+  "impacted_modules":["ui_api","cad_designer","rule_book","questionnaire","pmm","planner","routing","sizing","equipment","manufacturer_selector","detail_riser","qa","manifest","docs","versioning","migration","governance","deployment"],
+  "impact_notes":{"ui_api":"Expose stable component identities rather than manually managed version fields.","cad_runtime":"Preserve the exact canonical engineering implementation while removing engine-version response metadata.","rulebook":"Identify the living Rule Book by semantic identity and content hash.","migration":"Previously stored records remain readable; newly generated records emit identity fields.","deployment":"Deploy the protected merged SHA to Staging and verify runtime identity and hashes."},
+  "evidence":{"tests":["Full regression and active-product version guard must pass."],"docs":["Single Living System, runtime matrix and affected Rule Book documents define stable identity plus content-hash behavior."],"version_bump":["SWCIS 4.41.2 -> 4.41.3"],"migration":["Dual-read compatibility remains in historical paths; new API/artifact payloads emit identity keys only."],"contract_diff":["Rule Book, questionnaire, design basis and runtime metadata change from version/revision fields to stable identity fields."],"deployment_plan":["Protected Staging PR, merged-SHA deployment, health and browser verification."],"rollback_plan":["Redeploy the prior approved SHA; no project engineering data is rewritten."],"golden_regression":["Full project-agnostic regression must remain green; no engineering algorithm changes are permitted."],"semantic_diff":["No calculation, topology, sizing, placement, documentation or QA semantics change."],"artifact_diff":["New artifacts retain Git SHA and content hashes but omit hand-maintained component version labels."],"traceability":["Existing engineering Rule IDs and PMM-to-calculation-to-plan/riser/schedule chains are unchanged; only metadata identity keys change."]},
+  "risk":{"likelihood":2,"severity":2,"detectability":1,"score":4,"rationale":"Metadata key migration may affect old consumers; full compatibility and contract tests detect drift."},
+  "waiver":null
+}

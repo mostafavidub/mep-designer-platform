@@ -9,7 +9,7 @@ The Mechanical product has one living executable runtime. Its executable identit
 | Executable build | Git commit SHA + content hashes from `cad_engine/build_identity.py` |
 | PMM schema | `project-mechanical-model/v3` |
 | Traceability policy | `NO_ORPHAN_ENGINEERING_OUTPUT` |
-| Mechanical Rule Book | `mechanical-rulebook/5.2` |
+| Mechanical Rule Book | stable identity `mechanical-rulebook` + content hash |
 | Fixture/equipment Rule Book | `2.4-fixture-equipment-approved-symbols` |
 | Mechanical site manifest contract | `12.1` |
 | Manufacturer catalogue schema | `manufacturer-catalogue/1` |

@@ -15,7 +15,7 @@ from ezdxf import bbox
 from app.mechanical_rulebook import (
     DEFAULT_GAS_PROPOSAL,
     DEFAULT_WATER_INLET_PRESSURE,
-    RULEBOOK_VERSION,
+    RULEBOOK_IDENTITY,
     SANITARY,
     WATER,
     automatic_answers,
@@ -561,7 +561,7 @@ def _technical_model(doc, levels, calc):
         'mechanical_shaft_route': mechanical_shaft_route or None,
         'hot_water_system': hot_water_system or None,
         'local_mechanical_code': local_mechanical_code or None,
-        'water_design_basis_source': f'Rulebook v{RULEBOOK_VERSION}',
+        'water_design_basis_source': RULEBOOK_IDENTITY,
         'hazen_williams_c': hazen_c, 'water_route_length_m': round(water_length_m, 2) if water_length_m else None,
         'water_head_loss_m': round(head_loss_m, 2) if head_loss_m is not None else None,
         'drainage_fixture_units': drainage_fu, 'sanitary_main_dn_mm': sanitary_dn,
@@ -578,7 +578,7 @@ def _technical_model(doc, levels, calc):
         'roof_flow_lps': round(roof_flow_lps, 2) if roof_flow_lps else None,
         'roof_flow_per_drain_lps': round(roof_flow_each, 2) if roof_flow_each else None,
         'roof_drain_dn_mm': roof_dn,
-        'mechanical_rulebook_version': RULEBOOK_VERSION,
+        'mechanical_rulebook_identity': RULEBOOK_IDENTITY,
     }
     return model
 
@@ -1119,7 +1119,7 @@ def design_dxf_v10_4(src, dst, discipline, systems, revision, calc):
     meta['technical_symbol_blocks'] = symbol_count
     meta['technical_schedule_annotations'] = schedule_count
     meta['compact_output'] = cleanup
-    meta['design_standard'] = f'Rulebook v{RULEBOOK_VERSION} short-answer evidence-gated mechanical technical design v10.7'
+    meta['design_standard'] = f'{RULEBOOK_IDENTITY} short-answer evidence-gated mechanical technical design'
     return meta
 
 

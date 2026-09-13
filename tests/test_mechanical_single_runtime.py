@@ -81,6 +81,36 @@ def test_runtime_contract_is_build_and_schema_metadata_not_engine_version_manife
     assert "engine_version" not in text
 
 
+def test_active_product_surfaces_do_not_expose_hand_managed_versions():
+    paths = (
+        "cad_engine/runtime_contract.py",
+        "cad_engine/build_identity.py",
+        "cad_engine/runtime_core.py",
+        "cad_engine/reference_parity_engine.py",
+        "app/mechanical_rulebook.py",
+        "app/fixture_equipment_rulebook.py",
+        "app/main_auto.py",
+        "app/panel_checkout.py",
+        "app/mechanical_basis_contract.py",
+        "data/rulebook/generate_rulebook.py",
+        "standards/active-release.json",
+    )
+    forbidden = (
+        "MECHANICAL_RULEBOOK_VERSION",
+        "MECHANICAL_RULEBOOK_REVISION",
+        "QUESTIONNAIRE_VERSION",
+        "engine_version",
+        "mechanical_rulebook_version",
+        "mechanical_rulebook_revision",
+        "questionnaireVersion",
+        "mechanical-rulebook/5.",
+        "mechanical-design-basis-v",
+    )
+    for relative in paths:
+        text = (ROOT / relative).read_text(encoding="utf-8")
+        assert not [token for token in forbidden if token in text], relative
+
+
 def test_single_living_system_documents_git_only_engine_history():
     text = (ROOT / "docs/SINGLE_LIVING_SYSTEM_STANDARD.md").read_text(encoding="utf-8")
     assert "compatibility debt" in text

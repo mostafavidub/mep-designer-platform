@@ -10,10 +10,10 @@ import sys
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
-from cad_engine.version_manifest import MECHANICAL_RULEBOOK_VERSION
+from cad_engine.build_identity import RULEBOOK_IDENTITY
 
 
-VERSION = MECHANICAL_RULEBOOK_VERSION
+RULEBOOK_NAME = RULEBOOK_IDENTITY
 BENCHMARK = {
     "base_architectural_views": 4,
     "approved_deliverables": 29,
@@ -50,7 +50,7 @@ def build(path):
     r.bold = True; r.font.size = Pt(18)
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    sub.add_run(f"Version {VERSION} — Approved Drawing Manifest Contract").bold = True
+    sub.add_run(f"{RULEBOOK_NAME} — Approved Drawing Manifest Contract").bold = True
 
     add_heading(doc, "1. Source-of-truth contract")
     add_bullet(doc, "Architectural level count is not the mechanical deliverable count.")
@@ -159,7 +159,7 @@ def build(path):
     doc.core_properties.title = "EngiTools MEP Design Rule Book v5"
     doc.core_properties.subject = "Mechanical approved drawing manifest and 29-deliverable benchmark"
     doc.save(path)
-    print(f"installed Rule Book v{VERSION}: {path} ({path.stat().st_size} bytes)")
+    print(f"installed {RULEBOOK_NAME}: {path} ({path.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":

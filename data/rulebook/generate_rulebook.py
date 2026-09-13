@@ -1,8 +1,8 @@
-"""Generate the production MEP Design Rule Book DOCX from the canonical semantic revision.
+"""Generate the production MEP Design Rule Book DOCX from canonical rules.
 
 The runtime document mirrors the machine-enforced Drawing Manifest contract.
 It is generated at deploy time so the deployed RULEBOOK_PATH is governed by the
-same semantic Rule Book revision used by the website proposal and CAD Designer.
+same content-hashed Rule Book used by the website proposal and CAD Designer.
 """
 from pathlib import Path
 import sys
@@ -10,10 +10,10 @@ import sys
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Pt
-from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_REVISION
+from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_IDENTITY
 
 
-VERSION = MECHANICAL_RULEBOOK_REVISION
+RULEBOOK_IDENTITY = MECHANICAL_RULEBOOK_IDENTITY
 BENCHMARK = {
     "base_architectural_views": 4,
     "approved_deliverables": 29,
@@ -50,7 +50,7 @@ def build(path):
     r.bold = True; r.font.size = Pt(18)
     sub = doc.add_paragraph()
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    sub.add_run(f"Rule Book revision {VERSION} — Approved Drawing Manifest Contract").bold = True
+    sub.add_run(f"{RULEBOOK_IDENTITY} — Approved Drawing Manifest Contract").bold = True
 
     add_heading(doc, "1. Source-of-truth contract")
     add_bullet(doc, "Architectural level count is not the mechanical deliverable count.")
@@ -159,7 +159,7 @@ def build(path):
     doc.core_properties.title = "EngiTools MEP Design Rule Book"
     doc.core_properties.subject = "Mechanical approved drawing manifest and 29-deliverable benchmark"
     doc.save(path)
-    print(f"installed Rule Book revision {VERSION}: {path} ({path.stat().st_size} bytes)")
+    print(f"installed {RULEBOOK_IDENTITY}: {path} ({path.stat().st_size} bytes)")
 
 
 if __name__ == "__main__":

@@ -213,7 +213,7 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
         self.assertEqual(row['load_unit'], 'WSFU')
         self.assertEqual(row['size_mm'], 16.0)
         self.assertEqual(row['material'], 'PPR')
-        self.assertIn('MECHANICAL_RULEBOOK/5.2', row['material_source'])
+        self.assertIn('MECHANICAL_RULEBOOK/mechanical-rulebook', row['material_source'])
 
     def test_unknown_canonical_endpoint_kind_remains_fail_closed(self):
         from app.mechanical_rulebook import network_design_basis

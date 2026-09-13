@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import re
 
 
-CONTRACT_VERSION = "mechanical-design-basis-v18.5.3"
+CONTRACT_IDENTITY = "mechanical-design-basis"
 
 
 def _text(value):
@@ -112,10 +112,10 @@ def normalize_answers(answers, *, answer_key=None, raw_answer=None):
                 "source": "explicit_user_answer",
                 "raw_answer": _text(raw_answer if answer_key == "mechanical_shaft_route" else (answers or {}).get("mechanical_shaft_route")),
                 "recorded_at": datetime.now(timezone.utc).isoformat(),
-                "contract_version": CONTRACT_VERSION,
+                "contract_identity": CONTRACT_IDENTITY,
             }
     out["_mechanical_basis_contract"] = {
-        "version": CONTRACT_VERSION,
+        "identity": CONTRACT_IDENTITY,
         "status": "NORMALIZED",
     }
     return out
@@ -133,7 +133,7 @@ def shaft_approval(answers):
         return {
             "status": "APPROVED", "strategy": strategy,
             "source": "legacy_explicit_user_answer",
-            "contract_version": CONTRACT_VERSION,
+            "contract_identity": CONTRACT_IDENTITY,
         }
     return None
 

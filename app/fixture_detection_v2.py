@@ -17,7 +17,7 @@ from .fixture_equipment_rulebook import (
     CANDIDATE_THRESHOLD,
     CORROBORATION_BONUS,
     DETECTED_THRESHOLD,
-    DETECTION_VERSION,
+    DETECTION_IDENTITY,
     EQUIPMENT_ALIASES,
     EQUIPMENT_LAYER_HINTS,
     FIXTURE_ALIASES,
@@ -259,7 +259,7 @@ def enhance_dxf_result(path, base_result):
     try:
         doc, _recovery = read_input_dxf(path)
     except Exception as exc:
-        result["fixture_detection_version"] = DETECTION_VERSION
+        result["fixture_detection_identity"] = DETECTION_IDENTITY
         result["fixture_detection_diagnostics"] = [f"fixture_detector_read_failed:{type(exc).__name__}"]
         return result
 
@@ -314,7 +314,7 @@ def enhance_dxf_result(path, base_result):
     fixture_counts = Counter(r["type"] for r in fixtures if r["status"] == "detected")
     equipment_counts = Counter(r["type"] for r in equipment if r["status"] == "detected")
 
-    result["fixture_detection_version"] = DETECTION_VERSION
+    result["fixture_detection_identity"] = DETECTION_IDENTITY
     result["fixture_detections"] = fixtures[:20000]
     result["equipment_detections"] = equipment[:20000]
     result["fixture_counts"] = dict(fixture_counts)
@@ -357,7 +357,7 @@ def enrich_auto_inference(auto, analysis):
     auto["equipment_counts"] = dict(Counter(r["type"] for r in equipment if r.get("status") == "detected"))
     auto["fixture_blocks_detected"] = sum(auto["fixture_counts"].values())
     auto["equipment_detected"] = sum(auto["equipment_counts"].values())
-    auto["fixture_detection_version"] = DETECTION_VERSION
+    auto["fixture_detection_identity"] = DETECTION_IDENTITY
 
     diagnostics = list(auto.get("evidence_diagnostics") or [])
     wet_levels = []

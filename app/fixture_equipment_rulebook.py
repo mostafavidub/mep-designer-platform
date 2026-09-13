@@ -5,8 +5,8 @@ corroborated spatial evidence is required before a downstream design engine may
 count an installed fixture/equipment item.
 """
 
-RULEBOOK_VERSION = "2.4-fixture-equipment-approved-symbols"
-DETECTION_VERSION = "fixture-equipment-v2"
+RULEBOOK_IDENTITY = "fixture-equipment-rulebook"
+DETECTION_IDENTITY = "fixture-equipment-detection"
 
 DETECTED_THRESHOLD = 0.78
 CANDIDATE_THRESHOLD = 0.60
