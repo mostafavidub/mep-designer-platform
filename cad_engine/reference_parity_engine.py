@@ -113,10 +113,19 @@ def _norm(value: Any) -> str:
 
 def canonical_system(value: Any) -> str | None:
     n = _norm(value).lower()
+    exact=[]; contained=[]
     for canonical, aliases in SYSTEM_ALIASES.items():
-        if n == canonical.lower() or any(a in n for a in aliases):
-            return canonical
-    return None
+        candidates={canonical.lower(), *(_norm(alias).lower() for alias in aliases)}
+        if n in candidates:
+            exact.append((len(n),canonical))
+        for alias in candidates:
+            if alias and alias in n:
+                contained.append((len(alias),canonical))
+    # Longest semantic match prevents `roof_rainwater` becoming WATER and
+    # `exhaust_ventilation` becoming SANITARY_VENT merely because shorter
+    # substrings were declared earlier in the dictionary.
+    matches=exact or contained
+    return max(matches)[1] if matches else None
 
 
 def decompose_reference_sheet(sheet: dict[str, Any]) -> ReferenceSheetSpec:
@@ -256,7 +265,7 @@ def reconcile_plan_riser(context: ProjectContext, graph: dict[str, Any]) -> dict
                   if row.get("branch_on_plan") and canonical_system(row.get("system")) in {"SANITARY_VENT","WATER","HEATING","GAS"}}
         mapped={(str(e.get("from") or "").removeprefix("PLAN:"),e.get("system")) for e in branch_edges}
         missing=sorted(expected-mapped); orphan=sorted(mapped-expected)
-        return {"pass":not missing and not orphan and bool(mapped),"expected_branch_count":len(expected),
+        return {"pass":not missing and not orphan and (bool(mapped) or not expected),"expected_branch_count":len(expected),
                 "mapped_branch_count":len(mapped),"missing":missing,"orphan":orphan,
                 "authority":"UNIFIED_ENGINEERING_MODEL"}
     for idx,r in enumerate(context.routes):
@@ -421,4 +430,11 @@ def build_documentation_package(context: ProjectContext) -> dict[str,Any]:
     context_payload["network_graph"]={"graph_id":context.network_graph.get("graph_id"),"node_count":len(context.network_graph.get("nodes") or []),"edge_count":len(context.network_graph.get("edges") or [])}
     context_payload["calculation_rows"]={"count":len(context.calculation_rows)}
     context_payload["unified_engineering_model"]={"schema":context.unified_engineering_model.get("schema"),"status":context.unified_engineering_model.get("status"),"identity":context.unified_engineering_model.get("identity"),"totals":context.unified_engineering_model.get("totals")}
-    return {"identity":ENGINE_IDENTITY,"context":context_payload,"completion_inputs":propose_completion_inputs(context),"details":details,"riser":{"graph":riser,"reconciliation":reconciliation,"geometry":compose_riser_geometry_model(context,riser)},"calculations":calculations,"general_notes":notes,"consistency":consistency,"status":"PASS" if reconciliation["pass"] and consistency["pass"] else "FAIL"}
+    errors=[]
+    if not reconciliation["pass"]:
+        errors.extend("RISER_MISSING:"+str(row) for row in reconciliation.get("missing") or [])
+        errors.extend("RISER_ORPHAN:"+str(row) for row in reconciliation.get("orphan") or [])
+        if not errors: errors.append("PLAN_RISER_RECONCILIATION_FAILED")
+    for key in ("missing_details","missing_notes","missing_risers"):
+        errors.extend(key.upper()+":"+str(row) for row in consistency.get(key) or [])
+    return {"identity":ENGINE_IDENTITY,"context":context_payload,"completion_inputs":propose_completion_inputs(context),"details":details,"riser":{"graph":riser,"reconciliation":reconciliation,"geometry":compose_riser_geometry_model(context,riser)},"calculations":calculations,"general_notes":notes,"consistency":consistency,"errors":errors,"status":"PASS" if not errors else "FAIL"}

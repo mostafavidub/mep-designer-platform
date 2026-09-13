@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.41.3
+**Canonical version:** 4.42.0
 
 **Status:** LOCKED
 
@@ -8,7 +8,7 @@
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
 
-Version 4.41.3 removes hand-maintained component versions from every active product surface and replaces them with stable semantic identities, Git commit identity and content hashes. Schema/governance revisions and external file-format revisions remain explicit compatibility metadata. Version 4.41.2 requires automated Staging completion to submit valid numeric engineering-basis values rather than nonnumeric acknowledgements. Version 4.41.0 added locked rule `MEP-UNIFIED-MODEL-001`: individual rooms, network edges, calculations, plans, risers and schedules must be projections of one graph-native engineering model. Connected endpoints with zero plan branches, orphan calculations or divergent Plan/Riser/Schedule identities fail closed.
+Version 4.42.0 normalizes contracted drawing manifests before PMM registration, collapses duplicate aggregate identities, resolves overlapping system names by their most-specific family, and requires actionable Plan/Riser/Schedule reconciliation diagnostics. Version 4.41.3 removes hand-maintained component versions from every active product surface and replaces them with stable semantic identities, Git commit identity and content hashes. Schema/governance revisions and external file-format revisions remain explicit compatibility metadata. Version 4.41.0 added locked rule `MEP-UNIFIED-MODEL-001`: individual rooms, network edges, calculations, plans, risers and schedules must be projections of one graph-native engineering model. Connected endpoints with zero plan branches, orphan calculations or divergent Plan/Riser/Schedule identities fail closed.
 
 ## Non-negotiable rule
 

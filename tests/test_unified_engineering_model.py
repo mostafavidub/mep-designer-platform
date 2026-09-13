@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from cad_engine.unified_engineering_model import build_unified_engineering_model
-from cad_engine.reference_parity_engine import ProjectContext, build_documentation_package
+from cad_engine.reference_parity_engine import ProjectContext, build_documentation_package, canonical_system
 
 
 def fixture():
@@ -32,6 +32,24 @@ def test_one_model_drives_nonzero_plan_riser_schedule_branches():
     assert package["riser"]["reconciliation"]["mapped_branch_count"] == 1
     assert package["riser"]["graph"]["authority"] == "UNIFIED_ENGINEERING_MODEL"
     assert package["calculations"]["authority"] == "UNIFIED_ENGINEERING_MODEL"
+
+
+def test_non_vertical_system_only_package_is_not_a_false_riser_failure():
+    pmm,graph,rows=fixture()
+    graph["edges"][0].update({"system":"exhaust_ventilation","role":"equipment_branch"})
+    rows[0]["system"]="exhaust_ventilation"
+    model=build_unified_engineering_model(pmm,graph,rows)
+    context=ProjectContext(levels=["GROUND"],active_systems=["EXHAUST"],network_graph=graph,
+                           calculation_rows=rows,unified_engineering_model=model)
+    package=build_documentation_package(context)
+    assert package["status"] == "PASS"
+    assert package["riser"]["reconciliation"]["expected_branch_count"] == 0
+
+
+def test_overlapping_system_names_use_the_most_specific_family():
+    assert canonical_system("exhaust_ventilation") == "EXHAUST"
+    assert canonical_system("roof_rainwater") == "RAINWATER"
+    assert canonical_system("cold_water") == "WATER"
 
 
 def test_identity_divergence_fails_closed():

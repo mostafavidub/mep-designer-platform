@@ -44,6 +44,22 @@ class ProjectMechanicalModelTests(unittest.TestCase):
         self.assertFalse(model["valid"])
         self.assertIn("planner_total_does_not_match_manifest_count",model["diagnostics"])
 
+    def test_contract_manifest_uses_its_sheets_not_dictionary_keys(self):
+        sheets=[{"code":"M-W-01","family":"water_supply","levels":["Ground"]}]
+        manifest={"schema_version":"drawing-manifest/3.2","total_sheets":1,"sheets":sheets,"manifest_id":"sealed"}
+        model=build_project_mechanical_model(self._analysis(),scope=self._scope(),proposal={"drawing_manifest":manifest,"total_plans":1})
+        self.assertEqual(model["drawing_manifest"],sheets)
+        self.assertEqual(model["drawing_manifest_count"],1)
+        self.assertNotIn("planner_total_does_not_match_manifest_count",model["diagnostics"])
+
+    def test_duplicate_aggregate_fixture_evidence_has_one_registry_identity(self):
+        analysis=self._analysis()
+        original=analysis["architectural_auto"]["fixture_counts"]
+        model=build_project_mechanical_model(analysis,scope=self._scope(),proposal={})
+        fixture_entities=[row for row in model["identity_registry"]["entities"] if row["kind"]=="fixture-group"]
+        self.assertEqual(len(fixture_entities),len(original))
+        self.assertEqual(len({row["entity_id"] for row in fixture_entities}),len(fixture_entities))
+
     def test_exact_architecture_level_bounds_fill_profile_omission(self):
         analysis = self._analysis()
         analysis['architectural_auto']['architecture_model'] = {'levels': [

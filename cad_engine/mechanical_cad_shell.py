@@ -366,7 +366,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         return report
     context=project_context_from_report(report,answers=answers,project_id=src.stem);package=build_documentation_package(context);report['reference_parity_documentation']=package
     if package.get('status')!='PASS':
-        report['status']='FAIL';report['stage']='reference_parity_documentation_gate';_restore_or_remove(dst,backup)
+        report['status']='FAIL';report['stage']='reference_parity_documentation_gate';report['errors']=package.get('errors') or ['REFERENCE_PARITY_DOCUMENTATION_FAILED'];_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
         return report
     enhancement=apply_documentation_enhancements(dst,report,context);report['documentation_enhancement_qa']=enhancement

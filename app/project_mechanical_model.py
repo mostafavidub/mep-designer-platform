@@ -145,10 +145,17 @@ def _shaft_rows(levels):
 def _identity_registry(levels, spaces, rooms, fixtures, equipment, shafts, manifest):
     """Create deterministic IDs without mutating legacy PMM payload fields."""
     rows = []
+    seen = set()
     aliases = {}
 
     def add(kind, payload, aliases_for_row=None):
         entity_id = _stable_id(kind, payload)
+        # Group rows can legitimately arrive more than once when multiple
+        # analyzers report the same aggregate. They represent one PMM entity,
+        # not several physical instances, so collapse exact duplicates.
+        if entity_id in seen and kind.endswith("group"):
+            return entity_id
+        seen.add(entity_id)
         rows.append({"entity_id": entity_id, "kind": kind, "fingerprint": deepcopy(payload)})
         for alias in aliases_for_row or []:
             if alias is not None and str(alias).strip():
@@ -197,7 +204,8 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
     fixtures = _fixture_rows(auto)
     equipment = deepcopy(auto.get("equipment") or [])
     shafts = _shaft_rows(levels)
-    manifest = deepcopy(proposal.get("drawing_manifest") or proposal.get("deliverable_sheets") or [])
+    raw_manifest = deepcopy(proposal.get("drawing_manifest") or proposal.get("deliverable_sheets") or [])
+    manifest = deepcopy(raw_manifest.get("sheets") or []) if isinstance(raw_manifest, dict) else list(raw_manifest)
     identity_registry = _identity_registry(levels, spaces, rooms, fixtures, equipment, shafts, manifest)
 
     model = {
@@ -238,7 +246,11 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "typical_groups": deepcopy(scope.get("typical_groups") or auto.get("typical_groups") or []),
         "drawing_manifest": manifest,
         "drawing_manifest_count": len(manifest),
-        "planner_total_plans": int(proposal.get("total_plans") or proposal.get("deliverable_sheet_count") or len(manifest)),
+        "planner_total_plans": int(
+            proposal.get("total_plans") or proposal.get("deliverable_sheet_count")
+            or (raw_manifest.get("total_sheets") if isinstance(raw_manifest, dict) else 0)
+            or len(manifest)
+        ),
         "identity_registry": identity_registry,
         "traceability_contract": {
             "required_chain": ["PMM_ENTITY_ID", "CALC_ID", "PLAN_ID", "RISER_ID", "SCHEDULE_ID", "QA"],
