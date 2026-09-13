@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0118",
+  "summary":"Increase the canonical wall-mounted Split AC symbol geometry so every orientation remains legible on dense issued sheets without weakening visual QA.",
+  "requester":"project-owner",
+  "change_types":["runtime","drawing_output","test","documentation","release_identity","governance","deployment"],
+  "changed_rule_ids":["MEP-VISUAL-QA-001"],
+  "impacted_modules":["cad_designer","qa","manifest","ui_api","docs","versioning","migration","governance","deployment","detail_riser","equipment","manufacturer_selector","planner","pmm","questionnaire","routing","rule_book","sizing"],
+  "impact_notes":{
+    "cad_designer":"Enlarge canonical IDU block geometry and its internal strokes/label while preserving insertion identity and route anchors.",
+    "qa":"Keep the locked 28x14 plotted-pixel threshold unchanged and verify both horizontal and rotated symbols.",
+    "manifest":"No schema or drawing-scope change.",
+    "ui_api":"No response-schema change; the existing actionable QA diagnostic remains unchanged.",
+    "docs":"Record the minimum canonical IDU geometry required to survive plotted visual QA.",
+    "versioning":"Patch bump SWCIS 4.42.1 to 4.42.2.",
+    "migration":"No data migration; regenerated artifacts automatically use the corrected block definition.",
+    "governance":"Preserve the locked visual gate and improve the generated artifact that it evaluates.",
+    "deployment":"Protected PR, merged-SHA Staging deployment and retry retained external project PRJ-4b88b61c-d878-434a-a732-005706262c5d."
+  },
+  "evidence":{
+    "traceability":["MEP-VISUAL-QA-001 -> canonical ENGI_AC_INDOOR block -> exact reopened DXF -> per-sheet rendered pixels -> split_ac_visual_gate"],
+    "tests":["Positive standard symbol passes at 0 and 90 degrees; destructive undersized symbol remains blocked; full regression required."],
+    "docs":["SPLIT_EXHAUST_DESIGN_STANDARD documents canonical plotted legibility geometry."],
+    "version_bump":["SWCIS 4.42.1 -> 4.42.2"],
+    "migration":["None; output-only geometry is rebuilt on retry."],
+    "golden_regression":["Full project-agnostic regression plus retained Staging project 4 canary."],
+    "semantic_diff":["IDU identity, location, rotation, capacity, routes and callouts are unchanged; only visible block extents and internal graphics grow."],
+    "artifact_diff":["ENGI_AC_INDOOR envelope increases from 1.80x0.68 to 2.00x0.80 drawing units; QA minimum remains 28x14 pixels."],
+    "numeric_diff":["Envelope width +11.1 percent; height +17.6 percent; route and equipment calculation values unchanged."],
+    "contract_diff":["No gate relaxation or API/schema change."],
+    "deployment_plan":["Merge only after all required checks; deploy exact merge SHA to both Staging services; retry project 4 and download/reopen output."],
+    "rollback_plan":["Redeploy cdb4f6a61b0cbf62453465f350c7e319c786d4c7 and retain the failed QA evidence."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"A bounded generated-symbol geometry increase with unchanged coordinates, engineering semantics and fail-closed threshold."},
+  "waiver":null
+}

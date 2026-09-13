@@ -540,7 +540,7 @@ def _nearest_wall(p,walls):
 
 def _ensure_ac_blocks(doc):
     if "ENGI_AC_INDOOR" not in doc.blocks:
-        b=doc.blocks.new("ENGI_AC_INDOOR");b.add_lwpolyline([(-.90,-.34),(.90,-.34),(.90,.34),(-.90,.34)],close=True,dxfattribs={"lineweight":35});b.add_line((-.72,.08),(.72,.08),dxfattribs={"lineweight":25});b.add_line((-.72,-.08),(.72,-.08),dxfattribs={"lineweight":25});b.add_text("IDU",dxfattribs={"height":.22,"lineweight":25}).set_placement((-.22,-.27))
+        b=doc.blocks.new("ENGI_AC_INDOOR");b.add_lwpolyline([(-1.00,-.40),(1.00,-.40),(1.00,.40),(-1.00,.40)],close=True,dxfattribs={"lineweight":35});b.add_line((-.80,.10),(.80,.10),dxfattribs={"lineweight":25});b.add_line((-.80,-.10),(.80,-.10),dxfattribs={"lineweight":25});b.add_text("IDU",dxfattribs={"height":.24,"lineweight":25}).set_placement((-.24,-.32))
     if "ENGI_AC_OUTDOOR" not in doc.blocks:
         b=doc.blocks.new("ENGI_AC_OUTDOOR");b.add_lwpolyline([(-.70,-.65),(.70,-.65),(.70,.65),(-.70,.65)],close=True,dxfattribs={"lineweight":35});b.add_circle((0,.08),.38,dxfattribs={"lineweight":25});b.add_line((-.27,-.19),(.27,.35),dxfattribs={"lineweight":25});b.add_line((-.27,.35),(.27,-.19),dxfattribs={"lineweight":25});b.add_text("ODU",dxfattribs={"height":.20,"lineweight":25}).set_placement((-.31,-.59))
 
