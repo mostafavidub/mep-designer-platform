@@ -30,3 +30,18 @@ def test_incomplete_or_orphaned_sealed_identity_fails_closed():
     result = _canonical_architecture_identity(_answers(model))
     assert result["room_identity_complete"] is False
     assert result["shaft_wet_core_evidence_complete"] is False
+
+
+def test_unbounded_outlier_label_does_not_invalidate_real_closed_rooms():
+    model = {"levels": [{
+        "name": "Ground",
+        "rooms": [
+            {"id": "L01-R001", "type": "living", "bounds": [0, 0, 8, 8]},
+            {"id": "L01-R002", "type": "kitchen", "bounds": None, "polygon": None},
+        ],
+        "shafts": [], "wet_cores": [],
+    }]}
+    result = _canonical_architecture_identity(_answers(model))
+    assert result["room_identity_complete"] is True
+    assert result["closed_room_count"] == 1
+    assert result["unbounded_room_label_count"] == 1

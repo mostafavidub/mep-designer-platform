@@ -306,21 +306,30 @@ def _canonical_architecture_identity(answers: dict) -> dict:
     model = contract.get("architecture_evidence") or {}
     levels = model.get("levels") or []
     rooms = []
+    closed_rooms_by_level = {}
+    required_floor_levels = []
     shafts = []
     wet_cores = []
     for level in levels:
         level_id = level.get("id") or level.get("name")
+        closed_rooms_by_level[level_id] = []
+        if level.get("roof") is not True:
+            required_floor_levels.append(level_id)
         for room in level.get("rooms") or []:
             rooms.append((level_id, room))
+            if len(room.get("bounds") or room.get("polygon") or []) >= 4:
+                closed_rooms_by_level[level_id].append(room)
         for shaft in level.get("shafts") or []:
             shafts.append((level_id, shaft))
         for core in level.get("wet_cores") or []:
             wet_cores.append((level_id, core))
     room_ids = {room.get("id") for _level, room in rooms if room.get("id")}
-    rooms_complete = bool(rooms) and all(
+    closed_rooms = [(level_id, room) for level_id, values in closed_rooms_by_level.items() for room in values]
+    populated_levels = [level_id for level_id, values in closed_rooms_by_level.items() if values]
+    rooms_complete = bool(closed_rooms) and all(closed_rooms_by_level.get(level_id) for level_id in required_floor_levels) and all(
         level_id and room.get("id") and room.get("type")
         and len(room.get("bounds") or room.get("polygon") or []) >= 4
-        for level_id, room in rooms
+        for level_id, room in closed_rooms
     )
     shafts_complete = bool(shafts) and all(
         level_id and shaft.get("id")
@@ -336,7 +345,10 @@ def _canonical_architecture_identity(answers: dict) -> dict:
     return {
         "model_version": model.get("version"),
         "topology_version": model.get("topology_version"),
-        "room_count": len(rooms), "shaft_count": len(shafts), "wet_core_count": len(wet_cores),
+        "room_count": len(rooms), "closed_room_count": len(closed_rooms),
+        "unbounded_room_label_count": len(rooms) - len(closed_rooms),
+        "levels_with_closed_rooms": len(populated_levels),
+        "shaft_count": len(shafts), "wet_core_count": len(wet_cores),
         "room_identity_complete": rooms_complete,
         "shaft_wet_core_evidence_complete": shafts_complete or wet_cores_complete,
     }

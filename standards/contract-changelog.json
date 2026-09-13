@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-057","status":"APPROVED",
+      "summary":"Evaluate closed-room identity on geometrically bounded rooms, require valid closed-room coverage for every non-roof level, and retain unbounded labels as explicit outlier evidence.",
+      "affected_capabilities":["architecture_preservation_100","closed_room_identity","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete generation after exact Faseehi evidence showed 25 closed rooms and one remote unbounded kitchen label"},
+      "verification":{"project_regression":"must_pass","outlier_test":"must_pass","empty_floor_test":"must_fail_closed","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_retry":"must_pass"},
+      "migration":{"forward":"Retry the durable project after deployment.","rollback":"Revert closed-room scoping; preserve all exact-output gates."}
+    },
+    {
       "id":"GOV-2026-056","status":"APPROVED",
       "summary":"Allow exact-output architecture QA to reconcile flattened-DXF detections with complete server-sealed room, shaft and wet-core identities from the same upload.",
       "affected_capabilities":["architecture_preservation_100","architecture_identity","mechanical_generation"],"affected_projects":["all"],
