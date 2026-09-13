@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-060","status":"APPROVED",
+      "summary":"Synchronize deployed build identity and active documentation with Mechanical Rule Book 5.2.",
+      "affected_capabilities":["mechanical_runtime_authority","unified_engineering_model"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete phase one and publish a testable Staging build"},
+      "verification":{"runtime_contract":"must_pass","build_identity_revision":"must_equal_runtime_revision","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Metadata-only revision synchronization; regenerate artifacts to stamp the corrected identity.","rollback":"Revert the synchronization commit and redeploy the prior approved SHA."}
+    },
+    {
       "id":"GOV-2026-059","status":"APPROVED",
       "summary":"Require one graph-native engineering model to drive Mechanical calculations, plans, risers and schedules with shared identities and nonzero connected branch reconciliation.",
       "affected_capabilities":["unified_engineering_model","mechanical_runtime_authority","parametric_detail_riser_identity","calculation_reasonableness"],"affected_projects":["all"],
