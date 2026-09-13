@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-059","status":"APPROVED",
+      "summary":"Require one graph-native engineering model to drive Mechanical calculations, plans, risers and schedules with shared identities and nonzero connected branch reconciliation.",
+      "affected_capabilities":["unified_engineering_model","mechanical_runtime_authority","parametric_detail_riser_identity","calculation_reasonableness"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to implement phase one of the specialist engineering designer and publish it to Staging"},
+      "verification":{"positive_graph_test":"must_pass","destructive_identity_tests":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_regeneration":"must_complete"},
+      "migration":{"forward":"Reanalyse and regenerate each project to create unified-engineering-model/1 from its approved architecture and basis.","rollback":"Revert the protected commit and redeploy the prior approved SHA; never accept orphan or divergent outputs."}
+    },
+    {
       "id":"GOV-2026-058","status":"APPROVED",
       "summary":"Derive mandatory roof-plan coverage only from roof drawing types; keep -RAIN detail sheets under the independently validated detail contract.",
       "affected_capabilities":["drawing_set_coverage","detail_classification","mechanical_generation"],"affected_projects":["all"],

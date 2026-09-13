@@ -1,0 +1,5 @@
+{
+  "schema":"unified-engineering-model-golden/1",
+  "required":{"status":"PASS","branches_min":1,"identity_mismatch":0,"orphan_calculations":0,"graph_derived_documentation":true},
+  "forbidden":["ZERO_PLAN_BRANCHES_WITH_CONNECTED_ENDPOINTS","OUTPUT_IDENTITY_DIVERGENCE","ORPHAN_CALCULATIONS"]
+}

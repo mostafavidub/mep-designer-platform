@@ -17,15 +17,29 @@ def _routing_pass():
             "release_allowed": True, "controls": [{"status": "PASS"}] * 18}
 
 
+def _unified_pass(*_args, **_kwargs):
+    return {
+        "schema": "unified-engineering-model/1",
+        "status": "PASS",
+        "identity": {"model_id": "UEM-TEST"},
+        "totals": {"branches": 1, "plan_branches": 1},
+        "branch_counts": {"DOMESTIC_WATER": 1},
+        "level_branch_counts": {"GROUND": {"DOMESTIC_WATER": 1}},
+        "calculation_records": [{"network_edge_id": "E1", "branch_on_plan": True}],
+        "errors": [],
+    }
+
+
 @patch.object(authority, "evaluate_topology_routing", return_value=_routing_pass())
 @patch.object(authority, "materialize_authoritative_network", return_value={"status": "PASS"})
+@patch.object(authority, "build_unified_engineering_model", side_effect=_unified_pass)
 @patch.object(authority, "_design_shell", return_value={"status": "PASS", "composition": {}})
 @patch.object(authority, "run_pipeline")
 @patch.object(authority, "_traceability_preflight", return_value=_traceability_pass())
 @patch.object(authority, "_prepare_network_authority", return_value=_network_pass())
 @patch.object(authority, "_runtime_contract_errors", return_value=[])
 def test_external_input_blocker_delivers_truthful_pre_submission(
-    _contract, _network, _traceability, pipeline, renderer, materializer, routing_gate, tmp_path
+    _contract, _network, _traceability, pipeline, renderer, _unified, materializer, routing_gate, tmp_path
 ):
     pipeline.return_value = {
         "status": "INPUT_REQUIRED", "blocked_at": "target_design_packages",
@@ -52,8 +66,9 @@ def test_external_input_blocker_delivers_truthful_pre_submission(
 })
 @patch.object(authority, "_traceability_preflight", return_value=_traceability_pass())
 @patch.object(authority, "_prepare_network_authority", return_value=_network_pass())
+@patch.object(authority, "build_unified_engineering_model", side_effect=_unified_pass)
 @patch.object(authority, "_runtime_contract_errors", return_value=[])
-def test_real_pipeline_failure_still_blocks_artifact(_contract, _network, _traceability, _pipeline, renderer, tmp_path):
+def test_real_pipeline_failure_still_blocks_artifact(_contract, _unified, _network, _traceability, _pipeline, renderer, tmp_path):
     result = authority.design_mechanical_authority_site(Path("in.dxf"), tmp_path / "out.dxf", answers={}, plan_analysis={})
     renderer.assert_not_called()
     assert result["status"] == "FAIL"

@@ -102,6 +102,9 @@ class ProjectContext:
     routes: list[dict[str, Any]] = field(default_factory=list)
     rooms: list[dict[str, Any]] = field(default_factory=list)
     answers: dict[str, Any] = field(default_factory=dict)
+    network_graph: dict[str, Any] = field(default_factory=dict)
+    calculation_rows: list[dict[str, Any]] = field(default_factory=list)
+    unified_engineering_model: dict[str, Any] = field(default_factory=dict)
 
 
 def _norm(value: Any) -> str:
@@ -206,6 +209,30 @@ def compose_detail_sheet_model(context: ProjectContext) -> dict[str, Any]:
 
 
 def build_riser_graph(context: ProjectContext) -> dict[str, Any]:
+    if context.unified_engineering_model.get("status") == "PASS":
+        unified = context.unified_engineering_model
+        level_name = {str(row.get("id")): str(row.get("name") or row.get("type") or row.get("id"))
+                      for row in unified.get("levels") or []}
+        levels = list(dict.fromkeys(level_name.values())) or list(dict.fromkeys(context.levels or ["GROUND"]))
+        nodes=[]; edges=[]
+        systems=sorted({canonical_system(row.get("system")) for row in unified.get("calculation_records") or []
+                        if canonical_system(row.get("system")) in {"SANITARY_VENT","WATER","HEATING","GAS"}})
+        riser_by_system={"SANITARY_VENT":"S1/V1","WATER":"CW1/HW1","HEATING":"HF1/HR1","GAS":"G1"}
+        for system in systems:
+            riser_id=riser_by_system[system]
+            for level in levels: nodes.append({"id":f"{riser_id}@{level}","riser":riser_id,"system":system,"level":level})
+        for record in unified.get("calculation_records") or []:
+            system=canonical_system(record.get("system"))
+            if system not in riser_by_system or not record.get("branch_on_plan"): continue
+            raw_levels=record.get("levels") or []
+            names=[level_name.get(str(value),str(value)) for value in raw_levels]
+            level=names[0] if names else levels[0]
+            edges.append({"from":"PLAN:"+str(record["network_edge_id"]),"to":f"{riser_by_system[system]}@{level}",
+                          "system":system,"level":level,"type":"PLAN_BRANCH","dn":record.get("size_mm"),
+                          "calc_id":record.get("calc_id"),"plan_id":record.get("plan_id"),
+                          "riser_id":record.get("riser_id"),"schedule_id":record.get("schedule_id")})
+        return {"levels":levels,"nodes":nodes,"edges":edges,"authority":"UNIFIED_ENGINEERING_MODEL",
+                "source_unified_hash":(unified.get("identity") or {}).get("unified")}
     levels=list(dict.fromkeys(context.levels or ["GROUND"])); nodes=[]; edges=[]
     for system in context.active_systems:
         c=canonical_system(system)
@@ -223,6 +250,15 @@ def build_riser_graph(context: ProjectContext) -> dict[str, Any]:
 
 def reconcile_plan_riser(context: ProjectContext, graph: dict[str, Any]) -> dict[str, Any]:
     branch_edges=[e for e in graph["edges"] if e.get("type")=="PLAN_BRANCH"]; expected=[]
+    if graph.get("authority") == "UNIFIED_ENGINEERING_MODEL":
+        expected={(str(row.get("network_edge_id")),canonical_system(row.get("system")))
+                  for row in context.unified_engineering_model.get("calculation_records") or []
+                  if row.get("branch_on_plan") and canonical_system(row.get("system")) in {"SANITARY_VENT","WATER","HEATING","GAS"}}
+        mapped={(str(e.get("from") or "").removeprefix("PLAN:"),e.get("system")) for e in branch_edges}
+        missing=sorted(expected-mapped); orphan=sorted(mapped-expected)
+        return {"pass":not missing and not orphan and bool(mapped),"expected_branch_count":len(expected),
+                "mapped_branch_count":len(mapped),"missing":missing,"orphan":orphan,
+                "authority":"UNIFIED_ENGINEERING_MODEL"}
     for idx,r in enumerate(context.routes):
         c=canonical_system(r.get("system")); level=r.get("level") or r.get("floor")
         if c in {"SANITARY_VENT","WATER","HEATING","GAS"} and level: expected.append((idx,c,level))
@@ -258,6 +294,18 @@ def build_calculation_rows(context: ProjectContext, deps: dict[str, list[str]]) 
 
 
 def format_calculation_sheet_model(context: ProjectContext) -> dict[str, Any]:
+    if context.calculation_rows:
+        sections=defaultdict(list)
+        for source in context.calculation_rows:
+            row={"id":source.get("calc_id"),"sources":[source.get("network_edge_id")],
+                 "source_refs":[str(source.get("source") or source.get("provenance"))],
+                 "basis":"AUTHORITATIVE_GRAPH_SEGMENT","result_status":"CALCULATED",
+                 "system":source.get("system"),"size_mm":source.get("size_mm"),
+                 "downstream_load":source.get("downstream_load"),"load_unit":source.get("load_unit")}
+            sections[str(source.get("system") or "GENERAL").upper()].append(row)
+        return {"family":"CALCULATION","sections":[{"title":k,"columns":["ID","SOURCE","BASIS","RESULT","STATUS"],"rows":v} for k,v in sections.items()],
+                "summary_required":True,"units_required":True,"assumptions_required":True,
+                "authority":"UNIFIED_ENGINEERING_MODEL"}
     deps=build_calculation_dependencies(context); rows=build_calculation_rows(context,deps); sections=defaultdict(list)
     for r in rows: sections[r["id"].split("_")[0].upper()].append(r)
     return {"family":"CALCULATION","sections":[{"title":k,"columns":["ID","SOURCE","BASIS","RESULT","STATUS"],"rows":v} for k,v in sections.items()],"summary_required":True,"units_required":True,"assumptions_required":True}
@@ -359,9 +407,18 @@ def project_context_from_report(report: dict[str,Any], answers: dict[str,Any] | 
     pipeline=report.get("pipeline") or report.get("engineering") or {}; routes=[]
     for src in [pipeline.get("routing") or {}, pipeline.get("hvac") or {}]: routes.extend(src.get("routes") or [])
     equipment=(pipeline.get("hvac") or {}).get("equipment") or []; fixtures=(pipeline.get("architecture") or {}).get("fixtures") or []
-    return ProjectContext(project_id=project_id,building_use=answers.get("building_use","residential"),levels=levels or ["GROUND"],active_systems=systems,fixtures=list(fixtures),equipment=list(equipment),routes=list(routes),answers=answers)
+    contract=answers.get("_canonical_input_contract") or {}; unified=contract.get("unified_engineering_model") or {}
+    network=contract.get("network_graph") or {}; calculations=contract.get("calculation_rows") or []
+    if unified.get("status") == "PASS":
+        routes=[row for row in unified.get("calculation_records") or [] if row.get("branch_on_plan")]
+    pmm=contract.get("project_mechanical_model") or {}
+    return ProjectContext(project_id=project_id,building_use=answers.get("building_use","residential"),levels=levels or ["GROUND"],active_systems=systems,fixtures=list(fixtures),equipment=list(equipment),routes=list(routes),rooms=list(pmm.get("rooms") or []),answers=answers,network_graph=network,calculation_rows=list(calculations),unified_engineering_model=unified)
 
 
 def build_documentation_package(context: ProjectContext) -> dict[str,Any]:
     details=compose_detail_sheet_model(context); riser=build_riser_graph(context); reconciliation=reconcile_plan_riser(context,riser); calculations=format_calculation_sheet_model(context); notes=attach_provenance(context,select_general_notes(context)); consistency=sheet_consistency_gate(context,details,riser,calculations,notes)
-    return {"version":VERSION,"context":asdict(context),"completion_inputs":propose_completion_inputs(context),"details":details,"riser":{"graph":riser,"reconciliation":reconciliation,"geometry":compose_riser_geometry_model(context,riser)},"calculations":calculations,"general_notes":notes,"consistency":consistency,"status":"PASS" if reconciliation["pass"] and consistency["pass"] else "FAIL"}
+    context_payload=asdict(context)
+    context_payload["network_graph"]={"graph_id":context.network_graph.get("graph_id"),"node_count":len(context.network_graph.get("nodes") or []),"edge_count":len(context.network_graph.get("edges") or [])}
+    context_payload["calculation_rows"]={"count":len(context.calculation_rows)}
+    context_payload["unified_engineering_model"]={"schema":context.unified_engineering_model.get("schema"),"status":context.unified_engineering_model.get("status"),"identity":context.unified_engineering_model.get("identity"),"totals":context.unified_engineering_model.get("totals")}
+    return {"version":VERSION,"context":context_payload,"completion_inputs":propose_completion_inputs(context),"details":details,"riser":{"graph":riser,"reconciliation":reconciliation,"geometry":compose_riser_geometry_model(context,riser)},"calculations":calculations,"general_notes":notes,"consistency":consistency,"status":"PASS" if reconciliation["pass"] and consistency["pass"] else "FAIL"}

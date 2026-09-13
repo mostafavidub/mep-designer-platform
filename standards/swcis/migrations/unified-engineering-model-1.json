@@ -1,0 +1,11 @@
+{
+  "migration_id":"unified-engineering-model-1",
+  "from":"project-mechanical-model/v3 without unified model",
+  "to":"project-mechanical-model/v3 with unified-engineering-model/1",
+  "compatibility":"backward-compatible additive",
+  "forward":"Reanalyse approved architecture and rebuild topology, calculations and document projections on next generation.",
+  "rollback":"Redeploy the prior approved Git commit; no stored field is deleted or destructively rewritten.",
+  "validation":["individual room IDs unique","one calculation per edge","shared output identity","nonzero branches for connected endpoints"],
+  "consumer_order":["PMM","topology","segment sizing","unified model","CAD/documentation","QA"],
+  "database_migration":false
+}

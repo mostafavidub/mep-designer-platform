@@ -35,6 +35,7 @@ from .documentation_content_gate import (
     evaluate_documentation_content,
     exact_documentation_output_evidence,
 )
+from .unified_engineering_model import build_unified_engineering_model
 from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_basis
 
 
@@ -120,6 +121,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "architecture_recognition_context": _first_value(contract.get("architecture_recognition_context"), plan_analysis.get("architecture_recognition_context_canonical")),
         "documentation_content_context": _first_value(contract.get("documentation_content_context"), plan_analysis.get("documentation_content_context_canonical")),
         "questionnaire_design_basis_context": _first_value(contract.get("questionnaire_design_basis_context"), plan_analysis.get("questionnaire_design_basis_context_canonical")),
+        "unified_engineering_model": _first_value(contract.get("unified_engineering_model"), plan_analysis.get("unified_engineering_model_canonical")),
     }
 
 
@@ -342,6 +344,21 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if network_authority.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": sorted(set(required))}}
 
+    unified = build_unified_engineering_model(
+        payload.get("project_mechanical_model"), payload.get("network_graph"),
+        payload.get("calculation_rows"), payload.get("network_design_basis"),
+    )
+    if unified.get("status") != "PASS":
+        blockers = unified.get("errors") or unified.get("missing_inputs") or ["UNIFIED_ENGINEERING_MODEL_REQUIRED"]
+        return {"status": "FAIL", "stage": "unified_engineering_model_gate",
+                "network_authority_qa": network_authority, "unified_engineering_model_qa": unified,
+                "input_required": {"status": "INPUT_REQUIRED" if unified.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": blockers}}
+    payload["unified_engineering_model"] = unified
+    totals = dict(payload.get("calculation_totals") or {})
+    totals["branches"] = unified["totals"]["branches"]
+    payload["calculation_totals"] = totals
+
     traceability = _traceability_preflight(payload)
     if traceability.get("status") != "PASS":
         return {"status": "FAIL", "stage": "authority_input_gate",
@@ -428,7 +445,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         backup = Path(name)
         shutil.copy2(dst, backup)
 
-    rendered = _design_shell(src, dst, answers=answers, plan_analysis=plan_analysis)
+    shell_answers = dict(answers)
+    shell_contract = dict(shell_answers.get("_canonical_input_contract") or {})
+    shell_contract.update({
+        "unified_engineering_model": unified,
+        "network_graph": payload["network_graph"],
+        "calculation_rows": payload["calculation_rows"],
+        "calculation_totals": payload["calculation_totals"],
+        "project_mechanical_model": payload["project_mechanical_model"],
+    })
+    shell_answers["_canonical_input_contract"] = shell_contract
+    rendered = _design_shell(src, dst, answers=shell_answers, plan_analysis=plan_analysis)
     if rendered.get("status") != "PASS":
         if backup:
             backup.unlink(missing_ok=True)
@@ -439,6 +466,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         rendered["network_authority_qa"] = network_authority
         rendered["authority_pipeline_qa"] = result
         rendered["traceability_preflight"] = traceability
+        rendered["unified_engineering_model_qa"] = unified
         return rendered
 
     materialization = materialize_authoritative_network(src, dst, rendered, payload["network_graph"])
@@ -503,6 +531,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
 
     rendered["network_authority_qa"] = network_authority
     rendered["materialization_qa"] = materialization
+    rendered["unified_engineering_model_qa"] = unified
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
     rendered["calculation_reasonableness_qa"] = reasonableness
