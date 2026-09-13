@@ -110,6 +110,21 @@ class ArtifactQualityGateTests(unittest.TestCase):
                 'composition': {'manifest': [{'code': 'M-001', 'family': 'COVER'}]},
             }])
 
+    def test_rain_detail_code_is_not_misclassified_as_roof_plan(self):
+        drawing_set = self._approved_set([
+            {'code': 'M-S-01', 'family': 'sanitary_vent', 'drawing_type': 'floor_plan'},
+            {'code': 'M-S-RAIN', 'family': 'sanitary_vent', 'drawing_type': 'detail_sheet'},
+        ])
+        rows = [
+            {'code': 'M-101', 'family': 'SANITARY_VENT'},
+            {'code': 'M-501', 'family': 'GENERAL_DETAIL', 'title': 'RAINWATER / VENT DETAILS'},
+        ]
+        result = validate_generated_manifest(drawing_set, [{
+            'status': 'PASS', 'dxf_qa': {'status': 'PASS'},
+            'composition': {'manifest': rows},
+        }])
+        self.assertEqual(result['status'], 'PASS')
+
 
 class QueueIntegrationContractTests(unittest.TestCase):
     def test_queue_supervisor_is_fail_visible_and_keeps_polling_after_exception(self):

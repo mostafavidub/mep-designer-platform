@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-058","status":"APPROVED",
+      "summary":"Derive mandatory roof-plan coverage only from roof drawing types; keep -RAIN detail sheets under the independently validated detail contract.",
+      "affected_capabilities":["drawing_set_coverage","detail_classification","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete generation after live approved manifest proved M-S-RAIN is detail_sheet, not roof_plan"},
+      "verification":{"detail_regression":"must_pass","roof_plan_regression":"must_remain_fail_closed","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_retry":"must_pass"},
+      "migration":{"forward":"Retry the durable project after deployment.","rollback":"Revert classifier; preserve approved-manifest and detail gates."}
+    },
+    {
       "id":"GOV-2026-057","status":"APPROVED",
       "summary":"Evaluate closed-room identity on geometrically bounded rooms, require valid closed-room coverage for every non-roof level, and retain unbounded labels as explicit outlier evidence.",
       "affected_capabilities":["architecture_preservation_100","closed_room_identity","mechanical_generation"],"affected_projects":["all"],
