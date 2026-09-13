@@ -189,6 +189,12 @@ class QueueIntegrationContractTests(unittest.TestCase):
             ['gas_pressure'],
         )
 
+    def test_maintenance_defaults_supply_numeric_engineering_basis_values(self):
+        source = Path('app/job_queue.py').read_text(encoding='utf-8')
+        self.assertIn("'gas_pressure': '17.4 mbar'", source)
+        self.assertIn("'water_inlet_pressure': '2.0 bar'", source)
+        self.assertIn("'rainfall_intensity': '75 mm/h'", source)
+
     def test_legacy_heating_failure_reopens_supported_heating_question(self):
         self.assertEqual(
             legacy_basis_missing('design_basis_input_required:heating_system,rainfall_intensity'),

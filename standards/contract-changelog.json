@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-061","status":"APPROVED",
+      "summary":"Prevent repeated numeric engineering questions during automated Staging completion.",
+      "affected_capabilities":["mechanical_generation","questionnaire_design_basis_100"],"affected_projects":["staging-tests"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete phase one and produce a new Staging artifact"},
+      "verification":{"numeric_defaults":"must_pass","required_ci":"must_pass before merge","live_regeneration":"must_complete"},
+      "migration":{"forward":"Re-run completion on the retained Staging test project.","rollback":"Revert the commit; user-entered numeric values remain unaffected."}
+    },
+    {
       "id":"GOV-2026-060","status":"APPROVED",
       "summary":"Synchronize deployed build identity and active documentation with Mechanical Rule Book 5.2.",
       "affected_capabilities":["mechanical_runtime_authority","unified_engineering_model"],"affected_projects":["all"],
