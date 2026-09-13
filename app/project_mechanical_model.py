@@ -99,6 +99,28 @@ def _space_rows(levels):
     return spaces
 
 
+def _room_rows(auto):
+    """Preserve individual, bounded architecture rooms for engineering loads."""
+    rows = []
+    for level in ((auto.get("architecture_model") or {}).get("levels") or []):
+        level_name = str(level.get("name") or "").strip()
+        for index, room in enumerate(level.get("rooms") or [], 1):
+            room_id = room.get("id") or _stable_id("room", {
+                "level": level_name, "index": index, "type": room.get("type"),
+                "bounds": room.get("bounds"), "center": room.get("center"),
+            })
+            rows.append({
+                "id": str(room_id), "level": level_name, "type": room.get("type"),
+                "label": room.get("label"), "center": deepcopy(room.get("center") or room.get("label_point")),
+                "bounds": deepcopy(room.get("bounds")), "polygon": deepcopy(room.get("polygon")),
+                "area_drawing_units2": room.get("area_drawing_units2"),
+                "geometry_confidence": room.get("polygon_confidence"),
+                "wet": bool(room.get("wet")), "service_candidate": bool(room.get("service_candidate")),
+                "source": "architecture-model-bounded-room",
+            })
+    return rows
+
+
 def _fixture_rows(auto):
     rows = []
     for fixture_type, count in (auto.get("fixture_counts") or {}).items():
@@ -120,7 +142,7 @@ def _shaft_rows(levels):
     return rows
 
 
-def _identity_registry(levels, spaces, fixtures, equipment, shafts, manifest):
+def _identity_registry(levels, spaces, rooms, fixtures, equipment, shafts, manifest):
     """Create deterministic IDs without mutating legacy PMM payload fields."""
     rows = []
     aliases = {}
@@ -137,6 +159,9 @@ def _identity_registry(levels, spaces, fixtures, equipment, shafts, manifest):
         add("level", {"name": level.get("name"), "source_name": level.get("source_name")}, [level.get("name")])
     for space in spaces:
         add("space-group", {"level": space.get("level"), "type": space.get("type"), "count": space.get("count")})
+    for room in rooms:
+        add("room", {"id": room.get("id"), "level": room.get("level"), "type": room.get("type"),
+                     "bounds": room.get("bounds")}, [room.get("id")])
     for fixture in fixtures:
         add("fixture-group", {"type": fixture.get("type"), "count": fixture.get("count")})
     for index, item in enumerate(equipment or []):
@@ -168,11 +193,12 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
     levels = _level_rows(auto)
     level_names = _unique(row.get("name") for row in levels)
     spaces = _space_rows(levels)
+    rooms = _room_rows(auto)
     fixtures = _fixture_rows(auto)
     equipment = deepcopy(auto.get("equipment") or [])
     shafts = _shaft_rows(levels)
     manifest = deepcopy(proposal.get("drawing_manifest") or proposal.get("deliverable_sheets") or [])
-    identity_registry = _identity_registry(levels, spaces, fixtures, equipment, shafts, manifest)
+    identity_registry = _identity_registry(levels, spaces, rooms, fixtures, equipment, shafts, manifest)
 
     model = {
         "schema": PMM_SCHEMA,
@@ -183,6 +209,7 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "candidate_levels": deepcopy(auto.get("candidate_levels") or []),
         "restored_explicit_levels": deepcopy(auto.get("restored_explicit_levels") or []),
         "spaces": spaces,
+        "rooms": rooms,
         "fixtures": fixtures,
         "equipment": equipment,
         "coordination": deepcopy(analysis.get("coordination_v19") or {
@@ -217,6 +244,11 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
             "required_chain": ["PMM_ENTITY_ID", "CALC_ID", "PLAN_ID", "RISER_ID", "SCHEDULE_ID", "QA"],
             "policy": "NO_ORPHAN_ENGINEERING_OUTPUT",
             "legacy_fields_preserved": True,
+        },
+        "unified_model_contract": {
+            "schema": "unified-engineering-model/1",
+            "authorities": ["ROOM", "ENDPOINT", "NETWORK_EDGE", "CALCULATION", "PLAN", "RISER", "SCHEDULE"],
+            "identity_policy": "ONE_GRAPH_ONE_CALCULATION_ONE_OUTPUT_IDENTITY",
         },
         "inputs": {
             "architectural_inference": auto.get("effective_level_inference"),

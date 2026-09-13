@@ -1,12 +1,14 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.40.1
+**Canonical version:** 4.41.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
+
+Version 4.41.0 adds locked rule `MEP-UNIFIED-MODEL-001`: individual rooms, network edges, calculations, plans, risers and schedules must be projections of one graph-native engineering model. Connected endpoints with zero plan branches, orphan calculations or divergent Plan/Riser/Schedule identities now fail closed.
 
 ## Non-negotiable rule
 

@@ -1,0 +1,8 @@
+{
+  "schema":"mechanical-rule/1",
+  "rule_id":"MEP-UNIFIED-MODEL-001",
+  "status":"LOCKED",
+  "statement":"Every calculated Mechanical network edge and every Plan, Riser and Schedule representation shall derive from one authoritative graph and one shared calculation identity.",
+  "prohibitions":["orphan calculation","output identity divergence","zero plan branches with connected endpoints","reference-derived numeric default"],
+  "release":"FAIL_CLOSED"
+}
