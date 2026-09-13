@@ -1,0 +1,12 @@
+{
+  "change_id":"SWCIS-2026-0110",
+  "summary":"Separate real closed rooms from unbounded architecture-label outliers.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","runtime","test","governance","documentation","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"cad_designer":"Closed-room identity evaluates only room evidence with a polygon or bounds and requires coverage on every non-roof level.","qa":"Unbounded labels are counted as outliers and cannot satisfy room coverage.","deployment":"Protected Staging rollout and live retry.","docs":"Updates canonical version.","manifest":"Records SWCIS 4.40.0.","migration":"No schema migration.","governance":"GOV-2026-057 records closed-room scoping.","versioning":"SWCIS 4.40.0."},
+  "evidence":{"tests":["A valid closed room plus remote unbounded label passes with outlier count one; an unbounded-only level fails closed."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"contract_diff":["GOV-2026-057 distinguishes closed geometry from labels without geometry."],"version_bump":["SWCIS 4.39.9 -> 4.40.0"],"migration":["No DB schema migration; retry project 1."],"semantic_diff":["No room is invented: only geometrically closed evidence can satisfy identity and every floor still requires coverage."],"artifact_diff":["Issued DXF is unchanged; QA reports closed-room and unbounded-label counts separately."],"golden_regression":["Project-specific evidence, positive/destructive tests and required CI must pass."],"deployment_plan":["Protected PR, merged-SHA Staging deployment and live retry."],"rollback_plan":["Revert and redeploy; existing architecture gate remains fail closed."]},
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"Outlier exclusion is permitted only for labels with no geometry; floor-level closed-room coverage remains mandatory."},
+  "waiver":null
+}
