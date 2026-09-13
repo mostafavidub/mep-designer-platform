@@ -636,6 +636,14 @@
       "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to eliminate the versioning problem throughout the site and code"},
       "verification":{"active_runtime_guard":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_health":"must_pass"},
       "migration":{"forward":"New jobs emit stable identity keys; Git SHA and content hashes remain authoritative. Historical compatibility records are not rewritten.","rollback":"Redeploy the previous approved SHA; no customer project data migration is destructive."}
+    },
+    {
+      "id":"GOV-2026-063","status":"APPROVED",
+      "summary":"Make contracted manifests and the unified engineering model the consistent source for PMM, Plan, Riser, Calculation and Schedule documentation.",
+      "affected_capabilities":["pmm","drawing_manifest","reference_parity_documentation","plan_riser_schedule_traceability"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete phase one until every engineering gate passes"},
+      "verification":{"real_project_snapshot":"must_pass","positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_generation":"must_pass"},
+      "migration":{"forward":"Reanalyze the retained architectural input to rebuild normalized PMM and unified documentation identities, then generate a new revision.","rollback":"Redeploy the prior approved SHA; retain the failed revision and source evidence for diagnosis."}
     }
   ]
 }
