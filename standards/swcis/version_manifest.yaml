@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.42.0",
+  "standard_version": "4.42.1",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.42.1","date":"2026-09-13","summary":"Require Pre-Submission risers only for systems with authoritative unified-model calculation records while retaining final target-design gates."},
     {"version":"4.42.0","date":"2026-09-13","summary":"Normalize drawing-manifest and PMM identities and reconcile the most-specific system family across plans, risers, calculations and schedules."},
     {"version":"4.41.3","date":"2026-09-13","summary":"Replace hand-maintained versions on active runtime, Rule Book, questionnaire and design-basis surfaces with stable identities plus Git/content hashes."},
     {"version":"4.41.2","date":"2026-09-13","summary":"Supply valid numeric engineering-basis values during automated Staging completion."},

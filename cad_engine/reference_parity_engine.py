@@ -349,7 +349,17 @@ def sheet_consistency_gate(context: ProjectContext, detail_model: dict[str,Any],
             if d in rules: detail_systems.add(system)
     riser_systems={n["system"] for n in riser_graph.get("nodes",[])}; note_systems={n.get("system") for n in notes}
     missing_details=sorted(s for s in active if DETAIL_RULES.get(s) and s not in detail_systems); missing_notes=sorted(s for s in active if GENERAL_NOTES_KB.get(s) and s not in note_systems)
-    missing_risers=sorted((active & {"SANITARY_VENT","WATER","HEATING","GAS"})-riser_systems)
+    required_risers=active & {"SANITARY_VENT","WATER","HEATING","GAS"}
+    if context.unified_engineering_model.get("status") == "PASS":
+        # In a truthful Pre-Submission artifact, a manifest may reserve Heating
+        # or Gas sheets before manufacturer/coordination inputs allow their final
+        # network. Require risers for systems that actually have authoritative
+        # calculation records; final target-design gates still require every
+        # active system before any Submission Ready claim.
+        required_risers={canonical_system(row.get("system")) for row in
+                         context.unified_engineering_model.get("calculation_records") or []}
+        required_risers &= {"SANITARY_VENT","WATER","HEATING","GAS"}
+    missing_risers=sorted(required_risers-riser_systems)
     return {"pass":not missing_details and not missing_notes and not missing_risers,"missing_details":missing_details,"missing_notes":missing_notes,"missing_risers":missing_risers}
 
 

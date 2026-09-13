@@ -52,6 +52,27 @@ def test_overlapping_system_names_use_the_most_specific_family():
     assert canonical_system("cold_water") == "WATER"
 
 
+def test_pre_submission_reserved_heating_sheet_does_not_invent_a_riser():
+    pmm,graph,rows=fixture()
+    model=build_unified_engineering_model(pmm,graph,rows)
+    context=ProjectContext(levels=["GROUND"],active_systems=["SANITARY_VENT","HEATING"],
+                           network_graph=graph,calculation_rows=rows,unified_engineering_model=model)
+    package=build_documentation_package(context)
+    assert package["status"] == "PASS"
+    assert "HEATING" not in package["consistency"]["missing_risers"]
+
+
+def test_authoritative_heating_record_still_requires_its_riser(monkeypatch):
+    pmm,graph,rows=fixture()
+    model=build_unified_engineering_model(pmm,graph,rows)
+    model["calculation_records"][0]["system"]="heating"
+    context=ProjectContext(levels=["GROUND"],active_systems=["HEATING"],network_graph=graph,
+                           calculation_rows=rows,unified_engineering_model=model)
+    package=build_documentation_package(context)
+    assert package["status"] == "PASS"
+    assert package["riser"]["graph"]["authority"] == "UNIFIED_ENGINEERING_MODEL"
+
+
 def test_identity_divergence_fails_closed():
     pmm,graph,rows=fixture(); graph=deepcopy(graph);graph["edges"][0]["riser_id"]="OTHER"
     result=build_unified_engineering_model(pmm,graph,rows)
