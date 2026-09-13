@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.42.2",
+  "standard_version": "4.43.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.43.0","date":"2026-09-13","summary":"Link room calculations to HVAC equipment capacities and calculate water-service head from served floors and the actual critical route."},
     {"version":"4.42.2","date":"2026-09-13","summary":"Enlarge the canonical wall-mounted Split AC symbol to satisfy the unchanged plotted-legibility threshold in both orientations."},
     {"version":"4.42.1","date":"2026-09-13","summary":"Require Pre-Submission risers only for systems with authoritative unified-model calculation records while retaining final target-design gates."},
     {"version":"4.42.0","date":"2026-09-13","summary":"Normalize drawing-manifest and PMM identities and reconcile the most-specific system family across plans, risers, calculations and schedules."},

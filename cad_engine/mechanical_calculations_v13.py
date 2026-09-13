@@ -7,6 +7,7 @@ review can replace project values without changing routing logic.
 from __future__ import annotations
 
 import math
+from hashlib import sha256
 
 DEFAULTS = {
     'water_fixture_units': {'wc':2.5,'basin':1.0,'sink':1.5,'shower':2.0,'floor_drain':0.0},
@@ -26,6 +27,11 @@ def _area_m2(room, units):
     if room.get('area_m2') is not None:
         return float(room['area_m2'])
     return float(area) / 1_000_000.0 if units == 4 else float(area)
+
+
+def _calc_id(room_id, systems):
+    payload=str(room_id)+"|"+"|".join(sorted(systems or []))
+    return "CALC-ROOM-"+sha256(payload.encode()).hexdigest()[:12].upper()
 
 
 def calculate_mechanical_loads(architecture, recognition, requirements, design_basis=None):
@@ -49,7 +55,7 @@ def calculate_mechanical_loads(architecture, recognition, requirements, design_b
         cool = (area or 0) * basis['room_cooling_w_m2'].get(room.get('type'),0) if 'cooling' in req_by_id.get(rid,set()) else 0
         exhaust = basis['room_exhaust_cfm'].get(room.get('type'),0) if ('exhaust' in req_by_id.get(rid,set()) or 'ventilation' in req_by_id.get(rid,set())) else 0
         gas = sum(basis['gas_kw'].get(x.get('type'),0) for x in items if x.get('category')=='equipment')
-        row = {'room_id':rid,'area_m2':area,'water_fu':round(water_fu,2),'sanitary_dfu':round(sanitary_dfu,2),
+        row = {'calc_id':_calc_id(rid,req_by_id.get(rid,set())),'room_id':rid,'area_m2':area,'water_fu':round(water_fu,2),'sanitary_dfu':round(sanitary_dfu,2),
                'heating_w':round(heat,1),'cooling_w':round(cool,1),'exhaust_cfm':round(exhaust,1),'gas_kw':round(gas,2)}
         results.append(row)
         for key in totals: totals[key] += row[key]
@@ -60,4 +66,7 @@ def calculate_mechanical_loads(architecture, recognition, requirements, design_b
     totals['preliminary_water_lps'] = round(0.12 * math.sqrt(max(totals['water_fu'],0.0)), 3)
     return {'version':'mechanical-calculations-v13.4','rooms':results,'totals':totals,
             'design_basis':basis,'basis_status':'PRELIMINARY_OVERRIDEABLE',
+            'traceability':{'calculation_ids_unique':len({row['calc_id'] for row in results})==len(results),
+                            'room_results_reference_room_ids':all(row.get('room_id') for row in results),
+                            'all_assumptions_exposed':True},
             'quality':{'rooms_calculated':len(results),'traceable_basis':True}}

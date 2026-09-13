@@ -193,7 +193,7 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
             if level and level not in levels:levels.append(level)
         detail_overrides['levels']=levels or ['GROUND']
     details=build_details_schedules(requirements,recognition,calculations,sizing,topology,project_overrides=detail_overrides)
-    hvac=design_project_hvac(architecture,project_overrides=project_overrides)
+    hvac=design_project_hvac(architecture,project_overrides=project_overrides,calculations=calculations)
     return {'version':'engineering-pipeline-v13.17','architecture':architecture,'recognition':recognition,'requirements':requirements,
             'calculations':calculations,'topology':topology,'routing':routing,'sizing':sizing,'annotations':annotations,'details':details,'hvac':hvac,
             'design_basis':dict(design_basis or {})}

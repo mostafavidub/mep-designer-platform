@@ -19,6 +19,12 @@ a noncompliant diameter or drawing mismatch produces FAIL.
 
 ## Water service duty
 
+For an architecture-only Pre-Submission artifact, the CAD evidence layer must
+still identify the actual longest routed cold-water path, served-floor static
+head, residual head and its explicit preliminary friction method. It may not
+represent this as final segment hydraulics. An unresolved service mode remains
+`INPUT_REQUIRED`.
+
 The critical path is an explicit ordered set of calculated segment IDs. Required
 head is the sum of static head, critical-path friction, meter loss, valve loss
 and residual fixture pressure. Utility pressure is subtracted only for an inline

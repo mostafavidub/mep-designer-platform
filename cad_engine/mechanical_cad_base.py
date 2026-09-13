@@ -17,6 +17,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 import hashlib
 import math
+import re
 from pathlib import Path
 
 import ezdxf
@@ -152,6 +153,32 @@ def _water_fixture_proxy(pipeline):
     return total,q
 
 
+def _served_floor_count(authority, answers):
+    explicit=_numeric(_answer(answers,"floor_count","floors","number_of_floors"))
+    if explicit is not None and explicit>0:return int(math.ceil(explicit))
+    count=0;persian_ordinals={"اول":1,"دوم":2,"سوم":3,"چهارم":4,"پنجم":5,"ششم":6,"هفتم":7,"هشتم":8,"نهم":9,"دهم":10}
+    for level in (authority.get("project") or {}).get("levels") or {}:
+        numbers=[int(value) for value in re.findall(r"\d+",str(level))]
+        words=[value for word,value in persian_ordinals.items() if word in str(level)]
+        count=max(count,max(numbers+words) if numbers or words else 1)
+    return max(1,count)
+
+
+def _water_service_mode(answers):
+    mode=str(_answer(answers,"water_service_mode",default="") or "").strip().lower()
+    return {"pump":"break_tank_pump","tank_pump":"break_tank_pump","بوستر پمپ":"break_tank_pump",
+            "direct":"direct_city","city":"direct_city","مستقیم":"direct_city"}.get(mode,mode)
+
+
+def _critical_water_path(pipeline):
+    routes=[row for row in (pipeline.get("routing") or {}).get("routes") or [] if row.get("system")=="cold_water"]
+    if not routes:return None
+    route=max(routes,key=lambda row:float(row.get("length") or 0));length=max(0.0,float(route.get("length") or 0))
+    friction=length*.04*1.20
+    return {"route_id":route.get("id"),"length_m":round(length,2),"friction_head_m":round(friction,2),
+            "method":"critical routed length × 0.04 m/m × 1.20 fittings factor"}
+
+
 def enrich_water_service(doc,msp,pipeline,authority,compose,answers):
     row,b=_board_by_family(compose,"WATER","SERVICE")
     if not b:
@@ -161,15 +188,19 @@ def enrich_water_service(doc,msp,pipeline,authority,compose,answers):
     x1,y1,x2,y2=tuple(b["plan_area"])
     fu,q=_water_fixture_proxy(pipeline)
     pressure_bar=_numeric(_answer(answers,"water_pressure","water_inlet_pressure","water_inlet_pressure_bar","water"))
-    service_mode=str(_answer(answers,"water_service_mode",default="") or "").strip().lower()
+    service_mode=_water_service_mode(answers)
     direct_city=service_mode=="direct_city"
     service_head=pressure_bar*10.197 if pressure_bar is not None else None
-    nlevels=len(authority["project"].get("levels") or {})
-    static=max(3.2,3.2*nlevels)
+    floor_count=_served_floor_count(authority,answers);floor_height=_numeric(_answer(answers,"floor_height","floor_height_m")) or 3.2
+    static=max(float(floor_height),float(floor_height)*floor_count)
     residual=15.0
-    friction=max(4.0,.25*(static+residual))
+    critical=_critical_water_path(pipeline);friction=(critical or {}).get("friction_head_m")
+    if friction is None:friction=max(4.0,.25*(static+residual))
     gross=static+residual+friction
-    pump_head=max(0,gross-service_head) if service_head is not None else None
+    if service_mode=="inline_booster":pump_head=max(0,gross-service_head) if service_head is not None else None
+    elif service_mode=="break_tank_pump":
+        suction=_numeric(_answer(answers,"available_suction_head_m"));pump_head=max(0,gross-(suction or 0.0))
+    else:pump_head=None
     autonomy_min=15
     storage_l=q*60*autonomy_min
     selected_l=max(500,int(math.ceil(storage_l/500.0)*500))
@@ -217,14 +248,17 @@ def enrich_water_service(doc,msp,pipeline,authority,compose,answers):
         f"Utility pressure = {pressure_bar:.2f} bar" if pressure_bar is not None else "Utility pressure = INPUT REQUIRED",
         f"Gross head ≈ {gross:.1f} m",
         f"Pump head ≈ {pump_head:.1f} m" if pump_head is not None else "Final pump head = PENDING UTILITY PRESSURE",
+        f"Critical route {critical['route_id']} = {critical['length_m']:.1f} m; friction ≈ {friction:.1f} m" if critical else "Critical route hydraulics = INPUT REQUIRED",
     ])
     for i,line in enumerate(lines):
         _mtext(msp,layer,line,x1+.7,y2-.8-i*.65,8.2,.07 if i==0 else .055)
     return {
-        "status":"PASS" if pressure_bar is not None else "INPUT_REQUIRED",
+        "status":"PASS" if service_mode in {"break_tank_pump","inline_booster","direct_city"} and (service_mode=="break_tank_pump" or pressure_bar is not None) else "INPUT_REQUIRED",
         "fixture_unit_proxy":round(fu,2),"q_lps":round(q,3),"service_mode":service_mode or "unresolved","tank_l":0 if direct_city else selected_l,
         "utility_pressure_bar":pressure_bar,"pump_head_m":round(pump_head,2) if pump_head is not None else None,
-        "provenance":"fixture detection proxy + utility pressure input",
+        "gross_head_m":round(gross,2),"static_head_m":round(static,2),"residual_head_m":residual,
+        "friction_head_m":round(float(friction),2),"critical_path":critical,
+        "provenance":"fixture detection + served floors + critical routed length + declared service mode",
     }
 
 
