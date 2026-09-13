@@ -1,10 +1,12 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.42.2
+**Canonical version:** 4.43.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.43.0 completes phase-one calculation-to-CAD linkage: room heating/cooling results drive equipment duties with retained calculation identities, and water-service head exposes served-floor, critical-route, friction, residual and service-mode components. Final manufacturer and Submission Ready gates remain unchanged.
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
 
