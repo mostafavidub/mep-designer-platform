@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-056","status":"APPROVED",
+      "summary":"Allow exact-output architecture QA to reconcile flattened-DXF detections with complete server-sealed room, shaft and wet-core identities from the same upload.",
+      "affected_capabilities":["architecture_preservation_100","architecture_identity","mechanical_generation"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"project-owner instruction to complete generation after live evidence identified closed-room and shaft/wet-core identity loss at the flattened DXF boundary"},
+      "verification":{"positive_test":"must_pass","orphan_evidence_test":"must_fail_closed","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_retry":"must_pass"},
+      "migration":{"forward":"Retry the durable project after deployment.","rollback":"Revert identity reconciliation; preserve exact-output and 18-step gates."}
+    },
+    {
       "id":"GOV-2026-055","status":"APPROVED",
       "summary":"Return the architecture-preservation 100 gate report as failed-stage evidence so a live rejection identifies its exact controls.",
       "affected_capabilities":["architecture_preservation_100","cad_worker_diagnostics","mechanical_generation"],"affected_projects":["all"],

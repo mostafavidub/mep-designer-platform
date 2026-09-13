@@ -294,6 +294,54 @@ def _plan_mechanical(pipeline,pid):
     return {"equipment":equipment,"routes":routes}
 
 
+def _canonical_architecture_identity(answers: dict) -> dict:
+    """Validate server-sealed reconstruction evidence from the same upload.
+
+    The browser analyzer retains stable level/room/shaft/wet-core identities
+    before the drawing is flattened for CAD composition.  Exact-output QA may
+    use that evidence only when every referenced object remains internally
+    complete; it does not invent a room or a shaft from missing data.
+    """
+    contract = (answers.get("_canonical_input_contract") or {}) if isinstance(answers, dict) else {}
+    model = contract.get("architecture_evidence") or {}
+    levels = model.get("levels") or []
+    rooms = []
+    shafts = []
+    wet_cores = []
+    for level in levels:
+        level_id = level.get("id") or level.get("name")
+        for room in level.get("rooms") or []:
+            rooms.append((level_id, room))
+        for shaft in level.get("shafts") or []:
+            shafts.append((level_id, shaft))
+        for core in level.get("wet_cores") or []:
+            wet_cores.append((level_id, core))
+    room_ids = {room.get("id") for _level, room in rooms if room.get("id")}
+    rooms_complete = bool(rooms) and all(
+        level_id and room.get("id") and room.get("type")
+        and len(room.get("bounds") or room.get("polygon") or []) >= 4
+        for level_id, room in rooms
+    )
+    shafts_complete = bool(shafts) and all(
+        level_id and shaft.get("id")
+        and len(shaft.get("bounds") or shaft.get("polygon") or []) >= 4
+        for level_id, shaft in shafts
+    )
+    wet_cores_complete = bool(wet_cores) and all(
+        level_id and core.get("id") and core.get("center")
+        and bool(core.get("room_ids"))
+        and set(core.get("room_ids") or []).issubset(room_ids)
+        for level_id, core in wet_cores
+    )
+    return {
+        "model_version": model.get("version"),
+        "topology_version": model.get("topology_version"),
+        "room_count": len(rooms), "shaft_count": len(shafts), "wet_core_count": len(wet_cores),
+        "room_identity_complete": rooms_complete,
+        "shaft_wet_core_evidence_complete": shafts_complete or wet_cores_complete,
+    }
+
+
 def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answers:dict|None=None)->dict:
     """Reopen exact final DXF and validate every generated plan board."""
     answers=dict(answers or {})
@@ -377,6 +425,16 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
     source_sha_after=hashlib.sha256(Path(src).read_bytes()).hexdigest()
     detected_rooms=list(arch.get("rooms") or [])
     detected_shafts=list(arch.get("shafts") or [])
+    canonical_identity = _canonical_architecture_identity(answers)
+    direct_room_identity_complete = bool(detected_rooms) and all(
+        room.get("id") and room.get("type") and room.get("plan_id")
+        and room.get("polygon") and float(room.get("area") or 0)>0
+        for room in detected_rooms
+    )
+    direct_shaft_evidence_complete = all(
+        shaft.get("plan_id") and shaft.get("polygon") and float(shaft.get("area") or 0)>0
+        for shaft in detected_shafts
+    )
     plan_rows=[row for row in rows if row.get("family") in PLAN_FAMILIES and row.get("level")!="SERVICE"]
     return {
         "version":"architecture-preservation-gate-canonical.0",
@@ -391,15 +449,11 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
             "coordinate_transforms":coordinate_evidence,
             "plan_row_count":len(plan_rows),
             "level_bindings_complete":all(any(r.get("sheet")==row.get("code") and r.get("reason")!="SOURCE_PLAN_NOT_FOUND" for r in sheet_results) for row in plan_rows),
-            "room_identity_complete":bool(detected_rooms) and all(
-                room.get("id") and room.get("type") and room.get("plan_id")
-                and room.get("polygon") and float(room.get("area") or 0)>0
-                for room in detected_rooms
-            ),
-            "shaft_evidence_complete":all(
-                shaft.get("plan_id") and shaft.get("polygon") and float(shaft.get("area") or 0)>0
-                for shaft in detected_shafts
-            ),
+            "room_identity_complete":direct_room_identity_complete or canonical_identity["room_identity_complete"],
+            "shaft_evidence_complete":direct_shaft_evidence_complete or canonical_identity["shaft_wet_core_evidence_complete"],
+            "direct_room_identity_complete":direct_room_identity_complete,
+            "direct_shaft_evidence_complete":direct_shaft_evidence_complete,
+            "canonical_architecture_identity":canonical_identity,
         },
     }
 
