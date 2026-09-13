@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.41.1",
+  "standard_version": "4.41.2",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.41.2","date":"2026-09-13","summary":"Supply valid numeric engineering-basis values during automated Staging completion."},
     {"version":"4.41.1","date":"2026-09-13","summary":"Synchronize deployed build identity and active documentation with Mechanical Rule Book 5.2."},
     {"version":"4.41.0","date":"2026-09-13","summary":"Make one graph-native engineering model authoritative for individual rooms, calculations, plans, risers and schedules; reject zero-branch documentation for connected networks."},
     {"version":"4.40.1","date":"2026-09-13","summary":"Classify approved roof coverage from drawing type rather than a -RAIN code suffix so rainwater/vent detail sheets are not mistaken for roof plans."},

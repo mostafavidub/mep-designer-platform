@@ -869,8 +869,12 @@ def register_job_queue(app, legacy):
                 f'{name} {count}' for name, count in counts.items() if int(count or 0) > 0
             ) or 'سینک ۱، روشویی ۱، توالت ۱، دوش ۱'
             overrides = {
+                'city': 'مشهد',
                 'location': 'مشهد',
                 'gas': 'گاز برای پکیج و اجاق هر واحد',
+                'gas_pressure': '17.4 mbar',
+                'water_inlet_pressure': '2.0 bar',
+                'rainfall_intensity': '75 mm/h',
                 'fixture_schedule': quantified_fixtures,
             }
             for question in project.questions or []:
