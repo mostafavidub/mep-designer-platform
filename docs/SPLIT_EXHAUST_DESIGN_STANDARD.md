@@ -22,6 +22,12 @@ manufacturer/model, airflow, refrigerant sizes, route length, elevation,
 clearance and condensate status. The ODU must pass connected-ratio, combined
 route-length, elevation and site-clearance limits from its official record.
 
+The canonical `ENGI_AC_INDOOR` plotted symbol has a 2.00 by 0.80 drawing-unit
+envelope. Its long and short sides must remain at least 28 and 14 pixels in the
+exact reopened per-sheet rendering in both horizontal and rotated orientations.
+This is an output requirement: the visual QA threshold must not be reduced to
+make a smaller generated symbol pass.
+
 ## Exhaust
 
 Every applicable WC, bathroom, utility, kitchen or enclosed service room must
