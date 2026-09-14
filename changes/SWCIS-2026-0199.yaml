@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0199",
+  "summary":"Replace the paper-space fixed-length materialization cutoff with a scale-aware geometric-zero test.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance","documentation","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","routing","qa","manifest","docs","versioning","migration","governance","deployment"],
+  "impact_notes":{
+    "cad_designer":"Positive-length authoritative branches remain materializable after a large source drawing is uniformly fitted to its plan board.",
+    "routing":"No route is invented, moved, shortened or omitted; the canonical source path remains authoritative.",
+    "qa":"Exact geometric zero remains fail-closed using a floating-point scale-aware tolerance; visual legibility gates remain unchanged.",
+    "manifest":"No drawing-set scope change.",
+    "docs":"Records the unit-correct degeneracy definition.",
+    "versioning":"SWCIS 4.43.12.",
+    "migration":"No schema or stored-data migration.",
+    "governance":"Removes a false rejection without weakening actual zero-path detection.",
+    "deployment":"Deploy the co-built web/CAD runtime and retry the preserved paid project."
+  },
+  "evidence":{
+    "traceability":["cad_engine/mechanical_network_materializer.py","tests/test_phase_1_1_coordinate_release.py"],
+    "tests":["True-zero route remains rejected; positive short route after large uniform fit passes and is reopened exactly once."],
+    "docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump":["SWCIS 4.43.11 -> 4.43.12"],
+    "migration":["none"],
+    "semantic_diff":["Degenerate means indistinguishable geometric zero at the transformed coordinate magnitude, not shorter than an arbitrary paper-unit threshold."],
+    "artifact_diff":["Valid short canonical branches are retained; no invalid or missing path is accepted."],
+    "numeric_diff":["Tolerance is max(32 ULP at coordinate scale, 1e-12)."],
+    "contract_diff":["Materialization status changes from false FAIL to PASS only for strictly positive reversible paths."],
+    "golden_regression":["Full governed test suite required before merge."],
+    "deployment_plan":["Protected PR, Staging merge, health/build verification, automatic retry and terminal project inspection."],
+    "rollback_plan":["Revert and redeploy; retained project inputs remain retryable."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"The threshold affects drawing output but is guarded by reversible-transform, exact-file reopen and downstream visual QA."},
+  "waiver":null
+}

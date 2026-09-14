@@ -57,6 +57,15 @@ def test_materializer_fails_closed_when_route_is_degenerate(tmp_path):
     assert any("MATERIALIZED_SEGMENT_DEGENERATE" in item for item in result["errors"])
 
 
+def test_materializer_keeps_positive_short_branch_after_large_uniform_fit(tmp_path):
+    src, dst, report, network = _fixture_files(tmp_path)
+    network["levels"][0]["region_bounds"] = [0, 0, 1_000_000, 500_000]
+    network["edges"][0]["plan_path"] = [(500_000, 250_000), (500_100, 250_000)]
+    result = materialize_authoritative_network(src, dst, report, network)
+    assert result["status"] == "PASS", result
+    assert result["materialized_segments"] == 1
+
+
 def test_persisted_collapsed_path_is_detected_for_authoritative_rebuild():
     network = {"edges": [{"id": "E1", "draw_on_plan": True,
                            "plan_path": [(2, 2), (2, 2), (2, 2)]}]}
