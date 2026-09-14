@@ -83,7 +83,7 @@ class CommercialProjectFlowTests(unittest.TestCase):
         with patch('app.commercial_flow.assert_runtime_contract_synchronized', side_effect=RuntimeError('mismatch')):
             rejected = self.client.post(
                 f'/projects/{pid}/pay/gateway',
-                headers={'host': 'web-app-staging-production.up.railway.app'},
+                headers={'host': 'staging.planha.com'},
             )
         self.assertEqual(rejected.status_code, 503)
         commercial = app.state.commercial
@@ -100,7 +100,7 @@ class CommercialProjectFlowTests(unittest.TestCase):
         try:
             response = self.client.post(
                 f'/projects/{pid}/pay/gateway',
-                headers={'host': 'web-app-staging-production.up.railway.app'},
+                headers={'host': 'staging.planha.com'},
                 follow_redirects=False,
             )
         finally:
@@ -129,7 +129,7 @@ class CommercialProjectFlowTests(unittest.TestCase):
         pid = self._ready_project('mechanical')
         response = self.client.post(
             f'/projects/{pid}/pay/gateway',
-            headers={'host': 'web-app-staging-production.up.railway.app'},
+            headers={'host': 'staging.planha.com'},
             follow_redirects=False,
         )
         self.assertEqual(response.status_code, 303)

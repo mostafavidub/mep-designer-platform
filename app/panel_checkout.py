@@ -472,7 +472,7 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             token = secrets.token_urlsafe(32)
             db.add(Handoff(token_hash=digest(token), project_id=pid, expires=int(time.time()) + 86400))
             db.commit()
-            origin = os.environ.get("PANEL_PUBLIC_URL", "https://engitools-admin.finodex-2798.chatgpt.site").rstrip("/")
+            origin = os.environ.get("PANEL_PUBLIC_URL", "https://panel.planha.com").rstrip("/")
             return {"url": f"{origin}/panel/projects/new#handoff={token}"}
         finally:
             db.close()

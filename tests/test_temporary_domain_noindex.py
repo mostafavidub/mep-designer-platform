@@ -13,7 +13,7 @@ class TemporaryDomainNoindexTests(unittest.TestCase):
     def test_railway_hostname_is_noindex_follow(self):
         response = self.client.get(
             '/',
-            headers={'host': 'web-app-production-3d3b.up.railway.app'},
+            headers={'host': 'staging.planha.com'},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers.get('x-robots-tag'), 'noindex, follow')
@@ -32,7 +32,7 @@ class TemporaryDomainNoindexTests(unittest.TestCase):
             '/',
             headers={
                 'host': 'internal-service',
-                'x-forwarded-host': 'web-app-production-3d3b.up.railway.app',
+                'x-forwarded-host': 'staging.planha.com',
             },
         )
         self.assertEqual(response.headers.get('x-robots-tag'), 'noindex, follow')

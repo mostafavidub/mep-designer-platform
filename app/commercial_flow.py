@@ -16,7 +16,7 @@ def register_commercial_flow(app, legacy):
         host.strip().lower()
         for host in os.getenv(
             "STAGING_DEMO_PAYMENT_HOSTS",
-            "web-app-staging-production.up.railway.app",
+            "staging.planha.com",
         ).split(",")
         if host.strip()
     }

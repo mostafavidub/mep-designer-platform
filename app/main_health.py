@@ -72,7 +72,7 @@ TEMPORARY_NOINDEX_HOSTS = {
     host.strip().lower().rstrip('.')
     for host in os.getenv(
         'TEMPORARY_NOINDEX_HOSTS',
-        'web-app-production-3d3b.up.railway.app',
+        'staging.planha.com',
     ).split(',')
     if host.strip()
 }
