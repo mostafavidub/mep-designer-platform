@@ -369,6 +369,7 @@ def _cad_rejection_diagnostic(response):
     acceptance = detail.get('engineering_acceptance') or {}
     pipeline = detail.get('pipeline_qa') or {}
     authority = detail.get('authority_qa') or {}
+    dxf_qa = detail.get('dxf_qa') or {}
     return {
         'status_code': response.status_code,
         'code': detail.get('code'),
@@ -386,6 +387,11 @@ def _cad_rejection_diagnostic(response):
         'authority_qa': {
             'status': authority.get('status'),
             'errors': authority.get('errors') or [],
+        },
+        'dxf_qa': {
+            'status': dxf_qa.get('status'),
+            'errors': dxf_qa.get('errors') or [],
+            'metrics': dxf_qa.get('metrics') or {},
         },
     }
 

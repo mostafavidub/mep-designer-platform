@@ -1,10 +1,15 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.14
+**Canonical version:** 4.43.15
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Private runtime diagnostics for a blocked CAD transaction retain the exact gate
+name, status, error codes and bounded aggregate metrics needed to reproduce the
+failure. They exclude project geometry, credentials and customer source contents;
+customer-visible errors remain separately sanitized.
 
 Version 4.43.13 separates the source ownership frame from the authoritative
 drawable-content envelope for every architectural plan. Architecture, routes

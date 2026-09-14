@@ -29,6 +29,16 @@ def response(status, payload):
     return item
 
 
+def test_private_rejection_diagnostic_keeps_exact_dxf_gate_evidence():
+    result=dxf_output._cad_rejection_diagnostic(response(422,{"detail":{
+        "stage":"dxf_qa","dxf_qa":{"status":"FAIL","errors":["drawing_titleblock_overlap"],
+        "metrics":{"titleblock_overlap":3},"source_entities":["secret"]}
+    }}))
+    assert result["dxf_qa"] == {"status":"FAIL","errors":["drawing_titleblock_overlap"],
+                                "metrics":{"titleblock_overlap":3}}
+    assert "source_entities" not in result["dxf_qa"]
+
+
 @patch.dict(dxf_output.os.environ, {"COBUILT_CAD_IN_PROCESS": "1"})
 @patch("cad_engine.main_transport.design")
 def test_constrained_production_calls_canonical_design_in_process(design):
