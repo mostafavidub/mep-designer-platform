@@ -43,6 +43,12 @@ PMM_SCHEMA = "project-mechanical-model/v3"
 PMM_POLICY = "NO_ORPHAN_ENGINEERING_OUTPUT"
 
 
+def _emit_progress(answers: dict, stage: str) -> None:
+    callback = answers.get("_progress_callback")
+    if callable(callback):
+        callback(stage)
+
+
 def _runtime_contract_errors(answers: dict) -> list[str]:
     supplied = answers.get("_runtime_contract") or {}
     active = runtime_contract()
@@ -328,7 +334,9 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     if contract_errors:
         return {"status": "FAIL", "stage": "runtime_contract_gate", "authority_pipeline_qa": {"status": "FAIL", "errors": contract_errors}}
 
+    _emit_progress(answers, "architecture_interpretation")
     payload = _authority_payload(answers, plan_analysis)
+    _emit_progress(answers, "scope_mapping")
     questionnaire_qa = evaluate_questionnaire_design_basis(payload.get("questionnaire_design_basis_context"))
     # Contradictory or tampered basis evidence can never reach calculation. Missing
     # evidence may continue only far enough to produce a truthful Pre-Submission result.
@@ -336,6 +344,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "questionnaire_design_basis_gate",
                 "questionnaire_design_basis_qa": questionnaire_qa,
                 "input_required": {"status": "FAIL", "missing_inputs": questionnaire_qa.get("errors") or []}}
+    _emit_progress(answers, "network_topology")
     network_authority = _prepare_network_authority(src, payload)
     if network_authority.get("status") != "PASS":
         required = network_authority.get("missing_inputs") or network_authority.get("errors") or ["NETWORK_AUTHORITY_INCOMPLETE"]
@@ -344,6 +353,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if network_authority.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": sorted(set(required))}}
 
+    _emit_progress(answers, "network_sizing")
     unified = build_unified_engineering_model(
         payload.get("project_mechanical_model"), payload.get("network_graph"),
         payload.get("calculation_rows"), payload.get("network_design_basis"),
@@ -367,6 +377,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if traceability.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": traceability.get("errors") or []}}
 
+    _emit_progress(answers, "system_coordination")
     result = run_pipeline(payload)
     pre_submission = result.get("status") == "INPUT_REQUIRED"
     authority_errors = _result_authority_errors(result)
@@ -405,6 +416,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if reasonableness.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": blockers}}
 
+    _emit_progress(answers, "equipment_placement")
     equipment_context = _equipment_context(payload, result)
     equipment_preflight = evaluate_equipment_selection_placement(equipment_context)
     if not pre_submission and equipment_preflight.get("preflight_allowed") is not True:
@@ -416,6 +428,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "INPUT_REQUIRED" if equipment_preflight.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": blockers}}
 
+    _emit_progress(answers, "documentation_composition")
     documentation_context = _documentation_context(payload, result)
     documentation_preflight = evaluate_documentation_content(documentation_context)
     if not pre_submission and documentation_preflight.get("preflight_allowed") is not True:
@@ -460,6 +473,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         "project_mechanical_model": payload["project_mechanical_model"],
     })
     shell_answers["_canonical_input_contract"] = shell_contract
+    _emit_progress(answers, "drawing_composition")
     rendered = _design_shell(src, dst, answers=shell_answers, plan_analysis=plan_analysis)
     if rendered.get("status") != "PASS":
         if backup:
@@ -474,6 +488,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         rendered["unified_engineering_model_qa"] = unified
         return rendered
 
+    _emit_progress(answers, "network_materialization")
     materialization = materialize_authoritative_network(src, dst, rendered, payload["network_graph"])
     if materialization.get("status") != "PASS":
         _restore_target(dst, backup)
@@ -485,6 +500,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "materialization_qa": materialization,
                 "input_required": {"status": "INPUT_REQUIRED" if materialization.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": materialization.get("missing_inputs") or materialization.get("errors") or []}}
+    _emit_progress(answers, "exact_output_review")
     final_topology_routing = evaluate_topology_routing(
         payload["network_graph"], calculation_rows=payload["calculation_rows"],
         coordination=(payload.get("topology_routing_coordination") or {}),
