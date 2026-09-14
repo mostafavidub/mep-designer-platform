@@ -97,10 +97,21 @@ def _release_input_errors(report, pre_submission=None):
 def _pre_submission_pending_boards(report, pre_submission):
     if not isinstance(pre_submission,dict) or pre_submission.get('blocked_at')!='target_design_packages':return set()
     items=(((report.get('semantic_qa') or {}).get('pre_submission_disclosure') or {}).get('pending_family_content') or [])
+    manifest_by_code={
+        str(row.get('code') or '').strip().lower():str(row.get('old_sheet') or row.get('code') or '').strip().lower()
+        for row in ((report.get('composition') or {}).get('manifest') or [])
+        if isinstance(row,dict) and str(row.get('code') or '').strip()
+    }
     result=set()
     for item in items:
         parts=str(item).split(':',1)
-        if len(parts)==2:result.add((parts[0].strip().lower(),parts[1].strip().upper()))
+        if len(parts)==2:
+            code=parts[0].strip().lower();family=parts[1].strip().upper()
+            # Semantic QA records the public sheet code while hardening gates
+            # iterate the internal board identity. Preserve both identities so
+            # a truthful disclosure follows the board after sheet renumbering.
+            result.add((code,family))
+            if manifest_by_code.get(code):result.add((manifest_by_code[code],family))
     return result
 
 
