@@ -8,6 +8,7 @@ content; its plan-route decisions are replaced by the graph-native materializer.
 from __future__ import annotations
 
 import os
+import math
 from pathlib import Path
 import shutil
 import tempfile
@@ -43,6 +44,19 @@ from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_ba
 
 PMM_SCHEMA = "project-mechanical-model/v3"
 PMM_POLICY = "NO_ORPHAN_ENGINEERING_OUTPUT"
+
+
+def _has_collapsed_plan_path(network: dict) -> bool:
+    for edge in network.get("edges") or []:
+        points = edge.get("plan_path") or []
+        if not edge.get("draw_on_plan") or len(points) < 2:
+            continue
+        length = sum(math.dist(tuple(map(float, points[index - 1][:2])),
+                               tuple(map(float, points[index][:2])))
+                     for index in range(1, len(points)))
+        if length <= 1e-9:
+            return True
+    return False
 
 
 def _emit_progress(answers: dict, stage: str) -> None:
@@ -190,7 +204,8 @@ def _prepare_network_authority(src: Path, payload: dict) -> dict:
     if (pmm.get("traceability_contract") or {}).get("policy") != PMM_POLICY:
         return {"status": "INPUT_REQUIRED", "missing_inputs": ["PMM_NO_ORPHAN_TRACEABILITY_POLICY_REQUIRED"], "errors": []}
     existing = payload.get("network_graph") or {}
-    if existing.get("nodes") and existing.get("edges"):
+    has_collapsed_plan_path = _has_collapsed_plan_path(existing)
+    if existing.get("nodes") and existing.get("edges") and not has_collapsed_plan_path:
         topology = {"status": "PASS", "network": existing, "source": "SUPPLIED_NETWORK_GRAPH"}
     else:
         topology = build_authoritative_topology(
@@ -200,6 +215,8 @@ def _prepare_network_authority(src: Path, payload: dict) -> dict:
             fixture_evidence=payload.get("fixture_evidence"),
             declared_fixture_schedule=payload.get("declared_fixture_schedule"),
         )
+        if has_collapsed_plan_path:
+            topology["recovery"] = "REBUILT_COLLAPSED_SUPPLIED_PLAN_PATH"
     if topology.get("status") != "PASS":
         return {"status": topology.get("status") or "INPUT_REQUIRED",
                 "missing_inputs": topology.get("missing_inputs") or [],

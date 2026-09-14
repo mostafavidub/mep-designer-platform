@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.9
+**Canonical version:** 4.43.10
 
 **Status:** LOCKED
 
@@ -133,6 +133,12 @@ publish per-board scale/offset/round-trip evidence, and reject degenerate or
 out-of-board geometry. The exact saved DXF is then reopened and must repeat all
 applicable preservation, composition, linkage, completeness and visual checks;
 earlier pre-materialization evidence cannot authorize delivery.
+
+Count-only questionnaire fixtures must be placed at deterministic, room-bounded
+service points distinct from wet-core or shaft aggregation nodes. A persisted
+drawable graph whose complete plan path has zero length is stale execution data:
+it must be rebuilt from the saved architecture and approved answers, while the
+final materializer continues to reject any remaining degenerate route.
 
 ## Architecture reconstruction and preservation release gate
 

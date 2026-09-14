@@ -1,0 +1,39 @@
+{
+  "change_id":"SWCIS-2026-0197",
+  "summary":"Prevent and recover zero-length Mechanical plan routes created by count-only fixture placement at wet-core centroids.",
+  "requester":"project-owner",
+  "change_types":["routing","drawing_output","test","governance","documentation"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","routing","sizing","equipment","manufacturer_selector","detail_riser","ui_api","versioning"],
+  "impact_notes":{
+    "routing":"Count-only fixtures receive deterministic room-bounded service points distinct from aggregation nodes; persisted collapsed graphs are rebuilt from authoritative evidence.",
+    "cad_designer":"Materialization remains fail-closed and now receives non-degenerate plan paths.",
+    "qa":"Adds positive route-length and persisted-graph recovery regressions.",
+    "deployment":"Protected Staging rollout followed by retry of the reported project.",
+    "docs":"Records the collapsed-route prevention and recovery contract.",
+    "manifest":"Records SWCIS 4.43.10.",
+    "migration":"No schema migration; existing collapsed stored graphs are detected and rebuilt at runtime.",
+    "governance":"Records source-backed recovery without weakening the materialization gate.",
+    "ui_api":"The existing project can retry from its saved answers and architecture.",
+    "versioning":"SWCIS 4.43.10.",
+    "sizing":"Loads and sizes remain attached to their original endpoint identities.",
+    "equipment":"No equipment selection changes.",
+    "manufacturer_selector":"No catalogue-selection changes.",
+    "detail_riser":"No riser/detail semantics change."
+  },
+  "evidence":{
+    "tests":["Declared endpoints are unique and off-node; their plan routes have positive length; persisted collapsed paths trigger rebuild; materializer still rejects a remaining degenerate path."],
+    "docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "contract_diff":["Owner-declared count-only fixtures may not share the exact wet-core aggregation coordinate.","Persisted zero-length plan paths are invalidated and rebuilt rather than reused."],
+    "version_bump":["SWCIS 4.43.9 -> 4.43.10"],
+    "migration":["Runtime self-repair only; database schema and PMM schema are unchanged."],
+    "semantic_diff":["Endpoint identity, fixture counts, loads and target wet core remain unchanged; only drawable service-point geometry becomes non-degenerate."],
+    "artifact_diff":["Previously collapsed route entities become visible positive-length routes inside the corresponding room/plan."],
+    "numeric_diff":["Every drawable path must have source length > 1e-9 and materialized length > 0.01 drawing units."],
+    "golden_regression":["Focused topology/materialization tests and the full governed suite must pass."],
+    "deployment_plan":["Protected PR, merge, Staging health verification and retry PRJ-26dc8b93-267e-479b-ba7f-f74e8971076c."],
+    "rollback_plan":["Revert and redeploy; materializer remains fail-closed for degenerate paths."]
+  },
+  "risk":{"likelihood":3,"severity":4,"detectability":1,"score":12,"rationale":"Count-only fixtures were intentionally collocated with their wet-core target, deterministically producing a zero-length edge."},
+  "waiver":null
+}

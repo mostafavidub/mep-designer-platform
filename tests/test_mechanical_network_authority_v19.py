@@ -54,6 +54,23 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         self.assertTrue(all(row["installed"] is False for row in recognition["detections"]))
         self.assertTrue(all(row["design_status"] == "DESIGNED_FROM_OWNER_DECLARED_COUNT"
                             for row in recognition["detections"]))
+        points = [tuple(row["point"]) for row in recognition["detections"]]
+        self.assertEqual(len(points), len(set(points)))
+        self.assertTrue(all(point != (2, 2) for point in points))
+
+    def test_owner_declared_endpoint_routes_are_not_zero_length(self):
+        architecture = {"wet_cores": [{"room_id": "W1", "centroid": (2, 2), "level": "Ground"}],
+                        "rooms": [{"id": "W1", "polygon": [(1, 1), (3, 1), (3, 3), (1, 3)]}],
+                        "shafts": [], "walls": [], "obstacles": []}
+        recognition = _recognition_from_evidence([], {"detections": []}, architecture, "sink 1")
+        result = build_authoritative_topology_from_evidence(
+            pmm([{"name": "Ground", "region_bounds": [0, 0, 10, 10]}]), architecture, recognition)
+        self.assertEqual(result["status"], "PASS", result)
+        for edge in result["network"]["edges"]:
+            if edge.get("draw_on_plan"):
+                self.assertGreater(sum(
+                    __import__("math").dist(edge["plan_path"][index - 1], edge["plan_path"][index])
+                    for index in range(1, len(edge["plan_path"]))), 0)
 
     def test_candidate_fixture_evidence_is_not_promoted_to_installed(self):
         recognition = _recognition_from_evidence(
