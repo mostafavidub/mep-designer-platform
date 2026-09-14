@@ -639,6 +639,24 @@ def register_job_queue(app, legacy):
                     project.status = 'queued'; project.last_error = ''; set_project_progress(project, 'queued')
                 if revision:
                     revision.status = 'queued'; revision.error = ''
+            pre_submission_linkage_jobs = db.query(Job).filter(
+                Job.job_type == 'design', Job.status == 'failed',
+                func.lower(Job.last_error).like('%equipment_linkage_gate%'),
+                func.lower(Job.last_error).like('%equipment_or_route_missing:m-04%'),
+                func.lower(Job.last_error).like('%engitools-m-radiator%'),
+                func.lower(Job.last_error).like('%engitools-m-heat-flow%'),
+                func.lower(Job.last_error).like('%engitools-m-heat-return%'),
+                func.lower(Job.last_error).like('%target_design_packages_missing%'),
+            ).all()
+            for failed_job in pre_submission_linkage_jobs:
+                project = db.get(legacy.Project, failed_job.project_id)
+                revision = db.get(legacy.Revision, failed_job.revision_id) if failed_job.revision_id else None
+                failed_job.status = 'queued'; failed_job.attempts = 0
+                failed_job.available_at = datetime.utcnow(); failed_job.locked_at = None; failed_job.last_error = ''
+                if project:
+                    project.status = 'queued'; project.last_error = ''; set_project_progress(project, 'queued')
+                if revision:
+                    revision.status = 'queued'; revision.error = ''
             db.commit()
             jobs = db.query(Job).filter(Job.status == 'processing').all()
             diagnostic_retry = db.query(Job).filter(

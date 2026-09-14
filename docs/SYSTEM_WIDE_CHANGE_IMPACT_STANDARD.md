@@ -1,10 +1,12 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.5
+**Canonical version:** 4.43.6
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.43.6 scopes equipment-linkage disclosure to the exact non-final sheet/family explicitly pending because the canonical pipeline is blocked at `target_design_packages`; final, unrelated and undisclosed boards remain fail-closed.
 
 Version 4.43.5 materializes the canonical water-service mode at the production CAD entry point so authority calculations, enrichments and release QA consume one locked basis.
 

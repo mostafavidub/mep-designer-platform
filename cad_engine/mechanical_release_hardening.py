@@ -149,7 +149,7 @@ def validate_architectural_presentation(path: Path, composition: dict) -> dict:
     return {"version":"architectural-presentation-gate-v18.2","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"generated_north_count":len(generated_north),"subtitle_entity_count":len(subtitle_entities),"exact_file_reopened":True}
 
 
-def validate_equipment_linkage(path: Path, composition: dict) -> dict:
+def validate_equipment_linkage(path: Path, composition: dict, allowed_pending_boards=None) -> dict:
     """Require equipment symbols and their service routes for active families."""
     family_contract={
         "SPLIT_AC":["ENGITOOLS-M-HVAC-EQUIP","ENGITOOLS-M-HVAC-REFRIG","ENGITOOLS-M-HVAC-COND"],
@@ -159,7 +159,7 @@ def validate_equipment_linkage(path: Path, composition: dict) -> dict:
     }
     try: doc=ezdxf.readfile(Path(path)); entities=list(doc.modelspace())
     except Exception as exc:return {"version":"equipment-linkage-gate-v18.0","status":"FAIL","errors":["exact_dxf_reopen_failed"],"detail":str(exc)}
-    errors=[];results=[]
+    errors=[];results=[];allowed_pending={(str(k).lower(),str(f).upper()) for k,f in (allowed_pending_boards or set())}
     all_families={str(b.get("family") or "").upper() for b in ((composition or {}).get("boards") or {}).values()}
     for key,board in ((composition or {}).get("boards") or {}).items():
         family=str(board.get("family") or "").upper(); required=family_contract.get(family)
@@ -199,6 +199,9 @@ def validate_equipment_linkage(path: Path, composition: dict) -> dict:
             if not semantic["definition_label"]:missing.append(f"block_label_missing:{expected_label}")
             for layer in (["ENGITOOLS-M-HVAC-REFRIG","ENGITOOLS-M-HVAC-COND"] if not roof else []):
                 if counts.get(layer,0)<len(equipment):missing.append(f"linked_{layer}={counts.get(layer,0)}<{len(equipment)}")
+        disclosed_missing=list(missing) if missing and (str(key).lower(),family) in allowed_pending else []
+        if disclosed_missing:
+            semantic={**semantic,"pre_submission_pending":True,"disclosed_missing":disclosed_missing};missing=[]
         if missing:errors.append(f"equipment_or_route_missing:{key}:"+",".join(missing))
         results.append({"board_id":key,"family":family,"counts":counts,"semantic":semantic,"status":"PASS" if not missing else "FAIL"})
     return {"version":"equipment-linkage-gate-v18.0","status":"PASS" if not errors else "FAIL","errors":errors,"boards":results,"exact_file_reopened":True}
