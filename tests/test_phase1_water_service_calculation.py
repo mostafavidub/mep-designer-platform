@@ -2,6 +2,7 @@ from cad_engine.mechanical_authority_site_v15 import (
     _critical_water_path, _served_floor_count, _water_service_mode,
 )
 from cad_engine.mechanical_design_core import canonical_water_service_mode
+from cad_engine.mechanical_cad_shell import _normalize_project_answers
 
 
 def test_typical_floor_range_expands_static_head_basis():
@@ -26,6 +27,12 @@ def test_questionnaire_water_source_maps_to_calculation_service_mode():
 def test_explicit_service_mode_has_priority_and_ambiguous_source_stays_unresolved():
     assert canonical_water_service_mode({"water_service_mode":"direct_city","water_source":"مخزن و پمپ"}) == "direct_city"
     assert canonical_water_service_mode({"water_source":"کنتور شهری"}) is None
+
+
+def test_canonical_site_entry_materializes_mode_for_all_downstream_enrichments():
+    normalized = _normalize_project_answers({"water_source":"تأیید: کنتور شهری + مخزن + بوسترپمپ"})
+    assert normalized["water_service_mode"] == "break_tank_pump"
+    assert _normalize_project_answers({"water_source":"کنتور شهری"}).get("water_service_mode") is None
 
 
 def test_critical_path_uses_longest_actual_cold_water_route():

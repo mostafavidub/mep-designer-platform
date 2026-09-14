@@ -30,6 +30,7 @@ from .mechanical_release_hardening import (
 from .build_identity import build_identity
 from .sheet_visual_qa import repair_sheet_annotations, validate_all_sheet_visual_qa
 from .architecture_preservation_gate import evaluate_eighteen_step_contract
+from .mechanical_design_core import canonical_water_service_mode
 
 WEB_TO_CAD_FAMILY = {
     'WATER_SUPPLY': 'WATER',
@@ -62,6 +63,12 @@ def _normalize_project_answers(answers):
     a=dict(answers or {})
     if a.get('water_inlet_pressure') not in (None,'') and a.get('water_pressure') in (None,''):
         a['water_pressure']=a['water_inlet_pressure']
+    # Materialize the locked basis once so authority calculations, CAD
+    # enrichments and release QA cannot read different representations.
+    if a.get('water_service_mode') in (None, ''):
+        mode=canonical_water_service_mode(a)
+        if mode:
+            a['water_service_mode']=mode
     return a
 
 
