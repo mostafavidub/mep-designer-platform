@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.43.14",
+  "standard_version": "4.43.15",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.43.15","date":"2026-09-15","summary":"Retain bounded exact DXF QA error and metric evidence in private rejection diagnostics without exposing project source data."},
     {"version":"4.43.14","date":"2026-09-15","summary":"Materialize an exact sheet-and-family disclosure for target-package Pre-Submission gaps while retaining fail-closed final family-content requirements."},
     {"version":"4.43.13","date":"2026-09-14","summary":"Separate plan ownership frames from robust drawable content envelopes and reject outlier-inflated or mechanically masked exact-file visual fit."},
     {"version":"4.43.12","date":"2026-09-14","summary":"Classify CAD network degeneracy as true geometric zero after reversible transformation, without rejecting valid short branches created by large uniformly fitted architectural extents."},
