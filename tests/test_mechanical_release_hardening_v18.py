@@ -1,6 +1,7 @@
 import ezdxf
 from cad_engine.mechanical_authority_v15 import _airflow_endpoint, _boards, _draw_titleblock, _draw_detail_sheet, _ensure_ac_blocks, _entity_should_copy, _north_from_architecture
 from cad_engine.mechanical_release_hardening_v18 import validate_layout_geometry, validate_titleblocks, validate_safe_zones, validate_equipment_linkage, validate_detail_library, validate_content_completeness, validate_split_ac_visual_legibility, create_montage_and_validate, validate_architectural_presentation
+from cad_engine.mechanical_release_hardening import validate_equipment_linkage as validate_canonical_equipment_linkage
 
 
 def _rows(n=8):
@@ -115,6 +116,18 @@ def test_gate_4_equipment_requires_all_linked_routes(tmp_path):
     result=validate_equipment_linkage(path,composition)
     assert result["status"] == "FAIL"
     assert "ENGITOOLS-M-HEAT-RETURN" in result["errors"][0]
+
+
+def test_equipment_linkage_discloses_only_exact_pre_submission_board(tmp_path):
+    rows=_rows(2)
+    for row in rows:row["family"]="HEATING"
+    boards=_boards(rows);composition={"boards":{b.sheet:vars(b) for b in boards.values()}}
+    doc=ezdxf.new("R2010");path=tmp_path/"pending-heating.dxf";doc.saveas(path)
+    keys=list(composition["boards"])
+    result=validate_canonical_equipment_linkage(path,composition,{(keys[0],"HEATING")})
+    assert result["status"] == "FAIL"
+    assert result["boards"][0]["semantic"]["pre_submission_pending"] is True
+    assert result["boards"][1]["status"] == "FAIL"
 
 
 def test_gas_route_is_not_required_only_with_explicit_zero_load_evidence(tmp_path):

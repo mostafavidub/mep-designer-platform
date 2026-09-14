@@ -94,6 +94,16 @@ def _release_input_errors(report, pre_submission=None):
     return sorted(set(errors))
 
 
+def _pre_submission_pending_boards(report, pre_submission):
+    if not isinstance(pre_submission,dict) or pre_submission.get('blocked_at')!='target_design_packages':return set()
+    items=(((report.get('semantic_qa') or {}).get('pre_submission_disclosure') or {}).get('pending_family_content') or [])
+    result=set()
+    for item in items:
+        parts=str(item).split(':',1)
+        if len(parts)==2:result.add((parts[0].strip().lower(),parts[1].strip().upper()))
+    return result
+
+
 def _manifest_rows(value):
     if isinstance(value,dict): value=value.get('sheets') or value.get('manifest') or value.get('approved_manifest') or []
     if not isinstance(value,list): return []
@@ -395,7 +405,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         ('titleblock_qa',validate_titleblocks(dst,report.get('composition') or {}),'titleblock_gate'),
         ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
         ('architectural_presentation_qa',validate_architectural_presentation(dst,report.get('composition') or {}),'architectural_presentation_gate'),
-        ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {}),'equipment_linkage_gate'),
+        ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {},_pre_submission_pending_boards(report,answers.get('_pre_submission_authority'))),'equipment_linkage_gate'),
         ('split_ac_visual_qa',validate_split_ac_visual_legibility(dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews')),'split_ac_visual_gate'),
         ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),
         ('content_completeness_qa',validate_content_completeness(dst,report.get('composition') or {}),'content_completeness_gate'),

@@ -1,4 +1,4 @@
-from cad_engine.mechanical_cad_shell import _release_input_errors
+from cad_engine.mechanical_cad_shell import _pre_submission_pending_boards, _release_input_errors
 
 
 def _report(family="EXHAUST", enrichment="exhaust_cfm", status="INPUT_REQUIRED"):
@@ -22,3 +22,10 @@ def test_fail_status_is_never_disclosed_as_pre_submission_pending():
 
 def test_unrelated_family_pending_cannot_suppress_enrichment_error():
     assert _release_input_errors(_report(family="HEATING"), {"blocked_at":"target_design_packages"}) == ["exhaust_cfm:INPUT_REQUIRED"]
+
+
+def test_pending_equipment_board_scope_requires_exact_target_package_disclosure():
+    report={"semantic_qa":{"pre_submission_disclosure":{"pending_family_content":["M-04:HEATING"]}}}
+    assert _pre_submission_pending_boards(report,{"blocked_at":"target_design_packages"}) == {("m-04","HEATING")}
+    assert _pre_submission_pending_boards(report,{"blocked_at":"manufacturer"}) == set()
+    assert _pre_submission_pending_boards(report,None) == set()
