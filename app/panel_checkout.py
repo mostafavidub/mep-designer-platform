@@ -247,9 +247,27 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 .first()
                 or db.query(Link).filter(Link.project_id == project.id).first())
         data = authoritative_engine_state(db, project, link)
+        quoted = bool(order.quote_token and order.amount > 0)
+        paid = bool(order.paid)
+        checkout_state = "paid" if paid else "awaiting_payment" if quoted else "draft"
+        if quoted and not paid:
+            # Keep the engine's internal readiness intact while exposing the
+            # commercial state as the authoritative customer-facing state.
+            # A restored browser session can therefore resume checkout without
+            # repeating upload, analysis, or questionnaire work.
+            data = {
+                **data,
+                "status": "awaiting_payment",
+                "status_label": "در انتظار پرداخت",
+                "payment_required": True,
+            }
         return {"id": order.external_id, "owner": account_id(order.user_id), "title": project.name,
                 "service": "طراحی برق" if (project.answers or {}).get("discipline") == "electrical" else "طراحی مکانیک",
-                "area": float(order.area or 0), "amount": order.amount, "paid": bool(order.paid),
+                "area": float(order.area or 0), "amount": order.amount, "paid": paid,
+                "checkoutState": checkout_state,
+                "status": "در انتظار پرداخت" if checkout_state == "awaiting_payment" else data.get("status"),
+                "resumeAction": "payment" if checkout_state == "awaiting_payment" else None,
+                "paymentRequired": checkout_state == "awaiting_payment",
                 "quoteToken": order.quote_token, "answers": {k: v for k, v in (project.answers or {}).items() if isinstance(v, (str, int, float, bool))}, "engine": data}
 
     def authoritative_engine_state(db, project, link):

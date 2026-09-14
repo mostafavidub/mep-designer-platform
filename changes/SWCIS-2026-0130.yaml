@@ -1,0 +1,8 @@
+{
+  "id": "SWCIS-2026-0130",
+  "title": "Persist and resume unpaid customer checkout",
+  "summary": "Expose a durable awaiting-payment state after quotation so returning customers resume the same saved project, answers, analysis and quote; successful payment alone transitions the project into the design queue.",
+  "risk": "low",
+  "scope": ["panel-checkout", "customer-project-state", "payment-resume"],
+  "tests": ["tests/test_panel_checkout.py"]
+}

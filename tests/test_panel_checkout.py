@@ -61,6 +61,51 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_unpaid_quote_is_durable_and_resumes_payment_after_page_close(flow):
+    browser, auth, uid, pid, token, order = flow
+
+    assert order['checkoutState'] == 'awaiting_payment'
+    assert order['status'] == 'در انتظار پرداخت'
+    assert order['paymentRequired'] is True
+    assert order['resumeAction'] == 'payment'
+    assert order['engine']['status'] == 'awaiting_payment'
+    assert order['engine']['status_label'] == 'در انتظار پرداخت'
+    original_quote = order['quoteToken']
+    original_answers = order['answers']
+
+    # A fresh login represents closing the page and returning later. The
+    # server, not browser storage, must restore the same checkout and answers.
+    phone = None
+    with legacy.Session() as db:
+        phone = db.get(app.state.panel_checkout.Profile, uid).phone
+        project = db.get(legacy.Project, pid)
+        assert project.analysis['architectural_auto']['geometry_area_m2'] == 100
+    login = browser.post('/internal/panel/customer/session',
+                         headers={'x-panel-token': 'checkout-test-only-secret'},
+                         json={'phone': phone})
+    assert login.status_code == 200, login.text
+    restored = next(row for row in login.json()['projects'] if row['id'] == order['id'])
+    assert restored['checkoutState'] == 'awaiting_payment'
+    assert restored['quoteToken'] == original_quote
+    assert restored['answers'] == original_answers
+
+    # Successful payment atomically leaves checkout and starts one design job.
+    fund(uid, order['amount'])
+    restored_auth = {
+        'x-panel-token': 'checkout-test-only-secret',
+        'x-customer-session': login.json()['session'],
+    }
+    paid = pay(browser, restored_auth, pid, restored)
+    assert paid.status_code == 200, paid.text
+    completed = paid.json()['project']
+    assert completed['checkoutState'] == 'paid'
+    assert completed['paymentRequired'] is False
+    assert completed['resumeAction'] is None
+    assert completed['engine']['status'] == 'queued'
+    with legacy.Session() as db:
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
+
+
 def test_account_snapshot_exposes_one_revisioned_authoritative_progress(flow):
     browser, auth, uid, pid, token, order = flow
     fund(uid, order['amount'])
