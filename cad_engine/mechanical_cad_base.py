@@ -116,7 +116,7 @@ def enrich_roof_rainwater(doc, msp, pipeline, authority, compose, answers):
     q_total=(intensity*area*runoff/3600.0) if intensity is not None else None
 
     board_plan=tuple(b["plan_area"])
-    mapped=[_map_point(p,plan["bounds"],board_plan) for p in [(x1,y1),(x2,y1),(x2,y2),(x1,y2)]]
+    mapped=[_map_point(p,plan.get("content_bounds") or plan["bounds"],board_plan) for p in [(x1,y1),(x2,y1),(x2,y2),(x1,y2)]]
     drains=[]
     for i,p in enumerate(mapped,1):
         msp.add_circle(p,.13,dxfattribs={"layer":layer})
@@ -328,7 +328,7 @@ def enrich_exhaust(doc,msp,pipeline,compose):
         pid=plan["plan_id"]
         rooms=[r for r in pipeline["architecture"].get("rooms") or [] if r.get("plan_id")==pid and r.get("type") in EXHAUST_CFM]
         for room in rooms:
-            p=_map_point(tuple(room.get("label_point")),plan["bounds"],tuple(b["plan_area"]))
+            p=_map_point(tuple(room.get("label_point")),plan.get("content_bounds") or plan["bounds"],tuple(b["plan_area"]))
             cfm=EXHAUST_CFM[room["type"]]
             msp.add_circle(p,.10,dxfattribs={"layer":layer})
             tag=f"EF-{len(fans)+1:02d}"

@@ -72,6 +72,31 @@ def test_plan_content_envelope_must_fill_between_55_and_85_percent(tmp_path, mon
     assert any("plan_bbox_occupancy_below_minimum" in item for item in result["errors"])
 
 
+def test_mechanical_outliers_cannot_make_tiny_architecture_pass(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual,"_render_profile",_fake_render)
+    path=tmp_path/"mechanical-outlier.dxf";composition=_issued(path)
+    doc=ezdxf.readfile(path);msp=doc.modelspace()
+    for entity in list(msp):msp.delete_entity(entity)
+    msp.add_lwpolyline([(9,13),(11,13),(11,15),(9,15)],close=True,dxfattribs={"layer":"WALL"})
+    msp.add_line((1,3),(20,28),dxfattribs={"layer":"ENGITOOLS-M-WATER"})
+    msp.add_text("CW DN25",dxfattribs={"layer":"ENGITOOLS-M-WATER","height":.1}).set_placement((5,5))
+    doc.saveas(path)
+    result=visual.validate_all_sheet_visual_qa(path,composition,tmp_path/"previews")
+    assert result["status"]=="FAIL"
+    assert any("plan_bbox_occupancy_below_minimum" in item for item in result["errors"])
+
+
+def test_graphical_outlier_does_not_inflate_robust_architecture_fit():
+    doc=ezdxf.new("R2010");msp=doc.modelspace();doc.layers.add("WALL")
+    for index in range(20):
+        x=9+(index%5)*.4;y=13+(index//5)*.4
+        msp.add_line((x,y),(x+.3,y+.3),dxfattribs={"layer":"WALL"})
+    msp.add_circle((20,28),.05,dxfattribs={"layer":"WALL"})
+    metrics=visual._content_fit_metrics(list(msp),(0.5,2.5,20.5,29.2))
+    assert metrics["raw_occupancy"]>metrics["occupancy"]*10
+    assert metrics["major_axis_fill"]<.2
+
+
 def test_aspect_fitted_portrait_plan_is_not_rejected_by_area_occupancy(tmp_path, monkeypatch):
     monkeypatch.setattr(visual, "_render_profile", _fake_render)
     path = tmp_path / "portrait.dxf"; composition = _issued(path)

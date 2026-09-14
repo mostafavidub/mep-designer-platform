@@ -1,10 +1,17 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.11
+**Canonical version:** 4.43.13
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.43.13 separates the source ownership frame from the authoritative
+drawable-content envelope for every architectural plan. Architecture, routes
+and equipment use one reversible uniform transform derived from the robust
+graphical envelope; text, mechanical overlays and isolated outliers cannot
+inflate visual-fit evidence. Exact-file QA independently rejects a tiny,
+collapsed or outlier-authorized architectural underlay.
 
 Version 4.43.8 permits a disclosed preliminary room-type load proxy only when a recognized room has a calculation row but lacks closed-enclosure area; absent calculations and explicit zero-area/zero-load evidence remain fail-closed.
 
