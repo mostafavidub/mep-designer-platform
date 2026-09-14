@@ -65,15 +65,19 @@ def _normalize_project_answers(answers):
     return a
 
 
-def _release_input_errors(report):
+def _release_input_errors(report, pre_submission=None):
     errors=[]
+    pending = {str(item).split(":", 1)[-1] for item in (((report.get("semantic_qa") or {}).get("pre_submission_disclosure") or {}).get("pending_family_content") or [])}
+    disclosed_family = {"roof_rainwater":"ROOF", "exhaust_cfm":"EXHAUST", "split_roof":"SPLIT_AC"}
+    target_package_pre_submission = bool(isinstance(pre_submission,dict) and pre_submission.get("blocked_at")=="target_design_packages")
     enrichment=report.get('enrichment') or {}
     for name,result in enrichment.items():
         status=str((result or {}).get('status') or '').upper()
-        if status in {'INPUT_REQUIRED','FAIL'}: errors.append(f'{name}:{status}')
+        disclosed_pending=bool(target_package_pre_submission and status=='INPUT_REQUIRED' and disclosed_family.get(name) in pending)
+        if status in {'INPUT_REQUIRED','FAIL'} and not disclosed_pending: errors.append(f'{name}:{status}')
         for rec in (result or {}).get('records') or []:
             rstatus=str(rec.get('status') or '').upper()
-            if rstatus in {'INPUT_REQUIRED','FAIL'}: errors.append(f"{name}:{rec.get('sheet') or rec.get('route') or 'record'}:{rstatus}")
+            if rstatus in {'INPUT_REQUIRED','FAIL'} and not disclosed_pending: errors.append(f"{name}:{rec.get('sheet') or rec.get('route') or 'record'}:{rstatus}")
     authority=report.get('authority') or {};basis=authority.get('design_basis') or {}
     if basis.get('status')!='PASS': errors.append('design_basis_not_locked')
     pipeline_qa=report.get('pipeline_qa') or {}
@@ -349,7 +353,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     if report.get('status')!='PASS':
         if backup and backup.exists():shutil.copy2(backup,dst);backup.unlink(missing_ok=True)
         return report
-    unresolved=_release_input_errors(report);report['release_input_qa']={'version':'release-input-gate-canonical','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
+    unresolved=_release_input_errors(report,answers.get('_pre_submission_authority'));report['release_input_qa']={'version':'release-input-gate-canonical','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
     if unresolved:
         report['status']='FAIL';report['stage']='release_input_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)

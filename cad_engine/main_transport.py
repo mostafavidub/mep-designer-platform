@@ -172,6 +172,7 @@ def design(req: DesignRequest):
                         "architecture_preservation_100_gate":"architecture_preservation_100_qa",
                         "authority_preflight_gate":"authority_pipeline_qa",
                         "runtime_contract_gate":"authority_pipeline_qa",
+                        "release_input_gate":"release_input_qa",
                     }
                     detail={
                         "message":"Mechanical authority pipeline failed",

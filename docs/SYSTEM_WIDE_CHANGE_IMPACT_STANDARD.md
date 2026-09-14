@@ -1,12 +1,12 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.2
+**Canonical version:** 4.43.3
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
 
-Version 4.43.2 performs a one-condition startup recovery for preserved paid jobs carrying the exact former `semantic_qa` + `missing_family_specific_content` + `target_design_packages_missing` fingerprint; generic semantic and final QA failures remain stopped. Version 4.43.1 reconciles the semantic-sheet gate with the governed Pre-Submission profile. A non-blank family sheet whose missing final geometry is explicitly disclosed on that same sheet may be delivered only when the canonical pipeline is blocked at `target_design_packages`; final outputs, unrelated blockers, title-only sheets and blank sheets remain fail-closed. Version 4.43.0 completes phase-one calculation-to-CAD linkage: room heating/cooling results drive equipment duties with retained calculation identities, and water-service head exposes served-floor, critical-route, friction, residual and service-mode components. Final manufacturer and Submission Ready gates remain unchanged.
+Version 4.43.3 applies the same same-family disclosure rule to optional roof-rainwater, exhaust and split-roof enrichments and recovers only zero-architecture-loss jobs stopped by the former release-input mismatch. Version 4.43.2 performs a one-condition startup recovery for preserved paid jobs carrying the exact former `semantic_qa` + `missing_family_specific_content` + `target_design_packages_missing` fingerprint; generic semantic and final QA failures remain stopped. Version 4.43.1 reconciles the semantic-sheet gate with the governed Pre-Submission profile. A non-blank family sheet whose missing final geometry is explicitly disclosed on that same sheet may be delivered only when the canonical pipeline is blocked at `target_design_packages`; final outputs, unrelated blockers, title-only sheets and blank sheets remain fail-closed. Version 4.43.0 completes phase-one calculation-to-CAD linkage: room heating/cooling results drive equipment duties with retained calculation identities, and water-service head exposes served-floor, critical-route, friction, residual and service-mode components. Final manufacturer and Submission Ready gates remain unchanged.
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
 
