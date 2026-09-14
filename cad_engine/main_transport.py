@@ -131,6 +131,12 @@ def design(req: DesignRequest):
 
             if discipline=="mechanical":
                 design_answers=dict(req.answers or {})
+                # In the co-built deployment this callable persists only real
+                # engine boundaries. It is never serialized into remote CAD
+                # payloads and therefore cannot manufacture timer progress.
+                progress_callback=getattr(req,"_progress_callback",None)
+                if callable(progress_callback):
+                    design_answers["_progress_callback"]=progress_callback
                 # Authority planning must see the same accepted architectural
                 # evidence as the engineering pipeline.  Without this bridge a
                 # rejected pseudo-roof was revived and rainfall was requested

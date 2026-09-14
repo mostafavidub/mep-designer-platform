@@ -390,7 +390,7 @@ def _cad_rejection_diagnostic(response):
     }
 
 
-def _post_to_compatible_cad(payload):
+def _post_to_compatible_cad(payload, progress_callback=None):
     """Use the canonical CAD process shipped in this exact deployment."""
     def call_in_process():
         # Railway's constrained container must not load the CAD stack in a
@@ -414,7 +414,11 @@ def _post_to_compatible_cad(payload):
             # architectural analysis (tens of MB) and exhausted Railway memory.
             # The canonical route uses attribute access only, so a zero-copy
             # request namespace retains the exact same route and QA behavior.
-            local_payload = {'architecture_archive_b64': None, **payload}
+            local_payload = {
+                'architecture_archive_b64': None,
+                '_progress_callback': progress_callback,
+                **payload,
+            }
             return LocalResponse(200, design(SimpleNamespace(**local_payload)))
         except HTTPException as exc:
             return LocalResponse(exc.status_code, {'detail': exc.detail})
@@ -591,13 +595,21 @@ def run_design_dxf(project_id, revision_id):
             },
         }
         if discipline == 'mechanical':
-            for stage in ('coordination_v19', 'manufacturer_v19', 'documentation_v19'):
+            for stage in (
+                'coordination_validation',
+                'equipment_constraints_validation',
+                'documentation_validation',
+            ):
                 set_project_progress(p, stage)
                 db.commit()
         set_project_progress(p, 'engine_designing')
         db.commit()
         payload = _attach_remote_architecture(payload, pdir)
-        resp = _post_to_compatible_cad(payload)
+        def persist_engine_progress(stage):
+            set_project_progress(p, stage)
+            db.commit()
+
+        resp = _post_to_compatible_cad(payload, progress_callback=persist_engine_progress)
         if not resp.ok:
             message = _cad_error_message(resp)
             print(

@@ -110,8 +110,9 @@ class MechanicalRuntimeV19Tests(unittest.TestCase):
         root=Path(__file__).parents[1]
         panel=(root/"app/templates/project.html").read_text()
         progress=(root/"app/design_progress.py").read_text()
-        self.assertIn("data-mechanical-runtime-v19",panel)
-        for stage in ("coordination_v19","manufacturer_v19","documentation_v19"):
+        self.assertIn("data-mechanical-runtime",panel)
+        self.assertNotIn("v19",panel.lower())
+        for stage in ("coordination_validation","equipment_constraints_validation","documentation_validation"):
             self.assertIn(stage,progress)
 
 

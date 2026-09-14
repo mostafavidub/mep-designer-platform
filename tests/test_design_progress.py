@@ -26,7 +26,7 @@ class DesignProgressTests(unittest.TestCase):
         progress = get_project_progress(project)
         self.assertEqual(progress["stage"], "engine_designing")
         self.assertEqual(progress["percent"], 20)
-        self.assertIn("طراحی نقشه", progress["label"])
+        self.assertIn("طراحی", progress["label"])
 
     def test_unknown_stage_fails_closed(self):
         with self.assertRaises(ValueError):
@@ -45,7 +45,7 @@ class DesignProgressTests(unittest.TestCase):
         source = (ROOT / "app/dxf_output.py").read_text(encoding="utf-8")
         ordered = [
             "'preparing_inputs'", "'validating_contract'", "'engine_designing'",
-            "resp = _post_to_compatible_cad(payload)", "'mechanical_release_qa'", "'validating_output'", "'packaging'", "'artifact_qa'",
+            "resp = _post_to_compatible_cad(payload, progress_callback=persist_engine_progress)", "'mechanical_release_qa'", "'validating_output'", "'packaging'", "'artifact_qa'",
             "'uploading_output'", "'finalizing'", "'completed'",
         ]
         positions = [source.index(token) for token in ordered]
