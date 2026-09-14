@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0201",
+  "summary":"Materialize exact per-sheet target-package Pre-Submission disclosures before semantic CAD QA and safely resume only the matching retained paid jobs.",
+  "requester":"project-owner",
+  "change_types":["documentation","drawing_output","governance","qa","runtime","test","ui_api","versioning","migration","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Add an explicit board-bound disclosure to every target-package Pre-Submission plan that lacks final family geometry.",
+    "qa":"Semantic QA accepts missing final family geometry only when the exact affected sheet carries the canonical disclosure; final output remains fail-closed.",
+    "ui_api":"Existing status and downloadable Pre-Submission artifact contract are preserved.",
+    "docs":"Record the materialized per-sheet disclosure requirement.",
+    "versioning":"SWCIS 4.43.14.",
+    "manifest":"No drawing-scope change; disclosures bind to existing sheet codes and families.",
+    "migration":"No schema migration; exact matching failed jobs are regenerated from retained inputs.",
+    "governance":"Strengthens truthful Pre-Submission handling without permitting a Submission Ready claim.",
+    "deployment":"Protected Staging rollout followed by retry and exact artifact verification."
+  },
+  "evidence":{
+    "traceability":["target_design_packages blocker -> affected manifest sheet -> materialized disclosure -> semantic CAD QA -> PRE_SUBMISSION artifact"],
+    "tests":["Positive exact-sheet disclosure, destructive unrelated-blocker and final-output rejection, integration delivery, recovery fingerprint."],
+    "docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump":["SWCIS 4.43.13 -> 4.43.14"],
+    "migration":["No DB/schema change; retained paid input is safely regenerated."],
+    "golden_regression":["Full governed suite and focused Pre-Submission semantic regressions required."],
+    "semantic_diff":["A pending family limitation is proven by an exact board-bound disclosure entity, not inferred from an unrelated note."],
+    "artifact_diff":["Affected pending plan sheets visibly state that final family design is unavailable; no fabricated family geometry is added."],
+    "numeric_diff":["No engineering sizing, load, capacity, route or geometry numeric semantics change."],
+    "contract_diff":["Only target-design-package INPUT_REQUIRED artifacts with exact per-sheet disclosures may pass as PRE_SUBMISSION; Submission Ready gates are unchanged."],
+    "deployment_plan":["Validate impact, implement closure, run full tests, protected PR, merge, verify Staging deployment, retry the named project and verify downloadable artifact."],
+    "rollback_plan":["Revert the merged Git commit and redeploy the prior approved build; retained project inputs remain recoverable."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":2,"score":16,"rationale":"Incorrect scoping could conceal missing family content, constrained by exact blocker, exact sheet disclosure and destructive final-output tests."},
+  "waiver":null
+}
