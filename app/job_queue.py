@@ -657,6 +657,24 @@ def register_job_queue(app, legacy):
                     project.status = 'queued'; project.last_error = ''; set_project_progress(project, 'queued')
                 if revision:
                     revision.status = 'queued'; revision.error = ''
+            # The coordinate-integrity rollout exposed old graphs whose
+            # questionnaire-only fixtures were collocated with their wet-core
+            # node. Requeue only that exact deterministic failure; the fixed
+            # authority rebuilds the stale graph from retained architecture and
+            # approved answers without charging or recreating the project.
+            collapsed_plan_path_jobs = db.query(Job).filter(
+                Job.job_type == 'design', Job.status == 'failed',
+                func.lower(Job.last_error).like('%materialized_segment_degenerate:%'),
+            ).all()
+            for failed_job in collapsed_plan_path_jobs:
+                project = db.get(legacy.Project, failed_job.project_id)
+                revision = db.get(legacy.Revision, failed_job.revision_id) if failed_job.revision_id else None
+                failed_job.status = 'queued'; failed_job.attempts = 0
+                failed_job.available_at = datetime.utcnow(); failed_job.locked_at = None; failed_job.last_error = ''
+                if project:
+                    project.status = 'queued'; project.last_error = ''; set_project_progress(project, 'queued')
+                if revision:
+                    revision.status = 'queued'; revision.error = ''
             db.commit()
             jobs = db.query(Job).filter(Job.status == 'processing').all()
             diagnostic_retry = db.query(Job).filter(
