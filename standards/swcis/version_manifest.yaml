@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.43.3",
+  "standard_version": "4.43.4",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.43.4","date":"2026-09-14","summary":"Map questionnaire water-source choices into the canonical water-service calculation mode without guessing ambiguous inputs."},
     {"version":"4.43.3","date":"2026-09-14","summary":"Reconcile disclosed same-family optional enrichments with target-package Pre-Submission and recover only zero-architecture-loss release-input failures."},
     {"version":"4.43.2","date":"2026-09-14","summary":"Requeue preserved paid jobs only for the exact fixed semantic target-package Pre-Submission failure fingerprint."},
     {"version":"4.43.1","date":"2026-09-14","summary":"Deliver explicitly disclosed non-blank family-pending sheets only for the canonical target-design-package Pre-Submission blocker while retaining final fail-closed semantics."},
