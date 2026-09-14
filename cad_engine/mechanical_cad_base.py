@@ -372,15 +372,55 @@ def _entity_signature(e):
     return f"{typ}|{layer}|{value}"
 
 
-def qa_semantic_sheet_content(path: Path, compose, pre_submission=None):
-    doc=ezdxf.readfile(path)
-    msp=doc.modelspace()
+_PRE_SUBMISSION_DISCLOSURE_PREFIX = "PRE-SUBMISSION PENDING"
+
+
+def _target_package_pre_submission(value):
+    return bool(
+        isinstance(value, dict)
+        and value.get("blocked_at") == "target_design_packages"
+        and "TARGET_DESIGN_PACKAGES_MISSING" in set(value.get("blockers") or [])
+    )
+
+
+def _materialize_target_package_disclosures(doc, msp, compose, pre_submission):
+    """Draw a sheet-bound disclosure; never invent missing final design geometry."""
+    if not _target_package_pre_submission(pre_submission):
+        return {"status": "NOT_APPLICABLE", "sheets": []}
+    probe = qa_semantic_sheet_content_from_model(msp, compose)
+    if not probe["missing_family_content"]:
+        return {"status": "PASS", "sheets": []}
+    layer = "ENGITOOLS-M-PRE-SUBMISSION"
+    _ensure_layer(doc, layer, 1, 25)
+    boards = compose.get("boards") or {}
+    manifest = {row.get("code"): row for row in compose.get("manifest") or []}
+    records = []
+    for item in probe["missing_family_content"]:
+        code, gap = item.split(":", 1)
+        row = manifest.get(code) or {}
+        family = str(row.get("family") or gap)
+        board = boards.get(row.get("old_sheet")) or {}
+        area = board.get("plan_area") or board.get("bounds")
+        if not isinstance(area, (list, tuple)) or len(area) != 4:
+            continue
+        x1, y1, x2, y2 = map(float, area)
+        text = (
+            f"{_PRE_SUBMISSION_DISCLOSURE_PREFIX} | SHEET={code} | FAMILY={family}\n"
+            "FINAL FAMILY DESIGN PACKAGE INPUT REQUIRED — NOT SUBMISSION READY"
+        )
+        _mtext(msp, layer, text, x1 + 0.25, y2 - 0.25, max(1.0, (x2 - x1) - 0.5), 0.08)
+        records.append({"sheet": code, "family": family, "gap": gap, "board_id": row.get("old_sheet")})
+    return {
+        "status": "PASS" if len(records) == len(probe["missing_family_content"]) else "FAIL",
+        "sheets": records,
+        "expected": probe["missing_family_content"],
+    }
+
+
+def qa_semantic_sheet_content_from_model(msp, compose):
+    """Collect exact per-board semantic evidence from an open CAD model."""
     boards=compose.get("boards") or {}
-    signatures={}
-    content_counts={}
-    disclosure_by_sheet={}
-    disclosure_by_code={}
-    missing_family_content=[]
+    signatures={};content_counts={};disclosure_by_sheet={};disclosure_by_code={};missing_family_content=[]
     family_layer_need={
         "SANITARY_VENT":("ENGITOOLS-M-SANITARY","ENGITOOLS-M-VENT"),
         "WATER":("ENGITOOLS-M-COLD_WATER",),
@@ -390,45 +430,42 @@ def qa_semantic_sheet_content(path: Path, compose, pre_submission=None):
         "EXHAUST":("ENGITOOLS-M-EXHAUST",),
     }
     manifest={r["old_sheet"]:r for r in compose.get("manifest") or []}
-
     def intersect(ex,b):
         return not (ex.extmax.x<b[0] or ex.extmin.x>b[2] or ex.extmax.y<b[1] or ex.extmin.y>b[3])
-
     for old,b in boards.items():
-        bounds=tuple(b["bounds"])
-        tokens=[]
-        layers=Counter()
+        bounds=tuple(b["bounds"]);tokens=[];layers=Counter()
         for e in msp:
             layer=str(getattr(e.dxf,"layer",""))
-            if layer.startswith("ENGITOOLS-SHEET-"):
-                continue
+            if layer.startswith("ENGITOOLS-SHEET-"):continue
             try:
                 ex=bbox.extents([e],fast=True)
-                if not ex.has_data or not intersect(ex,bounds):
-                    continue
-            except Exception:
-                continue
-            tokens.append(_entity_signature(e))
-            layers[layer]+=1
-        content_counts[old]=len(tokens)
-        disclosure_by_sheet[old]=any(
-            "NO RELIABLE TERMINAL OR BRANCH ENDPOINT DETECTED" in token
-            for token in tokens
-        )
-        signatures[old]=hashlib.sha256("\n".join(sorted(tokens)).encode()).hexdigest()
-        row=manifest.get(old) or {}
-        if row.get("code"):
-            disclosure_by_code[row["code"]]=disclosure_by_sheet[old]
-        needs=family_layer_need.get(row.get("family"))
+                if not ex.has_data or not intersect(ex,bounds):continue
+            except Exception:continue
+            tokens.append(_entity_signature(e));layers[layer]+=1
+        content_counts[old]=len(tokens);signatures[old]=hashlib.sha256("\n".join(sorted(tokens)).encode()).hexdigest()
+        row=manifest.get(old) or {};code=str(row.get("code") or "");family=str(row.get("family") or "")
+        expected=f"{_PRE_SUBMISSION_DISCLOSURE_PREFIX} | SHEET={code} | FAMILY={family}"
+        disclosure_by_sheet[old]=any(expected in token for token in tokens)
+        if code:disclosure_by_code[code]=disclosure_by_sheet[old]
+        needs=family_layer_need.get(family)
         if needs:
-            if row.get("family")=="WATER" and row.get("level")=="SERVICE":
-                if layers["ENGITOOLS-M-WATER-SERVICE"]<=0:
-                    missing_family_content.append(f"{row.get('code')}:water_service")
-            elif row.get("family")=="SPLIT_AC" and row.get("level")=="ROOF":
-                if layers["ENGITOOLS-M-HVAC-ODU"]<=0:
-                    missing_family_content.append(f"{row.get('code')}:odu_roof")
+            if family=="WATER" and row.get("level")=="SERVICE":
+                if layers["ENGITOOLS-M-WATER-SERVICE"]<=0:missing_family_content.append(f"{code}:water_service")
+            elif family=="SPLIT_AC" and row.get("level")=="ROOF":
+                if layers["ENGITOOLS-M-HVAC-ODU"]<=0:missing_family_content.append(f"{code}:odu_roof")
             elif not all(any(k in lname and count>0 for lname,count in layers.items()) for k in needs):
-                missing_family_content.append(f"{row.get('code')}:{row.get('family')}")
+                missing_family_content.append(f"{code}:{family}")
+    return {"signatures":signatures,"content_counts":content_counts,"disclosure_by_sheet":disclosure_by_sheet,
+            "disclosure_by_code":disclosure_by_code,"missing_family_content":missing_family_content}
+
+
+def qa_semantic_sheet_content(path: Path, compose, pre_submission=None):
+    doc=ezdxf.readfile(path)
+    msp=doc.modelspace()
+    evidence=qa_semantic_sheet_content_from_model(msp,compose)
+    signatures=evidence["signatures"];content_counts=evidence["content_counts"]
+    disclosure_by_sheet=evidence["disclosure_by_sheet"];disclosure_by_code=evidence["disclosure_by_code"]
+    missing_family_content=evidence["missing_family_content"]
     groups=defaultdict(list)
     for s,h in signatures.items():
         groups[h].append(s)
@@ -444,7 +481,7 @@ def qa_semantic_sheet_content(path: Path, compose, pre_submission=None):
     disclosed_pre_submission = bool(
         missing_family_content
         and isinstance(pre_submission, dict)
-        and pre_submission.get("blocked_at") == "target_design_packages"
+        and _target_package_pre_submission(pre_submission)
         and all(
             disclosure_by_code.get(item.split(":", 1)[0], False)
             for item in missing_family_content
@@ -492,6 +529,11 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "exhaust_cfm":enrich_exhaust(doc,msp,pipeline,compose),
         "split_roof":enrich_split_roof(doc,msp,pipeline,compose),
     }
+    disclosure=_materialize_target_package_disclosures(
+        doc,msp,compose,answers.get("_pre_submission_authority")
+    )
+    if disclosure.get("status")=="FAIL":
+        return {"status":"FAIL","stage":"pre_submission_disclosure_gate","pre_submission_disclosure_qa":disclosure}
     # Enrichment is drawn inside the board envelopes established by the
     # composer.  Recomputing recursive extents here rebuilds the same large
     # geometry cache without changing the drawing envelope.
@@ -516,6 +558,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "authority":authority,
         "composition":compose,
         "enrichment":enrich,
+        "pre_submission_disclosure_qa":disclosure,
         "dxf_qa":dxf_qa,
         "semantic_qa":semantic_qa,
         "stage":failed_stage,

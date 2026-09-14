@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.13
+**Canonical version:** 4.43.14
 
 **Status:** LOCKED
 
@@ -140,6 +140,13 @@ publish per-board scale/offset/round-trip evidence, and reject degenerate or
 out-of-board geometry. The exact saved DXF is then reopened and must repeat all
 applicable preservation, composition, linkage, completeness and visual checks;
 earlier pre-materialization evidence cannot authorize delivery.
+
+For the architecture-only Pre-Submission profile, a missing final target-design
+package may never be represented by invented family geometry. The exact affected
+board must instead contain a machine-verifiable, visible disclosure naming its
+sheet and family. This exception applies only to the canonical
+`TARGET_DESIGN_PACKAGES_MISSING` input blocker, never authorizes a Submission Ready
+claim, and does not relax blank-sheet, final-family-content or exact-file gates.
 
 Count-only questionnaire fixtures must be placed at deterministic, room-bounded
 service points distinct from wet-core or shaft aggregation nodes. A persisted

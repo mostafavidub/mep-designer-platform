@@ -1,6 +1,9 @@
 import ezdxf
 
-from cad_engine.mechanical_cad_base import qa_semantic_sheet_content
+from cad_engine.mechanical_cad_base import (
+    _materialize_target_package_disclosures,
+    qa_semantic_sheet_content,
+)
 
 
 def _pending_heating_sheet(tmp_path):
@@ -30,6 +33,12 @@ def test_final_semantic_qa_still_blocks_missing_family_content(tmp_path):
 
 def test_target_package_pre_submission_is_deliverable_with_explicit_disclosure(tmp_path):
     path, compose = _pending_heating_sheet(tmp_path)
+    doc=ezdxf.readfile(path)
+    result=_materialize_target_package_disclosures(doc,doc.modelspace(),compose,{
+        "blocked_at":"target_design_packages","blockers":["TARGET_DESIGN_PACKAGES_MISSING"]
+    })
+    assert result["status"] == "PASS"
+    doc.saveas(path)
     result = qa_semantic_sheet_content(
         path, compose, {"blocked_at": "target_design_packages", "blockers": ["TARGET_DESIGN_PACKAGES_MISSING"]}
     )
@@ -42,6 +51,14 @@ def test_target_package_pre_submission_is_deliverable_with_explicit_disclosure(t
 def test_unrelated_pre_submission_blocker_cannot_bypass_semantic_qa(tmp_path):
     path, compose = _pending_heating_sheet(tmp_path)
     result = qa_semantic_sheet_content(path, compose, {"blocked_at": "manufacturer"})
+    assert result["status"] == "FAIL"
+
+
+def test_target_blocker_without_exact_missing_package_reason_cannot_bypass_semantic_qa(tmp_path):
+    path, compose = _pending_heating_sheet(tmp_path)
+    result = qa_semantic_sheet_content(path, compose, {
+        "blocked_at": "target_design_packages", "blockers": ["UNRELATED_INPUT"]
+    })
     assert result["status"] == "FAIL"
 
 
