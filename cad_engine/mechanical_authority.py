@@ -446,6 +446,11 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         shutil.copy2(dst, backup)
 
     shell_answers = dict(answers)
+    if pre_submission:
+        shell_answers["_pre_submission_authority"] = {
+            "blocked_at": result.get("blocked_at"),
+            "blockers": _pipeline_blockers(result),
+        }
     shell_contract = dict(shell_answers.get("_canonical_input_contract") or {})
     shell_contract.update({
         "unified_engineering_model": unified,
