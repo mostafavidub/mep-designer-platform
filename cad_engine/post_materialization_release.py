@@ -1,0 +1,54 @@
+"""Fail-closed checks executed after the last mutation of the issued DXF."""
+from __future__ import annotations
+
+from pathlib import Path
+import math
+
+from .mechanical_cad_preservation import evaluate_architecture_preservation
+from .mechanical_release_hardening import (
+    validate_titleblocks, validate_safe_zones, validate_architectural_presentation,
+    validate_equipment_linkage, validate_detail_library, validate_content_completeness,
+    validate_split_ac_visual_legibility, create_montage_and_validate,
+)
+from .sheet_visual_qa import validate_all_sheet_visual_qa
+
+
+def validate_coordinate_evidence(materialization):
+    rows = materialization.get("coordinate_transforms") or []
+    errors = []
+    for row in rows:
+        edge = str(row.get("edge_id") or "?")
+        sx = float(row.get("scale_x") or 0); sy = float(row.get("scale_y") or 0)
+        anisotropy = abs(sx / sy - 1.0) if abs(sy) > 1e-12 else math.inf
+        if anisotropy > .005:
+            errors.append(f"non_uniform_transform:{edge}:{anisotropy:.6f}")
+        roundtrip = row.get("roundtrip_max_error")
+        if roundtrip is None or float(roundtrip) > 1e-6:
+            errors.append(f"coordinate_roundtrip_failed:{edge}")
+    if not rows:
+        errors.append("coordinate_transform_evidence_missing")
+    return {"status": "PASS" if not errors else "FAIL", "errors": errors,
+            "transform_count": len(rows), "maximum_allowed_anisotropy": .005,
+            "maximum_roundtrip_error": 1e-6}
+
+
+def validate_after_last_mutation(src: Path, dst: Path, report: dict, answers: dict, materialization: dict) -> dict:
+    """Reopen and revalidate the exact downloadable file after graph drawing."""
+    composition = report.get("composition") or {}
+    checks = {
+        "coordinate_integrity": validate_coordinate_evidence(materialization),
+        "architecture_preservation": evaluate_architecture_preservation(src, dst, report, answers=answers),
+        "titleblocks": validate_titleblocks(dst, composition),
+        "safe_zones": validate_safe_zones(dst, composition),
+        "architectural_presentation": validate_architectural_presentation(dst, composition),
+        "equipment_linkage": validate_equipment_linkage(dst, composition),
+        "detail_library": validate_detail_library(dst, composition),
+        "content_completeness": validate_content_completeness(dst, composition),
+        "split_visual": validate_split_ac_visual_legibility(dst, composition, dst.with_name(dst.stem + "-final-split-previews")),
+        "all_sheet_visual": validate_all_sheet_visual_qa(dst, composition, dst.with_name(dst.stem + "-final-sheet-previews")),
+        "exact_montage": create_montage_and_validate(dst, dst.with_name(dst.stem + "-final-montage.png")),
+    }
+    failed = [name for name, result in checks.items() if str((result or {}).get("status") or "").upper() != "PASS"]
+    return {"status": "PASS" if not failed else "FAIL", "failed_checks": failed,
+            "checks": checks, "exact_downloadable_file_reopened": True,
+            "release_allowed": not failed, "policy": "FAIL_CLOSED_AFTER_LAST_DXF_MUTATION"}

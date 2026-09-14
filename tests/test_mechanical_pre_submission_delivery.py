@@ -30,6 +30,9 @@ def _unified_pass(*_args, **_kwargs):
     }
 
 
+@patch.object(authority, "validate_after_last_mutation", return_value={"status": "PASS"})
+@patch.object(authority, "repair_sheet_annotations", return_value={"status": "PASS"})
+@patch.object(authority, "validate_coordinate_evidence", return_value={"status": "PASS"})
 @patch.object(authority, "evaluate_topology_routing", return_value=_routing_pass())
 @patch.object(authority, "materialize_authoritative_network", return_value={"status": "PASS"})
 @patch.object(authority, "build_unified_engineering_model", side_effect=_unified_pass)
@@ -39,7 +42,8 @@ def _unified_pass(*_args, **_kwargs):
 @patch.object(authority, "_prepare_network_authority", return_value=_network_pass())
 @patch.object(authority, "_runtime_contract_errors", return_value=[])
 def test_external_input_blocker_delivers_truthful_pre_submission(
-    _contract, _network, _traceability, pipeline, renderer, _unified, materializer, routing_gate, tmp_path
+    _contract, _network, _traceability, pipeline, renderer, _unified, materializer,
+    routing_gate, _coordinate, _repair, _post_release, tmp_path
 ):
     pipeline.return_value = {
         "status": "INPUT_REQUIRED", "blocked_at": "target_design_packages",

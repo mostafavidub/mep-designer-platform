@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.8
+**Canonical version:** 4.43.9
 
 **Status:** LOCKED
 
@@ -126,6 +126,13 @@ It cross-links (and never replaces) routing, symbol/linkage, clearance, calculat
 detail, riser, schedule and documentation gates. A critical defect on any individual
 sheet blocks release; a package average cannot hide it. Submission-ready status also
 requires evidence that every sheet received independent visual review.
+
+Every geometry-producing mutation must finish before this gate. Network and
+annotation materialization must use one reversible uniform architectural transform,
+publish per-board scale/offset/round-trip evidence, and reject degenerate or
+out-of-board geometry. The exact saved DXF is then reopened and must repeat all
+applicable preservation, composition, linkage, completeness and visual checks;
+earlier pre-materialization evidence cannot authorize delivery.
 
 ## Architecture reconstruction and preservation release gate
 
