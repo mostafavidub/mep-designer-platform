@@ -32,7 +32,9 @@ def _next_capacity(required_btu, capacities):
 
 def design_project_hvac(architecture,project_overrides=None,calculations=None):
     cfg=project_overrides or {}; hvac=cfg.get("hvac") or {}
-    if hvac.get("cooling") not in {"split_ac","split","کولر گازی"} or hvac.get("heating") not in {"package_radiator","package-radiator","پکیج-شوفاژ"}:
+    cooling_enabled=hvac.get("cooling") in {"split_ac","split","کولر گازی"}
+    heating_enabled=hvac.get("heating") in {"package_radiator","package-radiator","پکیج-شوفاژ"}
+    if not cooling_enabled and not heating_enabled:
         return {"version":"project-hvac-v13.14","status":"SKIPPED","equipment":[],"routes":[],"vertical_links":[],"design_basis":hvac}
     plans={p["plan_id"]:p for p in architecture.get("plans") or [] if p.get("mechanical_role")=="PRIMARY_FLOOR"}
     rooms=[r for r in architecture.get("rooms") or [] if r.get("plan_id") in plans]
@@ -48,7 +50,7 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
     package_point={}
     for pid,p in plans.items():
         floor_rooms=by_plan[pid]
-        heat_rooms=[r for r in floor_rooms if r.get("type") in HEATING_ROOMS]
+        heat_rooms=[r for r in floor_rooms if heating_enabled and r.get("type") in HEATING_ROOMS]
         if not heat_rooms:
             continue
         candidates=[r for r in floor_rooms if r.get("type")=="kitchen"] or heat_rooms
@@ -70,7 +72,7 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
         terraces=[r for r in floor_rooms if r.get("type")=="terrace"]
         wet=[r for r in floor_rooms if r.get("type") in {"bathroom","toilet","kitchen"}]
         # Split AC indoors + outdoor unit + refrigerant/condensate routes.
-        split_rooms=[r for r in floor_rooms if r.get("type") in COOLING_ROOMS]
+        split_rooms=[r for r in floor_rooms if cooling_enabled and r.get("type") in COOLING_ROOMS]
         for n,r in enumerate(split_rooms,1):
             ip=r.get("label_point")
             if not ip:continue
@@ -100,7 +102,7 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
 
         # Radiators and hydronic branches stay entirely inside the same print plan.
         source=package_point.get(pid);source_id=f"PKG-{pid}"
-        heat_rooms=[r for r in floor_rooms if r.get("type") in HEATING_ROOMS]
+        heat_rooms=[r for r in floor_rooms if heating_enabled and r.get("type") in HEATING_ROOMS]
         for n,r in enumerate(heat_rooms,1):
             rp=r.get("label_point")
             if not rp:continue

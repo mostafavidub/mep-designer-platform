@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.43.6",
+  "standard_version": "4.43.7",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.43.7","date":"2026-09-14","summary":"Plan selected heating and cooling systems independently without cross-suppressing their equipment and routes."},
     {"version":"4.43.6","date":"2026-09-14","summary":"Scope Pre-Submission equipment-linkage disclosure to the exact pending board and family under the target-package blocker."},
     {"version":"4.43.5","date":"2026-09-14","summary":"Materialize the canonical water-service mode at the production CAD entry point for calculations, enrichment and release QA."},
     {"version":"4.43.4","date":"2026-09-14","summary":"Map questionnaire water-source choices into the canonical water-service calculation mode without guessing ambiguous inputs."},

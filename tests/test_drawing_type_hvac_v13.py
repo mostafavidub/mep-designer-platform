@@ -4,6 +4,18 @@ from cad_engine.plan_segmentation_v13 import detect_print_plans
 from cad_engine.project_hvac_v13 import design_project_hvac
 
 class DrawingTypeAndHVACTests(unittest.TestCase):
+    def test_heating_and_cooling_are_planned_independently(self):
+        arch={'plans':[{'plan_id':'P1','bounds':[0,0,21,29.7],'level':'GROUND','mechanical_role':'PRIMARY_FLOOR'}],
+              'rooms':[{'id':'R1','plan_id':'P1','type':'kitchen','label_point':(5,10)},
+                       {'id':'R2','plan_id':'P1','type':'living','label_point':(8,15)}]}
+        heating=design_project_hvac(arch,{'hvac':{'cooling':None,'heating':'package_radiator'}})
+        self.assertTrue(any(e['kind']=='radiator' for e in heating['equipment']))
+        self.assertTrue(any(r['system']=='heating_flow' for r in heating['routes']))
+        self.assertFalse(any(e['kind']=='split_indoor' for e in heating['equipment']))
+        cooling=design_project_hvac(arch,{'hvac':{'cooling':'split_ac','heating':None}})
+        self.assertTrue(any(e['kind']=='split_indoor' for e in cooling['equipment']))
+        self.assertFalse(any(e['kind']=='radiator' for e in cooling['equipment']))
+
     def test_only_canonical_arch_floor_is_primary(self):
         with tempfile.TemporaryDirectory() as td:
             path=os.path.join(td,'frames.dxf');doc=ezdxf.new('R2013');doc.layers.add('suport');msp=doc.modelspace()
