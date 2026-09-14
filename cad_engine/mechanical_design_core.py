@@ -897,7 +897,7 @@ def _overlap(ex,b):return not (ex.extmax.x < b[0] or ex.extmin.x > b[2] or ex.ex
 
 
 def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
-    doc=ezdxf.readfile(path);msp=doc.modelspace();boards={k:Board(**v) for k,v in compose_report["boards"].items()};title_overlaps=defaultdict(list);sheet_content=defaultdict(int)
+    doc=ezdxf.readfile(path);msp=doc.modelspace();boards={k:Board(**v) for k,v in compose_report["boards"].items()};title_overlaps=defaultdict(list);title_overlap_layers=defaultdict(Counter);sheet_content=defaultdict(int)
     for e in msp:
         layer=str(getattr(e.dxf,"layer",""))
         if layer.startswith("ENGITOOLS-SHEET-"):continue
@@ -906,7 +906,9 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
         for key,b in boards.items():
             if _overlap(ex,b.bounds):
                 sheet_content[key]+=1
-                if _overlap(ex,b.title_area):title_overlaps[key].append(str(getattr(e.dxf,"handle","")))
+                if _overlap(ex,b.title_area):
+                    title_overlaps[key].append(str(getattr(e.dxf,"handle","")))
+                    title_overlap_layers[key][layer or "0"]+=1
                 break
     errors=[]
     if compose_report.get("copy_failures"):errors.append("architecture_copy_failures")
@@ -922,7 +924,7 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     # directional authority (never fabricate an arrow), but allow the drawing
     # set to be issued with an explicit machine-readable coordination warning.
     warnings=[f"architectural_north_not_provided:{x}" for x in missing_north]
-    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north)}}
+    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"titleblock_overlap_by_sheet":{boards[k].code:len(v) for k,v in title_overlaps.items()},"titleblock_overlap_layers":{boards[k].code:dict(v) for k,v in title_overlap_layers.items()},"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north)}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:
