@@ -172,6 +172,13 @@ def test_startup_requeues_exact_water_service_basis_bridge_failure():
     assert "like('%water_service:input_required%')" in source
 
 
+def test_startup_requeues_exact_collapsed_plan_path_after_fixed_rollout():
+    source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
+    assert "collapsed_plan_path_jobs" in source
+    assert "like('%materialized_segment_degenerate:%')" in source
+    assert "project.status = 'queued'" in source
+
+
 @patch.dict(dxf_output.os.environ, {
     "COBUILT_CAD_IN_PROCESS": "0",
     "COBUILT_CAD_DESIGNER_URL": "http://web.railway.internal:8080",

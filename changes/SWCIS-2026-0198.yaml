@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0198",
+  "summary":"Automatically retry the exact persisted collapsed-plan failure after the corrected authority is deployed.",
+  "requester":"project-owner",
+  "change_types":["runtime","test","governance","documentation","deployment","ui_api"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"No design logic change; uses the corrected authority from SWCIS-2026-0197.",
+    "qa":"Retry is restricted to the exact materialized-segment-degenerate fingerprint.",
+    "ui_api":"The retained project returns to queued state with saved inputs and without another charge.",
+    "deployment":"Startup recovery requeues the reported failed project after rollout.",
+    "docs":"Records narrow operational recovery.",
+    "manifest":"Records SWCIS 4.43.11.",
+    "migration":"No schema migration or data rewrite.",
+    "governance":"No generic QA retry or bypass is introduced.",
+    "versioning":"SWCIS 4.43.11."
+  },
+  "evidence":{
+    "tests":["Static recovery contract verifies the exact failure fingerprint and queued transition."],
+    "docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "contract_diff":["Only failed design jobs containing materialized_segment_degenerate are requeued once on fixed-runtime startup."],
+    "version_bump":["SWCIS 4.43.10 -> 4.43.11"],
+    "migration":["No schema change; preserved architecture, answers, revision and payment are reused."],
+    "semantic_diff":["No engineering semantics change."],
+    "artifact_diff":["No existing artifact is accepted; the artifact is regenerated and must pass all current gates."],
+    "golden_regression":["Full governed suite and startup recovery regression must pass."],
+    "deployment_plan":["Protected PR, Staging merge, health verification and monitor the reported project."],
+    "rollback_plan":["Revert and redeploy; the project remains safely failed and recoverable manually."]
+  },
+  "risk":{"likelihood":2,"severity":3,"detectability":1,"score":6,"rationale":"The narrow fingerprint prevents unrelated failed jobs from being retried."},
+  "waiver":null
+}
