@@ -166,6 +166,12 @@ def test_startup_requeues_exact_zero_loss_release_input_followup():
     assert "like('%architecture_preservation:critical_missing=0,important_missing=0,all_missing=0%')" in source
 
 
+def test_startup_requeues_exact_water_service_basis_bridge_failure():
+    source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
+    assert "water_service_basis_jobs" in source
+    assert "like('%water_service:input_required%')" in source
+
+
 @patch.dict(dxf_output.os.environ, {
     "COBUILT_CAD_IN_PROCESS": "0",
     "COBUILT_CAD_DESIGNER_URL": "http://web.railway.internal:8080",

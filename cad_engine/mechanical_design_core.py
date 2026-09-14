@@ -247,6 +247,21 @@ def _answer(answers, *keys, default=None):
     return default
 
 
+def canonical_water_service_mode(answers):
+    explicit=_answer(answers,"water_service_mode")
+    if explicit not in (None,""):
+        return {"tank_pump":"break_tank_pump","pump":"inline_booster","direct":"direct_city"}.get(_norm(explicit),_norm(explicit))
+    source=_norm(_answer(answers,"water_source","water",default=""))
+    if not source:return None
+    tank=any(token in source for token in ("مخزن","tank")) and not any(token in source for token in ("بدون مخزن","without tank","no tank"))
+    pump=any(token in source for token in ("بوستر","پمپ","booster","pump")) and not any(token in source for token in ("بدون پمپ","without pump","no pump"))
+    direct=any(token in source for token in ("مستقیم","direct"))
+    if tank and pump:return "break_tank_pump"
+    if pump and not tank:return "inline_booster"
+    if direct and not tank and not pump:return "direct_city"
+    return None
+
+
 def build_design_overrides(answers: dict) -> dict:
     answers=normalize_answers(answers or {})
     plan_analysis=_answer(answers,"_plan_analysis",default={}) or {}
@@ -283,7 +298,7 @@ def build_design_overrides(answers: dict) -> dict:
         "water_inlet_pressure": _answer(answers,"water_pressure","water_inlet_pressure","water_inlet_pressure_bar","water"),
         "gas_service_pressure": _answer(answers,"gas_pressure","gas_service_pressure","gas_service_pressure_mbar"),
         "rainfall_intensity": _answer(answers,"rainfall_intensity","rainfall_intensity_mm_h"),
-        "water_service_mode": _answer(answers,"water_service_mode"),
+        "water_service_mode": canonical_water_service_mode(answers),
         "outdoor_unit_location": _answer(answers,"outdoor_unit_location"),
         "mechanical_shaft_route": _answer(answers,"mechanical_shaft_route"),
         "mechanical_shaft_approval": _answer(answers,"mechanical_shaft_approval"),
