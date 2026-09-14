@@ -1,10 +1,12 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.6
+**Canonical version:** 4.43.7
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.43.7 plans heating and cooling independently so a non-Split cooling choice cannot suppress an explicitly selected package-radiator system or its calculation-linked terminals and routes.
 
 Version 4.43.6 scopes equipment-linkage disclosure to the exact non-final sheet/family explicitly pending because the canonical pipeline is blocked at `target_design_packages`; final, unrelated and undisclosed boards remain fail-closed.
 
