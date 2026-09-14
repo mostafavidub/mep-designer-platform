@@ -78,6 +78,9 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
             if not ip:continue
             iid=f"AC-I-{pid}-{n:02d}"; room_calc=room_calcs.get(r.get("id")) or {}
             required_btu=float(room_calc.get("cooling_w") or 0)*3.412142
+            geometry_proxy=bool(room_calc and room_calc.get("area_m2") is None)
+            if required_btu<=0 and geometry_proxy:
+                required_btu=12000 if r.get("type")=="bedroom" else 18000
             if required_btu<=0 and not strict_calculation_linkage:
                 required_btu=12000 if r.get("type")=="bedroom" else 18000
             if required_btu<=0:
@@ -88,7 +91,7 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
             equipment.append({"id":iid,"kind":"split_indoor","plan_id":pid,"point":ip,"capacity_btu_h":capacity,
                               "required_capacity_btu_h":round(required_btu),"room_id":r.get("id"),
                               "source_calc_id":room_calc.get("calc_id"),
-                              "calculation_source":"room_cooling_load","calculation_status":"PRELIMINARY_PROJECT_BASIS"})
+                              "calculation_source":"unenclosed_room_type_proxy" if geometry_proxy else "room_cooling_load","calculation_status":"PRELIMINARY_GEOMETRY_PROXY" if geometry_proxy else "PRELIMINARY_PROJECT_BASIS"})
             if terraces:
                 target=min(terraces,key=lambda x:math.dist(ip,x.get("label_point")))['label_point']
             else:
@@ -108,6 +111,9 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
             if not rp:continue
             rid=f"RAD-{pid}-{n:02d}"; room_calc=room_calcs.get(r.get("id")) or {}
             required_kw=float(room_calc.get("heating_w") or 0)/1000.0
+            geometry_proxy=bool(room_calc and room_calc.get("area_m2") is None)
+            if required_kw<=0 and geometry_proxy:
+                required_kw={"bedroom":1.5,"living":2.5,"kitchen":1.5,"bathroom":.7}.get(r.get("type"),1.2)
             if required_kw<=0 and not strict_calculation_linkage:
                 required_kw={"bedroom":1.5,"living":2.5,"kitchen":1.5,"bathroom":.7}.get(r.get("type"),1.2)
             kw=math.ceil(required_kw*1.10*10)/10 if required_kw>0 else 0
@@ -116,7 +122,7 @@ def design_project_hvac(architecture,project_overrides=None,calculations=None):
             equipment.append({"id":rid,"kind":"radiator","plan_id":pid,"point":rp,"capacity_kw":kw,
                               "required_capacity_kw":round(required_kw,3),"room_id":r.get("id"),
                               "source_calc_id":room_calc.get("calc_id"),
-                              "calculation_source":"room_heating_load","calculation_status":"PRELIMINARY_PROJECT_BASIS"})
+                              "calculation_source":"unenclosed_room_type_proxy" if geometry_proxy else "room_heating_load","calculation_status":"PRELIMINARY_GEOMETRY_PROXY" if geometry_proxy else "PRELIMINARY_PROJECT_BASIS"})
             if source:
                 routes.append({"id":f"HF-{pid}-{n:02d}","system":"heating_flow","plan_id":pid,"points":_manhattan(source,rp),"from":source_id,"to":rid,"pipe_mm":20})
                 ret=[(x,y-0.08) for x,y in _manhattan(rp,source)]
