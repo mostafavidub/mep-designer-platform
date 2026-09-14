@@ -58,6 +58,39 @@ def test_blank_plan_and_missing_architecture_fail_closed(tmp_path, monkeypatch):
     assert any("architecture_underlay_not_visible" in item for item in result["errors"])
 
 
+def test_plan_content_envelope_must_fill_between_55_and_85_percent(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    path = tmp_path / "tiny.dxf"; composition = _issued(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    for entity in list(msp): msp.delete_entity(entity)
+    msp.add_lwpolyline([(9, 13), (11, 13), (11, 15), (9, 15)], close=True, dxfattribs={"layer": "WALL"})
+    msp.add_line((9.2, 14), (10.8, 14), dxfattribs={"layer": "ENGITOOLS-M-WATER"})
+    msp.add_text("CW DN25", dxfattribs={"layer":"ENGITOOLS-M-WATER","height":.1}).set_placement((9.5,14.2))
+    doc.saveas(path)
+    result = visual.validate_all_sheet_visual_qa(path, composition, tmp_path / "previews")
+    assert result["status"] == "FAIL"
+    assert any("plan_bbox_occupancy_below_minimum" in item for item in result["errors"])
+
+
+def test_identical_underlay_on_distinct_levels_is_rejected(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    path = tmp_path / "duplicate.dxf"; doc = ezdxf.new("R2010"); msp=doc.modelspace()
+    doc.layers.add("WALL"); doc.layers.add("ENGITOOLS-M-WATER")
+    boards={}; manifest=[]
+    for index, offset in enumerate((0, 30), 1):
+        code=f"M-10{index}"; key=f"S{index}"
+        boards[key]={"code":code,"family":"WATER","level":f"LEVEL-0{index}",
+                     "bounds":(offset,0,offset+21,29.7),"plan_area":(offset+.5,2.5,offset+20.5,29.2)}
+        manifest.append({"old_sheet":key,"code":code})
+        msp.add_lwpolyline([(offset+1,3),(offset+19,3),(offset+19,25),(offset+1,25)],close=True,dxfattribs={"layer":"WALL"})
+        msp.add_line((offset+2,5),(offset+18,5),dxfattribs={"layer":"ENGITOOLS-M-WATER"})
+        msp.add_text("CW DN25",dxfattribs={"layer":"ENGITOOLS-M-WATER","height":.1}).set_placement((offset+5,5.5))
+    doc.saveas(path)
+    result=visual.validate_all_sheet_visual_qa(path,{"boards":boards,"manifest":manifest},tmp_path/"previews")
+    assert result["status"]=="FAIL"
+    assert any("duplicate_architecture_across_levels" in item for item in result["errors"])
+
+
 def test_service_schematic_does_not_require_architecture_underlay(tmp_path, monkeypatch):
     monkeypatch.setattr(visual, "_render_profile", _fake_render)
     board = _board(code="M-151", family="WATER")

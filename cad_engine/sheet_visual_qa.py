@@ -25,6 +25,8 @@ PAPER_PROFILES = {
     "color": {"background": (16, 24, 32), "background_hex": "#101820", "dpi": 160},
     "monochrome": {"background": (255, 255, 255), "background_hex": "#ffffff", "dpi": 160},
 }
+MIN_PLAN_BBOX_OCCUPANCY = 0.55
+MAX_PLAN_BBOX_OCCUPANCY = 0.85
 
 MINIMUM_MODEL_TEXT_HEIGHT = 0.10
 
@@ -246,6 +248,27 @@ def _box_inside(box, bounds):
     return box[0] >= bounds[0] and box[1] >= bounds[1] and box[2] <= bounds[2] and box[3] <= bounds[3]
 
 
+def _content_bbox_occupancy(entities, bounds):
+    boxes=[box for box in (_entity_box(entity) for entity in entities) if box]
+    if not boxes:return 0.0
+    left=max(bounds[0],min(box[0] for box in boxes));bottom=max(bounds[1],min(box[1] for box in boxes))
+    right=min(bounds[2],max(box[2] for box in boxes));top=min(bounds[3],max(box[3] for box in boxes))
+    sheet_area=max((bounds[2]-bounds[0])*(bounds[3]-bounds[1]),1e-9)
+    return max(0.0,(right-left)*(top-bottom))/sheet_area
+
+
+def _normalized_geometry_signature(entities, bounds):
+    width=max(bounds[2]-bounds[0],1e-9);height=max(bounds[3]-bounds[1],1e-9);tokens=[]
+    for entity in entities:
+        box=_entity_box(entity)
+        if not box:continue
+        normalized=tuple(round(value,3) for value in (
+            (box[0]-bounds[0])/width,(box[1]-bounds[1])/height,
+            (box[2]-bounds[0])/width,(box[3]-bounds[1])/height))
+        tokens.append((entity.dxftype(),str(getattr(entity.dxf,"layer","")),normalized,_plain_text(entity)[:80]))
+    return hashlib.sha256(json.dumps(sorted(tokens),ensure_ascii=False).encode()).hexdigest() if tokens else None
+
+
 def _manifest_codes(composition: dict) -> list[str]:
     return [str(row.get("code") or row.get("old_sheet") or "") for row in (composition.get("manifest") or []) if row.get("code") or row.get("old_sheet")]
 
@@ -385,6 +408,13 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         if is_architectural_plan and not architecture: local_errors.append("architecture_underlay_not_visible")
         if family in PLAN_FAMILIES and not mechanical_texts: local_errors.append("mechanical_annotation_not_visible")
 
+        occupancy=_content_bbox_occupancy(architecture+mechanical,plan_area) if is_architectural_plan else None
+        if occupancy is not None and occupancy<MIN_PLAN_BBOX_OCCUPANCY:
+            local_errors.append(f"plan_bbox_occupancy_below_minimum:{occupancy:.3f}")
+        if occupancy is not None and occupancy>MAX_PLAN_BBOX_OCCUPANCY:
+            local_errors.append(f"plan_bbox_occupancy_above_maximum:{occupancy:.3f}")
+        architecture_signature=_normalized_geometry_signature(architecture,plan_area) if is_architectural_plan else None
+
         heights = [height for height in (_text_height(entity) for entity in mechanical_texts) if height is not None]
         minimum_height = min(heights) if heights else None
         if minimum_height is not None and minimum_height < 0.08:
@@ -426,11 +456,25 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
                        "sheet_structure": "PASS", "scale": scale,
                        "architecture_entity_count": len(architecture), "mechanical_entity_count": len(mechanical),
                        "annotation_count": len(mechanical_texts), "minimum_text_height": minimum_height,
+                       "plan_bbox_occupancy":round(occupancy,4) if occupancy is not None else None,
+                       "architecture_geometry_signature":architecture_signature,
                        "annotation_overlap_count": overlaps, "visual_density": round(density, 3),
                        "annotation_overlap_evidence": overlap_evidence[:20],
                        "render_profiles": renders, "baseline_status": baseline_status,
                        "signature": current_signature, "score": score,
                        "status": "PASS" if not local_errors else "FAIL", "errors": local_errors, "warnings": local_warnings})
+
+    for index,first in enumerate(sheets):
+        for second in sheets[index+1:]:
+            first_board=next((row for row in boards.values() if _board_code("",row)==first.get("code")),{})
+            second_board=next((row for row in boards.values() if _board_code("",row)==second.get("code")),{})
+            first_level=str(first_board.get("level") or "").upper();second_level=str(second_board.get("level") or "").upper()
+            if (first.get("family")!=second.get("family") or first_level==second_level
+                    or "TYPICAL" in first_level or "TYPICAL" in second_level):continue
+            if first.get("architecture_geometry_signature") and first.get("architecture_geometry_signature")==second.get("architecture_geometry_signature"):
+                defect=f"duplicate_architecture_across_levels:{first.get('code')}:{second.get('code')}"
+                errors.append(defect);first["errors"].append(defect);first["status"]="FAIL"
+                second["errors"].append(defect);second["status"]="FAIL"
 
     independent_review = (release_context or {}).get("independent_visual_review") or {}
     review_status = "PASS" if all(independent_review.get(key) for key in ("reviewer_id", "evidence_sha256", "reviewed_sheet_codes")) else "INPUT_REQUIRED"
@@ -448,6 +492,8 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
                   "mechanical_readability": True, "plotted_text": True, "annotation_overlap": True,
                   "symbols_and_connections": "CROSS_LINKED_EXISTING_GATES", "engineering_labels": True,
                   "route_continuity_direction": "CROSS_LINKED_ENGINEERING_GATES", "visual_density": True,
+                  "plan_bbox_occupancy_55_to_85_percent":True,
+                  "cross_level_architecture_duplicate_detection":True,
                   "equipment_clearance": "CROSS_LINKED_COORDINATION_GATE", "riser_details": True,
                   "schedules_notes_legend": True, "color_and_monochrome": True, "multiple_zoom_levels": True,
                   "baseline_diff": True, "destructive_test_contract": True, "per_sheet_scoring": True,

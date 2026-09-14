@@ -7,8 +7,11 @@ Uncertain rectangles are reported but never promoted to mechanical authority.
 """
 from __future__ import annotations
 from collections import Counter
+import hashlib
+import json
 import re
 import ezdxf
+from ezdxf import bbox
 
 
 def _point(entity):
@@ -279,6 +282,26 @@ def _segment_overlaps(value, first, second, tolerance=.05):
     return low-tolerance <= value <= high+tolerance
 
 
+def _source_geometry_fingerprint(entities, bounds):
+    """Fingerprint normalized architectural geometry inside exactly one frame."""
+    width=max(float(bounds[2])-float(bounds[0]),1e-9);height=max(float(bounds[3])-float(bounds[1]),1e-9);tokens=[]
+    for entity in entities:
+        layer=str(getattr(entity.dxf,"layer","") or "")
+        if entity.dxftype() in {"TEXT","MTEXT"} or any(token in _norm(layer) for token in PRINT_LAYER_TOKENS):continue
+        try:
+            extent=bbox.extents([entity],fast=True)
+            if not extent.has_data:continue
+            box=(float(extent.extmin.x),float(extent.extmin.y),float(extent.extmax.x),float(extent.extmax.y))
+        except Exception:continue
+        center=((box[0]+box[2])/2,(box[1]+box[3])/2)
+        if not _inside(center,bounds):continue
+        normalized=tuple(round(value,4) for value in (
+            (box[0]-bounds[0])/width,(box[1]-bounds[1])/height,
+            (box[2]-bounds[0])/width,(box[3]-bounds[1])/height))
+        tokens.append((entity.dxftype(),_norm(layer),normalized))
+    return hashlib.sha256(json.dumps(sorted(tokens),separators=(",",":"),ensure_ascii=False).encode()).hexdigest() if tokens else None
+
+
 def _recover_orthogonal_room_enclosures(architecture, plans):
     """Recover a room boundary only from four bracketing wall faces.
 
@@ -334,30 +357,38 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         bounds=architecture.get("bounds") or [0,0,0,0]
         plans=[{"plan_id":"PLAN-01","bounds":list(bounds),"source":"single_plan_fallback",
                 "drawing_type":"ARCH_FLOOR_PLAN","level":None,"mechanical_role":"PRIMARY_FLOOR"}]
-    def owner(point):
-        return next((p for p in plans if _inside(point,p["bounds"])),None)
+    ownership_ambiguities=[]; ownership_unassigned=[]
+    def owner(point, entity_type="entity", entity_id=None):
+        matches=[p for p in plans if _inside(point,p["bounds"])] if point else []
+        evidence={"entity_type":entity_type,"entity_id":entity_id,"point":point,
+                  "candidate_plan_ids":[p["plan_id"] for p in matches]}
+        if len(matches)>1:
+            ownership_ambiguities.append(evidence); return None
+        if not matches:
+            ownership_unassigned.append(evidence); return None
+        return matches[0]
     for room in architecture.get("rooms") or []:
-        p=owner(room.get("label_point")); room["plan_id"]=p["plan_id"] if p else None
+        p=owner(room.get("label_point"),"room",room.get("id")); room["plan_id"]=p["plan_id"] if p else None
     for item in recognition.get("detections") or []:
-        p=owner(item.get("point")); item["plan_id"]=p["plan_id"] if p else None
+        p=owner(item.get("point"),"detection",item.get("id")); item["plan_id"]=p["plan_id"] if p else None
 
     if plans and not any(p.get("mechanical_role")=="PRIMARY_FLOOR" for p in plans):
         promoted=_promote_room_evidenced_floor_plans(plans,architecture.get("rooms") or [])
         architecture.setdefault("quality",{})["room_evidence_promoted_plan_ids"]=promoted
 
-    doc=ezdxf.readfile(src); text_shafts=[]
-    for e in doc.modelspace():
+    doc=ezdxf.readfile(src); source_entities=list(doc.modelspace()); text_shafts=[]
+    for e in source_entities:
         if e.dxftype() not in {"TEXT","MTEXT"}: continue
         text=_text(e); point=_point(e)
         if not point or not ("داکت" in text or "شفت" in text): continue
-        p=owner(point)
+        p=owner(point,"shaft_text",str(getattr(e.dxf,"handle","") or text))
         if p:text_shafts.append({"layer":str(e.dxf.layer),"polygon":None,"point":point,"area":None,
                                  "plan_id":p["plan_id"],"source":"textual_vertical_core"})
     for shaft in architecture.get("shafts") or []:
         point=shaft.get("point")
         if point is None and shaft.get("polygon"):
             poly=shaft["polygon"]; point=(sum(x for x,y in poly)/len(poly),sum(y for x,y in poly)/len(poly))
-        p=owner(point); shaft["plan_id"]=p["plan_id"] if p else None; shaft["point"]=point
+        p=owner(point,"shaft",shaft.get("id")); shaft["plan_id"]=p["plan_id"] if p else None; shaft["point"]=point
     architecture["shafts"]=(architecture.get("shafts") or [])+text_shafts
     architecture["plans"]=plans
     architecture["mechanical_plan_ids"]=[p["plan_id"] for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"}]
@@ -365,6 +396,25 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     architecture.setdefault("quality",{})["plan_count"]=len(plans)
     architecture["quality"]["primary_floor_count"]=len(architecture["primary_floor_plan_ids"])
     architecture["quality"]["excluded_frame_count"]=sum(1 for p in plans if p.get("mechanical_role") in {"EXCLUDE","DUPLICATE_REFERENCE"})
+    ownership=[]
+    for plan in plans:
+        pid=plan["plan_id"]
+        room_ids=sorted(str(r.get("id")) for r in architecture.get("rooms") or [] if r.get("plan_id")==pid)
+        detection_ids=sorted(str(x.get("id")) for x in recognition.get("detections") or [] if x.get("plan_id")==pid)
+        payload={"plan_id":pid,"bounds":[round(float(v),6) for v in plan["bounds"]],
+                 "level":plan.get("level"),"room_ids":room_ids,"detection_ids":detection_ids}
+        payload["source_geometry_fingerprint"]=_source_geometry_fingerprint(source_entities,plan["bounds"])
+        payload["represented_levels"]=list(plan.get("represented_levels") or [])
+        payload["fingerprint"]=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+        ownership.append(payload)
+    architecture["level_ownership_contract"]={
+        "status":"PASS" if not ownership_ambiguities and not ownership_unassigned else "FAIL",
+        "source_unit_code":int(doc.header.get('$INSUNITS',0) or 0),
+        "orientation":architecture.get("orientation") or "SOURCE_WCS",
+        "plans":ownership,"ambiguities":ownership_ambiguities,"unassigned":ownership_unassigned,
+    }
+    architecture["quality"]["ambiguous_plan_ownership_count"]=len(ownership_ambiguities)
+    architecture["quality"]["unassigned_plan_entity_count"]=len(ownership_unassigned)
 
     _recover_orthogonal_room_enclosures(architecture,plans)
 

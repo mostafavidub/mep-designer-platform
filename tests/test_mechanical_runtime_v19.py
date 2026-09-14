@@ -114,6 +114,7 @@ class MechanicalRuntimeV19Tests(unittest.TestCase):
         self.assertNotIn("v19",panel.lower())
         for stage in ("coordination_validation","equipment_constraints_validation","documentation_validation"):
             self.assertIn(stage,progress)
+        self.assertNotIn("coordination_v19",progress)
 
 
 if __name__ == "__main__": unittest.main()
