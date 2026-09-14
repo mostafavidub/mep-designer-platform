@@ -159,6 +159,13 @@ def test_startup_requeues_only_exact_fixed_semantic_pre_submission_fingerprint()
     assert "Generic semantic/final QA failures remain" in source
 
 
+def test_startup_requeues_exact_zero_loss_release_input_followup():
+    source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
+    assert "release_input_pre_submission_jobs" in source
+    assert "like('%release_input_gate%')" in source
+    assert "like('%architecture_preservation:critical_missing=0,important_missing=0,all_missing=0%')" in source
+
+
 @patch.dict(dxf_output.os.environ, {
     "COBUILT_CAD_IN_PROCESS": "0",
     "COBUILT_CAD_DESIGNER_URL": "http://web.railway.internal:8080",
