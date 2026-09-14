@@ -372,12 +372,14 @@ def _entity_signature(e):
     return f"{typ}|{layer}|{value}"
 
 
-def qa_semantic_sheet_content(path: Path, compose):
+def qa_semantic_sheet_content(path: Path, compose, pre_submission=None):
     doc=ezdxf.readfile(path)
     msp=doc.modelspace()
     boards=compose.get("boards") or {}
     signatures={}
     content_counts={}
+    disclosure_by_sheet={}
+    disclosure_by_code={}
     missing_family_content=[]
     family_layer_need={
         "SANITARY_VENT":("ENGITOOLS-M-SANITARY","ENGITOOLS-M-VENT"),
@@ -409,8 +411,14 @@ def qa_semantic_sheet_content(path: Path, compose):
             tokens.append(_entity_signature(e))
             layers[layer]+=1
         content_counts[old]=len(tokens)
+        disclosure_by_sheet[old]=any(
+            "NO RELIABLE TERMINAL OR BRANCH ENDPOINT DETECTED" in token
+            for token in tokens
+        )
         signatures[old]=hashlib.sha256("\n".join(sorted(tokens)).encode()).hexdigest()
         row=manifest.get(old) or {}
+        if row.get("code"):
+            disclosure_by_code[row["code"]]=disclosure_by_sheet[old]
         needs=family_layer_need.get(row.get("family"))
         if needs:
             if row.get("family")=="WATER" and row.get("level")=="SERVICE":
@@ -427,14 +435,39 @@ def qa_semantic_sheet_content(path: Path, compose):
     duplicates=[x for x in groups.values() if len(x)>1]
     errors=[]
     if any(v==0 for v in content_counts.values()):errors.append("blank_sheet_content")
-    if missing_family_content:errors.append("missing_family_specific_content")
+    # A project can truthfully reach the CAD composer before the external final
+    # design packages (manufacturer selections, final coordinated capacities,
+    # etc.) exist.  In that specific pre-submission state the composer already
+    # places an explicit no-reliable-terminal/design-basis disclosure on the
+    # affected board.  Missing final family geometry is therefore a disclosed
+    # limitation, not a corrupt/blank sheet.  All other runs remain fail-closed.
+    disclosed_pre_submission = bool(
+        missing_family_content
+        and isinstance(pre_submission, dict)
+        and pre_submission.get("blocked_at") == "target_design_packages"
+        and all(
+            disclosure_by_code.get(item.split(":", 1)[0], False)
+            for item in missing_family_content
+        )
+    )
+    if missing_family_content and not disclosed_pre_submission:
+        errors.append("missing_family_specific_content")
+    warnings=[f"semantic_duplicate:{','.join(g)}" for g in duplicates]
+    if disclosed_pre_submission:
+        warnings.extend(f"pre_submission_family_pending:{item}" for item in missing_family_content)
     return {
         "version":"semantic-sheet-content-qa-canonical.0",
         "status":"PASS" if not errors else "FAIL",
         "errors":errors,
-        "warnings":[f"semantic_duplicate:{','.join(g)}" for g in duplicates],
+        "warnings":warnings,
         "missing_family_content":missing_family_content,
+        "pre_submission_disclosure":{
+            "active":disclosed_pre_submission,
+            "blocked_at":pre_submission.get("blocked_at") if isinstance(pre_submission,dict) else None,
+            "pending_family_content":missing_family_content if disclosed_pre_submission else [],
+        },
         "content_counts":content_counts,
+        "pre_submission_disclosure_by_sheet":disclosure_by_sheet,
         "duplicate_groups":duplicates,
     }
 
@@ -465,7 +498,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
     doc.saveas(dst)
 
     dxf_qa=qa_authority_dxf(dst,compose)
-    semantic_qa=qa_semantic_sheet_content(dst,compose)
+    semantic_qa=qa_semantic_sheet_content(dst,compose,answers.get("_pre_submission_authority"))
     status="PASS" if all(result.get("status")=="PASS" for result in (
         pipeline_qa, acceptance, dxf_qa, semantic_qa,
     )) else "FAIL"

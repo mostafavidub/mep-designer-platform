@@ -671,10 +671,12 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.08});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":
             p=_map_point(srcp,srcb,target);msp.add_lwpolyline([(p[0]-.30,p[1]-.42),(p[0]+.30,p[1]-.42),(p[0]+.30,p[1]+.42),(p[0]-.30,p[1]+.42)],close=True,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});msp.add_circle(p,.13,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});t=msp.add_mtext(f"{e['id']} | WALL PACKAGE | {e.get('capacity_kw',0):.1f} kW\nHF/HR + GAS ISOLATION + FLUE",dxfattribs={"layer":"ENGITOOLS-M-PACKAGE","char_height":.08});t.dxf.insert=(p[0]+.42,p[1]+.42);t.dxf.width=3.8
-    if not all_routes and not equipment:
+    if not all_routes:
         # Preserve the approved plan without inventing terminals. The explicit
         # note is mechanical content and makes the evidence boundary visible
-        # to reviewers instead of silently omitting the requested floor.
+        # to reviewers instead of silently omitting the requested floor.  This
+        # also applies when a source item (for example a package unit) exists
+        # but no calculation-backed branch/terminal can yet be drawn.
         _ensure_layer(doc,"ENGITOOLS-M-NOTES",7,18)
         x1,y1,x2,y2=target
         note=msp.add_mtext(

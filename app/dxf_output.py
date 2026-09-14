@@ -306,6 +306,10 @@ def _cad_error_message(response):
         failed_stage_qa = detail.get('failed_stage_qa')
         if isinstance(failed_stage_qa, dict):
             priority.extend(str(item) for item in failed_stage_qa.get('errors') or [])
+            priority.extend(
+                f'missing_family_content:{item}'
+                for item in failed_stage_qa.get('missing_family_content') or []
+            )
             priority.extend(f'failed_control:{item}' for item in failed_stage_qa.get('failures') or [])
             if failed_stage_qa.get('score') is not None:
                 priority.append(f'failed_stage_score:{failed_stage_qa.get("score")}')
