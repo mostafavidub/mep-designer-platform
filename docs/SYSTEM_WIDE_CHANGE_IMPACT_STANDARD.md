@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.15
+**Canonical version:** 4.43.16
 
 **Status:** LOCKED
 
@@ -10,6 +10,10 @@ Private runtime diagnostics for a blocked CAD transaction retain the exact gate
 name, status, error codes and bounded aggregate metrics needed to reproduce the
 failure. They exclude project geometry, credentials and customer source contents;
 customer-visible errors remain separately sanitized.
+
+Exact-file titleblock-overlap failures are attributed to bounded per-sheet and
+per-layer counts. This evidence is diagnostic only: any overlap still blocks
+release, and entity coordinates or customer source contents are not logged.
 
 Version 4.43.13 separates the source ownership frame from the authoritative
 drawable-content envelope for every architectural plan. Architecture, routes

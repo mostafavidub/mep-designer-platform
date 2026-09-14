@@ -4,6 +4,7 @@ from cad_engine.mechanical_cad_base import (
     _materialize_target_package_disclosures,
     qa_semantic_sheet_content,
 )
+from cad_engine.mechanical_design_core import qa_authority_dxf
 
 
 def _pending_heating_sheet(tmp_path):
@@ -88,3 +89,13 @@ def test_titleblock_content_without_disclosure_cannot_bypass_semantic_qa(tmp_pat
     result = qa_semantic_sheet_content(path, compose, {"blocked_at": "target_design_packages"})
     assert result["status"] == "FAIL"
     assert result["pre_submission_disclosure"]["active"] is False
+
+
+def test_titleblock_overlap_is_attributed_to_exact_sheet_and_layer(tmp_path):
+    path=tmp_path/"overlap.dxf";doc=ezdxf.new("R2010");doc.layers.add("ENGITOOLS-M-HEAT-FLOW")
+    doc.modelspace().add_line((2,1),(5,1),dxfattribs={"layer":"ENGITOOLS-M-HEAT-FLOW"});doc.saveas(path)
+    compose={"boards":{"B1":{"sheet":"B1","code":"M-H-01","family":"HEATING","level":"GROUND","title":"H","bounds":[0,0,20,10],"plan_area":[1,3,19,9],"title_area":[1,.4,19,2.4],"subtitle_area":[1,2.4,19,2.8]}},"copy_failures":[],"north":{"M-H-01":True}}
+    result=qa_authority_dxf(path,compose)
+    assert result["status"]=="FAIL"
+    assert result["metrics"]["titleblock_overlap_by_sheet"]=={"M-H-01":1}
+    assert result["metrics"]["titleblock_overlap_layers"]=={"M-H-01":{"ENGITOOLS-M-HEAT-FLOW":1}}

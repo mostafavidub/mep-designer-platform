@@ -1,0 +1,9 @@
+{
+  "change_id":"SWCIS-2026-0203",
+  "summary":"Attribute titleblock-overlap failures to exact sheets and layers so generated CAD geometry can be corrected without weakening the gate.",
+  "requester":"project-owner","change_types":["documentation","drawing_output","governance","qa","test","versioning","deployment"],"changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{"cad_designer":"No geometry decision change; exact overlap evidence is attributed to its generating layer.","qa":"Add bounded per-sheet and per-layer counts to titleblock QA metrics.","deployment":"Protected Staging rollout and retained-project retry.","docs":"Record attributable exact-file QA evidence.","governance":"Gate remains fail-closed.","manifest":"Sheet identity keys the evidence.","migration":"None.","ui_api":"Private diagnostic only.","versioning":"SWCIS 4.43.16."},
+  "evidence":{"traceability":["exact DXF entity -> board title area -> sheet code + layer count -> private diagnostic"],"tests":["Positive overlap attribution and clean-sheet regression."],"docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],"version_bump":["SWCIS 4.43.15 -> 4.43.16"],"migration":["none"],"golden_regression":["Full governed suite required."],"semantic_diff":["No release semantics change."],"artifact_diff":["No artifact mutation."],"numeric_diff":["Existing overlap total is decomposed by sheet and layer."],"contract_diff":["DXF QA failure metrics identify exact generating sheet/layer without source geometry."],"deployment_plan":["Test, PR, merge, Staging, retry."],"rollback_plan":["Revert merged commit and redeploy."]},
+  "risk":{"likelihood":1,"severity":2,"detectability":1,"score":2,"rationale":"Read-only bounded QA evidence."},"waiver":null
+}
