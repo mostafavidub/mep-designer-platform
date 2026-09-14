@@ -4,7 +4,7 @@ from cad_engine.mechanical_cad_base import (
     _materialize_target_package_disclosures,
     qa_semantic_sheet_content,
 )
-from cad_engine.mechanical_design_core import qa_authority_dxf
+from cad_engine.mechanical_design_core import _clip_polyline_to_rect, qa_authority_dxf
 
 
 def _pending_heating_sheet(tmp_path):
@@ -99,3 +99,11 @@ def test_titleblock_overlap_is_attributed_to_exact_sheet_and_layer(tmp_path):
     assert result["status"]=="FAIL"
     assert result["metrics"]["titleblock_overlap_by_sheet"]=={"M-H-01":1}
     assert result["metrics"]["titleblock_overlap_layers"]=={"M-H-01":{"ENGITOOLS-M-HEAT-FLOW":1}}
+
+
+def test_route_overlay_clips_crossing_segments_and_omits_titleblock_segments():
+    rect=(1,3,19,9)
+    assert _clip_polyline_to_rect([(5,1),(5,5)],rect)==[((5.0,3.02),(5.0,5.0))]
+    assert _clip_polyline_to_rect([(2,1),(18,1)],rect)==[]
+    for piece in _clip_polyline_to_rect([(-5,6),(25,6)],rect):
+        assert all(1<point[0]<19 and 3<point[1]<9 for point in piece)

@@ -647,6 +647,33 @@ def _draw_route(msp,doc,points,system):
     if len(points)>=2:msp.add_lwpolyline(points,dxfattribs={"layer":lname,"lineweight":lw})
 
 
+def _clip_segment_to_rect(a,b,rect,inset=.02):
+    """Liang-Barsky clipping for a presentation segment; source geometry is untouched."""
+    x1,y1,x2,y2=map(float,rect);x1+=inset;y1+=inset;x2-=inset;y2-=inset
+    ax,ay=map(float,a);bx,by=map(float,b);dx=bx-ax;dy=by-ay;t0=0.0;t1=1.0
+    for p,q in ((-dx,ax-x1),(dx,x2-ax),(-dy,ay-y1),(dy,y2-ay)):
+        if abs(p)<=1e-12:
+            if q<0:return None
+            continue
+        r=q/p
+        if p<0:
+            if r>t1:return None
+            t0=max(t0,r)
+        else:
+            if r<t0:return None
+            t1=min(t1,r)
+    if t1<t0:return None
+    return ((ax+t0*dx,ay+t0*dy),(ax+t1*dx,ay+t1*dy))
+
+
+def _clip_polyline_to_rect(points,rect):
+    pieces=[]
+    for a,b in zip(points,points[1:]):
+        clipped=_clip_segment_to_rect(a,b,rect)
+        if clipped and math.dist(*clipped)>1e-6:pieces.append(clipped)
+    return pieces
+
+
 def _annotation_text_for_segment(seg):
     size=seg.get("size_mm");system=seg.get("system")
     if system=="sanitary":
@@ -659,10 +686,14 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     srcb=_plan_fit_bounds(plan);target=board.plan_area;pid=plan["plan_id"]
     system_by_family={"SANITARY_VENT":{"sanitary","vent"},"WATER":{"cold_water","hot_water"},"HEATING":{"heating_flow","heating_return"},"GAS":{"gas"},"SPLIT_AC":{"refrigerant","condensate"},"EXHAUST":{"exhaust"}}
     systems=system_by_family.get(board.family,set());routes=[r for r in (pipeline["routing"].get("routes") or []) if r.get("plan_id")==pid and r.get("system") in systems];hvac_routes=[r for r in (pipeline.get("hvac",{}).get("routes") or []) if r.get("plan_id")==pid and r.get("system") in systems];all_routes=routes+hvac_routes;size_by_route={s.get("route_id"):s for s in pipeline["sizing"].get("segments") or []}
+    drawn_routes=0
     for r in all_routes:
-        pts=[_map_point(tuple(p),srcb,target) for p in r.get("points") or []];_draw_route(msp,doc,pts,r.get("system"))
-        if pts:
-            mid=pts[len(pts)//2];seg=size_by_route.get(r.get("id")) or {};txt=_annotation_text_for_segment({**r,**seg});layer=_route_layer(r.get("system"))[0];t=msp.add_mtext(txt,dxfattribs={"layer":layer,"char_height":.08});t.dxf.insert=(mid[0]+.08,mid[1]+.08);t.dxf.width=3.5
+        mapped=[_map_point(tuple(p),srcb,target) for p in r.get("points") or []]
+        pieces=_clip_polyline_to_rect(mapped,target)
+        for piece in pieces:_draw_route(msp,doc,piece,r.get("system"))
+        drawn_routes+=len(pieces)
+        if pieces:
+            piece=max(pieces,key=lambda value:math.dist(*value));mid=((piece[0][0]+piece[1][0])/2,(piece[0][1]+piece[1][1])/2);seg=size_by_route.get(r.get("id")) or {};txt=_annotation_text_for_segment({**r,**seg});layer=_route_layer(r.get("system"))[0];t=msp.add_mtext(txt,dxfattribs={"layer":layer,"char_height":.08});t.dxf.insert=(min(mid[0]+.08,target[2]-.2),min(mid[1]+.08,target[3]-.2));t.dxf.width=min(3.5,max(.5,target[2]-t.dxf.insert.x-.1))
     # Every active plumbing plan must show its local vertical connection even
     # when that floor has no branch endpoint.  Use the topology shaft proposed
     # for this exact plan and keep each system on its authoritative layer.
@@ -693,7 +724,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             p=_map_point(srcp,srcb,target);near=_nearest_wall(srcp,walls);rot=math.degrees(near[2]) if near else 0;L=.90;a=math.radians(rot);px,py=-math.sin(a),math.cos(a);c1=(p[0]-L/2*math.cos(a),p[1]-L/2*math.sin(a));c2=(p[0]+L/2*math.cos(a),p[1]+L/2*math.sin(a));msp.add_line(c1,c2,dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});msp.add_line((c1[0]+px*.10,c1[1]+py*.10),(c2[0]+px*.10,c2[1]+py*.10),dxfattribs={"layer":"ENGITOOLS-M-RADIATOR"});t=msp.add_mtext(f"{e['id']} | LOAD≈{e.get('capacity_kw',0):.1f} kW PRELIM.",dxfattribs={"layer":"ENGITOOLS-M-RADIATOR","char_height":.08});t.dxf.insert=(p[0]+.25,p[1]+.25);t.dxf.width=3.4
         elif board.family=="HEATING" and kind=="package":
             p=_map_point(srcp,srcb,target);msp.add_lwpolyline([(p[0]-.30,p[1]-.42),(p[0]+.30,p[1]-.42),(p[0]+.30,p[1]+.42),(p[0]-.30,p[1]+.42)],close=True,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});msp.add_circle(p,.13,dxfattribs={"layer":"ENGITOOLS-M-PACKAGE"});t=msp.add_mtext(f"{e['id']} | WALL PACKAGE | {e.get('capacity_kw',0):.1f} kW\nHF/HR + GAS ISOLATION + FLUE",dxfattribs={"layer":"ENGITOOLS-M-PACKAGE","char_height":.08});t.dxf.insert=(p[0]+.42,p[1]+.42);t.dxf.width=3.8
-    if not all_routes:
+    if not drawn_routes:
         # Preserve the approved plan without inventing terminals. The explicit
         # note is mechanical content and makes the evidence boundary visible
         # to reviewers instead of silently omitting the requested floor.  This
@@ -706,7 +737,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.08},
         )
         note.dxf.insert=(x1+.25,y2-.35);note.dxf.width=max(1.0,x2-x1-.5)
-    return {"routes":len(all_routes),"equipment":len(equipment),"split_contract":validate_split_representation(ac_units) if ac_units else None}
+    return {"routes":drawn_routes,"source_routes":len(all_routes),"equipment":len(equipment),"split_contract":validate_split_representation(ac_units) if ac_units else None}
 
 
 def _draw_roof_hvac_equipment(doc,msp,board,pipeline):
