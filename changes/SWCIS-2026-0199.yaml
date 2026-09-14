@@ -9,6 +9,7 @@
     "cad_designer":"Positive-length authoritative branches remain materializable after a large source drawing is uniformly fitted to its plan board.",
     "routing":"No route is invented, moved, shortened or omitted; the canonical source path remains authoritative.",
     "qa":"Exact geometric zero remains fail-closed using a floating-point scale-aware tolerance; visual legibility gates remain unchanged.",
+    "ui_api":"No public API shape changes; existing failed projects retain the same status and narrow automatic-retry contract.",
     "manifest":"No drawing-set scope change.",
     "docs":"Records the unit-correct degeneracy definition.",
     "versioning":"SWCIS 4.43.12.",
