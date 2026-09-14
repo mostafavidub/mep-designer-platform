@@ -582,6 +582,33 @@ def register_job_queue(app, legacy):
                 if revision:
                     revision.status = 'queued'
                     revision.error = ''
+            # Version 4.43.0 could stop an otherwise valid, explicitly
+            # disclosed target-package Pre-Submission artifact at semantic QA.
+            # Requeue only that exact three-part fingerprint after the fixed
+            # runtime starts.  Generic semantic/final QA failures remain
+            # stopped and the preserved paid input is reused without charging.
+            semantic_pre_submission_jobs = db.query(Job).filter(
+                Job.job_type == 'design',
+                Job.status == 'failed',
+                func.lower(Job.last_error).like('%semantic_qa%'),
+                func.lower(Job.last_error).like('%missing_family_specific_content%'),
+                func.lower(Job.last_error).like('%target_design_packages_missing%'),
+            ).all()
+            for failed_job in semantic_pre_submission_jobs:
+                project = db.get(legacy.Project, failed_job.project_id)
+                revision = db.get(legacy.Revision, failed_job.revision_id) if failed_job.revision_id else None
+                failed_job.status = 'queued'
+                failed_job.attempts = 0
+                failed_job.available_at = datetime.utcnow()
+                failed_job.locked_at = None
+                failed_job.last_error = ''
+                if project:
+                    project.status = 'queued'
+                    project.last_error = ''
+                    set_project_progress(project, 'queued')
+                if revision:
+                    revision.status = 'queued'
+                    revision.error = ''
             db.commit()
             jobs = db.query(Job).filter(Job.status == 'processing').all()
             diagnostic_retry = db.query(Job).filter(

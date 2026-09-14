@@ -150,6 +150,15 @@ def test_startup_requeues_only_exact_preserved_build_identity_failures():
     assert "failed_job.attempts = 0" in source
 
 
+def test_startup_requeues_only_exact_fixed_semantic_pre_submission_fingerprint():
+    source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
+    assert "semantic_pre_submission_jobs" in source
+    assert "like('%semantic_qa%')" in source
+    assert "like('%missing_family_specific_content%')" in source
+    assert "like('%target_design_packages_missing%')" in source
+    assert "Generic semantic/final QA failures remain" in source
+
+
 @patch.dict(dxf_output.os.environ, {
     "COBUILT_CAD_IN_PROCESS": "0",
     "COBUILT_CAD_DESIGNER_URL": "http://web.railway.internal:8080",
