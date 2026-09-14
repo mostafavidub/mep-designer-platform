@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from pathlib import Path
+import math
 import re
 import shutil
 import tempfile
@@ -259,8 +260,22 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
                 raise ValueError("DRAWABLE_SEGMENT_PATH_MISSING:" + str(edge.get("id")))
             if any(not _inside(point, target["target_bounds"], tolerance=0.03) for point in points):
                 raise ValueError("MATERIALIZED_SEGMENT_OUTSIDE_PLAN_BOARD:" + str(edge.get("id")))
-            if sum(((points[i][0]-points[i-1][0])**2 + (points[i][1]-points[i-1][1])**2) ** .5
-                   for i in range(1, len(points))) <= 0.01:
+            # ``points`` are now in paper-space units.  A fixed 0.01 drawing-unit
+            # cutoff incorrectly rejects real, short fixture branches whenever a
+            # large architectural source extent is uniformly fitted onto a board.
+            # Degeneracy is a geometric-zero condition, not a plotted-length
+            # preference: retain every positive, reversible segment and let the
+            # downstream legibility/annotation QA judge its presentation.
+            materialized_length = sum(
+                math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1])
+                for i in range(1, len(points))
+            )
+            coordinate_scale = max(
+                1.0,
+                *(abs(value) for point in points for value in point[:2]),
+            )
+            geometric_zero_tolerance = max(math.ulp(coordinate_scale) * 32, 1e-12)
+            if materialized_length <= geometric_zero_tolerance:
                 raise ValueError("MATERIALIZED_SEGMENT_DEGENERATE:" + str(edge.get("id")))
             route = msp.add_lwpolyline(points, dxfattribs={"layer": layer, "lineweight": lineweight})
             _set_identity(route, "NETWORK_SEGMENT", edge)
