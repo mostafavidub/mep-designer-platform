@@ -78,6 +78,8 @@ class LandingSmokeTests(unittest.TestCase):
     def test_home_omits_removed_marketing_sections_and_keeps_core_content(self):
         r = self.client.get('/')
         self._assert_brand_shell(r)
+        self.assertIn('<meta name="enamad" content="34819949" />', r.text)
+        self.assertNotIn('<meta name="enamad"', self.client.get('/blog').text)
         self.assertNotIn('ENGINEERING TRUST', r.text)
         self.assertNotIn('فرآیندی قابل ردیابی، نه یک خروجی مبهم', r.text)
         self.assertNotIn('شروع دستی یا EngiTools؟', r.text)
