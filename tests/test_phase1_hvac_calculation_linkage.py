@@ -35,3 +35,14 @@ def test_equipment_capacity_is_driven_by_room_calculation_not_room_type_constant
 def test_missing_room_calculation_does_not_invent_fixed_capacity():
     result = design_project_hvac(_architecture(), {"hvac": {"cooling": "split_ac", "heating": "package_radiator"}}, {"rooms": []})
     assert not [row for row in result["equipment"] if row["kind"] in {"split_indoor", "radiator"}]
+
+
+def test_unenclosed_but_calculated_room_gets_disclosed_preliminary_proxy():
+    calculations={"rooms":[{"room_id":row["id"],"area_m2":None,"heating_w":0,"cooling_w":0} for row in _architecture()["rooms"]]}
+    result=design_project_hvac(_architecture(),{"hvac":{"cooling":None,"heating":"package_radiator"}},calculations)
+    radiators=[row for row in result["equipment"] if row["kind"]=="radiator"]
+    assert radiators
+    assert all(row["calculation_status"]=="PRELIMINARY_GEOMETRY_PROXY" for row in radiators)
+    explicit_zero={"rooms":[{"room_id":row["id"],"area_m2":0,"heating_w":0,"cooling_w":0} for row in _architecture()["rooms"]]}
+    blocked=design_project_hvac(_architecture(),{"hvac":{"cooling":None,"heating":"package_radiator"}},explicit_zero)
+    assert not [row for row in blocked["equipment"] if row["kind"]=="radiator"]
