@@ -4,7 +4,7 @@
   "requester":"project-owner",
   "change_types":["drawing_output","qa","test","governance","documentation","deployment"],
   "changed_rule_ids":[],
-  "impacted_modules":["cad_designer","routing","qa","manifest","docs","versioning","migration","governance","deployment"],
+  "impacted_modules":["cad_designer","routing","qa","manifest","ui_api","docs","versioning","migration","governance","deployment"],
   "impact_notes":{
     "cad_designer":"Positive-length authoritative branches remain materializable after a large source drawing is uniformly fitted to its plan board.",
     "routing":"No route is invented, moved, shortened or omitted; the canonical source path remains authoritative.",
