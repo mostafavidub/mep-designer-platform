@@ -393,7 +393,7 @@ def _recognition_from_evidence(rows, fallback, architecture, declared_schedule=N
         for kind, count in sorted(counts.items()):
             for occurrence in range(count):
                 target = wet[index % len(wet)]; index += 1
-                point = tuple(target["centroid"])
+                point = _distributed_declared_fixture_point(target, index, architecture)
                 detections.append({
                     "id": "OWNER-DECLARED-%s-%03d" % (kind.upper(), occurrence + 1),
                     "category": "fixture", "type": kind, "point": point, "ports": EVIDENCE_PORTS[kind],
@@ -403,6 +403,40 @@ def _recognition_from_evidence(rows, fallback, architecture, declared_schedule=N
                 })
         return {"version": "owner-declared-designed-endpoints/1", "detections": detections, "candidates": []}
     return fallback
+
+
+def _distributed_declared_fixture_point(target, ordinal, architecture):
+    """Place count-only fixtures near, but never exactly on, their wet-core node.
+
+    Questionnaire counts identify real design endpoints but do not provide CAD
+    insertion points. Collocating every endpoint with the wet-core aggregation
+    node creates zero-length branches. This deterministic layout uses the
+    matching room envelope when available and a drawing-scale-relative offset
+    otherwise; it does not invent pipe sizes or engineering loads.
+    """
+    cx, cy = map(float, target["centroid"][:2])
+    room_id = target.get("room_id")
+    room = next((row for row in architecture.get("rooms") or []
+                 if room_id and str(row.get("id")) == str(room_id)), None)
+    polygon = (room or {}).get("polygon") or []
+    xs = [float(point[0]) for point in polygon if len(point) >= 2]
+    ys = [float(point[1]) for point in polygon if len(point) >= 2]
+    directions = ((1, 0), (0, 1), (-1, 0), (0, -1),
+                  (1, 1), (-1, 1), (-1, -1), (1, -1))
+    direction = directions[(max(int(ordinal), 1) - 1) % len(directions)]
+    if xs and ys and max(xs) > min(xs) and max(ys) > min(ys):
+        width, height = max(xs) - min(xs), max(ys) - min(ys)
+        step = max(min(width, height) * .08, 1e-6)
+        margin_x, margin_y = width * .08, height * .08
+        x = min(max(cx + direction[0] * step, min(xs) + margin_x), max(xs) - margin_x)
+        y = min(max(cy + direction[1] * step, min(ys) + margin_y), max(ys) - margin_y)
+    else:
+        drawing_scale = max(abs(cx), abs(cy), 1.0)
+        step = max(drawing_scale * .005, .05)
+        x, y = cx + direction[0] * step, cy + direction[1] * step
+    if math.dist((cx, cy), (x, y)) <= 1e-9:
+        x = cx + max(abs(cx), abs(cy), 1.0) * .005
+    return (round(x, 6), round(y, 6))
 
 
 def _edge(system, from_node, to_node, role, endpoint_ids, levels, points=None, route_meta=None):

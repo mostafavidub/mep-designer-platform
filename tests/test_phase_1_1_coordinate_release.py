@@ -6,6 +6,7 @@ import pytest
 from cad_engine.coordinate_integrity import uniform_fit, map_point, inverse_point, transform_evidence
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
 from cad_engine.post_materialization_release import validate_coordinate_evidence
+from cad_engine.mechanical_authority import _has_collapsed_plan_path
 
 
 def test_uniform_fit_never_stretches_x_and_y_independently():
@@ -54,3 +55,11 @@ def test_materializer_fails_closed_when_route_is_degenerate(tmp_path):
     result = materialize_authoritative_network(src, dst, report, network)
     assert result["status"] == "FAIL"
     assert any("MATERIALIZED_SEGMENT_DEGENERATE" in item for item in result["errors"])
+
+
+def test_persisted_collapsed_path_is_detected_for_authoritative_rebuild():
+    network = {"edges": [{"id": "E1", "draw_on_plan": True,
+                           "plan_path": [(2, 2), (2, 2), (2, 2)]}]}
+    assert _has_collapsed_plan_path(network) is True
+    network["edges"][0]["plan_path"][-1] = (2.1, 2)
+    assert _has_collapsed_plan_path(network) is False
