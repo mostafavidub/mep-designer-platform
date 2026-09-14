@@ -249,10 +249,22 @@ def _box_inside(box, bounds):
 
 
 def _content_fit_metrics(entities, bounds):
-    boxes=[box for box in (_entity_box(entity) for entity in entities) if box]
+    graphical=[entity for entity in entities if entity.dxftype() not in TEXT_TYPES|{"DIMENSION","LEADER"}]
+    boxes=[box for box in (_entity_box(entity) for entity in graphical) if box]
     if not boxes:return None
-    left=max(bounds[0],min(box[0] for box in boxes));bottom=max(bounds[1],min(box[1] for box in boxes))
-    right=min(bounds[2],max(box[2] for box in boxes));top=min(bounds[3],max(box[3] for box in boxes))
+    raw=(max(bounds[0],min(box[0] for box in boxes)),max(bounds[1],min(box[1] for box in boxes)),
+         min(bounds[2],max(box[2] for box in boxes)),min(bounds[3],max(box[3] for box in boxes)))
+    centers=[((box[0]+box[2])/2,(box[1]+box[3])/2,box) for box in boxes]
+    if len(centers)>=8:
+        def quantile(values,fraction):
+            values=sorted(values);position=(len(values)-1)*fraction;lo=int(position);hi=min(lo+1,len(values)-1);w=position-lo
+            return values[lo]*(1-w)+values[hi]*w
+        qx1,qx2=quantile([row[0] for row in centers],.025),quantile([row[0] for row in centers],.975)
+        qy1,qy2=quantile([row[1] for row in centers],.025),quantile([row[1] for row in centers],.975)
+        retained=[row[2] for row in centers if qx1<=row[0]<=qx2 and qy1<=row[1]<=qy2]
+    else:retained=boxes
+    left=max(bounds[0],min(box[0] for box in retained));bottom=max(bounds[1],min(box[1] for box in retained))
+    right=min(bounds[2],max(box[2] for box in retained));top=min(bounds[3],max(box[3] for box in retained))
     viewport_width=max(bounds[2]-bounds[0],1e-9);viewport_height=max(bounds[3]-bounds[1],1e-9)
     content_width=max(0.0,right-left);content_height=max(0.0,top-bottom)
     width_fill=content_width/viewport_width;height_fill=content_height/viewport_height
@@ -267,9 +279,12 @@ def _content_fit_metrics(entities, bounds):
     # otherwise require 85% of the aspect-ratio ceiling plus a filled major
     # axis. This detects genuinely tiny plans without rejecting valid fit.
     minimum_occupancy=min(MIN_PLAN_BBOX_OCCUPANCY,aspect_ceiling*.85)
+    raw_width=max(0.0,raw[2]-raw[0])/viewport_width;raw_height=max(0.0,raw[3]-raw[1])/viewport_height
     return {"occupancy":occupancy,"width_fill":width_fill,"height_fill":height_fill,
             "major_axis_fill":max(width_fill,height_fill),"aspect_ceiling":aspect_ceiling,
-            "minimum_occupancy":minimum_occupancy}
+            "minimum_occupancy":minimum_occupancy,"raw_occupancy":raw_width*raw_height,
+            "retained_entity_count":len(retained),"candidate_entity_count":len(boxes),
+            "retained_ratio":len(retained)/len(boxes)}
 
 
 def _normalized_geometry_signature(entities, bounds):
@@ -336,12 +351,20 @@ def _render_profile(doc, bounds, path: Path, profile: str, sessions: dict | None
     delta = np.abs(rgb.astype(int) - np.array(config["background"], dtype=int))
     mask = (delta > 18).any(axis=2)
     ink = int(mask.sum()); total = int(mask.size); ratio = ink / total if total else 0.0
+    ys,xs=np.nonzero(mask)
+    if len(xs):
+        qx=np.quantile(xs,[.01,.99]);qy=np.quantile(ys,[.01,.99])
+        robust_bbox_fill=float(max(0,qx[1]-qx[0])*max(0,qy[1]-qy[0])/max(mask.shape[0]*mask.shape[1],1))
+        robust_major_axis_fill=float(max((qx[1]-qx[0])/mask.shape[1],(qy[1]-qy[0])/mask.shape[0]))
+    else:robust_bbox_fill=0.0;robust_major_axis_fill=0.0
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=config["dpi"], facecolor=config["background_hex"])
     plt.close(fig)
     return {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "size_bytes": path.stat().st_size, "ink_pixels": ink, "total_pixels": total,
-            "ink_ratio": round(ratio, 6), "status": "PASS" if ink >= 100 and path.stat().st_size >= 1500 else "FAIL"}
+            "ink_ratio": round(ratio, 6),"robust_ink_bbox_fill":round(robust_bbox_fill,6),
+            "robust_ink_major_axis_fill":round(robust_major_axis_fill,6),
+            "status": "PASS" if ink >= 100 and path.stat().st_size >= 1500 else "FAIL"}
 
 
 def _close_render_sessions(sessions: dict) -> None:
@@ -423,7 +446,10 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         if is_architectural_plan and not architecture: local_errors.append("architecture_underlay_not_visible")
         if family in PLAN_FAMILIES and not mechanical_texts: local_errors.append("mechanical_annotation_not_visible")
 
-        content_fit=_content_fit_metrics(architecture+mechanical,plan_area) if is_architectural_plan else None
+        # The architectural underlay alone proves that the source plan was
+        # fitted correctly. Mechanical callouts/routes must never be allowed to
+        # inflate a tiny or collapsed architectural plan into a visual PASS.
+        content_fit=_content_fit_metrics(architecture,plan_area) if is_architectural_plan else None
         occupancy=content_fit["occupancy"] if content_fit else None
         if content_fit and (content_fit["major_axis_fill"] < .75 or occupancy < content_fit["minimum_occupancy"]):
             local_errors.append(f"plan_bbox_occupancy_below_minimum:{occupancy:.3f}")
@@ -452,6 +478,10 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         for profile in ("color", "monochrome", "overview", "content"):
             if not renders.get(profile) or renders[profile].get("status") != "PASS":
                 local_errors.append(f"{profile}_render_empty")
+        content_render=renders.get("content") or {}
+        if (is_architectural_plan and "robust_ink_major_axis_fill" in content_render and
+                content_render["robust_ink_major_axis_fill"] < .55):
+            local_errors.append(f"rendered_plan_major_axis_below_minimum:{content_render['robust_ink_major_axis_fill']:.3f}")
 
         base = (baseline or {}).get(code) or {}
         current_signature = {

@@ -497,6 +497,13 @@ def _fit_transform(source_bounds,target_bounds):
     return Matrix44.chain(Matrix44.translate(-sx1,-sy1,0),Matrix44.scale(scale,scale,1),Matrix44.translate(dx,dy,0)),scale,(dx,dy)
 
 
+def _plan_fit_bounds(plan):
+    bounds=plan.get("content_bounds") or plan.get("bounds")
+    if not bounds or len(bounds)!=4:
+        raise ValueError("MISSING_AUTHORITATIVE_PLAN_CONTENT_BOUNDS")
+    return bounds
+
+
 def _clone_entities(msp,entities,M):
     copied=[];failed=[]
     for e in entities:
@@ -649,7 +656,7 @@ def _annotation_text_for_segment(seg):
 
 def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     if not plan:return {"routes":0,"equipment":0}
-    srcb=plan["bounds"];target=board.plan_area;pid=plan["plan_id"]
+    srcb=_plan_fit_bounds(plan);target=board.plan_area;pid=plan["plan_id"]
     system_by_family={"SANITARY_VENT":{"sanitary","vent"},"WATER":{"cold_water","hot_water"},"HEATING":{"heating_flow","heating_return"},"GAS":{"gas"},"SPLIT_AC":{"refrigerant","condensate"},"EXHAUST":{"exhaust"}}
     systems=system_by_family.get(board.family,set());routes=[r for r in (pipeline["routing"].get("routes") or []) if r.get("plan_id")==pid and r.get("system") in systems];hvac_routes=[r for r in (pipeline.get("hvac",{}).get("routes") or []) if r.get("plan_id")==pid and r.get("system") in systems];all_routes=routes+hvac_routes;size_by_route={s.get("route_id"):s for s in pipeline["sizing"].get("segments") or []}
     for r in all_routes:
@@ -829,7 +836,10 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         if b.family in PLAN_FAMILIES:
             plan=_find_roof_plan(arch) if b.family=="ROOF" or b.level=="ROOF" else _find_plan_for_level(arch,b.level)
             if plan:
-                entities=_entities_in_bounds(src_msp,plan["bounds"]);M,_,_=_fit_transform(plan["bounds"],b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
+                fit_bounds=_plan_fit_bounds(plan);entities=_entities_in_bounds(src_msp,fit_bounds);M,scale,offset=_fit_transform(fit_bounds,b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
+                row["source_plan_id"]=plan["plan_id"]
+                row["source_bounds"]=list(fit_bounds)
+                row["uniform_transform"]={"scale_x":scale,"scale_y":scale,"offset_x":offset[0],"offset_y":offset[1],"roundtrip_required":True}
                 if b.family=="ROOF" or (b.family=="SPLIT_AC" and b.level=="ROOF"):
                     overlay_reports.append({"sheet":b.code,"roof_outdoor_units":_draw_roof_hvac_equipment(doc,msp,b,pipeline)})
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})

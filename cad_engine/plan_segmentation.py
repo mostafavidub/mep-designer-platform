@@ -302,6 +302,63 @@ def _source_geometry_fingerprint(entities, bounds):
     return hashlib.sha256(json.dumps(sorted(tokens),separators=(",",":"),ensure_ascii=False).encode()).hexdigest() if tokens else None
 
 
+def _quantile(values, fraction):
+    ordered=sorted(values)
+    if not ordered:return None
+    position=(len(ordered)-1)*fraction;lower=int(position);upper=min(lower+1,len(ordered)-1)
+    weight=position-lower
+    return ordered[lower]*(1-weight)+ordered[upper]*weight
+
+
+def _drawable_content_envelope(entities, frame_bounds):
+    """Return an outlier-resistant envelope for the actual plan drawing.
+
+    The print frame owns source entities, but must never be used as the board
+    fit envelope: title blocks and remote annotations can make a valid building
+    occupy only a few percent of the issued sheet.  Text is deliberately not
+    allowed to enlarge the envelope.  The retained graphical centre population
+    is trimmed at both tails and the complete extents of those retained entities
+    are then restored, so walls/arcs are not cropped merely because they cross a
+    quantile line.
+    """
+    x1,y1,x2,y2=map(float,frame_bounds);fw=x2-x1;fh=y2-y1
+    candidates=[]
+    for entity in entities:
+        if entity.dxftype() in {"TEXT","MTEXT","ATTRIB","ATTDEF","DIMENSION","LEADER"}:continue
+        layer=_norm(getattr(entity.dxf,"layer","") or "")
+        if any(token in layer for token in PRINT_LAYER_TOKENS):continue
+        try:
+            extent=bbox.extents([entity],fast=True)
+            if not extent.has_data:continue
+            box=(float(extent.extmin.x),float(extent.extmin.y),float(extent.extmax.x),float(extent.extmax.y))
+        except Exception:continue
+        center=((box[0]+box[2])/2,(box[1]+box[3])/2)
+        if not _inside(center,frame_bounds):continue
+        hugs=(abs(box[0]-x1)<=fw*.015 and abs(box[2]-x2)<=fw*.015 and
+              abs(box[1]-y1)<=fh*.015 and abs(box[3]-y2)<=fh*.015)
+        if hugs:continue
+        candidates.append((entity,box,center))
+    if len(candidates)<8:
+        return {"status":"FAIL","bounds":None,"reason":"insufficient_drawable_plan_geometry",
+                "candidate_count":len(candidates),"retained_count":0}
+    xs=[row[2][0] for row in candidates];ys=[row[2][1] for row in candidates]
+    qx1,qx2=_quantile(xs,.025),_quantile(xs,.975);qy1,qy2=_quantile(ys,.025),_quantile(ys,.975)
+    retained=[row for row in candidates if qx1<=row[2][0]<=qx2 and qy1<=row[2][1]<=qy2]
+    if len(retained)<max(8,int(len(candidates)*.60)):
+        return {"status":"FAIL","bounds":None,"reason":"outlier_dominated_plan_geometry",
+                "candidate_count":len(candidates),"retained_count":len(retained)}
+    left=max(x1,min(row[1][0] for row in retained));bottom=max(y1,min(row[1][1] for row in retained))
+    right=min(x2,max(row[1][2] for row in retained));top=min(y2,max(row[1][3] for row in retained))
+    if right-left<=max(fw*1e-6,1e-9) or top-bottom<=max(fh*1e-6,1e-9):
+        return {"status":"FAIL","bounds":None,"reason":"degenerate_drawable_plan_geometry",
+                "candidate_count":len(candidates),"retained_count":len(retained)}
+    pad_x=(right-left)*.02;pad_y=(top-bottom)*.02
+    bounds=[max(x1,left-pad_x),max(y1,bottom-pad_y),min(x2,right+pad_x),min(y2,top+pad_y)]
+    return {"status":"PASS","bounds":bounds,"reason":"trimmed_graphical_entity_envelope",
+            "candidate_count":len(candidates),"retained_count":len(retained),
+            "retained_ratio":round(len(retained)/len(candidates),6)}
+
+
 def _recover_orthogonal_room_enclosures(architecture, plans):
     """Recover a room boundary only from four bracketing wall faces.
 
@@ -377,6 +434,10 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         architecture.setdefault("quality",{})["room_evidence_promoted_plan_ids"]=promoted
 
     doc=ezdxf.readfile(src); source_entities=list(doc.modelspace()); text_shafts=[]
+    for plan in plans:
+        envelope=_drawable_content_envelope(source_entities,plan["bounds"])
+        plan["content_envelope"]=envelope
+        plan["content_bounds"]=envelope.get("bounds") if envelope.get("status")=="PASS" else None
     for e in source_entities:
         if e.dxftype() not in {"TEXT","MTEXT"}: continue
         text=_text(e); point=_point(e)
@@ -402,19 +463,23 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         room_ids=sorted(str(r.get("id")) for r in architecture.get("rooms") or [] if r.get("plan_id")==pid)
         detection_ids=sorted(str(x.get("id")) for x in recognition.get("detections") or [] if x.get("plan_id")==pid)
         payload={"plan_id":pid,"bounds":[round(float(v),6) for v in plan["bounds"]],
+                 "content_bounds":[round(float(v),6) for v in plan.get("content_bounds") or []],
                  "level":plan.get("level"),"room_ids":room_ids,"detection_ids":detection_ids}
         payload["source_geometry_fingerprint"]=_source_geometry_fingerprint(source_entities,plan["bounds"])
         payload["represented_levels"]=list(plan.get("represented_levels") or [])
         payload["fingerprint"]=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
         ownership.append(payload)
     architecture["level_ownership_contract"]={
-        "status":"PASS" if not ownership_ambiguities and not ownership_unassigned else "FAIL",
+        "status":"PASS" if (not ownership_ambiguities and not ownership_unassigned and
+                              all(p.get("content_bounds") for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"})) else "FAIL",
         "source_unit_code":int(doc.header.get('$INSUNITS',0) or 0),
         "orientation":architecture.get("orientation") or "SOURCE_WCS",
         "plans":ownership,"ambiguities":ownership_ambiguities,"unassigned":ownership_unassigned,
     }
     architecture["quality"]["ambiguous_plan_ownership_count"]=len(ownership_ambiguities)
     architecture["quality"]["unassigned_plan_entity_count"]=len(ownership_unassigned)
+    architecture["quality"]["invalid_plan_content_envelope_count"]=sum(
+        1 for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"} and not p.get("content_bounds"))
 
     _recover_orthogonal_room_enclosures(architecture,plans)
 

@@ -2,6 +2,14 @@
   "schema_version":"1.0.0",
   "changes":[
     {
+      "id":"GOV-2026-064","status":"APPROVED",
+      "summary":"Make robust per-plan architectural content bounds authoritative for uniform board fit and exact-file visual QA.",
+      "affected_capabilities":["architecture_preservation_100","plan_ownership","mechanical_generation","all_sheet_visual_qa"],"affected_projects":["all"],
+      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute and complete the full architectural-model and final-geometry quality process"},
+      "verification":{"positive_test":"must_pass","destructive_outlier_test":"must_pass","exact_file_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
+      "migration":{"forward":"Regenerate retained projects from immutable architectural inputs so per-plan content envelopes and transform evidence are rebuilt.","rollback":"Revert and redeploy the prior approved Git commit; never bypass architecture or visual gates."}
+    },
+    {
       "id":"GOV-2026-061","status":"APPROVED",
       "summary":"Prevent repeated numeric engineering questions during automated Staging completion.",
       "affected_capabilities":["mechanical_generation","questionnaire_design_basis_100"],"affected_projects":["staging-tests"],

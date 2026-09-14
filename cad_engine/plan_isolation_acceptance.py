@@ -12,6 +12,7 @@ def evaluate_plan_isolation(pipeline):
     quality=arch.get('quality') or {}
     if quality.get('ambiguous_plan_ownership_count',0):errors.append('ambiguous_plan_ownership')
     if quality.get('unassigned_plan_entity_count',0):errors.append('unassigned_plan_entities')
+    if quality.get('invalid_plan_content_envelope_count',0):errors.append('invalid_plan_content_envelope')
     fingerprints={}
     for row in ownership.get('plans') or []:
         signature=row.get('source_geometry_fingerprint'); represented=row.get('represented_levels') or []
