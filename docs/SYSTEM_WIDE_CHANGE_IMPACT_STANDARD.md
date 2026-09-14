@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.16
+**Canonical version:** 4.43.17
 
 **Status:** LOCKED
 
@@ -14,6 +14,11 @@ customer-visible errors remain separately sanitized.
 Exact-file titleblock-overlap failures are attributed to bounded per-sheet and
 per-layer counts. This evidence is diagnostic only: any overlap still blocks
 release, and entity coordinates or customer source contents are not logged.
+
+After the uniform plan transform, every paper-space route segment is clipped to
+the approved plan area before it is drawn. Fully outside segments are omitted
+and explicitly disclosed in Pre-Submission; source graph identity, engineering
+length and sizing remain unchanged, and any titleblock intersection still fails.
 
 Version 4.43.13 separates the source ownership frame from the authoritative
 drawable-content envelope for every architectural plan. Architecture, routes
