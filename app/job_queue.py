@@ -657,6 +657,25 @@ def register_job_queue(app, legacy):
                     project.status = 'queued'; project.last_error = ''; set_project_progress(project, 'queued')
                 if revision:
                     revision.status = 'queued'; revision.error = ''
+            # The former area-only visual fit check rejected correctly fitted
+            # portrait plans on landscape boards. Resume only zero-loss,
+            # pre-submission jobs carrying that exact false-positive fingerprint.
+            aspect_fit_visual_jobs = db.query(Job).filter(
+                Job.job_type == 'design', Job.status == 'failed',
+                func.lower(Job.last_error).like('%all_sheet_visual_gate%'),
+                func.lower(Job.last_error).like('%plan_bbox_occupancy_below_minimum%'),
+                func.lower(Job.last_error).like('%target_design_packages_missing%'),
+                func.lower(Job.last_error).like('%architecture_preservation:critical_missing=0,important_missing=0,all_missing=0%'),
+            ).all()
+            for failed_job in aspect_fit_visual_jobs:
+                project = db.get(legacy.Project, failed_job.project_id)
+                revision = db.get(legacy.Revision, failed_job.revision_id) if failed_job.revision_id else None
+                failed_job.status = 'queued'; failed_job.attempts = 0
+                failed_job.available_at = datetime.utcnow(); failed_job.locked_at = None; failed_job.last_error = ''
+                if project:
+                    project.status = 'queued'; project.last_error = ''; set_project_progress(project, 'queued')
+                if revision:
+                    revision.status = 'queued'; revision.error = ''
             # The coordinate-integrity rollout exposed old graphs whose
             # questionnaire-only fixtures were collocated with their wet-core
             # node. Requeue only that exact deterministic failure; the fixed

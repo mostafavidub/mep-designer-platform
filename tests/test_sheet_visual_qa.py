@@ -72,6 +72,21 @@ def test_plan_content_envelope_must_fill_between_55_and_85_percent(tmp_path, mon
     assert any("plan_bbox_occupancy_below_minimum" in item for item in result["errors"])
 
 
+def test_aspect_fitted_portrait_plan_is_not_rejected_by_area_occupancy(tmp_path, monkeypatch):
+    monkeypatch.setattr(visual, "_render_profile", _fake_render)
+    path = tmp_path / "portrait.dxf"; composition = _issued(path)
+    doc = ezdxf.readfile(path); msp = doc.modelspace()
+    for entity in list(msp): msp.delete_entity(entity)
+    msp.add_lwpolyline([(5.5, 3), (15.5, 3), (15.5, 28), (5.5, 28)], close=True, dxfattribs={"layer": "WALL"})
+    msp.add_line((6, 5), (15, 5), dxfattribs={"layer": "ENGITOOLS-M-WATER"})
+    msp.add_text("CW DN25", dxfattribs={"layer":"ENGITOOLS-M-WATER","height":.1}).set_placement((8,5.5))
+    doc.saveas(path)
+    result = visual.validate_all_sheet_visual_qa(path, composition, tmp_path / "previews")
+    assert result["status"] == "PASS", result
+    assert result["sheets"][0]["plan_bbox_occupancy"] < visual.MIN_PLAN_BBOX_OCCUPANCY
+    assert result["sheets"][0]["content_fit"]["major_axis_fill"] >= .75
+
+
 def test_identical_underlay_on_distinct_levels_is_rejected(tmp_path, monkeypatch):
     monkeypatch.setattr(visual, "_render_profile", _fake_render)
     path = tmp_path / "duplicate.dxf"; doc = ezdxf.new("R2010"); msp=doc.modelspace()

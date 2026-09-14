@@ -179,6 +179,14 @@ def test_startup_requeues_exact_collapsed_plan_path_after_fixed_rollout():
     assert "project.status = 'queued'" in source
 
 
+def test_startup_requeues_exact_aspect_fit_visual_false_positive():
+    source = (dxf_output.Path(__file__).parents[1] / "app/job_queue.py").read_text()
+    assert "aspect_fit_visual_jobs" in source
+    assert "like('%all_sheet_visual_gate%')" in source
+    assert "like('%plan_bbox_occupancy_below_minimum%')" in source
+    assert "like('%architecture_preservation:critical_missing=0,important_missing=0,all_missing=0%')" in source
+
+
 @patch.dict(dxf_output.os.environ, {
     "COBUILT_CAD_IN_PROCESS": "0",
     "COBUILT_CAD_DESIGNER_URL": "http://web.railway.internal:8080",

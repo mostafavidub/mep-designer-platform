@@ -248,13 +248,28 @@ def _box_inside(box, bounds):
     return box[0] >= bounds[0] and box[1] >= bounds[1] and box[2] <= bounds[2] and box[3] <= bounds[3]
 
 
-def _content_bbox_occupancy(entities, bounds):
+def _content_fit_metrics(entities, bounds):
     boxes=[box for box in (_entity_box(entity) for entity in entities) if box]
-    if not boxes:return 0.0
+    if not boxes:return None
     left=max(bounds[0],min(box[0] for box in boxes));bottom=max(bounds[1],min(box[1] for box in boxes))
     right=min(bounds[2],max(box[2] for box in boxes));top=min(bounds[3],max(box[3] for box in boxes))
-    sheet_area=max((bounds[2]-bounds[0])*(bounds[3]-bounds[1]),1e-9)
-    return max(0.0,(right-left)*(top-bottom))/sheet_area
+    viewport_width=max(bounds[2]-bounds[0],1e-9);viewport_height=max(bounds[3]-bounds[1],1e-9)
+    content_width=max(0.0,right-left);content_height=max(0.0,top-bottom)
+    width_fill=content_width/viewport_width;height_fill=content_height/viewport_height
+    occupancy=width_fill*height_fill
+    if not content_width or not content_height:
+        aspect_ceiling=0.0
+    else:
+        content_aspect=content_width/content_height;viewport_aspect=viewport_width/viewport_height
+        aspect_ceiling=min(content_aspect/viewport_aspect,viewport_aspect/content_aspect,1.0)
+    # A correctly fitted portrait plan cannot occupy 55% of a landscape
+    # viewport. Keep the absolute target whenever geometrically attainable,
+    # otherwise require 85% of the aspect-ratio ceiling plus a filled major
+    # axis. This detects genuinely tiny plans without rejecting valid fit.
+    minimum_occupancy=min(MIN_PLAN_BBOX_OCCUPANCY,aspect_ceiling*.85)
+    return {"occupancy":occupancy,"width_fill":width_fill,"height_fill":height_fill,
+            "major_axis_fill":max(width_fill,height_fill),"aspect_ceiling":aspect_ceiling,
+            "minimum_occupancy":minimum_occupancy}
 
 
 def _normalized_geometry_signature(entities, bounds):
@@ -408,8 +423,9 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         if is_architectural_plan and not architecture: local_errors.append("architecture_underlay_not_visible")
         if family in PLAN_FAMILIES and not mechanical_texts: local_errors.append("mechanical_annotation_not_visible")
 
-        occupancy=_content_bbox_occupancy(architecture+mechanical,plan_area) if is_architectural_plan else None
-        if occupancy is not None and occupancy<MIN_PLAN_BBOX_OCCUPANCY:
+        content_fit=_content_fit_metrics(architecture+mechanical,plan_area) if is_architectural_plan else None
+        occupancy=content_fit["occupancy"] if content_fit else None
+        if content_fit and (content_fit["major_axis_fill"] < .75 or occupancy < content_fit["minimum_occupancy"]):
             local_errors.append(f"plan_bbox_occupancy_below_minimum:{occupancy:.3f}")
         if occupancy is not None and occupancy>MAX_PLAN_BBOX_OCCUPANCY:
             local_errors.append(f"plan_bbox_occupancy_above_maximum:{occupancy:.3f}")
@@ -441,6 +457,7 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
         current_signature = {
             "family": family, "mechanical_entities": len(mechanical), "architecture_entities": len(architecture),
             "annotation_count": len(mechanical_texts), "minimum_text_height": minimum_height,
+            "content_fit": content_fit,
         }
         baseline_status = "NOT_CONFIGURED"
         if base:
@@ -457,6 +474,7 @@ def validate_all_sheet_visual_qa(path: Path, composition: dict, preview_dir: Pat
                        "architecture_entity_count": len(architecture), "mechanical_entity_count": len(mechanical),
                        "annotation_count": len(mechanical_texts), "minimum_text_height": minimum_height,
                        "plan_bbox_occupancy":round(occupancy,4) if occupancy is not None else None,
+                       "content_fit":content_fit,
                        "architecture_geometry_signature":architecture_signature,
                        "annotation_overlap_count": overlaps, "visual_density": round(density, 3),
                        "annotation_overlap_evidence": overlap_evidence[:20],
