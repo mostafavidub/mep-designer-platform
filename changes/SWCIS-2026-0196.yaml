@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0196",
+  "summary":"Preserve architectural aspect ratio through final network materialization and repeat exact-file release QA after the last CAD mutation.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","test","governance","documentation","ui_api"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Every architecture-to-board network mapping uses one reversible uniform scale and bounded offsets; degenerate and out-of-board geometry is rejected.",
+    "qa":"The exact issued DXF is reopened after network and annotation materialization and repeats preservation, composition, linkage, detail, completeness and every-sheet visual checks.",
+    "ui_api":"Progress exposes actual coordinate-integrity and annotation-layout engine events between materialization and exact-output review.",
+    "deployment":"Protected Staging rollout followed by health and browser verification.",
+    "docs":"Records the post-last-mutation coordinate and release contract.",
+    "manifest":"Records SWCIS 4.43.9.",
+    "migration":"No persistence schema migration; existing projects can be safely retried.",
+    "governance":"Classifies both new authorities and records their release evidence.",
+    "versioning":"SWCIS 4.43.9."
+  },
+  "evidence":{
+    "traceability":["Network materialization -> coordinate integrity -> annotation layout -> exact-file release QA -> artifact delivery."],
+    "tests":["Uniform mapping, reversible round-trip, exact reopen, degenerate fail-closed, boundary-safe annotation and real progress-stage regressions."],
+    "docs":["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "contract_diff":["No geometry mutation may occur after the final visual and architecture release checks.","New authorities are classified by the locked dependency and impact graphs."],
+    "version_bump":["SWCIS 4.43.8 -> 4.43.9"],
+    "migration":["No DB or PMM schema change; in-flight jobs use the new release sequence on retry."],
+    "semantic_diff":["Engineering systems and sizing inputs are unchanged; coordinate transport, mutation ordering and evidence are strengthened."],
+    "artifact_diff":["Network geometry retains source aspect ratio, stays inside the target board and the exact final DXF receives complete release QA."],
+    "numeric_diff":["scale_x equals scale_y within 0.5%; round-trip error <= 1e-6 drawing units; materialized route length > 0.01."],
+    "golden_regression":["Focused and integrated Mechanical authority, architecture, delivery and visual suites plus governed CI must pass."],
+    "deployment_plan":["Protected PR, merge, Staging deployment, health check and browser-visible stage verification."],
+    "rollback_plan":["Revert the merged Git commit and redeploy; prior fail-closed release gates remain active."]
+  },
+  "risk":{"likelihood":3,"severity":5,"detectability":2,"score":30,"rationale":"A late anisotropic transform can make every generated plan unusable while earlier checks still appear green."},
+  "waiver":null
+}

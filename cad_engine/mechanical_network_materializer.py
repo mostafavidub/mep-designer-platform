@@ -16,6 +16,7 @@ import ezdxf
 from ezdxf import bbox
 
 from .mechanical_network_topology import _typed_level
+from .coordinate_integrity import uniform_fit, map_point, transform_evidence
 
 
 APPID = "ENGITOOLS_MECHANICAL"
@@ -76,13 +77,7 @@ def _inside(point, bounds, tolerance=1e-6):
 
 
 def _map_point(point, source_bounds, target_bounds):
-    sx1, sy1, sx2, sy2 = map(float, source_bounds)
-    tx1, ty1, tx2, ty2 = map(float, target_bounds)
-    if sx2 <= sx1 or sy2 <= sy1:
-        raise ValueError("INVALID_SOURCE_BOUNDS")
-    rx = (float(point[0]) - sx1) / (sx2 - sx1)
-    ry = (float(point[1]) - sy1) / (sy2 - sy1)
-    return (tx1 + rx * (tx2 - tx1), ty1 + ry * (ty2 - ty1))
+    return map_point(point, uniform_fit(source_bounds, target_bounds))
 
 
 def _source_extents(src):
@@ -249,13 +244,24 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
             removed += _remove_legacy_route_entities(msp, target_bounds, layers)
 
         materialized = []
+        coordinate_transforms = []
         for edge in drawable:
             target = targets[edge["id"]]
             layer, color, lineweight = ROUTE_LAYERS[edge["system"]]
             _ensure_layer(doc, layer, color, lineweight)
-            points = [_map_point(point, target["source_bounds"], target["target_bounds"]) for point in edge.get("plan_path") or []]
+            source_points = [tuple(map(float, point[:2])) for point in edge.get("plan_path") or []]
+            transform = uniform_fit(target["source_bounds"], target["target_bounds"])
+            evidence = transform_evidence(transform, source_points)
+            if not evidence["uniform"] or not evidence["roundtrip_pass"]:
+                raise ValueError("NON_UNIFORM_OR_NON_REVERSIBLE_COORDINATE_TRANSFORM:" + str(edge.get("id")))
+            points = [map_point(point, transform) for point in source_points]
             if len(points) < 2:
                 raise ValueError("DRAWABLE_SEGMENT_PATH_MISSING:" + str(edge.get("id")))
+            if any(not _inside(point, target["target_bounds"], tolerance=0.03) for point in points):
+                raise ValueError("MATERIALIZED_SEGMENT_OUTSIDE_PLAN_BOARD:" + str(edge.get("id")))
+            if sum(((points[i][0]-points[i-1][0])**2 + (points[i][1]-points[i-1][1])**2) ** .5
+                   for i in range(1, len(points))) <= 0.01:
+                raise ValueError("MATERIALIZED_SEGMENT_DEGENERATE:" + str(edge.get("id")))
             route = msp.add_lwpolyline(points, dxfattribs={"layer": layer, "lineweight": lineweight})
             _set_identity(route, "NETWORK_SEGMENT", edge)
             midpoint = points[len(points) // 2]
@@ -264,6 +270,7 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
             label.dxf.width = 4.2
             _set_identity(label, "NETWORK_ANNOTATION", edge)
             materialized.append(edge["id"])
+            coordinate_transforms.append({"edge_id": edge["id"], "board_id": str(target["row"].get("old_sheet") or ""), **evidence})
         doc.saveas(dst)
 
         counts = _reopen_counts(dst)
@@ -281,6 +288,7 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
         return {"status": "PASS", "removed_legacy_entities": removed,
                 "materialized_segments": len(materialized), "expected_segments": len(expected),
                 "materialized_edge_ids": sorted(expected),
+                "coordinate_transforms": coordinate_transforms,
                 "reopen_counts": dict(counts), "exact_file_reopened": True,
                 "transactional_exact_output": True,
                 "identity_policy": "DXF_XDATA_EDGE_ID_EQUALS_NETWORK_EDGE_ID"}

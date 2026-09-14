@@ -41,6 +41,16 @@ class DesignProgressTests(unittest.TestCase):
         self.assertEqual(states['mechanical_release_qa'],'current')
         self.assertEqual(states['packaging'],'pending')
 
+    def test_coordinate_and_annotation_stages_are_real_ordered_milestones(self):
+        names = list(STAGES)
+        self.assertLess(names.index('network_materialization'), names.index('coordinate_integrity'))
+        self.assertLess(names.index('coordinate_integrity'), names.index('annotation_layout'))
+        self.assertLess(names.index('annotation_layout'), names.index('exact_output_review'))
+        authority = (ROOT / "cad_engine/mechanical_authority.py").read_text(encoding="utf-8")
+        positions = [authority.index(f'_emit_progress(answers, "{stage}")') for stage in (
+            'network_materialization', 'coordinate_integrity', 'annotation_layout', 'exact_output_review')]
+        self.assertEqual(positions, sorted(positions))
+
     def test_backend_emits_real_milestones_around_cad_and_artifact_work(self):
         source = (ROOT / "app/dxf_output.py").read_text(encoding="utf-8")
         ordered = [

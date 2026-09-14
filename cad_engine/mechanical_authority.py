@@ -35,6 +35,8 @@ from .documentation_content_gate import (
     evaluate_documentation_content,
     exact_documentation_output_evidence,
 )
+from .post_materialization_release import validate_after_last_mutation, validate_coordinate_evidence
+from .sheet_visual_qa import repair_sheet_annotations
 from .unified_engineering_model import build_unified_engineering_model
 from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_basis
 
@@ -500,7 +502,40 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "materialization_qa": materialization,
                 "input_required": {"status": "INPUT_REQUIRED" if materialization.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": materialization.get("missing_inputs") or materialization.get("errors") or []}}
+    _emit_progress(answers, "coordinate_integrity")
+    coordinate_integrity = validate_coordinate_evidence(materialization)
+    if coordinate_integrity.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "coordinate_integrity_gate",
+                "materialization_qa": materialization,
+                "coordinate_integrity_qa": coordinate_integrity,
+                "input_required": {"status": "FAIL", "missing_inputs": coordinate_integrity.get("errors") or []}}
+
+    _emit_progress(answers, "annotation_layout")
+    annotation_repair = repair_sheet_annotations(dst, rendered.get("composition") or {})
+    if annotation_repair.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "post_materialization_annotation_gate",
+                "materialization_qa": materialization,
+                "annotation_layout_repair_qa": annotation_repair,
+                "input_required": {"status": "FAIL", "missing_inputs": annotation_repair.get("unresolved") or []}}
+
     _emit_progress(answers, "exact_output_review")
+    post_materialization = validate_after_last_mutation(src, dst, rendered, answers, materialization)
+    if post_materialization.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "post_materialization_release_gate",
+                "network_authority_qa": network_authority,
+                "materialization_qa": materialization,
+                "post_materialization_release_qa": post_materialization,
+                "input_required": {"status": "FAIL", "missing_inputs": post_materialization.get("failed_checks") or []}}
+
     final_topology_routing = evaluate_topology_routing(
         payload["network_graph"], calculation_rows=payload["calculation_rows"],
         coordination=(payload.get("topology_routing_coordination") or {}),
@@ -552,6 +587,9 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
 
     rendered["network_authority_qa"] = network_authority
     rendered["materialization_qa"] = materialization
+    rendered["coordinate_integrity_qa"] = coordinate_integrity
+    rendered["post_materialization_annotation_repair_qa"] = annotation_repair
+    rendered["post_materialization_release_qa"] = post_materialization
     rendered["unified_engineering_model_qa"] = unified
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
