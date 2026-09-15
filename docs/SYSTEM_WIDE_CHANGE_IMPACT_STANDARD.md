@@ -1,10 +1,15 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.20
+**Canonical version:** 4.43.21
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+The post-materialization exact-file gate consumes the same explicit target-package
+Pre-Submission board disclosures as the pre-materialization gate, resolved through
+the approved manifest. Submission-ready runs and unrelated blockers receive no
+exception.
 
 Exact-file visual QA may use the complete copied architectural extent after the
 composer has already fitted an outlier-trimmed source envelope only when the

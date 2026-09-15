@@ -13,6 +13,29 @@ from .mechanical_release_hardening import (
 from .sheet_visual_qa import validate_all_sheet_visual_qa
 
 
+def _pending_equipment_boards(report: dict, answers: dict) -> set[tuple[str,str]]:
+    """Resolve only exact target-package Pre-Submission disclosures."""
+    pre_submission=(answers or {}).get("_pre_submission_authority")
+    if not isinstance(pre_submission,dict) or pre_submission.get("blocked_at")!="target_design_packages":
+        return set()
+    if "TARGET_DESIGN_PACKAGES_MISSING" not in set(pre_submission.get("blockers") or []):
+        return set()
+    items=((((report or {}).get("semantic_qa") or {}).get("pre_submission_disclosure") or {}).get("pending_family_content") or [])
+    manifest={
+        str(row.get("code") or "").strip().lower():str(row.get("old_sheet") or row.get("code") or "").strip().lower()
+        for row in ((((report or {}).get("composition") or {}).get("manifest")) or [])
+        if isinstance(row,dict) and str(row.get("code") or "").strip()
+    }
+    result=set()
+    for item in items:
+        parts=str(item).split(":",1)
+        if len(parts)!=2:continue
+        code=parts[0].strip().lower();family=parts[1].strip().upper()
+        result.add((code,family))
+        if manifest.get(code):result.add((manifest[code],family))
+    return result
+
+
 def validate_coordinate_evidence(materialization):
     rows = materialization.get("coordinate_transforms") or []
     errors = []
@@ -41,7 +64,7 @@ def validate_after_last_mutation(src: Path, dst: Path, report: dict, answers: di
         "titleblocks": validate_titleblocks(dst, composition),
         "safe_zones": validate_safe_zones(dst, composition),
         "architectural_presentation": validate_architectural_presentation(dst, composition),
-        "equipment_linkage": validate_equipment_linkage(dst, composition),
+        "equipment_linkage": validate_equipment_linkage(dst, composition, _pending_equipment_boards(report,answers)),
         "detail_library": validate_detail_library(dst, composition),
         "content_completeness": validate_content_completeness(dst, composition),
         "split_visual": validate_split_ac_visual_legibility(dst, composition, dst.with_name(dst.stem + "-final-split-previews")),

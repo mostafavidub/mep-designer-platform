@@ -542,7 +542,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "input_required": {"status": "FAIL", "missing_inputs": annotation_repair.get("unresolved") or []}}
 
     _emit_progress(answers, "exact_output_review")
-    post_materialization = validate_after_last_mutation(src, dst, rendered, answers, materialization)
+    post_materialization = validate_after_last_mutation(src, dst, rendered, shell_answers, materialization)
     if post_materialization.get("status") != "PASS":
         _restore_target(dst, backup)
         if backup:
