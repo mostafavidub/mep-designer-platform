@@ -11,6 +11,7 @@ from .sizing import size_networks
 from .annotation import build_annotations
 from .detail_library import build_details_schedules
 from .project_hvac import design_project_hvac
+from .independent_level_model_gate import build_independent_level_model
 
 
 def _inside(point, polygon):
@@ -180,6 +181,9 @@ def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     recognition=_discard_unlocated_native_fixtures(architecture,recognition)
     recognition=_merge_browser_fixture_evidence(architecture,recognition,(project_overrides or {}).get('fixture_evidence'))
     recognition=_add_locked_design_endpoints(architecture,recognition,design_basis or {})
+    independent_levels=build_independent_level_model(
+        src,architecture,recognition,unit_to_m=(project_overrides or {}).get('effective_unit_to_m'))
+    architecture['independent_level_model']=independent_levels
     requirements=derive_system_requirements(architecture,recognition,design_basis=design_basis)
     calculations=calculate_mechanical_loads(architecture,recognition,requirements,design_basis=design_basis)
     topology=build_system_topology(architecture,recognition,requirements,calculations,design_basis=design_basis);routing=route_topology(architecture,topology)
@@ -203,6 +207,8 @@ def validate_pipeline(result):
     errors=[];arch=result.get('architecture') or {};rec=result.get('recognition') or {};req=result.get('requirements') or {}
     topology=result.get('topology') or {};routing=result.get('routing') or {};sizing=result.get('sizing') or {};annotations=result.get('annotations') or {};hvac=result.get('hvac') or {};basis=result.get('design_basis') or {}
     if not arch.get('rooms'):errors.append('no_reconstructed_rooms')
+    level_model=arch.get('independent_level_model') or {}
+    if level_model.get('status')=='FAIL':errors.append('independent_level_model_invalid')
     if not req.get('project_systems'):errors.append('no_mechanical_system_requirements')
     if arch.get('plans') and not arch.get('primary_floor_plan_ids'):errors.append('no_primary_mechanical_floor_plans')
     if arch.get('plans') and (topology.get('quality') or {}).get('cross_plan_edges',0):errors.append('cross_plan_topology')

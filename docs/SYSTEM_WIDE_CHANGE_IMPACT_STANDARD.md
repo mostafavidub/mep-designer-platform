@@ -1,10 +1,17 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.45.0
+**Canonical version:** 4.46.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.46.0 adds locked rule `MEP-LEVEL-MODEL-001`. Each confirmed floor,
+explicit typical-floor group and roof receives one source-bound independent
+model with unique entity ownership, reversible coordinates, deterministic
+fingerprints and a reconciled vertical-core graph. Unsupported roof synthesis,
+ambiguous levels, cross-level ownership and unapproved duplicate geometry fail
+closed before Submission Ready output.
 
 Version 4.45.0 adds locked rule `MEP-DIMENSION-001`.  Applicable mechanical
 plan boards receive deterministic, owner-linked installation dimensions only
