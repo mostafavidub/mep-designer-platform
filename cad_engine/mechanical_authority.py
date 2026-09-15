@@ -181,6 +181,8 @@ def _documentation_context(payload: dict, result: dict) -> dict:
     supplied.setdefault("sheets", documentation.get("sheets") or [])
     active = payload.get("active_systems") or {}
     supplied.setdefault("active_systems", sorted(key for key, value in active.items() if value))
+    if payload.get("execution_detail_context") is not None:
+        supplied.setdefault("execution_detail_context", payload.get("execution_detail_context"))
     return supplied
 
 
