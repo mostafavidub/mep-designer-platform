@@ -40,7 +40,10 @@ ENDPOINT_CATEGORIES = {"fixture", "equipment", "terminal"}
 AGGREGATION_CATEGORIES = {"aggregation", "vertical_core"}
 SOURCE_KINDS = {"source", "discharge", "tank", "pump", "water_heater", "split_outdoor"}
 GRAVITY_SYSTEMS = {"sanitary", "rainwater", "condensate"}
-ALLOWED_SHAFT_SOURCES = {"ARCHITECTURAL_SHAFT_GEOMETRY", "ARCHITECTURAL_SHAFT_ROOM"}
+ALLOWED_SHAFT_SOURCES = {
+    "ARCHITECTURAL_SHAFT_GEOMETRY", "ARCHITECTURAL_SHAFT_ROOM",
+    "USER_AUTHORIZED_PROPOSED_SHAFT",
+}
 
 
 def _stable(value):
