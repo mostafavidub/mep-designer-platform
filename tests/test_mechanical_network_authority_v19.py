@@ -251,6 +251,23 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         self.assertFalse(any(value.startswith('ENDPOINT_HOST_REQUIRED:') for value in qa['errors']))
         self.assertNotIn('PROVISIONAL_SHAFT_FORBIDDEN', qa['errors'])
 
+    def test_installed_architectural_entity_is_valid_host_at_room_boundary(self):
+        installed = detection(point=(6, 2), room=None)
+        installed['installed'] = True
+        installed['evidence'] = ['ARCHITECTURE_FIXTURE_DETECTION']
+        result = build_authoritative_topology_from_evidence(
+            pmm([{'name': 'Ground', 'region_bounds': [0, 0, 10, 10]}]),
+            {'rooms': [], 'shafts': [], 'wet_cores': [], 'walls': [], 'obstacles': []},
+            {'detections': [installed]}, shaft_strategy='proposal_authorized',
+        )
+        self.assertEqual(result['status'], 'PASS', result)
+        endpoint = next(node for node in result['network']['nodes']
+                        if node.get('category') == 'fixture')
+        self.assertEqual(endpoint['host_id'], installed['id'])
+        self.assertEqual(endpoint['host_evidence'], 'INSTALLED_ARCHITECTURAL_ENTITY')
+        qa = evaluate_topology_routing(result['network'])
+        self.assertFalse(any(value.startswith('ENDPOINT_HOST_REQUIRED:') for value in qa['errors']))
+
     def test_real_shaft_builds_deterministic_identity_graph(self):
         architecture = {
             'shafts': [{'centroid': (8.0, 8.0), 'polygon': [(7, 7), (9, 7), (9, 9), (7, 9)]}],
