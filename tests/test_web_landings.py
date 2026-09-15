@@ -91,6 +91,12 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertIn('data-sample-carousel', r.text)
         self.assertIn('sample-lightbox', r.text)
 
+    def test_enamad_verification_file_is_public_and_empty(self):
+        r = self.client.get('/43519949.txt')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.text, '')
+        self.assertTrue(r.headers['content-type'].startswith('text/plain'))
+
     def test_home_has_scroll_driven_curved_workflow_road(self):
         home = self.client.get('/')
         self.assertEqual(home.status_code, 200)
