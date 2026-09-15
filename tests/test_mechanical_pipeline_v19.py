@@ -35,6 +35,7 @@ def pmm_v3():
 class MechanicalPipelineV19Tests(unittest.TestCase):
     def test_contract_loads_every_capability(self):
         status=release_contract_status(); self.assertEqual(status["status"],"PASS"); self.assertEqual(status["required_count"],status["passed_count"])
+        self.assertTrue(status["checks"]["professional_segment_calculation_sizing"])
 
     def test_full_pipeline_passes_only_in_order(self):
         result=run_v19_pipeline(payload()); self.assertEqual(result["status"],"PASS"); self.assertTrue(result["submission"]["release_allowed"])
