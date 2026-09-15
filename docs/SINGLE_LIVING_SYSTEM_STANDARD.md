@@ -31,3 +31,9 @@ Independent floor and roof ownership is produced only by the canonical
 one level-model owner; typical instances are explicit and roof support views
 attach only to a confirmed architectural roof base. Submission Ready requires
 all eighteen `MEP-LEVEL-MODEL-001` controls to pass at 100/100.
+
+Plan, riser, calculation and schedule reconciliation is produced only by
+`cad_engine.cross_document_reconciliation_gate`. These documents retain
+distinct deterministic representation identities and are projections of the
+same graph edge and calculation. The exact issued DXF must pass all eighteen
+`MEP-PRCS-001` controls at 100/100.

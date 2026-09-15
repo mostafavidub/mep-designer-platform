@@ -8,7 +8,7 @@ The Project Mechanical Model (PMM) is the canonical machine-readable source of t
 
 The required engineering chain is:
 
-`PMM Entity ID -> Calc ID -> Plan ID = Riser ID = Schedule ID -> QA`
+`PMM Entity ID -> Network Edge ID -> Calc ID -> distinct linked Plan / Riser / Schedule representation IDs -> exact-file QA`
 
 No orphan engineering output is issuable.
 

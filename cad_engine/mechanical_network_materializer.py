@@ -174,6 +174,15 @@ def _set_identity(entity, marker, edge):
         (1000, str(edge.get("system") or "")),
         (1000, str(edge.get("size_mm") or edge.get("size") or "")),
         (1000, str(edge.get("material") or "")),
+        (1000, str(edge.get("plan_representation_id") or "")),
+        (1000, str(edge.get("riser_representation_id") or "")),
+        (1000, str(edge.get("schedule_row_id") or "")),
+        (1000, str(edge.get("slope_percent") if edge.get("slope_percent") is not None else "")),
+        (1000, str(edge.get("downstream_load") if edge.get("downstream_load") is not None else "")),
+        (1000, str(edge.get("load_unit") or "")),
+        (1000, str(edge.get("from") or "")),
+        (1000, str(edge.get("to") or "")),
+        (1000, "|".join(str(value) for value in edge.get("levels") or [])),
     ])
 
 

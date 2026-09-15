@@ -54,6 +54,9 @@ def build_unified_engineering_model(pmm, network_graph, calculation_rows, design
         records.append({
             "network_edge_id": edge_id, "calc_id": calc_id,
             "plan_id": calc_id, "riser_id": calc_id, "schedule_id": calc_id,
+            "plan_representation_id": edge.get("plan_representation_id"),
+            "riser_representation_id": edge.get("riser_representation_id"),
+            "schedule_row_id": edge.get("schedule_row_id"),
             "system": edge.get("system"), "role": role, "levels": list(edge.get("levels") or []),
             "endpoint_ids": endpoints, "branch_on_plan": is_plan_branch,
             "size_mm": calc.get("size_mm"), "material": calc.get("material"),

@@ -20,7 +20,8 @@ schematic cannot satisfy the roof-rainwater gate.
 
 Risers are deterministic projections of the plan network graph. Their source
 graph hash changes whenever plan nodes, edges, execution data or typed levels
-change. Every segment enforces `Plan ID = Riser ID = Calc ID = Schedule ID`.
+change. Every segment links distinct Plan, Riser and Schedule representation
+identities through one canonical edge and calculation identity.
 
 Allowed riser level types are `GROUND`, `FIRST`, `SECOND`, `ROOF`, `BASEMENT`
 and `MEZZANINE`. Detail sheets and identifiers beginning with `DETAIL` are
