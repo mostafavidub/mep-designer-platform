@@ -95,6 +95,22 @@ def test_graphical_outlier_does_not_inflate_robust_architecture_fit():
     metrics=visual._content_fit_metrics(list(msp),(0.5,2.5,20.5,29.2))
     assert metrics["raw_occupancy"]>metrics["occupancy"]*10
     assert metrics["major_axis_fill"]<.2
+    assert metrics["perimeter_supported"] is False
+
+
+def test_supported_perimeter_is_not_removed_by_a_second_quantile_trim():
+    doc=ezdxf.new("R2010");msp=doc.modelspace();doc.layers.add("WALL")
+    for index in range(80):
+        x=5+(index%10)*.8;y=6+(index//10)*2.0
+        msp.add_line((x,y),(x+.6,y+.8),dxfattribs={"layer":"WALL"})
+    for y in (3,27):
+        for x in range(2,19,2):msp.add_line((x,y),(x+1.5,y),dxfattribs={"layer":"WALL"})
+    for x in (2,18):
+        for y in range(3,27,3):msp.add_line((x,y),(x,y+2.5),dxfattribs={"layer":"WALL"})
+    metrics=visual._content_fit_metrics(list(msp),(0.5,2.5,20.5,29.2))
+    assert metrics["perimeter_supported"] is True
+    assert metrics["occupancy"]==metrics["raw_occupancy"]
+    assert metrics["robust_occupancy"]<metrics["occupancy"]
 
 
 def test_aspect_fitted_portrait_plan_is_not_rejected_by_area_occupancy(tmp_path, monkeypatch):

@@ -267,8 +267,8 @@ def _content_fit_metrics(entities, bounds):
     right=min(bounds[2],max(box[2] for box in retained));top=min(bounds[3],max(box[3] for box in retained))
     viewport_width=max(bounds[2]-bounds[0],1e-9);viewport_height=max(bounds[3]-bounds[1],1e-9)
     content_width=max(0.0,right-left);content_height=max(0.0,top-bottom)
-    width_fill=content_width/viewport_width;height_fill=content_height/viewport_height
-    occupancy=width_fill*height_fill
+    robust_width_fill=content_width/viewport_width;robust_height_fill=content_height/viewport_height
+    robust_occupancy=robust_width_fill*robust_height_fill
     if not content_width or not content_height:
         aspect_ceiling=0.0
     else:
@@ -280,9 +280,21 @@ def _content_fit_metrics(entities, bounds):
     # axis. This detects genuinely tiny plans without rejecting valid fit.
     minimum_occupancy=min(MIN_PLAN_BBOX_OCCUPANCY,aspect_ceiling*.85)
     raw_width=max(0.0,raw[2]-raw[0])/viewport_width;raw_height=max(0.0,raw[3]-raw[1])/viewport_height
+    raw_occupancy=raw_width*raw_height
+    # The composer already fits an outlier-trimmed authoritative content
+    # envelope. A second centre-quantile trim can discard legitimate perimeter
+    # walls in drawings whose entities are concentrated in the interior. Use
+    # complete copied extents only when the robust envelope still supports at
+    # least half of that area; isolated remote geometry remains rejected.
+    perimeter_supported=bool(raw_occupancy and robust_occupancy/raw_occupancy>=.50)
+    width_fill=raw_width if perimeter_supported else robust_width_fill
+    height_fill=raw_height if perimeter_supported else robust_height_fill
+    occupancy=raw_occupancy if perimeter_supported else robust_occupancy
     return {"occupancy":occupancy,"width_fill":width_fill,"height_fill":height_fill,
             "major_axis_fill":max(width_fill,height_fill),"aspect_ceiling":aspect_ceiling,
             "minimum_occupancy":minimum_occupancy,"raw_occupancy":raw_width*raw_height,
+            "robust_occupancy":robust_occupancy,"robust_width_fill":robust_width_fill,
+            "robust_height_fill":robust_height_fill,"perimeter_supported":perimeter_supported,
             "retained_entity_count":len(retained),"candidate_entity_count":len(boxes),
             "retained_ratio":len(retained)/len(boxes)}
 
