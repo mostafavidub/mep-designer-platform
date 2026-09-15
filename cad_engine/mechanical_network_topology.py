@@ -462,7 +462,9 @@ def _edge(system, from_node, to_node, role, endpoint_ids, levels, points=None, r
     }
 
 
-def build_authoritative_topology_from_evidence(pmm, architecture, recognition, level_assignments=None):
+def build_authoritative_topology_from_evidence(
+    pmm, architecture, recognition, level_assignments=None, shaft_strategy=None,
+):
     """Build one deterministic graph from PMM levels and installed DXF evidence."""
     if (pmm or {}).get("schema") != "project-mechanical-model/v3":
         return {"status": "INPUT_REQUIRED", "missing_inputs": ["PROJECT_MECHANICAL_MODEL_V3"], "network": None}
@@ -563,6 +565,46 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
                 "level": level["id"], "level_type": level["type"], "level_name": level["name"],
                 "room_id": wet.get("room_id"), "source": "ARCHITECTURAL_WET_CORE"}
         nodes.append(node); node_by_id[node_id] = node; wet_nodes_by_level.setdefault(level["id"], []).append(node)
+
+    # An explicit owner authorization is itself authoritative project evidence,
+    # but it must materialize as deterministic, level-owned shaft geometry
+    # before routing.  Never create a shaft for an unknown/free-text strategy,
+    # and never replace or disambiguate architectural shafts.
+    proposal_strategies = {
+        "propose_near_wet_core", "propose_adjacent_to_stair", "proposal_authorized",
+    }
+    if shaft_strategy in proposal_strategies:
+        for level in levels:
+            level_id = level["id"]
+            if shaft_nodes_by_level.get(level_id):
+                continue
+            candidates = wet_nodes_by_level.get(level_id, [])
+            if candidates:
+                point = (
+                    sum(float(row["point"][0]) for row in candidates) / len(candidates),
+                    sum(float(row["point"][1]) for row in candidates) / len(candidates),
+                )
+            else:
+                bounds = level.get("region_bounds") or ()
+                if len(bounds) != 4:
+                    continue
+                point = ((float(bounds[0]) + float(bounds[2])) / 2,
+                         (float(bounds[1]) + float(bounds[3])) / 2)
+            node_id = _stable("SHAFT", {
+                "level": level_id, "strategy": shaft_strategy,
+                "point": [round(point[0], 6), round(point[1], 6)],
+            })
+            node = {
+                "id": node_id, "kind": "shaft", "category": "vertical_core",
+                "point": point, "level": level_id, "level_type": level["type"],
+                "level_name": level["name"], "elevation_m": level.get("elevation_m"),
+                "shaft_key": "USER-AUTHORIZED-PROPOSED-CORE",
+                "footprint_bounds": None,
+                "source": "USER_AUTHORIZED_PROPOSED_SHAFT",
+                "proposal_strategy": shaft_strategy,
+            }
+            nodes.append(node); node_by_id[node_id] = node
+            shaft_nodes_by_level.setdefault(level_id, []).append(node)
 
     if missing:
         return {"status": "INPUT_REQUIRED", "missing_inputs": sorted(set(missing)), "network": None,
@@ -680,7 +722,10 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
     logical_keys = [(row["system"], row["from"], row["to"], row["role"], tuple(row.get("levels") or [])) for row in edges]
     if len(logical_keys) != len(set(logical_keys)):
         return {"status": "FAIL", "errors": ["DUPLICATE_LOGICAL_NETWORK_EDGE"], "network": None}
-    allowed_shaft_sources = {"ARCHITECTURAL_SHAFT_GEOMETRY", "ARCHITECTURAL_SHAFT_ROOM"}
+    allowed_shaft_sources = {
+        "ARCHITECTURAL_SHAFT_GEOMETRY", "ARCHITECTURAL_SHAFT_ROOM",
+        "USER_AUTHORIZED_PROPOSED_SHAFT",
+    }
     if any(node.get("kind") == "shaft" and node.get("source") not in allowed_shaft_sources for node in nodes):
         return {"status": "FAIL", "errors": ["PROVISIONAL_SHAFT_FORBIDDEN"], "network": None}
 
@@ -705,13 +750,17 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
 
 
 def build_authoritative_topology(src, pmm, level_assignments=None, architecture_evidence=None,
-                                 fixture_evidence=None, declared_fixture_schedule=None):
+                                 fixture_evidence=None, declared_fixture_schedule=None,
+                                 shaft_strategy=None):
     architecture = _architecture_from_evidence(architecture_evidence, reconstruct_architecture(src))
     recognition = _recognition_from_evidence(
         fixture_evidence, recognize_fixtures_equipment(architecture), architecture,
         declared_schedule=declared_fixture_schedule,
     )
-    result = build_authoritative_topology_from_evidence(pmm, architecture, recognition, level_assignments=level_assignments)
+    result = build_authoritative_topology_from_evidence(
+        pmm, architecture, recognition, level_assignments=level_assignments,
+        shaft_strategy=shaft_strategy,
+    )
     result["architecture_version"] = architecture.get("version")
     result["recognition_version"] = recognition.get("version")
     return result
