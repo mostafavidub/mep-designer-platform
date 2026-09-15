@@ -5,6 +5,7 @@ import hashlib
 
 import ezdxf
 from ezdxf import bbox
+from .titleblock_issue_control import exact_titleblock_evidence
 
 
 def _inside(inner, outer, tol=1e-9):
@@ -77,6 +78,7 @@ def validate_titleblocks(path: Path, composition: dict) -> dict:
     try: doc=ezdxf.readfile(Path(path)); entities=list(doc.modelspace())
     except Exception as exc:
         return {"version":"titleblock-gate-v18.0","status":"FAIL","errors":["exact_dxf_reopen_failed"],"detail":str(exc)}
+    exact_metadata=exact_titleblock_evidence(path); metadata={r.get("sheet_code"):r for r in exact_metadata.get("records") or []}
     by_old={str(r.get("old_sheet")):r for r in rows}
     for key,board in boards.items():
         title=tuple(map(float,board.get("title_area") or ())); code=str((by_old.get(str(key)) or {}).get("code") or board.get("code") or "").strip()
@@ -89,14 +91,16 @@ def validate_titleblocks(path: Path, composition: dict) -> dict:
                 inside.append(entity)
         grid=sum(1 for e in inside if str(getattr(e.dxf,"layer","")).upper()=="ENGITOOLS-SHEET-GRID")
         code_hits=sum(1 for e in inside if code in _plain_text(e))
-        status="PASS" if grid>=10 and code_hits==1 else "FAIL"
+        record=metadata.get(code) or {}; status="PASS" if grid>=10 and code_hits==1 and record else "FAIL"
         if grid<10: errors.append(f"titleblock_grid_incomplete:{code}:{grid}")
         if code_hits!=1: errors.append(f"titleblock_code_count:{code}:{code_hits}")
-        results.append({"board_id":key,"code":code,"grid_entity_count":grid,"code_count":code_hits,"status":status})
+        if not record:errors.append(f"titleblock_semantic_metadata_missing:{code}")
+        elif record.get("issue_status") in {"SUBMISSION_READY","ISSUED_FOR_CONSTRUCTION"} and (record.get("checked_by") in {"NOT CHECKED","—",""} or record.get("approved_by") in {"NOT APPROVED","—",""}):errors.append(f"titleblock_false_final_approval:{code}")
+        results.append({"board_id":key,"code":code,"grid_entity_count":grid,"code_count":code_hits,"semantic_metadata":record,"status":status})
     if len(results)!=len(boards): errors.append(f"titleblock_count_mismatch:{len(results)}:{len(boards)}")
     return {"version":"titleblock-gate-v18.0","status":"PASS" if not errors else "FAIL","errors":sorted(set(errors)),
             "expected_titleblocks":len(boards),"validated_titleblocks":sum(r["status"]=="PASS" for r in results),
-            "boards":results,"exact_file_reopened":True}
+            "boards":results,"exact_file_reopened":True,"semantic_metadata_reopened":exact_metadata.get("reopened") is True}
 
 
 def validate_safe_zones(path: Path, composition: dict) -> dict:

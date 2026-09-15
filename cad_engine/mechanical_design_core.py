@@ -19,6 +19,9 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from hashlib import sha256
+import json
 import math
 import re
 from pathlib import Path
@@ -595,10 +598,15 @@ def _add_arrow(msp,start,end,layer):
         a=ang+off;msp.add_line(end,(end[0]+s*math.cos(a),end[1]+s*math.sin(a)),dxfattribs={"layer":layer})
 
 
-def _draw_titleblock(doc,msp,board,project_name="EngiTools Project",status="Authority Coordination"):
+def _draw_titleblock(doc,msp,board,project_name="EngiTools Project",status="PRE-SUBMISSION",issue=None):
+    issue=dict(issue or {});status=str(issue.get("issue_status") or status).upper()
+    revision=str(issue.get("revision") if issue.get("revision") is not None else "0")
+    issue_date=str(issue.get("issue_date") or datetime.now(timezone.utc).date().isoformat())
+    designed=str(issue.get("designed_by") or "AUTOMATED DESIGN");checked=str(issue.get("checked_by") or "NOT CHECKED")
+    approved=str(issue.get("approved_by") or "NOT APPROVED")
     for name,color,lw in (("ENGITOOLS-SHEET-GRID",7,18),("ENGITOOLS-SHEET-TEXT",7,15),("ENGITOOLS-SHEET-LOGO",3,20),("ENGITOOLS-SHEET-NORTH",7,18),("ENGITOOLS-SHEET-SUBTITLE",7,13)):_ensure_layer(doc,name,color,lw)
     x1,y1,x2,y2=board.bounds;ox1,oy1,ox2,oy2=x1+OUTER_MARGIN,y1+.40,x2-OUTER_MARGIN,y2-OUTER_MARGIN
-    msp.add_lwpolyline([(ox1,oy1),(ox2,oy1),(ox2,oy2),(ox1,oy2)],close=True,dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"})
+    border=msp.add_lwpolyline([(ox1,oy1),(ox2,oy1),(ox2,oy2),(ox1,oy2)],close=True,dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"})
     sep=board.title_area[3];msp.add_line((ox1,sep),(ox2,sep),dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"})
     left=2.95;right=3.00;xL=ox1+left;xR=ox2-right;cw=xR-xL
     msp.add_line((xL,oy1),(xL,sep),dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"});msp.add_line((xR,oy1),(xR,sep),dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"});msp.add_line((xL,oy1+.86),(xR,oy1+.86),dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"});msp.add_line((xL,oy1+2.34),(xR,oy1+2.34),dxfattribs={"layer":"ENGITOOLS-SHEET-GRID"})
@@ -612,8 +620,12 @@ def _draw_titleblock(doc,msp,board,project_name="EngiTools Project",status="Auth
     def mt(txt,x,y,w,h):e=msp.add_mtext(txt,dxfattribs={"layer":"ENGITOOLS-SHEET-TEXT","char_height":h});e.dxf.insert=(x,y);e.dxf.width=w;return e
     mt("EngiTools",ox1+.30,oy1+.36,2.2,.12);mt("سایت مهندسی",ox1+.72,oy1+.12,1.5,.07);mt("Project Name / نام پروژه",xL+.13,oy1+2.61,cw-.25,.065);mt(project_name,xL+.13,oy1+2.41,cw-.25,.10);mt("Drawing Title / عنوان نقشه",xL+.13,oy1+1.97,cw-.25,.07)
     h=.11 if len(board.title)<=34 else .10 if len(board.title)<=50 else .09;mt(board.title,xL+.13,oy1+1.18,cw-.25,h)
-    for i,(lab,val) in enumerate((("Discipline / رشته","Mechanical"),("Status / وضعیت",status),("Designed By / طراحی","EngiTools"),("Checked / کنترل","—"))):xx=xL+i*ccell+.09;mt(lab,xx,oy1+.50,ccell-.12,.055);mt(val,xx,oy1+.16,ccell-.12,.075)
-    mt("Sheet No. / شماره نقشه",xR+.10,oy1+2.60,right-.18,.065);mt(board.code,xR+.30,oy1+1.82,right-.40,.18);scale="1:100" if board.family in PLAN_FAMILIES else "NTS";mt("Scale / مقیاس",xR+.10,oy1+1.10,1.18,.06);mt(scale,xR+1.57,oy1+1.08,1.0,.075);mt("Date / تاریخ",xR+.10,oy1+.72,1.18,.06);mt("—",xR+1.57,oy1+.70,1.0,.075);mt("Revision / بازنگری",xR+.10,oy1+.14,1.18,.06);mt("Rev 0",xR+1.57,oy1+.12,1.0,.075)
+    for i,(lab,val) in enumerate((("Discipline / رشته","Mechanical"),("Status / وضعیت",status),("Designed By / طراحی",designed),("Checked / کنترل",checked))):xx=xL+i*ccell+.09;mt(lab,xx,oy1+.50,ccell-.12,.055);mt(val,xx,oy1+.16,ccell-.12,.075)
+    mt("Sheet No. / شماره نقشه",xR+.10,oy1+2.60,right-.18,.065);mt(board.code,xR+.30,oy1+1.82,right-.40,.18);scale=str(issue.get("scale") or ("1:100" if board.family in PLAN_FAMILIES else "NTS"));mt("Scale / مقیاس",xR+.10,oy1+1.10,1.18,.06);mt(scale,xR+1.57,oy1+1.08,1.0,.075);mt("Date / تاریخ",xR+.10,oy1+.72,1.18,.06);mt(issue_date,xR+1.57,oy1+.70,1.0,.075);mt("Revision / بازنگری",xR+.10,oy1+.14,1.18,.06);mt("Rev "+revision,xR+1.57,oy1+.12,1.0,.075)
+    metadata={"sheet_code":str(board.code),"drawing_title":str(board.title),"issue_status":status,"revision":revision,"issue_date":issue_date,"scale":scale,"designed_by":designed,"checked_by":checked,"approved_by":approved}
+    metadata["metadata_hash"]=sha256(json.dumps(metadata,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()).hexdigest()
+    if "ENGITOOLS_TITLEBLOCK" not in doc.appids:doc.appids.add("ENGITOOLS_TITLEBLOCK")
+    border.set_xdata("ENGITOOLS_TITLEBLOCK",[(1000,"TITLEBLOCK")]+[(1000,f"{k}={v}") for k,v in sorted(metadata.items())])
     # Drawing title and scale live only in the compact title block. A second
     # under-plan subtitle band is forbidden on every plan sheet.
 
@@ -882,6 +894,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
     if doc.dxfversion < 'AC1015':
         doc.dxfversion = 'AC1015'
     msp=doc.modelspace();manifest_rows=_layout_manifest(authority);boards=_boards(manifest_rows);arch=pipeline["architecture"];src_msp=doc.modelspace();project_name=_answer(answers,"project_name","name",default="پروژه تأسیسات مکانیکی")
+    issue=dict(answers.get("_titleblock_contract") or {});issue.setdefault("revision",answers.get("revision",0));issue.setdefault("issue_status","PRE_SUBMISSION")
     existing_layouts=[l.name for l in doc.layouts]
     for row in manifest_rows:
         if row["code"] not in existing_layouts:
@@ -891,7 +904,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
     independent_models=(arch.get("independent_level_model") or {}).get("models") or []
     copy_failures=[];overlay_reports=[];detail_index=0;north_records={}
     for row in manifest_rows:
-        b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
+        b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name,issue=issue);plan=None
         if b.family in PLAN_FAMILIES:
             plan=_find_roof_plan(arch) if b.family=="ROOF" or b.level=="ROOF" else _find_plan_for_level(arch,b.level)
             if plan:

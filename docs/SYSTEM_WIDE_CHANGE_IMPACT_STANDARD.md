@@ -1,10 +1,16 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.49.0
+**Canonical version:** 4.50.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.50.0 adds locked rule `MEP-TITLE-ISSUE-001`. Every title block is a
+source-attributed semantic record reconciled with its Manifest, Layout,
+viewport scale, revision register, issue transition and exact DXF/PDF package.
+Final issue requires a real checker, approver and artifact-bound signature;
+automated preliminary output must state that it is not checked or approved.
 
 Version 4.49.0 strengthens locked rules `MEP-DOC-CONTENT-001` and
 `MEP-SUBMIT-001`. Every required mechanical execution detail must be a
