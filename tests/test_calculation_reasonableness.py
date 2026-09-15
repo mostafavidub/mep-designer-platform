@@ -75,3 +75,25 @@ def test_zero_pump_head_and_zero_branches_are_blocked():
     assert out["status"] == "FAIL"
     assert "PUMP_HEAD_ZERO_OR_MISSING_WHEN_BOOSTER_REQUIRED" in out["errors"]
     assert "BRANCHES_ZERO_WITH_CONNECTED_ENDPOINTS" in out["errors"]
+
+
+def test_professional_sizing_is_independently_recomputed():
+    data = valid_payload()
+    data["network_design_basis"].update({
+        "professional_sizing_required": True,
+        "systems": {"cold_water": {"size_table": [
+            {"max_load": 1, "size_mm": 16}, {"max_load": 5, "size_mm": 25}]}}
+    })
+    for row in data["calculation_rows"]:
+        cap = 5 if row["downstream_load"] > 1 else 1
+        row.update({"selected_capacity": cap,
+                    "capacity_utilization": row["downstream_load"] / cap,
+                    "sizing_iterations": [{"passes": True}]})
+    out = evaluate_calculation_reasonableness(data)
+    assert out["status"] == "PASS"
+    assert out["checks"]["professional_segment_sizing"] is True
+
+    data["calculation_rows"][1]["size_mm"] = 25
+    out = evaluate_calculation_reasonableness(data)
+    assert out["status"] == "FAIL"
+    assert "C-BRANCH:NON_OPTIMAL_OR_UNDERSIZED_SIZE:EXPECTED_DN16" in out["errors"]

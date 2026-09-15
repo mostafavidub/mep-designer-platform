@@ -1,10 +1,17 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.47.0
+**Canonical version:** 4.48.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.48.0 strengthens locked rule `MEP-SIZE-001`. Every applicable
+segment must independently accumulate endpoint demand, evaluate the complete
+governed candidate table in deterministic order and select the smallest
+compliant size. Capacity, utilization, reserve and iteration evidence are
+persisted and independently recomputed; contradictory supplied loads/sizes,
+missing evidence and exhausted tables fail closed.
 
 Version 4.47.0 adds locked rule `MEP-PRCS-001`. Plan, riser, calculation and
 schedule are distinct deterministic projections linked by one canonical graph

@@ -107,6 +107,40 @@ def evaluate_calculation_reasonableness(payload: dict) -> dict:
     checks["finite_bounded_values"] = not any("OUT_OF_RANGE" in x or "NON_FINITE" in x for x in errors)
     checks["calculation_provenance"] = not any("PROVENANCE" in x for x in missing)
 
+    # When the governed professional profile is active, recompute the discrete
+    # selection independently.  A producer cannot pass merely by declaring its
+    # own size/capacity fields as valid.
+    if basis.get("professional_sizing_required"):
+        systems = basis.get("systems") or {}
+        for row in rows:
+            label = str(row.get("calc_id") or "UNKNOWN")
+            load = _number(row.get("downstream_load")); size = _number(row.get("size_mm"))
+            table = (systems.get(row.get("system")) or {}).get("size_table") or []
+            candidates = sorted(((_number(x.get("max_load")), _number(x.get("size_mm"))) for x in table
+                                 if isinstance(x, dict)), key=lambda x: (float("inf") if x[0] is None else x[0]))
+            if load is None or size is None or not candidates or any(a is None or b is None for a, b in candidates):
+                missing.append(f"{label}:PROFESSIONAL_SIZING_EVIDENCE")
+                continue
+            selected = next(((cap, dn) for cap, dn in candidates if load <= cap), None)
+            if selected is None:
+                errors.append(f"{label}:DESIGN_LOAD_EXCEEDS_SIZE_TABLE")
+                continue
+            cap, expected = selected
+            if abs(size - expected) > 1e-9:
+                errors.append(f"{label}:NON_OPTIMAL_OR_UNDERSIZED_SIZE:EXPECTED_DN{expected:g}")
+            if _number(row.get("selected_capacity")) != cap:
+                errors.append(f"{label}:SELECTED_CAPACITY_MISMATCH")
+            utilization = _number(row.get("capacity_utilization"))
+            if utilization is None or abs(utilization - load / cap) > 1e-9:
+                errors.append(f"{label}:CAPACITY_UTILIZATION_MISMATCH")
+            iterations = row.get("sizing_iterations") or []
+            if not iterations or iterations[-1].get("passes") is not True:
+                errors.append(f"{label}:SIZING_ITERATION_AUDIT_MISSING")
+    checks["professional_segment_sizing"] = not any(
+        token in item for item in errors + missing for token in
+        ("PROFESSIONAL_SIZING", "SIZE_TABLE", "NON_OPTIMAL", "SELECTED_CAPACITY", "CAPACITY_UTILIZATION", "SIZING_ITERATION")
+    )
+
     edges = graph.get("edges") or []
     edge_ids = {edge.get("id") for edge in edges}
     if set(by_edge) != edge_ids:

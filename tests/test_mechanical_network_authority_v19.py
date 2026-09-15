@@ -231,6 +231,33 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
         self.assertEqual(row['size_mm'], 16.0)
         self.assertEqual(row['material'], 'PPR')
         self.assertIn('MECHANICAL_RULEBOOK/mechanical-rulebook', row['material_source'])
+        self.assertEqual(row['selected_capacity'], 1.0)
+        self.assertEqual(row['capacity_utilization'], 1.0)
+        self.assertEqual(row['reserve_capacity'], 0.0)
+        self.assertEqual(row['sizing_method'], 'DETERMINISTIC_SMALLEST_COMPLIANT_CANDIDATE')
+        self.assertEqual(row['sizing_iterations'], [
+            {'size_mm': 16.0, 'capacity': 1.0, 'demand': 1.0, 'passes': True}])
+
+    def test_rulebook_recomputes_load_and_rejects_nonminimum_supplied_size(self):
+        from app.mechanical_rulebook import network_design_basis
+        graph = self.graph()
+        graph['nodes'].append({'id': 'F1', 'kind': 'basin', 'category': 'fixture'})
+        rows = self.explicit_rows(graph)
+        rows[0]['downstream_load'] = 99
+        result = design_authoritative_segments(graph, design_basis=network_design_basis(), calculation_rows=rows)
+        self.assertEqual(result['status'], 'FAIL')
+        self.assertIn('SEGMENT_CUMULATIVE_LOAD_MISMATCH:E-CW', result['errors'])
+        self.assertIn('SEGMENT_SIZE_NOT_MINIMUM_COMPLIANT:E-CW:EXPECTED_DN16', result['errors'])
+
+    def test_candidate_search_records_failed_candidates_before_selection(self):
+        from app.mechanical_rulebook import network_design_basis
+        graph = self.graph()
+        graph['nodes'].append({'id': 'F1', 'kind': 'wc', 'category': 'fixture'})
+        result = design_authoritative_segments(graph, design_basis=network_design_basis())
+        self.assertEqual(result['status'], 'PASS')
+        iterations = result['calculation_rows'][0]['sizing_iterations']
+        self.assertEqual([x['passes'] for x in iterations], [False, True])
+        self.assertEqual(result['calculation_rows'][0]['size_mm'], 20.0)
 
     def test_unknown_canonical_endpoint_kind_remains_fail_closed(self):
         from app.mechanical_rulebook import network_design_basis
