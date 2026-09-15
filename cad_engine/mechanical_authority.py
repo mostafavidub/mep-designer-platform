@@ -517,6 +517,15 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "mechanical_dimensioning_qa": initial_dimension_contract,
                 "input_required": {"status": "INPUT_REQUIRED",
                                    "missing_inputs": initial_dimension_contract.get("blockers") or []}}
+    independent_levels = rendered.get("independent_level_model") or {}
+    if not pre_submission and independent_levels.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "independent_level_model_gate",
+                "independent_level_model_qa": independent_levels,
+                "input_required": {"status": "INPUT_REQUIRED" if independent_levels.get("status") == "INPUT_REQUIRED" else "FAIL",
+                                   "missing_inputs": independent_levels.get("missing_inputs") or independent_levels.get("errors") or []}}
 
     _emit_progress(answers, "network_materialization")
     materialization = materialize_authoritative_network(src, dst, rendered, payload["network_graph"])
@@ -630,6 +639,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["coordinate_integrity_qa"] = coordinate_integrity
     rendered["post_materialization_annotation_repair_qa"] = annotation_repair
     rendered["mechanical_dimensioning_qa"] = dimension_exact
+    rendered["independent_level_model_qa"] = independent_levels
     rendered["post_materialization_release_qa"] = post_materialization
     rendered["unified_engineering_model_qa"] = unified
     rendered["authority_pipeline_qa"] = result

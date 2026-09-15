@@ -25,3 +25,9 @@ must use calibrated architectural units, a uniform board transform, stable
 source geometry and owner-linked dimension identities.  The final exact DXF is
 reopened after the last mutation; missing, guessed, zero, duplicated, orphaned,
 mis-scaled, unreadable or out-of-board required dimensions fail closed.
+
+Independent floor and roof ownership is produced only by the canonical
+`cad_engine.independent_level_model_gate` capability. Every source entity has
+one level-model owner; typical instances are explicit and roof support views
+attach only to a confirmed architectural roof base. Submission Ready requires
+all eighteen `MEP-LEVEL-MODEL-001` controls to pass at 100/100.

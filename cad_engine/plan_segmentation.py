@@ -224,9 +224,22 @@ def detect_print_plans(src):
         if key not in by_level or score>by_level[key][0]:by_level[key]=(score,p)
     for _,p in by_level.values():
         p["mechanical_role"]="PRIMARY_FLOOR"
+    roof_candidates=[p for p in plans if p["drawing_type"]=="ROOF_PLAN"]
+    if roof_candidates:
+        def roof_rank(plan):
+            blob=_norm("\n".join(plan.get("title_text") or []))
+            architecture_title=any(token in blob for token in ("پلان معماری پشت بام","roof architectural plan"))
+            slope_only=any(token in blob for token in ("پلان شیب بندی","پلان شیب‌بندی","roof slope plan"))
+            return (1 if architecture_title else 0,0 if slope_only else 1,1 if plan.get("arc_sheet") else 0,plan.get("entity_count",0))
+        roof_primary=max(roof_candidates,key=roof_rank)
+        for p in roof_candidates:
+            blob=_norm("\n".join(p.get("title_text") or []))
+            if p is roof_primary:p["mechanical_role"]="ROOF_SUPPORT";p["roof_view_role"]="ARCHITECTURAL_BASE"
+            elif any(token in blob for token in ("پلان شیب بندی","پلان شیب‌بندی","roof slope plan")):
+                p["mechanical_role"]="ROOF_ANALYSIS_SUPPORT";p["roof_view_role"]="SLOPE_DRAINAGE_SUPPORT"
+            else:p["mechanical_role"]="DUPLICATE_REFERENCE";p["roof_view_role"]="REJECTED_DUPLICATE"
     for p in plans:
-        if p["drawing_type"]=="ROOF_PLAN": p["mechanical_role"]="ROOF_SUPPORT"
-        elif p["drawing_type"]=="ARCH_FLOOR_PLAN" and p["mechanical_role"]!="PRIMARY_FLOOR":
+        if p["drawing_type"]=="ARCH_FLOOR_PLAN" and p["mechanical_role"]!="PRIMARY_FLOOR":
             p["mechanical_role"]="DUPLICATE_REFERENCE"
     return plans
 

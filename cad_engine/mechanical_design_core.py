@@ -40,6 +40,7 @@ from .authority_architecture import (
 )
 from .equipment_representation import validate_split_representation
 from .mechanical_dimensioning import apply_mechanical_dimensions, validate_exact_mechanical_dimensions
+from .independent_level_model_gate import normalize_level_identity
 from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
@@ -290,6 +291,8 @@ def build_design_overrides(answers: dict) -> dict:
     heating_key=canonical_heating_system(answers)
     return {
         "city": city,
+        "effective_unit_to_m": architectural_auto.get("effective_unit_to_m"),
+        "unit_inference": architectural_auto.get("unit_inference") or {},
         "cooling_system": cooling_key,
         "heating_system": heating_key,
         "gas_service": bool(gas_raw is True or (gas_answer and not any(x in gas_answer for x in ("ندارد","خیر","no gas")))),
@@ -329,17 +332,19 @@ def _level_evidence(pipeline):
     by_plan={p["plan_id"]:p for p in arch.get("plans") or []}
     levels={}
     for pid in arch.get("primary_floor_plan_ids") or []:
-        p=by_plan.get(pid) or {}; level=p.get("level") or pid
+        p=by_plan.get(pid) or {}; represented=list(p.get("represented_levels") or []);level_names=represented or [p.get("level") or pid]
         rooms=[r for r in arch.get("rooms") or [] if r.get("plan_id")==pid]
         detections=[d for d in recognition.get("detections") or [] if d.get("plan_id")==pid]
         room_types={r.get("type") for r in rooms}; equip_types={d.get("type") for d in detections}
-        levels[level]={
-            "plan_id":pid,"bounds":p.get("bounds"),
-            "wet":bool(room_types & {"bathroom","toilet","kitchen"}),
-            "habitable":bool(room_types & {"bedroom","living","kitchen"}),
-            "exhaust":bool(room_types & {"bathroom","toilet","kitchen","parking"}),
-            "gas_appliance":bool("stove" in equip_types or "water_heater" in equip_types or "kitchen" in room_types),
-        }
+        for raw_level in level_names:
+            level=normalize_level_identity(raw_level) or str(raw_level)
+            levels[level]={
+                "plan_id":pid,"bounds":p.get("bounds"),"typical_parent_plan_id":pid if len(level_names)>1 else None,
+                "wet":bool(room_types & {"bathroom","toilet","kitchen"}),
+                "habitable":bool(room_types & {"bedroom","living","kitchen"}),
+                "exhaust":bool(room_types & {"bathroom","toilet","kitchen","parking"}),
+                "gas_appliance":bool("stove" in equip_types or "water_heater" in equip_types or "kitchen" in room_types),
+            }
     return levels
 
 
@@ -545,7 +550,12 @@ def _airflow_endpoint(point,normal_angle,target,length=.85):
 
 
 def _find_plan_for_level(arch,level):
-    return next((p for p in arch.get("plans") or [] if p.get("mechanical_role")=="PRIMARY_FLOOR" and p.get("level")==level),None)
+    wanted=normalize_level_identity(level) or str(level)
+    for plan in arch.get("plans") or []:
+        if plan.get("mechanical_role")!="PRIMARY_FLOOR":continue
+        identities=[normalize_level_identity(value) or str(value) for value in (plan.get("represented_levels") or [plan.get("level")]) if value]
+        if wanted in identities:return plan
+    return None
 
 
 def _find_roof_plan(arch):
@@ -878,12 +888,17 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
             try:doc.layouts.new(row["code"])
             except Exception:pass
     shared_north=_shared_architectural_north(doc, arch.get("plans") or [])
+    independent_models=(arch.get("independent_level_model") or {}).get("models") or []
     copy_failures=[];overlay_reports=[];detail_index=0;north_records={}
     for row in manifest_rows:
         b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
         if b.family in PLAN_FAMILIES:
             plan=_find_roof_plan(arch) if b.family=="ROOF" or b.level=="ROOF" else _find_plan_for_level(arch,b.level)
             if plan:
+                level_model=next((model for model in independent_models if any(view.get("plan_id")==plan.get("plan_id") for view in model.get("source_views") or [])),None)
+                if level_model:
+                    row["level_model_id"]=level_model.get("model_id")
+                    row["level_instance_id"]=normalize_level_identity(b.level) or b.level
                 fit_bounds=_plan_fit_bounds(plan);entities=_entities_in_bounds(src_msp,fit_bounds);M,scale,offset=_fit_transform(fit_bounds,b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
                 row["source_plan_id"]=plan["plan_id"]
                 row["source_bounds"]=list(fit_bounds)
@@ -965,6 +980,9 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     if compose_report.get("copy_failures"):errors.append("architecture_copy_failures")
     if sum(len(v) for v in title_overlaps.values()):errors.append("drawing_titleblock_overlap")
     if any(sheet_content[k]==0 for k in boards):errors.append("blank_sheet")
+    unbound_level_rows=[row.get("code") for row in compose_report.get("manifest") or []
+                        if row.get("source_plan_id") and not row.get("level_model_id")]
+    if unbound_level_rows:errors.append("plan_sheet_without_independent_level_model")
     dimensioning=compose_report.get("dimensioning") or {}
     dimension_exact=compose_report.get("dimensioning_exact_qa") or {}
     if dimensioning.get("status")=="INPUT_REQUIRED":warnings=[f"dimension_input_required:{x}" for x in dimensioning.get("blockers") or []]
@@ -980,7 +998,7 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     # directional authority (never fabricate an arrow), but allow the drawing
     # set to be issued with an explicit machine-readable coordination warning.
     warnings.extend(f"architectural_north_not_provided:{x}" for x in missing_north)
-    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"dimensioning":dimension_exact,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"titleblock_overlap_by_sheet":{boards[k].code:len(v) for k,v in title_overlaps.items()},"titleblock_overlap_layers":{boards[k].code:dict(v) for k,v in title_overlap_layers.items()},"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north),"mechanical_dimensions":dimensioning.get("dimension_count",0)}}
+    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"dimensioning":dimension_exact,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"titleblock_overlap_by_sheet":{boards[k].code:len(v) for k,v in title_overlaps.items()},"titleblock_overlap_layers":{boards[k].code:dict(v) for k,v in title_overlap_layers.items()},"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north),"mechanical_dimensions":dimensioning.get("dimension_count",0),"unbound_independent_level_sheets":len(unbound_level_rows)}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:
@@ -990,4 +1008,4 @@ def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None,
     overrides=build_design_overrides(answers);pipeline=run_engineering_pipeline(src,design_basis=overrides,project_overrides=overrides);pipeline_qa=validate_pipeline(pipeline);acceptance=evaluate_engineering_acceptance(pipeline);authority=build_authority_model(pipeline,answers)
     if authority["authority_qa"]["status"]!="PASS":return {"status":"FAIL","stage":"authority_contract","pipeline_qa":pipeline_qa,"acceptance":acceptance,"authority":authority}
     compose=compose_authority_dxf(src,dst,pipeline,authority,answers);dxf_qa=qa_authority_dxf(dst,compose)
-    return {"status":"PASS" if dxf_qa["status"]=="PASS" and pipeline_qa["status"]=="PASS" else "FAIL","version":"mechanical-authority-site-pipeline-canonical.0","pipeline_qa":pipeline_qa,"engineering_acceptance":acceptance,"authority":authority,"composition":compose,"dxf_qa":dxf_qa}
+    return {"status":"PASS" if dxf_qa["status"]=="PASS" and pipeline_qa["status"]=="PASS" else "FAIL","version":"mechanical-authority-site-pipeline-canonical.0","pipeline_qa":pipeline_qa,"engineering_acceptance":acceptance,"authority":authority,"independent_level_model":pipeline.get("architecture",{}).get("independent_level_model") or {},"composition":compose,"dxf_qa":dxf_qa}
