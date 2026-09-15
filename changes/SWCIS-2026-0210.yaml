@@ -1,0 +1,44 @@
+{
+  "change_id":"SWCIS-2026-0210",
+  "summary":"Complete the canonical room-by-room hydronic heating design chain with traceable load allocation, terminal placement, cumulative hydraulic sizing and fail-closed professional QA.",
+  "requester":"project-owner",
+  "change_types":["calculation","documentation","drawing_output","equipment","governance","qa","runtime","test","versioning","deployment"],
+  "changed_rule_ids":["MEP-SIZE-001","MEP-EQUIP-001","MEP-UNIFIED-MODEL-001","MEP-SUBMIT-001"],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","migration","planner","pmm","qa","routing","rule_book","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Materialize room-linked radiators and supply/return routes from one canonical heating result.",
+    "deployment":"Protected Staging rollout followed by a retained-input real-project rerun.",
+    "detail_riser":"Verify heating schedule, calculation and riser identities remain reconciled.",
+    "docs":"Document the professional heating calculation, hydraulic and preliminary/final boundary.",
+    "equipment":"Terminal duty, selection margin and placement evidence become explicit and checked.",
+    "governance":"Extend locked heating traceability and fail-closed evidence without relaxing any release gate.",
+    "manifest":"No drawing-scope removal; heating family remains M-131/M-132.",
+    "migration":"Backward-compatible result enrichment; no persisted schema migration.",
+    "planner":"Generate complete heating content only from selected system plus room/calculation evidence.",
+    "pmm":"Consume existing room and calculation identities; schema unchanged.",
+    "qa":"Independently check load/capacity conservation, connectivity, hydraulics, placement and identity coverage.",
+    "routing":"Generate plan-local graph branches with explicit source and downstream radiator identities.",
+    "rule_book":"Clarify professional heating design requirements and authoritative-input boundary.",
+    "sizing":"Add cumulative flow, velocity, Reynolds number, friction gradient, pressure loss and critical-path evidence.",
+    "ui_api":"No public route change; existing progress and result contracts receive richer engineering evidence.",
+    "versioning":"SWCIS 4.44.0.",
+    "runtime":"Canonical unversioned Mechanical runtime only."
+  },
+  "evidence":{
+    "traceability":["PMM room -> room heat-loss calculation -> radiator -> supply/return segments -> hydraulic calculation -> plan/riser/schedule -> independent QA"],
+    "tests":["Positive multi-room heating design, missing authoritative input, explicit zero load, orphan radiator, hydraulic-limit breach, identity mismatch, canonical regression and full suite."],
+    "docs":["docs/HEATING_GAS_DESIGN_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump":["SWCIS 4.43.21 -> 4.44.0"],
+    "migration":["No stored-schema change; enriched dictionary fields are backward compatible."],
+    "golden_regression":["Governed automated suite plus blind retained-input Project 8 generation; private reference is comparison-only after candidate sealing."],
+    "semantic_diff":["A selected package-radiator system can no longer yield a nominal heating board without calculation-linked terminals and valid plan-local flow/return routes."],
+    "artifact_diff":["M-131 gains room-linked radiator duties, identifiers and sized flow/return geometry; M-132 consumes matching hydraulic and equipment records."],
+    "numeric_diff":["Terminal capacity margin, cumulative flow, velocity, Reynolds number, Darcy friction gradient, equivalent length and pressure loss are explicit and independently bounded."],
+    "contract_diff":["Pre-Submission may use disclosed design-envelope selection; Submission Ready still requires official manufacturer records, complete envelope inputs and independent engineer approval."],
+    "deployment_plan":["Focused tests, full regression, SWCIS PASS, PR, merge, protected Staging deployment, retained-input retry and exact-output verification."],
+    "rollback_plan":["Revert the merged commit and redeploy the prior approved Git identity; retained paid input remains retryable."
+    ]
+  },
+  "risk":{"likelihood":3,"severity":5,"detectability":2,"score":30,"rationale":"Heating calculation and issued geometry change together; strict negative tests, unchanged final gates and exact-output QA make defects detectable before release."},
+  "waiver":null
+}

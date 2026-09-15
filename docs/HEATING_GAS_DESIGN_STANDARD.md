@@ -4,6 +4,30 @@ Status: governed by MEP-SIZE-001, MEP-EQUIP-001 and MEP-SUBMIT-001.
 
 ## Heating
 
+### Professional Pre-Submission heating chain
+
+An explicitly confirmed total project heating load may be used to recover a
+useful Pre-Submission design when the architectural room identities are valid
+but reconstructed room areas are demonstrably degenerate.  The engine must:
+
+- disclose the invalid raw room-load total and the confirmed project total;
+- allocate the total deterministically by documented room-type weights;
+- preserve every room, radiator, route and calculation identity;
+- reconcile the sum of room duties exactly to the confirmed total;
+- size both flow and return branches from terminal duty and declared fluid
+  properties, design temperature difference, velocity and friction limits;
+- expose flow, DN, velocity, Reynolds number, friction gradient, equivalent
+  length and relative pressure loss for every branch; and
+- fail when any heatable room is unserved, any radiator is orphaned, any route
+  leaves its plan, any hydraulic limit has no compliant diameter, or the load
+  balance does not reconcile.
+
+This recovery is a `DESIGN_ENVELOPE` only.  It must remain `PRE_SUBMISSION` until
+the project envelope/design-day inputs, exterior-wall/window placement, official
+manufacturer radiator records, package/DHW duty and independent engineer review
+are complete.  A recovered preliminary design must never satisfy the final
+manufacturer or Submission Ready gates.
+
 Every room radiator is selected from an official, revisioned and hash-identified
 manufacturer record at the declared supply, return and room temperatures. The
 output records the room heat loss, exact model, section count, selected output
