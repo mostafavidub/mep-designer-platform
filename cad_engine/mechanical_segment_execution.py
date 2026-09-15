@@ -59,12 +59,15 @@ def _pick_size(load, table):
         maximum = _number(row.get("max_load")) if isinstance(row, dict) else None
         size = _number(row.get("size_mm")) if isinstance(row, dict) else None
         if maximum is None or size is None:
-            return None, "INVALID_EXPLICIT_SIZE_TABLE"
+            return None, None, [], "INVALID_EXPLICIT_SIZE_TABLE"
         valid.append((maximum, size))
+    iterations = []
     for maximum, size in sorted(valid, key=lambda value: value[0]):
+        iterations.append({"size_mm": size, "capacity": maximum,
+                           "demand": load, "passes": load <= maximum})
         if load <= maximum:
-            return size, None
-    return None, "EXPLICIT_SIZE_TABLE_RANGE_EXCEEDED"
+            return size, maximum, iterations, None
+    return None, None, iterations, "EXPLICIT_SIZE_TABLE_RANGE_EXCEEDED"
 
 
 def _shift_path(path, offset):
@@ -151,22 +154,38 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
                 if endpoint_type in load_by_type:
                     endpoint_loads[endpoint_id] = load_by_type[endpoint_type]
         endpoint_ids = edge.get("endpoint_ids") or []
+        calculated_load = None
+        unknown_loads = [value for value in endpoint_ids
+                         if not isinstance(endpoint_loads, dict) or _number(endpoint_loads.get(value)) is None]
+        if endpoint_ids and not unknown_loads and isinstance(endpoint_loads, dict):
+            calculated_load = sum(float(endpoint_loads[value]) for value in endpoint_ids)
+            if downstream_load is not None and abs(downstream_load - calculated_load) > 1e-9:
+                errors.append("SEGMENT_CUMULATIVE_LOAD_MISMATCH:%s" % edge_id)
+            downstream_load = calculated_load
+            load_unit = load_unit or (cfg.get("load_unit") if isinstance(cfg, dict) else None)
         if edge.get("role") == "vertical_riser":
-            unknown_loads = [value for value in endpoint_ids
-                             if not isinstance(endpoint_loads, dict) or _number(endpoint_loads.get(value)) is None]
             if unknown_loads:
                 missing.extend("ENDPOINT_LOAD:%s:%s" % (edge.get("system"), value) for value in unknown_loads)
             else:
-                calculated_load = sum(float(endpoint_loads[value]) for value in endpoint_ids)
-                if downstream_load is not None and abs(downstream_load - calculated_load) > 1e-9:
-                    errors.append("VERTICAL_CUMULATIVE_LOAD_MISMATCH:%s" % edge_id)
                 downstream_load = calculated_load
             load_unit = load_unit or (cfg.get("load_unit") if isinstance(cfg, dict) else None)
             if not load_unit:
                 missing.append("LOAD_UNIT:%s" % edge.get("system"))
 
+        size_table = cfg.get("size_table") if isinstance(cfg, dict) else None
+        selected_capacity = None
+        sizing_iterations = []
+        if calculated_load is not None and isinstance(size_table, list) and size_table:
+            calculated_size, selected_capacity, sizing_iterations, pick_error = _pick_size(calculated_load, size_table)
+            if pick_error:
+                errors.append(pick_error + ":" + str(edge_id))
+            elif size is not None and abs(size - calculated_size) > 1e-9:
+                errors.append("SEGMENT_SIZE_NOT_MINIMUM_COMPLIANT:%s:EXPECTED_DN%g" % (edge_id, calculated_size))
+            elif size is None:
+                size = calculated_size
+                size_source = "EXPLICIT_SYSTEM_SIZE_TABLE:" + str(edge.get("system"))
+
         if size is None:
-            size_table = cfg.get("size_table") if isinstance(cfg, dict) else None
             load_unit = cfg.get("load_unit") if isinstance(cfg, dict) else None
             if not isinstance(endpoint_loads, dict):
                 missing.append("ENDPOINT_LOADS:%s" % edge.get("system"))
@@ -174,12 +193,12 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
                 missing.append("SIZE_TABLE:%s" % edge.get("system"))
             if not load_unit:
                 missing.append("LOAD_UNIT:%s" % edge.get("system"))
-            unknown = [value for value in endpoint_ids if not isinstance(endpoint_loads, dict) or _number(endpoint_loads.get(value)) is None]
+            unknown = unknown_loads
             if unknown:
                 missing.extend("ENDPOINT_LOAD:%s:%s" % (edge.get("system"), value) for value in unknown)
             if not unknown and isinstance(endpoint_loads, dict) and isinstance(size_table, list) and size_table and load_unit:
                 downstream_load = sum(float(endpoint_loads[value]) for value in endpoint_ids)
-                size, pick_error = _pick_size(downstream_load, size_table)
+                size, selected_capacity, sizing_iterations, pick_error = _pick_size(downstream_load, size_table)
                 if pick_error:
                     errors.append(pick_error + ":" + str(edge_id))
                 else:
@@ -215,6 +234,11 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             "downstream_load": downstream_load, "load_unit": load_unit,
             "requires_slope": bool(requires_slope),
             "size_source": size_source, "material_source": material_source,
+            "selected_capacity": selected_capacity,
+            "capacity_utilization": (downstream_load / selected_capacity if downstream_load is not None and selected_capacity else None),
+            "reserve_capacity": (selected_capacity - downstream_load if downstream_load is not None and selected_capacity else None),
+            "sizing_iterations": sizing_iterations,
+            "sizing_method": "DETERMINISTIC_SMALLEST_COMPLIANT_CANDIDATE" if sizing_iterations else "EXPLICIT_ENGINEER_VALUE",
             "plan_path": path, "fittings": _fittings(path),
             "plan_id": calc_id, "riser_id": calc_id, "schedule_id": calc_id,
             **document_ids,
@@ -228,6 +252,11 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             "downstream_load": downstream_load, "load_unit": load_unit,
             "size_mm": size, "material": material, "slope_percent": slope,
             "size_source": size_source, "material_source": material_source,
+            "selected_capacity": selected_capacity,
+            "capacity_utilization": (downstream_load / selected_capacity if downstream_load is not None and selected_capacity else None),
+            "reserve_capacity": (selected_capacity - downstream_load if downstream_load is not None and selected_capacity else None),
+            "sizing_iterations": sizing_iterations,
+            "sizing_method": "DETERMINISTIC_SMALLEST_COMPLIANT_CANDIDATE" if sizing_iterations else "EXPLICIT_ENGINEER_VALUE",
             "source": row_source,
             **document_ids,
         })

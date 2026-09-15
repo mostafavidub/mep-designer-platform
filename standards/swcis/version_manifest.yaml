@@ -1,12 +1,13 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.47.0",
+  "standard_version": "4.48.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-09",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
   "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
   "history": [
+    {"version":"4.48.0","date":"2026-09-15","summary":"Require deterministic professional per-segment load accumulation, smallest-compliant sizing and independently recomputed capacity audit evidence."},
     {"version":"4.47.0","date":"2026-09-15","summary":"Require Plan, Riser, Calculation and Schedule to be distinct deterministic projections of one graph registry with bidirectional numeric and exact-DXF parity."},
     {"version":"4.46.0","date":"2026-09-15","summary":"Require one source-bound independent architectural model per confirmed floor, explicit typical group and roof, with unique entity ownership and vertical-core reconciliation."},
     {"version":"4.45.0","date":"2026-09-15","summary":"Add calibrated owner-linked mechanical plan dimensions with exact-DXF fail-closed verification."},

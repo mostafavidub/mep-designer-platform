@@ -108,6 +108,7 @@ def network_design_basis():
     return {
         'schema': NETWORK_DESIGN_BASIS['schema'],
         'source': f"MECHANICAL_RULEBOOK/{RULEBOOK_IDENTITY}:MEP-SIZE-001",
+        'professional_sizing_required': True,
         'systems': systems,
     }
 
