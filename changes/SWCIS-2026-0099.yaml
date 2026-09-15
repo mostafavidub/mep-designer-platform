@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0099",
+  "summary": "Expose the owner-requested empty eNamad verification file at the public domain root.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "Adds one exact public text-file route returning an empty body without changing page rendering.",
+    "qa": "A focused route test verifies status, empty content, and text/plain media type.",
+    "manifest": "No artifact identity or manifest schema changes; deployed build identity remains Git-derived.",
+    "docs": "This change request records the eNamad file-verification contract.",
+    "versioning": "No semantic version bump is required because no schema, policy, graph, or engineering behavior changes.",
+    "migration": "No stored-data migration is required.",
+    "governance": "The single versioned change request records complete affected-module evidence.",
+    "deployment": "Deploy only the protected all-green merge and verify the exact apex-domain URL."
+  },
+  "evidence": {
+    "traceability": ["app/main.py /43519949.txt -> tests/test_web_landings.py"],
+    "tests": ["tests/test_web_landings.py verifies the exact public empty-file response"],
+    "docs": ["changes/SWCIS-2026-0099.yaml"],
+    "version_bump": ["none: additive site-verification endpoint with no schema, rule, graph, or policy change"],
+    "migration": ["none: stateless HTTP route only"],
+    "golden_regression": ["no CAD or engineering output semantics changed"],
+    "semantic_diff": ["one exact public GET endpoint is added; existing routes retain their behavior"],
+    "artifact_diff": ["no generated engineering artifact change"],
+    "numeric_diff": ["none"],
+    "contract_diff": ["GET /43519949.txt returns HTTP 200, text/plain, and an empty body"],
+    "deployment_plan": ["merge the all-green commit, allow Railway production auto-deploy, and verify https://planha.com/43519949.txt"],
+    "rollback_plan": ["revert the protected merge commit and redeploy the preceding approved commit"]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 1,
+    "detectability": 1,
+    "score": 1,
+    "rationale": "The isolated empty response has no application state and is directly covered by a route test."
+  },
+  "waiver": null
+}
