@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0098",
-  "summary": "Expose the owner-provided eNamad verification token in the public homepage head only.",
+  "summary": "Expose the current owner-provided eNamad verification token in the public homepage head only.",
   "requester": "mostafavidub",
   "change_types": ["ui_api", "test", "documentation", "governance"],
   "changed_rule_ids": [],
@@ -22,7 +22,7 @@
     "version_bump": ["SWCIS 4.38.0 -> 4.38.1 for corrected app/templates path classification; no runtime version introduced"],
     "migration": ["none: HTML metadata only"],
     "golden_regression": ["no CAD or engineering output semantics changed"],
-    "semantic_diff": ["homepage head adds only meta[name=enamad] with the supplied token"],
+    "semantic_diff": ["homepage meta[name=enamad] replaces the superseded verification token with the current owner-supplied token"],
     "artifact_diff": ["no generated engineering artifact change"],
     "numeric_diff": ["none"],
     "contract_diff": ["public homepage HTML exposes the eNamad verification token; non-home routes do not"],
