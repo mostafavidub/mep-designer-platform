@@ -49,6 +49,7 @@ REQUIRED_CAPABILITIES = {
     "professional_segment_calculation_sizing":"cad_engine.calculation_reasonableness",
     "professional_execution_detail_18_control_score":"cad_engine.professional_execution_details",
     "professional_titleblock_issue_control_18_control_score":"cad_engine.titleblock_issue_control",
+    "professional_project_regression_18_control_score":"cad_engine.project_regression_gate",
 }
 
 def release_contract_status():
