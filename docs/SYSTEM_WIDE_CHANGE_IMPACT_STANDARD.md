@@ -1,10 +1,18 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.44.0
+**Canonical version:** 4.45.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.45.0 adds locked rule `MEP-DIMENSION-001`.  Applicable mechanical
+plan boards receive deterministic, owner-linked installation dimensions only
+from calibrated architectural coordinates and canonical mechanical targets.
+Generated DXF entities carry semantic XDATA and are independently reopened
+after the final mutation. Unknown units, missing targets, zero or nonfinite
+measurements, numeric mismatch, duplicates, orphans and out-of-board geometry
+fail closed; architectural dimensions remain immutable.
 
 Version 4.44.0 completes the canonical room-by-room hydronic heating
 Pre-Submission chain.  When valid room identities coexist with a corrupt tiny

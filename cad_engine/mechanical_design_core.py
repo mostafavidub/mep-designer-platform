@@ -39,6 +39,7 @@ from .authority_architecture import (
     validate_authority_contract,
 )
 from .equipment_representation import validate_split_representation
+from .mechanical_dimensioning import apply_mechanical_dimensions, validate_exact_mechanical_dimensions
 from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
@@ -697,9 +698,12 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     srcb=_plan_fit_bounds(plan);target=board.plan_area;pid=plan["plan_id"]
     system_by_family={"SANITARY_VENT":{"sanitary","vent"},"WATER":{"cold_water","hot_water"},"HEATING":{"heating_flow","heating_return"},"GAS":{"gas"},"SPLIT_AC":{"refrigerant","condensate"},"EXHAUST":{"exhaust"}}
     systems=system_by_family.get(board.family,set());routes=[r for r in (pipeline["routing"].get("routes") or []) if r.get("plan_id")==pid and r.get("system") in systems];hvac_routes=[r for r in (pipeline.get("hvac",{}).get("routes") or []) if r.get("plan_id")==pid and r.get("system") in systems];all_routes=routes+hvac_routes;size_by_route={s.get("route_id"):s for s in pipeline["sizing"].get("segments") or []}
-    drawn_routes=0
+    drawn_routes=0;dimension_targets=[]
     for r in all_routes:
         mapped=[_map_point(tuple(p),srcb,target) for p in r.get("points") or []]
+        source_points=[tuple(p) for p in r.get("points") or [] if len(p)==2]
+        if source_points and mapped:
+            dimension_targets.append({"owner_id":str(r.get("id") or r.get("route_id") or f"{board.code}-ROUTE"),"kind":"route_terminal","source_point":source_points[-1],"paper_point":mapped[-1]})
         pieces=_clip_polyline_to_rect(mapped,target)
         for piece in pieces:_draw_route(msp,doc,piece,r.get("system"))
         drawn_routes+=len(pieces)
@@ -712,6 +716,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     local_shaft=next((s for s in (pipeline.get("topology",{}).get("nodes") or []) if s.get("kind")=="shaft" and s.get("plan_id")==pid and s.get("point")),None)
     if local_shaft:
         p=_map_point(tuple(local_shaft["point"]),srcb,target)
+        dimension_targets.append({"owner_id":str(local_shaft.get("id") or f"{board.code}-SHAFT"),"kind":"shaft","source_point":tuple(local_shaft["point"]),"paper_point":p})
         riser_tags={"sanitary":"S1","vent":"V1","cold_water":"CW1","hot_water":"HW1"}
         for offset,system in enumerate(sorted(systems & set(riser_tags))):
             if system in route_systems:
@@ -726,6 +731,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
     for e in equipment:
         kind=e.get("kind");srcp=tuple(e.get("point") or ())
         if len(srcp)!=2:continue
+        dimension_targets.append({"owner_id":str(e.get("id") or f"{board.code}-EQUIPMENT"),"kind":"equipment","source_point":srcp,"paper_point":_map_point(srcp,srcb,target)})
         if board.family=="SPLIT_AC" and kind=="split_indoor":
             near=_nearest_wall(srcp,walls)
             if near:_,wallp,angle,_,_=near;p=_map_point(wallp,srcb,target);rot=math.degrees(angle)
@@ -748,7 +754,7 @@ def _draw_plan_overlay(doc,msp,board,plan,pipeline):
             dxfattribs={"layer":"ENGITOOLS-M-NOTES","char_height":.08},
         )
         note.dxf.insert=(x1+.25,y2-.35);note.dxf.width=max(1.0,x2-x1-.5)
-    return {"routes":drawn_routes,"source_routes":len(all_routes),"equipment":len(equipment),"split_contract":validate_split_representation(ac_units) if ac_units else None}
+    return {"routes":drawn_routes,"source_routes":len(all_routes),"equipment":len(equipment),"split_contract":validate_split_representation(ac_units) if ac_units else None,"dimension_targets":dimension_targets}
 
 
 def _draw_roof_hvac_equipment(doc,msp,board,pipeline):
@@ -931,8 +937,11 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         doc.header["$EXTMIN"]=(min_x,min_y,0.0);doc.header["$EXTMAX"]=(max_x,max_y,0.0);doc.header["$TILEMODE"]=1
         try:vp=doc.viewports.get("*Active")[0];vp.dxf.center=((min_x+max_x)/2,(min_y+max_y)/2);vp.dxf.height=(max_y-min_y)*1.03
         except Exception:pass
+    dimensioning=apply_mechanical_dimensions(doc,manifest_rows,boards,overlay_reports,answers)
     doc.saveas(dst)
-    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records}
+    report={"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records,"dimensioning":dimensioning}
+    report["dimensioning_exact_qa"]=validate_exact_mechanical_dimensions(dst,dimensioning,boards)
+    return report
 
 
 def _overlap(ex,b):return not (ex.extmax.x < b[0] or ex.extmin.x > b[2] or ex.extmax.y < b[1] or ex.extmin.y > b[3])
@@ -956,6 +965,11 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     if compose_report.get("copy_failures"):errors.append("architecture_copy_failures")
     if sum(len(v) for v in title_overlaps.values()):errors.append("drawing_titleblock_overlap")
     if any(sheet_content[k]==0 for k in boards):errors.append("blank_sheet")
+    dimensioning=compose_report.get("dimensioning") or {}
+    dimension_exact=compose_report.get("dimensioning_exact_qa") or {}
+    if dimensioning.get("status")=="INPUT_REQUIRED":warnings=[f"dimension_input_required:{x}" for x in dimensioning.get("blockers") or []]
+    else:warnings=[]
+    if dimensioning.get("status")=="PASS" and dimension_exact.get("status")!="PASS":errors.append("mechanical_dimension_exact_output_failed")
     # North is inherited only on boards containing a source architectural plan.
     # A service/equipment diagram has no architectural orientation, so adding a
     # generated arrow would violate the sole-authority north contract.
@@ -965,12 +979,15 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     # corrupt mechanical deliverable.  Keep the architecture as the sole
     # directional authority (never fabricate an arrow), but allow the drawing
     # set to be issued with an explicit machine-readable coordination warning.
-    warnings=[f"architectural_north_not_provided:{x}" for x in missing_north]
-    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"titleblock_overlap_by_sheet":{boards[k].code:len(v) for k,v in title_overlaps.items()},"titleblock_overlap_layers":{boards[k].code:dict(v) for k,v in title_overlap_layers.items()},"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north)}}
+    warnings.extend(f"architectural_north_not_provided:{x}" for x in missing_north)
+    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"dimensioning":dimension_exact,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"titleblock_overlap_by_sheet":{boards[k].code:len(v) for k,v in title_overlaps.items()},"titleblock_overlap_layers":{boards[k].code:dict(v) for k,v in title_overlap_layers.items()},"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north),"mechanical_dimensions":dimensioning.get("dimension_count",0)}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:
-    answers=dict(answers or {});overrides=build_design_overrides(answers);pipeline=run_engineering_pipeline(src,design_basis=overrides,project_overrides=overrides);pipeline_qa=validate_pipeline(pipeline);acceptance=evaluate_engineering_acceptance(pipeline);authority=build_authority_model(pipeline,answers)
+    answers=dict(answers or {})
+    if plan_analysis is not None:
+        answers["_plan_analysis"]=dict(plan_analysis)
+    overrides=build_design_overrides(answers);pipeline=run_engineering_pipeline(src,design_basis=overrides,project_overrides=overrides);pipeline_qa=validate_pipeline(pipeline);acceptance=evaluate_engineering_acceptance(pipeline);authority=build_authority_model(pipeline,answers)
     if authority["authority_qa"]["status"]!="PASS":return {"status":"FAIL","stage":"authority_contract","pipeline_qa":pipeline_qa,"acceptance":acceptance,"authority":authority}
     compose=compose_authority_dxf(src,dst,pipeline,authority,answers);dxf_qa=qa_authority_dxf(dst,compose)
     return {"status":"PASS" if dxf_qa["status"]=="PASS" and pipeline_qa["status"]=="PASS" else "FAIL","version":"mechanical-authority-site-pipeline-canonical.0","pipeline_qa":pipeline_qa,"engineering_acceptance":acceptance,"authority":authority,"composition":compose,"dxf_qa":dxf_qa}

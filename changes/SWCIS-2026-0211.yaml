@@ -1,0 +1,39 @@
+{
+  "change_id":"SWCIS-2026-0211",
+  "summary":"Add canonical, unit-aware, traceable mechanical dimension generation and exact-file fail-closed QA for every applicable plan sheet.",
+  "requester":"project-owner",
+  "change_types":["calculation","documentation","drawing_output","governance","qa","rule","runtime","test","versioning","deployment"],
+  "changed_rule_ids":["MEP-DIMENSION-001","MEP-SUBMIT-001","MEP-UNIFIED-MODEL-001"],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","planner","pmm","qa","questionnaire","routing","rule_book","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Generate real aligned DXF dimensions from plan-local geometry, stable datums and semantic mechanical owners.",
+    "deployment":"Publish only after focused, full-regression, governance and runtime gates pass.",
+    "docs":"Define professional dimension selection, placement, units, readability and issue-readiness rules.",
+    "governance":"Add a locked dimension traceability rule and classify the new canonical module in the dependency graph.",
+    "manifest":"No drawing-scope change; dimension applicability is derived per existing manifest board.",
+    "migration":"Backward-compatible DXF XDATA and composition-report enrichment; no persisted database migration.",
+    "planner":"Consume approved board, level, family and source-plan identities; no new sheet invention.",
+    "pmm":"Dimension owners resolve to existing spaces, equipment, routes, shafts and drawing identities.",
+    "qa":"Reopen the final exact DXF and reject missing, zero, duplicate, orphaned, mis-scaled, out-of-board or unreadable dimensions.",
+    "routing":"Dimension only canonical routes and endpoints; do not create or alter network topology.",
+    "sizing":"Displayed measurement is derived from calibrated model units and the board uniform transform.",
+    "versioning":"SWCIS 4.45.0.",
+    "runtime":"Canonical unversioned Mechanical runtime only."
+  },
+  "evidence":{
+    "traceability":["PMM owner -> board/source plan -> dimension requirement -> DXF DIMENSION/XDATA -> exact-file QA"],
+    "tests":["Positive scaled dimension generation, family applicability, source preservation, unknown units, zero length, duplicate identity, orphan owner, out-of-board placement, measurement mismatch, exact reopen and deterministic output."],
+    "docs":["docs/MECHANICAL_DIMENSIONING_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
+    "version_bump":["SWCIS 4.44.0 -> 4.45.0"],
+    "migration":["No stored-schema migration; ENGITOOLS_DIM XDATA and composition-report fields are additive."],
+    "golden_regression":["Governed automated suite plus architecture-only exact-DXF generation; private mechanical references remain excluded from generation."],
+    "semantic_diff":["Applicable mechanical plan sheets can no longer be treated as dimension-complete without owner-linked, calibrated, exact-output dimensions."],
+    "artifact_diff":["Applicable plan boards gain standard dimension layers, DIMSTYLE entities and semantic XDATA records."],
+    "numeric_diff":["Exact QA recomputes displayed millimetres from source-unit calibration and per-board uniform scale within governed tolerance."],
+    "contract_diff":["Submission Ready fails closed on incomplete or invalid required dimensions; Pre-Submission discloses authoritative-input blockers without inventing values."],
+    "deployment_plan":["Focused tests, full regression, SWCIS PASS, runtime guard, PR, merge, protected Staging deployment and exact-output smoke verification."],
+    "rollback_plan":["Revert the merged commit and redeploy the prior approved Git identity; no user project data is mutated."]
+  },
+  "risk":{"likelihood":3,"severity":5,"detectability":2,"score":30,"rationale":"Dimensions affect drawing usability and issue safety; exact-file reopen, owner/unit checks and negative regressions detect defects before release."},
+  "waiver":null
+}

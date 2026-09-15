@@ -38,6 +38,7 @@ from .documentation_content_gate import (
 )
 from .post_materialization_release import validate_after_last_mutation, validate_coordinate_evidence
 from .sheet_visual_qa import repair_sheet_annotations
+from .mechanical_dimensioning import validate_exact_mechanical_dimensions
 from .unified_engineering_model import build_unified_engineering_model
 from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_basis
 
@@ -507,6 +508,16 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         rendered["unified_engineering_model_qa"] = unified
         return rendered
 
+    initial_dimension_contract = ((rendered.get("composition") or {}).get("dimensioning") or {})
+    if not pre_submission and initial_dimension_contract.get("status") == "INPUT_REQUIRED":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "mechanical_dimensioning_input_gate",
+                "mechanical_dimensioning_qa": initial_dimension_contract,
+                "input_required": {"status": "INPUT_REQUIRED",
+                                   "missing_inputs": initial_dimension_contract.get("blockers") or []}}
+
     _emit_progress(answers, "network_materialization")
     materialization = materialize_authoritative_network(src, dst, rendered, payload["network_graph"])
     if materialization.get("status") != "PASS":
@@ -540,6 +551,18 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "materialization_qa": materialization,
                 "annotation_layout_repair_qa": annotation_repair,
                 "input_required": {"status": "FAIL", "missing_inputs": annotation_repair.get("unresolved") or []}}
+
+    composition = rendered.get("composition") or {}
+    dimension_contract = composition.get("dimensioning") or {}
+    dimension_exact = validate_exact_mechanical_dimensions(
+        dst, dimension_contract, composition.get("boards") or {})
+    if dimension_contract.get("status") == "PASS" and dimension_exact.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "mechanical_dimensioning_gate",
+                "mechanical_dimensioning_qa": dimension_exact,
+                "input_required": {"status": "FAIL", "missing_inputs": dimension_exact.get("errors") or []}}
 
     _emit_progress(answers, "exact_output_review")
     post_materialization = validate_after_last_mutation(src, dst, rendered, shell_answers, materialization)
@@ -606,6 +629,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["materialization_qa"] = materialization
     rendered["coordinate_integrity_qa"] = coordinate_integrity
     rendered["post_materialization_annotation_repair_qa"] = annotation_repair
+    rendered["mechanical_dimensioning_qa"] = dimension_exact
     rendered["post_materialization_release_qa"] = post_materialization
     rendered["unified_engineering_model_qa"] = unified
     rendered["authority_pipeline_qa"] = result
