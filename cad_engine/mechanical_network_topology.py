@@ -576,13 +576,10 @@ def build_authoritative_topology_from_evidence(
     if shaft_strategy in proposal_strategies:
         for level in levels:
             level_id = level["id"]
-            existing_shafts = shaft_nodes_by_level.get(level_id, [])
-            # A single architectural shaft is already an unambiguous authority.
-            # When several candidates exist, keep every architectural entity but
-            # materialize one owner-authorized design core so all disciplines and
-            # floors reference the same deterministic vertical identity.
-            if len(existing_shafts) == 1:
-                continue
+            # Preserve every architectural shaft, while materializing one separate
+            # owner-authorized design core on every level.  A partial mixture of
+            # architectural and proposed cores cannot guarantee one cross-level
+            # alignment identity when the source file omits alignment keys.
             candidates = wet_nodes_by_level.get(level_id, [])
             if candidates:
                 point = (
