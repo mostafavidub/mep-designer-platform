@@ -1,10 +1,19 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.21
+**Canonical version:** 4.44.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.44.0 completes the canonical room-by-room hydronic heating
+Pre-Submission chain.  When valid room identities coexist with a corrupt tiny
+area reconstruction, a user-confirmed total load may be deterministically and
+explicitly allocated to rooms rather than rounded to zero.  Every terminal then
+receives a traceable duty, selection margin, plan-local supply/return connection
+and hydraulic record.  Load conservation, connectivity, velocity, friction and
+diameter limits fail closed.  The recovery remains a disclosed design envelope;
+final manufacturer, envelope, placement and engineer-review gates are unchanged.
 
 The post-materialization exact-file gate consumes the same explicit target-package
 Pre-Submission board disclosures as the pre-materialization gate, resolved through
