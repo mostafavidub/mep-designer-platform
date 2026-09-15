@@ -47,6 +47,7 @@ REQUIRED_CAPABILITIES = {
     "questionnaire_design_basis_18_control_score":"app.design_basis_questionnaire_gate",
     "plan_riser_calculation_schedule_18_control_score":"cad_engine.cross_document_reconciliation_gate",
     "professional_segment_calculation_sizing":"cad_engine.calculation_reasonableness",
+    "professional_execution_detail_18_control_score":"cad_engine.professional_execution_details",
 }
 
 def release_contract_status():

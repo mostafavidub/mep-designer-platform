@@ -1,10 +1,17 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.48.0
+**Canonical version:** 4.49.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.49.0 strengthens locked rules `MEP-DOC-CONTENT-001` and
+`MEP-SUBMIT-001`. Every required mechanical execution detail must be a
+project-specific projection of its plan/PMM/calculation/schedule owner and
+must pass eighteen independent controls at 100/100. Text-only placeholders,
+missing installation assemblies, invented parameters, orphan callouts and
+exact-DXF entity mismatches fail closed.
 
 Version 4.48.0 strengthens locked rule `MEP-SIZE-001`. Every applicable
 segment must independently accumulate endpoint demand, evaluate the complete

@@ -5,6 +5,8 @@ from hashlib import sha256
 import json
 import math
 
+from .professional_execution_details import evaluate_execution_details
+
 
 CONTRACT_VERSION = "documentation-content/1"
 CONTROL_WEIGHTS = {
@@ -42,16 +44,26 @@ def exact_documentation_output_evidence(path, expected_detail_ids, expected_sche
     """Reopen the issued DXF and prove every public documentation identity exists."""
     try:
         import ezdxf
-        doc = ezdxf.readfile(str(path)); texts = []
+        doc = ezdxf.readfile(str(path)); texts = []; executable_detail_ids = set()
         for entity in doc.modelspace():
             if entity.dxftype() in {"TEXT", "MTEXT"}:
                 texts.append(str(entity.dxf.text if entity.dxftype() == "TEXT" else entity.text))
+            for appid in ("ENGITOOLS_DETAIL", "ENGITOOLS"):
+                try:
+                    values = [str(value) for code, value in entity.get_xdata(appid) if code == 1000]
+                except Exception:
+                    continue
+                if len(values) >= 2 and values[0] == "EXECUTION_DETAIL":
+                    executable_detail_ids.add(values[1])
         present = lambda values: sorted(value for value in values if any(str(value) in text for text in texts))
-        return {"reopened": True, "immutable": True,
+        evidence = {"reopened": True, "immutable": True,
                 "detail_ids": present(expected_detail_ids),
                 "schedule_ids": present(expected_schedule_ids),
                 "note_ids": present(expected_note_ids),
                 "symbols": present(expected_symbols)}
+        if executable_detail_ids:
+            evidence["executable_detail_ids"] = sorted(executable_detail_ids)
+        return evidence
     except Exception as exc:
         return {"reopened": False, "immutable": False, "detail_ids": [], "schedule_ids": [],
                 "note_ids": [], "symbols": [], "error": type(exc).__name__}
@@ -171,5 +183,18 @@ def evaluate_documentation_content(context, exact_output=None):
             "errors":sorted({x for row in controls for x in row["errors"]}),
             "missing_inputs":sorted({x for row in controls for x in row["missing_inputs"]}),
             "evidence_hash":_stable({"context":context,"exact_output":exact_output})}
+    execution_context = context.get("execution_detail_context")
+    if execution_context is not None:
+        execution = evaluate_execution_details(execution_context, exact_output)
+        report["professional_execution_detail_qa"] = execution
+        if execution.get("release_allowed") is not True:
+            report["status"] = "FAIL" if execution.get("status") == "FAIL" else "INPUT_REQUIRED"
+            report["release_allowed"] = False
+            report["errors"] = sorted(set(report["errors"] + execution.get("errors", [])))
+            report["missing_inputs"] = sorted(set(report["missing_inputs"] + execution.get("missing_inputs", [])))
     report["preflight_allowed"] = all(row["status"] == "PASS" for row in controls[:-1])
+    if execution_context is not None:
+        execution_preflight = evaluate_execution_details(execution_context, {})
+        report["preflight_allowed"] = report["preflight_allowed"] and all(
+            row["status"] == "PASS" for row in execution_preflight["controls"][:-1])
     return report
