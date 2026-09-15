@@ -576,7 +576,12 @@ def build_authoritative_topology_from_evidence(
     if shaft_strategy in proposal_strategies:
         for level in levels:
             level_id = level["id"]
-            if shaft_nodes_by_level.get(level_id):
+            existing_shafts = shaft_nodes_by_level.get(level_id, [])
+            # A single architectural shaft is already an unambiguous authority.
+            # When several candidates exist, keep every architectural entity but
+            # materialize one owner-authorized design core so all disciplines and
+            # floors reference the same deterministic vertical identity.
+            if len(existing_shafts) == 1:
                 continue
             candidates = wet_nodes_by_level.get(level_id, [])
             if candidates:
@@ -605,6 +610,16 @@ def build_authoritative_topology_from_evidence(
             }
             nodes.append(node); node_by_id[node_id] = node
             shaft_nodes_by_level.setdefault(level_id, []).append(node)
+
+    def selected_vertical_shaft(level_id):
+        shafts = shaft_nodes_by_level.get(level_id, [])
+        proposed = [row for row in shafts
+                    if row.get("source") == "USER_AUTHORIZED_PROPOSED_SHAFT"]
+        if len(proposed) == 1:
+            return proposed[0]
+        if len(shafts) == 1:
+            return shafts[0]
+        return None
 
     if missing:
         return {"status": "INPUT_REQUIRED", "missing_inputs": sorted(set(missing)), "network": None,
@@ -671,7 +686,7 @@ def build_authoritative_topology_from_evidence(
         system_level_count = len({lvl for (sys_name, lvl) in endpoints_by_system_level if sys_name == system})
         if system in PLUMBING_SYSTEMS and system_level_count > 1:
             for wet in {row["id"]: row for row in targets_used if row.get("kind") == "wet_core"}.values():
-                shaft = _nearest(wet["point"], shafts)
+                shaft = selected_vertical_shaft(level_id)
                 if shaft is None:
                     missing_route.append("AUTHORITATIVE_VERTICAL_CORE_REQUIRED:%s:%s" % (level["name"], system))
                 else:
@@ -688,13 +703,13 @@ def build_authoritative_topology_from_evidence(
                 continue
             selected = []
             for level_id in involved:
-                shafts = shaft_nodes_by_level.get(level_id, [])
                 level = next(row for row in levels if row["id"] == level_id)
-                if len(shafts) != 1:
+                shaft = selected_vertical_shaft(level_id)
+                if shaft is None:
                     missing_route.append("VERTICAL_SHAFT_CORRESPONDENCE_REQUIRED:%s:%s" % (level["name"], system))
                     selected = []
                     break
-                selected.append(shafts[0])
+                selected.append(shaft)
             supplied_keys = [row.get("shaft_key") for row in selected]
             if selected and any(supplied_keys) and (not all(supplied_keys) or len(set(supplied_keys)) != 1):
                 missing_route.append("VERTICAL_SHAFT_ALIGNMENT_KEY_MISMATCH:%s" % system)
