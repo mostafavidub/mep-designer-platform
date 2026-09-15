@@ -231,7 +231,8 @@ def detect_print_plans(src):
     return plans
 
 
-def _plans_from_authoritative_profiles(profiles):
+def _plans_from_authoritative_profiles(profiles, detected_frames=None):
+    detected_frames=list(detected_frames or [])
     plans=[]
     for profile in profiles or []:
         bounds=profile.get('region_bounds')
@@ -240,9 +241,23 @@ def _plans_from_authoritative_profiles(profiles):
         except (TypeError,ValueError):continue
         if len(bounds)!=4 or bounds[2]<=bounds[0] or bounds[3]<=bounds[1]:continue
         if status and not status.startswith('confirmed'):continue
+        # Browser analysis owns the level identity, but its region can be a
+        # coarse evidence-search window spanning several consultant frames.
+        # When its sealed title anchor belongs to exactly one locally detected
+        # print frame, that frame is the authoritative geometry boundary. This
+        # joins two independent observations instead of fitting the drawing to
+        # the coarse browser window and collapsing the plan on the issued sheet.
+        title_point=profile.get('title_point')
+        try:title_point=(float(title_point[0]),float(title_point[1]))
+        except (TypeError,ValueError,IndexError):title_point=None
+        matches=[frame for frame in detected_frames if title_point and _inside(title_point,frame.get('bounds') or [])]
+        geometry_source='sealed_browser_level_profile'
+        if len(matches)==1:
+            bounds=[float(x) for x in matches[0]['bounds']]
+            geometry_source='sealed_browser_identity_local_print_frame'
         roof=bool(profile.get('roof'))
         plans.append({'plan_id':f"PLAN-AUTH-{len(plans)+1:02d}",'bounds':bounds,
-                      'source':'sealed_browser_level_profile','drawing_type':'ROOF_PLAN' if roof else 'ARCH_FLOOR_PLAN',
+                      'source':geometry_source,'drawing_type':'ROOF_PLAN' if roof else 'ARCH_FLOOR_PLAN',
                       'level':str(profile.get('name') or f"LEVEL-{len(plans)+1:02d}"),
                       'mechanical_role':'ROOF_SUPPORT' if roof else 'PRIMARY_FLOOR',
                       'title_text':[],'entity_count':0})
@@ -401,7 +416,7 @@ def _recover_orthogonal_room_enclosures(architecture, plans):
 
 def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
     plans=detect_print_plans(src)
-    authoritative=_plans_from_authoritative_profiles(authoritative_profiles)
+    authoritative=_plans_from_authoritative_profiles(authoritative_profiles,plans)
     if any(p.get('mechanical_role')=='PRIMARY_FLOOR' for p in authoritative):
         # Browser analysis is sealed from this same upload and preserves every
         # confirmed drawing region.  Prefer it even when the local title parser

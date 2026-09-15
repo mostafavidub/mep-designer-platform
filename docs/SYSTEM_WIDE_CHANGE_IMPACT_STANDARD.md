@@ -1,10 +1,15 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.18
+**Canonical version:** 4.43.19
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+A confirmed browser level profile supplies level identity, while a unique local
+print frame containing its sealed title anchor supplies the geometry boundary.
+Coarse browser evidence windows must not be used for sheet fitting when this
+independent exact-frame reconciliation is available.
 
 Pre-Submission family disclosures are resolved through the composition manifest
 from the public sheet code to the internal board identity. Both identities remain
