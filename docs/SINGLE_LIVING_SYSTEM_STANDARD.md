@@ -18,3 +18,10 @@ Mechanical CI workflow filenames and visible workflow names are canonical and un
 `main` is deployable only after every required GitHub check is green and required reviews are complete. Rollback means deploying a prior approved Git commit/tag; copying or reactivating a historical runtime module is forbidden.
 
 For this single-owner repository, recorded owner approval fulfils the human review requirement under SWCIS. An independent reviewer is not required; automated and engineering gates remain mandatory.
+
+Mechanical dimensions are produced only by the canonical unversioned
+`cad_engine.mechanical_dimensioning` capability.  A submission-ready artifact
+must use calibrated architectural units, a uniform board transform, stable
+source geometry and owner-linked dimension identities.  The final exact DXF is
+reopened after the last mutation; missing, guessed, zero, duplicated, orphaned,
+mis-scaled, unreadable or out-of-board required dimensions fail closed.
