@@ -10,6 +10,8 @@ from __future__ import annotations
 import math
 import re
 
+from .cross_document_reconciliation_gate import representation_ids
+
 
 PAIRED_SYSTEMS = (("cold_water", "hot_water"), ("sanitary", "vent"),
                   ("heating_supply", "heating_return"),
@@ -207,6 +209,7 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             path = []
 
         enriched = dict(edge)
+        document_ids = representation_ids(edge)
         enriched.update({
             "size": size, "size_mm": size, "material": material, "slope_percent": slope,
             "downstream_load": downstream_load, "load_unit": load_unit,
@@ -214,6 +217,7 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             "size_source": size_source, "material_source": material_source,
             "plan_path": path, "fittings": _fittings(path),
             "plan_id": calc_id, "riser_id": calc_id, "schedule_id": calc_id,
+            **document_ids,
         })
         enriched_edges.append(enriched)
         row_source = "EXPLICIT_SEGMENT_ROW" if row and any(key in row for key in ("size", "size_mm", "material")) else (
@@ -225,6 +229,7 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             "size_mm": size, "material": material, "slope_percent": slope,
             "size_source": size_source, "material_source": material_source,
             "source": row_source,
+            **document_ids,
         })
         label = "DN%s | %s" % (("%g" % size) if size is not None else "?", material or "?")
         if slope is not None:

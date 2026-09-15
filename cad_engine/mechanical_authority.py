@@ -40,6 +40,7 @@ from .post_materialization_release import validate_after_last_mutation, validate
 from .sheet_visual_qa import repair_sheet_annotations
 from .mechanical_dimensioning import validate_exact_mechanical_dimensions
 from .unified_engineering_model import build_unified_engineering_model
+from .cross_document_reconciliation_gate import reconcile_cross_document_outputs
 from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_basis
 
 
@@ -281,9 +282,16 @@ def _traceability_preflight(payload: dict) -> dict:
         return {"status": "FAIL", "errors": riser.get("errors") or riser.get("missing_inputs") or ["RISER_GRAPH_RECONCILIATION_FAILED"],
                 "zero_mismatch": False, "riser": riser}
     reconciliation = reconcile_calculation_outputs(payload["calculation_rows"], riser)
-    return {"status": reconciliation.get("status"), "errors": reconciliation.get("errors") or [],
+    cross_document = reconcile_cross_document_outputs(payload["network_graph"], payload["calculation_rows"])
+    errors = list(reconciliation.get("errors") or []) + list(cross_document.get("errors") or [])
+    if cross_document.get("status") != "PASS":
+        errors += cross_document.get("missing_inputs") or cross_document.get("failed_checks") or []
+    status = "PASS" if reconciliation.get("status") == "PASS" and cross_document.get("status") == "PASS" else (
+        "INPUT_REQUIRED" if cross_document.get("status") == "INPUT_REQUIRED" else "FAIL")
+    payload["cross_document_registry"] = (cross_document.get("registry") or {})
+    return {"status": status, "errors": sorted(set(errors)),
             "zero_mismatch": bool(reconciliation.get("zero_mismatch")), "riser": riser,
-            "calculation_reconciliation": reconciliation}
+            "calculation_reconciliation": reconciliation, "cross_document_reconciliation": cross_document}
 
 
 def _result_authority_errors(result: dict) -> list[str]:
@@ -491,6 +499,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         "calculation_rows": payload["calculation_rows"],
         "calculation_totals": payload["calculation_totals"],
         "project_mechanical_model": payload["project_mechanical_model"],
+        "cross_document_registry": payload.get("cross_document_registry") or {},
     })
     shell_answers["_canonical_input_contract"] = shell_contract
     _emit_progress(answers, "drawing_composition")
@@ -585,6 +594,19 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "post_materialization_release_qa": post_materialization,
                 "input_required": {"status": "FAIL", "missing_inputs": post_materialization.get("failed_checks") or []}}
 
+    cross_document_exact = reconcile_cross_document_outputs(
+        payload["network_graph"], payload["calculation_rows"], exact_dxf=dst, exact_required=True)
+    # Pre-Submission may truthfully expose a pending reconciliation result; it
+    # must never claim coordinated/submission-ready status. Final issue remains
+    # strictly fail closed.
+    if not pre_submission and cross_document_exact.get("status") != "PASS":
+        _restore_target(dst, backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status": "FAIL", "stage": "plan_riser_calculation_schedule_gate",
+                "cross_document_reconciliation_qa": cross_document_exact,
+                "input_required": {"status": "FAIL", "missing_inputs": cross_document_exact.get("errors") or cross_document_exact.get("missing_inputs") or cross_document_exact.get("failed_checks") or []}}
+
     final_topology_routing = evaluate_topology_routing(
         payload["network_graph"], calculation_rows=payload["calculation_rows"],
         coordination=(payload.get("topology_routing_coordination") or {}),
@@ -644,6 +666,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["unified_engineering_model_qa"] = unified
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
+    rendered["cross_document_reconciliation_qa"] = cross_document_exact
     rendered["calculation_reasonableness_qa"] = reasonableness
     rendered["topology_routing_qa"] = final_topology_routing
     rendered["equipment_selection_placement_qa"] = final_equipment

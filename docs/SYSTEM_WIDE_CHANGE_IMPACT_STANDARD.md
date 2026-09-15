@@ -1,10 +1,16 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.46.0
+**Canonical version:** 4.47.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.47.0 adds locked rule `MEP-PRCS-001`. Plan, riser, calculation and
+schedule are distinct deterministic projections linked by one canonical graph
+edge/calculation registry. Bidirectional coverage, numeric parity and the exact
+issued DXF must pass eighteen controls at 100/100; orphan, duplicate, malformed
+or divergent output fails closed.
 
 Version 4.46.0 adds locked rule `MEP-LEVEL-MODEL-001`. Each confirmed floor,
 explicit typical-floor group and roof receives one source-bound independent
@@ -119,7 +125,7 @@ Private reference drawings remain outside Git. Reviewed semantic facts and priva
 
 For upgraded mechanical traceability the required identity chain is:
 
-`PMM Entity ID -> Calculation ID -> Plan ID = Riser ID = Schedule ID -> QA`
+`PMM Entity ID -> Network Edge ID -> Calculation ID -> distinct linked Plan / Riser / Schedule representation IDs -> exact-file QA`
 
 An orphan calculation, an output without a calculation, duplicate calculation identity, or identity divergence is a blocking engineering defect.
 

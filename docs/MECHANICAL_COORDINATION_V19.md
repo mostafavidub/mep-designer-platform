@@ -25,7 +25,8 @@ artifact creation entirely.
 3. Details contain executable geometry, dimensions, fittings, material,
    clearance and tags. Each active system declares mandatory detail families;
    missing parameters or families remain `INPUT_REQUIRED`. Risers are generated
-   from the network graph, enforcing `Plan ID = Riser ID = Calc ID = Schedule ID`
+   from the network graph, linking distinct Plan/Riser/Schedule representation
+   IDs through one Edge ID and Calculation ID
    with zero mismatch. Plan annotations reference network-edge identities and
    enlarged plans require an explicit source plan, bounds and scale.
 4. Golden projects 1, 3, 4, 6, 7, 8 and 10 are generated blind and hash-sealed
