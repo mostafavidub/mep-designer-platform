@@ -29,3 +29,13 @@ def test_pending_equipment_board_scope_requires_exact_target_package_disclosure(
     assert _pre_submission_pending_boards(report,{"blocked_at":"target_design_packages"}) == {("m-04","HEATING")}
     assert _pre_submission_pending_boards(report,{"blocked_at":"manufacturer"}) == set()
     assert _pre_submission_pending_boards(report,None) == set()
+
+
+def test_pending_equipment_board_scope_maps_public_code_to_internal_board():
+    report={
+        "semantic_qa":{"pre_submission_disclosure":{"pending_family_content":["M-104:HEATING"]}},
+        "composition":{"manifest":[{"code":"M-104","old_sheet":"M-04","family":"HEATING"}]},
+    }
+    assert _pre_submission_pending_boards(report,{"blocked_at":"target_design_packages"}) == {
+        ("m-104","HEATING"),("m-04","HEATING"),
+    }

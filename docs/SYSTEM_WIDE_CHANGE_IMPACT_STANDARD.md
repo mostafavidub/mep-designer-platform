@@ -1,10 +1,14 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.17
+**Canonical version:** 4.43.18
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Pre-Submission family disclosures are resolved through the composition manifest
+from the public sheet code to the internal board identity. Both identities remain
+available to exact-file gates; final/submission-ready runs receive no exception.
 
 Private runtime diagnostics for a blocked CAD transaction retain the exact gate
 name, status, error codes and bounded aggregate metrics needed to reproduce the
