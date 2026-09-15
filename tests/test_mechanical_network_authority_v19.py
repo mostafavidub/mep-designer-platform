@@ -156,6 +156,43 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         self.assertTrue(any(value.startswith('SYSTEM_TERMINATION_REQUIRED:') for value in result['missing_inputs']))
         self.assertNotIn('SHAFT-PROVISIONAL', str(result))
 
+    def test_explicit_owner_authorization_materializes_deterministic_multilevel_shafts(self):
+        model = pmm([
+            {'name': 'Ground', 'region_bounds': [0, 0, 10, 10]},
+            {'name': 'First', 'region_bounds': [20, 0, 30, 10]},
+        ], vertical=True)
+        architecture = {
+            'shafts': [], 'walls': [], 'obstacles': [],
+            'wet_cores': [
+                {'room_id': 'WG', 'centroid': (8, 8), 'level': 'Ground'},
+                {'room_id': 'WF', 'centroid': (28, 8), 'level': 'First'},
+            ],
+        }
+        recognition = {'detections': [
+            {**detection('G', point=(2, 2), ports=['cold_water']), 'level': 'Ground'},
+            {**detection('F', point=(22, 2), ports=['cold_water']), 'level': 'First'},
+        ]}
+        result = build_authoritative_topology_from_evidence(
+            model, architecture, recognition, shaft_strategy='proposal_authorized',
+        )
+        self.assertEqual(result['status'], 'PASS', result)
+        proposed = [node for node in result['network']['nodes']
+                    if node.get('source') == 'USER_AUTHORIZED_PROPOSED_SHAFT']
+        self.assertEqual(len(proposed), 2)
+        self.assertEqual({node['shaft_key'] for node in proposed},
+                         {'USER-AUTHORIZED-PROPOSED-CORE'})
+        self.assertTrue(any(edge['role'] == 'vertical_riser'
+                            for edge in result['network']['edges']))
+
+    def test_unknown_shaft_strategy_cannot_create_geometry(self):
+        result = build_authoritative_topology_from_evidence(
+            pmm([{'name': 'Ground', 'region_bounds': [0, 0, 10, 10]}]),
+            {'shafts': [], 'wet_cores': [], 'walls': [], 'obstacles': []},
+            {'detections': [detection()]}, shaft_strategy='pick_anywhere',
+        )
+        self.assertEqual(result['status'], 'INPUT_REQUIRED')
+        self.assertNotIn('USER_AUTHORIZED_PROPOSED_SHAFT', str(result))
+
     def test_real_shaft_builds_deterministic_identity_graph(self):
         architecture = {
             'shafts': [{'centroid': (8.0, 8.0), 'polygon': [(7, 7), (9, 7), (9, 9), (7, 9)]}],

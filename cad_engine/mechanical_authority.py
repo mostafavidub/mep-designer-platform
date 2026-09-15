@@ -220,6 +220,7 @@ def _prepare_network_authority(src: Path, payload: dict) -> dict:
             architecture_evidence=payload.get("architecture_evidence"),
             fixture_evidence=payload.get("fixture_evidence"),
             declared_fixture_schedule=payload.get("declared_fixture_schedule"),
+            shaft_strategy=payload.get("mechanical_shaft_route"),
         )
         if has_collapsed_plan_path:
             topology["recovery"] = "REBUILT_COLLAPSED_SUPPLIED_PLAN_PATH"
