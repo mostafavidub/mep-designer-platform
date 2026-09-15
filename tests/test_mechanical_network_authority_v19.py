@@ -193,6 +193,44 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         self.assertEqual(result['status'], 'INPUT_REQUIRED')
         self.assertNotIn('USER_AUTHORIZED_PROPOSED_SHAFT', str(result))
 
+    def test_authorized_proposal_disambiguates_multiple_architectural_shafts(self):
+        model = pmm([
+            {'name': 'Ground', 'region_bounds': [0, 0, 10, 10]},
+            {'name': 'First', 'region_bounds': [20, 0, 30, 10]},
+            {'name': 'Second', 'region_bounds': [40, 0, 50, 10]},
+        ], vertical=True)
+        architecture = {
+            'shafts': [
+                {'centroid': (42, 8), 'level': 'Second', 'shaft_id': 'ARCH-A'},
+                {'centroid': (48, 8), 'level': 'Second', 'shaft_id': 'ARCH-B'},
+            ],
+            'wet_cores': [
+                {'room_id': 'WG', 'centroid': (8, 8), 'level': 'Ground'},
+                {'room_id': 'WF', 'centroid': (28, 8), 'level': 'First'},
+                {'room_id': 'WS', 'centroid': (48, 8), 'level': 'Second'},
+            ],
+            'walls': [], 'obstacles': [],
+        }
+        recognition = {'detections': [
+            {**detection('G', point=(2, 2), ports=['cold_water']), 'level': 'Ground'},
+            {**detection('F', point=(22, 2), ports=['cold_water']), 'level': 'First'},
+            {**detection('S', point=(42, 2), ports=['cold_water']), 'level': 'Second'},
+        ]}
+        result = build_authoritative_topology_from_evidence(
+            model, architecture, recognition, shaft_strategy='proposal_authorized',
+        )
+        self.assertEqual(result['status'], 'PASS', result)
+        second_shafts = [node for node in result['network']['nodes']
+                         if node.get('kind') == 'shaft' and node.get('level_name') == 'Second']
+        self.assertEqual(len(second_shafts), 3)
+        self.assertEqual(sum(node.get('source') == 'USER_AUTHORIZED_PROPOSED_SHAFT'
+                             for node in second_shafts), 1)
+        risers = [edge for edge in result['network']['edges']
+                  if edge.get('role') == 'vertical_riser']
+        self.assertEqual(len(risers), 2)
+        self.assertEqual({edge.get('shaft_key') for edge in risers},
+                         {'USER-AUTHORIZED-PROPOSED-CORE'})
+
     def test_real_shaft_builds_deterministic_identity_graph(self):
         architecture = {
             'shafts': [{'centroid': (8.0, 8.0), 'polygon': [(7, 7), (9, 7), (9, 9), (7, 9)]}],
