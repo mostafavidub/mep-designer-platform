@@ -1,10 +1,15 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.43.19
+**Canonical version:** 4.43.20
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Exact-file visual QA may use the complete copied architectural extent after the
+composer has already fitted an outlier-trimmed source envelope only when the
+independent robust extent supports at least half of that area. Isolated remote
+geometry cannot inflate a visual PASS.
 
 A confirmed browser level profile supplies level identity, while a unique local
 print frame containing its sealed title anchor supplies the geometry boundary.
