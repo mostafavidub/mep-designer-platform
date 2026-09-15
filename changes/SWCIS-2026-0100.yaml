@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0100",
+  "summary": "Allow eNamad verifiers to probe the public verification file with HEAD as well as GET.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "The exact eNamad verification route now accepts HEAD probes in addition to its existing empty GET response.",
+    "qa": "Focused regression covers successful empty GET and HEAD responses with text/plain media type.",
+    "manifest": "No artifact identity or manifest schema changes; deployed build identity remains Git-derived.",
+    "docs": "This change request records the expanded HTTP-method verification contract.",
+    "versioning": "No semantic version bump is required because no schema, policy, graph, or engineering behavior changes.",
+    "migration": "No stored-data migration is required.",
+    "governance": "One versioned change request records complete affected-module evidence.",
+    "deployment": "Deploy only the protected all-green merge and verify GET and HEAD at the exact apex URL."
+  },
+  "evidence": {
+    "traceability": ["app/main.py GET/HEAD /43519949.txt -> tests/test_web_landings.py"],
+    "tests": ["tests/test_web_landings.py verifies status, empty response, and media type for GET and HEAD"],
+    "docs": ["changes/SWCIS-2026-0100.yaml"],
+    "version_bump": ["none: additive HTTP-method compatibility fix with no schema, rule, graph, or policy change"],
+    "migration": ["none: stateless HTTP route only"],
+    "golden_regression": ["no CAD or engineering output semantics changed"],
+    "semantic_diff": ["the existing verification endpoint additionally accepts HEAD; all other route behavior is unchanged"],
+    "artifact_diff": ["no generated engineering artifact change"],
+    "numeric_diff": ["none"],
+    "contract_diff": ["GET and HEAD /43519949.txt both return HTTP 200 and text/plain with an empty body"],
+    "deployment_plan": ["merge the all-green commit, allow Railway production auto-deploy, and verify GET plus HEAD on https://planha.com/43519949.txt"],
+    "rollback_plan": ["revert the protected merge commit and redeploy the preceding approved commit"]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 1,
+    "detectability": 1,
+    "score": 1,
+    "rationale": "The isolated method addition has no application state and is directly covered by GET and HEAD tests."
+  },
+  "waiver": null
+}

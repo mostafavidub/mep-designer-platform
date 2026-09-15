@@ -367,7 +367,7 @@ def sitemap(request:Request):
 @app.get('/robots.txt')
 def robots(request:Request):
     scheme=request.headers.get('x-forwarded-proto','https').split(',')[0].strip(); base=f'{scheme}://{request.url.netloc}'; return Response(content=f'User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n',media_type='text/plain')
-@app.get('/43519949.txt', include_in_schema=False)
+@app.api_route('/43519949.txt', methods=['GET', 'HEAD'], include_in_schema=False)
 def enamad_verification_file():
     return Response(content='', media_type='text/plain')
 @app.get('/{indexnow_key}.txt')

@@ -96,6 +96,10 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.text, '')
         self.assertTrue(r.headers['content-type'].startswith('text/plain'))
+        head = self.client.head('/43519949.txt')
+        self.assertEqual(head.status_code, 200)
+        self.assertEqual(head.content, b'')
+        self.assertTrue(head.headers['content-type'].startswith('text/plain'))
 
     def test_home_has_scroll_driven_curved_workflow_road(self):
         home = self.client.get('/')
