@@ -77,7 +77,10 @@ def canonical_shaft_strategy(value):
         return "propose_near_wet_core"
     if any(token in text for token in ("کنار راه پله", "کنار راه‌پله", "adjacent_to_stair", "stair")):
         return "propose_adjacent_to_stair"
-    if any(token in text for token in ("اجازه پیشنهاد", "باید پیشنهاد", "proposal allowed", "allow proposal")):
+    if any(token in text for token in (
+        "اجازه پیشنهاد", "باید پیشنهاد", "proposal allowed", "allow proposal",
+        "proposal_authorized",
+    )):
         return "proposal_authorized"
     if any(token in text for token in ("موجود معماری", "قطعی هستند", "existing architectural", "use_existing")):
         return "use_existing_architectural_shafts"
