@@ -24,6 +24,20 @@ def test_contract_accepts_city_alias_and_rejects_unknown_shaft_text():
     assert shaft_approval({'mechanical_shaft_route': 'یک جای خوب پیدا کن'}) is None
 
 
+def test_shaft_authorization_remains_valid_after_repeated_normalization():
+    answers = normalize_answers(
+        {},
+        answer_key='mechanical_shaft_route',
+        raw_answer='اجازه پیشنهاد مسیر و ابعاد شفت را دارید',
+    )
+    assert answers['mechanical_shaft_route'] == 'proposal_authorized'
+    assert persisted_answer_is_valid(answers, 'mechanical_shaft_route')
+
+    normalized_again = normalize_answers(answers)
+    assert normalized_again['mechanical_shaft_route'] == 'proposal_authorized'
+    assert shaft_approval(normalized_again)['status'] == 'APPROVED'
+
+
 def test_cooling_contract_accepts_only_explicit_wall_split():
     for value in ('اسپلیت دیواری', 'کولر گازی دیواری', 'wall_mounted_split_ac'):
         assert canonical_cooling_system({'cooling': value}) == 'wall_mounted_split_ac'
