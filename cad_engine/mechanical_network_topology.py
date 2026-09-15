@@ -119,6 +119,18 @@ def _inside(point, bounds):
     return bool(bounds and bounds[0] <= point[0] <= bounds[2] and bounds[1] <= point[1] <= bounds[3])
 
 
+def _room_host(point, level_name, rooms):
+    """Return a unique source-backed room host using its polygon envelope."""
+    matches = []
+    for room in rooms or []:
+        if room.get("level") and str(room.get("level")) != str(level_name):
+            continue
+        bounds = _bbox(room.get("polygon"))
+        if _inside(point, bounds):
+            matches.append(room)
+    return matches[0] if len(matches) == 1 else None
+
+
 def _level_registry(pmm):
     registry = []
     errors = []
@@ -506,10 +518,14 @@ def build_authoritative_topology_from_evidence(
             "point": [round(float(point[0]), 6), round(float(point[1]), 6)],
             "block": detection.get("block"), "layer": detection.get("layer"),
         })
+        room_id = detection.get("room_id")
+        inferred_host = None if room_id else _room_host(point, level["name"], architecture.get("rooms") or [])
         node = {
             "id": node_id, "kind": detection.get("type"), "category": detection.get("category"),
             "point": (float(point[0]), float(point[1])), "level": level["id"], "level_type": level["type"],
-            "level_name": level["name"], "room_id": detection.get("room_id"),
+            "level_name": level["name"], "room_id": room_id,
+            "host_id": inferred_host.get("id") if inferred_host else None,
+            "host_evidence": "UNIQUE_ARCHITECTURAL_ROOM_ENVELOPE" if inferred_host else None,
             "ports": list(detection.get("ports") or []), "source_detection_id": detection.get("id"),
             "source_pmm_id": _pmm_entity_id(pmm, detection), "evidence": list(detection.get("evidence") or []),
         }
