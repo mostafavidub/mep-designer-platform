@@ -41,6 +41,7 @@ from .sheet_visual_qa import repair_sheet_annotations
 from .mechanical_dimensioning import validate_exact_mechanical_dimensions
 from .unified_engineering_model import build_unified_engineering_model
 from .cross_document_reconciliation_gate import reconcile_cross_document_outputs
+from .titleblock_issue_control import evaluate_titleblock_issue_control, exact_titleblock_evidence
 from app.design_basis_questionnaire_gate import evaluate_questionnaire_design_basis
 
 
@@ -146,6 +147,7 @@ def _authority_payload(answers: dict, plan_analysis: dict) -> dict:
         "documentation_content_context": _first_value(contract.get("documentation_content_context"), plan_analysis.get("documentation_content_context_canonical")),
         "questionnaire_design_basis_context": _first_value(contract.get("questionnaire_design_basis_context"), plan_analysis.get("questionnaire_design_basis_context_canonical")),
         "unified_engineering_model": _first_value(contract.get("unified_engineering_model"), plan_analysis.get("unified_engineering_model_canonical")),
+        "titleblock_issue_context": _first_value(contract.get("titleblock_issue_context"), plan_analysis.get("titleblock_issue_context_canonical")),
     }
 
 
@@ -655,6 +657,16 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "final_engineering_release_qa": final_release,
                 "input_required": {"status": "INPUT_REQUIRED" if final_release.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": final_release.get("errors") or final_release.get("missing_inputs") or []}}
+    titleblock_context = payload.get("titleblock_issue_context")
+    titleblock_issue_qa = None
+    if titleblock_context is not None:
+        titleblock_issue_qa = evaluate_titleblock_issue_control(titleblock_context, exact_titleblock_evidence(dst))
+        if not pre_submission and titleblock_issue_qa.get("release_allowed") is not True:
+            _restore_target(dst, backup)
+            if backup: backup.unlink(missing_ok=True)
+            return {"status":"FAIL","stage":"titleblock_issue_control_gate","titleblock_issue_control_qa":titleblock_issue_qa,
+                    "input_required":{"status":"INPUT_REQUIRED" if titleblock_issue_qa.get("status")=="INPUT_REQUIRED" else "FAIL",
+                                      "missing_inputs":titleblock_issue_qa.get("errors") or titleblock_issue_qa.get("missing_inputs") or []}}
     if backup:
         backup.unlink(missing_ok=True)
 
@@ -675,6 +687,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
     rendered["final_engineering_release_qa"] = final_release
     rendered["architecture_space_equipment_qa"] = recognition_qa
     rendered["documentation_content_qa"] = final_documentation
+    rendered["titleblock_issue_control_qa"] = titleblock_issue_qa
     rendered["questionnaire_design_basis_qa"] = questionnaire_qa
     rendered["runtime_contract"] = runtime_contract()
     rendered["pipeline_authority"] = "mechanical"
