@@ -1,10 +1,17 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.50.0
+**Canonical version:** 4.51.0
 
 **Status:** LOCKED
 
 **Effective:** 2026-09-09
+
+Version 4.51.0 adds locked rule `MEP-REGRESSION-001`. Every candidate is
+evaluated from sealed identical inputs in disjoint cohorts, repeats to prove
+semantic determinism, retains its complete artifact set and passes engineering,
+exact-DXF, visual, destructive and recovery comparisons per project. Averages
+cannot hide a regression, and completion requires an artifact from the exact
+merged SHA on Staging.
 
 Version 4.50.0 adds locked rule `MEP-TITLE-ISSUE-001`. Every title block is a
 source-attributed semantic record reconciled with its Manifest, Layout,
