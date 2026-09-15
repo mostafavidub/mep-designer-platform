@@ -520,14 +520,21 @@ def build_authoritative_topology_from_evidence(
         })
         room_id = detection.get("room_id")
         inferred_host = None if room_id else _room_host(point, level["name"], architecture.get("rooms") or [])
+        source_pmm_id = _pmm_entity_id(pmm, detection)
+        installed_entity_host = bool(
+            not room_id and not inferred_host and detection.get("installed") is True
+            and detection.get("id") and detection.get("evidence")
+        )
         node = {
             "id": node_id, "kind": detection.get("type"), "category": detection.get("category"),
             "point": (float(point[0]), float(point[1])), "level": level["id"], "level_type": level["type"],
             "level_name": level["name"], "room_id": room_id,
-            "host_id": inferred_host.get("id") if inferred_host else None,
-            "host_evidence": "UNIQUE_ARCHITECTURAL_ROOM_ENVELOPE" if inferred_host else None,
+            "host_id": (inferred_host.get("id") if inferred_host else
+                        (source_pmm_id or detection.get("id")) if installed_entity_host else None),
+            "host_evidence": ("UNIQUE_ARCHITECTURAL_ROOM_ENVELOPE" if inferred_host else
+                              "INSTALLED_ARCHITECTURAL_ENTITY" if installed_entity_host else None),
             "ports": list(detection.get("ports") or []), "source_detection_id": detection.get("id"),
-            "source_pmm_id": _pmm_entity_id(pmm, detection), "evidence": list(detection.get("evidence") or []),
+            "source_pmm_id": source_pmm_id, "evidence": list(detection.get("evidence") or []),
         }
         nodes.append(node); node_by_id[node_id] = node
         for system in node["ports"]:
