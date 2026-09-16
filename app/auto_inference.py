@@ -302,7 +302,7 @@ def dynamic_questions(analysis, discipline, auto):
         q.append(('location', 'شهر و محل پروژه کجاست؟ این مورد برای شرایط اقلیمی و الزامات محلی لازم است.'))
     if not auto.get('occupancy_inferred'):
         q.append(('occupancy', 'کاربری دقیق ساختمان چیست؟ این مورد از پلان با اطمینان کافی تشخیص داده نشد.'))
-    if discipline == 'electrical' and not auto.get('floor_height_inferred') and not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
+    if discipline == 'electrical' and not auto.get('floor_height_inferred'):
         q.append(('heights', 'ارتفاع طبقات و وضعیت سقف کاذب را بفرمایید؛ این اطلاعات در پلان دوبعدی پیدا نشد.'))
 
     if discipline == 'electrical':
@@ -327,7 +327,7 @@ def dynamic_questions(analysis, discipline, auto):
         # Project facts below materially change routing or sizing and cannot be
         # safely replaced by a generic Rule Book value.  Every prompt accepts a
         # short confirmation of a transparent conservative proposal.
-        if not auto.get('floor_height_inferred') and not re.search(r'ارتفاع|height|floor height|سقف کاذب|false ceiling', text):
+        if not auto.get('floor_height_inferred'):
             q.append(('heights', 'ارتفاع طبقه و سقف کاذب مشخص نیست. پیشنهاد: «۳٫۲۰ متر؛ سقف کاذب فضاهای تر ۴۰ سانتی‌متر». پاسخ کوتاه: «تأیید» یا فقط مقدار متفاوت.'))
         # Heating and cooling are owner/design decisions. Symbols or notes in
         # architecture are useful evidence, but must never silently choose the

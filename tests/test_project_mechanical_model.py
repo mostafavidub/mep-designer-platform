@@ -18,6 +18,11 @@ class ProjectMechanicalModelTests(unittest.TestCase):
         self.assertEqual([row["elevation_m"] for row in model["levels"]], [0.0, 3.2])
         self.assertTrue(all(row["elevation_source"] == "CONFIRMED_UNIFORM_FLOOR_HEIGHT"
                             for row in model["levels"]))
+        persian = build_project_mechanical_model(
+            analysis, answers={"heights": "۳٫۲۰ متر؛ سقف کاذب فضاهای تر ۴۰ سانتی‌متر"},
+            scope=self._scope(), proposal={},
+        )
+        self.assertEqual([row["elevation_m"] for row in persian["levels"]], [0.0, 3.2])
 
     def test_missing_or_unreasonable_height_never_invents_level_elevations(self):
         analysis = self._analysis()
