@@ -9,6 +9,7 @@ guess a fixture/equipment level.
 from copy import deepcopy
 from hashlib import sha256
 import json
+import re
 
 
 PMM_SCHEMA = "project-mechanical-model/v3"
@@ -30,7 +31,20 @@ def _stable_id(kind, payload):
     return f"PMM-{kind.upper()}-{sha256(raw.encode('utf-8')).hexdigest()[:16].upper()}"
 
 
-def _level_rows(auto):
+def _explicit_uniform_floor_height(answers):
+    """Return a user/source-confirmed uniform floor-to-floor height in metres."""
+    value = (answers or {}).get("heights") or (answers or {}).get("floor_height_m")
+    if isinstance(value, (int, float)):
+        height = float(value)
+    else:
+        text = str(value or "").replace("٫", ".").replace(",", ".")
+        match = re.search(r"(?<!\d)(\d+(?:\.\d+)?)\s*(?:m|meter|metre|متر)", text, re.I)
+        height = float(match.group(1)) if match else None
+    return height if height is not None and 1.5 <= height <= 8.0 else None
+
+
+def _level_rows(auto, answers=None):
+    uniform_height = _explicit_uniform_floor_height(answers)
     profiles = auto.get("level_profiles") or []
     if profiles:
         architecture_bounds = {
@@ -39,10 +53,11 @@ def _level_rows(auto):
             if str(row.get("name") or "").strip() and row.get("region_bounds") is not None
         }
         rows = []
-        for profile in profiles:
+        for order, profile in enumerate(profiles):
             name = str(profile.get("name") or "").strip()
             if not name:
                 continue
+            explicit_elevation = profile.get("elevation_m")
             rows.append({
                 "name": name,
                 "roof": bool(profile.get("roof")),
@@ -60,11 +75,21 @@ def _level_rows(auto):
                 "level_confidence": profile.get("level_confidence"),
                 "level_evidence": deepcopy(profile.get("level_evidence") or []),
                 "level_detection_status": profile.get("level_detection_status"),
+                "elevation_m": (
+                    explicit_elevation
+                    if explicit_elevation is not None
+                    else round(order * uniform_height, 6) if uniform_height is not None else None
+                ),
+                "elevation_source": (
+                    (profile.get("elevation_source") or "ARCHITECTURAL_LEVEL_EVIDENCE")
+                    if explicit_elevation is not None
+                    else "CONFIRMED_UNIFORM_FLOOR_HEIGHT" if uniform_height is not None else None
+                ),
             })
         return rows
 
     rows = []
-    for item in auto.get("levels") or []:
+    for order, item in enumerate(auto.get("levels") or []):
         if isinstance(item, dict):
             name = item.get("name")
             confidence = item.get("confidence")
@@ -77,6 +102,8 @@ def _level_rows(auto):
             rows.append({
                 "name": str(name), "roof": False, "region_bounds": region_bounds, "room_counts": {},
                 "level_confidence": confidence, "level_evidence": [],
+                "elevation_m": round(order * uniform_height, 6) if uniform_height is not None else None,
+                "elevation_source": "CONFIRMED_UNIFORM_FLOOR_HEIGHT" if uniform_height is not None else None,
             })
     return rows
 
@@ -197,7 +224,7 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
     proposal = proposal or {}
     auto = analysis.get("architectural_auto") or {}
 
-    levels = _level_rows(auto)
+    levels = _level_rows(auto, answers)
     level_names = _unique(row.get("name") for row in levels)
     spaces = _space_rows(levels)
     rooms = _room_rows(auto)

@@ -169,6 +169,12 @@ def generate_riser_from_network(network: dict) -> dict:
         if not row.get("size_source") or not row.get("material_source"):
             vertical_errors.append("VERTICAL_EXECUTION_PROVENANCE_REQUIRED:" + rid)
     status = "PASS" if not mismatches and not missing_execution and not vertical_errors else "FAIL"
+    errors = []
+    if mismatches:
+        errors.extend("PLAN_RISER_CALC_SCHEDULE_ID_MISMATCH:" + str(row.get("network_edge_id") or "UNKNOWN")
+                      for row in mismatches)
+    errors.extend("NETWORK_EXECUTION_DATA_REQUIRED:" + str(value) for value in missing_execution)
+    errors.extend(vertical_errors)
     graph_hash=sha256(json.dumps({"nodes":nodes,"edges":edges,"levels":level_registry},sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return {
         "status": status,
@@ -178,6 +184,7 @@ def generate_riser_from_network(network: dict) -> dict:
                            "missing_execution_data": missing_execution, "vertical_errors": sorted(vertical_errors),
                            "zero_mismatch": not mismatches and not vertical_errors},
         "claim": "GRAPH_DERIVED" if status == "PASS" else "NOT_ISSUABLE",
+        "errors": sorted(set(errors)),
         "level_policy":"DETAIL levels forbidden; typed architectural levels only",
     }
 

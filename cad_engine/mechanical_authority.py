@@ -284,7 +284,8 @@ def _traceability_preflight(payload: dict) -> dict:
         return {"status": "INPUT_REQUIRED", "errors": input_errors, "zero_mismatch": False}
     riser = generate_riser_from_network(payload["network_graph"])
     if riser.get("status") != "PASS":
-        return {"status": "FAIL", "errors": riser.get("errors") or riser.get("missing_inputs") or ["RISER_GRAPH_RECONCILIATION_FAILED"],
+        nested_errors = (riser.get("reconciliation") or {}).get("vertical_errors") or []
+        return {"status": "FAIL", "errors": riser.get("errors") or riser.get("missing_inputs") or nested_errors or ["RISER_GRAPH_RECONCILIATION_FAILED"],
                 "zero_mismatch": False, "riser": riser}
     reconciliation = reconcile_calculation_outputs(payload["calculation_rows"], riser)
     cross_document = reconcile_cross_document_outputs(payload["network_graph"], payload["calculation_rows"])

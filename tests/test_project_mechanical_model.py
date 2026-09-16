@@ -5,6 +5,30 @@ from app.project_mechanical_model import PMM_SCHEMA, build_project_mechanical_mo
 
 
 class ProjectMechanicalModelTests(unittest.TestCase):
+    def test_confirmed_uniform_floor_height_materializes_level_elevations(self):
+        analysis = self._analysis()
+        analysis["architectural_auto"]["level_profiles"] = [
+            {"name": "Ground", "region_bounds": [0, 0, 10, 10]},
+            {"name": "First", "region_bounds": [20, 0, 30, 10]},
+        ]
+        model = build_project_mechanical_model(
+            analysis, answers={"heights": "3.20 m floor-to-floor"},
+            scope=self._scope(), proposal={},
+        )
+        self.assertEqual([row["elevation_m"] for row in model["levels"]], [0.0, 3.2])
+        self.assertTrue(all(row["elevation_source"] == "CONFIRMED_UNIFORM_FLOOR_HEIGHT"
+                            for row in model["levels"]))
+
+    def test_missing_or_unreasonable_height_never_invents_level_elevations(self):
+        analysis = self._analysis()
+        analysis["architectural_auto"]["level_profiles"] = [
+            {"name": "Ground"}, {"name": "First"},
+        ]
+        for answers in ({}, {"heights": "نامشخص"}, {"heights": "12 m"}):
+            model = build_project_mechanical_model(
+                analysis, answers=answers, scope=self._scope(), proposal={},
+            )
+            self.assertEqual([row["elevation_m"] for row in model["levels"]], [None, None])
     def _analysis(self):
         return {"architectural_auto": {
             "effective_level_inference": "per-level-room-pattern-v3",
