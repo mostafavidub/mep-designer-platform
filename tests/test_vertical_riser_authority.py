@@ -76,6 +76,7 @@ class VerticalRiserAuthorityTests(unittest.TestCase):
         result = generate_riser_from_network(network)
         self.assertEqual(result["status"], "FAIL")
         errors = result["reconciliation"]["vertical_errors"]
+        self.assertEqual(result["errors"], errors)
         self.assertTrue(any(value.startswith("VERTICAL_LEVEL_ELEVATIONS_REQUIRED") for value in errors))
         self.assertTrue(any(value.startswith("UNDECLARED_VERTICAL_OFFSET") for value in errors))
         self.assertTrue(any(value.startswith("VERTICAL_CUMULATIVE_LOAD_REQUIRED") for value in errors))
