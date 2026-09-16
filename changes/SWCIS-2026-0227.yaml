@@ -1,0 +1,43 @@
+{
+  "change_id":"SWCIS-2026-0227",
+  "summary":"Require an explicit numeric floor height whenever architecture has no authoritative height value.",
+  "requester":"project-owner",
+  "change_types":["questionnaire","pmm","schema","ui_api","governance","test","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["questionnaire","pmm","planner","cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "questionnaire":"A generic height word cannot suppress the numeric floor-height question; selectable answers now contain explicit metric values.",
+    "pmm":"Parses confirmed Persian or Latin numeric height evidence.",
+    "planner":"No drawing scope change.",
+    "cad_designer":"Vertical risers receive the confirmed height through PMM.",
+    "deployment":"Deploy merged SHA and rerun the retained benchmark.",
+    "detail_riser":"No rule weakening; missing height still fails closed.",
+    "docs":"Records the production questionnaire omission.",
+    "equipment":"Not affected.",
+    "governance":"Only an explicit selected or extracted numeric value is accepted.",
+    "manifest":"Not affected.",
+    "manufacturer_selector":"Not affected.",
+    "migration":"No persisted schema migration; new runs rebuild answers and PMM.",
+    "qa":"Adds omission and Persian-number regressions.",
+    "routing":"Vertical topology receives elevation evidence; plan routing is unchanged.",
+    "sizing":"Not affected.",
+    "ui_api":"Question options communicate actual engineering values rather than qualitative ceiling-only choices.",
+    "versioning":"No user-visible runtime version."
+  },
+  "evidence":{
+    "traceability":["architecture lacks numeric height -> questionnaire height -> confirmed numeric answer -> PMM elevation -> riser QA"],
+    "tests":["Focused questionnaire, PMM, topology, sizing, riser and authority suites"],
+    "docs":["changes/SWCIS-2026-0227.yaml"],
+    "version_bump":["none"],
+    "migration":["none"],
+    "golden_regression":["Generic word ارتفاع still asks the height question; ۳٫۲۰ متر materializes 0.0/3.2 m elevations."],
+    "semantic_diff":["Only numeric source evidence suppresses the question."],
+    "artifact_diff":["Regenerated PMM contains source-backed elevation metadata."],
+    "numeric_diff":["Persian digits and decimal separator are normalized before the unchanged 1.5-8.0 m reasonableness bound."],
+    "contract_diff":["Questionnaire now collects the evidence already required by the locked riser gate."],
+    "deployment_plan":["CI, merge, exact-SHA Staging deployment and architecture-only rerun."],
+    "rollback_plan":["Revert and deploy the prior approved SHA."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":2,"score":16,"rationale":"Explicit numeric choices and destructive omission tests prevent silent guessing."},
+  "waiver":null
+}

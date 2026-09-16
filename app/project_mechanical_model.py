@@ -37,7 +37,9 @@ def _explicit_uniform_floor_height(answers):
     if isinstance(value, (int, float)):
         height = float(value)
     else:
-        text = str(value or "").replace("٫", ".").replace(",", ".")
+        text = str(value or "").translate(str.maketrans(
+            "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789"
+        )).replace("٫", ".").replace(",", ".")
         match = re.search(r"(?<!\d)(\d+(?:\.\d+)?)\s*(?:m|meter|metre|متر)", text, re.I)
         height = float(match.group(1)) if match else None
     return height if height is not None and 1.5 <= height <= 8.0 else None

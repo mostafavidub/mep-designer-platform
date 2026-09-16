@@ -54,6 +54,12 @@ class MechanicalMinimalQuestionTests(unittest.TestCase):
         self.assertNotIn('water_inlet_pressure', keys)
         self.assertNotIn('sanitary_outlet', keys)
 
+    def test_generic_height_word_never_suppresses_numeric_height_question(self):
+        auto = self.auto(floor_height_inferred=None)
+        analysis = {'files': [{'texts': ['پلان معماری؛ خط ارتفاع نما موجود است اما مقدار طبقه ثبت نشده']} ]}
+        keys = [key for key, _ in dynamic_questions(analysis, 'mechanical', auto)]
+        self.assertIn('heights', keys)
+
     def test_explicit_no_gas_in_architecture_prevents_gas_question(self):
         auto = self.auto(gas_absence_inferred=True)
         analysis = {'files': [{'texts': ['بدون گاز']}]}
