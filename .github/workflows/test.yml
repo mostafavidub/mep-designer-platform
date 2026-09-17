@@ -44,6 +44,52 @@ jobs:
             test_resumable_upload.ResumableUploadTests \
             test_mechanical_flow_e2e.MechanicalFlowE2ETests
 
+  seo-domain-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: sqlite:///./test_seo_ci.db
+      DATA_DIR: /tmp/engitools-seo-ci-data
+      CAD_OUTPUT_DIR: /tmp/engitools-seo-ci-cad
+      TMPDIR: /tmp/engitools-seo-ci-tmp
+      MPLBACKEND: Agg
+      CAD_DESIGNER_URL: http://127.0.0.1:9999
+      PYTHONPATH: .:tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r cad_engine/requirements.txt
+      - name: Railway host redirects to canonical domain
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_railway_hostname_redirects_to_canonical_host || { echo railway >> /tmp/seo-failures; exit 1; }
+      - name: WWW redirects to canonical domain
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_www_hostname_redirects_to_canonical_host || { echo www >> /tmp/seo-failures; exit 1; }
+      - name: Canonical metadata stays indexable
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_canonical_host_remains_indexable || { echo canonical >> /tmp/seo-failures; exit 1; }
+      - name: Unlisted host canonicalizes metadata
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_future_unlisted_custom_domain_remains_indexable_but_canonicalizes_to_planha || { echo unlisted >> /tmp/seo-failures; exit 1; }
+      - name: Private routes remain noindex
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_private_page_remains_noindex_nofollow_on_canonical_domain || { echo private >> /tmp/seo-failures; exit 1; }
+      - name: Health probe remains reachable and noindex
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_health_probe_on_railway_hostname_is_not_redirected_and_stays_noindex || { echo health >> /tmp/seo-failures; exit 1; }
+      - name: Forwarded host redirects correctly
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_forwarded_railway_host_redirects_behind_proxy || { echo forwarded >> /tmp/seo-failures; exit 1; }
+      - name: Sitemap and robots advertise canonical domain
+        continue-on-error: true
+        run: python -m unittest -v test_temporary_domain_noindex.TemporaryDomainNoindexTests.test_sitemap_and_robots_only_advertise_canonical_domain || { echo discovery >> /tmp/seo-failures; exit 1; }
+      - name: Assert canonical-domain regression passed
+        run: test ! -s /tmp/seo-failures
+
   full-suite-observability:
     runs-on: ubuntu-latest
     timeout-minutes: 15
