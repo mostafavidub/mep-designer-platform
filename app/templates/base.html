@@ -11,19 +11,19 @@
   <title>{% block title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}EngiTools ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF است؛ با تحلیل خودکار پلان و پرسش فقط درباره اطلاعات ضروری پروژه.{% endblock %}">
   <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1{% endblock %}">
-  {% set canonical_scheme = request.headers.get('x-forwarded-proto', 'https').split(',')[0].strip() %}
+  {% set canonical_base = 'https://planha.com' %}
   {% set page_path = request.url.path %}
   {% set is_home = page_path == '/' %}
   {% set is_landing = page_path in ['/', '/electrical', '/mechanical'] %}
   {% set is_discipline = page_path in ['/electrical', '/mechanical'] %}
   {% if is_home %}<meta name="enamad" content="43519949" />{% endif %}
-  <link rel="canonical" href="{{ canonical_scheme }}://{{ request.url.netloc }}{{ page_path }}">
+  <link rel="canonical" href="{{ canonical_base }}{{ page_path }}">
   <meta property="og:locale" content="fa_IR">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:site_name" content="EngiTools">
   <meta property="og:title" content="{% block og_title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
   <meta property="og:description" content="{% block og_description %}طراحی هوشمند نقشه‌های تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF.{% endblock %}">
-  <meta property="og:url" content="{{ canonical_scheme }}://{{ request.url.netloc }}{{ page_path }}">
+  <meta property="og:url" content="{{ canonical_base }}{{ page_path }}">
   {% block social_image %}{% endblock %}
   <meta name="twitter:card" content="{% block twitter_card %}summary{% endblock %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +47,7 @@
   <link rel="stylesheet" href="/static/account.css?v=20260902-1">
   <link rel="stylesheet" href="/static/admin-pricing.css?v=20260902-1">
   {% block head_extra %}{% endblock %}
-  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/"},{"@type":"WebSite","@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#website","name":"EngiTools","url":"{{ canonical_scheme }}://{{ request.url.netloc }}/","publisher":{"@id":"{{ canonical_scheme }}://{{ request.url.netloc }}/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://planha.com/#organization","name":"EngiTools","url":"https://planha.com/"},{"@type":"WebSite","@id":"https://planha.com/#website","name":"EngiTools","url":"https://planha.com/","publisher":{"@id":"https://planha.com/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
 </head>
 <body>
