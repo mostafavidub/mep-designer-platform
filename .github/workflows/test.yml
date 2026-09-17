@@ -18,7 +18,7 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt -r cad_engine/requirements.txt
-      - name: Run upload, DXF, queue and storage regression tests
+      - name: Run upload, DXF, queue, storage and canonical-domain regression tests
         env:
           DATABASE_URL: sqlite:///./test_ci.db
           DATA_DIR: /tmp/engitools-ci-data
@@ -42,7 +42,8 @@ jobs:
             test_job_queue_and_artifact_qa.ArtifactQualityGateTests.test_zip_without_dxf_is_rejected \
             test_job_queue_and_artifact_qa.QueueIntegrationContractTests \
             test_resumable_upload.ResumableUploadTests \
-            test_mechanical_flow_e2e.MechanicalFlowE2ETests
+            test_mechanical_flow_e2e.MechanicalFlowE2ETests \
+            test_temporary_domain_noindex.TemporaryDomainNoindexTests
 
   full-suite-observability:
     runs-on: ubuntu-latest
