@@ -1,9 +1,12 @@
 import os
 import shutil
+from urllib.parse import urlsplit
+
 from cad_engine.build_identity import build_identity
 from cad_engine.mechanical_release_contract import release_contract_status
 
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.responses import RedirectResponse, Response
 
 from . import main_auto
 from . import unit_sanity  # patches dimension-based CAD unit sanity before project analysis
@@ -65,9 +68,21 @@ register_panel_bridge(app, main_auto.legacy, DesignJob)
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
-# The Railway hostname is a temporary trial URL and must not accumulate search
-# signals that cannot be preserved after the trial expires. Keep this scoped by
-# hostname so a future custom domain is indexable without a code change.
+PUBLIC_SITE_URL = os.getenv('PUBLIC_SITE_URL', 'https://planha.com').strip().rstrip('/') or 'https://planha.com'
+PUBLIC_SITE = urlsplit(PUBLIC_SITE_URL)
+CANONICAL_HOST = (PUBLIC_SITE.hostname or 'planha.com').lower().rstrip('.')
+CANONICAL_SCHEME = PUBLIC_SITE.scheme or 'https'
+CANONICAL_REDIRECT_HOSTS = {
+    host.strip().lower().rstrip('.')
+    for host in os.getenv(
+        'CANONICAL_REDIRECT_HOSTS',
+        'www.planha.com,web-app-production-3d3b.up.railway.app',
+    ).split(',')
+    if host.strip()
+}
+
+# Keep any non-canonical technical host out of search even if redirect behavior
+# is temporarily bypassed by an internal health request.
 TEMPORARY_NOINDEX_HOSTS = {
     host.strip().lower().rstrip('.')
     for host in os.getenv(
@@ -84,10 +99,24 @@ def _request_hostname(request):
     return host.split(':', 1)[0].lower().rstrip('.')
 
 
+def _canonical_redirect_url(request):
+    path = request.url.path or '/'
+    query = request.url.query
+    suffix = f'?{query}' if query else ''
+    return f'{CANONICAL_SCHEME}://{CANONICAL_HOST}{path}{suffix}'
+
+
 @app.middleware('http')
 async def performance_headers(request, call_next):
-    response = await call_next(request)
     path = request.url.path
+    host = _request_hostname(request)
+    # Do not interfere with Railway/internal probes, but consolidate all public
+    # duplicate hosts to the single SEO host while preserving path and query.
+    is_probe = path in {'/system_health', '/storage_health'} or path.startswith('/internal/')
+    if not is_probe and host in CANONICAL_REDIRECT_HOSTS and host != CANONICAL_HOST:
+        return RedirectResponse(url=_canonical_redirect_url(request), status_code=301)
+
+    response = await call_next(request)
     if path.startswith('/static/'):
         if request.query_params.get('v'):
             response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
@@ -97,10 +126,41 @@ async def performance_headers(request, call_next):
         response.headers['Cache-Control'] = 'no-cache'
     if path.startswith('/projects/') or path in {'/login', '/register'}:
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'
-    elif _request_hostname(request) in TEMPORARY_NOINDEX_HOSTS:
+    elif host in TEMPORARY_NOINDEX_HOSTS:
         response.headers['X-Robots-Tag'] = 'noindex, follow'
     response.headers.setdefault('Vary', 'Accept-Encoding')
     return response
+
+
+# Replace inherited host-derived SEO endpoints with canonical-domain versions.
+for route in list(app.router.routes):
+    if getattr(route, 'path', None) in {'/sitemap.xml', '/robots.txt'} and 'GET' in (getattr(route, 'methods', None) or set()):
+        app.router.routes.remove(route)
+
+
+@app.get('/sitemap.xml', include_in_schema=False)
+def canonical_sitemap():
+    paths = ['/', '/electrical', '/mechanical', '/blog'] + [
+        f"/blog/{post['slug']}" for post in main_auto.legacy.BLOG
+    ]
+    rows = ''.join(
+        f'<url><loc>{PUBLIC_SITE_URL}{path}</loc>'
+        f'<changefreq>{"weekly" if path.startswith("/blog/") else "daily"}</changefreq>'
+        f'<priority>{"0.8" if path.startswith("/blog/") else "0.9"}</priority></url>'
+        for path in paths
+    )
+    xml = '<?xml version="1.0" encoding="UTF-8"?>' + (
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + rows + '</urlset>'
+    )
+    return Response(content=xml, media_type='application/xml')
+
+
+@app.get('/robots.txt', include_in_schema=False)
+def canonical_robots():
+    return Response(
+        content=f'User-agent: *\nAllow: /\nSitemap: {PUBLIC_SITE_URL}/sitemap.xml\n',
+        media_type='text/plain',
+    )
 
 
 def integrated_system_health():
