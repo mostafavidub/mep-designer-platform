@@ -112,9 +112,11 @@ def _release_input_errors(report, pre_submission=None):
     pipeline_errors=set(pipeline_qa.get('errors') or [])
     disclosed_target_package=bool(
         target_package_pre_submission
-        and pipeline_qa.get('status')=='INPUT_REQUIRED'
-        and 'TARGET_DESIGN_PACKAGES_MISSING' in pipeline_errors
+        and pipeline_qa.get('status') in {'FAIL','INPUT_REQUIRED'}
+        and pipeline_errors
         and pipeline_errors <= ({'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)
+        and ('TARGET_DESIGN_PACKAGES_MISSING' in pipeline_errors
+             or bool(pipeline_errors & _DISCLOSABLE_EVIDENCE_CONSTRAINTS))
     )
     if pipeline_qa.get('status')!='PASS' and not disclosed_target_package:
         errors.extend('pipeline:'+str(x) for x in pipeline_errors)
