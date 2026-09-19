@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0231",
+  "summary":"Represent a canonical roof vent edge on an explicit service schematic when authoritative roof architecture is unavailable.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","governance","test","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Creates a sanitary vent service schematic in both the production core and compatibility authority only when the canonical graph proves a drawable roof vent edge and no authoritative roof plan exists.",
+    "deployment":"Deploy merged SHA and rerun the retained architecture-only benchmark.",
+    "docs":"Records the distinction between a roof plan and a disclosed termination schematic.",
+    "governance":"The support sheet is SCHEMATIC, not PLAN, so it cannot inflate or substitute for the approved plan scope.",
+    "manifest":"Adds a derived VENT_ROOF_TERMINATION support role without inventing roof architecture.",
+    "migration":"No persisted schema migration; rerun failed projects.",
+    "qa":"Adds authority-model and exact-file materialization regressions.",
+    "ui_api":"No interface change.",
+    "versioning":"No user-visible runtime version."
+  },
+  "evidence":{
+    "traceability":["canonical roof vent edge -> no authoritative roof board -> derived service schematic -> exact-file edge identity"],
+    "tests":["tests/test_mechanical_authority_v15.py","tests/test_phase_1_1_coordinate_release.py","tests/test_manifest_support_roles_v17.py"],
+    "docs":["changes/SWCIS-2026-0231.yaml"],
+    "version_bump":["none"],
+    "migration":["none"],
+    "golden_regression":["A graph-required roof vent edge without roof architecture gets exactly one disclosed service schematic."],
+    "semantic_diff":["The support is labelled SCHEMATIC and carries derived_support_role=VENT_ROOF_TERMINATION."],
+    "artifact_diff":["Roof vent topology is represented without a fabricated architectural roof plan."],
+    "numeric_diff":["No calculation changes."],
+    "contract_diff":["Derived support is admitted only from the canonical graph and cannot count as an approved plan."],
+    "deployment_plan":["CI, merge, exact-SHA Staging deployment and architecture-only rerun."],
+    "rollback_plan":["Revert and deploy the prior approved SHA."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":2,"score":16,"rationale":"The fallback is restricted to graph-proven roof vent edges, disclosed as schematic, and regression checked against plan-count governance."},
+  "waiver":null
+}

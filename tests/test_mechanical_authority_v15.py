@@ -8,6 +8,7 @@ from cad_engine.mechanical_authority_v15 import (
     compose_authority_dxf,
     qa_authority_dxf,
 )
+from cad_engine.mechanical_design_core import build_authority_model as build_production_authority_model
 
 
 def test_rejected_reused_roof_title_does_not_require_rainfall():
@@ -35,6 +36,36 @@ def test_rejected_reused_roof_title_does_not_require_rainfall():
     authority = build_authority_model(pipeline, answers)
     assert authority['project']['roof_present'] is False
     assert 'rainfall_intensity' not in authority['design_basis']['missing']
+
+
+def test_graph_required_roof_vent_gets_honest_service_schematic_without_roof_architecture():
+    pipeline = {
+        'architecture': {
+            'primary_floor_plan_ids': ['P1'],
+            'plans': [{'plan_id': 'P1', 'level': 'GROUND', 'mechanical_role': 'PRIMARY_FLOOR', 'bounds': [0, 0, 10, 10]}],
+            'rooms': [{'plan_id': 'P1', 'type': 'bath'}, {'plan_id': 'P1', 'type': 'kitchen'}],
+            'quality': {},
+        },
+        'recognition': {'detections': []},
+    }
+    answers = {
+        'city': 'گنبد کاووس', 'cooling': 'اسپلیت دیواری',
+        'heating': 'پکیج دیواری و رادیاتور', 'gas': 'ساختمان گاز ندارد',
+        'water_inlet_pressure': '2.5 bar',
+        '_plan_analysis': {'architectural_auto': {'roof_scope_reliable': False}},
+        '_canonical_input_contract': {'network_graph': {
+            'levels': [{'id': 'L-R', 'name': 'بام', 'type': 'ROOF'}],
+            'edges': [{'id': 'E-VTR', 'system': 'vent', 'levels': ['L-R'], 'draw_on_plan': True}],
+        }},
+    }
+    for builder in (build_authority_model, build_production_authority_model):
+        authority = builder(pipeline, answers)
+        support = [row for row in authority['manifest']['sheets']
+                   if row.get('derived_support_role') == 'VENT_ROOF_TERMINATION']
+        assert len(support) == 1
+        assert support[0]['family'] == 'SANITARY_VENT'
+        assert support[0]['level'] == 'SERVICE'
+        assert support[0]['purpose'] == 'SCHEMATIC'
 from cad_engine.authority_architecture_v14 import (
     build_project_model,
     resolve_design_basis,

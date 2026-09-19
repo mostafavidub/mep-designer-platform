@@ -151,12 +151,19 @@ def _target_board_map(report, network, src):
                 level.get("type") == "ROOF"
                 and row_family == family
                 and str(row.get("level") or "").upper() == "SERVICE"
-                and str(row.get("purpose") or "PLAN").upper() == "PLAN"
+                and (
+                    str(row.get("purpose") or "PLAN").upper() == "PLAN"
+                    or (
+                        str(row.get("purpose") or "").upper() == "SCHEMATIC"
+                        and str(row.get("derived_support_role") or "").upper() == "VENT_ROOF_TERMINATION"
+                    )
+                )
             )
             exact_level = row_family == family and row_level_type == level.get("type")
             if not (exact_level or roof_coordination or roof_service_fallback):
                 continue
-            if str(row.get("purpose") or "PLAN").upper() != "PLAN" and not roof_coordination:
+            if (str(row.get("purpose") or "PLAN").upper() != "PLAN"
+                    and not roof_coordination and not roof_service_fallback):
                 continue
             board = boards.get(row.get("old_sheet")) or {}
             area = board.get("plan_area")

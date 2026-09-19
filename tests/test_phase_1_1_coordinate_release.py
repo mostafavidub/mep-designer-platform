@@ -101,6 +101,19 @@ def test_materializer_uses_same_system_service_board_when_no_roof_plan_exists(tm
     assert result["materialized_segments"] == 1
 
 
+def test_materializer_uses_derived_vent_roof_schematic_without_counting_it_as_plan(tmp_path):
+    src, dst, report, network = _fixture_files(tmp_path)
+    report["composition"]["manifest"][0].update({
+        "family": "SANITARY_VENT", "level": "SERVICE", "purpose": "SCHEMATIC",
+        "derived_support_role": "VENT_ROOF_TERMINATION", "code": "M-VTR",
+    })
+    network["levels"][0].update({"name": "بام", "type": "ROOF"})
+    network["edges"][0]["system"] = "vent"
+    result = materialize_authoritative_network(src, dst, report, network)
+    assert result["status"] == "PASS", result
+    assert result["materialized_segments"] == 1
+
+
 def test_persisted_collapsed_path_is_detected_for_authoritative_rebuild():
     network = {"edges": [{"id": "E1", "draw_on_plan": True,
                            "plan_path": [(2, 2), (2, 2), (2, 2)]}]}

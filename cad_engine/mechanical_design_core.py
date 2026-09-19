@@ -395,20 +395,34 @@ def build_authority_model(pipeline, answers):
         if isinstance(row,dict)
         and str(row.get("drawing_type") or "").strip().upper()=="ROOF_PLAN"
     ),None)
+    canonical_network=((answers or {}).get("_canonical_input_contract") or {}).get("network_graph") or {}
+    canonical_levels={str(row.get("id")):str(row.get("type") or row.get("name") or "").strip().upper()
+                      for row in canonical_network.get("levels") or [] if isinstance(row,dict)}
+    canonical_roof_vent=any(
+        isinstance(edge,dict)
+        and edge.get("draw_on_plan") is not False
+        and str(edge.get("system") or "").strip().lower() in {"vent","sanitary_vent"}
+        and any(canonical_levels.get(str(level_id))=="ROOF" for level_id in edge.get("levels") or [])
+        for edge in canonical_network.get("edges") or []
+    )
     canonical_roof=next((row for row in manifest.get("sheets") or [] if row.get("family")=="ROOF"),None)
     if canonical_roof is not None and approved_roof_row is not None:
         canonical_roof["approved_code"]=str(approved_roof_row.get("code") or approved_roof_row.get("sheet_code") or "").strip().upper()
         canonical_roof["approved_drawing_type"]="ROOF_PLAN"
         canonical_roof["title"]=str(approved_roof_row.get("label") or approved_roof_row.get("title") or canonical_roof.get("title"))
-    if approved_roof_termination and not any(row.get("family")=="ROOF" for row in manifest.get("sheets") or []):
+    if (approved_roof_termination or canonical_roof_vent) and not any(row.get("family")=="ROOF" for row in manifest.get("sheets") or []):
         # No authoritative roof architecture was proved. Preserve the approved
-        # deliverable as an explicit engineering termination schematic rather
-        # than fabricating a roof plan or silently dropping the sheet.
+        # deliverable, or a graph-required roof vent edge, as an explicit
+        # engineering termination schematic rather than fabricating a roof
+        # plan or silently dropping the network edge.  A graph-derived support
+        # is SCHEMATIC (not PLAN), so it cannot inflate the approved plan count.
         manifest["sheets"].append({
-            "sheet":None,"family":"SANITARY_VENT","level":"SERVICE","purpose":"PLAN",
+            "sheet":None,"family":"SANITARY_VENT","level":"SERVICE",
+            "purpose":"PLAN" if approved_roof_termination else "SCHEMATIC",
             "title":"VENT TERMINATION / ROOF COORDINATION SCHEMATIC — ROOF ARCHITECTURE NOT PROVIDED",
             "approved_code":str((approved_roof_row or {}).get("code") or (approved_roof_row or {}).get("sheet_code") or "").strip().upper(),
             "approved_drawing_type":"ROOF_PLAN",
+            "derived_support_role":"VENT_ROOF_TERMINATION" if canonical_roof_vent and not approved_roof_termination else None,
         })
         for i,row in enumerate(manifest["sheets"]):
             row["sheet"]=f"M-{i:02d}"
