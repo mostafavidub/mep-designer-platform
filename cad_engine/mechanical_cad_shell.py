@@ -75,7 +75,12 @@ def _normalize_project_answers(answers):
 def _release_input_errors(report, pre_submission=None):
     errors=[]
     pending = {str(item).split(":", 1)[-1] for item in (((report.get("semantic_qa") or {}).get("pre_submission_disclosure") or {}).get("pending_family_content") or [])}
-    disclosed_family = {"roof_rainwater":"ROOF", "exhaust_cfm":"EXHAUST", "split_roof":"SPLIT_AC"}
+    disclosed_family = {
+        "roof_rainwater": "ROOF",
+        "exhaust_cfm": "EXHAUST",
+        "split_roof": "SPLIT_AC",
+        "gas_table": "GAS",
+    }
     target_package_pre_submission = bool(isinstance(pre_submission,dict) and pre_submission.get("blocked_at")=="target_design_packages")
     enrichment=report.get('enrichment') or {}
     for name,result in enrichment.items():
