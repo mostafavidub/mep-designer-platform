@@ -46,6 +46,11 @@ _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS = {
     'architecture:insufficient_room_geometry',
     'architecture:no_real_shaft_evidence',
 }
+_DISCLOSABLE_EVIDENCE_CONSTRAINTS = _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS | {
+    'fixture_recognition:no_plumbing_fixture_evidence',
+    'selected_hvac_has_no_project_equipment',
+    'selected_hvac_has_no_project_routes',
+}
 PRIMARY_CAD_FAMILIES = set(WEB_TO_CAD_FAMILY.values())
 PLAN_DRAWING_TYPES = {'FLOOR_PLAN','ROOF_PLAN','EQUIPMENT_PLAN','VENTILATION_PLAN'}
 DRAWING_TYPE_ROLE = {
@@ -108,7 +113,8 @@ def _release_input_errors(report, pre_submission=None):
     disclosed_target_package=bool(
         target_package_pre_submission
         and pipeline_qa.get('status')=='INPUT_REQUIRED'
-        and pipeline_errors <= {'TARGET_DESIGN_PACKAGES_MISSING'}
+        and 'TARGET_DESIGN_PACKAGES_MISSING' in pipeline_errors
+        and pipeline_errors <= ({'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)
     )
     if pipeline_qa.get('status')!='PASS' and not disclosed_target_package:
         errors.extend('pipeline:'+str(x) for x in pipeline_errors)
@@ -118,8 +124,8 @@ def _release_input_errors(report, pre_submission=None):
         target_package_pre_submission
         and acceptance.get('status') in {'FAIL','INPUT_REQUIRED','PRE_SUBMISSION'}
         and acceptance_errors
-        and (acceptance.get('status')!='FAIL' or bool(acceptance_errors & _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS))
-        and acceptance_errors <= ({'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS)
+        and (acceptance.get('status')!='FAIL' or bool(acceptance_errors & _DISCLOSABLE_EVIDENCE_CONSTRAINTS))
+        and acceptance_errors <= ({'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)
     )
     if acceptance.get('status')!='PASS' and not disclosed_acceptance:
         errors.extend('engineering_acceptance:'+str(x) for x in acceptance_errors or ['MISSING'])
@@ -164,9 +170,9 @@ def _effective_pre_submission(report, supplied):
     pipeline=report.get('pipeline_qa') or {}; acceptance=report.get('engineering_acceptance') or {}
     error_sets=[set(pipeline.get('errors') or []),set(acceptance.get('errors') or [])]
     combined=set().union(*error_sets)
-    allowed={'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS
+    allowed={'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS
     if ('TARGET_DESIGN_PACKAGES_MISSING' in combined and combined <= allowed
-            and error_sets[0] <= {'TARGET_DESIGN_PACKAGES_MISSING'}):
+            and error_sets[0] <= allowed):
         return {'blocked_at':'target_design_packages','blockers':sorted(combined),
                 'source':'EXACT_ENGINE_GATE_EVIDENCE'}
     return supplied

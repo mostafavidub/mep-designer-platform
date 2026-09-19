@@ -118,7 +118,7 @@ def test_exact_target_package_with_bounded_architecture_constraints_is_truthful_
     disclosure=_materialize_target_package_disclosures(doc,doc.modelspace(),compose,recovered)
     assert disclosure["status"]=="PASS"
     assert disclosure["architecture_constraints"]==sorted(blockers[1:])
-    assert any("ARCHITECTURE CONSTRAINTS" in entity.plain_text()
+    assert any("UNRESOLVED EVIDENCE CONSTRAINTS" in entity.plain_text()
                for entity in doc.modelspace().query("MTEXT"))
 
 
@@ -128,6 +128,18 @@ def test_unrelated_engineering_failure_cannot_be_disclosed_as_target_pre_submiss
         {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
         {"status":"FAIL","errors":["routing:route_crosses_architectural_wall"]},
     ) is None
+
+
+def test_selected_hvac_without_project_evidence_is_disclosed_not_fabricated():
+    result=_effective_target_package_pre_submission(
+        None,
+        {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING",
+          "selected_hvac_has_no_project_equipment","selected_hvac_has_no_project_routes"]},
+        {"status":"FAIL","errors":["architecture:no_real_shaft_evidence",
+          "fixture_recognition:no_plumbing_fixture_evidence"]},
+    )
+    assert result["blocked_at"]=="target_design_packages"
+    assert "selected_hvac_has_no_project_routes" in result["blockers"]
 
 
 def test_pending_gas_table_is_deliverable_only_as_explicit_target_package_pre_submission():

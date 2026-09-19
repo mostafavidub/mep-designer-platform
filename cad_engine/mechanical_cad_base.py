@@ -377,6 +377,11 @@ _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS = {
     "architecture:insufficient_room_geometry",
     "architecture:no_real_shaft_evidence",
 }
+_DISCLOSABLE_EVIDENCE_CONSTRAINTS = _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS | {
+    "fixture_recognition:no_plumbing_fixture_evidence",
+    "selected_hvac_has_no_project_equipment",
+    "selected_hvac_has_no_project_routes",
+}
 
 
 def _target_package_pre_submission(value):
@@ -400,10 +405,10 @@ def _effective_target_package_pre_submission(supplied, pipeline_qa, acceptance):
     results=(pipeline_qa or {},acceptance or {})
     error_sets=[set(result.get("errors") or []) for result in results]
     combined=set().union(*error_sets)
-    allowed={"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS
+    allowed={"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS
     if ("TARGET_DESIGN_PACKAGES_MISSING" in combined
             and combined <= allowed
-            and error_sets[0] <= {"TARGET_DESIGN_PACKAGES_MISSING"}):
+            and error_sets[0] <= allowed):
         return {"blocked_at":"target_design_packages","blockers":sorted(combined),
                 "source":"EXACT_ENGINE_GATE_EVIDENCE"}
     return supplied
@@ -414,7 +419,7 @@ def _materialize_target_package_disclosures(doc, msp, compose, pre_submission):
     if not _target_package_pre_submission(pre_submission):
         return {"status": "NOT_APPLICABLE", "sheets": []}
     probe = qa_semantic_sheet_content_from_model(msp, compose)
-    constraints=sorted(set(pre_submission.get("blockers") or []) & _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS)
+    constraints=sorted(set(pre_submission.get("blockers") or []) & _DISCLOSABLE_EVIDENCE_CONSTRAINTS)
     if not probe["missing_family_content"] and not constraints:
         return {"status": "PASS", "sheets": []}
     layer = "ENGITOOLS-M-PRE-SUBMISSION"
@@ -438,7 +443,7 @@ def _materialize_target_package_disclosures(doc, msp, compose, pre_submission):
         text = (
             f"{_PRE_SUBMISSION_DISCLOSURE_PREFIX} | SHEET={code} | FAMILY={family}\n"
             "FINAL FAMILY DESIGN PACKAGE INPUT REQUIRED — NOT SUBMISSION READY"
-            + (f"\nARCHITECTURE CONSTRAINTS: {', '.join(constraints)}" if constraints else "")
+            + (f"\nUNRESOLVED EVIDENCE CONSTRAINTS: {', '.join(constraints)}" if constraints else "")
         )
         _mtext(msp, layer, text, x1 + 0.25, y2 - 0.25, max(1.0, (x2 - x1) - 0.5), 0.08)
         records.append({"sheet": code, "family": family, "gap": gap, "board_id": row.get("old_sheet")})
@@ -582,7 +587,8 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
     )
     pipeline_release_qa = pipeline_qa
     if (target_package_pending and pipeline_qa.get("status") == "INPUT_REQUIRED"
-            and set(pipeline_qa.get("errors") or []) <= {"TARGET_DESIGN_PACKAGES_MISSING"}):
+            and "TARGET_DESIGN_PACKAGES_MISSING" in set(pipeline_qa.get("errors") or [])
+            and set(pipeline_qa.get("errors") or []) <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)):
         pipeline_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
     acceptance_release_qa = acceptance
     acceptance_errors = set(acceptance.get("errors") or [])
@@ -590,8 +596,8 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
             and acceptance.get("status") in {"FAIL", "INPUT_REQUIRED", "PRE_SUBMISSION"}
             and acceptance_errors
             and (acceptance.get("status") != "FAIL" or
-                 bool(acceptance_errors & _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS))
-            and acceptance_errors <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS)):
+                 bool(acceptance_errors & _DISCLOSABLE_EVIDENCE_CONSTRAINTS))
+            and acceptance_errors <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)):
         acceptance_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
     status="PASS" if all(result.get("status")=="PASS" for result in (
         pipeline_release_qa, acceptance_release_qa, dxf_qa, semantic_qa,

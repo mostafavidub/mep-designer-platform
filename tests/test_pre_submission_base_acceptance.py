@@ -4,7 +4,7 @@ from pathlib import Path
 def test_base_release_uses_bounded_disclosed_acceptance_view_without_mutating_original_result():
     source = Path('cad_engine/mechanical_cad_base.py').read_text(encoding='utf-8')
     assert '_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS' in source
-    assert 'acceptance_errors <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS)' in source
+    assert 'acceptance_errors <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)' in source
     assert 'pipeline_release_qa, acceptance_release_qa, dxf_qa, semantic_qa' in source
     assert '("engineering_acceptance_gate",acceptance_release_qa)' in source
     assert '"engineering_acceptance":acceptance' in source
