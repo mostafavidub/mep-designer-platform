@@ -27,6 +27,26 @@ MAX_ATTEMPTS = int(os.getenv('JOB_MAX_ATTEMPTS', '3'))
 RETRY_DELAY_SECONDS = int(os.getenv('JOB_RETRY_DELAY_SECONDS', '30'))
 STALE_AFTER_MINUTES = int(os.getenv('JOB_STALE_AFTER_MINUTES', '70'))
 
+
+def _configured_worker_types():
+    """Return the queue roles owned by this deployment.
+
+    Web and worker services share the same application image.  An explicit
+    empty ``JOB_WORKER_TYPES`` therefore means "HTTP only"; an unset value
+    preserves the historical all-in-one deployment for local installs.
+    """
+    raw = os.getenv('JOB_WORKER_TYPES')
+    if raw is None:
+        return {'analysis', 'design'}
+    return {
+        item.strip().lower()
+        for item in raw.split(',')
+        if item.strip().lower() in {'analysis', 'design'}
+    }
+
+
+WORKER_TYPES = _configured_worker_types()
+
 _QUEUE_STATE_LOCK = threading.Lock()
 _QUEUE_STATE = {
     job_type: {
@@ -43,9 +63,17 @@ def queue_health():
     """Expose worker liveness without leaking job or project data."""
     with _QUEUE_STATE_LOCK:
         workers = {name: dict(value) for name, value in _QUEUE_STATE.items()}
-    started = any(worker['heartbeat_at'] for worker in workers.values())
-    healthy = all(worker['alive'] for worker in workers.values())
-    return {'status': 'ok' if healthy else ('error' if started else 'starting'), 'workers': workers}
+    enabled = {name: worker for name, worker in workers.items() if name in WORKER_TYPES}
+    if not enabled:
+        return {'status': 'ok', 'mode': 'http_only', 'workers': workers}
+    started = any(worker['heartbeat_at'] for worker in enabled.values())
+    healthy = all(worker['alive'] for worker in enabled.values())
+    return {
+        'status': 'ok' if healthy else ('error' if started else 'starting'),
+        'mode': 'worker',
+        'worker_types': sorted(WORKER_TYPES),
+        'workers': workers,
+    }
 
 
 def _record_worker_state(job_type, *, alive=None, error=None):
@@ -756,7 +784,7 @@ def register_job_queue(app, legacy):
             for job_type in ('analysis', 'design'):
                 _record_worker_state(job_type, alive=False, error=exc)
             return
-        for job_type in ('analysis', 'design'):
+        for job_type in sorted(WORKER_TYPES):
             threading.Thread(target=_worker, args=(job_type,), daemon=True, name=f'{job_type}-queue').start()
 
     @app.on_event('shutdown')

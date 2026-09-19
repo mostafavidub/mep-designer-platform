@@ -1,0 +1,34 @@
+{
+  "change_id":"SWCIS-2026-0234",
+  "summary":"Separate the customer-facing HTTP service from persistent analysis and CAD design workers while preserving the all-in-one default for local deployments.",
+  "requester":"project-owner",
+  "change_types":["runtime","test","deployment","ui_api","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "deployment":"Staging web runs HTTP-only and the authority service exclusively owns analysis and design queues.",
+    "docs":"No public workflow or engineering-design contract changes.",
+    "governance":"Records role separation, health semantics, deployment controls and rollback evidence.",
+    "manifest":"Mechanical drawing and artifact manifests are unaffected.",
+    "migration":"No database schema or persisted-project migration is required.",
+    "qa":"Focused tests cover the default, HTTP-only and allow-listed worker configurations.",
+    "ui_api":"HTTP-only queue health is explicitly healthy without claiming nonexistent worker threads.",
+    "versioning":"Automatic Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["Deployment role -> JOB_WORKER_TYPES allow-list -> owned queue threads -> explicit queue-health mode."],
+    "tests":["Default all-in-one, explicit HTTP-only and worker allow-list regressions."],
+    "docs":["No customer-facing documentation change; this is an operational isolation control."],
+    "contract_diff":["Unset JOB_WORKER_TYPES continues to start both workers.","An explicitly empty JOB_WORKER_TYPES starts no queue threads and reports HTTP-only health."],
+    "version_bump":["Behavior-preserving deployment patch identified by automatic Git build identity."],
+    "migration":["No schema or persisted-data change."],
+    "semantic_diff":["Engineering analysis and design semantics are unchanged; only the service that executes queued work changes."],
+    "artifact_diff":["Input and output artifact formats, manifests and release gates are unchanged."],
+    "numeric_diff":["Queue worker threads on the web service decrease from two to zero; the dedicated worker service owns exactly analysis and design."],
+    "golden_regression":["Focused worker-role tests plus required fail-closed CI must pass before merge."],
+    "deployment_plan":["Protected PR, merge, configure web HTTP-only, copy R2 credentials to the worker, configure worker roles, redeploy both services, verify health, then resume queued projects."],
+    "rollback_plan":["Unset JOB_WORKER_TYPES on both services and revert the merge; queued jobs and artifacts remain durable in PostgreSQL and R2."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"A wrong deployment variable could leave no workers, but queue health and persistent queued jobs make the condition visible and recoverable without data loss."},
+  "waiver":null
+}
