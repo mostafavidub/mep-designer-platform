@@ -18,9 +18,14 @@ def _pending_equipment_boards(report: dict, answers: dict) -> set[tuple[str,str]
     pre_submission=(answers or {}).get("_pre_submission_authority")
     if not isinstance(pre_submission,dict) or pre_submission.get("blocked_at")!="target_design_packages":
         return set()
-    if "TARGET_DESIGN_PACKAGES_MISSING" not in set(pre_submission.get("blockers") or []):
+    disclosure=(((report or {}).get("semantic_qa") or {}).get("pre_submission_disclosure") or {})
+    # The canonical shell has already evaluated the engine evidence and writes
+    # this disclosure only for the exact target-package authority state.  Reuse
+    # that signed board-level result after materialization instead of trying to
+    # reconstruct it from a second (and sometimes narrower) blocker list.
+    if disclosure.get("active") is not True or disclosure.get("blocked_at")!="target_design_packages":
         return set()
-    items=((((report or {}).get("semantic_qa") or {}).get("pre_submission_disclosure") or {}).get("pending_family_content") or [])
+    items=disclosure.get("pending_family_content") or []
     manifest={
         str(row.get("code") or "").strip().lower():str(row.get("old_sheet") or row.get("code") or "").strip().lower()
         for row in ((((report or {}).get("composition") or {}).get("manifest")) or [])
@@ -58,16 +63,20 @@ def validate_coordinate_evidence(materialization):
 def validate_after_last_mutation(src: Path, dst: Path, report: dict, answers: dict, materialization: dict) -> dict:
     """Reopen and revalidate the exact downloadable file after graph drawing."""
     composition = report.get("composition") or {}
+    pending_equipment_boards = _pending_equipment_boards(report, answers)
     checks = {
         "coordinate_integrity": validate_coordinate_evidence(materialization),
         "architecture_preservation": evaluate_architecture_preservation(src, dst, report, answers=answers),
         "titleblocks": validate_titleblocks(dst, composition),
         "safe_zones": validate_safe_zones(dst, composition),
         "architectural_presentation": validate_architectural_presentation(dst, composition),
-        "equipment_linkage": validate_equipment_linkage(dst, composition, _pending_equipment_boards(report,answers)),
+        "equipment_linkage": validate_equipment_linkage(dst, composition, pending_equipment_boards),
         "detail_library": validate_detail_library(dst, composition),
         "content_completeness": validate_content_completeness(dst, composition),
-        "split_visual": validate_split_ac_visual_legibility(dst, composition, dst.with_name(dst.stem + "-final-split-previews")),
+        "split_visual": validate_split_ac_visual_legibility(
+            dst, composition, dst.with_name(dst.stem + "-final-split-previews"),
+            allowed_pending=pending_equipment_boards,
+        ),
         "all_sheet_visual": validate_all_sheet_visual_qa(dst, composition, dst.with_name(dst.stem + "-final-sheet-previews")),
         "exact_montage": create_montage_and_validate(dst, dst.with_name(dst.stem + "-final-montage.png")),
     }
