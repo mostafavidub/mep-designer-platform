@@ -88,6 +88,19 @@ def test_materializer_uses_approved_roof_coordination_board_for_roof_services(tm
     assert result["materialized_segments"] == 1
 
 
+@pytest.mark.parametrize("system,family", [("vent", "SANITARY_VENT"), ("cold_water", "WATER")])
+def test_materializer_uses_same_system_service_board_when_no_roof_plan_exists(tmp_path, system, family):
+    src, dst, report, network = _fixture_files(tmp_path)
+    report["composition"]["manifest"][0].update(
+        {"family": family, "level": "SERVICE", "purpose": "PLAN", "code": "M-SVC"}
+    )
+    network["levels"][0].update({"name": "بام", "type": "ROOF"})
+    network["edges"][0]["system"] = system
+    result = materialize_authoritative_network(src, dst, report, network)
+    assert result["status"] == "PASS", result
+    assert result["materialized_segments"] == 1
+
+
 def test_persisted_collapsed_path_is_detected_for_authoritative_rebuild():
     network = {"edges": [{"id": "E1", "draw_on_plan": True,
                            "plan_path": [(2, 2), (2, 2), (2, 2)]}]}

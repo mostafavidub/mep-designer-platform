@@ -134,7 +134,7 @@ def _target_board_map(report, network, src):
         if not family:
             errors.append("SYSTEM_FAMILY_UNMAPPED:" + str(edge.get("system")))
             continue
-        candidates = []
+        candidate_groups = {0: [], 1: [], 2: []}
         for row in manifest:
             row_family = str(row.get("family") or "").upper()
             # A canonical roof-coordination plan is intentionally shared by
@@ -146,18 +146,25 @@ def _target_board_map(report, network, src):
                 and family in {"SANITARY_VENT", "WATER"}
                 and (row_family in {"ROOF", "ROOF_RAINWATER"} or row_drawing_type == "ROOF_PLAN")
             )
-            if row_family != family and not roof_coordination:
+            row_level_type = _row_level_type(row.get("level"))
+            roof_service_fallback = (
+                level.get("type") == "ROOF"
+                and row_family == family
+                and str(row.get("level") or "").upper() == "SERVICE"
+                and str(row.get("purpose") or "PLAN").upper() == "PLAN"
+            )
+            exact_level = row_family == family and row_level_type == level.get("type")
+            if not (exact_level or roof_coordination or roof_service_fallback):
                 continue
             if str(row.get("purpose") or "PLAN").upper() != "PLAN" and not roof_coordination:
-                continue
-            if str(row.get("level") or "").upper() == "SERVICE":
-                continue
-            if _row_level_type(row.get("level")) != level.get("type"):
                 continue
             board = boards.get(row.get("old_sheet")) or {}
             area = board.get("plan_area")
             if isinstance(area, (list, tuple)) and len(area) == 4:
-                candidates.append((row, board))
+                priority = 0 if exact_level else (1 if roof_coordination else 2)
+                candidate_groups[priority].append((row, board))
+        candidates = next((candidate_groups[value] for value in (0, 1, 2)
+                           if candidate_groups[value]), [])
         if not candidates:
             errors.append("TARGET_PLAN_BOARD_REQUIRED:%s:%s" % (family, level.get("type")))
             continue
