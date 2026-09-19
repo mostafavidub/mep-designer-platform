@@ -1,12 +1,12 @@
 {
   "change_id":"SWCIS-2026-0253",
-  "summary":"Fit paired-route offsets inside level envelopes and consistently disclose exact PRE_SUBMISSION target-package acceptance states.",
+  "summary":"Fit routes and retained architecture inside authoritative bounds and consistently disclose exact PRE_SUBMISSION target-package acceptance states.",
   "requester":"project-owner",
   "change_types":["calculation","drawing_output","routing","qa","test","governance"],
   "changed_rule_ids":[],
   "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
   "impact_notes":{
-    "cad_designer":"Paired routes remain separated without leaving their source plan envelope.",
+    "cad_designer":"Paired routes remain separated without leaving their source plan envelope; architectural fit is calculated from the exact retained geometry rather than removed source sheet furniture.",
     "deployment":"Deploy after protected CI and retry project 01.",
     "detail_riser":"No change.",
     "docs":"Requested and applied offsets remain traceable in execution evidence.",
@@ -15,7 +15,7 @@
     "manifest":"No change.",
     "manufacturer_selector":"No change.",
     "migration":"No persisted schema migration.",
-    "qa":"Every offset is rechecked against level bounds; base and shell accept the same exact preliminary status vocabulary; FAIL remains fail-closed.",
+    "qa":"Every offset is rechecked against level bounds; copied architecture fills its plan viewport from its exact robust envelope; base and shell accept the same exact preliminary status vocabulary; FAIL remains fail-closed.",
     "routing":"Requested side wins when feasible, then opposite side, then the side with the largest feasible fraction.",
     "sizing":"No pipe size or engineering load changes.",
     "ui_api":"Project 01 no longer requests user input for a purely geometric fixed-offset overflow.",
@@ -23,7 +23,7 @@
   },
   "evidence":{
     "traceability":["requested offset -> directional capacities -> largest in-envelope rigid translation -> applied offset evidence"],
-    "tests":["Full requested offset is retained when feasible.","Full opposite offset is selected when feasible.","A partial offset is selected at a boundary.","A path spanning both boundaries remains fail-closed.","Exact PRE_SUBMISSION target-package acceptance is disclosed; FAIL is still rejected."],
+    "tests":["Full requested offset is retained when feasible.","Full opposite offset is selected when feasible.","A partial offset is selected at a boundary.","A path spanning both boundaries remains fail-closed.","Exact PRE_SUBMISSION target-package acceptance is disclosed; FAIL is still rejected.","Removed source sheet furniture cannot shrink the retained architectural underlay.","Isolated retained geometry remains preservation-critical and participates in fit."],
     "docs":["Governed in executable tests and this record."],
     "contract_diff":["Offset magnitude is now bounded by the same level envelope used by topology and CAD materialization."],
     "version_bump":["Patch identified by immutable Git SHA."],

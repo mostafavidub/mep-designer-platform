@@ -389,7 +389,11 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
             sheet_results.append({"sheet":row.get("code"),"status":"FAIL","reason":"SOURCE_PLAN_NOT_FOUND"})
             all_missing.append({"sheet":row.get("code"),"reason":"SOURCE_PLAN_NOT_FOUND"})
             continue
-        fit_bounds=tuple(plan.get("content_bounds") or plan["bounds"])
+        # Composition fits the exact retained/copyable architecture, not the
+        # broader segmentation envelope which may still contain sheet
+        # furniture. Reuse that immutable transform evidence for round-trip QA.
+        fit_bounds=tuple(row.get("source_bounds") or plan.get("render_fit_bounds") or
+                         plan.get("content_bounds") or plan["bounds"])
         src_entities=_entities_in_bounds(src_doc.modelspace(),fit_bounds)
         before=_snapshot_selected(src_entities,plan["plan_id"])
         source_layers={r["layer"] for r in before["entities"]}
