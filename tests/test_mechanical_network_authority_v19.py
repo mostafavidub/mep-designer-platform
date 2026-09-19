@@ -6,7 +6,7 @@ import ezdxf
 
 from cad_engine.mechanical_network_topology import (
     build_authoritative_topology_from_evidence, _architecture_from_evidence,
-    _recognition_from_evidence, _assign_level, _typed_level,
+    _recognition_from_evidence, _assign_level, _resolve_level_for_point, _typed_level,
 )
 from cad_engine.mechanical_segment_execution import design_authoritative_segments
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
@@ -136,6 +136,24 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         level, error = _assign_level('MEP-1', (2, 2), levels, {})
         self.assertIsNone(level)
         self.assertEqual(error, 'AMBIGUOUS_LEVEL_ASSIGNMENT:MEP-1')
+
+    def test_explicit_level_label_is_reassigned_to_unique_spatial_owner(self):
+        levels = [
+            {'id': 'L0', 'name': 'Ground', 'type': 'GROUND', 'region_bounds': [0, 0, 10, 10]},
+            {'id': 'L1', 'name': 'First', 'type': 'FIRST', 'region_bounds': [20, 0, 30, 10]},
+        ]
+        level, error = _resolve_level_for_point('MEP-1', 'First', (2, 2), levels, {})
+        self.assertIsNone(error)
+        self.assertEqual(level['type'], 'GROUND')
+
+    def test_explicit_level_geometry_mismatch_without_spatial_owner_fails_closed(self):
+        levels = [
+            {'id': 'L0', 'name': 'Ground', 'type': 'GROUND', 'region_bounds': [0, 0, 10, 10]},
+            {'id': 'L1', 'name': 'First', 'type': 'FIRST', 'region_bounds': [20, 0, 30, 10]},
+        ]
+        level, error = _resolve_level_for_point('MEP-1', 'First', (200, 200), levels, {})
+        self.assertIsNone(level)
+        self.assertEqual(error, 'EXPLICIT_LEVEL_GEOMETRY_MISMATCH:MEP-1:First')
 
     def test_detail_pseudo_level_is_rejected(self):
         result = build_authoritative_topology_from_evidence(
