@@ -280,6 +280,38 @@ def _snapshot_in_source_coordinates(snapshot,srcb,target):
     return normalized
 
 
+def _validate_matched_topology(before, after, match):
+    """Validate topology without letting coordinate quantization invent loss.
+
+    ``validate_topology`` clusters endpoints in source units.  A scale/inverse-
+    scale round trip can move a point across a clustering boundary by a few
+    floating-point ulps even when the output contains an exact transformed
+    copy of every protected entity.  Exact entity correspondence is stronger
+    evidence than that quantized graph comparison.  It may resolve only this
+    numerical false negative: missing or extra protected entities, a spatial
+    fallback match, or any material bbox error still fail closed.
+    """
+    topology=validate_topology(before,after)
+    if topology.get("pass"):
+        topology["evidence"]="SOURCE_COORDINATE_GRAPH"
+        return topology
+    matches=match.get("matches") or []
+    exact_correspondence=(
+        match.get("pass") is True
+        and match.get("strategy") in {"exact_transformed_geometry","preserved_copy_order"}
+        and int(match.get("protected_source_count") or 0)==int(match.get("matched_count") or -1)
+        and not (match.get("missing") or [])
+        and not (match.get("extra_protected") or [])
+        and matches
+        and max(float(item.get("bbox_error") or 0.0) for item in matches)<=1e-6
+    )
+    if exact_correspondence:
+        topology["quantized_graph_pass"]=False
+        topology["pass"]=True
+        topology["evidence"]="EXACT_ENTITY_CORRESPONDENCE"
+    return topology
+
+
 def _source_plan_for_row(arch,row):
     family=row.get("family"); level=row.get("level")
     if family=="ROOF" or level=="ROOF":
@@ -410,7 +442,11 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         out_entities=_entities_in_output_board(out_doc,plan_area,source_layers)
         after=_snapshot_selected(out_entities,f"OUT-{row.get('code')}")
         match=_match_transformed_architecture(before,after,fit_bounds,plan_area)
-        topo=validate_topology(before,_snapshot_in_source_coordinates(after,fit_bounds,plan_area))
+        topo=_validate_matched_topology(
+            before,
+            _snapshot_in_source_coordinates(after,fit_bounds,plan_area),
+            match,
+        )
         # Visibility is assessed against the actual drawable sheet region, not
         # only the fitting rectangle.  Architectural blocks/text may extend
         # beyond their insertion-point region while remaining fully visible.
