@@ -5,8 +5,8 @@ from cad_engine.mechanical_authority_site_v15 import qa_semantic_sheet_content
 from cad_engine.mechanical_release_hardening_v18 import validate_equipment_linkage
 from cad_engine.mechanical_authority_v15 import (
     Board, _append_approved_service_plan_boards, _draw_service_equipment_content,
-    _layout_manifest,
 )
+from cad_engine.mechanical_design_core import _layout_manifest
 
 
 def _approved_17():
@@ -101,6 +101,19 @@ def test_approved_equipment_plans_are_materialized_as_distinct_service_boards():
     assert [row['code'] for row in service] == ['M-W-EQUIP','M-H-EQUIP','M-C-EQUIP']
     assert [row['family'] for row in service] == ['WATER','HEATING','SPLIT_AC']
     assert all(row['purpose'] == 'PLAN' for row in service)
+
+
+def test_reused_approved_plan_code_is_renumbered_per_physical_level():
+    manifest = {'sheets':[
+        {'sheet':'M-00','family':'WATER','level':'GROUND','purpose':'PLAN','approved_code':'M-111'},
+        {'sheet':'M-01','family':'WATER','level':'LEVEL-01','purpose':'PLAN','approved_code':'M-111'},
+        {'sheet':'M-02','family':'WATER','level':'LEVEL-02','purpose':'PLAN','approved_code':'M-111'},
+    ]}
+
+    rows = _layout_manifest({'manifest': manifest})
+
+    assert [row['code'] for row in rows] == ['M-111', 'M-112', 'M-113']
+    assert len({row['code'] for row in rows}) == len(rows)
 
 
 def test_existing_service_board_is_bound_and_unapproved_roof_support_is_removed():

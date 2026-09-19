@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0253",
+  "summary":"Renumber an approved plan code reused across physical levels into unique family-and-level sheet codes.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","manifest","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Each physical level receives one unique public sheet identity per family.",
+    "deployment":"Ship after current benchmark outcomes, then retry project 03.",
+    "detail_riser":"No change.",
+    "docs":"Titles retain their physical level while codes become unique.",
+    "equipment":"No change.",
+    "governance":"A unique approved code is preserved; only an ambiguous reused code is deterministically renumbered.",
+    "manifest":"Duplicate M-101/M-111/M-141/M-171 plan identities are replaced by family ordinal codes.",
+    "manufacturer_selector":"No change.",
+    "migration":"No persisted schema migration.",
+    "qa":"Plan boards, dimensions and titleblocks can be attributed to one sheet identity.",
+    "routing":"No change.",
+    "sizing":"No change.",
+    "ui_api":"Project 03 no longer fails the approved-manifest duplicate-code gate.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["approved rows -> approved-code multiplicity -> unique family ordinal code -> board/dimension/titleblock identity"],
+    "tests":["Three WATER levels reusing M-111 become M-111/M-112/M-113.","All generated codes are unique."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Approved codes are authoritative only when they uniquely identify one generated board."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["No board content or engineering calculation changes."],
+    "artifact_diff":["Project 03 duplicate plan codes are eliminated before dimensions are generated."],
+    "numeric_diff":["Sheet suffix increments by family ordinal."],
+    "golden_regression":["Primary plan board, manifest and dimension suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout after current queue evidence, controlled retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"Unique approved codes remain untouched and duplicate codes are already invalid for release."},
+  "waiver":null
+}

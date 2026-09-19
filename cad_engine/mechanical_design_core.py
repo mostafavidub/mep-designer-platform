@@ -468,9 +468,17 @@ def _title_fa(family, level):
 
 def _layout_manifest(authority):
     rows=[];family_ord=defaultdict(int)
+    approved_code_counts=Counter(
+        str(row.get("approved_code") or "").strip().upper()
+        for row in authority["manifest"]["sheets"]
+        if str(row.get("approved_code") or "").strip()
+    )
     for i,row in enumerate(authority["manifest"]["sheets"],1):
         family=row["family"];family_ord[family]+=1;level=row.get("level") or "MULTI"
-        rows.append({**row,"old_sheet":row["sheet"],"code":row.get("approved_code") or _sheet_code(family,level,family_ord[family]),"title_fa":row.get("title") or _title_fa(family,level),"ordinal":i})
+        approved_code=str(row.get("approved_code") or "").strip().upper()
+        code=(approved_code if approved_code and approved_code_counts[approved_code] == 1
+              else _sheet_code(family,level,family_ord[family]))
+        rows.append({**row,"old_sheet":row["sheet"],"code":code,"title_fa":row.get("title") or _title_fa(family,level),"ordinal":i})
     return rows
 
 
