@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0263",
+  "summary":"Keep the canonical board-level target-package Pre-Submission disclosure consistent through post-materialization equipment and Split-AC visual QA.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"The final exact-file reopen consumes the same signed board/family disclosure as the canonical shell; no geometry is invented.",
+    "deployment":"Protected rollout followed by retained-input retries for projects 02, 03, 04 and 07.",
+    "docs":"The exact semantic disclosure is the authority after graph materialization.",
+    "governance":"Only an active target-design-package disclosure on the exact board and family can admit missing preliminary equipment.",
+    "qa":"Equipment linkage and Split-AC visual QA receive one immutable pending-board set after the last DXF mutation.",
+    "ui_api":"A truthful Pre-Submission artifact is deliverable without misreporting a final coordinated issue.",
+    "manifest":"No schema change.","migration":"No data migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"Missing preliminary equipment remains visibly disclosed and final mode remains fail-closed.",
+    "manufacturer_selector":"No change.","routing":"No change.","sizing":"No change."
+  },
+  "evidence":{
+    "traceability":["engine target-package authority -> semantic board/family disclosure -> post-materialization equipment and visual gates"],
+    "tests":["Active exact disclosure passes public/internal board identities.","Inactive disclosure cannot suppress an unrelated failure.","Targeted hardening and recovery suites pass."],
+    "docs":["Gate docstrings and regression tests define the bounded contract."],
+    "contract_diff":["The final two gates consume the shell's already evaluated disclosure instead of reconstructing a narrower blocker list."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["Pre-Submission remains explicitly not submission ready; final delivery remains strict."],
+    "artifact_diff":["No new equipment or route entities are fabricated."],"numeric_diff":["No calculation changes."],
+    "golden_regression":["Post-materialization, Split-AC visual, fail-closed and governed CI suites must pass."],
+    "deployment_plan":["Protected PR, exact-SHA rollout, retry retained projects, download and reopen every artifact."],
+    "rollback_plan":["Revert the merge SHA and redeploy the preceding exact build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"The exception requires both runtime target-package authority and the exact active semantic board/family disclosure; final output has no allowance."},
+  "waiver":null
+}
