@@ -501,6 +501,22 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
             design_basis={'systems': {'cold_water': {'plan_offset_xy': [2,0]}}},
             calculation_rows=self.explicit_rows(graph),
         )
+        self.assertEqual(result['status'], 'PASS', result)
+        edge=result['network']['edges'][0]
+        self.assertEqual(edge['plan_path'], [(2.0,2.0),(10.0,8.0)])
+        self.assertEqual(edge['plan_offset_xy_requested'], [2,0])
+        self.assertEqual(edge['plan_offset_xy_applied'], [1.0,0.0])
+
+    def test_separation_offset_fails_only_when_path_spans_both_boundaries(self):
+        graph = self.graph()
+        graph['levels'] = [{'id':'L1','type':'GROUND','region_bounds':[0,0,10,10]}]
+        graph['edges'][0]['levels'] = ['L1']
+        graph['edges'][0]['plan_path'] = [(0,2),(10,8)]
+        result = design_authoritative_segments(
+            graph,
+            design_basis={'systems': {'cold_water': {'plan_offset_xy': [2,0]}}},
+            calculation_rows=self.explicit_rows(graph),
+        )
         self.assertEqual(result['status'], 'FAIL')
         self.assertIn('PLAN_OFFSET_OUTSIDE_LEVEL_BOUNDS:E-CW', result['errors'])
 

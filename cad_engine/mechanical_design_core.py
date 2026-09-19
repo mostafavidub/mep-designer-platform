@@ -557,8 +557,38 @@ def _fit_transform(source_bounds,target_bounds):
     return Matrix44.chain(Matrix44.translate(-sx1,-sy1,0),Matrix44.scale(scale,scale,1),Matrix44.translate(dx,dy,0)),scale,(dx,dy)
 
 
+def _copyable_geometry_bounds(entities, fallback):
+    """Return the robust envelope of the geometry that will actually be drawn.
+
+    Plan segmentation deliberately considers sheet furniture while finding a
+    print region.  Composition removes that furniture.  Fitting against the
+    former envelope therefore leaves the retained architectural model tiny.
+    Derive the render transform from the exact copy set, excluding annotation
+    types that visual QA also excludes.  The complete retained envelope is
+    used: preservation-critical geometry is never trimmed to improve fit.
+    """
+    excluded={"TEXT","MTEXT","DIMENSION","LEADER"}
+    boxes=[]
+    for entity in entities:
+        if entity.dxftype().upper() in excluded:
+            continue
+        ext=_entity_ext(entity)
+        if not ext or not ext.has_data:
+            continue
+        box=(float(ext.extmin.x),float(ext.extmin.y),float(ext.extmax.x),float(ext.extmax.y))
+        if box[2]>box[0] or box[3]>box[1]:
+            boxes.append(box)
+    if not boxes:
+        return tuple(map(float,fallback))
+    bounds=(min(box[0] for box in boxes),min(box[1] for box in boxes),
+            max(box[2] for box in boxes),max(box[3] for box in boxes))
+    if bounds[2]-bounds[0]<=1e-9 or bounds[3]-bounds[1]<=1e-9:
+        return tuple(map(float,fallback))
+    return bounds
+
+
 def _plan_fit_bounds(plan):
-    bounds=plan.get("content_bounds") or plan.get("bounds")
+    bounds=plan.get("render_fit_bounds") or plan.get("content_bounds") or plan.get("bounds")
     if not bounds or len(bounds)!=4:
         raise ValueError("MISSING_AUTHORITATIVE_PLAN_CONTENT_BOUNDS")
     return bounds
@@ -952,7 +982,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                 if level_model:
                     row["level_model_id"]=level_model.get("model_id")
                     row["level_instance_id"]=normalize_level_identity(b.level) or b.level
-                fit_bounds=_plan_fit_bounds(plan);entities=_entities_in_bounds(src_msp,fit_bounds);M,scale,offset=_fit_transform(fit_bounds,b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
+                ownership_bounds=_plan_fit_bounds(plan);entities=_entities_in_bounds(src_msp,ownership_bounds);fit_bounds=_copyable_geometry_bounds(entities,ownership_bounds);plan["render_fit_bounds"]=list(fit_bounds);M,scale,offset=_fit_transform(fit_bounds,b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
                 row["source_plan_id"]=plan["plan_id"]
                 row["source_bounds"]=list(fit_bounds)
                 row["uniform_transform"]={"scale_x":scale,"scale_y":scale,"offset_x":offset[0],"offset_y":offset[1],"roundtrip_required":True}
