@@ -1,0 +1,43 @@
+{
+  "change_id": "SWCIS-2026-0102",
+  "summary": "Add generated article registry for automated SEO content publishing.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment"
+  ],
+  "impact_notes": {
+    "ui_api": "Adds a data registry for generated SEO articles.",
+    "governance": "Records the automated SEO publishing architecture change required by protected-branch governance.",
+    "deployment": "Approved SEO content can be deployed through the existing GitHub to Railway production flow."
+  },
+  "evidence": {
+    "tests": [
+      "GitHub required checks"
+    ],
+    "docs": [
+      "app/static/content/articles.json",
+      "changes/SWCIS-2026-0102.yaml"
+    ],
+    "contract_diff": [
+      "Adds a generated SEO article registry. Existing engineering runtime contracts are unchanged."
+    ],
+    "version_bump": [
+      "not required: this change adds content data storage without introducing a parallel runtime version"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 1,
+    "detectability": 1,
+    "score": 1,
+    "rationale": "The initial change only adds an empty generated-content registry and does not alter engineering runtime behavior."
+  },
+  "waiver": null
+}
