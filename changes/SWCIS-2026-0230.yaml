@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0230",
+  "summary":"Route roof service segments to approved same-system SERVICE coordination boards when authoritative roof architecture is unavailable.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","governance","test","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Board resolution now prefers exact-level plans, then an approved roof plan, then a same-system SERVICE coordination plan for roof-only service segments.",
+    "deployment":"Deploy merged SHA and rerun the retained benchmark.",
+    "docs":"Records the production case with no authoritative roof architecture.",
+    "governance":"Fallback requires same family, SERVICE level, PLAN purpose, valid plan area and unique candidate; ambiguity still fails closed.",
+    "manifest":"Uses the existing approved SANITARY_VENT/SERVICE and WATER/SERVICE sheets instead of fabricating roof architecture.",
+    "migration":"No persisted schema migration; rerun failed projects.",
+    "qa":"Adds exact-file regressions for both sanitary vent and water service fallback.",
+    "ui_api":"No interface change.",
+    "versioning":"No user-visible runtime version."
+  },
+  "evidence":{
+    "traceability":["roof service edge -> no exact roof board -> same-family approved SERVICE board -> exact-file entity"],
+    "tests":["tests/test_phase_1_1_coordinate_release.py"],
+    "docs":["changes/SWCIS-2026-0230.yaml"],
+    "version_bump":["none"],
+    "migration":["none"],
+    "golden_regression":["WATER and SANITARY_VENT roof segments use unique same-system SERVICE boards only when roof plans are absent."],
+    "semantic_diff":["SERVICE coordination plans are recognized as the non-fabricated roof-service representation."],
+    "artifact_diff":["Roof service routes are drawn on disclosed coordination sheets rather than blocking or inventing a roof plan."],
+    "numeric_diff":["No calculation changes."],
+    "contract_diff":["Priority-ordered board resolution makes representation explicit and deterministic."],
+    "deployment_plan":["CI, merge, exact-SHA Staging deployment and architecture-only rerun."],
+    "rollback_plan":["Revert and deploy the prior approved SHA."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":2,"score":16,"rationale":"Fallback is narrowly limited to roof service edges and unique approved same-system SERVICE plan boards."},
+  "waiver":null
+}
