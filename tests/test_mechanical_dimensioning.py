@@ -139,3 +139,31 @@ def test_generation_is_deterministic_and_owner_deduplicated(tmp_path):
     _, second, _ = _fixture(tmp_path, targets=duplicate_owner)
     assert [r["semantic_id"] for r in first["records"]] == [r["semantic_id"] for r in second["records"]]
     assert len({r["owner_id"] for r in first["records"]}) == 1
+
+
+def test_duplicate_manifest_rows_do_not_duplicate_dimension_identity(tmp_path):
+    doc = ezdxf.new("R2010")
+    board = SimpleNamespace(code="M-101", bounds=(0, 0, 21, 29.7),
+                            plan_area=(1, 4, 20, 29), title_area=(0, 0, 21, 3.1))
+    row = {"old_sheet": "S", "code": "M-101", "family": "WATER",
+           "source_plan_id": "PLAN-1", "source_bounds": [0, 0, 10, 10],
+           "uniform_transform": {"scale_x": 1.8, "scale_y": 1.8,
+                                 "offset_x": 1.5, "offset_y": 5.0}}
+    reports = [{"sheet": "M-101", "dimension_targets": [
+        {"owner_id": "EQ-1", "kind": "equipment",
+         "source_point": (5, 6), "paper_point": (10.5, 15.8)},
+    ]}]
+    answers = {"_plan_analysis": {"architectural_auto": {"effective_unit_to_m": 1.0}}}
+    result = apply_mechanical_dimensions(doc, [row, dict(row)], {"S": board}, reports, answers)
+    assert result["dimension_count"] == 2
+    assert len({record["semantic_id"] for record in result["records"]}) == 2
+
+
+def test_out_of_plan_targets_are_not_dimensioned(tmp_path):
+    _, report, _ = _fixture(tmp_path, targets=[
+        {"owner_id": "OFF-SHEET", "kind": "equipment",
+         "source_point": (100, 100), "paper_point": (100, 100)},
+    ])
+    assert report["status"] == "INPUT_REQUIRED"
+    assert report["dimension_count"] == 0
+    assert "NO_IN_PLAN_MECHANICAL_DIMENSION_TARGET" in report["blockers"][0]

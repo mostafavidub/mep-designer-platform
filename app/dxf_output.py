@@ -558,13 +558,17 @@ def run_design_dxf(project_id, revision_id):
             analysis = dict(p.analysis or {})
             pmm = analysis.get('project_mechanical_model') or {}
             architectural_auto = analysis.get('architectural_auto') or {}
+            architecture_evidence = dict(architectural_auto.get('architecture_model') or {})
+            architecture_evidence['roof_scope_reliable'] = bool(
+                architectural_auto.get('roof_scope_reliable')
+            )
             from app.mechanical_rulebook import network_design_basis
             design_answers['_canonical_input_contract'] = {
                 'project_mechanical_model': pmm,
                 # These are architecture-only facts produced before design.  They
                 # preserve level/room/shaft provenance that the CAD worker cannot
                 # reliably reconstruct from flattened DXF layers on its own.
-                'architecture_evidence': architectural_auto.get('architecture_model') or {},
+                'architecture_evidence': architecture_evidence,
                 'fixture_evidence': architectural_auto.get('fixture_detections') or [],
                 'declared_fixture_schedule': design_answers.get('fixture_schedule'),
                 'mechanical_shaft_route': design_answers.get('mechanical_shaft_route'),

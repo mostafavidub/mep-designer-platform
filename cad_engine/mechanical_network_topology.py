@@ -391,6 +391,11 @@ def _architecture_from_evidence(model, fallback):
         return fallback
     rooms, shafts, wet_cores, walls, obstacles = [], [], [], [], []
     for level in model.get("levels") or []:
+        if level.get("roof") and model.get("roof_scope_reliable") is False:
+            # A title-like or reused occupied-floor view must not host owner-
+            # declared fixtures as a roof. The upstream architecture analysis
+            # already proved that this project has no reliable roof scope.
+            continue
         level_name = level.get("name")
         for room in level.get("rooms") or []:
             normalized = dict(room)

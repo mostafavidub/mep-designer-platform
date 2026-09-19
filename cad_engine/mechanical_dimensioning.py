@@ -112,7 +112,7 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
     unit = _unit_context(doc, answers)
     _ensure_resources(doc)
     msp = doc.modelspace()
-    records, blockers = [], []
+    records, blockers, emitted_ids = [], [], set()
     for row in manifest:
         family = str(row.get("family") or "").upper()
         sheet = str(row.get("code") or "")
@@ -129,6 +129,12 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
             blockers.append(f"{sheet}:NO_TRACEABLE_MECHANICAL_DIMENSION_TARGET")
             continue
         x1, y1, x2, y2 = board.plan_area
+        targets = [target for target in targets
+                   if x1 <= float(target["paper_point"][0]) <= x2
+                   and y1 <= float(target["paper_point"][1]) <= y2]
+        if not targets:
+            blockers.append(f"{sheet}:NO_IN_PLAN_MECHANICAL_DIMENSION_TARGET")
+            continue
         dimlfac = unit["unit_to_m"] * 1000.0 / float(paper_scale)
         for index, target in enumerate(targets):
             px, py = map(float, target["paper_point"])
@@ -167,6 +173,9 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
                 if expected_mm < 1.0 or math.dist(p1, p2) < 1e-6:
                     continue
                 semantic_id = _semantic_id(sheet, target["owner_id"], axis, "INSTALLATION")
+                if semantic_id in emitted_ids:
+                    continue
+                emitted_ids.add(semantic_id)
                 override = {"dimlfac": dimlfac, "dimdec": 0, "dimtxt": .09, "dimasz": .09}
                 dim = msp.add_linear_dim(base=location, p1=p1, p2=p2, angle=0 if axis == "X" else 90,
                                          dimstyle=DIMSTYLE, override=override,
