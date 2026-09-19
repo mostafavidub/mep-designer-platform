@@ -370,18 +370,28 @@ def build_authority_model(pipeline, answers):
     approved=(answers or {}).get("_approved_drawing_manifest") or {}
     approved_rows=approved.get("sheets") if isinstance(approved,dict) else approved
     known_levels=set((project.get("levels") or {}).keys())
+    def level_token(value):
+        text=_norm(value).replace(" ","").replace("-","")
+        if text in {"ground","g","طبقههمکف","همکف"}:return "GROUND"
+        if text in {"roof","r","بام"}:return "ROOF"
+        for word,number in (("اول","01"),("دوم","02"),("سوم","03"),("چهارم","04"),("پنجم","05")):
+            if word in text:return "LEVEL"+number
+        match=re.search(r"(?:level|floor)(\d+)",text)
+        return "LEVEL"+match.group(1).zfill(2) if match else text.upper()
+    known_by_token={level_token(level):level for level in known_levels}
     for row in approved_rows or []:
         if not isinstance(row,dict) or str(row.get("drawing_type") or "").strip().upper()!="FLOOR_PLAN":
             continue
         systems=APPROVED_FAMILY_SYSTEMS.get(str(row.get("family") or "").strip().upper()) or set()
         levels=row.get("levels") or [row.get("level")]
         for level in levels:
-            if level not in known_levels:
+            resolved_level=level if level in known_levels else known_by_token.get(level_token(level))
+            if resolved_level not in known_levels:
                 continue
-            current=set(req.get("by_level",{}).get(level) or [])
+            current=set(req.get("by_level",{}).get(resolved_level) or [])
             if "gas" in systems and basis.get("basis",{}).get("gas_service") is not True:
                 systems=systems-{"gas"}
-            req["by_level"][level]=sorted(current|systems)
+            req["by_level"][resolved_level]=sorted(current|systems)
     req["project_systems"]=sorted({system for systems in req.get("by_level",{}).values() for system in systems}|({"vent_termination","rainwater","split_outdoor"}&set(req.get("project_systems") or [])))
     manifest=build_reference_driven_manifest(project,req)
     approved_roof_termination=any(
