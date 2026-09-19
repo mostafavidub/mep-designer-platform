@@ -774,6 +774,11 @@ def register_job_queue(app, legacy):
 
     @app.on_event('startup')
     def start_persistent_workers():
+        # HTTP-only replicas share the database but do not own queue recovery.
+        # Letting a web rollout recover "stale" work can race a healthy design
+        # worker and mark its in-flight revision failed during deployment.
+        if not WORKER_TYPES:
+            return
         try:
             _migrate_ready_outputs_to_object_storage()
             _reclaim_failed_artifacts()

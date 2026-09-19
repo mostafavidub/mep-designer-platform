@@ -106,7 +106,15 @@ def _release_input_errors(report, pre_submission=None):
     if pipeline_qa.get('status')!='PASS' and not disclosed_target_package:
         errors.extend('pipeline:'+str(x) for x in pipeline_errors)
     acceptance=report.get('engineering_acceptance') or {}
-    if acceptance.get('status')!='PASS': errors.extend('engineering_acceptance:'+str(x) for x in acceptance.get('errors') or ['MISSING'])
+    acceptance_errors=set(acceptance.get('errors') or [])
+    disclosed_acceptance=bool(
+        target_package_pre_submission
+        and acceptance.get('status')=='INPUT_REQUIRED'
+        and acceptance_errors
+        and acceptance_errors <= {'TARGET_DESIGN_PACKAGES_MISSING'}
+    )
+    if acceptance.get('status')!='PASS' and not disclosed_acceptance:
+        errors.extend('engineering_acceptance:'+str(x) for x in acceptance_errors or ['MISSING'])
     return sorted(set(errors))
 
 

@@ -61,6 +61,27 @@ def test_exact_target_package_pipeline_input_is_not_a_release_error():
     assert _release_input_errors(report, pre_submission) == []
 
 
+def test_exact_target_package_engineering_acceptance_input_is_disclosed_not_failed():
+    report = {
+        "pipeline_qa": {"status": "PASS", "errors": []},
+        "engineering_acceptance": {
+            "status": "INPUT_REQUIRED",
+            "errors": ["TARGET_DESIGN_PACKAGES_MISSING"],
+        },
+        "enrichment": {},
+        "authority": {"design_basis": {"status": "PASS"}},
+    }
+    pre_submission = {
+        "blocked_at": "target_design_packages",
+        "blockers": ["TARGET_DESIGN_PACKAGES_MISSING"],
+    }
+    assert _release_input_errors(report, pre_submission) == []
+    report["engineering_acceptance"]["status"] = "FAIL"
+    assert _release_input_errors(report, pre_submission) == [
+        "engineering_acceptance:TARGET_DESIGN_PACKAGES_MISSING"
+    ]
+
+
 def test_pending_gas_table_is_deliverable_only_as_explicit_target_package_pre_submission():
     report = {
         "pipeline_qa": {"status": "INPUT_REQUIRED", "errors": ["TARGET_DESIGN_PACKAGES_MISSING"]},
