@@ -1,0 +1,35 @@
+{
+  "change_id":"SWCIS-2026-0237",
+  "summary":"Exclude unhosted fixture symbols parked outside all authoritative plan regions from the installed mechanical network.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","routing","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "calculation":"Only hosted in-plan endpoints contribute loads and sizing.",
+    "deployment":"Deploy to Staging and rerun the blocked architecture-only benchmark.",
+    "docs":"No public workflow change.",
+    "governance":"Distinguishes installed plan evidence from parked CAD library symbols.",
+    "manifest":"Drawing scope remains unchanged.",
+    "migration":"No persisted schema migration is required.",
+    "qa":"Regression covers a valid hosted endpoint beside an unhosted out-of-plan symbol and a duplicate roof view.",
+    "ui_api":"No customer-facing API change.",
+    "versioning":"Automatic Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["Detected symbol -> authoritative plan bounds + architectural host -> installed endpoint or excluded library evidence."],
+    "tests":["Hosted endpoint is routed; out-of-plan unhosted symbol is excluded and recorded; duplicate roof view does not create a duplicate network."],
+    "docs":["No customer-facing documentation change."],
+    "contract_diff":["Detected blocks outside every authoritative plan and without a room host cannot become consumers."],
+    "version_bump":["Behavioral evidence correction identified by automatic Git build identity."],
+    "migration":["No database or artifact migration."],
+    "semantic_diff":["Parked library symbols no longer create cross-sheet routes or loads."],
+    "artifact_diff":["Artifact format is unchanged; false out-of-plan branches are removed."],
+    "numeric_diff":["Fixture count and branch count decrease only by the number of unhosted out-of-plan detections."],
+    "golden_regression":["Focused network authority and coordinate release suites must pass before merge."],
+    "deployment_plan":["Protected PR, Staging rollout, controlled retry, exact artifact QA."],
+    "rollback_plan":["Revert the merge and redeploy; durable project inputs remain unchanged."]
+  },
+  "risk":{"likelihood":2,"severity":3,"detectability":1,"score":6,"rationale":"A real fixture outside every detected plan would be excluded, but such evidence has no authoritative sheet owner and cannot safely be routed."},
+  "waiver":null
+}
