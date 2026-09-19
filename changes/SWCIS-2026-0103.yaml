@@ -1,0 +1,44 @@
+{
+  "change_id": "SWCIS-2026-0103",
+  "summary": "Fix canonical redirect and noindex behavior for the temporary Railway hostname.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment"
+  ],
+  "impact_notes": {
+    "ui_api": "The temporary Railway hostname remains accessible for runtime use but is no longer treated as a canonical redirect host.",
+    "governance": "Records the SEO temporary-domain behavior change required by protected-branch governance.",
+    "deployment": "The canonical public host remains planha.com while the Railway hostname remains non-indexable."
+  },
+  "evidence": {
+    "tests": [
+      "tests/test_temporary_domain_noindex.py",
+      "GitHub required checks"
+    ],
+    "docs": [
+      "app/main_health.py",
+      "changes/SWCIS-2026-0103.yaml"
+    ],
+    "contract_diff": [
+      "www.planha.com continues to redirect to the canonical planha.com host; the temporary Railway hostname returns content with X-Robots-Tag noindex, follow instead of participating in canonical redirects."
+    ],
+    "version_bump": [
+      "not required: this is an SEO host-behavior correction and does not introduce a parallel runtime version"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 1,
+    "detectability": 1,
+    "score": 1,
+    "rationale": "The change is limited to temporary-domain redirect and indexing behavior and leaves the canonical production host unchanged."
+  },
+  "waiver": null
+}

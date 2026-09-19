@@ -76,7 +76,7 @@ CANONICAL_REDIRECT_HOSTS = {
     host.strip().lower().rstrip('.')
     for host in os.getenv(
         'CANONICAL_REDIRECT_HOSTS',
-        'www.planha.com,web-app-production-3d3b.up.railway.app',
+        'www.planha.com',
     ).split(',')
     if host.strip()
 }
