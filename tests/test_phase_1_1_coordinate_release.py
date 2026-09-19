@@ -79,7 +79,7 @@ def test_materializer_maps_public_level_02_manifest_to_semantic_second(tmp_path)
 def test_materializer_uses_approved_roof_coordination_board_for_roof_services(tmp_path, system):
     src, dst, report, network = _fixture_files(tmp_path)
     report["composition"]["manifest"][0].update(
-        {"family": "ROOF", "level": "ROOF", "purpose": "PLAN", "code": "M-011"}
+        {"family": "ROOF", "level": "ROOF", "purpose": "ROOF", "drawing_type": "ROOF_PLAN", "code": "M-011"}
     )
     network["levels"][0].update({"name": "بام", "type": "ROOF"})
     network["edges"][0]["system"] = system

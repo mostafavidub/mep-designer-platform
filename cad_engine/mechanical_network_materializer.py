@@ -140,14 +140,15 @@ def _target_board_map(report, network, src):
             # A canonical roof-coordination plan is intentionally shared by
             # roof rainwater, vent terminations and roof water equipment.  It
             # is the approved roof board, not a missing per-system floor plan.
+            row_drawing_type = str(row.get("drawing_type") or row.get("approved_drawing_type") or "").upper()
             roof_coordination = (
                 level.get("type") == "ROOF"
                 and family in {"SANITARY_VENT", "WATER"}
-                and row_family == "ROOF"
+                and (row_family in {"ROOF", "ROOF_RAINWATER"} or row_drawing_type == "ROOF_PLAN")
             )
             if row_family != family and not roof_coordination:
                 continue
-            if str(row.get("purpose") or "PLAN").upper() != "PLAN":
+            if str(row.get("purpose") or "PLAN").upper() != "PLAN" and not roof_coordination:
                 continue
             if str(row.get("level") or "").upper() == "SERVICE":
                 continue
