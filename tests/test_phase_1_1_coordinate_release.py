@@ -7,6 +7,7 @@ from cad_engine.coordinate_integrity import uniform_fit, map_point, inverse_poin
 from cad_engine.mechanical_network_materializer import materialize_authoritative_network
 from cad_engine.post_materialization_release import validate_coordinate_evidence
 from cad_engine.mechanical_authority import _has_collapsed_plan_path
+from cad_engine.mechanical_network_topology import _orthogonal_path
 
 
 def test_uniform_fit_never_stretches_x_and_y_independently():
@@ -120,3 +121,26 @@ def test_persisted_collapsed_path_is_detected_for_authoritative_rebuild():
     assert _has_collapsed_plan_path(network) is True
     network["edges"][0]["plan_path"][-1] = (2.1, 2)
     assert _has_collapsed_plan_path(network) is False
+
+
+def test_route_solver_ignores_geometry_from_neighbouring_plan_boards():
+    bounds = (0, 0, 10, 10)
+    foreign_walls = [
+        {"start": (100, -100), "end": (100, 100)},
+        {"start": (110, -100), "end": (110, 100)},
+    ]
+    path, metadata = _orthogonal_path(
+        (1, 1), (9, 9), foreign_walls, [], route_bounds=bounds,
+    )
+    assert path
+    assert metadata
+    assert all(bounds[0] <= point[0] <= bounds[2] and bounds[1] <= point[1] <= bounds[3]
+               for point in path)
+
+
+def test_route_solver_fails_before_materialization_for_cross_board_endpoint():
+    path, reason = _orthogonal_path(
+        (1, 1), (11, 9), [], [], route_bounds=(0, 0, 10, 10),
+    )
+    assert path is None
+    assert reason == "ROUTE_ENDPOINT_OUTSIDE_LEVEL_BOUNDS"

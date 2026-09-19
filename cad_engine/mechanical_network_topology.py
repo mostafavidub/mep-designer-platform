@@ -288,9 +288,33 @@ def _clean(points):
     return out
 
 
-def _orthogonal_path(start, end, walls, obstacles):
+def _bounds_overlap(left, right):
+    return bool(left and right and not (
+        left[2] < right[0] or left[0] > right[2]
+        or left[3] < right[1] or left[1] > right[3]
+    ))
+
+
+def _wall_bounds(wall):
+    points = [tuple(point) for point in (wall.get("start"), wall.get("end"))
+              if isinstance(point, (tuple, list)) and len(point) == 2]
+    return _bbox(points)
+
+
+def _orthogonal_path(start, end, walls, obstacles, route_bounds=None):
     if start == end:
         return None, None
+    if route_bounds and (not _inside(start, route_bounds) or not _inside(end, route_bounds)):
+        return None, "ROUTE_ENDPOINT_OUTSIDE_LEVEL_BOUNDS"
+    # Architecture extraction contains walls and obstacles for every detected
+    # viewport.  Routing one floor against another floor's geometry can send an
+    # A* detour into a neighbouring plan board.  Keep the solver strictly local
+    # to the owning level; this preserves plan/route coordinate identity.
+    if route_bounds:
+        walls = [wall for wall in walls or []
+                 if _bounds_overlap(_wall_bounds(wall), route_bounds)]
+        obstacles = [item for item in obstacles or []
+                     if _bounds_overlap(_bbox(item.get("points") or item.get("polygon")), route_bounds)]
     if start[0] == end[0] or start[1] == end[1]:
         candidates = [[start, end]]
     else:
@@ -323,7 +347,9 @@ def _orthogonal_path(start, end, walls, obstacles):
         ys = [start[1], end[1], *(point[1] for point in wall_points)]
         span = max(max(xs) - min(xs), max(ys) - min(ys), 1.0)
         margin = max(1.0, span * .02)
-        bounds = (min(xs) - margin, min(ys) - margin, max(xs) + margin, max(ys) + margin)
+        bounds = tuple(route_bounds) if route_bounds else (
+            min(xs) - margin, min(ys) - margin, max(xs) + margin, max(ys) + margin
+        )
         open_route = _open_space_route(start, end, bounds, walls or [])
         if open_route:
             obstacle_hits = sum(
@@ -687,7 +713,18 @@ def build_authoritative_topology_from_evidence(
         if vertical:
             points = None; meta = None
         else:
-            points, meta = _orthogonal_path(tuple(from_node["point"]), tuple(to_node["point"]), walls, obstacles)
+            route_level = next((row for row in levels if row["id"] in level_ids), None)
+            route_bounds = (route_level or {}).get("region_bounds")
+            points, meta = _orthogonal_path(
+                tuple(from_node["point"]), tuple(to_node["point"]),
+                walls, obstacles, route_bounds=route_bounds,
+            )
+            if meta == "ROUTE_ENDPOINT_OUTSIDE_LEVEL_BOUNDS":
+                missing_route.append(
+                    "ROUTE_ENDPOINT_OUTSIDE_LEVEL_BOUNDS:%s:%s:%s"
+                    % (system, from_node["id"], to_node["id"])
+                )
+                return
             if meta == "ROUTE_INTERSECTS_STRUCTURAL_OBSTACLE":
                 missing_route.append("ROUTE_CLEARANCE_REQUIRED:" + system + ":" + from_node["id"] + ":" + to_node["id"])
                 return
