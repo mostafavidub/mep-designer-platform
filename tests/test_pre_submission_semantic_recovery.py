@@ -62,6 +62,26 @@ def test_exact_target_package_pipeline_input_is_not_a_release_error():
     assert _release_input_errors(report, pre_submission) == []
 
 
+def test_exact_target_package_pipeline_fail_is_disclosed_only_for_bounded_evidence_gaps():
+    report = {
+        "pipeline_qa": {"status": "FAIL", "errors": [
+            "selected_hvac_has_no_project_equipment",
+            "selected_hvac_has_no_project_routes",
+        ]},
+        "engineering_acceptance": {"status": "PASS"},
+        "enrichment": {}, "authority": {"design_basis": {"status": "PASS"}},
+    }
+    pre_submission = {"blocked_at": "target_design_packages",
+                      "blockers": ["TARGET_DESIGN_PACKAGES_MISSING"]}
+    assert _release_input_errors(report, pre_submission) == []
+    report["pipeline_qa"]["errors"].append("unsized_routes")
+    assert _release_input_errors(report, pre_submission) == [
+        "pipeline:selected_hvac_has_no_project_equipment",
+        "pipeline:selected_hvac_has_no_project_routes",
+        "pipeline:unsized_routes",
+    ]
+
+
 def test_exact_target_package_engineering_acceptance_input_is_disclosed_not_failed():
     report = {
         "pipeline_qa": {"status": "PASS", "errors": []},

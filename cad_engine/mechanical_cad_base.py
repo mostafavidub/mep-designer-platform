@@ -586,9 +586,13 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         and "TARGET_DESIGN_PACKAGES_MISSING" in set(pre_submission.get("blockers") or [])
     )
     pipeline_release_qa = pipeline_qa
-    if (target_package_pending and pipeline_qa.get("status") == "INPUT_REQUIRED"
-            and "TARGET_DESIGN_PACKAGES_MISSING" in set(pipeline_qa.get("errors") or [])
-            and set(pipeline_qa.get("errors") or []) <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)):
+    pipeline_errors = set(pipeline_qa.get("errors") or [])
+    if (target_package_pending
+            and pipeline_qa.get("status") in {"FAIL", "INPUT_REQUIRED"}
+            and pipeline_errors
+            and pipeline_errors <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)
+            and ("TARGET_DESIGN_PACKAGES_MISSING" in pipeline_errors
+                 or bool(pipeline_errors & _DISCLOSABLE_EVIDENCE_CONSTRAINTS))):
         pipeline_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
     acceptance_release_qa = acceptance
     acceptance_errors = set(acceptance.get("errors") or [])

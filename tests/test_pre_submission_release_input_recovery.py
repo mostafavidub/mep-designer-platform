@@ -95,3 +95,18 @@ def test_shell_discloses_absent_selected_hvac_evidence_without_inventing_design(
     effective=_effective_pre_submission(report,None)
     assert effective["blocked_at"]=="target_design_packages"
     assert _release_input_errors(report,effective)==[]
+
+
+def test_shell_accepts_bounded_hvac_fail_only_under_exact_target_package_disclosure():
+    report={
+        "pipeline_qa":{"status":"FAIL","errors":[
+            "selected_hvac_has_no_project_equipment","selected_hvac_has_no_project_routes"]},
+        "engineering_acceptance":{"status":"PASS","errors":[]},
+        "authority":{"design_basis":{"status":"PASS"}},"enrichment":{},
+    }
+    disclosed={"blocked_at":"target_design_packages","blockers":["TARGET_DESIGN_PACKAGES_MISSING"]}
+    assert _release_input_errors(report,disclosed)==[]
+    assert _release_input_errors(report,None)==[
+        "pipeline:selected_hvac_has_no_project_equipment",
+        "pipeline:selected_hvac_has_no_project_routes",
+    ]
