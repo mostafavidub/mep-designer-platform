@@ -530,12 +530,29 @@ def _presentation_artifact_reason(e, bounds):
     hugs=(abs(ex1-x1)<=tolx and abs(ex2-x2)<=tolx and abs(ey1-y1)<=toly and abs(ey2-y2)<=toly)
     if typ in {"LWPOLYLINE","POLYLINE"} and hugs and ew>=sw*.85 and eh>=sh*.85:
         return "SOURCE_PRINT_FRAME"
-    protected=("wall","door","window","shaft","column","grid","stair","dimension","struct","دیوار","در","پنجره")
-    semantic_arch=any(token in layer for token in protected) or typ in {"DIMENSION","HATCH","INSERT","ARC","CIRCLE","SPLINE"}
+    protected=("wall","door","window","shaft","column","grid","stair","dimension","struct","structure","دیوار","در","پنجره")
+    # Match complete layer tokens.  Substring matching classified
+    # ``construction`` as structural merely because it contains ``struct``;
+    # that kept source footer notes in the building extents.
+    semantic_layer=any(
+        re.search(rf"(?:^|[^a-z0-9؀-ۿ]){re.escape(token)}(?:$|[^a-z0-9؀-ۿ])",layer,re.I)
+        for token in protected
+    )
+    semantic_arch=semantic_layer or typ in {"DIMENSION","HATCH","INSERT","ARC","CIRCLE","SPLINE"}
     bottom=ey2<=y1+sh*.16+toly
     stale_text=bool(LEGACY_SHEET_TEXT_RE.search(_text(e))) or any(x in txt for x in ("پلان معماری","architectural plan","sc:1/100"))
+    # Real benchmark drawings repeat footer furniture without the words
+    # "architectural plan": long guardrail notes, ARC sheet codes and printed
+    # scale fractions.  They sit in the bottom band, are not hosted by an
+    # architectural semantic layer, and must not expand the building fit or
+    # collide with the generated title block.
+    footer_text=typ in {"TEXT","MTEXT"} and (
+        ew>=sw*.35 or
+        bool(re.fullmatch(r"arc\s*\d+",txt,re.I)) or
+        bool(re.fullmatch(r"\d+\s*/\s*\d+",txt))
+    )
     wide_separator=typ in {"LINE","LWPOLYLINE","POLYLINE"} and ew>=sw*.48 and eh<=sh*.08
-    if bottom and not semantic_arch and (stale_text or wide_separator):return "SOURCE_FOOTER_BAND"
+    if bottom and not semantic_arch and (stale_text or footer_text or wide_separator):return "SOURCE_FOOTER_BAND"
     return None
 
 
