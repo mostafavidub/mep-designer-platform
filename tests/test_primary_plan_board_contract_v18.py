@@ -116,6 +116,19 @@ def test_reused_approved_plan_code_is_renumbered_per_physical_level():
     assert len({row['code'] for row in rows}) == len(rows)
 
 
+def test_reused_code_remains_unique_when_legacy_levels_share_same_type():
+    manifest = {'sheets':[
+        {'sheet':'M-00','family':'WATER','level':'GROUND','purpose':'PLAN','approved_code':'M-111'},
+        {'sheet':'M-01','family':'WATER','level':'GROUND','purpose':'PLAN','approved_code':'M-111'},
+        {'sheet':'M-02','family':'WATER','level':'GROUND','purpose':'PLAN','approved_code':'M-111'},
+    ]}
+
+    rows = _layout_manifest({'manifest': manifest})
+
+    assert [row['code'] for row in rows] == ['M-111', 'M-112', 'M-113']
+    assert len({row['code'] for row in rows}) == len(rows)
+
+
 def test_existing_service_board_is_bound_and_unapproved_roof_support_is_removed():
     approved = [
         {'family':'water_supply','code':'M-W-EQUIP','label':'Water equipment','drawing_type':'equipment_plan'},
