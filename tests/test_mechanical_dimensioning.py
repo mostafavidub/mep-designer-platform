@@ -69,6 +69,23 @@ def test_zero_axis_is_omitted_without_zero_dimension(tmp_path):
     assert validate_exact_mechanical_dimensions(path, report, boards)["status"] == "PASS"
 
 
+def test_nonzero_source_origin_maps_datum_inside_plan_not_titleblock(tmp_path):
+    doc=ezdxf.new("R2010")
+    board=SimpleNamespace(code="M-131",bounds=(0,0,21,29.7),plan_area=(1,4,20,29),title_area=(0,0,21,3.1))
+    source_bounds=[7700,-3960,7710,-3950];scale=1.5;offset_x=1.5-source_bounds[0]*scale;offset_y=5-source_bounds[1]*scale
+    source_point=(7705,-3954);paper_point=(source_point[0]*scale+offset_x,source_point[1]*scale+offset_y)
+    manifest=[{"old_sheet":"S","code":"M-131","family":"HEATING","source_plan_id":"P1",
+               "source_bounds":source_bounds,"uniform_transform":{"scale_x":scale,"scale_y":scale,"offset_x":offset_x,"offset_y":offset_y}}]
+    reports=[{"sheet":"M-131","dimension_targets":[{"owner_id":"RAD-1","kind":"equipment","source_point":source_point,"paper_point":paper_point}]}]
+    answers={"_plan_analysis":{"architectural_auto":{"effective_unit_to_m":1.0}}}
+    result=apply_mechanical_dimensions(doc,manifest,{"S":board},reports,answers)
+    path=tmp_path/"nonzero-origin.dxf";doc.saveas(path)
+    assert result["status"]=="PASS"
+    assert validate_exact_mechanical_dimensions(path,result,{"S":board})["status"]=="PASS"
+    for entity in doc.modelspace().query("DIMENSION"):
+        assert all(point.y>=board.plan_area[1] for point in (entity.dxf.defpoint,entity.dxf.defpoint2,entity.dxf.defpoint3))
+
+
 def test_exact_qa_rejects_mismatch_orphan_duplicate_and_outside_board(tmp_path):
     path, report, boards = _fixture(tmp_path)
     doc = ezdxf.readfile(path)

@@ -1,6 +1,6 @@
 import unittest
 
-from cad_engine.engineering_runner_v13 import _merge_browser_fixture_evidence, _discard_unlocated_native_fixtures, _add_locked_design_endpoints
+from cad_engine.engineering_runner import _merge_browser_fixture_evidence, _discard_unlocated_native_fixtures, _add_locked_design_endpoints
 
 
 class FixtureEvidenceResilienceTests(unittest.TestCase):
@@ -58,6 +58,17 @@ class FixtureEvidenceResilienceTests(unittest.TestCase):
         evidence=[{'kind':'sink','name':'SINK-2','x':6500,'y':2300,'source_file':'arch.dxf'}]
         result=_merge_browser_fixture_evidence(arch,rec,evidence)
         self.assertEqual(result['detections'][0]['room_id'],'R-K')
+
+    def test_browser_fixture_identity_never_aliases_native_fixture_on_another_plan(self):
+        arch=self._architecture()
+        rec={'detections':[{'id':f'MEP-{index:04d}','category':'fixture','type':'sink',
+                            'room_id':'R-K','plan_id':'P1','point':(6200+index,2200)}
+                           for index in range(1,10)],'quality':{}}
+        evidence=[{'kind':'toilet','name':'WC-GROUND','x':2600,'y':2100,'source_file':'arch.dxf'}]
+        result=_merge_browser_fixture_evidence(arch,rec,evidence)
+        identities=[row['id'] for row in result['detections']]
+        self.assertEqual(len(identities),len(set(identities)))
+        self.assertEqual(result['detections'][-1]['id'],'MEP-0010')
 
     def test_distant_legend_symbol_stays_unassigned(self):
         arch=self._architecture(); rec={'detections':[],'quality':{}}

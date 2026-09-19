@@ -138,8 +138,12 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
                 blockers.append(f"{sheet}:{target['owner_id']}:SOURCE_BOUNDS_REQUIRED")
                 continue
             datum_x, datum_y = float(source_bounds[0]), float(source_bounds[1])
-            paper_datum_x = float(transform.get("offset_x", x1))
-            paper_datum_y = float(transform.get("offset_y", y1))
+            # offset_x/y are affine translation terms, not paper coordinates
+            # of the source datum.  Mapping a non-zero source origin to the
+            # bare translation can put dimension definition points in the
+            # title block and makes the measured length disagree with XDATA.
+            paper_datum_x = datum_x * float(paper_scale) + float(transform.get("offset_x", x1))
+            paper_datum_y = datum_y * float(paper_scale) + float(transform.get("offset_y", y1))
             horizontal_lane = max(y1+.15, paper_datum_y-.25-index*.15)
             vertical_lane = max(x1+.15, paper_datum_x-.25-index*.15)
             axes = (("X", abs(sx-datum_x), (paper_datum_x, py), (px, py), (paper_datum_x, horizontal_lane)),

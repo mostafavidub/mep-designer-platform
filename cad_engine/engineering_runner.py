@@ -64,6 +64,7 @@ def _merge_browser_fixture_evidence(architecture, recognition, evidence):
     aliases={'faucet':'basin','basin':'basin','sink':'sink','toilet':'wc','wc':'wc',
              'bath':'shower','bathtub':'shower','shower':'shower','floor_drain':'floor_drain'}
     rows=list(recognition.get('detections') or []);rooms=list(architecture.get('rooms') or []);polygon_rooms=[r for r in rooms if r.get('polygon')]
+    used_ids={str(row.get('id')) for row in rows if row.get('id')}
     accepted=0; fallback_accepted=0
     for raw in evidence or []:
         kind=aliases.get(str(raw.get('kind') or '').strip().lower())
@@ -76,7 +77,15 @@ def _merge_browser_fixture_evidence(architecture, recognition, evidence):
             room=_nearest_compatible_room(architecture,rooms,point,kind)
             if not room:continue
             evidence_tags.extend(['strong_source_block','bounded_same_plan_semantic_room_fallback']);confidence=.84;fallback_accepted+=1
-        rows.append({'id':f"MEP-{len(rows)+1:03d}",'category':'fixture','type':kind,'point':point,'block':raw.get('name') or '',
+        # Native CAD recognition uses zero-padded MEP identities too.  Derive
+        # the next free identity from the complete registry instead of the row
+        # count: a browser fixture must never alias a native fixture on another
+        # floor, because topology resolves graph endpoints by this identity.
+        serial=1
+        while f"MEP-{serial:04d}" in used_ids:
+            serial+=1
+        identity=f"MEP-{serial:04d}";used_ids.add(identity)
+        rows.append({'id':identity,'category':'fixture','type':kind,'point':point,'block':raw.get('name') or '',
                      'layer':'ANALYZED-SOURCE-BLOCK','room_id':room.get('id'),'plan_id':room.get('plan_id'),'confidence':confidence,
                      'status':'detected','installed':True,'evidence':evidence_tags,'source_file':raw.get('source_file')});accepted+=1
     recognition['detections']=rows;recognition['fixtures']=[r for r in rows if r.get('category')=='fixture'];recognition['equipment']=[r for r in rows if r.get('category')=='equipment']
