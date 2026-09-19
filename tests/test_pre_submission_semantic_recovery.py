@@ -61,15 +61,16 @@ def test_exact_target_package_pipeline_input_is_not_a_release_error():
     assert _release_input_errors(report, pre_submission) == []
 
 
-def test_disclosed_pending_gas_table_is_deliverable_only_as_target_package_pre_submission():
+def test_pending_gas_table_is_deliverable_only_as_explicit_target_package_pre_submission():
     report = {
         "pipeline_qa": {"status": "INPUT_REQUIRED", "errors": ["TARGET_DESIGN_PACKAGES_MISSING"]},
         "engineering_acceptance": {"status": "PASS"},
         "enrichment": {"gas_table": {"status": "INPUT_REQUIRED"}},
         "authority": {"design_basis": {"status": "PASS"}},
-        "semantic_qa": {
-            "pre_submission_disclosure": {"pending_family_content": ["M-G-01:GAS"]}
-        },
+        # A routed GAS plan can be semantically populated while its schedule is
+        # still pending appliance loads.  The artifact-wide Pre-Submission
+        # disclosure, not a false missing-family flag, carries that limitation.
+        "semantic_qa": {"pre_submission_disclosure": {"pending_family_content": []}},
     }
     pre_submission = {
         "blocked_at": "target_design_packages",

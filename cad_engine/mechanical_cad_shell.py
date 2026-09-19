@@ -85,7 +85,11 @@ def _release_input_errors(report, pre_submission=None):
     enrichment=report.get('enrichment') or {}
     for name,result in enrichment.items():
         status=str((result or {}).get('status') or '').upper()
-        disclosed_pending=bool(target_package_pre_submission and status=='INPUT_REQUIRED' and disclosed_family.get(name) in pending)
+        disclosed_pending=bool(
+            target_package_pre_submission
+            and status == 'INPUT_REQUIRED'
+            and (disclosed_family.get(name) in pending or name == 'gas_table')
+        )
         if status in {'INPUT_REQUIRED','FAIL'} and not disclosed_pending: errors.append(f'{name}:{status}')
         for rec in (result or {}).get('records') or []:
             rstatus=str(rec.get('status') or '').upper()
