@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0260",
+  "summary":"Separate immutable plan ownership bounds from derived render-fit bounds across repeated system sheets.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Every system sheet selects architecture from immutable content/plan ownership bounds; render-fit bounds control only scale and placement.",
+    "deployment":"Deploy through protected CI, then retry the five benchmark projects from a clean queue.",
+    "docs":"Ownership and transform envelopes are now explicitly separate concepts.",
+    "governance":"Derived fit data cannot mutate the source entity population on later sheets.",
+    "qa":"Repeated system sheets for one level have identical architectural topology and no neighbouring extra wall.",
+    "ui_api":"Previously blocked projects can complete without suppressing the topology gate.",
+    "manifest":"No schema change; existing source_bounds remains the transform envelope.","migration":"No data migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"No change.","manufacturer_selector":"No change.","routing":"No change.","sizing":"No change."
+  },
+  "evidence":{
+    "traceability":["content_bounds -> immutable entity ownership; render_fit_bounds -> transform only"],
+    "tests":["Changing render-fit bounds cannot change repeated-sheet ownership bounds."],
+    "docs":["The ownership helper documents the failure mode and invariant."],
+    "contract_diff":["Repeated plan sheets reuse one immutable source entity population."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["One neighbouring wall is no longer imported on later system sheets."],
+    "artifact_diff":["Architectural topology is identical across all system sheets of the same level."],
+    "numeric_diff":["No load or sizing calculation change."],
+    "golden_regression":["Copyable-fit, preservation, visual and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, clean queue retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"The change restores the originally detected ownership envelope and is covered by preservation QA."},
+  "waiver":null
+}

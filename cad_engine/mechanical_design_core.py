@@ -610,6 +610,21 @@ def _plan_fit_bounds(plan):
     return bounds
 
 
+def _plan_ownership_bounds(plan):
+    """Return the immutable source-selection envelope for a plan.
+
+    ``render_fit_bounds`` is derived after selecting copyable entities and can
+    extend beyond the segmentation ownership box because text or a block has a
+    wide bbox.  It is a transform envelope only.  Reusing it as the selection
+    envelope on the second sheet of the same level imports neighbouring source
+    entities and makes repeated plan sheets topologically inconsistent.
+    """
+    bounds=plan.get("content_bounds") or plan.get("bounds")
+    if not bounds or len(bounds)!=4:
+        raise ValueError("MISSING_AUTHORITATIVE_PLAN_OWNERSHIP_BOUNDS")
+    return bounds
+
+
 def _clone_entities(msp,entities,M):
     copied=[];failed=[]
     for e in entities:
@@ -998,7 +1013,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                 if level_model:
                     row["level_model_id"]=level_model.get("model_id")
                     row["level_instance_id"]=normalize_level_identity(b.level) or b.level
-                ownership_bounds=_plan_fit_bounds(plan);entities=_entities_in_bounds(src_msp,ownership_bounds);fit_bounds=_copyable_geometry_bounds(entities,ownership_bounds);plan["render_fit_bounds"]=list(fit_bounds);M,scale,offset=_fit_transform(fit_bounds,b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
+                ownership_bounds=_plan_ownership_bounds(plan);entities=_entities_in_bounds(src_msp,ownership_bounds);fit_bounds=_copyable_geometry_bounds(entities,ownership_bounds);plan["render_fit_bounds"]=list(fit_bounds);M,scale,offset=_fit_transform(fit_bounds,b.plan_area);_,failed=_clone_entities(msp,entities,M);copy_failures.extend(failed);north=_north_from_architecture(doc,plan) or shared_north;north_records[b.code]=north
                 row["source_plan_id"]=plan["plan_id"]
                 row["source_bounds"]=list(fit_bounds)
                 row["uniform_transform"]={"scale_x":scale,"scale_y":scale,"offset_x":offset[0],"offset_y":offset[1],"roundtrip_required":True}
