@@ -563,15 +563,14 @@ def _copyable_geometry_bounds(entities, fallback):
     Plan segmentation deliberately considers sheet furniture while finding a
     print region.  Composition removes that furniture.  Fitting against the
     former envelope therefore leaves the retained architectural model tiny.
-    Derive the render transform from the exact copy set, excluding annotation
-    types that visual QA also excludes.  The complete retained envelope is
-    used: preservation-critical geometry is never trimmed to improve fit.
+    Derive the render transform from the exact copy set, including retained
+    architectural dimensions, leaders and text.  Visual occupancy is measured
+    from graphical architecture separately, but every preserved source entity
+    must stay above the title block.  The complete retained envelope is used:
+    preservation-critical geometry is never trimmed to improve fit.
     """
-    excluded={"TEXT","MTEXT","DIMENSION","LEADER"}
     boxes=[]
     for entity in entities:
-        if entity.dxftype().upper() in excluded:
-            continue
         ext=_entity_ext(entity)
         if not ext or not ext.has_data:
             continue

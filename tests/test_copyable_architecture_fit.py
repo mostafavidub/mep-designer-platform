@@ -32,3 +32,13 @@ def test_copyable_fit_preserves_one_isolated_remote_geometry_outlier():
     bounds=_copyable_geometry_bounds(entities,(0,0,1001,1001))
     assert bounds[2]>=1001
     assert bounds[3]>=1001
+
+
+def test_copyable_fit_keeps_retained_architectural_text_inside_viewport():
+    doc=ezdxf.new("R2010");msp=doc.modelspace()
+    wall=msp.add_line((8,6),(14,14),dxfattribs={"layer":"wall"})
+    note=msp.add_text("ARCH NOTE",dxfattribs={"layer":"construction","height":1})
+    note.dxf.insert=(4,2)
+    bounds=_copyable_geometry_bounds([wall,note],(0,0,30,20))
+    assert bounds[0]<=4
+    assert bounds[1]<=2
