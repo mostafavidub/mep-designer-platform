@@ -143,6 +143,13 @@ class QueueIntegrationContractTests(unittest.TestCase):
         self.assertIn("app.router.routes.remove(route)", source)
         self.assertIn("app.add_api_route('/system_health', integrated_system_health", source)
 
+    def test_storage_exhaustion_keeps_http_repairable_but_does_not_start_workers(self):
+        source = Path('app/job_queue.py').read_text(encoding='utf-8')
+        startup = source[source.index('def start_persistent_workers'):source.index("@app.on_event('shutdown')")]
+        self.assertIn('except OperationalError as exc:', startup)
+        self.assertIn("_record_worker_state(job_type, alive=False, error=exc)", startup)
+        self.assertLess(startup.index('return'), startup.index('threading.Thread'))
+
     def test_design_input_requires_a_local_or_durable_architecture_copy(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
