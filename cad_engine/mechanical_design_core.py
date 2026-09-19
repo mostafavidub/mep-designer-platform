@@ -539,6 +539,19 @@ def _presentation_artifact_reason(e, bounds):
         for token in protected
     )
     semantic_arch=semantic_layer or typ in {"DIMENSION","HATCH","INSERT","ARC","CIRCLE","SPLINE"}
+    # Reject source-sheet prose whose rendered box crosses well beyond the
+    # print region that owns its insertion point. Several real architectural
+    # files contain a long MTEXT note on the generic ``construction`` layer;
+    # its insertion belongs to one frame while its box spans neighbouring
+    # frames. Keeping it in the fit envelope makes the actual building occupy
+    # only 18-25% of every generated sheet. Normal room names and semantic
+    # architectural layers remain protected.
+    cross_frame_text=(
+        typ in {"TEXT","MTEXT"}
+        and not semantic_arch
+        and (ew>sw*1.25 or eh>sh*1.25)
+    )
+    if cross_frame_text:return "SOURCE_CROSS_FRAME_TEXT"
     bottom=ey2<=y1+sh*.16+toly
     stale_text=bool(LEGACY_SHEET_TEXT_RE.search(_text(e))) or any(x in txt for x in ("پلان معماری","architectural plan","sc:1/100"))
     # Real benchmark drawings repeat footer furniture without the words

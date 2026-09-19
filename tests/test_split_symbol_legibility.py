@@ -65,3 +65,30 @@ def test_split_visual_threshold_remains_fail_closed_for_undersized_idu(tmp_path)
 
     assert result["status"] == "FAIL"
     assert any(error.startswith("split_symbol_too_small:S1:") for error in result["errors"])
+
+
+def test_empty_split_board_passes_only_with_exact_pre_submission_disclosure(tmp_path):
+    row = {
+        "old_sheet": "M-06",
+        "code": "M-161",
+        "family": "SPLIT_AC",
+        "level": "GROUND",
+        "title_fa": "Split AC plan",
+    }
+    board = _boards([row])["M-06"]
+    doc = ezdxf.new("R2013")
+    path = tmp_path / "pending-split.dxf"
+    doc.saveas(path)
+    composition = {"boards": {board.sheet: vars(board)}}
+
+    blocked = validate_split_ac_visual_legibility(path, composition)
+    assert blocked["status"] == "FAIL"
+    assert "split_visual_no_equipment:M-06" in blocked["errors"]
+
+    disclosed = validate_split_ac_visual_legibility(
+        path,
+        composition,
+        allowed_pending={("m-06", "SPLIT_AC")},
+    )
+    assert disclosed["status"] == "PASS", disclosed
+    assert disclosed["boards"][0]["pre_submission_pending"] is True

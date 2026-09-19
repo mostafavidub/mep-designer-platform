@@ -31,3 +31,13 @@ def test_arc_code_and_scale_fraction_are_source_footer_furniture():
 def test_in_plan_room_note_is_never_removed_by_text_shape_alone():
     note=_mtext("آشپزخانه",(10,10),5,"construction")
     assert _presentation_artifact_reason(note,BOUNDS) is None
+
+
+def test_nonsemantic_text_spanning_neighbouring_print_frames_is_removed():
+    note=_mtext("LONG SOURCE SHEET NOTE "*30,(10,10),60,"construction")
+    assert _presentation_artifact_reason(note,BOUNDS)=="SOURCE_CROSS_FRAME_TEXT"
+
+
+def test_cross_frame_architectural_text_on_semantic_layer_is_preserved():
+    note=_mtext("ARCHITECTURAL GRID NOTE "*30,(10,10),60,"wall-note")
+    assert _presentation_artifact_reason(note,BOUNDS) is None

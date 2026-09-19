@@ -481,7 +481,10 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
         ('architectural_presentation_qa',validate_architectural_presentation(dst,report.get('composition') or {}),'architectural_presentation_gate'),
         ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {},_pre_submission_pending_boards(report,effective_pre_submission)),'equipment_linkage_gate'),
-        ('split_ac_visual_qa',validate_split_ac_visual_legibility(dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews')),'split_ac_visual_gate'),
+        ('split_ac_visual_qa',validate_split_ac_visual_legibility(
+            dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews'),
+            allowed_pending=_pre_submission_pending_boards(report,effective_pre_submission),
+        ),'split_ac_visual_gate'),
         ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),
         ('content_completeness_qa',validate_content_completeness(dst,report.get('composition') or {}),'content_completeness_gate'),
         ('all_sheet_visual_qa',validate_all_sheet_visual_qa(
