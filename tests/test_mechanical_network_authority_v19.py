@@ -184,6 +184,32 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         self.assertTrue(any(edge['role'] == 'vertical_riser'
                             for edge in result['network']['edges']))
 
+    def test_installed_multilevel_system_builds_riser_even_when_pmm_flag_is_stale(self):
+        model = pmm([
+            {'name': 'Ground', 'region_bounds': [0, 0, 10, 10]},
+            {'name': 'First', 'region_bounds': [20, 0, 30, 10]},
+        ], vertical=False)
+        architecture = {
+            'shafts': [], 'walls': [], 'obstacles': [],
+            'wet_cores': [
+                {'room_id': 'WG', 'centroid': (8, 8), 'level': 'Ground'},
+                {'room_id': 'WF', 'centroid': (28, 8), 'level': 'First'},
+            ],
+        }
+        recognition = {'detections': [
+            {**detection('G', point=(2, 2), ports=['cold_water']), 'level': 'Ground'},
+            {**detection('F', point=(22, 2), ports=['cold_water']), 'level': 'First'},
+        ]}
+        result = build_authoritative_topology_from_evidence(
+            model, architecture, recognition, shaft_strategy='proposal_authorized',
+        )
+        self.assertEqual(result['status'], 'PASS', result)
+        vertical = [edge for edge in result['network']['edges']
+                    if edge.get('role') == 'vertical_riser']
+        self.assertEqual(len(vertical), 1)
+        qa = evaluate_topology_routing(result['network'])
+        self.assertNotIn('MISSING_VERTICAL_CONTINUITY:cold_water', qa['errors'])
+
     def test_unknown_shaft_strategy_cannot_create_geometry(self):
         result = build_authoritative_topology_from_evidence(
             pmm([{'name': 'Ground', 'region_bounds': [0, 0, 10, 10]}]),

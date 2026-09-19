@@ -305,8 +305,22 @@ def materialize_authoritative_network(src: Path, dst: Path, report: dict, networ
             points = [map_point(point, transform) for point in source_points]
             if len(points) < 2:
                 raise ValueError("DRAWABLE_SEGMENT_PATH_MISSING:" + str(edge.get("id")))
-            if any(not _inside(point, target["target_bounds"], tolerance=0.03) for point in points):
-                raise ValueError("MATERIALIZED_SEGMENT_OUTSIDE_PLAN_BOARD:" + str(edge.get("id")))
+            outside = [point for point in points
+                       if not _inside(point, target["target_bounds"], tolerance=0.03)]
+            if outside:
+                # Keep the gate fail-closed, but retain enough bounded evidence
+                # to distinguish a small coordinate drift from a wrongly
+                # assigned endpoint.  This is intentionally diagnostic only;
+                # routes are never clipped or silently moved into the board.
+                raise ValueError(
+                    "MATERIALIZED_SEGMENT_OUTSIDE_PLAN_BOARD:%s:SOURCE=%s:TARGET=%s:OUTSIDE=%s"
+                    % (
+                        edge.get("id"),
+                        [round(float(value), 6) for value in target["source_bounds"]],
+                        [round(float(value), 6) for value in target["target_bounds"]],
+                        [[round(float(value), 6) for value in point] for point in outside[:3]],
+                    )
+                )
             # ``points`` are now in paper-space units.  A fixed 0.01 drawing-unit
             # cutoff incorrectly rejects real, short fixture branches whenever a
             # large architectural source extent is uniformly fitted onto a board.

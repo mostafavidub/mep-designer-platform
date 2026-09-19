@@ -712,7 +712,15 @@ def build_authoritative_topology_from_evidence(
                 else:
                     add_edge(system, wet, shaft, "riser_connection", level_endpoint_ids, [level_id])
 
-    vertical_enabled = bool((pmm.get("systems") or {}).get("vertical_systems"))
+    # The PMM flag is advisory scope metadata.  The installed endpoint graph is
+    # the execution authority: whenever one system is present on more than one
+    # detected level it necessarily requires continuous riser edges.  Relying
+    # only on the advisory flag produced disconnected multi-level networks for
+    # projects whose architectural inference discovered additional floors.
+    vertical_enabled = bool(
+        (pmm.get("systems") or {}).get("vertical_systems")
+        or any(len(level_ids) > 1 for level_ids in systems_by_level.values())
+    )
     if vertical_enabled:
         order = {row["id"]: row["order"] for row in levels}
         for system, level_ids in sorted(systems_by_level.items()):
