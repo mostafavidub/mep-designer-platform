@@ -68,3 +68,17 @@ def test_shell_recovers_exact_target_package_state_from_engine_evidence():
     assert _release_input_errors(report,effective)==[]
     report["pipeline_qa"]["errors"].append("OTHER")
     assert _effective_pre_submission(report,None) is None
+
+
+def test_shell_discloses_only_bounded_architecture_constraints_with_target_package():
+    report={
+        "pipeline_qa":{"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        "engineering_acceptance":{"status":"FAIL","errors":[
+            "architecture:insufficient_room_geometry","architecture:no_real_shaft_evidence"]},
+        "authority":{"design_basis":{"status":"PASS"}},
+    }
+    effective=_effective_pre_submission(report,None)
+    assert effective["blocked_at"]=="target_design_packages"
+    assert _release_input_errors(report,effective)==[]
+    report["engineering_acceptance"]["errors"].append("routing:route_crosses_architectural_wall")
+    assert _effective_pre_submission(report,None) is None

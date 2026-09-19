@@ -41,6 +41,11 @@ WEB_TO_CAD_FAMILY = {
     'VENTILATION_EXHAUST': 'EXHAUST',
     'ROOF_RAINWATER': 'ROOF',
 }
+
+_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS = {
+    'architecture:insufficient_room_geometry',
+    'architecture:no_real_shaft_evidence',
+}
 PRIMARY_CAD_FAMILIES = set(WEB_TO_CAD_FAMILY.values())
 PLAN_DRAWING_TYPES = {'FLOOR_PLAN','ROOF_PLAN','EQUIPMENT_PLAN','VENTILATION_PLAN'}
 DRAWING_TYPE_ROLE = {
@@ -111,9 +116,10 @@ def _release_input_errors(report, pre_submission=None):
     acceptance_errors=set(acceptance.get('errors') or [])
     disclosed_acceptance=bool(
         target_package_pre_submission
-        and acceptance.get('status') in {'INPUT_REQUIRED','PRE_SUBMISSION'}
+        and acceptance.get('status') in {'FAIL','INPUT_REQUIRED','PRE_SUBMISSION'}
         and acceptance_errors
-        and acceptance_errors <= {'TARGET_DESIGN_PACKAGES_MISSING'}
+        and (acceptance.get('status')!='FAIL' or bool(acceptance_errors & _DISCLOSABLE_ARCHITECTURE_CONSTRAINTS))
+        and acceptance_errors <= ({'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS)
     )
     if acceptance.get('status')!='PASS' and not disclosed_acceptance:
         errors.extend('engineering_acceptance:'+str(x) for x in acceptance_errors or ['MISSING'])
@@ -157,10 +163,11 @@ def _effective_pre_submission(report, supplied):
         return supplied
     pipeline=report.get('pipeline_qa') or {}; acceptance=report.get('engineering_acceptance') or {}
     error_sets=[set(pipeline.get('errors') or []),set(acceptance.get('errors') or [])]
-    if set().union(*error_sets)=={'TARGET_DESIGN_PACKAGES_MISSING'} and all(
-        errors <= {'TARGET_DESIGN_PACKAGES_MISSING'} for errors in error_sets
-    ):
-        return {'blocked_at':'target_design_packages','blockers':['TARGET_DESIGN_PACKAGES_MISSING'],
+    combined=set().union(*error_sets)
+    allowed={'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_ARCHITECTURE_CONSTRAINTS
+    if ('TARGET_DESIGN_PACKAGES_MISSING' in combined and combined <= allowed
+            and error_sets[0] <= {'TARGET_DESIGN_PACKAGES_MISSING'}):
+        return {'blocked_at':'target_design_packages','blockers':sorted(combined),
                 'source':'EXACT_ENGINE_GATE_EVIDENCE'}
     return supplied
 

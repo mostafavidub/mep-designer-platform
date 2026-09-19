@@ -104,6 +104,32 @@ def test_exact_engine_gate_evidence_recovers_missing_transient_pre_submission_ke
     ) is None
 
 
+def test_exact_target_package_with_bounded_architecture_constraints_is_truthful_pre_submission(tmp_path):
+    blockers=["TARGET_DESIGN_PACKAGES_MISSING","architecture:insufficient_room_geometry",
+              "architecture:no_real_shaft_evidence"]
+    recovered=_effective_target_package_pre_submission(
+        None,
+        {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        {"status":"FAIL","errors":blockers[1:]},
+    )
+    assert recovered["blockers"]==sorted(blockers)
+    path,compose=_pending_heating_sheet(tmp_path)
+    doc=ezdxf.readfile(path)
+    disclosure=_materialize_target_package_disclosures(doc,doc.modelspace(),compose,recovered)
+    assert disclosure["status"]=="PASS"
+    assert disclosure["architecture_constraints"]==sorted(blockers[1:])
+    assert any("ARCHITECTURE CONSTRAINTS" in entity.plain_text()
+               for entity in doc.modelspace().query("MTEXT"))
+
+
+def test_unrelated_engineering_failure_cannot_be_disclosed_as_target_pre_submission():
+    assert _effective_target_package_pre_submission(
+        None,
+        {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        {"status":"FAIL","errors":["routing:route_crosses_architectural_wall"]},
+    ) is None
+
+
 def test_pending_gas_table_is_deliverable_only_as_explicit_target_package_pre_submission():
     report = {
         "pipeline_qa": {"status": "INPUT_REQUIRED", "errors": ["TARGET_DESIGN_PACKAGES_MISSING"]},
