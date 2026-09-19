@@ -212,9 +212,10 @@ def validate_equipment_linkage(path: Path, composition: dict, allowed_pending_bo
 
 
 def validate_split_ac_visual_legibility(path: Path, composition: dict, preview_dir: Path | None=None,
-                                        minimum_symbol_pixels: tuple[int,int]=(28,14), minimum_ink_pixels: int=20) -> dict:
+                                        minimum_symbol_pixels: tuple[int,int]=(28,14), minimum_ink_pixels: int=20,
+                                        allowed_pending: set | None=None) -> dict:
     """Render every Split-AC sheet and reject symbols that are not visibly legible."""
-    path=Path(path);preview_dir=Path(preview_dir) if preview_dir else None;errors=[];results=[]
+    path=Path(path);preview_dir=Path(preview_dir) if preview_dir else None;errors=[];results=[];allowed_pending=allowed_pending or set()
     try:
         doc=ezdxf.readfile(path);entities=list(doc.modelspace())
         from ezdxf.addons.drawing import RenderContext,Frontend
@@ -233,12 +234,13 @@ def validate_split_ac_visual_legibility(path: Path, composition: dict, preview_d
                 if e.dxftype()!="INSERT" or str(getattr(e.dxf,"name","")).upper()!=name or not p or not(area[0]<=p[0]<=area[2] and area[1]<=p[1]<=area[3]):continue
                 ex=bbox.extents([e],fast=True);a=ax.transData.transform((ex.extmin.x,ex.extmin.y));b=ax.transData.transform((ex.extmax.x,ex.extmax.y));w=abs(int(b[0]-a[0]));h=abs(int(b[1]-a[1]));long_px=max(w,h);short_px=min(w,h);ink=board_ink;units.append({"handle":str(e.dxf.handle),"pixel_width":w,"pixel_height":h,"pixel_long_side":long_px,"pixel_short_side":short_px,"rendered_board_ink_pixels":ink});
                 if long_px<minimum_symbol_pixels[0] or short_px<minimum_symbol_pixels[1]:errors.append(f"split_symbol_too_small:{key}:{w}x{h}")
-            if not units:errors.append(f"split_visual_no_equipment:{key}")
+            pending=(str(key).lower(),"SPLIT_AC") in allowed_pending
+            if not units and not pending:errors.append(f"split_visual_no_equipment:{key}")
             preview=None
             if preview_dir:
                 preview=preview_dir/f"{board.get('code') or key}-{board.get('level') or ''}.png";fig.savefig(preview,dpi=120,facecolor="#101820")
                 if not preview.exists() or preview.stat().st_size<1500:errors.append(f"split_preview_empty:{key}")
-            results.append({"board_id":key,"code":board.get("code"),"unit_count":len(units),"units":units,"preview":str(preview) if preview else None,"status":"PASS" if units and not any(f":{key}:" in x for x in errors) else "FAIL"})
+            results.append({"board_id":key,"code":board.get("code"),"unit_count":len(units),"units":units,"preview":str(preview) if preview else None,"pre_submission_pending":bool(pending and not units),"status":"PASS" if (units or pending) and not any(f":{key}:" in x for x in errors) else "FAIL"})
         plt.close(fig)
     except Exception as exc:return {"version":"split-ac-visual-legibility-v18.1","status":"FAIL","errors":["split_visual_render_failed"],"detail":str(exc)}
     if not results:errors.append("no_split_ac_boards")
