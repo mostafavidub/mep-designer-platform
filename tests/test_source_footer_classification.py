@@ -41,3 +41,17 @@ def test_nonsemantic_text_spanning_neighbouring_print_frames_is_removed():
 def test_cross_frame_architectural_text_on_semantic_layer_is_preserved():
     note=_mtext("ARCHITECTURAL GRID NOTE "*30,(10,10),60,"wall-note")
     assert _presentation_artifact_reason(note,BOUNDS) is None
+
+
+def test_a4_border_inset_five_percent_is_removed_even_when_mislabeled_wall():
+    doc=ezdxf.new("R2010");doc.layers.add("WALL")
+    frame=doc.modelspace().add_lwpolyline(
+        [(1,1),(29,1),(29,19),(1,19)],close=True,dxfattribs={"layer":"WALL"})
+    assert _presentation_artifact_reason(frame,BOUNDS)=="SOURCE_PRINT_FRAME"
+
+
+def test_smaller_closed_wall_outline_is_not_classified_as_sheet_border():
+    doc=ezdxf.new("R2010");doc.layers.add("WALL")
+    building=doc.modelspace().add_lwpolyline(
+        [(3,3),(27,3),(27,17),(3,17)],close=True,dxfattribs={"layer":"WALL"})
+    assert _presentation_artifact_reason(building,BOUNDS) is None
