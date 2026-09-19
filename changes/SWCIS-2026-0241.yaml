@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0241",
+  "summary":"Clamp mechanical dimension datums and lanes at every plan edge and preserve exact-DXF failure identities in durable diagnostics.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","ui_api","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Dimension datums and lane definition points are symmetrically clamped inside all four plan-board edges.",
+    "deployment":"Deploy both Staging services and retry Project 03 before the remaining benchmark projects.",
+    "detail_riser":"Not affected.",
+    "docs":"No workflow change.",
+    "equipment":"Owner linkage remains unchanged.",
+    "governance":"Exact-DXF outside, orphan, duplicate and numeric mismatch identities survive into durable failure evidence.",
+    "manifest":"Not affected.",
+    "manufacturer_selector":"Not affected.",
+    "migration":"No persisted schema migration.",
+    "qa":"Board containment and exact measurements remain independently fail-closed.",
+    "routing":"Not affected.",
+    "sizing":"Not affected.",
+    "ui_api":"No public geometry is exposed; only bounded gate identities are retained.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["source coordinate -> affine transform -> four-edge clamp -> semantic XDATA -> exact reopen"],
+    "tests":["Upper/right-edge target retains all dimension definition points inside its board and passes exact reopen."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Every definition point must stay within the owning board at lower, upper, left and right limits."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["Dimension placement is bounded on all board edges without changing owner identity."],
+    "artifact_diff":["Only dimensions that would exceed an upper or right edge move inward."],
+    "numeric_diff":["No sizing change; exact-DXF measurement tolerance remains unchanged."],
+    "golden_regression":["Dimension exact-file and runtime recovery suites must pass."],
+    "deployment_plan":["Protected PR, required CI, exact-SHA Staging rollout, controlled retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior approved build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Independent exact-file validation detects containment or measurement regression."},
+  "waiver":null
+}
