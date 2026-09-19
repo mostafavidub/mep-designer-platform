@@ -82,3 +82,16 @@ def test_shell_discloses_only_bounded_architecture_constraints_with_target_packa
     assert _release_input_errors(report,effective)==[]
     report["engineering_acceptance"]["errors"].append("routing:route_crosses_architectural_wall")
     assert _effective_pre_submission(report,None) is None
+
+
+def test_shell_discloses_absent_selected_hvac_evidence_without_inventing_design():
+    report={
+        "pipeline_qa":{"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING",
+            "selected_hvac_has_no_project_equipment","selected_hvac_has_no_project_routes"]},
+        "engineering_acceptance":{"status":"FAIL","errors":[
+            "architecture:no_real_shaft_evidence","fixture_recognition:no_plumbing_fixture_evidence"]},
+        "authority":{"design_basis":{"status":"PASS"}},"enrichment":{},
+    }
+    effective=_effective_pre_submission(report,None)
+    assert effective["blocked_at"]=="target_design_packages"
+    assert _release_input_errors(report,effective)==[]
