@@ -291,6 +291,22 @@ def _cad_error_message(response):
                 if sheet.get('status') == 'FAIL':
                     if not (sheet.get('topology') or {}).get('pass', True):
                         reasons.append(f'TOPOLOGY_MISMATCH:{sheet.get("sheet") or "unknown"}')
+                        topology=sheet.get('topology') or {}
+                        match=sheet.get('preservation_match') or {}
+                        before=topology.get('wall_topology_before') or {}
+                        after=topology.get('wall_topology_after') or {}
+                        reasons.append(
+                            'TOPOLOGY_EVIDENCE:'
+                            f'{sheet.get("sheet") or "unknown"}:'
+                            f'strategy={match.get("strategy") or "unknown"}:'
+                            f'protected={int(match.get("protected_source_count") or 0)}/'
+                            f'{int(match.get("matched_count") or 0)}/'
+                            f'{len(match.get("extra_protected") or [])}:'
+                            f'walls={int(before.get("wall_count") or 0)}/'
+                            f'{int(after.get("wall_count") or 0)}:'
+                            f'critical={topology.get("critical_counts_before") or {}}/'
+                            f'{topology.get("critical_counts_after") or {}}'
+                        )
                     if not (sheet.get('visibility') or {}).get('pass', True):
                         reasons.append(f'VISIBILITY_FAILURE:{sheet.get("sheet") or "unknown"}')
                 for missing_item in (sheet.get('preservation_match') or {}).get('missing') or []:
