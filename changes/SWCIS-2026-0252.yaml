@@ -2,7 +2,7 @@
   "change_id":"SWCIS-2026-0252",
   "summary":"Complete late benchmark recovery for exact target-package state, pending gas-board disclosures, in-envelope route offsets, and unique board codes even when legacy level types repeat.",
   "requester":"project-owner",
-  "change_types":["drawing_output","routing","qa","test","governance"],
+  "change_types":["calculation","drawing_output","routing","qa","test","governance"],
   "changed_rule_ids":[],
   "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
   "impact_notes":{
