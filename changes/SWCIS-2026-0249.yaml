@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0249",
+  "summary":"Remove remote historical-artifact reclamation from the latency-critical design job claim path.",
+  "requester":"project-owner",
+  "change_types":["runtime","performance","ui_api","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Queued designs are claimed before any historical cleanup network calls.",
+    "deployment":"Deploy worker service and retry benchmark projects.",
+    "detail_riser":"No change.",
+    "docs":"No drawing-content change.",
+    "equipment":"No change.",
+    "governance":"Cleanup remains at startup and per-job finalization; durable sources and finals remain protected.",
+    "manifest":"No change.",
+    "manufacturer_selector":"No change.",
+    "migration":"No persisted schema migration.",
+    "qa":"Output quality gates are unchanged.",
+    "routing":"No change.",
+    "sizing":"No change.",
+    "ui_api":"Queued status transitions promptly to real processing progress.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["queued row -> database claim -> processing state -> design execution; cleanup remains outside claim"],
+    "tests":["Claim source cannot call historical failed-artifact reclamation.","Startup still performs reclamation."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Remote cleanup is no longer a prerequisite for claiming each design job."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["No engineering semantics change."],
+    "artifact_diff":["No CAD content change."],
+    "numeric_diff":["Removes O(historical projects) remote checks from each claim."],
+    "golden_regression":["Queue and artifact QA suite must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":2,"detectability":1,"score":2,"rationale":"Cleanup ownership remains in startup and job finalization while release QA is untouched."},
+  "waiver":null
+}

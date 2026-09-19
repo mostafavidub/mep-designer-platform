@@ -127,6 +127,13 @@ class ArtifactQualityGateTests(unittest.TestCase):
 
 
 class QueueIntegrationContractTests(unittest.TestCase):
+    def test_design_claim_does_not_wait_for_historical_object_storage_cleanup(self):
+        source = Path('app/job_queue.py').read_text(encoding='utf-8')
+        claim = source[source.index('def _claim(job_type):'):source.index('def _finish(job_id')]
+        self.assertNotIn('_reclaim_failed_artifacts()', claim)
+        startup = source[source.index('def start_persistent_workers'):source.index("@app.on_event('shutdown')")]
+        self.assertIn('_reclaim_failed_artifacts()', startup)
+
     def test_queue_supervisor_is_fail_visible_and_keeps_polling_after_exception(self):
         source = Path('app/job_queue.py').read_text(encoding='utf-8')
         self.assertIn("_record_worker_state(job_type, alive=True, error=exc)", source)
