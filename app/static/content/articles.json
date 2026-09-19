@@ -1,1 +1,36 @@
-[]
+[
+  {
+    "job_id": "TEST-SEO-001",
+    "keyword": "تست انتشار خودکار مقاله",
+    "page_type": "راهنما",
+    "status": "ready",
+    "title": "تست انتشار خودکار مقاله با SEO Engine",
+    "meta_description": "این صفحه فقط برای تست مسیر انتشار خودکار مقاله از SEO Engine به سایت EngiTools ایجاد شده است.",
+    "slug": "seo-engine-publish-test",
+    "primary_keyword": "تست انتشار خودکار مقاله",
+    "secondary_keywords": [
+      "SEO Engine",
+      "انتشار خودکار محتوا"
+    ],
+    "format": "test",
+    "angle": "End-to-end publishing smoke test",
+    "words": 120,
+    "sections": 2,
+    "machine_score": 100,
+    "internal_links": [
+      "/electrical",
+      "/mechanical"
+    ],
+    "flags": [],
+    "notes_text": "Temporary smoke-test article. Remove before production merge.",
+    "doc_url": "",
+    "html_doc_url": "",
+    "markdown": "## تست اتصال\nاین مقاله برای بررسی مسیر انتشار خودکار ایجاد شده است.",
+    "html": "<h2>تست اتصال SEO Engine به سایت</h2><p>اگر این متن نمایش داده شود، مقاله از فایل articles.json خوانده شده و قالب داینامیک با موفقیت اجرا شده است.</p><h2>تست لینک داخلی</h2><p>برای بررسی لینک داخلی می‌توانید به <a href=\"/electrical\">طراحی برق ساختمان</a> و <a href=\"/mechanical\">طراحی مکانیک ساختمان</a> مراجعه کنید.</p>",
+    "business_case": "Technical end-to-end smoke test only.",
+    "created_date": "2026-09-19",
+    "engine_version": "1.1",
+    "run_id": "test-generated-article-001",
+    "demand_metric": "test"
+  }
+]
