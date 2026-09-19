@@ -3,6 +3,7 @@ import ezdxf
 from cad_engine.mechanical_design_core import (
     _copyable_geometry_bounds,
     _fit_transform,
+    _fit_parameters,
     _plan_fit_bounds,
     _plan_ownership_bounds,
 )
@@ -61,3 +62,18 @@ def test_render_fit_never_mutates_repeated_sheet_ownership():
     # Recomputing fit for another system sheet cannot expand entity ownership.
     plan["render_fit_bounds"]=[1,1,26,19]
     assert _plan_ownership_bounds(plan)==[5,4,20,16]
+
+
+def test_dense_plan_fit_is_centered_below_visual_ceiling():
+    scale,dx,dy=_fit_parameters((0,0,10,10),(0,0,20,20))
+    width=10*scale;height=10*scale
+    assert round((width*height)/(20*20),6)==.80
+    assert dx==(20-width)/2
+    assert dy==(20-height)/2
+
+
+def test_sparse_plan_fit_is_not_shrunk_further():
+    scale,dx,dy=_fit_parameters((0,0,20,5),(0,0,20,20))
+    assert scale==1
+    assert dx==0
+    assert dy==7.5
