@@ -111,7 +111,7 @@ def _release_input_errors(report, pre_submission=None):
     acceptance_errors=set(acceptance.get('errors') or [])
     disclosed_acceptance=bool(
         target_package_pre_submission
-        and acceptance.get('status')=='INPUT_REQUIRED'
+        and acceptance.get('status') in {'INPUT_REQUIRED','PRE_SUBMISSION'}
         and acceptance_errors
         and acceptance_errors <= {'TARGET_DESIGN_PACKAGES_MISSING'}
     )

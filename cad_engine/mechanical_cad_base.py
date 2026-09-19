@@ -396,9 +396,7 @@ def _effective_target_package_pre_submission(supplied, pipeline_qa, acceptance):
     results=(pipeline_qa or {},acceptance or {})
     error_sets=[set(result.get("errors") or []) for result in results]
     combined=set().union(*error_sets)
-    allowed_statuses={"PASS","INPUT_REQUIRED","FAIL"}
     if (combined == {"TARGET_DESIGN_PACKAGES_MISSING"}
-            and all(result.get("status") in allowed_statuses for result in results)
             and all(errors <= {"TARGET_DESIGN_PACKAGES_MISSING"} for errors in error_sets)):
         return {"blocked_at":"target_design_packages","blockers":["TARGET_DESIGN_PACKAGES_MISSING"],
                 "source":"EXACT_ENGINE_GATE_EVIDENCE"}
@@ -576,7 +574,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
     acceptance_release_qa = acceptance
     acceptance_errors = set(acceptance.get("errors") or [])
     if (target_package_pending
-            and acceptance.get("status") in {"INPUT_REQUIRED", "FAIL"}
+            and acceptance.get("status") in {"INPUT_REQUIRED", "PRE_SUBMISSION"}
             and acceptance_errors == {"TARGET_DESIGN_PACKAGES_MISSING"}):
         acceptance_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
     status="PASS" if all(result.get("status")=="PASS" for result in (

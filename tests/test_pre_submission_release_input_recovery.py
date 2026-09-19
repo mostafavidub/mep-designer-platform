@@ -59,9 +59,12 @@ def test_pending_gas_schedule_record_maps_to_internal_equipment_board():
 def test_shell_recovers_exact_target_package_state_from_engine_evidence():
     report={
         "pipeline_qa":{"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
-        "engineering_acceptance":{"status":"FAIL","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        "engineering_acceptance":{"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        "authority":{"design_basis":{"status":"PASS"}},
     }
     effective=_effective_pre_submission(report,None)
     assert effective["blocked_at"]=="target_design_packages"
+    report["engineering_acceptance"]["status"]="PRE_SUBMISSION"
+    assert _release_input_errors(report,effective)==[]
     report["pipeline_qa"]["errors"].append("OTHER")
     assert _effective_pre_submission(report,None) is None

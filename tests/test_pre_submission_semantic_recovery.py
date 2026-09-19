@@ -87,10 +87,16 @@ def test_exact_engine_gate_evidence_recovers_missing_transient_pre_submission_ke
     result=_effective_target_package_pre_submission(
         None,
         {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
-        {"status":"FAIL","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
     )
     assert result["blocked_at"]=="target_design_packages"
     assert result["source"]=="EXACT_ENGINE_GATE_EVIDENCE"
+    result=_effective_target_package_pre_submission(
+        None,
+        {"status":"PASS","errors":[]},
+        {"status":"PRE_SUBMISSION","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+    )
+    assert result["blocked_at"]=="target_design_packages"
     assert _effective_target_package_pre_submission(
         None,
         {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING","OTHER"]},
