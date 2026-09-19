@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0247",
+  "summary":"Allow a gas schedule lacking appliance loads to be delivered only as an explicitly disclosed target-package Pre-Submission artifact.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","release_gate","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"No gas loads or sizes are invented when appliance inputs are absent.",
+    "deployment":"Deploy Staging and retry project 04 with the other benchmark projects.",
+    "detail_riser":"No change.",
+    "docs":"The gas sheet must retain its visible Pre-Submission pending disclosure.",
+    "equipment":"Absent appliance loads remain absent and disclosed.",
+    "governance":"The exemption is limited to exact target-design-package blocking plus a matching semantic GAS disclosure.",
+    "manifest":"The GAS family must exist in the approved manifest and semantic disclosure.",
+    "manufacturer_selector":"No change.",
+    "migration":"No persisted schema migration.",
+    "qa":"Unrelated blockers, undisclosed gas gaps, FAIL statuses, and submission-ready claims remain blocked.",
+    "routing":"No change.",
+    "sizing":"Gas sizing remains INPUT_REQUIRED until appliance loads are supplied.",
+    "ui_api":"A truthful NOT SUBMISSION READY artifact can be downloaded instead of an opaque generation failure.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["gas_table INPUT_REQUIRED -> semantic pending GAS -> exact target-package blocker -> Pre-Submission release"],
+    "tests":["Matching disclosed GAS input gap passes only under exact target-package Pre-Submission.","The same gap remains blocked for an unrelated phase."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Truthfully disclosed gas input gaps are treated like the existing roof, exhaust, and split target-package disclosures."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["Missing gas design inputs remain visible and cannot be represented as completed engineering."],
+    "artifact_diff":["Project 04 can produce a marked Pre-Submission file with pending GAS content."],
+    "numeric_diff":["No numeric values are synthesized."],
+    "golden_regression":["Pre-Submission semantic recovery and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"The artifact remains explicitly non-submission-ready and the bypass requires matching semantic evidence."},
+  "waiver":null
+}
