@@ -142,10 +142,19 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
             # of the source datum.  Mapping a non-zero source origin to the
             # bare translation can put dimension definition points in the
             # title block and makes the measured length disagree with XDATA.
-            paper_datum_x = datum_x * float(paper_scale) + float(transform.get("offset_x", x1))
-            paper_datum_y = datum_y * float(paper_scale) + float(transform.get("offset_y", y1))
-            horizontal_lane = max(y1+.15, paper_datum_y-.25-index*.15)
-            vertical_lane = max(x1+.15, paper_datum_x-.25-index*.15)
+            mapped_datum_x = datum_x * float(paper_scale) + float(transform.get("offset_x", x1))
+            mapped_datum_y = datum_y * float(paper_scale) + float(transform.get("offset_y", y1))
+            # Keep the complete rendered DIMENSION entity—not only its
+            # mathematical definition point—inside the plan safe zone. Move
+            # the source datum by the exact inverse paper-space inset so the
+            # displayed measurement remains source-coordinate truthful.
+            safe_inset=.45
+            paper_datum_x=max(mapped_datum_x,x1+safe_inset)
+            paper_datum_y=max(mapped_datum_y,y1+safe_inset)
+            datum_x+=(paper_datum_x-mapped_datum_x)/float(paper_scale)
+            datum_y+=(paper_datum_y-mapped_datum_y)/float(paper_scale)
+            horizontal_lane = max(y1+.70, paper_datum_y+.20+index*.15)
+            vertical_lane = max(x1+.70, paper_datum_x+.20+index*.15)
             axes = (("X", abs(sx-datum_x), (paper_datum_x, py), (px, py), (paper_datum_x, horizontal_lane)),
                     ("Y", abs(sy-datum_y), (px, paper_datum_y), (px, py), (vertical_lane, paper_datum_y)))
             for axis, source_distance, p1, p2, location in axes:

@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0240",
+  "summary":"Inset exact mechanical dimension datums and lanes from sheet borders while preserving source-coordinate measurements, and expose bounded exact-dimension diagnostics.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","ui_api","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Dimension datums and lanes remain inside each plan safe zone using an exactly inverted source-coordinate inset.",
+    "deployment":"Deploy both Staging services and retry Project 03.",
+    "detail_riser":"Not affected; only plan installation dimensions change.",
+    "docs":"No workflow change.",
+    "equipment":"Owner linkage remains unchanged.",
+    "governance":"Exact-DXF dimension failures gain bounded counts and error identities without source geometry disclosure.",
+    "manifest":"Not affected.",
+    "manufacturer_selector":"Not affected.",
+    "migration":"No persisted schema migration.",
+    "qa":"Exact measurement, board bounds and title safe zones remain fail-closed.",
+    "routing":"Not affected.",
+    "sizing":"Not affected.",
+    "ui_api":"No public response change; diagnostics remain server-only.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["source datum -> inverse-safe inset -> paper dimension -> XDATA expected value -> exact reopen"],
+    "tests":["Non-zero source origin produces exact dimensions whose definition points stay at least 0.44 paper units inside the plan."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Rendered dimension geometry must remain inside the plan safe zone, not merely its mathematical target."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None; retry rebuilds dimensions."],
+    "semantic_diff":["Measurements retain source truth while rendered lanes no longer touch the title boundary."],
+    "artifact_diff":["Installation dimension entities move inward; owner IDs and measured values remain stable."],
+    "numeric_diff":["No engineering calculation changes; inverse affine adjustment preserves dimension value."],
+    "golden_regression":["Dimension and authority exact-file suites must pass."],
+    "deployment_plan":["Protected PR, required CI, exact-SHA Staging rollout, controlled retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior approved build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Deterministic affine math is independently reopened and checked."},
+  "waiver":null
+}

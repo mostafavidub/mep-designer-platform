@@ -370,6 +370,18 @@ def _cad_rejection_diagnostic(response):
     pipeline = detail.get('pipeline_qa') or {}
     authority = detail.get('authority_qa') or {}
     dxf_qa = detail.get('dxf_qa') or {}
+    dxf_diagnostic = {
+        'status': dxf_qa.get('status'),
+        'errors': dxf_qa.get('errors') or [],
+        'metrics': dxf_qa.get('metrics') or {},
+    }
+    dimensioning = dxf_qa.get('dimensioning')
+    if isinstance(dimensioning, dict):
+        dxf_diagnostic.update({
+            'dimensioning_errors': dimensioning.get('errors') or [],
+            'dimensioning_expected_count': dimensioning.get('expected_count'),
+            'dimensioning_exact_count': dimensioning.get('exact_count'),
+        })
     return {
         'status_code': response.status_code,
         'code': detail.get('code'),
@@ -388,11 +400,7 @@ def _cad_rejection_diagnostic(response):
             'status': authority.get('status'),
             'errors': authority.get('errors') or [],
         },
-        'dxf_qa': {
-            'status': dxf_qa.get('status'),
-            'errors': dxf_qa.get('errors') or [],
-            'metrics': dxf_qa.get('metrics') or {},
-        },
+        'dxf_qa': dxf_diagnostic,
     }
 
 
