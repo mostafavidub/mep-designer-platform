@@ -1,6 +1,6 @@
 {
   "change_id":"SWCIS-2026-0262",
-  "summary":"Carry exact target-package Pre-Submission disclosure into Split-AC visual QA and exclude non-semantic cross-frame source notes from generated plan fit.",
+  "summary":"Carry exact target-package Pre-Submission disclosure into Split-AC visual QA and exclude cross-frame notes plus inset source borders from generated plan fit.",
   "requester":"project-owner",
   "change_types":["drawing_output","qa","test","governance"],
   "changed_rule_ids":[],

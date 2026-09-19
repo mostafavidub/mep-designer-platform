@@ -526,7 +526,13 @@ def _presentation_artifact_reason(e, bounds):
     ew=max(ex2-ex1,0.0);eh=max(ey2-ey1,0.0);typ=e.dxftype().upper()
     layer=_norm(getattr(e.dxf,"layer",""));txt=_norm(_text(e))
     if layer in {"suport","support","frame","sheet","border"}:return "SOURCE_PRINT_LAYER"
-    tolx=max(sw*.035,.15);toly=max(sh*.035,.15)
+    # Real A4 source frames are commonly inset by exactly 10 mm from a
+    # 210x297 mm segmentation rectangle (4.8% on the short axis).  The former
+    # 3.5% tolerance missed those frames when they were mislabeled ``WALL``,
+    # so the generated sheet fitted the whole paper border instead of the
+    # building.  A closed polyline still has to span at least 85% on both axes,
+    # keeping normal building outlines outside this narrowly geometric rule.
+    tolx=max(sw*.055,.15);toly=max(sh*.055,.15)
     hugs=(abs(ex1-x1)<=tolx and abs(ex2-x2)<=tolx and abs(ey1-y1)<=toly and abs(ey2-y2)<=toly)
     if typ in {"LWPOLYLINE","POLYLINE"} and hugs and ew>=sw*.85 and eh>=sh*.85:
         return "SOURCE_PRINT_FRAME"
