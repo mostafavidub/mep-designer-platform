@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from cad_engine.routing_v13 import _open_space_route,route_topology
 from cad_engine.mechanical_network_topology import _orthogonal_path
 from cad_engine.routing import route_topology as route_canonical_topology, _sparse_axis
@@ -59,6 +61,25 @@ def test_authoritative_router_ignores_distant_same_level_wall_mass():
     assert route[0] == (10.0, 10.0)
     assert route[-1] == (14.0, 10.0)
     assert metadata['wall_crossings'] == 0
+
+
+def test_authoritative_router_rejects_astar_detour_outside_level_envelope():
+    walls = [
+        {'start': (11.0, 0.0), 'end': (11.0, 20.0)},
+        {'start': (13.0, 0.0), 'end': (13.0, 20.0)},
+    ]
+    bounds = (0.0, 0.0, 20.0, 20.0)
+    with patch(
+        'cad_engine.mechanical_network_topology._open_space_route',
+        return_value=[(10.0, 10.0), (25.0, 10.0), (14.0, 10.0)],
+    ):
+        route, metadata = _orthogonal_path(
+            (10.0, 10.0), (14.0, 10.0), walls, [], route_bounds=bounds,
+        )
+
+    assert route == [(10.0, 10.0), (14.0, 10.0)]
+    assert all(0.0 <= x <= 20.0 and 0.0 <= y <= 20.0 for x, y in route)
+    assert metadata == {'wall_crossings': 2, 'routing': 'ORTHOGONAL_PRE_COORDINATION'}
 
 
 def test_authoritative_topology_records_one_terminal_sleeve_without_waiving_middle_crossings():

@@ -365,7 +365,12 @@ def _orthogonal_path(start, end, walls, obstacles, route_bounds=None):
             min(xs) - margin, min(ys) - margin, max(xs) + margin, max(ys) + margin
         )
         open_route = _open_space_route(start, end, bounds, walls or [])
-        if open_route:
+        # The graph and its eventual CAD board share the authoritative level
+        # envelope.  A sparse-search result outside that envelope is not a
+        # valid detour and must never reach materialization.  Reject the A*
+        # candidate here and retain the already-ranked bounded orthogonal path;
+        # do not clip or move any route point after engineering selection.
+        if open_route and all(_inside(point, route_bounds or bounds) for point in open_route):
             obstacle_hits = sum(
                 1 for a, b in zip(open_route, open_route[1:]) for rect in rects
                 if _seg_hits_rect(a, b, rect)

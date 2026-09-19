@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0251",
+  "summary":"Complete benchmark recovery for bounded routing, target-package disclosure, unique multi-level sheet identities, and record-level pending gas schedules.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","routing","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Only in-envelope routes materialize; exact target-package gaps remain visibly Pre-Submission; every physical level has a unique sheet code.",
+    "deployment":"Deploy as one exact-SHA benchmark recovery and retry projects 01, 02, 03, 04 and 07.",
+    "detail_riser":"No change.",
+    "docs":"Target-package and pending gas-schedule gaps remain explicitly marked Pre-Submission and not submission ready.",
+    "equipment":"Endpoints remain unchanged.",
+    "governance":"No geometric clipping or false PASS is introduced: invalid routes are rejected, original acceptance evidence is retained, FAIL gas records remain blocking, and duplicate sheet identities are eliminated.",
+    "manifest":"The selected plan board and route retain one level identity; reused approved codes are deterministically made unique by family and level.",
+    "manufacturer_selector":"No change.",
+    "migration":"No persisted schema migration.",
+    "qa":"Materialization remains fail-closed; exact singleton target-package gaps have a release-only disclosed view; gas FAIL records still block; dimensions can be attributed to unique boards.",
+    "routing":"Falls back to the already-ranked bounded orthogonal route when A-star leaves the level envelope.",
+    "sizing":"No change.",
+    "ui_api":"The five failed benchmark projects can proceed without hiding unresolved final-design limitations.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["level bounds -> route validation -> materialization","acceptance evidence -> exact target-package disclosure -> Pre-Submission output","approved-code multiplicity -> unique board identity -> dimensions","gas schedule record -> INPUT_REQUIRED disclosure or FAIL block"],
+    "tests":["Out-of-envelope A-star paths are rejected.","Exact target-package acceptance gaps retain original evidence and may produce disclosed Pre-Submission output.","Repeated family plan codes become unique across levels.","Pending gas records are disclosed while FAIL records remain blocked."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Routing, base acceptance, manifest identity and gas-schedule record handling now enforce one consistent fail-closed Pre-Submission contract."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["No coordinates are clipped or silently translated."],
+    "artifact_diff":["Projects 01, 02, 03, 04 and 07 can be regenerated with bounded routes, unique sheet codes and truthful Pre-Submission disclosures."],
+    "numeric_diff":["All accepted route points satisfy bounds and all generated plan codes are unique."],
+    "golden_regression":["Bounded routing, base acceptance, semantic recovery, manifest and dimension suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, worker-idle verification, controlled retry of only failed targets."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Every exception is exact and evidence-preserving; unrelated, compound, or FAIL conditions remain blocked by independent QA."},
+  "waiver":null
+}

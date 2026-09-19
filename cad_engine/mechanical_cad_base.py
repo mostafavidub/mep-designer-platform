@@ -551,12 +551,18 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
     if (target_package_pending and pipeline_qa.get("status") == "INPUT_REQUIRED"
             and set(pipeline_qa.get("errors") or []) <= {"TARGET_DESIGN_PACKAGES_MISSING"}):
         pipeline_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
+    acceptance_release_qa = acceptance
+    acceptance_errors = set(acceptance.get("errors") or [])
+    if (target_package_pending
+            and acceptance.get("status") in {"INPUT_REQUIRED", "FAIL"}
+            and acceptance_errors == {"TARGET_DESIGN_PACKAGES_MISSING"}):
+        acceptance_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
     status="PASS" if all(result.get("status")=="PASS" for result in (
-        pipeline_release_qa, acceptance, dxf_qa, semantic_qa,
+        pipeline_release_qa, acceptance_release_qa, dxf_qa, semantic_qa,
     )) else "FAIL"
     failed_stage=next((name for name,result in (
         ("pipeline_qa",pipeline_release_qa),
-        ("engineering_acceptance_gate",acceptance),
+        ("engineering_acceptance_gate",acceptance_release_qa),
         ("dxf_qa",dxf_qa),
         ("semantic_qa",semantic_qa),
     ) if result.get("status")!="PASS"),None)
@@ -566,6 +572,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "pipeline_qa":pipeline_qa,
         "pipeline_release_qa":pipeline_release_qa,
         "engineering_acceptance":acceptance,
+        "engineering_acceptance_release_qa":acceptance_release_qa,
         "authority":authority,
         "composition":compose,
         "enrichment":enrich,

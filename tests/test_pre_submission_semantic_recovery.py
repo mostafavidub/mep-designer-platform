@@ -104,6 +104,25 @@ def test_pending_gas_table_is_deliverable_only_as_explicit_target_package_pre_su
     ]
 
 
+def test_pending_gas_table_record_is_disclosed_without_weakening_failures():
+    report = {
+        "pipeline_qa": {"status": "INPUT_REQUIRED", "errors": ["TARGET_DESIGN_PACKAGES_MISSING"]},
+        "engineering_acceptance": {"status": "PASS"},
+        "enrichment": {
+            "gas_table": {
+                "status": "PASS",
+                "records": [{"sheet": "M-141", "status": "INPUT_REQUIRED"}],
+            }
+        },
+        "authority": {"design_basis": {"status": "PASS"}},
+        "semantic_qa": {"pre_submission_disclosure": {"pending_family_content": []}},
+    }
+    pre_submission = {"blocked_at": "target_design_packages"}
+    assert _release_input_errors(report, pre_submission) == []
+    report["enrichment"]["gas_table"]["records"][0]["status"] = "FAIL"
+    assert _release_input_errors(report, pre_submission) == ["gas_table:M-141:FAIL"]
+
+
 def test_unrelated_pre_submission_blocker_cannot_bypass_semantic_qa(tmp_path):
     path, compose = _pending_heating_sheet(tmp_path)
     result = qa_semantic_sheet_content(path, compose, {"blocked_at": "manufacturer"})
