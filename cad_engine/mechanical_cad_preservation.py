@@ -394,13 +394,19 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         # furniture. Reuse that immutable transform evidence for round-trip QA.
         fit_bounds=tuple(row.get("source_bounds") or plan.get("render_fit_bounds") or
                          plan.get("content_bounds") or plan["bounds"])
-        src_entities=_entities_in_bounds(src_doc.modelspace(),fit_bounds)
+        # Composition selects every copyable entity owned by the authoritative
+        # plan, then fits that retained set with ``fit_bounds``.  Preservation
+        # must snapshot that same ownership set; using the narrower render-fit
+        # envelope as a selection window silently dropped perimeter entities
+        # from the comparison and produced false topology/missing failures.
+        ownership_bounds=tuple(plan.get("content_bounds") or plan["bounds"])
+        src_entities=_entities_in_bounds(src_doc.modelspace(),ownership_bounds)
         before=_snapshot_selected(src_entities,plan["plan_id"])
         source_layers={r["layer"] for r in before["entities"]}
         plan_area=tuple(board["plan_area"])
         scale,dx,dy=_fit_parameters(fit_bounds,plan_area)
         coordinate_evidence.append({"sheet":row.get("code"),"scale":scale,"offset":[dx,dy],
-                                    "source_bounds":list(fit_bounds),"ownership_bounds":list(plan["bounds"]),"target_bounds":list(plan_area)})
+                                    "source_bounds":list(fit_bounds),"ownership_bounds":list(ownership_bounds),"target_bounds":list(plan_area)})
         out_entities=_entities_in_output_board(out_doc,plan_area,source_layers)
         after=_snapshot_selected(out_entities,f"OUT-{row.get('code')}")
         match=_match_transformed_architecture(before,after,fit_bounds,plan_area)
