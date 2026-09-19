@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0238",
+  "summary":"Confine authoritative network routing to the owning level bounds and ignore walls and obstacles from neighbouring plan viewports.",
+  "requester":"project-owner",
+  "change_types":["routing","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Consumes level-local authoritative paths; coordinate transport remains unchanged.",
+    "deployment":"Deploy to Staging and rerun the blocked architecture-only benchmark project.",
+    "detail_riser":"Plan paths remain projections of the same graph; vertical riser edges are unaffected.",
+    "docs":"No customer-facing workflow change.",
+    "equipment":"Equipment identities and selection remain unchanged.",
+    "governance":"Closes cross-viewport geometry leakage without relaxing any route or exact-file gate.",
+    "manifest":"Drawing scope and board identities remain unchanged.",
+    "manufacturer_selector":"Not affected; catalogue and selection gates remain fail-closed.",
+    "migration":"No persisted schema migration is required; saved inputs are rebuilt deterministically on retry.",
+    "qa":"Positive and destructive tests cover local routing and a cross-board endpoint.",
+    "routing":"Filters walls and obstacles to the owning level and constrains open-space search to that level's authoritative bounds.",
+    "sizing":"Loads, lengths, sizes and materials are not modified by this coordinate-ownership correction.",
+    "ui_api":"No public API or customer-visible contract change.",
+    "versioning":"Automatic Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["PMM level region -> local wall/obstacle set -> bounded orthogonal route -> unchanged graph edge identity -> exact-file materialization."],
+    "tests":["Local route ignores neighbouring-board walls; cross-board endpoint fails before materialization; focused coordinate and network authority suites pass."],
+    "docs":["No public documentation change; governed routing behavior is clarified by tests and this change record."],
+    "contract_diff":["No route may leave the authoritative region of its owning level; cross-level endpoints remain fail-closed."],
+    "version_bump":["Behavior-preserving routing ownership correction identified by immutable Git build identity."],
+    "migration":["No database, PMM schema, or artifact migration; retry reconstructs the canonical graph from retained architecture and answers."],
+    "semantic_diff":["Routes are computed only against geometry owned by the same level; foreign viewport walls cannot cause an out-of-board detour."],
+    "artifact_diff":["DXF format and graph identities are unchanged; affected plan routes remain inside their approved board or fail before drawing."],
+    "numeric_diff":["No load, capacity, size, material, slope, or calculation formula changes."],
+    "golden_regression":["Focused topology, coordinate-release, and mechanical-network-authority suites must pass before merge."],
+    "deployment_plan":["Protected pull request, all required CI green, Staging rollout to web and authority services, controlled retry, exact artifact QA."],
+    "rollback_plan":["Revert the merge commit and redeploy the prior approved Git SHA; durable project inputs and prior artifacts remain unchanged."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"Incorrect level bounds could reject a legitimate endpoint, but that is safer and directly diagnosable than routing into a neighbouring plan board."},
+  "waiver":null
+}
