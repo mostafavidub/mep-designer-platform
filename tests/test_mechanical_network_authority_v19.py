@@ -32,6 +32,23 @@ def detection(item_id='MEP-1', point=(2.0, 2.0), ports=None, kind='basin', room=
 
 
 class TopologyAuthorityV19Tests(unittest.TestCase):
+    def test_unreliable_roof_scope_cannot_host_declared_fixtures(self):
+        architecture = _architecture_from_evidence({
+            "roof_scope_reliable": False,
+            "levels": [
+                {"name": "Roof", "roof": True,
+                 "wet_cores": [{"id": "WR", "center": [200, 200]}]},
+                {"name": "Ground", "roof": False,
+                 "wet_cores": [{"id": "WG", "center": [2, 2]}]},
+            ],
+        }, {"walls": [], "obstacles": []})
+        self.assertEqual([row["level"] for row in architecture["wet_cores"]], ["Ground"])
+        recognition = _recognition_from_evidence(
+            [], {"detections": []}, architecture, "shower 1; toilet 1",
+        )
+        self.assertTrue(recognition["detections"])
+        self.assertEqual({row["level"] for row in recognition["detections"]}, {"Ground"})
+
     def test_architecture_room_shaft_is_authoritative_not_provisional(self):
         architecture = _architecture_from_evidence({"levels": [{
             "name": "طبقه همکف", "rooms": [{"id": "R-S", "type": "shaft", "center": [8, 8],
