@@ -91,6 +91,20 @@ def _source_extents(src):
 
 def _row_level_type(value):
     text = str(value or "").strip().upper()
+    # The drawing manifest uses stable public level identifiers while the
+    # engineering graph uses semantic level types.  Normalize that boundary
+    # explicitly; relying on the free-text parser makes LEVEL-01/LEVEL-02
+    # unrecognisable and leaves otherwise valid graph edges without a board.
+    manifest_aliases = {
+        "LEVEL-00": "GROUND",
+        "LEVEL-0": "GROUND",
+        "LEVEL-01": "FIRST",
+        "LEVEL-1": "FIRST",
+        "LEVEL-02": "SECOND",
+        "LEVEL-2": "SECOND",
+    }
+    if text in manifest_aliases:
+        return manifest_aliases[text]
     if text in {"GROUND", "FIRST", "SECOND", "ROOF", "BASEMENT", "MEZZANINE"}:
         return text
     if re.fullmatch(r"TYPICAL_[1-9]\d*_[1-9]\d*", text):
@@ -122,7 +136,16 @@ def _target_board_map(report, network, src):
             continue
         candidates = []
         for row in manifest:
-            if str(row.get("family") or "").upper() != family:
+            row_family = str(row.get("family") or "").upper()
+            # A canonical roof-coordination plan is intentionally shared by
+            # roof rainwater, vent terminations and roof water equipment.  It
+            # is the approved roof board, not a missing per-system floor plan.
+            roof_coordination = (
+                level.get("type") == "ROOF"
+                and family in {"SANITARY_VENT", "WATER"}
+                and row_family == "ROOF"
+            )
+            if row_family != family and not roof_coordination:
                 continue
             if str(row.get("purpose") or "PLAN").upper() != "PLAN":
                 continue
