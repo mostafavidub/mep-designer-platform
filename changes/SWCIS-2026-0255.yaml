@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0255",
+  "summary":"Compare preservation against the exact authoritative ownership set while reusing the exact render transform.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"No generated geometry changes; preservation now snapshots the same source ownership set used by composition.",
+    "deployment":"Deploy through protected CI and retry project 01.",
+    "docs":"Coordinate evidence separately records ownership bounds and render-fit bounds.",
+    "governance":"Selection and transform envelopes have distinct, explicit responsibilities.",
+    "qa":"Perimeter architecture is no longer omitted from the source comparison when render-fit bounds are narrower.",
+    "ui_api":"False architecture-preservation failures no longer surface as generic project failures.",
+    "manifest":"Uses existing source_bounds evidence.","migration":"No schema migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"No change.","manufacturer_selector":"No change.","routing":"No change.","sizing":"No change."
+  },
+  "evidence":{
+    "traceability":["authoritative plan ownership -> complete source snapshot -> recorded render transform -> exact output comparison"],
+    "tests":["Preservation source selection uses ownership bounds and never render-fit bounds."],
+    "docs":["Selection/transform distinction is documented in code and governance."],
+    "contract_diff":["Source selection and coordinate transform no longer share one incorrectly narrowed rectangle."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["No architecture is deleted or reclassified."],
+    "artifact_diff":["Previously false missing/topology flags for perimeter entities are removed."],
+    "numeric_diff":["No engineering numeric value changes."],
+    "golden_regression":["Preservation and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"The output is unchanged; only source comparison parity is restored."},
+  "waiver":null
+}
