@@ -152,6 +152,19 @@ def _pre_submission_pending_boards(report, pre_submission):
     return result
 
 
+def _effective_pre_submission(report, supplied):
+    if isinstance(supplied,dict) and supplied.get('blocked_at')=='target_design_packages':
+        return supplied
+    pipeline=report.get('pipeline_qa') or {}; acceptance=report.get('engineering_acceptance') or {}
+    error_sets=[set(pipeline.get('errors') or []),set(acceptance.get('errors') or [])]
+    if set().union(*error_sets)=={'TARGET_DESIGN_PACKAGES_MISSING'} and all(
+        errors <= {'TARGET_DESIGN_PACKAGES_MISSING'} for errors in error_sets
+    ):
+        return {'blocked_at':'target_design_packages','blockers':['TARGET_DESIGN_PACKAGES_MISSING'],
+                'source':'EXACT_ENGINE_GATE_EVIDENCE'}
+    return supplied
+
+
 def _manifest_rows(value):
     if isinstance(value,dict): value=value.get('sheets') or value.get('manifest') or value.get('approved_manifest') or []
     if not isinstance(value,list): return []
@@ -418,7 +431,8 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
     if report.get('status')!='PASS':
         if backup and backup.exists():shutil.copy2(backup,dst);backup.unlink(missing_ok=True)
         return report
-    unresolved=_release_input_errors(report,answers.get('_pre_submission_authority'));report['release_input_qa']={'version':'release-input-gate-canonical','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
+    effective_pre_submission=_effective_pre_submission(report,answers.get('_pre_submission_authority'))
+    unresolved=_release_input_errors(report,effective_pre_submission);report['release_input_qa']={'version':'release-input-gate-canonical','status':'PASS' if not unresolved else 'FAIL','errors':unresolved}
     if unresolved:
         report['status']='FAIL';report['stage']='release_input_gate';_restore_or_remove(dst,backup)
         if backup:backup.unlink(missing_ok=True)
@@ -453,7 +467,7 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         ('titleblock_qa',validate_titleblocks(dst,report.get('composition') or {}),'titleblock_gate'),
         ('safe_zone_qa',validate_safe_zones(dst,report.get('composition') or {}),'safe_zone_gate'),
         ('architectural_presentation_qa',validate_architectural_presentation(dst,report.get('composition') or {}),'architectural_presentation_gate'),
-        ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {},_pre_submission_pending_boards(report,answers.get('_pre_submission_authority'))),'equipment_linkage_gate'),
+        ('equipment_linkage_qa',validate_equipment_linkage(dst,report.get('composition') or {},_pre_submission_pending_boards(report,effective_pre_submission)),'equipment_linkage_gate'),
         ('split_ac_visual_qa',validate_split_ac_visual_legibility(dst,report.get('composition') or {},dst.with_name(dst.stem+'-split-previews')),'split_ac_visual_gate'),
         ('detail_library_qa',validate_detail_library(dst,report.get('composition') or {}),'detail_library_gate'),
         ('content_completeness_qa',validate_content_completeness(dst,report.get('composition') or {}),'content_completeness_gate'),
