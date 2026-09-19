@@ -47,6 +47,20 @@ def test_authoritative_topology_routes_around_wall_endpoint():
     assert metadata == {'wall_crossings': 0, 'routing': 'ORTHOGONAL_OPEN_SPACE_ASTAR'}
 
 
+def test_authoritative_router_ignores_distant_same_level_wall_mass():
+    walls = [
+        {'start': (1000.0 + index, 1000.0), 'end': (1000.0 + index, 2000.0)}
+        for index in range(10000)
+    ]
+    walls.append({'start': (12.0, 9.0), 'end': (12.0, 13.0)})
+    route, metadata = _orthogonal_path(
+        (10.0, 10.0), (14.0, 10.0), walls, [], route_bounds=(0.0, 0.0, 20000.0, 3000.0),
+    )
+    assert route[0] == (10.0, 10.0)
+    assert route[-1] == (14.0, 10.0)
+    assert metadata['wall_crossings'] == 0
+
+
 def test_authoritative_topology_records_one_terminal_sleeve_without_waiving_middle_crossings():
     walls = [
         {'start': (9.0, 9.0), 'end': (11.0, 9.0)},
