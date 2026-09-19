@@ -1,0 +1,32 @@
+{
+  "change_id":"SWCIS-2026-0254",
+  "summary":"Deliver target-package preliminary drawings with exact, visible architecture constraints while keeping unrelated engineering failures blocked.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Project geometry is not invented; bounded room-envelope and shaft-evidence limitations are printed on affected Pre-Submission sheets.",
+    "deployment":"Deploy through protected CI and retry benchmark project 02.",
+    "docs":"Every affected plan sheet states NOT SUBMISSION READY and lists exact architecture constraints.",
+    "governance":"Only two named architectural evidence constraints may accompany the exact target-package blocker; routing, sizing, topology and unrelated failures remain blocking.",
+    "qa":"The preliminary exception is exact-set bounded and requires the target-package blocker.",
+    "ui_api":"A truthful preliminary DXF can be downloaded instead of presenting a generic internal failure.",
+    "detail_riser":"No change.","equipment":"No change.","manifest":"No change.","manufacturer_selector":"No change.","migration":"No schema migration.","routing":"No change.","sizing":"No change.","versioning":"Git SHA remains authoritative."
+  },
+  "evidence":{
+    "traceability":["pipeline target-package blocker -> exact architecture constraint set -> visible per-sheet disclosure -> pre-submission release"],
+    "tests":["Bounded architecture constraints are disclosed.","Unrelated routing failure remains blocked.","Shell and base use the same exact exception.","Base fail-closed source contract asserts the bounded set."],
+    "docs":["Constraints are embedded in the DXF sheet, not only server logs."],
+    "contract_diff":["A target-package preliminary may carry two exact architectural evidence limitations."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["No missing shaft or room polygon is fabricated."],
+    "artifact_diff":["Affected plan sheets carry an explicit architecture constraint note."],
+    "numeric_diff":["No engineering calculation changes."],
+    "golden_regression":["Pre-submission semantic and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled project 02 retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Exception is narrow, exact and visibly disclosed; all unrelated failures remain blocked."},
+  "waiver":null
+}
