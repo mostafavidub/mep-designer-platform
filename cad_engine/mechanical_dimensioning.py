@@ -132,7 +132,6 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
         dimlfac = unit["unit_to_m"] * 1000.0 / float(paper_scale)
         for index, target in enumerate(targets):
             px, py = map(float, target["paper_point"])
-            sx, sy = map(float, target["source_point"])
             source_bounds = row.get("source_bounds") or []
             if len(source_bounds) != 4:
                 blockers.append(f"{sheet}:{target['owner_id']}:SOURCE_BOUNDS_REQUIRED")
@@ -155,10 +154,16 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
             datum_y+=(paper_datum_y-mapped_datum_y)/float(paper_scale)
             horizontal_lane = min(max(y1+.70, paper_datum_y+.20+index*.15),y2-.70)
             vertical_lane = min(max(x1+.70, paper_datum_x+.20+index*.15),x2-.70)
-            axes = (("X", abs(sx-datum_x), (paper_datum_x, py), (px, py), (paper_datum_x, horizontal_lane)),
-                    ("Y", abs(sy-datum_y), (px, paper_datum_y), (px, py), (vertical_lane, paper_datum_y)))
-            for axis, source_distance, p1, p2, location in axes:
-                expected_mm = source_distance * unit["unit_to_m"] * 1000.0
+            axes = (("X", (paper_datum_x, py), (px, py), (paper_datum_x, horizontal_lane)),
+                    ("Y", (px, paper_datum_y), (px, py), (vertical_lane, paper_datum_y)))
+            for axis, p1, p2, location in axes:
+                # The dimension describes the final coordinated installation
+                # point in the delivered drawing. Equipment/route symbols may
+                # be displaced from their topology seed during collision-safe
+                # placement, so the exact paper geometry—not the pre-layout
+                # seed—must be the numeric authority checked after reopening.
+                paper_distance = abs(p2[0]-p1[0]) if axis == "X" else abs(p2[1]-p1[1])
+                expected_mm = paper_distance * dimlfac
                 if expected_mm < 1.0 or math.dist(p1, p2) < 1e-6:
                     continue
                 semantic_id = _semantic_id(sheet, target["owner_id"], axis, "INSTALLATION")

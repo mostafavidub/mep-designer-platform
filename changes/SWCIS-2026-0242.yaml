@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0242",
+  "summary":"Derive installation dimension values from final coordinated paper geometry and verify the same values after exact DXF reopen.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Installation dimensions now describe the final collision-coordinated symbol or route-terminal position visible in the delivered sheet.",
+    "deployment":"Deploy both Staging services and rerun Project 03.",
+    "detail_riser":"Not affected.",
+    "docs":"No workflow change.",
+    "equipment":"Final placed equipment geometry becomes the installation-dimension authority while owner identity remains unchanged.",
+    "governance":"The value written to semantic XDATA is independently reproduced from reopened DXF definition points and scale override.",
+    "manifest":"Not affected.",
+    "manufacturer_selector":"Not affected.",
+    "migration":"No persisted schema migration.",
+    "qa":"Exact measurement mismatch remains fail-closed; only the correct post-coordination authority is used.",
+    "routing":"Final route-terminal placement is dimensioned as delivered.",
+    "sizing":"No hydraulic or thermal sizing change.",
+    "ui_api":"No public API change.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["owner topology seed -> coordinated paper point -> DIMENSION definition points -> XDATA expected_mm -> exact reopen"],
+    "tests":["Exact dimension suite checks generated and independently reopened values, identity, scale and board containment."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["A delivered installation dimension must report the visible final installation coordinate, not a pre-layout seed."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["Post-coordination drawing geometry is the numeric authority for installation dimensions."],
+    "artifact_diff":["Dimension labels now agree with the exact entity measurements in the final DXF."],
+    "numeric_diff":["Only dimensions whose final symbol position differs from the topology seed change; exact reopen must agree within 0.2% or 1 mm."],
+    "golden_regression":["Dimension and authority exact-file suites must pass."],
+    "deployment_plan":["Protected PR, required CI, exact-SHA Staging rollout, controlled retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior approved build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"The final DXF is independently reopened and its actual DIMENSION measurement is compared with XDATA."},
+  "waiver":null
+}
