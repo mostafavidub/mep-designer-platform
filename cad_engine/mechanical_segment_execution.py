@@ -83,6 +83,14 @@ def _shift_path(path, offset):
     return [(float(p[0]) + dx, float(p[1]) + dy) for p in path]
 
 
+def _path_inside_bounds(path, bounds, tolerance=1e-6):
+    return bool(bounds and len(bounds) == 4 and path and all(
+        float(bounds[0]) - tolerance <= float(point[0]) <= float(bounds[2]) + tolerance
+        and float(bounds[1]) - tolerance <= float(point[1]) <= float(bounds[3]) + tolerance
+        for point in path
+    ))
+
+
 def _fittings(path):
     rows = []
     for index in range(1, len(path or []) - 1):
@@ -121,6 +129,7 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
     output_rows = []
     annotations = []
     nodes_by_id = {row.get("id"): row for row in network.get("nodes") or [] if row.get("id")}
+    levels_by_id = {row.get("id"): row for row in network.get("levels") or [] if row.get("id")}
 
     for edge in network.get("edges") or []:
         edge_id = edge.get("id")
@@ -222,10 +231,27 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             if slope is None:
                 missing.append("SLOPE_PERCENT:%s" % edge.get("system"))
 
-        path = _shift_path(edge.get("plan_path") or [], cfg.get("plan_offset_xy") if isinstance(cfg, dict) else None)
+        requested_offset = cfg.get("plan_offset_xy") if isinstance(cfg, dict) else None
+        path = _shift_path(edge.get("plan_path") or [], requested_offset)
         if path is None:
             errors.append("INVALID_PLAN_OFFSET:%s" % edge.get("system"))
             path = []
+        applied_offset = requested_offset
+        edge_levels = edge.get("levels") or []
+        level = levels_by_id.get(edge_levels[0]) if len(edge_levels) == 1 else None
+        level_bounds = (level or {}).get("region_bounds")
+        if requested_offset not in (None, [], ()) and path and level_bounds and not _path_inside_bounds(path, level_bounds):
+            dx = _number(requested_offset[0]) if isinstance(requested_offset, (list, tuple)) and len(requested_offset) == 2 else None
+            dy = _number(requested_offset[1]) if isinstance(requested_offset, (list, tuple)) and len(requested_offset) == 2 else None
+            opposite = _shift_path(edge.get("plan_path") or [], [-dx, -dy]) if dx is not None and dy is not None else None
+            if opposite and _path_inside_bounds(opposite, level_bounds):
+                # Separation direction is a routing preference, not an
+                # engineering endpoint. Preserve its magnitude and select the
+                # only in-envelope side; never clip a route after selection.
+                path = opposite
+                applied_offset = [-dx, -dy]
+            else:
+                errors.append("PLAN_OFFSET_OUTSIDE_LEVEL_BOUNDS:%s" % edge_id)
 
         enriched = dict(edge)
         document_ids = representation_ids(edge)
@@ -240,6 +266,8 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
             "sizing_iterations": sizing_iterations,
             "sizing_method": "DETERMINISTIC_SMALLEST_COMPLIANT_CANDIDATE" if sizing_iterations else "EXPLICIT_ENGINEER_VALUE",
             "plan_path": path, "fittings": _fittings(path),
+            "plan_offset_xy_requested": requested_offset,
+            "plan_offset_xy_applied": applied_offset,
             "plan_id": calc_id, "riser_id": calc_id, "schedule_id": calc_id,
             **document_ids,
         })

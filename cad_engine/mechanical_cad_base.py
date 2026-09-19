@@ -383,6 +383,28 @@ def _target_package_pre_submission(value):
     )
 
 
+def _effective_target_package_pre_submission(supplied, pipeline_qa, acceptance):
+    """Recover the exact target-package state from engine evidence.
+
+    The workflow normally supplies this state.  Older persisted projects can
+    lack that transient key even though both independent engine gates record
+    the same sole blocker.  Recover only that exact singleton; never convert a
+    compound or unrelated failure into Pre-Submission.
+    """
+    if _target_package_pre_submission(supplied):
+        return supplied
+    results=(pipeline_qa or {},acceptance or {})
+    error_sets=[set(result.get("errors") or []) for result in results]
+    combined=set().union(*error_sets)
+    allowed_statuses={"PASS","INPUT_REQUIRED","FAIL"}
+    if (combined == {"TARGET_DESIGN_PACKAGES_MISSING"}
+            and all(result.get("status") in allowed_statuses for result in results)
+            and all(errors <= {"TARGET_DESIGN_PACKAGES_MISSING"} for errors in error_sets)):
+        return {"blocked_at":"target_design_packages","blockers":["TARGET_DESIGN_PACKAGES_MISSING"],
+                "source":"EXACT_ENGINE_GATE_EVIDENCE"}
+    return supplied
+
+
 def _materialize_target_package_disclosures(doc, msp, compose, pre_submission):
     """Draw a sheet-bound disclosure; never invent missing final design geometry."""
     if not _target_package_pre_submission(pre_submission):
@@ -529,9 +551,10 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "exhaust_cfm":enrich_exhaust(doc,msp,pipeline,compose),
         "split_roof":enrich_split_roof(doc,msp,pipeline,compose),
     }
-    disclosure=_materialize_target_package_disclosures(
-        doc,msp,compose,answers.get("_pre_submission_authority")
+    pre_submission=_effective_target_package_pre_submission(
+        answers.get("_pre_submission_authority"),pipeline_qa,acceptance
     )
+    disclosure=_materialize_target_package_disclosures(doc,msp,compose,pre_submission)
     if disclosure.get("status")=="FAIL":
         return {"status":"FAIL","stage":"pre_submission_disclosure_gate","pre_submission_disclosure_qa":disclosure}
     # Enrichment is drawn inside the board envelopes established by the
@@ -540,8 +563,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
     doc.saveas(dst)
 
     dxf_qa=qa_authority_dxf(dst,compose)
-    semantic_qa=qa_semantic_sheet_content(dst,compose,answers.get("_pre_submission_authority"))
-    pre_submission = answers.get("_pre_submission_authority")
+    semantic_qa=qa_semantic_sheet_content(dst,compose,pre_submission)
     target_package_pending = bool(
         isinstance(pre_submission, dict)
         and pre_submission.get("blocked_at") == "target_design_packages"

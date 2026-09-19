@@ -475,6 +475,35 @@ class SegmentExecutionAuthorityV19Tests(unittest.TestCase):
         )
         self.assertEqual(result['status'], 'PASS')
 
+    def test_separation_offset_reverses_to_the_in_bounds_side(self):
+        graph = self.graph()
+        graph['levels'] = [{'id':'L1','type':'GROUND','region_bounds':[0,0,10,10]}]
+        graph['edges'][0]['levels'] = ['L1']
+        graph['edges'][0]['plan_path'] = [(9,2),(9,8)]
+        result = design_authoritative_segments(
+            graph,
+            design_basis={'systems': {'cold_water': {'plan_offset_xy': [2,0]}}},
+            calculation_rows=self.explicit_rows(graph),
+        )
+        self.assertEqual(result['status'], 'PASS', result)
+        edge=result['network']['edges'][0]
+        self.assertEqual(edge['plan_path'], [(7.0,2.0),(7.0,8.0)])
+        self.assertEqual(edge['plan_offset_xy_requested'], [2,0])
+        self.assertEqual(edge['plan_offset_xy_applied'], [-2.0,0.0])
+
+    def test_separation_offset_fails_when_neither_side_fits(self):
+        graph = self.graph()
+        graph['levels'] = [{'id':'L1','type':'GROUND','region_bounds':[0,0,10,10]}]
+        graph['edges'][0]['levels'] = ['L1']
+        graph['edges'][0]['plan_path'] = [(1,2),(9,8)]
+        result = design_authoritative_segments(
+            graph,
+            design_basis={'systems': {'cold_water': {'plan_offset_xy': [2,0]}}},
+            calculation_rows=self.explicit_rows(graph),
+        )
+        self.assertEqual(result['status'], 'FAIL')
+        self.assertIn('PLAN_OFFSET_OUTSIDE_LEVEL_BOUNDS:E-CW', result['errors'])
+
     def test_same_system_duplicate_geometry_fails(self):
         graph = self.graph(duplicate=True)
         result = design_authoritative_segments(graph, calculation_rows=self.explicit_rows(graph))

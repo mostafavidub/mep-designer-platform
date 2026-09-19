@@ -1,6 +1,7 @@
 import ezdxf
 
 from cad_engine.mechanical_cad_base import (
+    _effective_target_package_pre_submission,
     _materialize_target_package_disclosures,
     qa_semantic_sheet_content,
 )
@@ -80,6 +81,21 @@ def test_exact_target_package_engineering_acceptance_input_is_disclosed_not_fail
     assert _release_input_errors(report, pre_submission) == [
         "engineering_acceptance:TARGET_DESIGN_PACKAGES_MISSING"
     ]
+
+
+def test_exact_engine_gate_evidence_recovers_missing_transient_pre_submission_key():
+    result=_effective_target_package_pre_submission(
+        None,
+        {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+        {"status":"FAIL","errors":["TARGET_DESIGN_PACKAGES_MISSING"]},
+    )
+    assert result["blocked_at"]=="target_design_packages"
+    assert result["source"]=="EXACT_ENGINE_GATE_EVIDENCE"
+    assert _effective_target_package_pre_submission(
+        None,
+        {"status":"INPUT_REQUIRED","errors":["TARGET_DESIGN_PACKAGES_MISSING","OTHER"]},
+        {"status":"PASS","errors":[]},
+    ) is None
 
 
 def test_pending_gas_table_is_deliverable_only_as_explicit_target_package_pre_submission():

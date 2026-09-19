@@ -467,7 +467,7 @@ def _title_fa(family, level):
 
 
 def _layout_manifest(authority):
-    rows=[];family_ord=defaultdict(int)
+    rows=[];family_ord=defaultdict(int);used_codes=set()
     approved_code_counts=Counter(
         str(row.get("approved_code") or "").strip().upper()
         for row in authority["manifest"]["sheets"]
@@ -478,6 +478,14 @@ def _layout_manifest(authority):
         approved_code=str(row.get("approved_code") or "").strip().upper()
         code=(approved_code if approved_code and approved_code_counts[approved_code] == 1
               else _sheet_code(family,level,family_ord[family]))
+        if code in used_codes:
+            # Legacy extraction can classify several physical regions with the
+            # same level type. Identity remains per board, so use the family
+            # ordinal when a level-derived code collides.
+            code=_sheet_code(family,"",family_ord[family])
+            if code in used_codes:
+                code=f"M-{900+i:03d}"
+        used_codes.add(code)
         rows.append({**row,"old_sheet":row["sheet"],"code":code,"title_fa":row.get("title") or _title_fa(family,level),"ordinal":i})
     return rows
 
