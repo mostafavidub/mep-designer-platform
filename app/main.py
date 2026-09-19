@@ -5,6 +5,7 @@ from collections import Counter
 
 import requests, ezdxf
 from .dxf_input import normalize_input_copy, read_input_dxf
+from .seo_articles import load_generated_articles
 from cad_engine.build_identity import build_identity
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSONResponse, Response
@@ -179,11 +180,25 @@ def present_question(item):
 
 def qlist(items): return [present_question({'key':k,'question':q}) for k,q in items]
 
-BLOG = [
+LEGACY_BLOG = [
 {'slug':'electrical-building-plan','title':'نقشه برق ساختمان؛ راهنمای طراحی تأسیسات برقی از پلان تا رایزر','excerpt':'راهنمای کاربردی طراحی پلان روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، رایزر، تابلو برق و کنترل نهایی نقشه.','tag':'برق','body':[]},
 {'slug':'mep-input-guide','title':'فایل معماری مناسب برای طراحی تأسیسات چه ویژگی‌هایی دارد؟','excerpt':'چک‌لیست آماده‌سازی DXF برای تحلیل دقیق‌تر لایه‌ها، ترازها و شفت‌ها.','tag':'راهنما','body':['برای شروع طراحی، فایل معماری باید خوانا، مقیاس‌پذیر و فاقد فایل‌های نامرتبط باشد.','پلان‌های ترازهای متفاوت را جدا نگه دارید و نام فضاها، شفت‌ها، بازشوها و اطلاعات اصلی را حذف نکنید.','اگر چند DXF دارید، آن‌ها را در یک ZIP قرار دهید؛ فایل‌های مخفی سیستم به‌صورت خودکار نادیده گرفته می‌شوند.']},
 {'slug':'electrical-plan-scope','title':'تفاوت پلان روشنایی، قدرت، اعلام حریق و جریان ضعیف','excerpt':'چرا یک نقشه برق ممکن است به چند شیت تخصصی تقسیم شود؟','tag':'برق','body':['نقشه برق فقط یک پلان واحد نیست؛ Scope می‌تواند شامل روشنایی، پریز و قدرت، اعلام حریق، جریان ضعیف، ارت و تابلوها باشد.','اگر تراکم اطلاعات خوانایی را کاهش دهد، هر Level باید به چند شیت سیستمی تفکیک شود.','تعداد پلان‌های پایه از Levelهای معماری می‌آید و رایزر، SLD و Panel Schedule جدا از آن محاسبه می‌شوند.']},
 {'slug':'mechanical-plan-scope','title':'از آب و فاضلاب تا HVAC؛ Scope نقشه‌های مکانیکی','excerpt':'مرور سیستم‌های اصلی مکانیک و نحوه تفکیک خروجی‌ها.','tag':'مکانیک','body':['در طراحی مکانیک، آب سرد و گرم، فاضلاب و ونت، گاز، گرمایش، سرمایش و تهویه هرکدام Scope مستقل دارند.','تعداد پلان‌های طبقه‌ای بر اساس Levelهای معماری تعیین می‌شود و در صورت نیاز رایزرها و دیتیل‌ها به آن اضافه می‌شوند.','هدف نهایی حفظ خوانایی، قابلیت اجرا و تطابق با اطلاعات واقعی پروژه است.']}]
+
+GENERATED_BLOG = load_generated_articles()
+
+LEGACY_SLUGS = {
+    post["slug"]
+    for post in LEGACY_BLOG
+    if post.get("slug")
+}
+
+BLOG = LEGACY_BLOG + [
+    post
+    for post in GENERATED_BLOG
+    if post.get("slug") not in LEGACY_SLUGS
+]
 
 app = FastAPI(title='EngiTools')
 app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, same_site='lax')

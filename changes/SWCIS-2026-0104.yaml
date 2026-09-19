@@ -1,0 +1,62 @@
+{
+  "change_id": "SWCIS-2026-0104",
+  "summary": "Add protected dynamic SEO article publishing from a private registry into the production blog, including publish gating, HTML sanitization, dynamic rendering, sitemap discovery, and regression tests.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "test",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "qa",
+    "manifest",
+    "ui_api",
+    "docs",
+    "versioning",
+    "migration",
+    "governance",
+    "deployment"
+  ],
+  "impact_notes": {
+    "qa": "Adds regression coverage for generated article loading, publication gating, blog discovery, rendering, sitemap discovery, and 404 behavior.",
+    "manifest": "The application-visible content surface changes because generated published articles become discoverable through the existing blog registry.",
+    "ui_api": "Adds a private generated-article registry loader, protected publication gate, sanitized HTML rendering, and dynamic article template routing.",
+    "docs": "The SWCIS change record documents the generated SEO publishing contract and operational behavior.",
+    "versioning": "No runtime protocol or engineering version is introduced; the feature reuses the existing application deployment lifecycle.",
+    "migration": "No persistent database migration is required. The generated article registry is file-based and starts empty.",
+    "governance": "Records the new SEO content publishing surface under fail-closed repository governance.",
+    "deployment": "Published registry changes require the normal GitHub merge and Railway deployment cycle before becoming live."
+  },
+  "evidence": {
+    "tests": [
+      "tests/test_generated_seo_article_registry.py",
+      "tests/test_seo_mechanical_article.py",
+      "GitHub required checks"
+    ],
+    "docs": [
+      "app/seo_articles.py",
+      "app/seo_runtime.py",
+      "app/templates/generated_article.html",
+      "changes/SWCIS-2026-0104.yaml"
+    ],
+    "contract_diff": [
+      "Generated SEO content is loaded only from the private app/templates/content/articles.json registry.",
+      "Only entries with status=published are eligible for publication; status=ready is not public.",
+      "Generated article HTML is sanitized before Jinja renders it with the safe filter.",
+      "Legacy hardcoded blog articles retain their existing templates and take precedence on slug collision.",
+      "Published generated articles are discoverable through /blog, /blog/{slug}, and the canonical sitemap."
+    ],
+    "version_bump": [
+      "not required: this feature changes the SEO content publishing surface without introducing a new runtime contract, engineering calculation version, or schema migration"
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 2,
+    "detectability": 1,
+    "score": 4,
+    "rationale": "The feature affects public SEO article rendering and routing, but publication is gated to status=published, generated HTML is sanitized, legacy routes remain preserved, and regression coverage exercises the primary public surfaces."
+  },
+  "waiver": null
+}
