@@ -1,10 +1,9 @@
 import json
 from pathlib import Path
 
-ARTICLES_PATH = Path(__file__).resolve().parent / "static" / "content" / "articles.json"
+ARTICLES_PATH = Path(__file__).resolve().parent / "templates" / "content" / "articles.json"
 
-PUBLISHABLE_STATUSES = {"ready", "published"}
-
+PUBLISHABLE_STATUSES = {"published"}
 
 def load_generated_articles():
     try:
