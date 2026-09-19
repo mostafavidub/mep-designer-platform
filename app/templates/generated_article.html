@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }} | EngiTools{% endblock %}
+
+{% block meta_description %}{{ post.excerpt }}{% endblock %}
+
+{% block og_type %}article{% endblock %}
+
+{% block og_title %}{{ post.title }} | EngiTools{% endblock %}
+
+{% block og_description %}{{ post.excerpt }}{% endblock %}
+
+{% block twitter_card %}summary{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ post.title | tojson }},
+  "description": {{ post.excerpt | tojson }},
+  "datePublished": {{ post.created_date | tojson }},
+  "dateModified": {{ post.created_date | tojson }},
+  "author": {
+    "@type": "Organization",
+    "name": "EngiTools"
+  },
+  "publisher": {
+    "@id": "https://planha.com/#organization"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": {{ ("https://planha.com/blog/" ~ post.slug) | tojson }}
+  },
+  "inLanguage": "fa-IR"
+}
+</script>
+{% endblock %}
+
+{% block body %}
+
+<style>
+.generated-article {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 56px 24px 80px;
+}
+
+.generated-article-header {
+  margin-bottom: 36px;
+}
+
+.generated-article-tag {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: .88rem;
+  opacity: .7;
+}
+
+.generated-article h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.35;
+  margin: 0 0 18px;
+}
+
+.generated-article-lead {
+  font-size: 1.12rem;
+  line-height: 2;
+  opacity: .78;
+}
+
+.generated-article-body {
+  line-height: 2.05;
+  font-size: 1.03rem;
+}
+
+.generated-article-body h2 {
+  margin-top: 48px;
+  margin-bottom: 15px;
+}
+
+.generated-article-body h3 {
+  margin-top: 34px;
+  margin-bottom: 12px;
+}
+
+.generated-article-body p {
+  margin: 0 0 20px;
+}
+
+.generated-article-body ul,
+.generated-article-body ol {
+  padding-right: 24px;
+  margin: 18px 0 26px;
+}
+
+.generated-article-body a {
+  text-decoration: underline;
+}
+
+.generated-article-footer {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(120,120,120,.25);
+}
+
+.generated-article-keyword {
+  font-size: .85rem;
+  opacity: .65;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 720px) {
+  .generated-article {
+    padding: 36px 18px 60px;
+  }
+}
+</style>
+
+<main>
+  <article class="generated-article">
+
+    <header class="generated-article-header">
+
+      <nav class="breadcrumbs" aria-label="مسیر صفحه">
+        <a href="/">خانه</a>
+        <span>←</span>
+        <a href="/blog">وبلاگ مهندسان</a>
+      </nav>
+
+      <div class="generated-article-tag">
+        {{ post.tag }}
+      </div>
+
+      <h1>{{ post.title }}</h1>
+
+      {% if post.excerpt %}
+      <p class="generated-article-lead">
+        {{ post.excerpt }}
+      </p>
+      {% endif %}
+
+    </header>
+
+    <div class="generated-article-body">
+      {{ post.html | safe }}
+    </div>
+
+    <footer class="generated-article-footer">
+
+      {% if post.primary_keyword %}
+      <div class="generated-article-keyword">
+        موضوع اصلی: {{ post.primary_keyword }}
+      </div>
+      {% endif %}
+
+      <a href="/blog">← بازگشت به وبلاگ مهندسان</a>
+
+    </footer>
+
+  </article>
+</main>
+
+{% endblock %}
