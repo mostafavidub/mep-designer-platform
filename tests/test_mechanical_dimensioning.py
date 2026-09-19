@@ -83,7 +83,7 @@ def test_nonzero_source_origin_maps_datum_inside_plan_not_titleblock(tmp_path):
     assert result["status"]=="PASS"
     assert validate_exact_mechanical_dimensions(path,result,{"S":board})["status"]=="PASS"
     for entity in doc.modelspace().query("DIMENSION"):
-        assert all(point.y>=board.plan_area[1] for point in (entity.dxf.defpoint,entity.dxf.defpoint2,entity.dxf.defpoint3))
+        assert all(point.y>=board.plan_area[1]+.44 for point in (entity.dxf.defpoint,entity.dxf.defpoint2,entity.dxf.defpoint3))
 
 
 def test_exact_qa_rejects_mismatch_orphan_duplicate_and_outside_board(tmp_path):
