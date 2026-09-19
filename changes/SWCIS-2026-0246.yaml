@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0246",
+  "summary":"Spatially bound per-edge wall and obstacle scoring to the terminal detour corridor before authoritative routing.",
+  "requester":"project-owner",
+  "change_types":["routing","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Per-edge routing no longer rescans distant walls from a large same-level or multi-frame envelope.",
+    "deployment":"Deploy Staging and retry the five blocked benchmark projects.",
+    "detail_riser":"Not affected.",
+    "docs":"No workflow change.",
+    "equipment":"Terminal coordinates remain unchanged.",
+    "governance":"Geometry outside the maximum bounded detour cannot influence the edge; unresolved local paths remain fail-closed.",
+    "manifest":"Not affected.",
+    "manufacturer_selector":"Not affected.",
+    "migration":"No persisted schema migration.",
+    "qa":"Local corridor includes a 50% terminal-span margin capped at 25 drawing units and is intersected with authoritative level bounds.",
+    "routing":"Wall/obstacle intersection scoring is spatially reduced before candidate evaluation and A-star.",
+    "sizing":"Not affected.",
+    "ui_api":"Long-running projects can reach real progress or a deterministic routing failure.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["level geometry -> edge terminal corridor -> local wall set -> candidate/A-star -> proven route"],
+    "tests":["A route remains correct with 10,000 distant same-level walls plus one local blocking wall.","Existing routing and topology regressions remain green."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Only geometry capable of intersecting the bounded route corridor participates in per-edge scoring."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["Normal local routes are unchanged; distant frames no longer impose quadratic work."],
+    "artifact_diff":["No output change for routes whose relevant geometry was already local."],
+    "numeric_diff":["Local margin is max(1, min(25, 0.5 × terminal span))."],
+    "golden_regression":["Bounded routing and network authority suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"The corridor is bounded by authoritative level geometry and any unproved path remains a hard failure."},
+  "waiver":null
+}

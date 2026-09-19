@@ -315,6 +315,20 @@ def _orthogonal_path(start, end, walls, obstacles, route_bounds=None):
                  if _bounds_overlap(_wall_bounds(wall), route_bounds)]
         obstacles = [item for item in obstacles or []
                      if _bounds_overlap(_bbox(item.get("points") or item.get("polygon")), route_bounds)]
+    # Score and search only geometry that can affect a bounded detour between
+    # these terminals. Large multi-plan DXFs can contain tens of thousands of
+    # otherwise valid wall segments in the same broad level envelope; scanning
+    # every one for every network edge stalls before the first progress event.
+    span=max(abs(float(end[0])-float(start[0])),abs(float(end[1])-float(start[1])),1.0)
+    margin=max(1.0,min(25.0,span*.5))
+    local_bounds=(min(start[0],end[0])-margin,min(start[1],end[1])-margin,
+                  max(start[0],end[0])+margin,max(start[1],end[1])+margin)
+    if route_bounds:
+        local_bounds=(max(local_bounds[0],route_bounds[0]),max(local_bounds[1],route_bounds[1]),
+                      min(local_bounds[2],route_bounds[2]),min(local_bounds[3],route_bounds[3]))
+    walls=[wall for wall in walls or [] if _bounds_overlap(_wall_bounds(wall),local_bounds)]
+    obstacles=[item for item in obstacles or []
+               if _bounds_overlap(_bbox(item.get("points") or item.get("polygon")),local_bounds)]
     if start[0] == end[0] or start[1] == end[1]:
         candidates = [[start, end]]
     else:
