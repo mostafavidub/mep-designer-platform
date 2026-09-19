@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0251",
+  "summary":"Reject sparse-search detours outside their authoritative level envelope before network materialization.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","routing","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Only route points inside the owning plan envelope can enter CAD materialization.",
+    "deployment":"Deploy after collecting the current benchmark outcomes, then retry project 01.",
+    "detail_riser":"No change.",
+    "docs":"No documentation claim changes.",
+    "equipment":"Endpoints remain unchanged.",
+    "governance":"Invalid A-star candidates are rejected at topology authority; no post-design clipping is allowed.",
+    "manifest":"The selected plan board and route retain one level identity.",
+    "manufacturer_selector":"No change.",
+    "migration":"No persisted schema migration.",
+    "qa":"The existing materialization boundary gate remains fail-closed as a second independent check.",
+    "routing":"Falls back to the already-ranked bounded orthogonal route when A-star leaves the level envelope.",
+    "sizing":"No change.",
+    "ui_api":"Project 01 no longer fails late on a route that should have been rejected earlier.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["level bounds -> A-star candidate -> bounds validation -> bounded route -> board materialization"],
+    "tests":["A mocked out-of-envelope A-star path is rejected and never materialized.","The original terminals and bounded orthogonal path are retained."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["A-star output now obeys the same level envelope already enforced for endpoints and final CAD entities."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["No coordinates are clipped or silently translated."],
+    "artifact_diff":["Project 01 route EDGE-DC59857A6FA2CE remains inside its plan board."],
+    "numeric_diff":["All accepted route points satisfy inclusive authoritative bounds."],
+    "golden_regression":["Bounded A-star, topology and materialization suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout after current queue evidence, controlled retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"The change rejects an invalid candidate earlier while retaining independent fail-closed materialization QA."},
+  "waiver":null
+}
