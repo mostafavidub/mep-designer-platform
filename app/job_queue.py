@@ -13,6 +13,7 @@ from pathlib import Path
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import artifact_storage
@@ -743,10 +744,18 @@ def register_job_queue(app, legacy):
 
     @app.on_event('startup')
     def start_persistent_workers():
-        _migrate_ready_outputs_to_object_storage()
-        _reclaim_failed_artifacts()
-        _reclaim_verified_inputs()
-        _recover_stale_jobs()
+        try:
+            _migrate_ready_outputs_to_object_storage()
+            _reclaim_failed_artifacts()
+            _reclaim_verified_inputs()
+            _recover_stale_jobs()
+        except OperationalError as exc:
+            # Keep the HTTP process reachable for an authenticated volume
+            # repair when SQLite cannot allocate even its recovery write.  No
+            # queue thread starts, and system_health remains fail-closed.
+            for job_type in ('analysis', 'design'):
+                _record_worker_state(job_type, alive=False, error=exc)
+            return
         for job_type in ('analysis', 'design'):
             threading.Thread(target=_worker, args=(job_type,), daemon=True, name=f'{job_type}-queue').start()
 
