@@ -325,7 +325,10 @@ def _cad_error_message(response):
                         f'{route.get("wall_crossings") or 0}:'
                         f'{route.get("routing") or "unknown"}'
                     )
-        failures = [item for item in failure_evidence if any(token in item.lower() for token in ('fail', 'error', 'missing', 'not_', 'invalid', '_gate','cross','without'))]
+        failures = [item for item in failure_evidence if any(token in item.lower() for token in (
+            'fail', 'error', 'missing', 'not_', 'invalid', '_gate', 'cross', 'without',
+            'outside', 'orphan', 'duplicate', 'mismatch', 'zero_or_nonfinite',
+        ))]
         diagnostic = ' | '.join(dict.fromkeys(priority + failures))[:1600] or str(detail)[:1600]
         return f'CAD_QA_FAILURE: {diagnostic}'
     message = str(detail or 'موتور طراحی اطلاعات پروژه را کافی تشخیص نداد.')

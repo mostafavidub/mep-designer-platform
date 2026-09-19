@@ -149,12 +149,12 @@ def apply_mechanical_dimensions(doc, manifest: list[dict], boards: dict, overlay
             # the source datum by the exact inverse paper-space inset so the
             # displayed measurement remains source-coordinate truthful.
             safe_inset=.45
-            paper_datum_x=max(mapped_datum_x,x1+safe_inset)
-            paper_datum_y=max(mapped_datum_y,y1+safe_inset)
+            paper_datum_x=min(max(mapped_datum_x,x1+safe_inset),x2-safe_inset)
+            paper_datum_y=min(max(mapped_datum_y,y1+safe_inset),y2-safe_inset)
             datum_x+=(paper_datum_x-mapped_datum_x)/float(paper_scale)
             datum_y+=(paper_datum_y-mapped_datum_y)/float(paper_scale)
-            horizontal_lane = max(y1+.70, paper_datum_y+.20+index*.15)
-            vertical_lane = max(x1+.70, paper_datum_x+.20+index*.15)
+            horizontal_lane = min(max(y1+.70, paper_datum_y+.20+index*.15),y2-.70)
+            vertical_lane = min(max(x1+.70, paper_datum_x+.20+index*.15),x2-.70)
             axes = (("X", abs(sx-datum_x), (paper_datum_x, py), (px, py), (paper_datum_x, horizontal_lane)),
                     ("Y", abs(sy-datum_y), (px, paper_datum_y), (px, py), (vertical_lane, paper_datum_y)))
             for axis, source_distance, p1, p2, location in axes:

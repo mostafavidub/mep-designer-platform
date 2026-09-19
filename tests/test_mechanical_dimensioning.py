@@ -86,6 +86,22 @@ def test_nonzero_source_origin_maps_datum_inside_plan_not_titleblock(tmp_path):
         assert all(point.y>=board.plan_area[1]+.44 for point in (entity.dxf.defpoint,entity.dxf.defpoint2,entity.dxf.defpoint3))
 
 
+def test_dimension_lanes_remain_inside_upper_and_right_board_edges(tmp_path):
+    targets = [{"owner_id": "EQ-UPPER-RIGHT", "kind": "equipment",
+                "source_point": (10, 10), "paper_point": (19.5, 23.0)}]
+    path, report, boards = _fixture(tmp_path, targets=targets)
+    assert report["status"] == "PASS"
+    assert validate_exact_mechanical_dimensions(path, report, boards)["status"] == "PASS"
+    board = boards["S"]
+    doc = ezdxf.readfile(path)
+    for entity in doc.modelspace().query("DIMENSION"):
+        if entity.dxf.layer not in LAYERS.values():
+            continue
+        assert all(board.bounds[0] <= point.x <= board.bounds[2]
+                   and board.bounds[1] <= point.y <= board.bounds[3]
+                   for point in (entity.dxf.defpoint, entity.dxf.defpoint2, entity.dxf.defpoint3))
+
+
 def test_exact_qa_rejects_mismatch_orphan_duplicate_and_outside_board(tmp_path):
     path, report, boards = _fixture(tmp_path)
     doc = ezdxf.readfile(path)
