@@ -81,7 +81,7 @@ def _grid_axis(low,high,step,extras):
     rows.append(round(high,6));rows.extend(round(float(v),6) for v in extras if low<=float(v)<=high)
     return sorted(set(rows))
 
-def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
+def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05,max_values=192):
     """Keep A* finite while retaining narrow passages beside real walls."""
     values={float(low),float(high),float(start),float(end)}
     for wall in walls:
@@ -89,7 +89,17 @@ def _sparse_axis(low,high,start,end,walls,coordinate,clearance=.05):
             value=float(point[coordinate])
             for candidate in (value-clearance,value,value+clearance):
                 if low<=candidate<=high:values.add(round(candidate,6))
-    return sorted(values)
+    ordered=sorted(values)
+    if len(ordered)<=max_values:return ordered
+    # A dense architectural wall drawing can otherwise create a Cartesian
+    # grid with millions of A* nodes. Preserve bounds, terminals and the wall
+    # clearances most relevant to the terminal corridor; omitting the rest can
+    # only make routing fail closed, never approve a wall crossing.
+    anchors=(float(start),float(end),(float(start)+float(end))/2.0)
+    fixed={float(low),float(high),float(start),float(end)}
+    candidates=[value for value in ordered if value not in fixed]
+    candidates.sort(key=lambda value:(min(abs(value-anchor) for anchor in anchors),value))
+    return sorted(fixed|set(candidates[:max(0,max_values-len(fixed))]))
 
 def _open_space_route(start,end,bounds,walls,start_penetration=False,end_penetration=False,step=.25):
     """Find an orthogonal route through real wall openings using bounded A*."""
@@ -135,10 +145,13 @@ def _open_space_route(start,end,bounds,walls,start_penetration=False,end_penetra
     ex=xs.index(float(end[0]));ey=ys.index(float(end[1]));source=(sx,sy);target=(ex,ey)
     queue=[(abs(start[0]-end[0])+abs(start[1]-end[1]),0.0,source)]
     cost={source:0.0};parent={};visited=set()
+    max_visited=50000
     while queue:
         _,spent,node=heapq.heappop(queue)
         if node in visited:continue
         visited.add(node)
+        if len(visited)>max_visited:
+            return None
         if node==target:
             indices=[]
             while node in parent:indices.append(node);node=parent[node]
