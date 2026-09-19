@@ -157,6 +157,12 @@ class QueueIntegrationContractTests(unittest.TestCase):
         self.assertIn("_record_worker_state(job_type, alive=False, error=exc)", startup)
         self.assertLess(startup.index('return'), startup.index('threading.Thread'))
 
+    def test_http_only_replica_cannot_recover_or_interrupt_worker_jobs(self):
+        source = Path('app/job_queue.py').read_text(encoding='utf-8')
+        startup = source[source.index('def start_persistent_workers'):source.index("@app.on_event('shutdown')")]
+        self.assertIn('if not WORKER_TYPES:', startup)
+        self.assertLess(startup.index('if not WORKER_TYPES:'), startup.index('_recover_stale_jobs()'))
+
     def test_design_input_requires_a_local_or_durable_architecture_copy(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

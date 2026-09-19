@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0250",
+  "summary":"Make the worker deployment the sole owner of queue recovery and disclose exact target-package engineering input gaps as Pre-Submission.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","runtime","ui_api","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Healthy in-flight work is no longer marked failed by a concurrent HTTP-only rollout.",
+    "deployment":"Worker role exclusively recovers stale jobs; web role serves HTTP only.",
+    "detail_riser":"No change.",
+    "docs":"Exact target-package engineering gaps remain visibly Pre-Submission.",
+    "equipment":"No values are invented.",
+    "governance":"Only INPUT_REQUIRED with the single exact target-package reason is disclosed; FAIL remains blocked.",
+    "manifest":"No change.",
+    "manufacturer_selector":"No change.",
+    "migration":"No persisted schema migration.",
+    "qa":"Engineering acceptance retains fail-closed behavior for every other reason and status.",
+    "routing":"No change.",
+    "sizing":"No change.",
+    "ui_api":"Projects no longer flip to failed merely because the web service deploys.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["HTTP-only role -> no queue mutation","worker role -> recovery -> claim -> execution","target package INPUT_REQUIRED -> Pre-Submission disclosure"],
+    "tests":["HTTP-only startup returns before stale recovery.","Exact acceptance input gap is disclosed only as target-package Pre-Submission.","FAIL state remains blocked."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Queue recovery has one deployment owner; exact acceptance input gaps align with the existing target-package disclosure contract."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["No completed-engineering claim is created."],
+    "artifact_diff":["Project 02 can yield a marked Pre-Submission artifact instead of an opaque acceptance failure."],
+    "numeric_diff":["No numeric values change."],
+    "golden_regression":["Queue, Pre-Submission and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, then one clean retry of all benchmark jobs."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Single-owner recovery removes a race; disclosure remains limited to a precise INPUT_REQUIRED state."},
+  "waiver":null
+}
