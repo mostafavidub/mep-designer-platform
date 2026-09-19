@@ -229,6 +229,30 @@ def test_customer_projects_are_durable_across_sessions(monkeypatch):
     assert [p['id'] for p in second_login['projects']] == ['PRJ-LEGACY-001']
 
 
+def test_identical_project_import_does_not_rewrite_durable_row(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-panel-token": "checkout-test-only-secret"}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    auth = {**headers, 'x-customer-session': login['session']}
+    project = {"id": f"PRJ-IDEMPOTENT-{uuid4().hex[:8]}", "title": "پیش‌نویس محلی",
+               "service": "طراحی مکانیک", "status": "در انتظار پرداخت", "progress": 20,
+               "amount": 1200000}
+
+    first = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [project]})
+    assert first.status_code == 200, first.text
+    with legacy.Session() as db:
+        row = db.get(app.state.panel_checkout.PanelProject, project["id"])
+        original_updated_at = row.updated_at
+
+    second = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [project]})
+    assert second.status_code == 200, second.text
+    with legacy.Session() as db:
+        row = db.get(app.state.panel_checkout.PanelProject, project["id"])
+        assert row.updated_at == original_updated_at
+
+
 def test_phone_login_reuses_established_profile_account(monkeypatch):
     monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
     browser = TestClient(app, raise_server_exceptions=False)
