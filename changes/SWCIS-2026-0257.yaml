@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0257",
+  "summary":"Exclude evidence-proven repeated source footer notes, sheet codes and scale fractions from architectural fit.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Only bottom-band source sheet furniture matching bounded geometric/text patterns is excluded; in-plan room notes remain untouched.",
+    "deployment":"Deploy through protected CI and retry projects 01 and 03.",
+    "docs":"Repeated guardrail notes, ARC codes and printed scale fractions are classified as source footer furniture.",
+    "governance":"Classification requires bottom-band location, a non-semantic layer and an exact bounded pattern.",
+    "qa":"Source footer furniture can no longer shrink the building or cross the generated title block.",
+    "ui_api":"Projects no longer fail visual/title-block QA because of legacy source footer text.",
+    "manifest":"No change.","migration":"No schema migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"No change.","manufacturer_selector":"No change.","routing":"No change.","sizing":"No change."
+  },
+  "evidence":{
+    "traceability":["entity extent + bottom band + non-semantic layer + exact text/width pattern -> source footer exclusion"],
+    "tests":["Long footer note is excluded.","ARC code is excluded.","Scale fraction is excluded.","In-plan room note remains."],
+    "docs":["Rules are documented beside the classifier."],
+    "contract_diff":["Three evidence-proven footer forms join existing source furniture classification."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["No building geometry or in-plan semantic note is removed."],
+    "artifact_diff":["Architectural underlays fit the actual building instead of legacy footer text."],
+    "numeric_diff":["No engineering calculation changes."],
+    "golden_regression":["Footer classifier, composition, preservation and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"Classification is spatially and semantically bounded and covered by negative tests."},
+  "waiver":null
+}
