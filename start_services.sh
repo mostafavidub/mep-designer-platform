@@ -14,6 +14,11 @@ export TMPDIR="${TMPDIR:-/tmp/engitools-tmp}"
 mkdir -p "$CAD_OUTPUT_DIR" "$TMPDIR"
 python -c 'import os, shutil; from pathlib import Path; root=Path(os.environ["CAD_OUTPUT_DIR"]); [shutil.rmtree(p, ignore_errors=True) if p.is_dir() else p.unlink(missing_ok=True) for p in list(root.iterdir())]'
 
+# A replacement instance starts with no valid in-flight local CAD transaction.
+# Reclaim only regenerable volume workspaces and checkpoint SQLite before any
+# application startup hook needs to write recovery state.
+python -m app.storage_bootstrap
+
 RULEBOOK_TARGET="${RULEBOOK_PATH:-/data/rulebook/MEP_Design_Rulebook.docx}"
 mkdir -p "$(dirname "$RULEBOOK_TARGET")"
 python data/rulebook/generate_rulebook.py "$RULEBOOK_TARGET"

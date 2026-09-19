@@ -361,8 +361,12 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             if row and row.user_id != uid:
                 raise HTTPException(409, "این پروژه متعلق به حساب دیگری است.")
             if row:
-                row.payload = encoded
-                row.updated_at = now
+                # Browser-draft migration is idempotent.  Replaying the exact
+                # same snapshot must not grow SQLite's WAL or keep touching the
+                # volume on every customer-state poll.
+                if row.payload != encoded:
+                    row.payload = encoded
+                    row.updated_at = now
             else:
                 db.add(PanelProject(id=project_id, user_id=uid, payload=encoded, created_at=now, updated_at=now))
 
