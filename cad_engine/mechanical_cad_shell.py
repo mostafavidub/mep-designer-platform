@@ -138,6 +138,17 @@ def _pre_submission_pending_boards(report, pre_submission):
             # a truthful disclosure follows the board after sheet renumbering.
             result.add((code,family))
             if manifest_by_code.get(code):result.add((manifest_by_code[code],family))
+    # A gas plan can already contain the approved sheet identity while the
+    # appliance schedule/route remains explicitly INPUT_REQUIRED.  Carry that
+    # exact record-level disclosure into the equipment-linkage gate using both
+    # public and internal board identities.  FAIL records are never admitted.
+    gas_table=((report.get('enrichment') or {}).get('gas_table') or {})
+    for record in gas_table.get('records') or []:
+        if str(record.get('status') or '').upper()!='INPUT_REQUIRED':continue
+        code=str(record.get('sheet') or '').strip().lower()
+        if not code:continue
+        result.add((code,'GAS'))
+        if manifest_by_code.get(code):result.add((manifest_by_code[code],'GAS'))
     return result
 
 

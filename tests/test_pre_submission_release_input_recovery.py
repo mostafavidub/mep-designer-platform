@@ -39,3 +39,18 @@ def test_pending_equipment_board_scope_maps_public_code_to_internal_board():
     assert _pre_submission_pending_boards(report,{"blocked_at":"target_design_packages"}) == {
         ("m-104","HEATING"),("m-04","HEATING"),
     }
+
+
+def test_pending_gas_schedule_record_maps_to_internal_equipment_board():
+    report={
+        "semantic_qa":{"pre_submission_disclosure":{"pending_family_content":[]}},
+        "composition":{"manifest":[{"code":"M-141","old_sheet":"M-05","family":"GAS"}]},
+        "enrichment":{"gas_table":{"status":"PASS","records":[
+            {"sheet":"M-141","status":"INPUT_REQUIRED"},
+        ]}},
+    }
+    assert _pre_submission_pending_boards(report,{"blocked_at":"target_design_packages"}) == {
+        ("m-141","GAS"),("m-05","GAS"),
+    }
+    report["enrichment"]["gas_table"]["records"][0]["status"]="FAIL"
+    assert _pre_submission_pending_boards(report,{"blocked_at":"target_design_packages"}) == set()
