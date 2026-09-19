@@ -1,12 +1,22 @@
 from cad_engine.routing_v13 import _open_space_route,route_topology
 from cad_engine.mechanical_network_topology import _orthogonal_path
-from cad_engine.routing import route_topology as route_canonical_topology
+from cad_engine.routing import route_topology as route_canonical_topology, _sparse_axis
 
 def test_astar_is_bounded_for_oversized_export_frame():
     route=_open_space_route((10.0,10.0),(14.0,14.0),(-5000.0,-5000.0,5000.0,5000.0),[])
     assert route[0]==(10.0,10.0)
     assert route[-1]==(14.0,14.0)
     assert len(route)<=4
+
+
+def test_dense_wall_axes_are_bounded_before_cartesian_astar_expansion():
+    walls = [
+        {'start': (float(index), 0.0), 'end': (float(index), 1000.0)}
+        for index in range(1, 1000)
+    ]
+    axis = _sparse_axis(0.0, 1000.0, 10.0, 990.0, walls, 0)
+    assert len(axis) <= 192
+    assert {0.0, 10.0, 990.0, 1000.0}.issubset(axis)
 
 def test_bounded_astar_retains_passage_around_wall_endpoint():
     walls=[{'start':(12.0,9.0),'end':(12.0,13.0)}]
