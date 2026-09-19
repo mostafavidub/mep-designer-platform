@@ -218,7 +218,8 @@ def _resolve_level_for_point(source_id, explicit, point, levels, assignments):
         if labelled and _inside(point, labelled.get("region_bounds")):
             return labelled, None
         spatial, spatial_error = _assign_level(source_id, point, levels, assignments)
-        if spatial and spatial_error is None:
+        if (spatial and spatial_error is None
+                and _inside(point, spatial.get("region_bounds"))):
             return spatial, None
         if not labelled:
             return None, "UNKNOWN_EXPLICIT_LEVEL:" + str(explicit)
@@ -516,6 +517,7 @@ def build_authoritative_topology_from_evidence(
         wetcore_assignments = {}
 
     missing = []
+    excluded_unhosted_detections = []
     nodes = []
     node_by_id = {}
     endpoints_by_system_level = {}
@@ -531,6 +533,14 @@ def build_authoritative_topology_from_evidence(
             str(detection.get("id") or "UNKNOWN"), explicit_level, point,
             levels, detection_assignments,
         )
+        if (error and error.startswith("EXPLICIT_LEVEL_GEOMETRY_MISMATCH:")
+                and not detection.get("room_id")):
+            # Blocks outside every authoritative plan region are commonly
+            # fixture symbols parked in a CAD library/legend.  They have no
+            # architectural host and must not become installed consumers or
+            # invalidate an otherwise bounded project model.
+            excluded_unhosted_detections.append(str(detection.get("id") or "UNKNOWN"))
+            continue
         if error:
             missing.append(error)
             continue
@@ -803,7 +813,8 @@ def build_authoritative_topology_from_evidence(
         },
     }
     return {"status": "PASS", "network": network, "evidence": {
-        "installed_detections": len(recognition.get("detections") or []),
+        "installed_detections": len(recognition.get("detections") or []) - len(excluded_unhosted_detections),
+        "excluded_unhosted_out_of_plan_detections": sorted(excluded_unhosted_detections),
         "real_shafts": sum(len(v) for v in shaft_nodes_by_level.values()),
         "level_assignment_policy": "EXPLICIT_OR_UNAMBIGUOUS_REGION_BOUNDS_ONLY",
     }}

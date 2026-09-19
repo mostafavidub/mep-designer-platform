@@ -79,14 +79,17 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         )
         self.assertEqual(recognition["detections"], [])
 
-    def test_duplicate_roof_views_are_consolidated_without_duplicate_level(self):
+    def test_duplicate_roof_view_fixture_is_not_routed_on_canonical_roof(self):
         model = pmm([
             {"name": "بام", "roof": True, "region_bounds": [0, 0, 10, 10]},
             {"name": "پشت بام", "roof": True, "region_bounds": [20, 0, 30, 10]},
         ])
         result = build_authoritative_topology_from_evidence(
             model, {"shafts": [{"centroid": (8, 8), "polygon": []}], "wet_cores": [], "walls": [], "obstacles": []},
-            {"detections": [{**detection(point=(22, 2), ports=["cold_water"]), "level": "پشت بام"}]},
+            {"detections": [
+                {**detection('CANONICAL', point=(2, 2), ports=["cold_water"]), "level": "بام"},
+                {**detection('DUPLICATE', point=(22, 2), ports=["cold_water"], room=None), "level": "پشت بام"},
+            ]},
         )
         self.assertEqual(result["status"], "PASS")
         qa = evaluate_topology_routing(result["network"])
@@ -94,6 +97,10 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
             value.startswith("NO_SYSTEM_TERMINATION:") for value in qa["errors"]
         ))
         self.assertEqual(len(result["network"]["levels"]), 1)
+        self.assertEqual(
+            result["evidence"]["excluded_unhosted_out_of_plan_detections"],
+            ["DUPLICATE"],
+        )
 
     def test_single_active_plumbing_level_does_not_require_cross_level_shaft(self):
         model = pmm([
@@ -154,6 +161,22 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         level, error = _resolve_level_for_point('MEP-1', 'First', (200, 200), levels, {})
         self.assertIsNone(level)
         self.assertEqual(error, 'EXPLICIT_LEVEL_GEOMETRY_MISMATCH:MEP-1:First')
+
+    def test_unhosted_fixture_block_outside_all_plan_regions_is_excluded(self):
+        model = pmm([{'name': 'Ground', 'region_bounds': [0, 0, 10, 10]}])
+        architecture = {
+            'shafts': [], 'walls': [], 'obstacles': [],
+            'wet_cores': [{'room_id': 'W1', 'centroid': (8, 8), 'level': 'Ground'}],
+        }
+        valid = {**detection('VALID', point=(2, 2), ports=['cold_water']), 'level': 'Ground'}
+        parked = {**detection('PARKED', point=(-200, 2), ports=['cold_water'], room=None),
+                  'level': 'Ground'}
+        result = build_authoritative_topology_from_evidence(
+            model, architecture, {'detections': [valid, parked]},
+        )
+        self.assertEqual(result['status'], 'PASS', result)
+        self.assertEqual(result['evidence']['installed_detections'], 1)
+        self.assertEqual(result['evidence']['excluded_unhosted_out_of_plan_detections'], ['PARKED'])
 
     def test_detail_pseudo_level_is_rejected(self):
         result = build_authoritative_topology_from_evidence(
