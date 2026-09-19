@@ -319,8 +319,10 @@ def register_job_queue(app, legacy):
             # Deletion is permitted only through an explicit user lifecycle action.
 
     def _claim(job_type):
-        if job_type == 'design':
-            _reclaim_failed_artifacts()
+        # Claiming is latency-critical.  Failed-workspace reclamation can call
+        # object storage once per historical project and previously blocked the
+        # only design consumer before it marked the next job as processing.
+        # Startup and per-job finalization already own safe reclamation.
         db = legacy.Session()
         try:
             query = db.query(Job).filter(
