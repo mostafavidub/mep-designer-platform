@@ -91,6 +91,43 @@ def _path_inside_bounds(path, bounds, tolerance=1e-6):
     ))
 
 
+def _bounded_separation_offset(path, requested, bounds):
+    """Choose the largest whole-path translation inside ``bounds``.
+
+    The path is translated as one rigid geometry; no point is clipped.  The
+    requested side wins when fully feasible, then the opposite full side, and
+    finally the side offering the larger feasible fraction of the requested
+    separation magnitude.
+    """
+    if not path or not bounds or not isinstance(requested,(list,tuple)) or len(requested)!=2:
+        return None,None
+    dx=_number(requested[0]);dy=_number(requested[1])
+    if dx is None or dy is None or (abs(dx)<=1e-12 and abs(dy)<=1e-12):
+        return None,None
+
+    def capacity(vx,vy):
+        limit=1.0
+        for point in path:
+            x=float(point[0]);y=float(point[1])
+            if vx>0:limit=min(limit,(float(bounds[2])-x)/vx)
+            elif vx<0:limit=min(limit,(float(bounds[0])-x)/vx)
+            if vy>0:limit=min(limit,(float(bounds[3])-y)/vy)
+            elif vy<0:limit=min(limit,(float(bounds[1])-y)/vy)
+        return max(0.0,min(1.0,limit))
+
+    candidates=[]
+    for preference,(vx,vy) in enumerate(((dx,dy),(-dx,-dy))):
+        scale=capacity(vx,vy)
+        if scale>1e-9:
+            applied=(vx*scale,vy*scale)
+            shifted=[(float(point[0])+applied[0],float(point[1])+applied[1]) for point in path]
+            if _path_inside_bounds(shifted,bounds):
+                candidates.append((scale,-preference,shifted,[applied[0],applied[1]]))
+    if not candidates:return None,None
+    _,_,shifted,applied=max(candidates,key=lambda row:(row[0],row[1]))
+    return shifted,applied
+
+
 def _fittings(path):
     rows = []
     for index in range(1, len(path or []) - 1):
@@ -241,15 +278,15 @@ def design_authoritative_segments(network, design_basis=None, calculation_rows=N
         level = levels_by_id.get(edge_levels[0]) if len(edge_levels) == 1 else None
         level_bounds = (level or {}).get("region_bounds")
         if requested_offset not in (None, [], ()) and path and level_bounds and not _path_inside_bounds(path, level_bounds):
-            dx = _number(requested_offset[0]) if isinstance(requested_offset, (list, tuple)) and len(requested_offset) == 2 else None
-            dy = _number(requested_offset[1]) if isinstance(requested_offset, (list, tuple)) and len(requested_offset) == 2 else None
-            opposite = _shift_path(edge.get("plan_path") or [], [-dx, -dy]) if dx is not None and dy is not None else None
-            if opposite and _path_inside_bounds(opposite, level_bounds):
-                # Separation direction is a routing preference, not an
-                # engineering endpoint. Preserve its magnitude and select the
-                # only in-envelope side; never clip a route after selection.
-                path = opposite
-                applied_offset = [-dx, -dy]
+            bounded, bounded_offset = _bounded_separation_offset(
+                edge.get("plan_path") or [], requested_offset, level_bounds
+            )
+            if bounded:
+                # Separation direction/magnitude is a routing preference, not
+                # an endpoint. Translate the complete path rigidly by the
+                # largest feasible vector; never clip individual points.
+                path = bounded
+                applied_offset = bounded_offset
             else:
                 errors.append("PLAN_OFFSET_OUTSIDE_LEVEL_BOUNDS:%s" % edge_id)
 
