@@ -204,6 +204,28 @@ def _assign_level(source_id, point, levels, assignments):
     return None, "LEVEL_ASSIGNMENT_REQUIRED:" + source_id
 
 
+def _resolve_level_for_point(source_id, explicit, point, levels, assignments):
+    """Resolve a level only when its semantic label agrees with geometry.
+
+    Upstream architecture evidence can carry a plausible level name while its
+    coordinates still belong to a different viewport.  Trusting that label
+    creates cross-sheet routes which only fail much later during CAD
+    materialization.  A contradictory label is therefore treated as a hint:
+    accept a unique spatial owner, otherwise fail closed with bounded evidence.
+    """
+    if explicit:
+        labelled = _resolve_explicit_level(explicit, levels)
+        if labelled and _inside(point, labelled.get("region_bounds")):
+            return labelled, None
+        spatial, spatial_error = _assign_level(source_id, point, levels, assignments)
+        if spatial and spatial_error is None:
+            return spatial, None
+        if not labelled:
+            return None, "UNKNOWN_EXPLICIT_LEVEL:" + str(explicit)
+        return None, "EXPLICIT_LEVEL_GEOMETRY_MISMATCH:%s:%s" % (source_id, explicit)
+    return _assign_level(source_id, point, levels, assignments)
+
+
 def _pmm_entity_id(pmm, detection):
     registry = (pmm.get("identity_registry") or {}).get("entities") or []
     dtype = detection.get("type")
@@ -505,11 +527,10 @@ def build_authoritative_topology_from_evidence(
             missing.append("DETECTION_POINT_REQUIRED:" + str(detection.get("id") or "UNKNOWN"))
             continue
         explicit_level = detection.get("level")
-        if explicit_level:
-            level = _resolve_explicit_level(explicit_level, levels)
-            error = None if level else "UNKNOWN_EXPLICIT_LEVEL:" + str(explicit_level)
-        else:
-            level, error = _assign_level(str(detection.get("id") or "UNKNOWN"), point, levels, detection_assignments)
+        level, error = _resolve_level_for_point(
+            str(detection.get("id") or "UNKNOWN"), explicit_level, point,
+            levels, detection_assignments,
+        )
         if error:
             missing.append(error)
             continue
@@ -551,11 +572,9 @@ def build_authoritative_topology_from_evidence(
             continue
         sid = "SHAFT-%02d" % index
         explicit_level = shaft.get("level")
-        if explicit_level:
-            level = _resolve_explicit_level(explicit_level, levels)
-            error = None if level else "UNKNOWN_EXPLICIT_LEVEL:" + str(explicit_level)
-        else:
-            level, error = _assign_level(sid, point, levels, shaft_assignments)
+        level, error = _resolve_level_for_point(
+            sid, explicit_level, point, levels, shaft_assignments,
+        )
         if error:
             missing.append(error)
             continue
@@ -575,11 +594,9 @@ def build_authoritative_topology_from_evidence(
             continue
         wid = "WETCORE-%02d" % index
         explicit_level = wet.get("level")
-        if explicit_level:
-            level = _resolve_explicit_level(explicit_level, levels)
-            error = None if level else "UNKNOWN_EXPLICIT_LEVEL:" + str(explicit_level)
-        else:
-            level, error = _assign_level(wid, point, levels, wetcore_assignments)
+        level, error = _resolve_level_for_point(
+            wid, explicit_level, point, levels, wetcore_assignments,
+        )
         if error:
             missing.append(error)
             continue
