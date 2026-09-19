@@ -5,6 +5,7 @@ from cad_engine.mechanical_cad_base import (
     qa_semantic_sheet_content,
 )
 from cad_engine.mechanical_design_core import _clip_polyline_to_rect, qa_authority_dxf
+from cad_engine.mechanical_cad_shell import _release_input_errors
 
 
 def _pending_heating_sheet(tmp_path):
@@ -47,6 +48,17 @@ def test_target_package_pre_submission_is_deliverable_with_explicit_disclosure(t
     assert result["pre_submission_disclosure"]["active"] is True
     assert result["pre_submission_disclosure"]["pending_family_content"] == ["M-H-01:HEATING"]
     assert "pre_submission_family_pending:M-H-01:HEATING" in result["warnings"]
+
+
+def test_exact_target_package_pipeline_input_is_not_a_release_error():
+    report = {
+        "pipeline_qa": {"status": "INPUT_REQUIRED", "errors": ["TARGET_DESIGN_PACKAGES_MISSING"]},
+        "engineering_acceptance": {"status": "PASS"},
+        "enrichment": {}, "authority": {"design_basis": {"status": "PASS"}},
+    }
+    pre_submission = {"blocked_at": "target_design_packages",
+                      "blockers": ["TARGET_DESIGN_PACKAGES_MISSING"]}
+    assert _release_input_errors(report, pre_submission) == []
 
 
 def test_unrelated_pre_submission_blocker_cannot_bypass_semantic_qa(tmp_path):

@@ -541,11 +541,21 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
 
     dxf_qa=qa_authority_dxf(dst,compose)
     semantic_qa=qa_semantic_sheet_content(dst,compose,answers.get("_pre_submission_authority"))
+    pre_submission = answers.get("_pre_submission_authority")
+    target_package_pending = bool(
+        isinstance(pre_submission, dict)
+        and pre_submission.get("blocked_at") == "target_design_packages"
+        and "TARGET_DESIGN_PACKAGES_MISSING" in set(pre_submission.get("blockers") or [])
+    )
+    pipeline_release_qa = pipeline_qa
+    if (target_package_pending and pipeline_qa.get("status") == "INPUT_REQUIRED"
+            and set(pipeline_qa.get("errors") or []) <= {"TARGET_DESIGN_PACKAGES_MISSING"}):
+        pipeline_release_qa = {"status": "PASS", "disclosed_pre_submission": True}
     status="PASS" if all(result.get("status")=="PASS" for result in (
-        pipeline_qa, acceptance, dxf_qa, semantic_qa,
+        pipeline_release_qa, acceptance, dxf_qa, semantic_qa,
     )) else "FAIL"
     failed_stage=next((name for name,result in (
-        ("pipeline_qa",pipeline_qa),
+        ("pipeline_qa",pipeline_release_qa),
         ("engineering_acceptance_gate",acceptance),
         ("dxf_qa",dxf_qa),
         ("semantic_qa",semantic_qa),
@@ -554,6 +564,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
         "status":status,
         "version":"mechanical-authority-site-pipeline-canonical.1",
         "pipeline_qa":pipeline_qa,
+        "pipeline_release_qa":pipeline_release_qa,
         "engineering_acceptance":acceptance,
         "authority":authority,
         "composition":compose,

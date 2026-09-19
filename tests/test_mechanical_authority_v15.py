@@ -66,6 +66,31 @@ def test_graph_required_roof_vent_gets_honest_service_schematic_without_roof_arc
         assert support[0]['family'] == 'SANITARY_VENT'
         assert support[0]['level'] == 'SERVICE'
         assert support[0]['purpose'] == 'SCHEMATIC'
+
+
+def test_persian_approved_ground_level_materializes_explicit_gas_plan():
+    pipeline = {
+        'architecture': {
+            'primary_floor_plan_ids': ['P1'],
+            'plans': [{'plan_id': 'P1', 'level': 'GROUND', 'mechanical_role': 'PRIMARY_FLOOR',
+                       'bounds': [0, 0, 10, 10]}],
+            'rooms': [{'plan_id': 'P1', 'type': 'kitchen'}], 'quality': {},
+        },
+        'recognition': {'detections': []},
+    }
+    answers = {
+        'city': 'تهران', 'cooling': 'اسپلیت دیواری',
+        'heating': 'پکیج دیواری و رادیاتور', 'gas': 'گاز برای پکیج و اجاق هر واحد',
+        'gas_pressure': '21 mbar', 'water_inlet_pressure': '2.5 bar',
+        '_approved_drawing_manifest': {'sheets': [{
+            'family': 'gas', 'code': 'M-G-01', 'label': 'گاز',
+            'levels': ['طبقه همکف'], 'drawing_type': 'floor_plan',
+        }]},
+    }
+    authority = build_production_authority_model(pipeline, answers)
+    gas = [row for row in authority['manifest']['sheets'] if row.get('family') == 'GAS']
+    assert len(gas) == 1
+    assert gas[0]['level'] == 'GROUND'
 from cad_engine.authority_architecture_v14 import (
     build_project_model,
     resolve_design_basis,

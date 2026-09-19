@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0244",
+  "summary":"Honor Persian-to-canonical level bindings for approved gas plans and permit only the exact disclosed target-package Pre-Submission state through the CAD shell.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","manifest","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Approved Persian level names bind to canonical GROUND/ROOF/LEVEL-N identities.",
+    "deployment":"Deploy Staging and retry projects 04 and 07.",
+    "detail_riser":"Not affected.",
+    "docs":"No workflow change.",
+    "equipment":"Not affected.",
+    "governance":"Only TARGET_DESIGN_PACKAGES_MISSING at target_design_packages may pass as visibly disclosed Pre-Submission.",
+    "manifest":"Explicit approved GAS/FLOOR_PLAN rows can no longer disappear because of localized level labels.",
+    "manufacturer_selector":"Missing target packages remain truthfully disclosed and never claim manufacturer confirmation.",
+    "migration":"No persisted schema migration.",
+    "qa":"All other pipeline errors remain fail-closed; exact disclosed target-package state is release-compatible only as NOT SUBMISSION READY.",
+    "routing":"Not affected.",
+    "sizing":"Not affected.",
+    "ui_api":"No public API change.",
+    "versioning":"Git build identity remains authoritative."
+  },
+  "evidence":{
+    "traceability":["approved localized level -> canonical level -> required system -> manifest board", "pipeline input blocker -> exact disclosure -> Pre-Submission release"],
+    "tests":["Persian طبقه همکف approved GAS plan materializes on GROUND.","Exact target-package blocker is exempted while unrelated errors remain blocked."],
+    "docs":["Governed in executable tests and this record."],
+    "contract_diff":["Localized level labels are aliases, not different levels; an explicit truthful Pre-Submission disclosure is deliverable."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["GAS plan coverage matches approved scope; Pre-Submission no longer fails itself at the legacy pipeline gate."],
+    "artifact_diff":["Project 04 gains its approved GAS board; Project 07 retains explicit NOT SUBMISSION READY disclosures."],
+    "numeric_diff":["No engineering formula changes."],
+    "golden_regression":["Authority manifest and Pre-Submission suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, controlled retries."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Alias mapping is deterministic and the only release exemption requires an exact blocker fingerprint plus visible disclosure."},
+  "waiver":null
+}
