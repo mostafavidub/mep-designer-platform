@@ -66,6 +66,28 @@ def test_materializer_keeps_positive_short_branch_after_large_uniform_fit(tmp_pa
     assert result["materialized_segments"] == 1
 
 
+def test_materializer_maps_public_level_02_manifest_to_semantic_second(tmp_path):
+    src, dst, report, network = _fixture_files(tmp_path)
+    report["composition"]["manifest"][0]["level"] = "LEVEL-02"
+    network["levels"][0].update({"name": "طبقه دوم", "type": "SECOND"})
+    result = materialize_authoritative_network(src, dst, report, network)
+    assert result["status"] == "PASS", result
+    assert result["materialized_segments"] == 1
+
+
+@pytest.mark.parametrize("system", ["vent", "cold_water"])
+def test_materializer_uses_approved_roof_coordination_board_for_roof_services(tmp_path, system):
+    src, dst, report, network = _fixture_files(tmp_path)
+    report["composition"]["manifest"][0].update(
+        {"family": "ROOF", "level": "ROOF", "purpose": "PLAN", "code": "M-011"}
+    )
+    network["levels"][0].update({"name": "بام", "type": "ROOF"})
+    network["edges"][0]["system"] = system
+    result = materialize_authoritative_network(src, dst, report, network)
+    assert result["status"] == "PASS", result
+    assert result["materialized_segments"] == 1
+
+
 def test_persisted_collapsed_path_is_detected_for_authoritative_rebuild():
     network = {"edges": [{"id": "E1", "draw_on_plan": True,
                            "plan_path": [(2, 2), (2, 2), (2, 2)]}]}
