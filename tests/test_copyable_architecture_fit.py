@@ -1,6 +1,11 @@
 import ezdxf
 
-from cad_engine.mechanical_design_core import _copyable_geometry_bounds, _fit_transform
+from cad_engine.mechanical_design_core import (
+    _copyable_geometry_bounds,
+    _fit_transform,
+    _plan_fit_bounds,
+    _plan_ownership_bounds,
+)
 
 
 def test_render_fit_uses_retained_architecture_not_removed_sheet_furniture():
@@ -42,3 +47,17 @@ def test_copyable_fit_keeps_retained_architectural_text_inside_viewport():
     bounds=_copyable_geometry_bounds([wall,note],(0,0,30,20))
     assert bounds[0]<=4
     assert bounds[1]<=2
+
+
+def test_render_fit_never_mutates_repeated_sheet_ownership():
+    plan={
+        "bounds":[0,0,30,20],
+        "content_bounds":[5,4,20,16],
+        # A retained annotation may legitimately expand the transform envelope.
+        "render_fit_bounds":[2,2,24,18],
+    }
+    assert _plan_fit_bounds(plan)==[2,2,24,18]
+    assert _plan_ownership_bounds(plan)==[5,4,20,16]
+    # Recomputing fit for another system sheet cannot expand entity ownership.
+    plan["render_fit_bounds"]=[1,1,26,19]
+    assert _plan_ownership_bounds(plan)==[5,4,20,16]
