@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0261",
+  "summary":"Apply a shared adaptive fit ceiling to dense plan sheets while preserving sparse-plan scale.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Architecture and mechanical overlays use one shared adaptive transform; only raw occupancy above 85% is centered at 80%.",
+    "deployment":"Deploy through protected CI, then retry all five benchmark projects.",
+    "docs":"Fit policy explicitly distinguishes dense and sparse plans.",
+    "governance":"The visual 55-85% acceptance band remains unchanged and is achieved by generation rather than relaxed QA.",
+    "qa":"Dense plans gain annotation/lineweight breathing room; sparse plans retain their maximum available scale.",
+    "ui_api":"Projects no longer fail solely because an aspect-matched plan fills 89% of the viewport.",
+    "manifest":"No schema change.","migration":"No data migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"Overlay coordinates follow the same transform.","manufacturer_selector":"No change.","routing":"Route coordinates follow the same transform.","sizing":"No calculation change."
+  },
+  "evidence":{
+    "traceability":["raw geometric occupancy >85% -> shared centered transform targeting 80%"],
+    "tests":["Dense square plan targets 80% occupancy.","Sparse plan is not shrunk.","Preservation uses the canonical transform."],
+    "docs":["Adaptive thresholds and rationale are documented beside the fit function."],
+    "contract_diff":["Visual acceptance thresholds do not change; generation now conforms."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["Plan content is unchanged; only centered uniform scale changes for dense sheets."],
+    "artifact_diff":["Previously 89% dense sheets target 80%; sparse sheets are unchanged."],
+    "numeric_diff":["Trigger 0.85, target 0.80, uniform scale factor sqrt(0.80/raw occupancy)."],
+    "golden_regression":["Fit, preservation, visual and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, CI, exact-SHA rollout, clean five-project retry."],
+    "rollback_plan":["Revert merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"Transform is shared by architecture, overlays and exact-file preservation and does not affect sparse plans."},
+  "waiver":null
+}

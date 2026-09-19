@@ -25,6 +25,7 @@ from .mechanical_design_core import (
     _entities_in_bounds,
     _find_plan_for_level,
     _find_roof_plan,
+    _fit_parameters as _canonical_fit_parameters,
 )
 from .engineering_runner import run_engineering_pipeline
 from .architecture_preservation_gate import (
@@ -126,11 +127,7 @@ def _entities_in_output_board(doc,plan_area,source_layers):
 
 
 def _fit_parameters(srcb,target):
-    sx1,sy1,sx2,sy2=map(float,srcb); tx1,ty1,tx2,ty2=map(float,target)
-    sw=max(sx2-sx1,1e-9); sh=max(sy2-sy1,1e-9); tw=tx2-tx1; th=ty2-ty1
-    scale=min(tw/sw,th/sh); nw=sw*scale; nh=sh*scale
-    dx=tx1+(tw-nw)/2; dy=ty1+(th-nh)/2
-    return scale,dx,dy
+    return _canonical_fit_parameters(tuple(map(float,srcb)),tuple(map(float,target)))
 
 
 def _expected_bbox(rec,srcb,target):

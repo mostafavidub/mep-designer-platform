@@ -567,10 +567,24 @@ def _entities_in_bounds(msp,bounds):
     return [e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e,bounds)]
 
 
-def _fit_transform(source_bounds,target_bounds):
+def _fit_parameters(source_bounds,target_bounds):
     sx1,sy1,sx2,sy2=source_bounds;tx1,ty1,tx2,ty2=target_bounds
     sw=max(sx2-sx1,1e-9);sh=max(sy2-sy1,1e-9);tw=tx2-tx1;th=ty2-ty1
-    scale=min(tw/sw,th/sh);nw=sw*scale;nh=sh*scale;dx=tx1+(tw-nw)/2;dy=ty1+(th-nh)/2
+    scale=min(tw/sw,th/sh);nw=sw*scale;nh=sh*scale
+    occupancy=(nw*nh)/max(tw*th,1e-9)
+    # Preserve the 55-85% visual acceptance band without shrinking plans that
+    # are already sparse.  Dense/aspect-matched plans receive just enough
+    # centered breathing room to land at a robust 80% target, leaving room for
+    # lineweights and annotations that slightly expand rendered extents.
+    if occupancy>.85:
+        scale*=math.sqrt(.80/occupancy);nw=sw*scale;nh=sh*scale
+    dx=tx1+(tw-nw)/2;dy=ty1+(th-nh)/2
+    return scale,dx,dy
+
+
+def _fit_transform(source_bounds,target_bounds):
+    scale,dx,dy=_fit_parameters(source_bounds,target_bounds)
+    sx1,sy1,_,_=source_bounds
     return Matrix44.chain(Matrix44.translate(-sx1,-sy1,0),Matrix44.scale(scale,scale,1),Matrix44.translate(dx,dy,0)),scale,(dx,dy)
 
 
