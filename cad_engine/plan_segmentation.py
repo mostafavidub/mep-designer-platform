@@ -367,6 +367,33 @@ def _plans_from_authoritative_profiles(profiles, detected_frames=None):
                       'level':str(profile.get('name') or f"LEVEL-{len(plans)+1:02d}"),
                       'mechanical_role':'ROOF_SUPPORT' if roof else 'PRIMARY_FLOOR',
                       'title_text':[],'entity_count':0})
+    # Keep locally classified non-design frames in the ownership inventory.
+    # The sealed browser profiles own the designable level identities, but
+    # sections, elevations, furniture/lintel sheets and duplicate references
+    # still own their source entities.  Dropping those frames makes legitimate
+    # source evidence appear unassigned and incorrectly fails the independent
+    # level model.  Never restore a locally detected roof here: a rejected roof
+    # profile must stay outside the mechanical scope.
+    authoritative_bounds = {tuple(round(float(v), 6) for v in plan["bounds"]) for plan in plans}
+    has_authoritative_roof = any(plan.get("mechanical_role") == "ROOF_SUPPORT" for plan in plans)
+    for frame in detected_frames:
+        role = frame.get("mechanical_role")
+        if role not in {"EXCLUDE", "DUPLICATE_REFERENCE", "ROOF_SUPPORT"}:
+            continue
+        if role == "ROOF_SUPPORT" and has_authoritative_roof:
+            continue
+        bounds = frame.get("bounds") or []
+        if len(bounds) != 4:
+            continue
+        key = tuple(round(float(v), 6) for v in bounds)
+        if key in authoritative_bounds:
+            continue
+        retained = dict(frame)
+        if role == "ROOF_SUPPORT":
+            retained["mechanical_role"] = "EXCLUDE"
+            retained["roof_view_role"] = "REJECTED_LOCAL_ROOF_OWNERSHIP_ONLY"
+        retained["source"] = "local_excluded_frame_ownership_evidence"
+        plans.append(retained)
     return plans
 
 
