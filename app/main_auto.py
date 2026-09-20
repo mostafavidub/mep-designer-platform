@@ -468,15 +468,27 @@ def panel_analysis_payload(auto):
     floors = len(profiles) or None
     evidence = []
     warnings = []
+    architecture_model = auto.get('architecture_model') or {}
     if area is not None:
         evidence.append(f'مساحت هندسی {area} مترمربع در موتور مرکزی محاسبه شد.')
     else:
         warnings.append('مساحت قابل اتکا از نقشه استخراج نشد؛ متراژ باید توسط کاربر تأیید شود.')
     if floors:
         evidence.append(f'{floors} طبقه قابل استفاده از عناوین و هندسه معماری تشخیص داده شد.')
+    if architecture_model.get('status') == 'INPUT_REQUIRED':
+        labels = {
+            'CANONICAL_PLAN_FRAME': 'قاب قطعی پلان',
+            'ROOM_BOUNDARY_GEOMETRY': 'مرز هندسی اتاق‌ها',
+            'SHAFT_BOUNDARY_GEOMETRY': 'مرز هندسی شفت‌ها',
+        }
+        missing = [labels.get(key, key) for key in architecture_model.get('missing_inputs') or []]
+        warnings.append(
+            'مدل معماری برای طراحی نهایی کامل نیست: ' + '، '.join(missing) +
+            '. سیستم هندسهٔ جایگزین یا ساختگی تولید نکرده است.'
+        )
 
     return {
-        'status': 'confirm' if area is not None else 'review',
+        'status': 'review' if architecture_model.get('status') == 'INPUT_REQUIRED' else ('confirm' if area is not None else 'review'),
         'area': area,
         'floors': floors,
         'floorAreas': [],

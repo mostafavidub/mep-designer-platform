@@ -391,6 +391,13 @@ def auto_summary(auto, discipline):
     if discipline == 'mechanical' and auto.get('estimated_water_flow_lps') is not None:
         items.append(f"دبی اولیه آب از Fixtureهای تشخیص‌داده‌شده ≈ {auto['estimated_water_flow_lps']} L/s")
     if discipline == 'mechanical':
+        architecture_model = auto.get('architecture_model') or {}
+        if architecture_model.get('status') == 'INPUT_REQUIRED':
+            missing = ', '.join(architecture_model.get('missing_inputs') or [])
+            items.append(
+                'مدل معماری برای طراحی نهایی ناقص است و هندسه حدسی ساخته نشد؛ '
+                f'موارد لازم: {missing}'
+            )
         items.append(f'جنس لوله، ضرایب هیدرولیکی، شیب‌ها، فشار مبنای محافظه‌کارانه، دبی پایه تهویه و انتخاب اولیه تجهیزات توسط {RULEBOOK_IDENTITY} تعیین می‌شود')
         if auto.get('fixture_blocks_detected'):
             items.append(f"{auto['fixture_blocks_detected']} سمبل واقعی تجهیزات مکانیکی/بهداشتی از DXF تشخیص داده شد")
