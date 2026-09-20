@@ -1,3 +1,4 @@
+import re
 import statistics
 
 from ezdxf import bbox
@@ -19,12 +20,63 @@ def _dimension_measurements(doc):
     return values
 
 
+def _text_value(entity):
+    try:
+        return str(entity.dxf.text if entity.dxftype() == 'TEXT' else entity.text or '')
+    except Exception:
+        return ''
+
+
+def _paper_space_metre_evidence(doc):
+    """Detect a metre-authored plan plotted in centimetre-sized paper frames.
+
+    This is intentionally conjunctive.  A scale label, an A-series frame and
+    repeated architectural opening/height dimensions must all agree; none of
+    them alone is allowed to turn an unknown DXF unit into an engineering unit.
+    """
+    texts = [_text_value(entity) for entity in doc.modelspace().query('TEXT MTEXT')]
+    has_scale_100 = any(re.search(r'(?i)(?:sc(?:ale)?\s*[:=]?\s*)?1\s*[/ :]\s*100', text) for text in texts)
+    metric_tokens = []
+    canonical = (0.75, 0.8, 0.9, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2, 2.3)
+    for text in texts:
+        normalized = text.replace('/', '.').replace(',', '.')
+        for raw in re.findall(r'(?<!\d)(\d+(?:\.\d+)?)(?!\d)', normalized):
+            try:
+                value = float(raw)
+            except ValueError:
+                continue
+            if any(abs(value - candidate) <= 0.015 for candidate in canonical):
+                metric_tokens.append(value)
+    a_series_frames = 0
+    for entity in doc.modelspace().query('LWPOLYLINE POLYLINE'):
+        try:
+            extent = bbox.extents([entity], fast=True)
+            if not extent.has_data:
+                continue
+            width = abs(float(extent.extmax.x - extent.extmin.x))
+            height = abs(float(extent.extmax.y - extent.extmin.y))
+        except Exception:
+            continue
+        short, long = sorted((width, height))
+        if ((20.5 <= short <= 21.5 and 29.0 <= long <= 30.5) or
+                (29.0 <= short <= 30.5 and 41.0 <= long <= 43.0)):
+            a_series_frames += 1
+    passed = bool(has_scale_100 and a_series_frames >= 1 and len(metric_tokens) >= 4)
+    return {
+        'status': 'PASS' if passed else 'INSUFFICIENT_EVIDENCE',
+        'scale_1_100_label': has_scale_100,
+        'a_series_frame_count': a_series_frames,
+        'canonical_metric_dimension_token_count': len(metric_tokens),
+    }
+
+
 def _infer_scale(doc):
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     header_scale = main_auto.INSUNITS_TO_M.get(insunits)
     values = _dimension_measurements(doc)
     median_dim = statistics.median(values) if values else None
 
+    paper_evidence = _paper_space_metre_evidence(doc) if not header_scale else None
     scale = header_scale
     source = 'header' if header_scale else 'unknown'
     confidence = 'medium' if header_scale else 'low'
@@ -40,6 +92,10 @@ def _infer_scale(doc):
         scale = 0.001
         source = 'dimension-measurement-override-m-header-to-mm'
         confidence = 'high'
+    elif not header_scale and paper_evidence and paper_evidence['status'] == 'PASS':
+        scale = 1.0
+        source = 'multi-evidence-paper-frame-scale-and-architectural-dimensions'
+        confidence = 'high'
 
     return {
         'header_insunits': insunits,
@@ -49,6 +105,7 @@ def _infer_scale(doc):
         'median_dimension_drawing_units': round(median_dim, 6) if median_dim is not None else None,
         'source': source,
         'confidence': confidence,
+        'paper_space_metre_evidence': paper_evidence,
     }
 
 
