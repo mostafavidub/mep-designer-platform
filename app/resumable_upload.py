@@ -1,4 +1,3 @@
-import hashlib
 import shutil
 from pathlib import Path
 
@@ -96,44 +95,40 @@ def register_resumable_upload_routes(app):
             if total < 1 or total > MAX_CHUNKS or index < 0 or index >= total:
                 raise HTTPException(400, 'Invalid chunk coordinates')
 
+            pdir = legacy.DATA_DIR / 'projects' / str(pid)
+            pdir.mkdir(parents=True, exist_ok=True)
+            final_path = pdir / ('architecture.zip' if ext == '.zip' else 'architecture.dxf')
+
             # Idempotent response if the final chunk response was lost and retried.
-            durable = db.query(legacy.ProjectInputBlob.id).filter_by(project_id=pid).first()
-            if project.status != 'uploading' and durable is not None:
+            if project.status != 'uploading' and final_path.exists():
                 return JSONResponse({'ok': True, 'complete': True, 'project_id': pid, 'flow_url': f'/projects/{pid}/flow'})
 
             body = await request.body()
             if not body or len(body) > CHUNK_SIZE_MAX:
                 raise HTTPException(413, 'Chunk is empty or too large')
 
-            chunk = db.query(legacy.ProjectUploadChunk).filter_by(project_id=pid, chunk_index=index).first()
-            if chunk is None:
-                chunk = legacy.ProjectUploadChunk(project_id=pid, chunk_index=index)
-                db.add(chunk)
-            chunk.total_chunks = total
-            chunk.filename = filename
-            chunk.content = body
-            db.commit()
+            chunks_dir = pdir / '.upload_chunks'
+            chunks_dir.mkdir(parents=True, exist_ok=True)
+            part = chunks_dir / f'{index:05d}.part'
+            temp = chunks_dir / f'{index:05d}.tmp'
+            temp.write_bytes(body)
+            temp.replace(part)
 
-            rows = db.query(legacy.ProjectUploadChunk).filter_by(project_id=pid).order_by(
-                legacy.ProjectUploadChunk.chunk_index
-            ).all()
-            complete = len(rows) == total and [row.chunk_index for row in rows] == list(range(total))
+            complete = all((chunks_dir / f'{i:05d}.part').exists() for i in range(total))
             if not complete:
                 return JSONResponse({'ok': True, 'complete': False, 'received': index, 'total': total})
 
-            assembled = b''.join(bytes(row.content) for row in rows)
-            if len(assembled) > CHUNK_SIZE_MAX * MAX_CHUNKS:
-                raise HTTPException(413, 'Uploaded file is too large')
-            blob = db.query(legacy.ProjectInputBlob).filter_by(project_id=pid).first()
-            if blob is None:
-                blob = legacy.ProjectInputBlob(project_id=pid)
-                db.add(blob)
-            blob.filename = f'architecture{ext}'
-            blob.media_type = 'application/zip' if ext == '.zip' else 'application/dxf'
-            blob.sha256 = hashlib.sha256(assembled).hexdigest()
-            blob.content = assembled
-            for row in rows:
-                db.delete(row)
+            assembled = pdir / (final_path.name + '.uploading')
+            with assembled.open('wb') as out:
+                for i in range(total):
+                    chunk = chunks_dir / f'{i:05d}.part'
+                    with chunk.open('rb') as src:
+                        shutil.copyfileobj(src, out, length=1024 * 1024)
+                    # Release each fragment immediately so assembly does not
+                    # require twice the uploaded file size on the volume.
+                    chunk.unlink()
+            assembled.replace(final_path)
+            shutil.rmtree(chunks_dir, ignore_errors=True)
 
             project.status = 'analyzing'
             project.last_error = ''
@@ -143,7 +138,15 @@ def register_resumable_upload_routes(app):
         except HTTPException:
             raise
         except Exception as exc:
-            # Keep received database chunks so a client retry can resume safely.
+            # Failed uploads must not consume persistent volume indefinitely.
+            shutil.rmtree(
+                legacy.DATA_DIR / 'projects' / str(pid) / '.upload_chunks',
+                ignore_errors=True,
+            )
+            uploading = legacy.DATA_DIR / 'projects' / str(pid) / 'architecture.zip.uploading'
+            uploading.unlink(missing_ok=True)
+            uploading = legacy.DATA_DIR / 'projects' / str(pid) / 'architecture.dxf.uploading'
+            uploading.unlink(missing_ok=True)
             project.last_error = str(exc)
             project.status = 'awaiting_upload'
             db.commit()

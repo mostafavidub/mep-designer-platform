@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, JSON
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
-from sqlalchemy import create_engine, String, Integer, Text, DateTime, ForeignKey, JSON, LargeBinary, UniqueConstraint
+from sqlalchemy import create_engine, String, Integer, Text, DateTime, ForeignKey, JSON, LargeBinary
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 DATA_DIR = Path(os.getenv('DATA_DIR', '/data'))
@@ -85,18 +85,6 @@ class ProjectInputBlob(Base):
     filename: Mapped[str] = mapped_column(String(255))
     media_type: Mapped[str] = mapped_column(String(100))
     sha256: Mapped[str] = mapped_column(String(64))
-    content: Mapped[bytes] = mapped_column(LargeBinary)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-class ProjectUploadChunk(Base):
-    """Resumable upload fragment shared by all stateless web replicas."""
-    __tablename__ = 'project_upload_chunks'
-    __table_args__ = (UniqueConstraint('project_id', 'chunk_index', name='uq_project_upload_chunk'),)
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id'), index=True)
-    chunk_index: Mapped[int] = mapped_column(Integer)
-    total_chunks: Mapped[int] = mapped_column(Integer)
-    filename: Mapped[str] = mapped_column(String(255))
     content: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

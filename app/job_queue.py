@@ -512,8 +512,6 @@ def register_job_queue(app, legacy):
             original = project_dir / 'architecture.zip'
             if not original.exists():
                 original = project_dir / 'architecture.dxf'
-            if not original.exists() and _database_input_exists(project_id, legacy):
-                original = _restore_database_input(project_id, legacy.DATA_DIR, legacy)
             storage_warning = ''
             # The persistent Railway volume already owns the upload.  R2 is a
             # durability copy, not a prerequisite for parsing it.  A temporary
