@@ -351,6 +351,18 @@ def _level_evidence(pipeline):
     return levels
 
 
+def _approved_level_token(value):
+    """Normalize workflow and engine level identities to one manifest key."""
+    text=_norm(value).replace(" ","").replace("-","").replace("\u200c","")
+    if text in {"ground","g","طبقههمکف","همکف"}:return "GROUND"
+    if text in {"mezzanine","mezz","m","نیمطبقه"}:return "MEZZANINE"
+    if text in {"roof","r","بام"}:return "ROOF"
+    for word,number in (("اول","01"),("دوم","02"),("سوم","03"),("چهارم","04"),("پنجم","05")):
+        if word in text:return "LEVEL"+number
+    match=re.search(r"(?:level|floor)(\d+)",text)
+    return "LEVEL"+match.group(1).zfill(2) if match else text.upper()
+
+
 def build_authority_model(pipeline, answers):
     levels=_level_evidence(pipeline)
     roof=any(p.get("mechanical_role")=="ROOF_SUPPORT" for p in pipeline["architecture"].get("plans") or [])
@@ -370,22 +382,14 @@ def build_authority_model(pipeline, answers):
     approved=(answers or {}).get("_approved_drawing_manifest") or {}
     approved_rows=approved.get("sheets") if isinstance(approved,dict) else approved
     known_levels=set((project.get("levels") or {}).keys())
-    def level_token(value):
-        text=_norm(value).replace(" ","").replace("-","")
-        if text in {"ground","g","طبقههمکف","همکف"}:return "GROUND"
-        if text in {"roof","r","بام"}:return "ROOF"
-        for word,number in (("اول","01"),("دوم","02"),("سوم","03"),("چهارم","04"),("پنجم","05")):
-            if word in text:return "LEVEL"+number
-        match=re.search(r"(?:level|floor)(\d+)",text)
-        return "LEVEL"+match.group(1).zfill(2) if match else text.upper()
-    known_by_token={level_token(level):level for level in known_levels}
+    known_by_token={_approved_level_token(level):level for level in known_levels}
     for row in approved_rows or []:
         if not isinstance(row,dict) or str(row.get("drawing_type") or "").strip().upper()!="FLOOR_PLAN":
             continue
         systems=APPROVED_FAMILY_SYSTEMS.get(str(row.get("family") or "").strip().upper()) or set()
         levels=row.get("levels") or [row.get("level")]
         for level in levels:
-            resolved_level=level if level in known_levels else known_by_token.get(level_token(level))
+            resolved_level=level if level in known_levels else known_by_token.get(_approved_level_token(level))
             if resolved_level not in known_levels:
                 continue
             current=set(req.get("by_level",{}).get(resolved_level) or [])
