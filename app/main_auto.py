@@ -277,6 +277,13 @@ def analyze_project_job(project_id):
     if not p:
         db.close()
         return
+    # Never hold a database session/transaction while parsing a large DXF.
+    # Railway may use a constrained SQLite volume or a small PostgreSQL pool;
+    # either way the CAD work must not block project status and upload routes.
+    prior_answers = dict(p.answers or {})
+    discipline = prior_answers.get('discipline', 'mechanical')
+    db.close()
+    db = None
     try:
         pdir = legacy.DATA_DIR / 'projects' / str(project_id)
         inp = Path(os.getenv('TMPDIR', '/tmp')) / 'engitools-analysis' / str(project_id)
@@ -311,7 +318,6 @@ def analyze_project_job(project_id):
         if not files:
             raise ValueError('هیچ فایل DXF معتبر پیدا نشد.')
 
-        discipline = (p.answers or {}).get('discipline', 'mechanical')
         analysis = {
             'discipline': discipline,
             'architecture_analyzer_version': '3.5-project-evidence-gate',
@@ -319,11 +325,14 @@ def analyze_project_job(project_id):
             'files': [analyze_dxf_enhanced(x) for x in files],
             'inference_mode': 'architecture-first-v2-spatial',
         }
-        prior_answers = dict(p.answers or {})
         _auto, answers, qs = build_unified_questionnaire(
             analysis, discipline, prior_answers
         )
 
+        db = legacy.Session()
+        p = db.get(legacy.Project, project_id)
+        if not p:
+            return
         p.analysis = analysis
         p.questions = legacy.qlist(qs)
         p.current_question = 0
@@ -333,6 +342,11 @@ def analyze_project_job(project_id):
         db.commit()
     except Exception as e:
         traceback.print_exc()
+        if db is None:
+            db = legacy.Session()
+            p = db.get(legacy.Project, project_id)
+        if not p:
+            return
         p.status = 'awaiting_upload'
         p.last_error = str(e)
         db.commit()
@@ -340,7 +354,8 @@ def analyze_project_job(project_id):
         try:
             shutil.rmtree(Path(os.getenv('TMPDIR', '/tmp')) / 'engitools-analysis' / str(project_id), ignore_errors=True)
         finally:
-            db.close()
+            if db is not None:
+                db.close()
 
 
 

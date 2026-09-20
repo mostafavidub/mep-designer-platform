@@ -233,6 +233,14 @@ class QueueIntegrationContractTests(unittest.TestCase):
             self.assertIn('ConnectionError', warning)
             self.assertTrue(source.exists())
 
+    def test_large_dxf_analysis_does_not_hold_database_session(self):
+        source = Path('app/main_auto.py').read_text(encoding='utf-8')
+        function = source[source.index('def analyze_project_job'):source.index('\n\n\ndef _present_question')]
+        self.assertIn('prior_answers = dict(p.answers or {})', function)
+        self.assertIn('db.close()\n    db = None\n    try:', function)
+        self.assertIn('db = legacy.Session()\n        p = db.get(legacy.Project, project_id)', function)
+        self.assertLess(function.index('db.close()\n    db = None'), function.index("analysis = {"))
+
     def test_upload_failure_ui_never_uses_opaque_cannot_continue_message(self):
         source = Path('app/static/resumable-upload.js').read_text(encoding='utf-8')
         self.assertNotIn("d.error||'امکان ادامه وجود ندارد.'", source)
