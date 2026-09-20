@@ -588,7 +588,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None=
     pipeline_release_qa = pipeline_qa
     pipeline_errors = set(pipeline_qa.get("errors") or [])
     if (target_package_pending
-            and pipeline_qa.get("status") in {"FAIL", "INPUT_REQUIRED"}
+            and pipeline_qa.get("status") in {"FAIL", "INPUT_REQUIRED", "PRE_SUBMISSION"}
             and pipeline_errors
             and pipeline_errors <= ({"TARGET_DESIGN_PACKAGES_MISSING"}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)
             and ("TARGET_DESIGN_PACKAGES_MISSING" in pipeline_errors

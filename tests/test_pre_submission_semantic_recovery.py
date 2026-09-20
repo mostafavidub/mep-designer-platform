@@ -62,6 +62,17 @@ def test_exact_target_package_pipeline_input_is_not_a_release_error():
     assert _release_input_errors(report, pre_submission) == []
 
 
+def test_exact_target_package_pipeline_pre_submission_is_not_a_release_error():
+    report = {
+        "pipeline_qa": {"status": "PRE_SUBMISSION", "errors": ["TARGET_DESIGN_PACKAGES_MISSING"]},
+        "engineering_acceptance": {"status": "PASS"},
+        "enrichment": {}, "authority": {"design_basis": {"status": "PASS"}},
+    }
+    pre_submission = {"blocked_at": "target_design_packages",
+                      "blockers": ["TARGET_DESIGN_PACKAGES_MISSING"]}
+    assert _release_input_errors(report, pre_submission) == []
+
+
 def test_exact_target_package_pipeline_fail_is_disclosed_only_for_bounded_evidence_gaps():
     report = {
         "pipeline_qa": {"status": "FAIL", "errors": [
