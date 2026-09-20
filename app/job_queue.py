@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import re
 import secrets
+import hashlib
 import shutil
 import threading
 import time
@@ -87,18 +88,89 @@ def _record_worker_state(job_type, *, alive=None, error=None):
             state['error_count'] += 1
 
 
-def backup_input_without_blocking(project_id: int, original: Path) -> str:
-    """Copy an upload to object storage without blocking local analysis."""
+def _database_input_exists(project_id: int, legacy) -> bool:
+    if legacy is None or not hasattr(legacy, 'ProjectInputBlob'):
+        return False
+    db = legacy.Session()
+    try:
+        return db.query(legacy.ProjectInputBlob.id).filter_by(project_id=project_id).first() is not None
+    finally:
+        db.close()
+
+
+def _durable_input_exists(project_id: int, legacy=None) -> bool:
+    try:
+        if artifact_storage.input_is_durable(project_id):
+            return True
+    except Exception:
+        pass
+    return _database_input_exists(project_id, legacy)
+
+
+def _persist_database_input(project_id: int, original: Path, legacy) -> None:
+    """Persist the validated upload where all Railway services can read it."""
+    content = original.read_bytes()
+    digest = hashlib.sha256(content).hexdigest()
+    media_type = 'application/zip' if original.suffix.lower() == '.zip' else 'application/dxf'
+    db = legacy.Session()
+    try:
+        blob = db.query(legacy.ProjectInputBlob).filter_by(project_id=project_id).first()
+        if blob is None:
+            blob = legacy.ProjectInputBlob(project_id=project_id)
+            db.add(blob)
+        blob.filename = original.name
+        blob.media_type = media_type
+        blob.sha256 = digest
+        blob.content = content
+        db.commit()
+    finally:
+        db.close()
+
+
+def _restore_database_input(project_id: int, data_dir: Path, legacy) -> Path:
+    db = legacy.Session()
+    try:
+        blob = db.query(legacy.ProjectInputBlob).filter_by(project_id=project_id).first()
+        if blob is None:
+            raise FileNotFoundError('No durable database architecture input exists.')
+        content = bytes(blob.content)
+        if hashlib.sha256(content).hexdigest() != blob.sha256:
+            raise ValueError('Database architecture input failed SHA-256 verification.')
+        suffix = '.zip' if blob.filename.lower().endswith('.zip') else '.dxf'
+        project_dir = Path(data_dir) / 'projects' / str(project_id)
+        project_dir.mkdir(parents=True, exist_ok=True)
+        target = project_dir / f'architecture{suffix}'
+        temporary = target.with_suffix(target.suffix + '.restoring')
+        temporary.write_bytes(content)
+        os.replace(temporary, target)
+        return target
+    finally:
+        db.close()
+
+
+def backup_input_without_blocking(project_id: int, original: Path, legacy=None) -> str:
+    """Make an upload durable without making object storage mandatory."""
     if not original.exists():
         return ''
     try:
-        artifact_storage.upload_input(project_id, original)
-        return ''
+        uri = artifact_storage.upload_input(project_id, original)
+        if uri and artifact_storage.input_is_durable(project_id):
+            return ''
+        if legacy is None:
+            return 'object_storage_unavailable_and_database_fallback_not_configured'
+        _persist_database_input(project_id, original, legacy)
+        return 'input_stored_in_database_fallback'
     except Exception as exc:
+        if legacy is not None:
+            try:
+                _persist_database_input(project_id, original, legacy)
+                return f'input_stored_in_database_fallback_after_{type(exc).__name__}'[:1200]
+            except Exception as fallback_exc:
+                return f'{type(exc).__name__}: {exc}; database fallback: {fallback_exc}'[:1200]
         return f'{type(exc).__name__}: {exc}'[:1200]
 
 
-def design_input_available(project_id: int, data_dir: Path) -> bool:
+def design_input_available(project_id: int, data_dir: Path, legacy=None) -> bool:
     """True only when design can read a local or durable architecture source."""
     project_dir = Path(data_dir) / 'projects' / str(project_id)
     if any((project_dir / name).exists() for name in ('architecture.zip', 'architecture.dxf')):
@@ -107,17 +179,23 @@ def design_input_available(project_id: int, data_dir: Path) -> bool:
     if input_dir.exists() and any(input_dir.rglob('*.dxf')):
         return True
     try:
-        return artifact_storage.input_is_durable(project_id)
+        return _durable_input_exists(project_id, legacy)
     except Exception:
-        return False
+        return _database_input_exists(project_id, legacy)
 
 
-def design_input_materializable(project_id: int, data_dir: Path, safe_extract) -> bool:
+def design_input_materializable(project_id: int, data_dir: Path, safe_extract, legacy=None) -> bool:
     """Prove a source can be restored and yields at least one usable DXF."""
-    if not design_input_available(project_id, data_dir):
+    if not design_input_available(project_id, data_dir, legacy):
         return False
     try:
-        artifact_storage.ensure_design_input(project_id, data_dir, safe_extract)
+        try:
+            artifact_storage.ensure_design_input(project_id, data_dir, safe_extract)
+        except Exception:
+            if not _database_input_exists(project_id, legacy):
+                raise
+            _restore_database_input(project_id, data_dir, legacy)
+            artifact_storage.ensure_design_input(project_id, data_dir, safe_extract)
         return True
     except Exception:
         return False
@@ -439,7 +517,7 @@ def register_job_queue(app, legacy):
             # durability copy, not a prerequisite for parsing it.  A temporary
             # object-storage outage must therefore never turn a completely
             # received file into an unrecoverable ``awaiting_upload`` project.
-            storage_warning = backup_input_without_blocking(project_id, original)
+            storage_warning = backup_input_without_blocking(project_id, original, legacy)
             original_analyze(project_id)
             db = legacy.Session(); project = db.get(legacy.Project, project_id)
             success = bool(project and project.status not in ('awaiting_upload', 'uploading', 'analyzing'))
@@ -450,7 +528,7 @@ def register_job_queue(app, legacy):
                 project.analysis = analysis
                 db.commit()
             db.close()
-            if success and artifact_storage.input_is_durable(project_id):
+            if success and _durable_input_exists(project_id, legacy):
                 project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
                 for transient in (project_dir / 'architecture.zip', project_dir / 'architecture.dxf', project_dir / 'input', project_dir / '.upload_chunks'):
                     if transient.is_dir():
@@ -478,7 +556,11 @@ def register_job_queue(app, legacy):
             return
         db.close()
         try:
-            artifact_storage.ensure_design_input(project_id, legacy.DATA_DIR, legacy.safe_extract)
+            try:
+                artifact_storage.ensure_design_input(project_id, legacy.DATA_DIR, legacy.safe_extract)
+            except Exception:
+                _restore_database_input(project_id, legacy.DATA_DIR, legacy)
+                artifact_storage.ensure_design_input(project_id, legacy.DATA_DIR, legacy.safe_extract)
             original_design(project_id, revision_id)
             db = legacy.Session(); revision = db.get(legacy.Revision, revision_id)
             success = bool(revision and revision.status == 'ready')
@@ -489,7 +571,7 @@ def register_job_queue(app, legacy):
         finally:
             project_dir = Path(legacy.DATA_DIR) / 'projects' / str(project_id)
             try:
-                durable_input = artifact_storage.input_is_durable(project_id)
+                durable_input = _durable_input_exists(project_id, legacy)
             except Exception:
                 durable_input = False
             if durable_input:

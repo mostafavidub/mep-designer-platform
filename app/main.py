@@ -72,6 +72,22 @@ class ArtifactBlob(Base):
     content: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+class ProjectInputBlob(Base):
+    """Durable architecture input used when object storage is unavailable.
+
+    Railway web, analysis and design services do not share a local filesystem.
+    Keeping this separate from generated artifacts prevents an input from ever
+    being exposed as a downloadable engineering deliverable.
+    """
+    __tablename__ = 'project_input_blobs'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey('projects.id'), unique=True, index=True)
+    filename: Mapped[str] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(100))
+    sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
 class RuleCandidate(Base):
     __tablename__ = 'rule_candidates'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

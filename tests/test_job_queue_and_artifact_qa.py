@@ -2,7 +2,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import ezdxf
 
@@ -232,6 +232,32 @@ class QueueIntegrationContractTests(unittest.TestCase):
                 warning = backup_input_without_blocking(81, source)
             self.assertIn('ConnectionError', warning)
             self.assertTrue(source.exists())
+
+    def test_object_storage_none_is_not_treated_as_durable_success(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / 'architecture.dxf'
+            source.write_bytes(b'validated architecture')
+            legacy = MagicMock()
+            with patch('app.job_queue.artifact_storage.upload_input', return_value=None), patch(
+                'app.job_queue._persist_database_input'
+            ) as persist:
+                warning = backup_input_without_blocking(81, source, legacy)
+            persist.assert_called_once_with(81, source, legacy)
+            self.assertEqual(warning, 'input_stored_in_database_fallback')
+
+    def test_materialization_restores_database_fallback_after_object_storage_miss(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            legacy = MagicMock()
+            with patch('app.job_queue.design_input_available', return_value=True), patch(
+                'app.job_queue.artifact_storage.ensure_design_input',
+                side_effect=[FileNotFoundError('object missing'), root / 'projects' / '85' / 'architecture.dxf'],
+            ) as ensure, patch('app.job_queue._database_input_exists', return_value=True), patch(
+                'app.job_queue._restore_database_input'
+            ) as restore:
+                self.assertTrue(design_input_materializable(85, root, lambda *_: None, legacy))
+            restore.assert_called_once_with(85, root, legacy)
+            self.assertEqual(ensure.call_count, 2)
 
     def test_upload_failure_ui_never_uses_opaque_cannot_continue_message(self):
         source = Path('app/static/resumable-upload.js').read_text(encoding='utf-8')
