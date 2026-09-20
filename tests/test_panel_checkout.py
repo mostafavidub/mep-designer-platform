@@ -61,6 +61,57 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_handoff_targets_project_resume_flow_not_blank_new_project(flow):
+    browser, _, _, _, _, _ = flow
+    result = browser.post('/api/upload/init/electrical', json={'name': 'handoff route fixture'})
+    pid = result.json()['project_id']
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.status = 'ready_to_design'
+        project.questions = []
+        project.answers = {'discipline': 'electrical'}
+        db.commit()
+    response = browser.post(f'/projects/{pid}/panel-handoff')
+    assert response.status_code == 200, response.text
+    assert '/panel/projects#handoff=' in response.json()['url']
+    assert '/panel/projects/new#handoff=' not in response.json()['url']
+
+
+def test_incomplete_draft_restores_file_answers_step_and_is_visible_to_admin(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-panel-token": "checkout-test-only-secret"}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    auth = {**headers, 'x-customer-session': login['session']}
+    draft_id = f"PRJ-DRAFT-{uuid4().hex[:10]}"
+    draft = {
+        "id": draft_id, "title": "پیش‌نویس پایدار", "service": "طراحی مکانیک",
+        "status": "در انتظار تکمیل", "checkoutState": "draft", "resumeAction": "complete",
+        "currentStep": 2, "progress": 0, "amount": 0, "area": 200,
+        "fileKey": f"projects/{login['userId']}/drawing.dxf", "fileName": "drawing.dxf",
+        "answers": {"kind": "مسکونی", "city": "تهران", "heating_system": "رادیاتور"},
+        "analysis": {"status": "ready", "area": 200, "questions": [{"key": "gas"}]},
+        "note": "پاسخ‌ها تا این مرحله ذخیره شده‌اند",
+    }
+    saved = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [draft]})
+    assert saved.status_code == 200, saved.text
+
+    restored = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    row = next(item for item in restored['projects'] if item['id'] == draft_id)
+    assert row['status'] == 'در انتظار تکمیل'
+    assert row['resumeAction'] == 'complete'
+    assert row['currentStep'] == 2
+    assert row['fileName'] == 'drawing.dxf'
+    assert row['answers']['city'] == 'تهران'
+    assert row['analysis']['area'] == 200
+
+    admin = browser.post('/internal/panel/admin/accounts', headers=headers, json={'action': 'state'})
+    admin_row = next(item for item in admin.json()['projects'] if item['id'] == draft_id)
+    assert admin_row['status'] == 'در انتظار تکمیل'
+    assert admin_row['answers']['heating_system'] == 'رادیاتور'
+
+
 def test_unpaid_quote_is_durable_and_resumes_payment_after_page_close(flow):
     browser, auth, uid, pid, token, order = flow
 

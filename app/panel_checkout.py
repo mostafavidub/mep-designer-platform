@@ -348,6 +348,8 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             raise HTTPException(400, "فهرست پروژه‌ها معتبر نیست.")
         now = datetime.utcnow().isoformat() + "Z"
         allowed = {"title", "service", "area", "amount", "status", "progress", "date", "answers",
+                   "checkoutState", "resumeAction", "paymentRequired", "currentStep", "note",
+                   "fileKey", "fileName", "analysis",
                    "engineProjectId", "engineProjectToken", "quoteToken", "paid", "designStage",
                    "designLabel", "designDetail", "designTimeline", "outputReady", "lastError"}
         for item in rows:
@@ -356,7 +358,10 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             project_id = str(item["id"])
             payload = {key: item[key] for key in allowed if key in item}
             encoded = json.dumps(payload, ensure_ascii=False)
-            if len(encoded.encode()) > 20000:
+            # A resumable draft includes the bounded architectural-analysis
+            # snapshot required to rebuild its questionnaire after a browser
+            # closes.  Keep a strict cap, but do not truncate that evidence.
+            if len(encoded.encode()) > 250000:
                 raise HTTPException(400, "حجم اطلاعات پروژه بیش از حد مجاز است.")
             row = db.get(PanelProject, project_id)
             if row and row.user_id != uid:
@@ -478,7 +483,10 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             db.add(Handoff(token_hash=digest(token), project_id=pid, expires=int(time.time()) + 86400))
             db.commit()
             origin = os.environ.get("PANEL_PUBLIC_URL", "https://panel.planha.com").rstrip("/")
-            return {"url": f"{origin}/panel/projects/new#handoff={token}"}
+            # The fragment keeps the one-time token out of server logs.  The
+            # panel claims it and then routes to the durable project identity;
+            # never force a returning customer into a blank new-project flow.
+            return {"url": f"{origin}/panel/projects#handoff={token}"}
         finally:
             db.close()
 
