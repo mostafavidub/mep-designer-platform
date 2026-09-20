@@ -132,3 +132,17 @@ def object_storage_health():
         'free_bytes': usage.free,
     }
     return status
+
+
+@app.get('/volume_health')
+def volume_health():
+    """Fast local-volume probe that never waits for database or S3 calls."""
+    usage = shutil.disk_usage(str(main_auto.legacy.DATA_DIR))
+    return {
+        'status': 'ok',
+        'path': str(main_auto.legacy.DATA_DIR),
+        'total_bytes': usage.total,
+        'used_bytes': usage.used,
+        'free_bytes': usage.free,
+        'used_percent': round((usage.used / usage.total) * 100, 2) if usage.total else 0,
+    }

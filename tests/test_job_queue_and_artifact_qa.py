@@ -150,6 +150,13 @@ class QueueIntegrationContractTests(unittest.TestCase):
         self.assertIn("app.router.routes.remove(route)", source)
         self.assertIn("app.add_api_route('/system_health', integrated_system_health", source)
 
+    def test_volume_health_probe_avoids_database_and_object_storage(self):
+        source = Path('app/main_health.py').read_text(encoding='utf-8')
+        function = source[source.index("@app.get('/volume_health')"):]
+        self.assertIn("shutil.disk_usage(str(main_auto.legacy.DATA_DIR))", function)
+        self.assertNotIn('artifact_storage.healthcheck()', function)
+        self.assertNotIn('legacy.Session()', function)
+
     def test_storage_exhaustion_keeps_http_repairable_but_does_not_start_workers(self):
         source = Path('app/job_queue.py').read_text(encoding='utf-8')
         startup = source[source.index('def start_persistent_workers'):source.index("@app.on_event('shutdown')")]
