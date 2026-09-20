@@ -146,8 +146,8 @@ def _placeholder_profile(candidate):
     }
 
 
-def infer_architecture_facts(analysis, discipline):
-    auto = v2.infer_architecture_facts(analysis, discipline)
+def _enrich_level_detection(auto, analysis, discipline):
+    auto = dict(auto or {})
     candidates = _collect_candidates((analysis or {}).get("files") or [])
     profiles = [dict(p) for p in (auto.get("level_profiles") or [])]
     restored = []
@@ -227,9 +227,19 @@ def infer_architecture_facts(analysis, discipline):
     return auto
 
 
+def infer_architecture_facts(analysis, discipline):
+    """Standalone compatibility entrypoint used by focused inference tests."""
+    return _enrich_level_detection(v2.infer_architecture_facts(analysis, discipline), analysis, discipline)
+
+
 def install(main_auto_module):
-    """Patch only the inference binding used by project analysis."""
+    """Add level evidence without discarding previously installed enrichers."""
     if getattr(main_auto_module, "_level_detection_v3_installed", False):
         return
-    main_auto_module.infer_architecture_facts = infer_architecture_facts
+    base_infer = main_auto_module.infer_architecture_facts
+
+    def infer(analysis, discipline):
+        return _enrich_level_detection(base_infer(analysis, discipline), analysis, discipline)
+
+    main_auto_module.infer_architecture_facts = infer
     main_auto_module._level_detection_v3_installed = True

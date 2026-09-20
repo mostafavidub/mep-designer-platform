@@ -1,9 +1,23 @@
 import unittest
+from types import SimpleNamespace
 
 from app import level_detection_v3 as v3
 
 
 class LevelDetectionV3Tests(unittest.TestCase):
+    def test_install_preserves_upstream_inference_fields(self):
+        module=SimpleNamespace(
+            infer_architecture_facts=lambda analysis,discipline:{
+                'effective_unit_to_m':1.0,
+                'unit_inference':{'status':'PASS'},
+                'level_profiles':[],
+            }
+        )
+        v3.install(module)
+        result=module.infer_architecture_facts({'files':[]},'mechanical')
+        self.assertEqual(result['effective_unit_to_m'],1.0)
+        self.assertEqual(result['unit_inference']['status'],'PASS')
+
     def test_mezzanine_is_restored_when_explicit_layout_title_has_no_room_labels(self):
         analysis = {
             'files': [{
