@@ -6,6 +6,7 @@ from ezdxf import bbox
 from . import main_auto
 
 _original_analyze_dxf_enhanced = main_auto.analyze_dxf_enhanced
+_original_infer_architecture_facts = main_auto.infer_architecture_facts
 
 
 def _dimension_measurements(doc):
@@ -140,6 +141,37 @@ def analyze_dxf_enhanced(path):
     return result
 
 
+def _aggregate_unit_inference(analysis):
+    rows=[]
+    for item in (analysis or {}).get('files') or []:
+        scale=item.get('effective_unit_to_m')
+        evidence=item.get('unit_inference') or {}
+        try: scale=float(scale)
+        except (TypeError,ValueError): continue
+        if scale <= 0 or evidence.get('confidence') not in {'high','medium'}:
+            continue
+        rows.append({'file':item.get('file'),'scale_to_m':scale,'evidence':evidence})
+    file_count=len((analysis or {}).get('files') or [])
+    if not rows or len(rows) != file_count:
+        return {'status':'INPUT_REQUIRED','effective_scale_to_m':None,
+                'errors':['CALIBRATED_ARCHITECTURAL_UNIT_REQUIRED'],'files':rows}
+    scales={round(row['scale_to_m'],12) for row in rows}
+    if len(scales) != 1:
+        return {'status':'INPUT_REQUIRED','effective_scale_to_m':None,
+                'errors':['CONFLICTING_ARCHITECTURAL_FILE_UNITS'],'files':rows}
+    return {'status':'PASS','effective_scale_to_m':rows[0]['scale_to_m'],
+            'errors':[],'files':rows,'provenance':'per-file-converging-unit-evidence'}
+
+
+def infer_architecture_facts(analysis, discipline):
+    result=_original_infer_architecture_facts(analysis,discipline)
+    project_unit=_aggregate_unit_inference(analysis)
+    result['unit_inference']=project_unit
+    result['effective_unit_to_m']=project_unit['effective_scale_to_m']
+    return result
+
+
 # Patch module globals used by analyze_project_job and legacy workflow.
 main_auto.analyze_dxf_enhanced = analyze_dxf_enhanced
 main_auto.legacy.analyze_dxf = analyze_dxf_enhanced
+main_auto.infer_architecture_facts = infer_architecture_facts

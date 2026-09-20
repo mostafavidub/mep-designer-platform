@@ -1,6 +1,6 @@
 import ezdxf
 
-from app.unit_sanity import _infer_scale
+from app.unit_sanity import _aggregate_unit_inference, _infer_scale
 
 
 def _unknown_unit_doc(*, complete_evidence=True):
@@ -26,3 +26,22 @@ def test_scale_label_and_frame_alone_do_not_create_an_engineering_unit():
     assert result['effective_scale_to_m'] is None
     assert result['confidence']=='low'
     assert result['paper_space_metre_evidence']['status']=='INSUFFICIENT_EVIDENCE'
+
+
+def test_project_unit_is_published_only_when_every_file_agrees():
+    result=_aggregate_unit_inference({'files':[
+        {'file':'a.dxf','effective_unit_to_m':1.0,'unit_inference':{'confidence':'high'}},
+        {'file':'b.dxf','effective_unit_to_m':1.0,'unit_inference':{'confidence':'medium'}},
+    ]})
+    assert result['status']=='PASS'
+    assert result['effective_scale_to_m']==1.0
+
+
+def test_conflicting_file_units_remain_input_required():
+    result=_aggregate_unit_inference({'files':[
+        {'file':'a.dxf','effective_unit_to_m':1.0,'unit_inference':{'confidence':'high'}},
+        {'file':'b.dxf','effective_unit_to_m':.001,'unit_inference':{'confidence':'high'}},
+    ]})
+    assert result['status']=='INPUT_REQUIRED'
+    assert result['effective_scale_to_m'] is None
+    assert result['errors']==['CONFLICTING_ARCHITECTURAL_FILE_UNITS']
