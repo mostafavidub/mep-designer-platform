@@ -10,7 +10,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import heapq
 import hashlib
+import hmac
 import json
+import os
 import re
 from pathlib import Path
 
@@ -344,6 +346,18 @@ def _verify_chain(events):
     return True
 
 
+def _require_admin(request):
+    expected = os.getenv("PANEL_BRIDGE_TOKEN", "")
+    supplied = request.headers.get("x-panel-token", "")
+    if expected and supplied and hmac.compare_digest(expected, supplied):
+        return
+    forwarded = request.headers.get("x-forwarded-host", "").split(",", 1)[0].strip().lower()
+    host = (forwarded or request.headers.get("host", "")).split(":", 1)[0]
+    allowed = {value.strip().lower() for value in os.getenv("ADMIN_REVIEW_HOSTS", "admin.planha.com").split(",") if value.strip()}
+    if host not in allowed:
+        raise HTTPException(403, "دسترسی به سوابق پشتیبانی فقط از پنل ادمین مجاز است.")
+
+
 def install(app, legacy):
     class ArchitectureReviewEvent(legacy.Base):
         __tablename__ = "architecture_review_events"
@@ -482,6 +496,7 @@ def install(app, legacy):
 
     @app.get("/admin/projects/{pid}/architecture-review")
     def admin_review(pid: int, request: Request):
+        _require_admin(request)
         db = legacy.Session(); project = db.get(legacy.Project, pid)
         if not project: db.close(); raise HTTPException(404)
         state = _review_state(legacy, project)
@@ -495,6 +510,7 @@ def install(app, legacy):
 
     @app.get("/admin/architecture-reviews")
     def admin_review_index(request: Request):
+        _require_admin(request)
         db = legacy.Session()
         rows = db.query(ArchitectureReviewEvent).order_by(ArchitectureReviewEvent.id.desc()).limit(1000).all()
         project_ids = list(dict.fromkeys(row.project_id for row in rows))

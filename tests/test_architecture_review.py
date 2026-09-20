@@ -2,7 +2,7 @@ import unittest
 
 from fastapi import HTTPException
 
-from app.architecture_review import _require_revision, _resolve_boundary, _validate_space
+from app.architecture_review import _require_admin, _require_revision, _resolve_boundary, _validate_space
 
 
 def square_state():
@@ -19,6 +19,14 @@ def square_state():
 
 
 class ArchitectureReviewTests(unittest.TestCase):
+    def test_admin_audit_rejects_untrusted_public_host(self):
+        class Headers(dict):
+            get = dict.get
+        request = type("Request", (), {"headers": Headers({"host": "web-app.railway.app"})})()
+        with self.assertRaises(HTTPException) as error:
+            _require_admin(request)
+        self.assertEqual(error.exception.status_code, 403)
+
     def test_stale_parallel_editor_is_rejected(self):
         with self.assertRaises(HTTPException) as error:
             _require_revision({"revision": 4}, {"review_revision": 3})
