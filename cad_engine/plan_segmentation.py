@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import json
+import math
 import re
 import ezdxf
 from ezdxf import bbox
@@ -168,7 +169,7 @@ def analyze_plan_frames(src):
         # normally an inner wall/room outline, not a sheet frame.
         if not content_hit:continue
         if not layer_hit and not (family_count>=2 and title_hit):continue
-        evidence={"print_layer":layer_hit,"repeated_geometry":family_count>=2,
+        evidence={"print_layer":layer_hit,"repeated_geometry":family_count>=2,"closed_frame":True,
                   "nested_border":nested>0,"drawing_title":title_hit,"substantial_content":content_hit}
         score=(30 if layer_hit else 0)+(20 if family_count>=2 else 0)+(10 if nested else 0)+(25 if title_hit else 0)+(15 if content_hit else 0)
         candidates.append({**row,"title_text":texts,"entity_count":count,"graphic_entity_count":graphic,
@@ -202,6 +203,25 @@ def analyze_plan_frames(src):
 def detect_print_plans(src):
     analysis=analyze_plan_frames(src)
     frames=[x for x in analysis["candidates"] if x["confidence"]>=70]
+    recovered=_recover_title_anchored_plan_regions(src)
+    # A consultant may omit one border among an otherwise valid repeated
+    # sheet family.  Recover only title anchors not already owned by a closed
+    # accepted frame; never replace the stronger framed evidence.
+    for row in recovered:
+        anchor=row.get("title_anchor")
+        if any(_inside(anchor,frame["bounds"]) for frame in frames):continue
+        bounds=list(row["bounds"])
+        for frame in frames:
+            other=frame["bounds"]
+            horizontal_overlap=min(bounds[2],other[2])-max(bounds[0],other[0])>0
+            vertical_overlap=min(bounds[3],other[3])-max(bounds[1],other[1])>0
+            if horizontal_overlap and anchor[1]>=other[3]:bounds[1]=max(bounds[1],other[3])
+            elif horizontal_overlap and anchor[1]<=other[1]:bounds[3]=min(bounds[3],other[1])
+            if vertical_overlap and anchor[0]>=other[2]:bounds[0]=max(bounds[0],other[2])
+            elif vertical_overlap and anchor[0]<=other[0]:bounds[2]=min(bounds[2],other[0])
+        if bounds[2]<=bounds[0] or bounds[3]<=bounds[1]:continue
+        row["bounds"]=bounds;row["width"]=bounds[2]-bounds[0];row["height"]=bounds[3]-bounds[1]
+        frames.append(row)
     frames=sorted(frames,key=lambda x:(-x["bounds"][1],x["bounds"][0]))
     plans=[]
     for i,frame in enumerate(frames):
@@ -242,6 +262,79 @@ def detect_print_plans(src):
         if p["drawing_type"]=="ARCH_FLOOR_PLAN" and p["mechanical_role"]!="PRIMARY_FLOOR":
             p["mechanical_role"]="DUPLICATE_REFERENCE"
     return plans
+
+
+def _recover_title_anchored_plan_regions(src):
+    """Recover genuine plan regions when the consultant omitted closed frames.
+
+    This is deliberately not a whole-file fallback.  An accepted region needs
+    an explicit plan title, independent neighbouring title separators and a
+    substantial local population of drawable entities.  The resulting bounds
+    are therefore evidence from the uploaded architecture, not invented sheet
+    geometry.  Files without enough evidence remain unresolved.
+    """
+    doc=ezdxf.readfile(src);entities=list(doc.modelspace());anchors=[]
+    for entity in entities:
+        if entity.dxftype() not in {"TEXT","MTEXT"}:continue
+        value=_text(entity);point=_point(entity);kind=_classify(value)
+        if not point or "پلان" not in _norm(value) and "plan" not in _norm(value):continue
+        if kind=="UNKNOWN":continue
+        anchors.append({"point":point,"text":value,"drawing_type":kind,
+                        "represented_levels":_levels(value)})
+    if not anchors:return []
+    # Keep the original coordinate: rounding can turn the current anchor into
+    # its own apparent right-hand neighbour and clip the recovered region at
+    # the title insertion point.
+    xs=sorted(set(row["point"][0] for row in anchors))
+    if len(xs)<2:return []
+    gaps=sorted(b-a for a,b in zip(xs,xs[1:]) if b-a>1e-6)
+    typical_gap=gaps[len(gaps)//2] if gaps else None
+    if not typical_gap:return []
+    recovered=[]
+    for anchor in anchors:
+        if anchor["drawing_type"] not in {"ARCH_FLOOR_PLAN","ROOF_PLAN"}:continue
+        x,y=anchor["point"];lefts=[value for value in xs if value<x-1e-9];rights=[value for value in xs if value>x+1e-9]
+        left=(x+max(lefts))/2 if lefts else x-typical_gap/2
+        right=(x+min(rights))/2 if rights else x+typical_gap/2
+        width=right-left
+        if width<=0:continue
+        column_ys=sorted(row["point"][1] for row in anchors
+                         if abs(row["point"][0]-x)<=typical_gap*.35 and abs(row["point"][1]-y)>1e-9)
+        below=[value for value in column_ys if value<y];above=[value for value in column_ys if value>y]
+        search_bottom=(y+max(below))/2 if below else y-width*4
+        search_top=(y+min(above))/2 if above else y+width*4
+        local=[]
+        for entity in entities:
+            if entity.dxftype() in {"TEXT","MTEXT","ATTRIB","ATTDEF","DIMENSION","LEADER"}:continue
+            try:
+                extent=bbox.extents([entity],fast=True)
+                if not extent.has_data:continue
+                box=(float(extent.extmin.x),float(extent.extmin.y),float(extent.extmax.x),float(extent.extmax.y))
+            except Exception:continue
+            center=((box[0]+box[2])/2,(box[1]+box[3])/2)
+            if left<=center[0]<=right and search_bottom<=center[1]<=search_top:
+                local.append((box,center))
+        if len(local)<25:continue
+        centers_y=[row[1][1] for row in local]
+        low=_quantile(centers_y,.01);high=_quantile(centers_y,.99)
+        retained=[row for row in local if low<=row[1][1]<=high]
+        if len(retained)<25:continue
+        bottom=min(y,min(row[0][1] for row in retained));top=max(y,max(row[0][3] for row in retained))
+        if top-bottom<=width*.25:continue
+        pad=max(width*.015,1e-6)
+        bounds=[left+pad,bottom-pad,right-pad,top+pad]
+        recovered.append({"bounds":bounds,"width":bounds[2]-bounds[0],"height":bounds[3]-bounds[1],
+                          "short":min(bounds[2]-bounds[0],bounds[3]-bounds[1]),
+                          "long":max(bounds[2]-bounds[0],bounds[3]-bounds[1]),"layer":"",
+                          "handle":"","title_text":[anchor["text"]],"entity_count":len(local),
+                          "graphic_entity_count":len(local),"drawing_type":anchor["drawing_type"],
+                          "level":anchor["represented_levels"][0] if len(anchor["represented_levels"])==1 else None,
+                          "represented_levels":anchor["represented_levels"],
+                          "evidence":{"explicit_plan_title":True,"title_cluster_separation":True,
+                                      "substantial_local_content":True,"closed_frame":False},
+                          "confidence":85,"recovery_method":"title_anchored_content_region",
+                          "title_anchor":anchor["point"]})
+    return sorted(recovered,key=lambda row:(-row["bounds"][1],row["bounds"][0]))
 
 
 def _plans_from_authoritative_profiles(profiles, detected_frames=None):
@@ -442,18 +535,50 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         bounds=architecture.get("bounds") or [0,0,0,0]
         plans=[{"plan_id":"PLAN-01","bounds":list(bounds),"source":"single_plan_fallback",
                 "drawing_type":"ARCH_FLOOR_PLAN","level":None,"mechanical_role":"PRIMARY_FLOOR"}]
-    ownership_ambiguities=[]; ownership_unassigned=[]
-    def owner(point, entity_type="entity", entity_id=None):
+    doc=ezdxf.readfile(src); source_entities=list(doc.modelspace())
+    ownership_ambiguities=[]; ownership_unassigned=[]; ownership_excluded=[]
+    # At least two independently confirmed closed frames establish a real
+    # drawing-board inventory.  A recovered missing border may coexist with
+    # it; isolated unenclosed text far outside every board can then be retained
+    # as explicitly excluded source residue.  Title-only files (P2 class) do
+    # not receive this exemption.
+    closed_frame_inventory=sum(1 for p in plans
+        if (p.get("frame_evidence") or {}).get("closed_frame") is True)>=2
+    authoritative_widths=[min(p["bounds"][2]-p["bounds"][0],p["bounds"][3]-p["bounds"][1])
+                          for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"}]
+    isolation_radius=max(authoritative_widths,default=2.0)*.5
+    graphical_centers=[]
+    for entity in source_entities:
+        if entity.dxftype() in {"TEXT","MTEXT","ATTRIB","ATTDEF","DIMENSION","LEADER"}:continue
+        try:
+            extent=bbox.extents([entity],fast=True)
+            if extent.has_data:graphical_centers.append(((extent.extmin.x+extent.extmax.x)/2,
+                                                         (extent.extmin.y+extent.extmax.y)/2))
+        except Exception:pass
+    title_region_inventory=(len([p for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"}])>=2 and
+                            all((p.get("frame_evidence") or {}).get("explicit_plan_title") is True
+                                for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"}))
+    room_points=[room.get("label_point") for room in architecture.get("rooms") or [] if room.get("label_point")]
+    def owner(point, entity_type="entity", entity_id=None, *, isolated_unenclosed_room=False):
         matches=[p for p in plans if _inside(point,p["bounds"])] if point else []
         evidence={"entity_type":entity_type,"entity_id":entity_id,"point":point,
                   "candidate_plan_ids":[p["plan_id"] for p in matches]}
         if len(matches)>1:
             ownership_ambiguities.append(evidence); return None
+        if not matches and (closed_frame_inventory or title_region_inventory) and isolated_unenclosed_room:
+            evidence["exclusion_reason"]="isolated_unenclosed_room_text_outside_confirmed_drawing_frames"
+            ownership_excluded.append(evidence); return None
         if not matches:
             ownership_unassigned.append(evidence); return None
         return matches[0]
     for room in architecture.get("rooms") or []:
-        p=owner(room.get("label_point"),"room",room.get("id")); room["plan_id"]=p["plan_id"] if p else None
+        point=room.get("label_point")
+        other_nearby=sum(1 for other in room_points if point and 1e-9<math.dist(point,other)<=isolation_radius)
+        graphical_support=any(math.dist(point,other)<=isolation_radius for other in graphical_centers) if point else False
+        isolated=not room.get("polygon") and other_nearby==0 and not graphical_support
+        p=owner(point,"room",room.get("id"),isolated_unenclosed_room=isolated)
+        room["plan_id"]=p["plan_id"] if p else None
+        if not p and isolated and (closed_frame_inventory or title_region_inventory):room["scope_status"]="EXCLUDED_SOURCE_RESIDUE"
     for item in recognition.get("detections") or []:
         p=owner(item.get("point"),"detection",item.get("id")); item["plan_id"]=p["plan_id"] if p else None
 
@@ -461,7 +586,7 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         promoted=_promote_room_evidenced_floor_plans(plans,architecture.get("rooms") or [])
         architecture.setdefault("quality",{})["room_evidence_promoted_plan_ids"]=promoted
 
-    doc=ezdxf.readfile(src); source_entities=list(doc.modelspace()); text_shafts=[]
+    text_shafts=[]
     for plan in plans:
         envelope=_drawable_content_envelope(source_entities,plan["bounds"])
         plan["content_envelope"]=envelope
@@ -503,6 +628,7 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         "source_unit_code":int(doc.header.get('$INSUNITS',0) or 0),
         "orientation":architecture.get("orientation") or "SOURCE_WCS",
         "plans":ownership,"ambiguities":ownership_ambiguities,"unassigned":ownership_unassigned,
+        "excluded_source_evidence":ownership_excluded,
     }
     architecture["quality"]["ambiguous_plan_ownership_count"]=len(ownership_ambiguities)
     architecture["quality"]["unassigned_plan_entity_count"]=len(ownership_unassigned)

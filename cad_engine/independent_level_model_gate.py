@@ -178,6 +178,9 @@ def build_independent_level_model(source_path: Path, architecture: dict, recogni
                     if plan.get("mechanical_role") in {"PRIMARY_FLOOR", "ROOF_SUPPORT", "ROOF_ANALYSIS_SUPPORT"}]
     plans = [plan for plan in source_views if plan.get("mechanical_role") in {"PRIMARY_FLOOR", "ROOF_SUPPORT"}]
     errors, missing, warnings = [], [], []
+    ownership_contract=architecture.get("level_ownership_contract") or {}
+    if ownership_contract.get("status") != "PASS":
+        errors.append("ARCHITECTURAL_LEVEL_OWNERSHIP_UNRESOLVED")
     if not unit_to_m or not math.isfinite(float(unit_to_m)) or float(unit_to_m) <= 0:
         missing.append("CALIBRATED_ARCHITECTURAL_UNIT_REQUIRED")
     plan_ids = [str(plan.get("plan_id") or "") for plan in plans]
@@ -342,6 +345,7 @@ def build_independent_level_model(source_path: Path, architecture: dict, recogni
         "immutable_source_identity": bool(source_hash),
         "calibrated_units": not any("CALIBRATED_ARCHITECTURAL_UNIT_REQUIRED" in row for row in missing),
         "confirmed_frame_inventory": bool(plans),
+        "authoritative_ownership_contract": ownership_contract.get("status") == "PASS",
         "drawing_type_classification": all(model["kind"] in {"FLOOR", "TYPICAL_FLOOR", "ROOF"} for model in models),
         "unique_plan_identity": bool(plan_ids) and len(plan_ids)==len(set(plan_ids)),
         "normalized_level_identity": bool(level_ids) and all(not row.startswith("UNRESOLVED-") for row in level_ids),

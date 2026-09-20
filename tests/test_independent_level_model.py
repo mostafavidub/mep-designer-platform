@@ -32,7 +32,19 @@ def _architecture(specs):
             rooms.append({"id":f"ROOM-{index}","plan_id":pid,"label_point":point})
             detections.append({"id":f"EQ-{index}","plan_id":pid,"point":point})
         shafts.append({"id":f"SHAFT-{index}","plan_id":pid,"point":point})
-    return {"plans":plans,"rooms":rooms,"shafts":shafts},{"detections":detections}
+    return {"plans":plans,"rooms":rooms,"shafts":shafts,
+            "level_ownership_contract":{"status":"PASS"}},{"detections":detections}
+
+
+def test_failed_architectural_ownership_contract_cannot_report_pass(tmp_path):
+    path=tmp_path/"source.dxf";doc=ezdxf.new("R2013");doc.modelspace().add_line((0,0),(10,10));doc.saveas(path)
+    architecture={"plans":[{"plan_id":"P1","bounds":[0,0,10,10],"content_bounds":[0,0,10,10],
+                            "drawing_type":"ARCH_FLOOR_PLAN","mechanical_role":"PRIMARY_FLOOR","level":"GROUND"}],
+                  "rooms":[],"shafts":[],"level_ownership_contract":{"status":"FAIL"}}
+    result=build_independent_level_model(Path(path),architecture,{"detections":[]},unit_to_m=.001)
+    assert result["status"]=="FAIL"
+    assert "ARCHITECTURAL_LEVEL_OWNERSHIP_UNRESOLVED" in result["errors"]
+    assert result["checks"]["authoritative_ownership_contract"] is False
 
 
 def test_level_identity_normalizes_persian_english_and_roof():

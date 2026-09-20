@@ -1,7 +1,7 @@
 import ezdxf
 
 from cad_engine.plan_isolation_acceptance import evaluate_plan_isolation
-from cad_engine.plan_segmentation import _drawable_content_envelope
+from cad_engine.plan_segmentation import _drawable_content_envelope, apply_plan_scopes
 
 
 def test_unresolved_architectural_ownership_blocks_engineering():
@@ -45,3 +45,34 @@ def test_missing_authoritative_content_envelope_blocks_isolation():
         "topology":{"nodes":[],"edges":[]},"routing":{"routes":[]}})
     assert result["status"]=="FAIL"
     assert "invalid_plan_content_envelope" in result["errors"]
+
+
+def test_isolated_unenclosed_text_outside_confirmed_frames_is_audited_not_bound(tmp_path):
+    path=tmp_path/"residue.dxf";doc=ezdxf.new("R2013");doc.layers.add("suport");msp=doc.modelspace()
+    for offset,title in ((0,"پلان معماری طبقه همکف"),(40,"پلان معماری طبقه اول")):
+        msp.add_lwpolyline([(offset,0),(offset+30,0),(offset+30,21),(offset,21)],close=True,dxfattribs={"layer":"suport"})
+        msp.add_text(title,dxfattribs={"insert":(offset+2,18),"height":.2})
+        for index in range(30):msp.add_line((offset+2+index%5,2+index//5),(offset+3+index%5,2+index//5))
+    doc.saveas(path)
+    architecture={"bounds":[0,0,200,200],"rooms":[{"id":"R-RESIDUE","label_point":(150,150),"polygon":None}],
+                  "shafts":[],"walls":[],"quality":{}}
+    scoped,_=apply_plan_scopes(path,architecture,{"detections":[]})
+    contract=scoped["level_ownership_contract"]
+    assert contract["status"]=="PASS"
+    assert contract["unassigned"]==[]
+    assert contract["excluded_source_evidence"][0]["entity_id"]=="R-RESIDUE"
+
+
+def test_unframed_cluster_outside_confirmed_frames_remains_unresolved(tmp_path):
+    path=tmp_path/"cluster.dxf";doc=ezdxf.new("R2013");doc.layers.add("suport");msp=doc.modelspace()
+    for offset,title in ((0,"پلان معماری طبقه همکف"),(40,"پلان معماری طبقه اول")):
+        msp.add_lwpolyline([(offset,0),(offset+30,0),(offset+30,21),(offset,21)],close=True,dxfattribs={"layer":"suport"})
+        msp.add_text(title,dxfattribs={"insert":(offset+2,18),"height":.2})
+        for index in range(30):msp.add_line((offset+2+index%5,2+index//5),(offset+3+index%5,2+index//5))
+    doc.saveas(path)
+    architecture={"bounds":[0,0,200,200],"rooms":[
+        {"id":"R1","label_point":(150,150),"polygon":None},
+        {"id":"R2","label_point":(151,150),"polygon":None}],"shafts":[],"walls":[],"quality":{}}
+    scoped,_=apply_plan_scopes(path,architecture,{"detections":[]})
+    assert scoped["level_ownership_contract"]["status"]=="FAIL"
+    assert len(scoped["level_ownership_contract"]["unassigned"])==2

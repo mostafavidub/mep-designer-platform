@@ -57,3 +57,26 @@ def test_inset_wall_border_does_not_duplicate_print_frame(tmp_path):
     msp.add_lwpolyline([(1,1),(20,1),(20,28.7),(1,28.7)],close=True,dxfattribs={"layer":"WALL"})
     doc.saveas(path)
     assert len(detect_print_plans(path))==1
+
+
+def test_explicit_title_and_local_geometry_recover_plan_without_closed_frame(tmp_path):
+    path=tmp_path/"open-frame.dxf";doc=ezdxf.new("R2013");msp=doc.modelspace()
+    for x,title in ((10,"پلان نعل درگاه طبقه همکف"),(40,"پلان معماری طبقه همکف"),(70,"پلان موقعیت")):
+        msp.add_mtext(title,dxfattribs={"char_height":.2}).set_location((x,0))
+        for i in range(40):
+            xx=x-10+(i%8)*2;yy=4+(i//8)*2
+            msp.add_line((xx,yy),(xx+1,yy),dxfattribs={"layer":"0"})
+    doc.saveas(path)
+    plans=detect_print_plans(path)
+    assert len(plans)==1
+    assert plans[0]["drawing_type"]=="ARCH_FLOOR_PLAN"
+    assert plans[0]["level"]=="GROUND"
+    assert plans[0]["frame_evidence"]["closed_frame"] is False
+
+
+def test_single_title_without_independent_region_separators_does_not_invent_plan(tmp_path):
+    path=tmp_path/"ambiguous.dxf";doc=ezdxf.new("R2013");msp=doc.modelspace()
+    msp.add_mtext("پلان معماری طبقه همکف",dxfattribs={"char_height":.2}).set_location((10,0))
+    for i in range(40):msp.add_line((i,5),(i+1,5),dxfattribs={"layer":"0"})
+    doc.saveas(path)
+    assert detect_print_plans(path)==[]
