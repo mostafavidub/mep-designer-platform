@@ -439,6 +439,9 @@ def register_mechanical_workflow(app, legacy):
     def design(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
+        architecture_review = (p.analysis or {}).get('architecture_review') or {}
+        if architecture_review and architecture_review.get('status') != 'CONFIRMED':
+            p.status = 'architecture_review'; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}/architecture-review', 303)
         if ensure_required_basis_questions(p): db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
         if refresh_stale_proposal(p): db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
         if _discipline(p) == 'mechanical' and not is_approved(p): p.status = 'drawing_set_review'; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
@@ -447,6 +450,9 @@ def register_mechanical_workflow(app, legacy):
     def design_json(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
+        architecture_review = (p.analysis or {}).get('architecture_review') or {}
+        if architecture_review and architecture_review.get('status') != 'CONFIRMED':
+            p.status = 'architecture_review'; db.commit(); data = legacy.flow_payload(p); db.close(); return JSONResponse(data, status_code=409)
         if ensure_required_basis_questions(p):
             db.commit(); db.refresh(p); data = legacy.flow_payload(p); data['drawing_set'] = None; db.close(); return JSONResponse(data, status_code=409)
         if refresh_stale_proposal(p):

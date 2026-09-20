@@ -84,3 +84,37 @@ cohort until project 2 has a confirmed frame and the unresolved shared/open
 spaces in projects 1, 3 and 7 receive real architectural separators or an
 explicit user-approved space-zone boundary. Per the requested vertical-slice
 order, Sanitary + Vent must not be declared started for those projects.
+
+## Audited visual-confirmation completion
+
+The unresolved-space path is now implemented as a fail-closed customer review,
+not a hidden fallback:
+
+- selectable points are immutable node IDs extracted from actual noded CAD
+  intersections/endpoints; arbitrary screen coordinates are never persisted;
+- selected corners are anchors and every edge, including automatic closure,
+  is resolved along the CAD wall graph;
+- disconnected anchors fail, and materially ambiguous routes require an
+  intermediate user-selected anchor instead of silent route selection;
+- standard space type, optional display name, open-plan semantics and master
+  suite grouping are stored with the boundary;
+- master bedroom/wet-room separation, cross-space overlap, label containment,
+  frame containment and polygon validity are enforced server-side;
+- a mistaken semantic detection may be excluded only with a written reason;
+- every mutation is hash chained, bound to the architecture file SHA-256 and
+  visible in both the customer project and the admin support view;
+- a changed architecture artifact invalidates the prior approval;
+- optimistic review revisions prevent two browser tabs from silently
+  overwriting each other;
+- mechanical design is gated until the review is confirmed, then resumes the
+  normal questionnaire/drawing-set workflow.
+
+A fresh-database end-to-end exercise rendered the customer review, persisted a
+four-node CAD-snapped bedroom, completed the three explicit acknowledgements,
+resumed the mechanical workflow and rendered the admin audit with a valid event
+chain. The complete clean regression suite passes: `1083 passed`.
+
+The remaining project-2 canonical-frame gap is intentionally not fabricated by
+this feature. When no credible plan frame exists at all, the customer is told
+that a corrected architecture file or support intervention is required; a room
+boundary UI cannot safely invent the ownership of the full drawing.

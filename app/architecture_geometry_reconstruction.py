@@ -172,6 +172,59 @@ def _supporting_evidence(poly, rows, tolerance):
     }
 
 
+def _review_geometry(noded, sources, frame_bounds, tolerance):
+    """Serialize the *noded* wall graph used by the review UI.
+
+    Edges are split at real CAD intersections.  Consequently a UI anchor is
+    not merely close to a wall: it is a vertex in the exact graph along which
+    the confirmed room boundary will later be resolved.
+    """
+    coordinates = []
+    raw_segments = []
+    geometries = list(noded.geoms) if hasattr(noded, "geoms") else [noded]
+    for geometry in geometries:
+        if hasattr(geometry, "coords"):
+            coords = list(geometry.coords)
+            coordinates.extend(coords)
+            raw_segments.extend(zip(coords, coords[1:]))
+    deduped = {}
+    for x, y in coordinates:
+        key = (round(float(x) / tolerance), round(float(y) / tolerance))
+        deduped.setdefault(key, (float(x), float(y)))
+    nodes = []
+    key_to_id = {}
+    for _index, (key, (x, y)) in enumerate(sorted(deduped.items(), key=lambda row: row[1])):
+        if not _inside(frame_bounds, (x, y)):
+            continue
+        digest = hashlib.sha256(f"{x:.8f},{y:.8f}".encode()).hexdigest()[:16]
+        node_id = f"NODE-{digest}"
+        key_to_id[key] = node_id
+        nodes.append({"id": node_id, "x": round(x, 6), "y": round(y, 6)})
+        if len(nodes) >= 2500:
+            break
+    segments = []
+    seen = set()
+    for a, b in raw_segments:
+        a_key = (round(float(a[0]) / tolerance), round(float(a[1]) / tolerance))
+        b_key = (round(float(b[0]) / tolerance), round(float(b[1]) / tolerance))
+        a_id, b_id = key_to_id.get(a_key), key_to_id.get(b_key)
+        if not a_id or not b_id or a_id == b_id:
+            continue
+        edge = tuple(sorted((a_id, b_id)))
+        if edge in seen:
+            continue
+        seen.add(edge)
+        segments.append({
+            "a_id": a_id, "b_id": b_id,
+            "a": [round(float(a[0]), 6), round(float(a[1]), 6)],
+            "b": [round(float(b[0]), 6), round(float(b[1]), 6)],
+            "kind": "noded_architectural_linework",
+        })
+        if len(segments) >= 5000:
+            break
+    return {"snap_points": nodes, "wall_segments": segments}
+
+
 def reconstruct_boundaries(msp, frame_bounds, semantic_labels):
     """Reconstruct validated room/shaft cells within one canonical frame."""
     if not frame_bounds or len(frame_bounds) != 4:
@@ -275,6 +328,7 @@ def reconstruct_boundaries(msp, frame_bounds, semantic_labels):
                 "provenance": "INFERRED",
             }
 
+    review_geometry = _review_geometry(noded, sources, frame_bounds, tolerance)
     return {
         "accepted": accepted,
         "diagnostics": [f"rejected_{key}:{value}" for key, value in sorted(rejected.items())],
@@ -287,4 +341,5 @@ def reconstruct_boundaries(msp, frame_bounds, semantic_labels):
             "snap_tolerance": tolerance,
             "source_layer_counts": dict(Counter(row["layer"] for row in sources)),
         },
+        **review_geometry,
     }

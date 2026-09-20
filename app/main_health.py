@@ -10,6 +10,7 @@ from . import unit_sanity  # patches dimension-based CAD unit sanity before proj
 from . import dxf_output  # patches design/download flow to deliver DXF artifacts
 from . import artifact_storage
 from . import mechanical_workflow
+from .architecture_review import install as install_architecture_review
 from . import mechanical_drawing_set
 from . import mechanical_review_fix
 from .artifact_delivery_fix import install as install_artifact_delivery_fix
@@ -51,6 +52,7 @@ install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
 install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_output)
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
+install_architecture_review(app, main_auto.legacy)
 install_mechanical_site_manifest(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)

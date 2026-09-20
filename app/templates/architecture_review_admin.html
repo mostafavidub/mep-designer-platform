@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}سوابق تأیید معماری | Planha Admin{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block body %}
+<main class="container"><div class="row" style="justify-content:space-between"><div><div class="kicker">ADMIN SUPPORT</div><h1>سوابق تأیید معماری</h1><p class="muted">رویدادهای تغییرناپذیر انتخاب کاربر، متصل به پروژه و فایل معماری.</p></div><a class="btn secondary" href="/admin/pricing">بازگشت به ادمین</a></div>
+<div class="card"><table><thead><tr><th>پروژه</th><th>کاربر</th><th>اقدام</th><th>زمان</th><th>هش</th><th></th></tr></thead><tbody>{% for event in events %}{% set project=projects.get(event.project_id) %}<tr><td>{{project.name if project else event.project_id}}</td><td>CUST-{{event.user_id}}</td><td>{{event.action}}</td><td>{{event.created_at}}</td><td><code>{{event.event_hash[:16]}}…</code></td><td><a href="/admin/projects/{{event.project_id}}/architecture-review">مشاهده</a></td></tr>{% else %}<tr><td colspan="6">هنوز سابقه‌ای ثبت نشده است.</td></tr>{% endfor %}</tbody></table></div></main>
+{% endblock %}

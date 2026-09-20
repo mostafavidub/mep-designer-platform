@@ -80,6 +80,9 @@ class ArchitectureGeometryReconstructionTests(unittest.TestCase):
         second = reconstruct_boundaries(msp, [0, 0, 8, 8], labels)
         self.assertEqual(first["accepted"][0]["geometry_fingerprint"],
                          second["accepted"][0]["geometry_fingerprint"])
+        self.assertTrue(first["snap_points"])
+        self.assertTrue(first["wall_segments"])
+        self.assertTrue(all(row.get("a_id") and row.get("b_id") for row in first["wall_segments"]))
 
     def test_ignores_dimension_layer_as_room_boundary(self):
         _doc, msp = self._model()

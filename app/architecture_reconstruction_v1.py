@@ -237,6 +237,8 @@ def reconstruct_dxf(path, base_result=None):
                 "frame_bounds": frame.get("bounds"),
                 "diagnostics": reconstruction.get("diagnostics") or [],
                 "quality": reconstruction.get("quality") or {},
+                "snap_points": reconstruction.get("snap_points") or [],
+                "wall_segments": reconstruction.get("wall_segments") or [],
             })
             for index, geometry in (reconstruction.get("accepted") or {}).items():
                 accepted_by_label.setdefault(index, geometry)
@@ -326,10 +328,12 @@ def enrich_auto(auto, analysis):
     all_rooms = []
     all_primitives = []
     all_frames = []
+    all_boundary_reconstruction = []
     for f in (analysis or {}).get("files") or []:
         all_rooms.extend(f.get("architecture_rooms") or [])
         all_primitives.extend(f.get("architecture_primitives") or [])
         all_frames.extend(f.get("architecture_plan_frames") or [])
+        all_boundary_reconstruction.extend(f.get("architecture_boundary_reconstruction") or [])
 
     # Assign semantic room labels to their closest canonical level title, then
     # derive a spatial envelope from those labels. The envelope prevents an
@@ -342,6 +346,8 @@ def enrich_auto(auto, analysis):
         title = tuple(float(v) for v in title)
         canonical_frame = _matching_plan_frame(profile, all_frames)
         canonical_bounds = canonical_frame.get("bounds") if canonical_frame else None
+        review_geometry = next((row for row in all_boundary_reconstruction
+                                if row.get("frame_handle") == (canonical_frame or {}).get("handle")), {})
         other_titles = [tuple(float(v) for v in p.get("title_point")) for p in profiles if p is not profile and p.get("title_point")]
         assigned_rooms = []
         for room in all_rooms:
@@ -404,6 +410,10 @@ def enrich_auto(auto, analysis):
             "walls": by_kind["wall"], "doors": by_kind["door"], "windows": by_kind["window"],
             "columns": by_kind["column"], "stairs": by_kind["stair"], "shafts": by_kind["shaft"],
             "fixed_furniture": by_kind["furniture"],
+            "review_geometry": {
+                "snap_points": review_geometry.get("snap_points") or [],
+                "wall_segments": review_geometry.get("wall_segments") or [],
+            },
             "counts": {k: len(v) for k, v in by_kind.items()},
         })
 
