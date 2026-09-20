@@ -38,6 +38,20 @@ def _pending_equipment_boards(report: dict, answers: dict) -> set[tuple[str,str]
         code=parts[0].strip().lower();family=parts[1].strip().upper()
         result.add((code,family))
         if manifest.get(code):result.add((manifest[code],family))
+    # Keep parity with the canonical pre-materialization gate: the gas plan
+    # may have a valid approved board while its appliance schedule/route is an
+    # explicit INPUT_REQUIRED record.  Admit only that exact record identity;
+    # FAIL records and unrelated families remain blocking.
+    gas_table=(((report or {}).get("enrichment") or {}).get("gas_table") or {})
+    for record in gas_table.get("records") or []:
+        if str(record.get("status") or "").upper()!="INPUT_REQUIRED":
+            continue
+        code=str(record.get("sheet") or "").strip().lower()
+        if not code:
+            continue
+        result.add((code,"GAS"))
+        if manifest.get(code):
+            result.add((manifest[code],"GAS"))
     return result
 
 

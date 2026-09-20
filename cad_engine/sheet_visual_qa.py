@@ -286,7 +286,12 @@ def _content_fit_metrics(entities, bounds):
     # walls in drawings whose entities are concentrated in the interior. Use
     # complete copied extents only when the robust envelope still supports at
     # least half of that area; isolated remote geometry remains rejected.
-    perimeter_supported=bool(raw_occupancy and robust_occupancy/raw_occupancy>=.50)
+    # Exact copied-plan evidence shows that dense room furniture can put just
+    # under half of the complete architectural envelope inside the 2.5--97.5%
+    # centre quantiles even when both perimeter walls are real and connected.
+    # A 45% support floor still rejects isolated outliers/source furniture,
+    # while avoiding a second destructive trim of the composer-validated fit.
+    perimeter_supported=bool(raw_occupancy and robust_occupancy/raw_occupancy>=.45)
     width_fill=raw_width if perimeter_supported else robust_width_fill
     height_fill=raw_height if perimeter_supported else robust_height_fill
     occupancy=raw_occupancy if perimeter_supported else robust_occupancy

@@ -351,6 +351,18 @@ def _level_evidence(pipeline):
     return levels
 
 
+def _approved_level_token(value):
+    """Normalize workflow and engine level identities to one manifest key."""
+    text=_norm(value).replace(" ","").replace("-","").replace("\u200c","")
+    if text in {"ground","g","طبقههمکف","همکف"}:return "GROUND"
+    if text in {"mezzanine","mezz","m","نیمطبقه"}:return "MEZZANINE"
+    if text in {"roof","r","بام"}:return "ROOF"
+    for word,number in (("اول","01"),("دوم","02"),("سوم","03"),("چهارم","04"),("پنجم","05")):
+        if word in text:return "LEVEL"+number
+    match=re.search(r"(?:level|floor)(\d+)",text)
+    return "LEVEL"+match.group(1).zfill(2) if match else text.upper()
+
+
 def build_authority_model(pipeline, answers):
     levels=_level_evidence(pipeline)
     roof=any(p.get("mechanical_role")=="ROOF_SUPPORT" for p in pipeline["architecture"].get("plans") or [])
@@ -370,22 +382,14 @@ def build_authority_model(pipeline, answers):
     approved=(answers or {}).get("_approved_drawing_manifest") or {}
     approved_rows=approved.get("sheets") if isinstance(approved,dict) else approved
     known_levels=set((project.get("levels") or {}).keys())
-    def level_token(value):
-        text=_norm(value).replace(" ","").replace("-","")
-        if text in {"ground","g","طبقههمکف","همکف"}:return "GROUND"
-        if text in {"roof","r","بام"}:return "ROOF"
-        for word,number in (("اول","01"),("دوم","02"),("سوم","03"),("چهارم","04"),("پنجم","05")):
-            if word in text:return "LEVEL"+number
-        match=re.search(r"(?:level|floor)(\d+)",text)
-        return "LEVEL"+match.group(1).zfill(2) if match else text.upper()
-    known_by_token={level_token(level):level for level in known_levels}
+    known_by_token={_approved_level_token(level):level for level in known_levels}
     for row in approved_rows or []:
         if not isinstance(row,dict) or str(row.get("drawing_type") or "").strip().upper()!="FLOOR_PLAN":
             continue
         systems=APPROVED_FAMILY_SYSTEMS.get(str(row.get("family") or "").strip().upper()) or set()
         levels=row.get("levels") or [row.get("level")]
         for level in levels:
-            resolved_level=level if level in known_levels else known_by_token.get(level_token(level))
+            resolved_level=level if level in known_levels else known_by_token.get(_approved_level_token(level))
             if resolved_level not in known_levels:
                 continue
             current=set(req.get("by_level",{}).get(resolved_level) or [])
@@ -582,8 +586,55 @@ def _entity_should_copy(e,bounds=None):
     return True
 
 
+def _connected_footer_frame_entities(entities,bounds):
+    """Find fragmented source-frame lines that cannot be classified alone.
+
+    Some real consultant drawings explode the lower/side edge of an inset
+    print frame into separate LINE entities and put them on ``WALL``.  The long
+    lower segment spans most of the ownership frame and a short perpendicular
+    segment is connected to its endpoint.  Treat only that paired, bottom-band
+    topology as sheet furniture; a normal isolated exterior wall is retained.
+    """
+    if not bounds or len(bounds)!=4:
+        return set()
+    x1,y1,x2,y2=map(float,bounds);sw=max(x2-x1,1e-9);sh=max(y2-y1,1e-9)
+    boxes={}
+    for entity in entities:
+        ext=_entity_ext(entity)
+        if ext and ext.has_data:
+            boxes[entity]=(float(ext.extmin.x),float(ext.extmin.y),
+                           float(ext.extmax.x),float(ext.extmax.y))
+    seeds=[]
+    for entity,box in boxes.items():
+        ew=box[2]-box[0];eh=box[3]-box[1]
+        if (entity.dxftype().upper()=="LINE" and _norm(getattr(entity.dxf,"layer",""))=="wall"
+                and ew>=sw*.75 and eh<=sh*.02 and box[3]<=y1+sh*.10):
+            seeds.append((entity,box))
+    if not seeds:
+        return set()
+    removed=set();tol=max(sw,sh)*.01
+    for seed,seed_box in seeds:
+        seed_ends=((seed_box[0],seed_box[1]),(seed_box[2],seed_box[3]))
+        connected=[]
+        for entity,box in boxes.items():
+            if (entity is seed or entity.dxftype().upper()!="LINE"
+                    or _norm(getattr(entity.dxf,"layer",""))!="wall"
+                    or box[3]>y1+sh*.15):
+                continue
+            points=((box[0],box[1]),(box[2],box[3]))
+            if any(math.dist(first,second)<=tol for first in seed_ends for second in points):
+                connected.append(entity)
+        # The connected perpendicular/stub evidence is required.  Never remove
+        # a lone long wall merely because it happens to lie near the page edge.
+        if connected:
+            removed.add(seed);removed.update(connected)
+    return removed
+
+
 def _entities_in_bounds(msp,bounds):
-    return [e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e,bounds)]
+    selected=[e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e,bounds)]
+    fragmented_frame=_connected_footer_frame_entities(selected,bounds)
+    return [entity for entity in selected if entity not in fragmented_frame]
 
 
 def _fit_parameters(source_bounds,target_bounds):

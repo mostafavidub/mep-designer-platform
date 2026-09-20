@@ -6,7 +6,13 @@ from cad_engine.mechanical_release_hardening_v18 import validate_equipment_linka
 from cad_engine.mechanical_authority_v15 import (
     Board, _append_approved_service_plan_boards, _draw_service_equipment_content,
 )
-from cad_engine.mechanical_design_core import _layout_manifest
+from cad_engine.mechanical_design_core import _layout_manifest, _approved_level_token
+
+
+def test_approved_manifest_mezzanine_alias_matches_engine_identity():
+    assert _approved_level_token("نیم طبقه") == "MEZZANINE"
+    assert _approved_level_token("نیم‌طبقه") == "MEZZANINE"
+    assert _approved_level_token("Mezzanine") == "MEZZANINE"
 
 
 def _approved_17():
