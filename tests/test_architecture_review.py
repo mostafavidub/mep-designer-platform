@@ -32,6 +32,12 @@ class ArchitectureReviewTests(unittest.TestCase):
         self.assertIn("svg.addEventListener('pointermove'", template)
         self.assertIn("panY+=dy*", template)
         self.assertIn("touch-action: none", css)
+        self.assertIn("function renderVisualUnderlay", template)
+        self.assertIn("level.visual_entities||[]", template)
+        self.assertIn("architecture-source-text", template)
+        review_source = Path("app/architecture_review.py").read_text(encoding="utf-8")
+        self.assertIn('"schema": "architecture-review/2"', review_source)
+        self.assertIn('existing.get("visual_underlay_contract") == "source-faithful/1"', review_source)
 
     def test_confirmed_model_cannot_be_silently_edited(self):
         with self.assertRaises(HTTPException) as error:

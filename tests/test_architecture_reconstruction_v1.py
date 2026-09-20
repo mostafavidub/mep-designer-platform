@@ -145,6 +145,33 @@ class ArchitectureReconstructionV1Tests(unittest.TestCase):
         self.assertEqual(level['counts']['door'], 1)
         self.assertEqual(level['region_bounds'], [0.0, 0.0, 20.0, 20.0])
 
+    def test_unlabeled_cell_type_is_inferred_from_fixture_but_remains_reviewable(self):
+        analysis_file = {
+            'architecture_rooms': [{
+                'type': 'unknown', 'label': 'فضای بدون عنوان', 'label_point': [5, 5],
+                'polygon': [[1, 1], [9, 1], [9, 9], [1, 9]],
+                'bounds': [1, 1, 9, 9], 'polygon_confidence': 'low',
+                'provenance': 'GEOMETRY_ONLY',
+            }],
+            'architecture_primitives': [{
+                'kind': 'bed_fixture', 'layer': 'FURN', 'entity_type': 'INSERT',
+                'block': 'DOUBLE-BED', 'bounds': [3, 3, 7, 6], 'centroid': [5, 4.5],
+            }],
+            'architecture_plan_frames': [{
+                'bounds': [0, 0, 10, 10], 'drawing_type': 'ARCH_FLOOR_PLAN',
+                'level': 'GROUND', 'handle': 'FRAME-1',
+            }],
+            'architecture_boundary_reconstruction': [{
+                'frame_handle': 'FRAME-1', 'snap_points': [], 'wall_segments': [],
+                'visual_underlay': {'status': 'PASS', 'entities': [{'kind': 'polyline'}]},
+            }],
+        }
+        auto = {'level_profiles': [{'name': 'طبقه همکف', 'title_point': [5, 5], 'roof': False}]}
+        room = enrich_auto(auto, {'files': [analysis_file]})['architecture_model']['levels'][0]['rooms'][0]
+        self.assertEqual(room['type'], 'bedroom')
+        self.assertEqual(room['type_provenance'], 'INFERRED_FROM_INSTALLED_FIXTURE')
+        self.assertEqual(room['polygon_confidence'], 'low')
+
 
 if __name__ == '__main__':
     unittest.main()

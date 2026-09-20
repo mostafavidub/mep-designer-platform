@@ -36,6 +36,23 @@
 .architecture-label { display: none; }
 .architecture-canvas { cursor: grab; touch-action: none; user-select: none; }
 .architecture-canvas.is-panning { cursor: grabbing; }
+.architecture-source-polyline,
+.architecture-source-polygon {
+  fill: none;
+  stroke: #344054;
+  stroke-width: .8;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.architecture-source-polygon { fill: #6670850b; }
+.architecture-source-point { fill: #344054; pointer-events: none; }
+.architecture-source-text {
+  fill: #475467;
+  font-family: Tahoma, Arial, sans-serif;
+  pointer-events: none;
+  user-select: none;
+}
+.architecture-wall { opacity: .28; }
 .architecture-view-tools { display: flex; gap: 6px; direction: ltr; }
 .architecture-view-tools button {
   border: 1px solid #cdd6e2;

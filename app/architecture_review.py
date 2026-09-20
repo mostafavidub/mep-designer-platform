@@ -79,18 +79,32 @@ def _review_state(legacy, project):
     analysis = dict(project.analysis or {})
     existing = dict(analysis.get("architecture_review") or {})
     source_hash = architecture_source_hash(legacy, project.id)
-    if existing.get("source_hash") == source_hash and existing.get("spaces"):
+    if (existing.get("source_hash") == source_hash and existing.get("spaces") and
+            existing.get("visual_underlay_contract") == "source-faithful/1"):
         return existing
     model = ((analysis.get("architectural_auto") or {}).get("architecture_model") or {})
     spaces = []
     levels = []
+    claimed_visual_ids = set()
     for level_index, level in enumerate(model.get("levels") or []):
         level_id = f"LEVEL-{level_index + 1:02d}"
+        visual_underlay = ((level.get("review_geometry") or {}).get("visual_underlay") or {})
+        owned_visual_entities = []
+        for entity in visual_underlay.get("entities") or []:
+            identity = entity.get("visual_entity_id")
+            if not identity or identity in claimed_visual_ids:
+                continue
+            claimed_visual_ids.add(identity)
+            owned_visual_entities.append({**entity, "plan_id": level_id})
         levels.append({
             "id": level_id, "name": level.get("name") or level_id,
             "frame": (level.get("canonical_frame") or {}).get("bounds"),
             "snap_points": ((level.get("review_geometry") or {}).get("snap_points") or []),
             "wall_segments": ((level.get("review_geometry") or {}).get("wall_segments") or []),
+            "visual_entities": owned_visual_entities,
+            "visual_inventory": visual_underlay.get("inventory") or {},
+            "visual_unsupported": visual_underlay.get("unsupported") or {},
+            "visual_underlay_status": visual_underlay.get("status") or "FAIL",
         })
         rows = list(level.get("rooms") or []) + [dict(row, type="shaft") for row in level.get("shafts") or []]
         for ordinal, row in enumerate(rows):
@@ -107,11 +121,13 @@ def _review_state(legacy, project):
                 "bounds": row.get("bounds"), "confidence": confidence,
                 "status": "AUTO_CONFIRMED" if confirmed else "REVIEW_REQUIRED",
                 "provenance": row.get("provenance") or ("INFERRED" if row.get("polygon") else "LABEL_ONLY"),
-                "relationship": "INDEPENDENT", "group_id": None,
+                "relationship": row.get("relationship") or "INDEPENDENT",
+                "group_id": row.get("group_id"),
                 "warnings_acknowledged": [], "updated_at": None,
             })
     state = {
-        "schema": "architecture-review/1", "source_hash": source_hash,
+        "schema": "architecture-review/2", "source_hash": source_hash,
+        "visual_underlay_contract": "source-faithful/1",
         "revision": 1,
         "status": "REVIEW_REQUIRED", "levels": levels, "spaces": spaces,
         "instructions_version": "architecture-review-guidance/1",
@@ -122,7 +138,12 @@ def _review_state(legacy, project):
 
 
 def _state_status(state):
-    levels_ready = all(level.get("frame") for level in state.get("levels") or [])
+    levels = state.get("levels") or []
+    levels_ready = bool(levels) and all(
+        level.get("frame") and level.get("visual_underlay_status") == "PASS" and
+        bool(level.get("visual_entities"))
+        for level in levels
+    )
     spaces_ready = bool(state.get("spaces")) and all(
         row.get("status") in {"AUTO_CONFIRMED", "USER_CONFIRMED", "EXCLUDED_BY_USER"}
         for row in state.get("spaces") or []

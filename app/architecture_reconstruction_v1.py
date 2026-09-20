@@ -27,6 +27,10 @@ LAYER_HINTS = {
     "stair": ("stair", "stairs", "peleh", "پله", "راه پله", "راهپله"),
     "shaft": ("shaft", "شفت"),
     "furniture": ("furniture", "furn", "fur", "cabinet", "مبلمان", "کابینت"),
+    "bath_fixture": ("shower", "bathtub", "bath fixture", "دوش", "وان"),
+    "toilet_fixture": ("toilet", "water closet", "lavatory", "روشویی", "توالت"),
+    "kitchen_fixture": ("kitchen sink", "cooktop", "stove", "سینک", "اجاق"),
+    "bed_fixture": (" bed ", "double bed", "single bed", "تخت"),
 }
 
 BLOCK_HINTS = {
@@ -35,6 +39,10 @@ BLOCK_HINTS = {
     "column": ("column", "columns", "ستون"),
     "stair": ("stair", "peleh", "پله"),
     "shaft": ("shaft", "شفت"),
+    "bath_fixture": ("shower", "bathtub", "دوش", "وان"),
+    "toilet_fixture": ("toilet", "wc", "lavatory", "توالت", "روشویی"),
+    "kitchen_fixture": ("sink", "cooktop", "stove", "سینک", "اجاق"),
+    "bed_fixture": ("double bed", "single bed", "bed", "تخت"),
 }
 
 
@@ -208,6 +216,7 @@ def reconstruct_dxf(path, base_result=None):
         })
 
     boundary_reconstruction = []
+    unlabeled_rooms = []
     try:
         from cad_engine.plan_segmentation import analyze_plan_frames
         frame_analysis = analyze_plan_frames(path)
@@ -239,13 +248,23 @@ def reconstruct_dxf(path, base_result=None):
                 "quality": reconstruction.get("quality") or {},
                 "snap_points": reconstruction.get("snap_points") or [],
                 "wall_segments": reconstruction.get("wall_segments") or [],
+                "visual_underlay": reconstruction.get("visual_underlay") or {},
             })
+            for cell in reconstruction.get("unlabeled_cells") or []:
+                unlabeled_rooms.append({
+                    "type": "unknown",
+                    "label": "فضای بدون عنوان",
+                    "source_type": "GEOMETRY_ONLY",
+                    "source_name": frame.get("handle"),
+                    **cell,
+                })
             for index, geometry in (reconstruction.get("accepted") or {}).items():
                 accepted_by_label.setdefault(index, geometry)
         for index, room in enumerate(rooms):
             if room.get("polygon") or index not in accepted_by_label:
                 continue
             room.update(accepted_by_label[index])
+        rooms.extend(unlabeled_rooms)
     except Exception as exc:
         result["architecture_plan_frames"] = []
         reconstruction_diagnostics.append(
@@ -388,6 +407,36 @@ def enrich_auto(auto, analysis):
         for symbol_kind in ("door", "window", "column", "stair", "shaft"):
             by_kind[symbol_kind] = _merge_symbol_components(by_kind[symbol_kind], symbol_kind)
 
+        inferred_types = (
+            ("bath_fixture", "bath"),
+            ("toilet_fixture", "toilet"),
+            ("kitchen_fixture", "kitchen"),
+            ("bed_fixture", "bedroom"),
+        )
+        for room in assigned_rooms:
+            if room.get("type") != "unknown" or not room.get("polygon"):
+                continue
+            evidence = []
+            for primitive_kind, room_kind in inferred_types:
+                hits = [p for p in by_kind.get(primitive_kind, [])
+                        if p.get("centroid") and _contains(room["polygon"], p["centroid"])]
+                if not hits:
+                    continue
+                room["type"] = room_kind
+                room["label"] = {
+                    "bath": "حمام تشخیص‌داده‌شده",
+                    "toilet": "سرویس تشخیص‌داده‌شده",
+                    "kitchen": "آشپزخانه تشخیص‌داده‌شده",
+                    "bedroom": "اتاق خواب تشخیص‌داده‌شده",
+                }[room_kind]
+                room["type_confidence"] = "medium"
+                room["type_provenance"] = "INFERRED_FROM_INSTALLED_FIXTURE"
+                evidence = [{"kind": primitive_kind, "block": hit.get("block"),
+                             "layer": hit.get("layer")} for hit in hits[:20]]
+                break
+            if evidence:
+                room["type_evidence"] = evidence
+
         # Shaft text is valid evidence of a shaft location even when the
         # architect did not draw the shaft on a semantic layer.  Keep the
         # geometry explicitly label-only instead of inventing a shaft box.
@@ -413,6 +462,7 @@ def enrich_auto(auto, analysis):
             "review_geometry": {
                 "snap_points": review_geometry.get("snap_points") or [],
                 "wall_segments": review_geometry.get("wall_segments") or [],
+                "visual_underlay": review_geometry.get("visual_underlay") or {},
             },
             "counts": {k: len(v) for k, v in by_kind.items()},
         })

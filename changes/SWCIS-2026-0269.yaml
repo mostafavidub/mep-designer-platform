@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0269",
+  "summary": "Build a complete source-faithful architectural underlay and a separately traceable engineering topology for exception-only review",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private reference projects are optional; automated regression remains required.",
+  "owner_release_authorization": "2026-09-20: owner requested complete professional remediation of architectural understanding on Staging; Production remains untouched.",
+  "change_types": ["drawing_output", "routing", "ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["planner", "cad_designer", "routing", "pmm", "ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "planner": "changed: lossless visual underlay, expanded block/entity handling, separate topology and completeness evidence",
+    "cad_designer": "verified: downstream CAD consumes only confirmed source-traceable architecture",
+    "routing": "verified: obstacle and space topology consumers receive the confirmed engineering topology, never presentation-only entities",
+    "pmm": "verified: architectural identities remain source-traceable before downstream Mechanical linkage",
+    "ui_api": "changed: render complete underlay beneath review overlays and request only genuine exceptions",
+    "qa": "changed: entity coverage, transform parity, unsupported-content and visual-underlay completeness fail closed",
+    "docs": "added: architecture-understanding and exception-review contract",
+    "governance": "verified: locked Mechanical gates remain fail-closed and consume only confirmed architecture",
+    "manifest": "verified: build and artifact identity semantics remain unchanged",
+    "migration": "changed: existing architecture reviews are invalidated when the source-derived underlay contract changes",
+    "versioning": "verified: runtime remains unversioned; schema revision changes only if review persistence changes",
+    "deployment": "changed: Staging-only rollout, real-project visual verification and rollback by Git commit"
+  },
+  "evidence": {
+    "traceability": ["source handle/block path/layer -> visual entity -> topology entity -> plan/level/space/review identity"],
+    "tests": ["81 architecture/review/preservation/panel checks: positive full-underlay reconstruction, destructive nested-block/XREF/empty-INSERT coverage, exception inference and review UI contract"],
+    "docs": ["docs/ARCHITECTURE_UNDERSTANDING_COMPLETION.md"],
+    "version_bump": ["architecture review persistence schema changed from architecture-review/1 to architecture-review/2; SWCIS engineering-rule version remains 4.51.0 because no locked engineering rule changed"],
+    "migration": ["same-hash reviews without visual_underlay_contract=source-faithful/1 are rebuilt and cannot retain prior confirmation authority"],
+    "golden_regression": ["synthetic mixed-entity, nested-block, XREF, empty-block, open-plan and unlabeled-cell cases; architecture preservation and panel checkout suites"],
+    "semantic_diff": ["wall-only review graph -> source-faithful visual underlay plus separate engineering topology"],
+    "artifact_diff": ["review artifact now contains per-plan visual entities with source handle/layer/block path plus separate wall graph; duplicate ownership is rejected by allocation"],
+    "numeric_diff": ["engineering calculations unchanged; drawable, unsupported, critical unsupported, truncation and coverage-ratio metrics added"],
+    "contract_diff": ["architecture-review/2 and source-faithful/1 documented in docs/ARCHITECTURE_UNDERSTANDING_COMPLETION.md"],
+    "deployment_plan": ["deploy exact protected Staging commit; verify project 40; Production untouched"],
+    "rollback_plan": ["redeploy prior approved Staging Git commit"]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 3, "score": 45, "rationale": "Missing architectural geometry can corrupt every downstream system; independent coverage and visual comparison make loss detectable."},
+  "waiver": null
+}
