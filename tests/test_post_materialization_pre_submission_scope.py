@@ -32,3 +32,16 @@ def test_exact_file_gate_uses_the_same_signed_disclosure_as_the_shell():
         "blocked_at":"target_design_packages","blockers":["EQUIPMENT_SELECTION_EVIDENCE_REQUIRED"],
     }}
     assert _pending_equipment_boards(_report(),answers)=={("m-104","HEATING"),("m-04","HEATING")}
+
+
+def test_exact_file_gate_carries_only_input_required_gas_record_identity():
+    report=_report()
+    report["composition"]["manifest"].append({"code":"M-108","old_sheet":"M-08","family":"GAS"})
+    report["enrichment"]={"gas_table":{"records":[
+        {"sheet":"M-108","status":"INPUT_REQUIRED"},
+        {"sheet":"M-109","status":"FAIL"},
+    ]}}
+    answers={"_pre_submission_authority":{"blocked_at":"target_design_packages","blockers":[]}}
+    assert _pending_equipment_boards(report,answers)=={
+        ("m-104","HEATING"),("m-04","HEATING"),("m-108","GAS"),("m-08","GAS"),
+    }

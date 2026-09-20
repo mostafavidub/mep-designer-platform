@@ -1,0 +1,33 @@
+{
+  "change_id":"SWCIS-2026-0264",
+  "summary":"Carry an exact INPUT_REQUIRED gas schedule/route disclosure through post-materialization equipment-linkage QA.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Post-materialization QA maps only INPUT_REQUIRED gas records to their public and internal approved board identities.",
+    "deployment":"Deploy after the active project 03 run finishes, then retry retained project 02.",
+    "docs":"Gas record disclosure parity is explicit at the exact-file gate.",
+    "governance":"FAIL gas records and unrelated families remain blocking.",
+    "qa":"The final equipment gate matches the canonical shell's gas-record semantics.",
+    "ui_api":"Project 02 can deliver a truthful preliminary artifact without inventing a gas route.",
+    "manifest":"Approved manifest remains the only public/internal identity bridge.","migration":"No data migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"Only an already disclosed missing gas appliance schedule/route is admitted.",
+    "manufacturer_selector":"No change.","routing":"No route is fabricated.","sizing":"No calculation change."
+  },
+  "evidence":{
+    "traceability":["gas enrichment INPUT_REQUIRED record -> approved sheet identity -> final equipment-linkage disclosure"],
+    "tests":["INPUT_REQUIRED gas record maps both identities.","FAIL gas record is excluded.","Twenty-six targeted exact-file and visual tests pass."],
+    "docs":["Regression test defines record-level boundary."],
+    "contract_diff":["Post-materialization resolver now includes the shell's existing exact gas-record rule."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["Pre-Submission limitation remains visible; submission-ready claims remain prohibited."],
+    "artifact_diff":["No new gas geometry is generated."],"numeric_diff":["No numeric changes."],
+    "golden_regression":["Equipment, Split-AC and fail-closed suites must pass."],
+    "deployment_plan":["Protected PR, exact-SHA rollout after active job completion, retry project 02, reopen output."],
+    "rollback_plan":["Revert the merge SHA and redeploy prior build."]
+  },
+  "risk":{"likelihood":1,"severity":3,"detectability":1,"score":3,"rationale":"Only INPUT_REQUIRED gas records under an active exact target-package disclosure are mapped; FAIL records are tested negative."},
+  "waiver":null
+}
