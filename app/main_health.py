@@ -27,7 +27,7 @@ from .resumable_upload import register_resumable_upload_routes
 from .service_art_runtime import register_service_art_routes
 from .seo_runtime import register_seo_articles
 from .analysis_workspace_guard import install as install_analysis_workspace_guard
-from .job_queue import queue_health, register_job_queue
+from .job_queue import WORKER_TYPES, queue_health, register_job_queue
 from .gsc_api import register_gsc_routes
 from .commercial_flow import register_commercial_flow
 from .panel_bridge import register_panel_bridge
@@ -104,6 +104,8 @@ async def performance_headers(request, call_next):
 
 
 def integrated_system_health():
+    from .runtime_topology import topology_status
+
     status = main_auto.legacy.system_health()
     status['object_storage'] = artifact_storage.healthcheck()
     status['job_queue'] = queue_health()
@@ -111,6 +113,12 @@ def integrated_system_health():
         status['status'] = 'error'
     status['build_identity'] = build_identity()
     status['mechanical'] = release_contract_status()
+    status['runtime_topology'] = topology_status(
+        main_auto.legacy.DB_URL,
+        set(WORKER_TYPES),
+    )
+    if status['runtime_topology']['status'] != 'ok':
+        status['status'] = 'error'
     return status
 
 
