@@ -1,6 +1,6 @@
 import ezdxf
 
-from cad_engine.mechanical_design_core import _presentation_artifact_reason
+from cad_engine.mechanical_design_core import _presentation_artifact_reason, _entities_in_bounds
 
 
 BOUNDS=(0.0,0.0,30.0,20.0)
@@ -55,3 +55,20 @@ def test_smaller_closed_wall_outline_is_not_classified_as_sheet_border():
     building=doc.modelspace().add_lwpolyline(
         [(3,3),(27,3),(27,17),(3,17)],close=True,dxfattribs={"layer":"WALL"})
     assert _presentation_artifact_reason(building,BOUNDS) is None
+
+
+def test_fragmented_bottom_frame_on_wall_layer_is_removed_only_when_connected():
+    doc=ezdxf.new("R2010");doc.layers.add("WALL");msp=doc.modelspace()
+    frame_bottom=msp.add_line((4.6,1.5),(29.4,1.5),dxfattribs={"layer":"WALL"})
+    frame_stub=msp.add_line((4.6,.4),(4.6,1.5),dxfattribs={"layer":"WALL"})
+    real_wall=msp.add_line((8,5),(24,5),dxfattribs={"layer":"WALL"})
+    selected=_entities_in_bounds(msp,BOUNDS)
+    assert frame_bottom not in selected
+    assert frame_stub not in selected
+    assert real_wall in selected
+
+
+def test_isolated_long_lower_wall_is_preserved_without_frame_topology():
+    doc=ezdxf.new("R2010");doc.layers.add("WALL");msp=doc.modelspace()
+    wall=msp.add_line((4.6,1.5),(29.4,1.5),dxfattribs={"layer":"WALL"})
+    assert wall in _entities_in_bounds(msp,BOUNDS)

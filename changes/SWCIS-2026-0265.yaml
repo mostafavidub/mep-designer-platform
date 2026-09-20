@@ -1,0 +1,32 @@
+{
+  "change_id":"SWCIS-2026-0265",
+  "summary":"Remove only topology-proven fragmented source footer frames and accept perimeter-supported exact plan fits at the calibrated support boundary.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","test","governance","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","docs","governance","manifest","migration","qa","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Detect an exploded lower print-frame edge only when a long WALL-labelled bottom segment has connected bottom-band frame topology; preserve an isolated real wall.",
+    "deployment":"Roll out after active project 07 finishes, then retry project 03 from retained input.",
+    "docs":"Project 03 exact source geometry calibrates the fragmented-frame and perimeter-support contracts.",
+    "governance":"No architecture is removed by layer name alone; connected topology and bottom-band geometry are both mandatory.",
+    "qa":"Lower the second-pass perimeter-support boundary from 50% to 45% after exact composer fitting; isolated outliers remain rejected.",
+    "ui_api":"No API change.","manifest":"No schema change.","migration":"No data migration.","versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.","equipment":"No change.","manufacturer_selector":"No change.","routing":"No change.","sizing":"No change."
+  },
+  "evidence":{
+    "traceability":["project 03 fragmented WALL footer frame -> topology filter -> exact copy bounds -> sheet visual QA"],
+    "tests":["Connected fragmented footer frame is removed.","Isolated long lower wall is preserved.","Thirty-one source/visual/exact-file tests pass."],
+    "docs":["Function contract documents the paired topology requirement."],
+    "contract_diff":["Exact composer fit may use the raw perimeter envelope when robust centre support is at least 45%."],
+    "version_bump":["Patch identified by immutable Git SHA."],"migration":["None."],
+    "semantic_diff":["Project 03 plans retain architecture while source print furniture no longer controls scale."],
+    "artifact_diff":["Local exact-source evidence improves the three plan fits from 0.253/0.187 failures to occupancies 0.80/0.57/0.57 with major-axis fill 0.965."],
+    "numeric_diff":["Perimeter support boundary 0.50 -> 0.45; target occupancy band and major-axis threshold unchanged."],
+    "golden_regression":["Source furniture, architecture preservation and all-sheet visual suites must pass."],
+    "deployment_plan":["Protected CI, exact-SHA rollout, retained project 03 retry, exact-DXF reopen."],
+    "rollback_plan":["Revert merge SHA and restore prior fit classifier."]
+  },
+  "risk":{"likelihood":2,"severity":4,"detectability":1,"score":8,"rationale":"Architecture deletion risk is controlled by exact connected topology, negative isolated-wall regression and final preservation/visual gates."},
+  "waiver":null
+}

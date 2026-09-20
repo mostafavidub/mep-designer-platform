@@ -582,8 +582,55 @@ def _entity_should_copy(e,bounds=None):
     return True
 
 
+def _connected_footer_frame_entities(entities,bounds):
+    """Find fragmented source-frame lines that cannot be classified alone.
+
+    Some real consultant drawings explode the lower/side edge of an inset
+    print frame into separate LINE entities and put them on ``WALL``.  The long
+    lower segment spans most of the ownership frame and a short perpendicular
+    segment is connected to its endpoint.  Treat only that paired, bottom-band
+    topology as sheet furniture; a normal isolated exterior wall is retained.
+    """
+    if not bounds or len(bounds)!=4:
+        return set()
+    x1,y1,x2,y2=map(float,bounds);sw=max(x2-x1,1e-9);sh=max(y2-y1,1e-9)
+    boxes={}
+    for entity in entities:
+        ext=_entity_ext(entity)
+        if ext and ext.has_data:
+            boxes[entity]=(float(ext.extmin.x),float(ext.extmin.y),
+                           float(ext.extmax.x),float(ext.extmax.y))
+    seeds=[]
+    for entity,box in boxes.items():
+        ew=box[2]-box[0];eh=box[3]-box[1]
+        if (entity.dxftype().upper()=="LINE" and _norm(getattr(entity.dxf,"layer",""))=="wall"
+                and ew>=sw*.75 and eh<=sh*.02 and box[3]<=y1+sh*.10):
+            seeds.append((entity,box))
+    if not seeds:
+        return set()
+    removed=set();tol=max(sw,sh)*.01
+    for seed,seed_box in seeds:
+        seed_ends=((seed_box[0],seed_box[1]),(seed_box[2],seed_box[3]))
+        connected=[]
+        for entity,box in boxes.items():
+            if (entity is seed or entity.dxftype().upper()!="LINE"
+                    or _norm(getattr(entity.dxf,"layer",""))!="wall"
+                    or box[3]>y1+sh*.15):
+                continue
+            points=((box[0],box[1]),(box[2],box[3]))
+            if any(math.dist(first,second)<=tol for first in seed_ends for second in points):
+                connected.append(entity)
+        # The connected perpendicular/stub evidence is required.  Never remove
+        # a lone long wall merely because it happens to lie near the page edge.
+        if connected:
+            removed.add(seed);removed.update(connected)
+    return removed
+
+
 def _entities_in_bounds(msp,bounds):
-    return [e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e,bounds)]
+    selected=[e for e in msp if (lambda p:p and _inside(p,bounds))(_point(e)) and _entity_should_copy(e,bounds)]
+    fragmented_frame=_connected_footer_frame_entities(selected,bounds)
+    return [entity for entity in selected if entity not in fragmented_frame]
 
 
 def _fit_parameters(source_bounds,target_bounds):
