@@ -38,6 +38,29 @@ class ResumableUploadTests(unittest.TestCase):
         r = self.client.post(f'{url}?index=0&total=1&filename=plan.exe', content=b'x')
         self.assertEqual(r.status_code, 400)
 
+    def test_direct_object_upload_is_presigned_and_verified_before_analysis(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'direct-object'})
+        self.assertEqual(init.status_code, 200)
+        data = init.json(); pid = data['project_id']
+        self.assertEqual(data['direct_upload_url'], f'/api/upload/{pid}/presign')
+        with patch('app.resumable_upload.artifact_storage.presigned_input_upload', return_value={
+            'upload_url': 'https://objects.example/upload',
+            'key': f'projects/{pid}/input/plan.dxf',
+            'content_type': 'application/dxf',
+        }):
+            target = self.client.post(data['direct_upload_url'], json={
+                'filename': 'plan.dxf', 'size': 2048, 'content_type': 'application/dxf',
+            })
+        self.assertEqual(target.status_code, 200)
+        with patch('app.resumable_upload.artifact_storage.input_object_exists', return_value=True), patch(
+            'app.resumable_upload.legacy.schedule_analysis'
+        ) as schedule:
+            completed = self.client.post(target.json()['complete_url'], json={
+                'filename': 'plan.dxf', 'size': 2048,
+            })
+        self.assertEqual(completed.status_code, 200)
+        schedule.assert_called_once_with(pid)
+
     def test_discipline_pages_load_resumable_client(self):
         for path in ('/electrical', '/mechanical'):
             r = self.client.get(path)

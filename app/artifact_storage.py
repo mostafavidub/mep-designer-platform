@@ -80,6 +80,32 @@ def upload_input(project_id: int, path: Path) -> str | None:
     return f's3://{S3_BUCKET}/{key}'
 
 
+def presigned_input_upload(project_id: int, filename: str, media_type: str, expires_in: int = 900) -> dict:
+    """Return a short-lived direct-upload target for a validated input name."""
+    if not configured():
+        raise RuntimeError('Object storage is not configured.')
+    safe_name = Path(filename).name
+    if Path(safe_name).suffix.lower() not in {'.dxf', '.zip'}:
+        raise ValueError('فایل ورودی باید DXF یا ZIP باشد.')
+    key = input_key(project_id, safe_name)
+    content_type = media_type or ('application/zip' if safe_name.lower().endswith('.zip') else 'application/dxf')
+    url = _client().generate_presigned_url(
+        'put_object',
+        Params={'Bucket': S3_BUCKET, 'Key': key, 'ContentType': content_type},
+        ExpiresIn=max(60, min(int(expires_in), 3600)),
+    )
+    return {'upload_url': url, 'key': key, 'content_type': content_type}
+
+
+def input_object_exists(project_id: int, filename: str, expected_size: int | None = None) -> bool:
+    if not configured():
+        return False
+    key = input_key(project_id, Path(filename).name)
+    response = _client().head_object(Bucket=S3_BUCKET, Key=key)
+    size = int(response.get('ContentLength') or 0)
+    return size > 0 and (expected_size is None or size == int(expected_size))
+
+
 def upload_output(project_id: int, revision: int, discipline: str, path: Path) -> str | None:
     client = _client()
     if client is None:

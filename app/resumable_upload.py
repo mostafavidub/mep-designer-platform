@@ -5,6 +5,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from . import main as legacy
+from . import artifact_storage
 
 CHUNK_SIZE_MAX = 2 * 1024 * 1024
 MAX_CHUNKS = 400
@@ -74,7 +75,56 @@ def register_resumable_upload_routes(app):
             'project_id': pid,
             'chunk_url': f'/api/upload/{pid}/chunk',
             'flow_url': f'/projects/{pid}/flow',
+            'direct_upload_url': f'/api/upload/{pid}/presign',
         })
+
+    @app.post('/api/upload/{pid}/presign')
+    async def presign_upload(pid: int, request: Request):
+        user = legacy.current_user(request)
+        db, project = legacy.own_project(pid, user.id)
+        if not project:
+            raise HTTPException(404)
+        try:
+            payload = await request.json()
+            filename = Path(str(payload.get('filename') or '')).name
+            size = int(payload.get('size') or 0)
+            if Path(filename).suffix.lower() not in {'.dxf', '.zip'}:
+                raise HTTPException(400, 'فایل ورودی باید DXF یا ZIP باشد.')
+            if size < 1 or size > 50 * 1024 * 1024:
+                raise HTTPException(413, 'حجم فایل معتبر نیست.')
+            target = artifact_storage.presigned_input_upload(
+                pid, filename, str(payload.get('content_type') or 'application/octet-stream')
+            )
+            return JSONResponse({
+                'ok': True,
+                **target,
+                'complete_url': f'/api/upload/{pid}/complete-object',
+            })
+        finally:
+            db.close()
+
+    @app.post('/api/upload/{pid}/complete-object')
+    async def complete_object_upload(pid: int, request: Request):
+        user = legacy.current_user(request)
+        db, project = legacy.own_project(pid, user.id)
+        if not project:
+            raise HTTPException(404)
+        try:
+            payload = await request.json()
+            filename = Path(str(payload.get('filename') or '')).name
+            size = int(payload.get('size') or 0)
+            if not artifact_storage.input_object_exists(pid, filename, size):
+                raise HTTPException(409, 'فایل کامل در فضای ذخیره‌سازی تأیید نشد.')
+            project.status = 'analyzing'
+            project.last_error = ''
+            db.commit()
+            legacy.schedule_analysis(pid)
+            return JSONResponse({
+                'ok': True, 'complete': True, 'project_id': pid,
+                'flow_url': f'/projects/{pid}/flow',
+            })
+        finally:
+            db.close()
 
     @app.post('/api/upload/{pid}/chunk')
     async def upload_chunk(pid: int, request: Request):

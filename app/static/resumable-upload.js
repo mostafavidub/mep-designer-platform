@@ -87,6 +87,25 @@
       const init=await fetch(`/api/upload/init/${discipline}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name}),cache:'no-store'});
       if(!init.ok){let message=`init ${init.status}`;try{const body=await init.json();message=body.detail||message}catch(_){}throw new Error(message)}
       const session=await init.json();projectId=session.project_id;flowUrl=session.flow_url;
+      if(session.direct_upload_url){
+        try{
+          setProgress(8,'آماده‌سازی فضای ذخیره‌سازی مستقیم...');
+          const presign=await fetch(session.direct_upload_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:file.name,size:file.size,content_type:file.type||'application/octet-stream'}),cache:'no-store'});
+          if(!presign.ok)throw new Error('direct upload unavailable');
+          const target=await presign.json();
+          setProgress(20,'ارسال مستقیم فایل به فضای امن پروژه...');
+          const uploaded=await fetch(target.upload_url,{method:'PUT',headers:{'Content-Type':target.content_type},body:file});
+          if(!uploaded.ok)throw new Error(`direct upload ${uploaded.status}`);
+          setProgress(92,'تأیید یکپارچگی فایل...');
+          const completed=await fetch(target.complete_url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:file.name,size:file.size}),cache:'no-store'});
+          if(!completed.ok)throw new Error('direct upload verification failed');
+          setProgress(100,'فایل کامل دریافت شد؛ در حال تحلیل...');
+          btn.textContent='در حال تحلیل...';openModal();loadFlow();return;
+        }catch(directError){
+          console.warn('Direct object upload unavailable; using resumable fallback',directError);
+          setProgress(8,'ادامه با آپلود قطعه‌ای امن...');
+        }
+      }
       const total=Math.ceil(file.size/CHUNK);
       for(let i=0;i<total;i++){
         const start=i*CHUNK,end=Math.min(file.size,start+CHUNK);
