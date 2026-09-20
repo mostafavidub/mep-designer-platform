@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0267",
+  "summary": "Make unresolved architecture confirmation a single fail-closed invariant across checkout, paid retry and queue claim",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private reference projects are optional; automated regression remains required.",
+  "owner_release_authorization": "2026-09-20: owner requested complete Staging correction of the architecture-review bypass.",
+  "change_types": ["ui_api", "runtime", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "ui_api": "changed: payment and paid retry hold ambiguous projects for visual architecture confirmation",
+    "qa": "changed: queue claim repeats the architecture confirmation gate as defense in depth",
+    "docs": "added: architecture review checkout contract, rollout and rollback evidence",
+    "governance": "verified: existing MEP-ARCH-RECOG-001 fail-closed intent is enforced without changing the locked rule",
+    "manifest": "verified: no locked rule, schema, artifact contract or module manifest changed",
+    "migration": "verified: no schema migration; legacy projects reconcile through the shared runtime predicate",
+    "versioning": "verified: no public schema or engineering-rule version bump is required",
+    "deployment": "changed: Staging-only rollout and live ambiguous-project verification; Production untouched"
+  },
+  "evidence": {
+    "traceability": ["MEP-ARCH-RECOG-001 -> architecture model INPUT_REQUIRED -> architecture_review -> checkout/retry/queue claim"],
+    "tests": ["tests/test_panel_checkout.py::test_architecture_review_is_a_hard_gate_for_payment_and_paid_retry", "tests/test_panel_checkout.py::test_double_click_is_one_debit_one_ledger_one_job"],
+    "docs": ["docs/ARCHITECTURE_REVIEW_CHECKOUT_GATE.md"],
+    "version_bump": ["not required: behavior-preserving enforcement of an existing locked fail-closed rule"],
+    "migration": ["docs/ARCHITECTURE_REVIEW_CHECKOUT_GATE.md#migration-and-rollout"],
+    "golden_regression": ["existing unambiguous checkout flow remains one payment and one Job"],
+    "semantic_diff": ["ambiguous architecture: queued output -> paid architecture_review with no design Job"],
+    "artifact_diff": ["no CAD artifact is allowed before architecture confirmation"],
+    "numeric_diff": ["not affected: no engineering numeric rule changed"],
+    "contract_diff": ["docs/ARCHITECTURE_REVIEW_CHECKOUT_GATE.md#contract-delta"],
+    "deployment_plan": ["docs/ARCHITECTURE_REVIEW_CHECKOUT_GATE.md#migration-and-rollout"],
+    "rollback_plan": ["docs/ARCHITECTURE_REVIEW_CHECKOUT_GATE.md#rollback"]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 2, "score": 20, "rationale": "A missed entry point could generate engineering output from unconfirmed room geometry; centralized predicate, checkout negatives and queue defense make it directly detectable."},
+  "waiver": null
+}

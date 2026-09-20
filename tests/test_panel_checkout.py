@@ -171,6 +171,7 @@ def test_paid_failed_project_retries_once_without_second_charge(flow, monkeypatc
         db.commit()
         balance = db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one().balance
         ledger_count = db.query(app.state.panel_checkout.Ledger).filter_by(user_id=uid).count()
+
     monkeypatch.setattr('app.panel_checkout.artifact_storage.input_is_durable', lambda project_id: project_id == pid)
 
     first = browser.post('/internal/panel/customer/retry', headers=auth, json={'engineProjectId': pid})
@@ -180,6 +181,51 @@ def test_paid_failed_project_retries_once_without_second_charge(flow, monkeypatc
     assert second.status_code == 200, second.text
     with legacy.Session() as db:
         assert db.query(DesignJob).filter_by(project_id=pid, status='queued').count() == 1
+        assert db.query(app.state.panel_checkout.Ledger).filter_by(user_id=uid).count() == ledger_count
+        assert db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one().balance == balance
+
+
+def test_architecture_review_is_a_hard_gate_for_payment_and_paid_retry(flow, monkeypatch):
+    browser, auth, uid, pid, token, order = flow
+    fund(uid, order['amount'])
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.analysis = {
+            **(project.analysis or {}),
+            'architectural_auto': {'architecture_model': {
+                'status': 'INPUT_REQUIRED',
+                'missing_inputs': ['ROOM_BOUNDARY_GEOMETRY'],
+            }},
+            'architecture_review': {'status': 'REVIEW_REQUIRED', 'spaces': []},
+        }
+        db.commit()
+
+    paid = pay(browser, auth, pid, order)
+    assert paid.status_code == 200, paid.text
+    assert paid.json()['project']['engine']['status'] == 'architecture_review'
+    assert paid.json()['project']['engine']['architecture_review_required'] is True
+    assert paid.json()['project']['engine']['output_ready'] is False
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        assert project.status == 'architecture_review'
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid == 1
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+        balance = db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one().balance
+        ledger_count = db.query(app.state.panel_checkout.Ledger).filter_by(user_id=uid).count()
+
+    review_link = browser.post('/internal/panel/customer/review_link', headers=auth, json={'engineProjectId': pid})
+    assert review_link.status_code == 200, review_link.text
+    access = browser.get(review_link.json()['url'], follow_redirects=False)
+    assert access.status_code == 303, (review_link.json()['url'], access.text)
+    assert access.headers['location'] == f'/projects/{pid}/architecture-review'
+    assert 'session=' in access.headers.get('set-cookie', '')
+
+    monkeypatch.setattr('app.panel_checkout.artifact_storage.input_is_durable', lambda project_id: project_id == pid)
+    retried = browser.post('/internal/panel/customer/retry', headers=auth, json={'engineProjectId': pid})
+    assert retried.status_code == 200, retried.text
+    with legacy.Session() as db:
+        assert db.get(legacy.Project, pid).status == 'architecture_review'
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
         assert db.query(app.state.panel_checkout.Ledger).filter_by(user_id=uid).count() == ledger_count
         assert db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one().balance == balance
 

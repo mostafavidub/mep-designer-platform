@@ -20,6 +20,7 @@ from . import artifact_storage
 from . import mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
 from .design_recovery import RecoveryDecision, classify_recovery, get_recovery, record_recovery, repeated_recovery_failure
+from .architecture_review import hold_for_review
 from .schema_management import create_table_during_registration
 
 
@@ -336,6 +337,19 @@ def register_job_queue(app, legacy):
             job = query.first()
             if not job:
                 return None
+            if job_type == 'design':
+                project = db.get(legacy.Project, job.project_id)
+                if project and hold_for_review(project):
+                    job.status = 'failed'
+                    job.last_error = 'ARCHITECTURE_REVIEW_REQUIRED'
+                    job.locked_at = None
+                    job.updated_at = datetime.utcnow()
+                    revision = db.get(legacy.Revision, job.revision_id)
+                    if revision:
+                        revision.status = 'failed'
+                        revision.error = 'ARCHITECTURE_REVIEW_REQUIRED'
+                    db.commit()
+                    return None
             job.status = 'processing'
             job.locked_at = datetime.utcnow()
             job.attempts += 1
@@ -841,6 +855,9 @@ def register_job_queue(app, legacy):
         if not design_input_materializable(project.id, legacy.DATA_DIR, legacy.safe_extract):
             project.status = 'awaiting_upload'
             project.last_error = 'نسخه قابل‌بازیابی فایل معماری موجود نیست. همان فایل DXF یا ZIP را دوباره بارگذاری کنید؛ پاسخ‌ها و تحلیل ثبت‌شده حفظ می‌شوند.'
+            db.commit()
+            return False
+        if hold_for_review(project):
             db.commit()
             return False
         discipline = (project.answers or {}).get('discipline', (project.analysis or {}).get('discipline', 'mechanical'))

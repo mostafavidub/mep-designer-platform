@@ -17,11 +17,12 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from fastapi import HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import Integer, String, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import artifact_storage, mechanical_workflow
+from .architecture_review import hold_for_review
 from .design_progress import set_project_progress
 
 
@@ -508,13 +509,30 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     async def customer(action: str, request: Request):
         uid = session_user(request)
         body = await request.json()
-        if action not in ("state", "import", "claim", "quote", "pay", "topup", "retry"):
+        if action not in ("state", "import", "claim", "quote", "pay", "topup", "retry", "review_link"):
             raise HTTPException(404)
         with legacy.Session() as db:
             begin(db)
             require_account(db, uid)
             if action == "state":
                 return state(db, uid)
+            if action == "review_link":
+                try:
+                    pid = int(body.get("engineProjectId", 0))
+                except (TypeError, ValueError):
+                    raise HTTPException(400)
+                link = db.query(Link).filter(Link.project_id == pid).first()
+                project = db.get(legacy.Project, pid)
+                if not link or not project or link.external_user_hash != digest(account_id(uid)):
+                    raise HTTPException(404)
+                if not hold_for_review(project):
+                    raise HTTPException(409, "این پروژه نیازمند تأیید معماری نیست.")
+                db.commit()
+                expiry = int(time.time()) + 600
+                material = f"review:{uid}:{pid}:{expiry}"
+                token = f"{uid}.{pid}.{expiry}.{sign(material)}"
+                base = str(request.base_url).rstrip("/")
+                return {"url": f"{base}/panel/architecture-review-access?token={token}"}
             if action == "import":
                 import_projects(db, uid, body.get("projects"))
                 db.commit()
@@ -529,6 +547,10 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                     raise HTTPException(404, "پیوند انتقال معتبر نیست یا منقضی شده است.")
                 row.claimed_by = uid
                 project = db.get(legacy.Project, row.project_id)
+                # A claimed handoff transfers the engine project to the durable
+                # panel account.  The original anonymous upload owner must not
+                # prevent that same customer from completing architecture review.
+                project.user_id = uid
                 order = db.get(Checkout, project.id)
                 if order and order.user_id != uid:
                     raise HTTPException(404)
@@ -562,6 +584,9 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                     return {"project": order_payload(db, order), **state(db, uid)}
                 if not artifact_storage.input_is_durable(pid):
                     raise HTTPException(409, "فایل معماری باید ابتدا از نسخه ذخیره‌شده ترمیم شود.")
+                if hold_for_review(project):
+                    db.commit()
+                    return {"project": order_payload(db, order), **state(db, uid)}
                 active = db.query(Job).filter(
                     Job.project_id == pid,
                     Job.job_type == "design",
@@ -691,15 +716,36 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             else:
                 db.add(Ledger(id=f"TXN-{secrets.token_hex(12)}", user_id=uid, project_id=pid, amount=order.amount,
                               balance_after=wallet.balance, created_at=datetime.utcnow().isoformat() + "Z"))
-            revision = legacy.Revision(project_id=pid, revision_no=(project.current_revision or 0) + 1, status="queued")
-            db.add(revision); db.flush()
-            db.add(Job(job_type="design", project_id=pid, revision_id=revision.id, status="queued"))
-            project.status = "queued"
-            project.last_error = ""
-            set_project_progress(project, "queued")
+            if not hold_for_review(project):
+                revision = legacy.Revision(project_id=pid, revision_no=(project.current_revision or 0) + 1, status="queued")
+                db.add(revision); db.flush()
+                db.add(Job(job_type="design", project_id=pid, revision_id=revision.id, status="queued"))
+                project.status = "queued"
+                project.last_error = ""
+                set_project_progress(project, "queued")
             # Debit, ledger, paid marker and queue job either all commit or all roll back.
             db.commit()
             return {"project": order_payload(db, order), **state(db, uid)}
+
+    @app.get("/panel/architecture-review-access")
+    def architecture_review_access(token: str, request: Request):
+        parts = token.split(".")
+        if len(parts) != 4 or not all(part.isdigit() for part in parts[:3]):
+            raise HTTPException(404)
+        uid, pid, expiry = map(int, parts[:3])
+        expected = sign(f"review:{uid}:{pid}:{expiry}")
+        if expiry <= time.time() or not secrets.compare_digest(expected, parts[3]):
+            raise HTTPException(404)
+        with legacy.Session() as db:
+            project = db.get(legacy.Project, pid)
+            order = db.get(Checkout, pid)
+            if not project or not order or order.user_id != uid or not hold_for_review(project):
+                raise HTTPException(404)
+            project.user_id = uid
+            db.commit()
+        request.session["uid"] = uid
+        request.session["panel_return_url"] = os.environ.get("PANEL_PUBLIC_URL", "https://panel.planha.com").rstrip("/") + "/panel/projects"
+        return RedirectResponse(f"/projects/{pid}/architecture-review", 303)
 
     app.state.panel_checkout = SimpleNamespace(Handoff=Handoff, Checkout=Checkout, Ledger=Ledger, Activity=Activity, Profile=Profile, PanelProject=PanelProject,
                                                session_user=session_user, apply_account_reconciliations=apply_account_reconciliations)

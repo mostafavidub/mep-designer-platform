@@ -329,6 +329,32 @@ def review_complete(project):
     return review.get("status") == "CONFIRMED"
 
 
+def review_required(project):
+    """Fail closed whenever architecture ambiguity has not been confirmed.
+
+    This predicate is intentionally entry-point agnostic.  Checkout, wallet,
+    retry, maintenance and the queue consumer must all ask the same question
+    instead of duplicating (and eventually bypassing) the review rule.
+    """
+    analysis = project.analysis or {}
+    review = analysis.get("architecture_review") or {}
+    if review:
+        return review.get("status") != "CONFIRMED"
+    model = ((analysis.get("architectural_auto") or {}).get("architecture_model") or {})
+    return model.get("status") == "INPUT_REQUIRED" and bool(set(model.get("missing_inputs") or []) & {
+        "CANONICAL_PLAN_FRAME", "ROOM_BOUNDARY_GEOMETRY", "SHAFT_BOUNDARY_GEOMETRY",
+    })
+
+
+def hold_for_review(project):
+    """Move a project to the truthful review state without fabricating an error."""
+    if not review_required(project):
+        return False
+    project.status = "architecture_review"
+    project.last_error = ""
+    return True
+
+
 def _final_integrity(state):
     groups = {}
     for row in state.get("spaces") or []:
@@ -498,7 +524,7 @@ def install(app, legacy):
                {"status": "CONFIRMED", "source_hash": state["source_hash"]},
                {"ip": request.client.host if request.client else None,
                 "user_agent": request.headers.get("user-agent", "")[:300]})
-        db.commit(); next_url = f"/projects/{pid}"; db.close()
+        db.commit(); next_url = request.session.pop("panel_return_url", None) or f"/projects/{pid}"; db.close()
         return JSONResponse({"ok": True, "next_url": next_url})
 
     @app.get("/admin/projects/{pid}/architecture-review")

@@ -21,6 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from . import artifact_storage, dxf_output, mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
+from .architecture_review import review_required
 from .panel_checkout import register_panel_checkout, session_user
 from .schema_management import create_table_during_registration
 
@@ -64,6 +65,7 @@ def register_panel_bridge(app, legacy, Job):
 
     def status_payload(project):
         data = legacy.flow_payload(project)
+        architecture_review_required = review_required(project)
         # The panel persists its own project list. Always expose the current,
         # customer-safe failure separately so a stale local row cannot hide the
         # reason after the engine transitions to ``failed``.
@@ -82,7 +84,12 @@ def register_panel_bridge(app, legacy, Job):
         if progress:
             data["design_progress"] = progress
             data["progress"] = progress["percent"]
-        data["output_ready"] = bool(data.get("output_url")) and project.status == "ready"
+        data["output_ready"] = bool(data.get("output_url")) and project.status == "ready" and not architecture_review_required
+        data["architecture_review_required"] = architecture_review_required
+        if data["architecture_review_required"]:
+            data["status"] = "architecture_review"
+            data["status_label"] = "در انتظار تأیید معماری"
+            data["progress"] = 0
         data["download_url"] = (
             f"/internal/panel/projects/{project.id}/output"
             if data["output_ready"]
@@ -319,6 +326,8 @@ def register_panel_bridge(app, legacy, Job):
             discipline = (project.answers or {}).get(
                 "discipline", (project.analysis or {}).get("discipline", "mechanical")
             )
+            if review_required(project):
+                raise HTTPException(409, "تأیید معماری پروژه پیش از دانلود خروجی الزامی است.")
             if project.status != "ready" or not revision or revision.status != "ready":
                 raise HTTPException(409, "Output is not ready")
             stored = dxf_output._resolve_existing_cad_artifact(
