@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0268",
+  "summary": "Make visual architecture confirmation legible and guided across drawing-unit scales",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private reference projects are optional; automated regression remains required.",
+  "owner_release_authorization": "2026-09-20: owner requested complete Staging correction of the unusable architecture confirmation screen.",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "ui_api": "changed: scale-aware labels, deferred snap nodes, explicit four-step guidance, useful space names and view controls",
+    "qa": "changed: regression asserts labels cannot use a fixed drawing-unit size and nodes remain hidden before space selection",
+    "docs": "added: visual review usability contract and evidence",
+    "governance": "verified: existing architecture confirmation semantics and audit history are unchanged",
+    "manifest": "verified: no locked rule, schema or artifact manifest changed",
+    "migration": "verified: no data migration; existing review records render with the new presentation",
+    "versioning": "verified: no engineering rule or schema version bump is required",
+    "deployment": "changed: Staging-only rollout and live project verification; Production untouched"
+  },
+  "evidence": {
+    "traceability": ["architecture review state -> selected floor/space -> exact CAD snap nodes -> audited boundary confirmation"],
+    "tests": ["tests/test_architecture_review.py::ArchitectureReviewTests::test_review_ui_keeps_labels_screen_scaled_and_hides_nodes_until_selection", "tests/test_architecture_review.py", "tests/test_architecture_geometry_reconstruction.py", "tests/test_panel_checkout.py"],
+    "docs": ["docs/ARCHITECTURE_REVIEW_USABILITY.md"],
+    "version_bump": ["not required: presentation-only change; architecture-review/1 data contract remains unchanged"],
+    "migration": ["docs/ARCHITECTURE_REVIEW_USABILITY.md#migration-and-rollout"],
+    "golden_regression": ["43 architecture, geometry and checkout tests pass"],
+    "semantic_diff": ["all snap nodes and fixed-size labels -> selected-space nodes and scale-aware labels"],
+    "artifact_diff": ["no DXF artifact changes; browser rendering only"],
+    "numeric_diff": ["not affected: no engineering numeric value changed"],
+    "contract_diff": ["docs/ARCHITECTURE_REVIEW_USABILITY.md#contract-delta"],
+    "deployment_plan": ["docs/ARCHITECTURE_REVIEW_USABILITY.md#migration-and-rollout"],
+    "rollback_plan": ["docs/ARCHITECTURE_REVIEW_USABILITY.md#rollback"]
+  },
+  "risk": {"likelihood": 2, "severity": 3, "detectability": 2, "score": 12, "rationale": "An unreadable review could induce wrong user selections; scale-aware rendering, progressive disclosure and a real-project visual check make it directly detectable."},
+  "waiver": null
+}

@@ -1,0 +1,67 @@
+.architecture-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px;
+  background: #f4f7fb;
+  border: 1px solid #dce2e9;
+  border-radius: 14px;
+}
+.architecture-steps span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: #526072;
+  font-size: 13px;
+}
+.architecture-steps span.active {
+  background: #fff;
+  color: #172033;
+  box-shadow: 0 1px 4px #17203316;
+}
+.architecture-steps b {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #dde5ef;
+  color: #344054;
+}
+.architecture-steps .active b { background: #1769d2; color: #fff; }
+.architecture-toolbar { flex-wrap: wrap; }
+.architecture-label { display: none; }
+.architecture-canvas { cursor: grab; touch-action: none; user-select: none; }
+.architecture-canvas.is-panning { cursor: grabbing; }
+.architecture-view-tools { display: flex; gap: 6px; direction: ltr; }
+.architecture-view-tools button {
+  border: 1px solid #cdd6e2;
+  background: #fff;
+  color: #263247;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+}
+.architecture-view-tools button:first-child,
+.architecture-view-tools button:last-child { font-size: 18px; line-height: 1; min-width: 34px; }
+.architecture-list-help { display: block; margin: 6px 0 10px; color: #667085; line-height: 1.7; }
+.architecture-space-option { align-items: center; cursor: pointer; }
+.architecture-space-option span { display: flex; align-items: center; gap: 8px; }
+.architecture-space-option span em {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #eef3f9;
+  color: #475467;
+  font-style: normal;
+  font-size: 11px;
+}
+.architecture-space-option.active span em { background: #1769d2; color: #fff; }
+@media (max-width: 980px) { .architecture-steps { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { .architecture-steps { grid-template-columns: 1fr; } }

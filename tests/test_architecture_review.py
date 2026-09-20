@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from fastapi import HTTPException
 
@@ -19,6 +20,19 @@ def square_state():
 
 
 class ArchitectureReviewTests(unittest.TestCase):
+    def test_review_ui_keeps_labels_screen_scaled_and_hides_nodes_until_selection(self):
+        template = Path("app/templates/architecture_review.html").read_text(encoding="utf-8")
+        self.assertIn("'font-size':Math.max(m.size*.012,m.w*.009)", template)
+        self.assertIn("if(!admin&&spaceId)", template)
+        self.assertIn("نمایش کامل پلان", template)
+        self.assertIn("spaceTitle(s,index)", template)
+        self.assertIn("نقاط آبی فقط بعد از انتخاب فضا نمایش داده می‌شوند", template)
+        css = Path("app/static/architecture-review-v2.css").read_text(encoding="utf-8")
+        self.assertIn(".architecture-label { display: none; }", css)
+        self.assertIn("svg.addEventListener('pointermove'", template)
+        self.assertIn("panY+=dy*", template)
+        self.assertIn("touch-action: none", css)
+
     def test_confirmed_model_cannot_be_silently_edited(self):
         with self.assertRaises(HTTPException) as error:
             _require_mutable({"status": "CONFIRMED"})
