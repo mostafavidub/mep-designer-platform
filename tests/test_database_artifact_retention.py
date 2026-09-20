@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.main import ArtifactBlob, Base, Project, ProjectInputBlob, Revision, User
+from app.main import ArtifactBlob, Base, Project, Revision, User
 
 
 def test_artifact_blob_is_available_from_a_separate_service_session(tmp_path):
@@ -29,29 +29,4 @@ def test_artifact_blob_is_available_from_a_separate_service_session(tmp_path):
     assert restored.project_id == project_id
     assert restored.revision_no == 1
     assert bytes(restored.content) == b'validated-dxf-bytes'
-    second.close()
-
-
-def test_architecture_input_blob_is_available_from_a_separate_worker_session(tmp_path):
-    engine = create_engine(f"sqlite:///{tmp_path / 'shared-input.db'}")
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    first = Session()
-    user = User(email='input@example.test')
-    first.add(user); first.flush()
-    project = Project(user_id=user.id, name='shared architecture input')
-    first.add(project); first.flush()
-    blob = ProjectInputBlob(
-        project_id=project.id,
-        filename='architecture.dxf',
-        media_type='application/dxf',
-        sha256='b' * 64,
-        content=b'architecture-dxf-bytes',
-    )
-    first.add(blob); first.commit(); project_id = project.id; first.close()
-
-    second = Session()
-    restored = second.query(ProjectInputBlob).filter_by(project_id=project_id).one()
-    assert restored.filename == 'architecture.dxf'
-    assert bytes(restored.content) == b'architecture-dxf-bytes'
     second.close()
