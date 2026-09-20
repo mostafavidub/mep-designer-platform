@@ -114,13 +114,18 @@ def register_resumable_upload_routes(app):
             chunk.content = body
             db.commit()
 
-            rows = db.query(legacy.ProjectUploadChunk).filter_by(project_id=pid).order_by(
-                legacy.ProjectUploadChunk.chunk_index
-            ).all()
-            complete = len(rows) == total and [row.chunk_index for row in rows] == list(range(total))
+            # Counting must not hydrate every binary fragment on every request:
+            # doing so makes a 26 MB upload transfer hundreds of MB internally.
+            received = db.query(legacy.ProjectUploadChunk.id).filter_by(project_id=pid).count()
+            complete = received == total
             if not complete:
                 return JSONResponse({'ok': True, 'complete': False, 'received': index, 'total': total})
 
+            rows = db.query(legacy.ProjectUploadChunk).filter_by(project_id=pid).order_by(
+                legacy.ProjectUploadChunk.chunk_index
+            ).all()
+            if [row.chunk_index for row in rows] != list(range(total)):
+                raise ValueError('Upload chunk sequence is incomplete.')
             assembled = b''.join(bytes(row.content) for row in rows)
             if len(assembled) > CHUNK_SIZE_MAX * MAX_CHUNKS:
                 raise HTTPException(413, 'Uploaded file is too large')
