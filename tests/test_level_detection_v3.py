@@ -65,6 +65,26 @@ class LevelDetectionV3Tests(unittest.TestCase):
         self.assertEqual(v3._explicit_level_title('Mezzanine Floor Plan')[0], 'نیم طبقه')
         self.assertEqual(v3._explicit_level_title('Basement Plan')[0], 'زیرزمین')
 
+    def test_reused_roof_title_is_not_an_authoritative_level(self):
+        analysis = {
+            'files': [{
+                'text_labels': [
+                    {'text': 'پلان معماری طبقه همکف', 'x': 0, 'y': 0, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'اتاق خواب', 'x': 2, 'y': 2, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'پلان معماری بام', 'x': 100, 'y': 0, 'source_type': 'layout', 'source_name': 'Model'},
+                    {'text': 'اتاق خواب', 'x': 102, 'y': 2, 'source_type': 'layout', 'source_name': 'Model'},
+                ],
+                'fixture_counts': {}, 'roof_drain_count': 0,
+            }]
+        }
+        auto = v3.infer_architecture_facts(analysis, 'mechanical')
+        self.assertFalse(auto['roof_scope_reliable'])
+        self.assertNotIn('بام', [x['name'] for x in auto['levels']])
+        self.assertNotIn('بام', [x['name'] for x in auto['level_profiles']])
+        rejected = next(x for x in auto['candidate_levels'] if x['name'] == 'بام')
+        self.assertEqual(rejected['rejection_reason'], 'occupied_floor_content_without_roof_drain_evidence')
+        self.assertIn('pseudo_roof_removed_from_authoritative_levels', auto['level_detection_diagnostics'])
+
 
 if __name__ == '__main__':
     unittest.main()

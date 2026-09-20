@@ -180,6 +180,28 @@ def infer_architecture_facts(analysis, discipline):
             weak.append(candidate)
 
     if profiles:
+        # A rejected pseudo-roof is not merely "out of rainwater scope"; it is
+        # not an architectural level at all.  Keeping it in level_profiles lets
+        # reconstruction assign occupied-floor rooms and geometry to a fake
+        # second level even though the inference layer already proved that the
+        # title was reused and no roof evidence exists.  Preserve the title as
+        # an auditable candidate, but fail closed by removing it from every
+        # authoritative level collection.
+        rejected_roofs = []
+        if auto.get("roof_scope_reliable") is False:
+            rejected_roofs = [p for p in profiles if p.get("roof")]
+            profiles = [p for p in profiles if not p.get("roof")]
+            for profile in rejected_roofs:
+                weak.append({
+                    "name": profile.get("name"),
+                    "confidence": profile.get("level_confidence", 0.0),
+                    "active": False,
+                    "basis": "rejected-pseudo-roof",
+                    "source_type": profile.get("source_type"),
+                    "source_name": profile.get("source_name"),
+                    "title_point": profile.get("title_point"),
+                    "rejection_reason": "occupied_floor_content_without_roof_drain_evidence",
+                })
         auto["level_profiles"] = profiles
         auto["levels"] = [{"name": p["name"], "confidence": p.get("level_confidence")} for p in profiles]
         # Typical groups are intentionally recalculated only from profiles with
@@ -199,6 +221,8 @@ def infer_architecture_facts(analysis, discipline):
         diagnostics.append("explicit_levels_restored_without_room_labels")
     if weak:
         diagnostics.append("weak_level_titles_retained_as_candidates")
+    if auto.get("roof_scope_reliable") is False and any(x.get("basis") == "rejected-pseudo-roof" for x in weak):
+        diagnostics.append("pseudo_roof_removed_from_authoritative_levels")
     auto["level_detection_diagnostics"] = list(dict.fromkeys(diagnostics))
     return auto
 
