@@ -48,6 +48,13 @@ def test_panel_bridge_resumes_asking_project_with_new_answers():
     assert 'project.status = "uploading"' in BRIDGE
 
 
+def test_panel_bridge_repairs_non_durable_existing_input_before_reuse():
+    assert 'durable_input = artifact_storage.input_is_durable(project.id)' in BRIDGE
+    assert 'project.status != "asking" and durable_input' in BRIDGE
+    assert 'artifact_storage.upload_input(pid, input_path)' in BRIDGE
+    assert "نسخه پایدار فایل معماری ثبت نشد" in BRIDGE
+
+
 def test_panel_bridge_restores_answers_after_analyzer_reset_before_advancing():
     analyzer = BRIDGE.index('legacy.analyze_project_job(pid)')
     restoration = BRIDGE.index('restored_answers.update(', analyzer)

@@ -157,6 +157,51 @@ def test_unpaid_quote_is_durable_and_resumes_payment_after_page_close(flow):
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
 
 
+def test_paid_failed_project_retries_once_without_second_charge(flow, monkeypatch):
+    browser, auth, uid, pid, token, order = flow
+    fund(uid, order['amount'])
+    paid = pay(browser, auth, pid, order)
+    assert paid.status_code == 200, paid.text
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.status = 'failed'
+        project.last_error = 'فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد.'
+        job = db.query(DesignJob).filter_by(project_id=pid).one()
+        job.status = 'failed'
+        db.commit()
+        balance = db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one().balance
+        ledger_count = db.query(app.state.panel_checkout.Ledger).filter_by(user_id=uid).count()
+    monkeypatch.setattr('app.panel_checkout.artifact_storage.input_is_durable', lambda project_id: project_id == pid)
+
+    first = browser.post('/internal/panel/customer/retry', headers=auth, json={'engineProjectId': pid})
+    second = browser.post('/internal/panel/customer/retry', headers=auth, json={'engineProjectId': pid})
+
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    with legacy.Session() as db:
+        assert db.query(DesignJob).filter_by(project_id=pid, status='queued').count() == 1
+        assert db.query(app.state.panel_checkout.Ledger).filter_by(user_id=uid).count() == ledger_count
+        assert db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one().balance == balance
+
+
+def test_checkout_retains_panel_file_pointer_for_paid_input_repair(flow):
+    browser, auth, uid, pid, token, order = flow
+    retained = {
+        'id': order['id'], 'title': 'فایل قابل ترمیم', 'service': 'طراحی برق',
+        'status': 'در انتظار پرداخت', 'progress': 20, 'amount': order['amount'],
+        'fileKey': f'projects/CUST-{uid}/retained-plan.dxf', 'fileName': 'retained-plan.dxf',
+        'analysis': {'status': 'ready', 'area': 100},
+    }
+    imported = browser.post('/internal/panel/customer/import', headers=auth, json={'projects': [retained]})
+    assert imported.status_code == 200, imported.text
+
+    state = browser.post('/internal/panel/customer/state', headers=auth, json={}).json()
+    restored = next(row for row in state['projects'] if row['id'] == order['id'])
+    assert restored['fileKey'] == retained['fileKey']
+    assert restored['fileName'] == retained['fileName']
+    assert restored['analysis']['area'] == 100
+
+
 def test_account_snapshot_exposes_one_revisioned_authoritative_progress(flow):
     browser, auth, uid, pid, token, order = flow
     fund(uid, order['amount'])

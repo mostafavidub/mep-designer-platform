@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import Integer, String, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from . import mechanical_workflow
+from . import artifact_storage, mechanical_workflow
 from .design_progress import set_project_progress
 
 
@@ -262,6 +262,13 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 "status_label": "در انتظار پرداخت",
                 "payment_required": True,
             }
+        retained = db.get(PanelProject, order.external_id)
+        retained_payload = {}
+        if retained:
+            try:
+                retained_payload = json.loads(retained.payload) or {}
+            except (TypeError, ValueError):
+                retained_payload = {}
         return {"id": order.external_id, "owner": account_id(order.user_id), "title": project.name,
                 "service": "طراحی برق" if (project.answers or {}).get("discipline") == "electrical" else "طراحی مکانیک",
                 "area": float(order.area or 0), "amount": order.amount, "paid": paid,
@@ -269,7 +276,14 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 "status": "در انتظار پرداخت" if checkout_state == "awaiting_payment" else data.get("status"),
                 "resumeAction": "payment" if checkout_state == "awaiting_payment" else None,
                 "paymentRequired": checkout_state == "awaiting_payment",
-                "quoteToken": order.quote_token, "answers": {k: v for k, v in (project.answers or {}).items() if isinstance(v, (str, int, float, bool))}, "engine": data}
+                "quoteToken": order.quote_token,
+                # Keep the panel's R2 pointer after checkout so an already-paid
+                # project can repair a missing engine-side durable copy without
+                # asking the customer to upload or pay again.
+                "fileKey": retained_payload.get("fileKey"),
+                "fileName": retained_payload.get("fileName"),
+                "analysis": retained_payload.get("analysis"),
+                "answers": {k: v for k, v in (project.answers or {}).items() if isinstance(v, (str, int, float, bool))}, "engine": data}
 
     def authoritative_engine_state(db, project, link):
         """Return one revisioned snapshot shared by customer and admin views."""
@@ -494,7 +508,7 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     async def customer(action: str, request: Request):
         uid = session_user(request)
         body = await request.json()
-        if action not in ("state", "import", "claim", "quote", "pay", "topup"):
+        if action not in ("state", "import", "claim", "quote", "pay", "topup", "retry"):
             raise HTTPException(404)
         with legacy.Session() as db:
             begin(db)
@@ -544,7 +558,50 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 order = Checkout(project_id=pid, user_id=uid, external_id=link.external_project_id)
                 db.add(order); db.flush()
             if order.paid:
+                if action != "retry":
+                    return {"project": order_payload(db, order), **state(db, uid)}
+                if not artifact_storage.input_is_durable(pid):
+                    raise HTTPException(409, "فایل معماری باید ابتدا از نسخه ذخیره‌شده ترمیم شود.")
+                active = db.query(Job).filter(
+                    Job.project_id == pid,
+                    Job.job_type == "design",
+                    Job.status.in_(("queued", "processing")),
+                ).order_by(Job.id.desc()).first()
+                if not active:
+                    previous = db.query(Job).filter(
+                        Job.project_id == pid, Job.job_type == "design",
+                    ).order_by(Job.id.desc()).first()
+                    if previous and previous.revision_id:
+                        active = previous
+                        active.status = "queued"
+                        active.attempts = 0
+                        active.available_at = datetime.utcnow()
+                        active.locked_at = None
+                        active.last_error = ""
+                        revision = db.get(legacy.Revision, active.revision_id)
+                        if revision:
+                            revision.status = "queued"
+                            revision.error = ""
+                    else:
+                        revision = legacy.Revision(
+                            project_id=pid,
+                            revision_no=(project.current_revision or 0) + 1,
+                            status="queued",
+                        )
+                        db.add(revision)
+                        db.flush()
+                        active = Job(
+                            job_type="design", project_id=pid,
+                            revision_id=revision.id, status="queued",
+                        )
+                        db.add(active)
+                project.status = "queued"
+                project.last_error = ""
+                set_project_progress(project, "queued")
+                db.commit()
                 return {"project": order_payload(db, order), **state(db, uid)}
+            if action == "retry":
+                raise HTTPException(409, "این پروژه هنوز پرداخت نشده است.")
             if action == "quote":
                 supplied = body.get("answers") or {}
                 if not isinstance(supplied, dict):

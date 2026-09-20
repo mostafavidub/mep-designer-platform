@@ -139,7 +139,17 @@ def register_panel_bridge(app, legacy, Job):
                 access_token = project_token(external_project_id, external_user_hash)
                 if not secrets.compare_digest(existing.access_token_hash, digest(access_token)):
                     raise HTTPException(409, "Project link cannot be recovered")
-                if project.status != "asking":
+                # A linked project is only reusable when its original upload is
+                # genuinely durable.  Older panel projects were analysed from a
+                # temporary local copy and could therefore become impossible to
+                # design after that copy was cleaned up.  Re-posting the same
+                # external id with the retained panel file repairs that project
+                # instead of returning a misleading successful status.
+                try:
+                    durable_input = artifact_storage.input_is_durable(project.id)
+                except Exception:
+                    durable_input = False
+                if project.status != "asking" and durable_input:
                     data = status_payload(project)
                     data.update({"project_token": access_token, "engine_project_id": project.id})
                     return JSONResponse(data)
@@ -191,7 +201,10 @@ def register_panel_bridge(app, legacy, Job):
             db.close()
 
         try:
-            legacy.save_project_input(pid, file)
+            input_path = legacy.save_project_input(pid, file)
+            artifact_storage.upload_input(pid, input_path)
+            if not artifact_storage.input_is_durable(pid):
+                raise RuntimeError('نسخه پایدار فایل معماری ثبت نشد؛ دوباره تلاش کنید.')
             # The panel already collected the exact file-aware questionnaire.
             # Re-run the authority analyzer synchronously, merge those answers,
             # and fail closed if the engine discovers any unresolved input.
