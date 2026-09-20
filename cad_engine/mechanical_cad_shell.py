@@ -112,7 +112,7 @@ def _release_input_errors(report, pre_submission=None):
     pipeline_errors=set(pipeline_qa.get('errors') or [])
     disclosed_target_package=bool(
         target_package_pre_submission
-        and pipeline_qa.get('status') in {'FAIL','INPUT_REQUIRED'}
+        and pipeline_qa.get('status') in {'FAIL','INPUT_REQUIRED','PRE_SUBMISSION'}
         and pipeline_errors
         and pipeline_errors <= ({'TARGET_DESIGN_PACKAGES_MISSING'}|_DISCLOSABLE_EVIDENCE_CONSTRAINTS)
         and ('TARGET_DESIGN_PACKAGES_MISSING' in pipeline_errors
