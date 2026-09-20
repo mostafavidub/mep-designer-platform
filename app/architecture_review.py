@@ -285,6 +285,11 @@ def _require_revision(state, payload):
         raise HTTPException(409, "این پروژه هم‌زمان در صفحه دیگری تغییر کرده است؛ برای جلوگیری از بازنویسی، صفحه را تازه‌سازی کنید.")
 
 
+def _require_mutable(state):
+    if state.get("status") == "CONFIRMED":
+        raise HTTPException(409, "مدل معماری قفل شده است. برای اصلاح مبنا، فایل معماری اصلاح‌شده را دوباره بارگذاری کنید تا تأیید قبلی باطل و سابقه حفظ شود.")
+
+
 def _sync_model(analysis, state):
     auto = dict(analysis.get("architectural_auto") or {})
     model = dict(auto.get("architecture_model") or {})
@@ -418,6 +423,7 @@ def install(app, legacy):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project: raise HTTPException(404)
         state = _review_state(legacy, project); payload = await request.json()
+        _require_mutable(state)
         _require_revision(state, payload)
         spaces = state.get("spaces") or []
         existing = next((row for row in spaces if row.get("id") == space_id), None)
@@ -443,6 +449,7 @@ def install(app, legacy):
         user = legacy.current_user(request); db, project = legacy.own_project(pid, user.id)
         if not project: raise HTTPException(404)
         state = _review_state(legacy, project); payload = await request.json()
+        _require_mutable(state)
         _require_revision(state, payload)
         reason = str(payload.get("reason") or "").strip()
         if len(reason) < 10:

@@ -2,7 +2,7 @@ import unittest
 
 from fastapi import HTTPException
 
-from app.architecture_review import _require_admin, _require_revision, _resolve_boundary, _validate_space
+from app.architecture_review import _require_admin, _require_mutable, _require_revision, _resolve_boundary, _validate_space
 
 
 def square_state():
@@ -19,6 +19,11 @@ def square_state():
 
 
 class ArchitectureReviewTests(unittest.TestCase):
+    def test_confirmed_model_cannot_be_silently_edited(self):
+        with self.assertRaises(HTTPException) as error:
+            _require_mutable({"status": "CONFIRMED"})
+        self.assertEqual(error.exception.status_code, 409)
+
     def test_admin_audit_rejects_untrusted_public_host(self):
         class Headers(dict):
             get = dict.get
