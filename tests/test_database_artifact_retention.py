@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.main import ArtifactBlob, Base, Project, ProjectInputBlob, Revision, User
+from app.main import ArtifactBlob, Base, Project, ProjectInputBlob, ProjectUploadChunk, Revision, User
 
 
 def test_artifact_blob_is_available_from_a_separate_service_session(tmp_path):
@@ -54,4 +54,32 @@ def test_architecture_input_blob_is_available_from_a_separate_worker_session(tmp
     restored = second.query(ProjectInputBlob).filter_by(project_id=project_id).one()
     assert restored.filename == 'architecture.dxf'
     assert bytes(restored.content) == b'architecture-dxf-bytes'
+    second.close()
+
+
+def test_upload_chunks_are_shared_between_web_replicas(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'shared-chunks.db'}")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    first = Session()
+    user = User(email='chunks@example.test')
+    first.add(user); first.flush()
+    project = Project(user_id=user.id, name='resumable upload', status='uploading')
+    first.add(project); first.flush()
+    first.add(ProjectUploadChunk(
+        project_id=project.id, chunk_index=0, total_chunks=2,
+        filename='architecture.dxf', content=b'first',
+    ))
+    first.commit(); project_id = project.id; first.close()
+
+    second = Session()
+    second.add(ProjectUploadChunk(
+        project_id=project_id, chunk_index=1, total_chunks=2,
+        filename='architecture.dxf', content=b'second',
+    ))
+    second.commit()
+    rows = second.query(ProjectUploadChunk).filter_by(project_id=project_id).order_by(
+        ProjectUploadChunk.chunk_index
+    ).all()
+    assert b''.join(bytes(row.content) for row in rows) == b'firstsecond'
     second.close()
