@@ -92,6 +92,59 @@ class ArchitectureReconstructionV1Tests(unittest.TestCase):
         finally:
             path.unlink(missing_ok=True)
 
+    def test_rejects_shared_outline_as_room_geometry_and_promotes_shaft_label(self):
+        path = self._write_architecture()
+        try:
+            base = {'text_labels': [
+                {'text': 'آشپزخانه', 'x': 3, 'y': 3, 'source_type': 'layout', 'source_name': 'Model'},
+                {'text': 'حمام', 'x': 5, 'y': 4, 'source_type': 'layout', 'source_name': 'Model'},
+                {'text': 'داکت', 'x': 6, 'y': 5, 'source_type': 'layout', 'source_name': 'Model'},
+            ]}
+            analysis_file = reconstruct_dxf(path, base)
+            # The same closed outline contains three semantic labels, so it is
+            # not accepted as three fabricated room/shaft polygons.
+            self.assertTrue(all(row['polygon'] is None for row in analysis_file['architecture_rooms']))
+            auto = {'level_profiles': [
+                {'name': 'طبقه همکف', 'title_point': [10, -2], 'roof': False},
+            ]}
+            level = enrich_auto(auto, {'files': [analysis_file]})['architecture_model']['levels'][0]
+            self.assertEqual([row['type'] for row in level['rooms']], ['kitchen', 'bath'])
+            self.assertEqual(len(level['shafts']), 2)  # semantic block + explicit shaft label
+            label_shaft = next(row for row in level['shafts'] if row['entity_type'] == 'TEXT_EVIDENCE')
+            self.assertEqual(label_shaft['geometry_confidence'], 'label_only')
+            model = enrich_auto(auto, {'files': [analysis_file]})['architecture_model']
+            self.assertEqual(model['status'], 'INPUT_REQUIRED')
+            self.assertIn('ROOM_BOUNDARY_GEOMETRY', model['missing_inputs'])
+            self.assertIn('SHAFT_BOUNDARY_GEOMETRY', model['missing_inputs'])
+            self.assertEqual(model['quality']['fabricated_geometry_count'], 0)
+        finally:
+            path.unlink(missing_ok=True)
+
+    def test_canonical_print_frame_prevents_non_plan_labels_and_entities_from_leaking(self):
+        analysis_file = {
+            'architecture_rooms': [
+                {'type': 'bath', 'label': 'حمام', 'label_point': [5, 5]},
+                {'type': 'stair', 'label': 'دال راه پله', 'label_point': [105, 5]},
+            ],
+            'architecture_primitives': [
+                {'kind': 'door', 'layer': 'door', 'entity_type': 'LINE',
+                 'bounds': [4, 4, 5, 5], 'centroid': [4.5, 4.5]},
+                {'kind': 'door', 'layer': 'door', 'entity_type': 'LINE',
+                 'bounds': [104, 4, 105, 5], 'centroid': [104.5, 4.5]},
+            ],
+            'architecture_plan_frames': [
+                {'bounds': [0, 0, 20, 20], 'drawing_type': 'ARCH_FLOOR_PLAN', 'level': 'GROUND'},
+                {'bounds': [100, 0, 120, 20], 'drawing_type': 'SECTION', 'level': None},
+            ],
+        }
+        auto = {'level_profiles': [
+            {'name': 'طبقه همکف', 'title_point': [10, 10], 'roof': False},
+        ]}
+        level = enrich_auto(auto, {'files': [analysis_file]})['architecture_model']['levels'][0]
+        self.assertEqual([row['type'] for row in level['rooms']], ['bath'])
+        self.assertEqual(level['counts']['door'], 1)
+        self.assertEqual(level['region_bounds'], [0.0, 0.0, 20.0, 20.0])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -138,6 +138,7 @@ def _text_value(entity):
 
 def reconstruct_dxf(path, base_result=None):
     result = dict(base_result or {})
+    reconstruction_diagnostics = []
     try:
         doc, _recovery = read_input_dxf(path)
     except Exception as exc:
@@ -170,7 +171,7 @@ def reconstruct_dxf(path, base_result=None):
                 if area > 0:
                     closed_polygons.append({"points": pts, "bounds": b, "area": area, "layer": layer})
 
-    rooms = []
+    semantic_labels = []
     for item in result.get("text_labels") or []:
         room_type = base_inference.classify_room(item.get("text") or "")
         if not room_type:
@@ -179,8 +180,21 @@ def reconstruct_dxf(path, base_result=None):
             p = (float(item["x"]), float(item["y"]))
         except Exception:
             continue
+        semantic_labels.append((item, room_type, p))
+
+    # A print border, apartment outline or other large closed polyline often
+    # encloses several labels.  Treating it as every enclosed room's polygon
+    # fabricates room geometry.  A polygon is authoritative for a room only
+    # when it encloses exactly one semantic space/shaft label.
+    polygon_label_counts = {
+        id(poly): sum(1 for _item, _kind, point in semantic_labels if _contains(poly["points"], point))
+        for poly in closed_polygons
+    }
+    rooms = []
+    for item, room_type, p in semantic_labels:
         containing = [poly for poly in closed_polygons if _contains(poly["points"], p)]
-        polygon = min(containing, key=lambda x: x["area"]) if containing else None
+        exclusive = [poly for poly in containing if polygon_label_counts.get(id(poly)) == 1]
+        polygon = min(exclusive, key=lambda x: x["area"]) if exclusive else None
         rooms.append({
             "type": room_type,
             "label": str(item.get("text") or ""),
@@ -192,11 +206,33 @@ def reconstruct_dxf(path, base_result=None):
             "polygon_confidence": "high" if polygon else "label_only",
         })
 
+    try:
+        from cad_engine.plan_segmentation import analyze_plan_frames
+        frame_analysis = analyze_plan_frames(path)
+        result["architecture_plan_frames"] = [
+            {
+                "bounds": [round(float(v), 6) for v in row.get("bounds") or []],
+                "drawing_type": row.get("drawing_type"),
+                "level": row.get("level"),
+                "represented_levels": list(row.get("represented_levels") or []),
+                "confidence": row.get("confidence"),
+                "handle": row.get("handle"),
+                "title_text": list(row.get("title_text") or []),
+            }
+            for row in frame_analysis.get("candidates") or []
+            if len(row.get("bounds") or []) == 4
+        ]
+    except Exception as exc:
+        result["architecture_plan_frames"] = []
+        reconstruction_diagnostics.append(
+            f"plan_frame_analysis_failed:{type(exc).__name__}"
+        )
+
     result["architecture_reconstruction_version"] = RECONSTRUCTION_VERSION
     result["architecture_primitives"] = primitives[:50000]
     result["architecture_primitive_counts"] = dict(layer_counts)
     result["architecture_rooms"] = rooms[:10000]
-    result["architecture_reconstruction_diagnostics"] = []
+    result["architecture_reconstruction_diagnostics"] = reconstruction_diagnostics
     return result
 
 
@@ -213,14 +249,64 @@ def _expanded_bounds(points, pad_ratio=0.22):
     return [b[0]-px, b[1]-py, b[2]+px, b[3]+py]
 
 
+def _bounds_overlap(a, b, tolerance=0.0):
+    return not (a[2] < b[0]-tolerance or b[2] < a[0]-tolerance or
+                a[3] < b[1]-tolerance or b[3] < a[1]-tolerance)
+
+
+def _merge_symbol_components(items, kind, tolerance=0.015):
+    """Collapse line/arc fragments that describe one semantic CAD symbol."""
+    pending = [dict(item) for item in items]
+    merged = []
+    while pending:
+        component = [pending.pop(0)]
+        changed = True
+        while changed:
+            changed = False
+            component_bounds = _bounds([p for row in component for p in (
+                (row["bounds"][0], row["bounds"][1]), (row["bounds"][2], row["bounds"][3])
+            )])
+            for row in list(pending):
+                if row.get("layer") == component[0].get("layer") and _bounds_overlap(
+                    component_bounds, row.get("bounds") or [0, 0, 0, 0], tolerance
+                ):
+                    pending.remove(row); component.append(row); changed = True
+        points = [p for row in component for p in (
+            (row["bounds"][0], row["bounds"][1]), (row["bounds"][2], row["bounds"][3])
+        )]
+        bounds = _bounds(points)
+        merged.append({
+            "kind": kind,
+            "entity_type": "COMPOSITE" if len(component) > 1 else component[0].get("entity_type"),
+            "layer": component[0].get("layer"),
+            "block": component[0].get("block"),
+            "bounds": [round(v, 6) for v in bounds],
+            "centroid": [round(v, 6) for v in _centroid(bounds)],
+            "source_entity_count": len(component),
+            "geometry_confidence": "semantic_layer_component",
+        })
+    return merged
+
+
+def _matching_plan_frame(profile, frames):
+    title = profile.get("title_point")
+    if not title or len(title) != 2:
+        return None
+    matches = [row for row in frames if row.get("drawing_type") in {"ARCH_FLOOR_PLAN", "ROOF_PLAN"}
+               and _inside(row.get("bounds"), title)]
+    return matches[0] if len(matches) == 1 else None
+
+
 def enrich_auto(auto, analysis):
     auto = dict(auto or {})
     profiles = auto.get("level_profiles") or []
     all_rooms = []
     all_primitives = []
+    all_frames = []
     for f in (analysis or {}).get("files") or []:
         all_rooms.extend(f.get("architecture_rooms") or [])
         all_primitives.extend(f.get("architecture_primitives") or [])
+        all_frames.extend(f.get("architecture_plan_frames") or [])
 
     # Assign semantic room labels to their closest canonical level title, then
     # derive a spatial envelope from those labels. The envelope prevents an
@@ -231,11 +317,15 @@ def enrich_auto(auto, analysis):
         if not title:
             continue
         title = tuple(float(v) for v in title)
+        canonical_frame = _matching_plan_frame(profile, all_frames)
+        canonical_bounds = canonical_frame.get("bounds") if canonical_frame else None
         other_titles = [tuple(float(v) for v in p.get("title_point")) for p in profiles if p is not profile and p.get("title_point")]
         assigned_rooms = []
         for room in all_rooms:
             p = tuple(room.get("label_point") or [])
             if len(p) != 2:
+                continue
+            if canonical_bounds and not _inside(canonical_bounds, p):
                 continue
             if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
                 continue
@@ -250,6 +340,8 @@ def enrich_auto(auto, analysis):
             p = tuple(primitive.get("centroid") or [])
             if len(p) != 2:
                 continue
+            if canonical_bounds and not _inside(canonical_bounds, p):
+                continue
             if other_titles and min(math.dist(p, t) for t in other_titles) < math.dist(p, title):
                 continue
             assigned_primitives.append(primitive)
@@ -258,15 +350,33 @@ def enrich_auto(auto, analysis):
             b = primitive.get("bounds") or []
             if len(b) == 4:
                 spatial_points.extend(((b[0], b[1]), (b[2], b[3])))
-        region = _expanded_bounds(spatial_points, pad_ratio=0.02)
+        region = list(canonical_bounds) if canonical_bounds else _expanded_bounds(spatial_points, pad_ratio=0.02)
         if region is None:
             # Roofs may have no room labels; use a bounded vicinity around title
             # rather than inventing a building polygon.
             region = [title[0]-1, title[1]-1, title[0]+1, title[1]+1]
         by_kind = {k: [p for p in assigned_primitives if p.get("kind") == k] for k in LAYER_HINTS}
+        for symbol_kind in ("door", "window", "column", "stair", "shaft"):
+            by_kind[symbol_kind] = _merge_symbol_components(by_kind[symbol_kind], symbol_kind)
+
+        # Shaft text is valid evidence of a shaft location even when the
+        # architect did not draw the shaft on a semantic layer.  Keep the
+        # geometry explicitly label-only instead of inventing a shaft box.
+        shaft_labels = [room for room in assigned_rooms if room.get("type") == "shaft"]
+        assigned_rooms = [room for room in assigned_rooms if room.get("type") != "shaft"]
+        for shaft in shaft_labels:
+            point = list(shaft.get("label_point") or [0.0, 0.0])
+            by_kind["shaft"].append({
+                "kind": "shaft", "entity_type": "TEXT_EVIDENCE", "layer": None, "block": None,
+                "bounds": shaft.get("bounds"), "centroid": _centroid(shaft.get("bounds")) or point,
+                "label": shaft.get("label"), "label_point": point,
+                "geometry_confidence": "high" if shaft.get("bounds") else "label_only",
+                "provenance": "architectural_shaft_label",
+            })
         level_rows.append({
             "name": profile.get("name"), "roof": bool(profile.get("roof")),
             "title_point": list(title), "region_bounds": [round(v, 6) for v in region],
+            "canonical_frame": canonical_frame,
             "rooms": assigned_rooms,
             "walls": by_kind["wall"], "doors": by_kind["door"], "windows": by_kind["window"],
             "columns": by_kind["column"], "stairs": by_kind["stair"], "shafts": by_kind["shaft"],
@@ -274,12 +384,37 @@ def enrich_auto(auto, analysis):
             "counts": {k: len(v) for k, v in by_kind.items()},
         })
 
+    room_count = sum(len(x["rooms"]) for x in level_rows)
+    rooms_with_polygon = sum(
+        1 for level in level_rows for room in level["rooms"] if room.get("polygon")
+    )
+    shafts = [shaft for level in level_rows for shaft in level["shafts"]]
+    shafts_with_geometry = sum(
+        1 for shaft in shafts if shaft.get("geometry_confidence") != "label_only"
+    )
+    missing_inputs = []
+    if any(level.get("canonical_frame") is None for level in level_rows):
+        missing_inputs.append("CANONICAL_PLAN_FRAME")
+    if room_count and rooms_with_polygon != room_count:
+        missing_inputs.append("ROOM_BOUNDARY_GEOMETRY")
+    if shafts and shafts_with_geometry != len(shafts):
+        missing_inputs.append("SHAFT_BOUNDARY_GEOMETRY")
     auto["architecture_model"] = {
         "version": RECONSTRUCTION_VERSION,
         "levels": level_rows,
         "level_count": len(level_rows),
-        "room_count": sum(len(x["rooms"]) for x in level_rows),
+        "room_count": room_count,
         "primitive_count": sum(sum(x["counts"].values()) for x in level_rows),
+        "status": "INPUT_REQUIRED" if missing_inputs else "PASS",
+        "missing_inputs": missing_inputs,
+        "quality": {
+            "canonical_frame_count": sum(bool(x.get("canonical_frame")) for x in level_rows),
+            "room_count": room_count,
+            "rooms_with_valid_polygon": rooms_with_polygon,
+            "shaft_count": len(shafts),
+            "shafts_with_valid_geometry": shafts_with_geometry,
+            "fabricated_geometry_count": 0,
+        },
     }
     return auto
 
