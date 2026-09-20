@@ -22,6 +22,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from . import artifact_storage, dxf_output, mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
 from .panel_checkout import register_panel_checkout, session_user
+from .schema_management import create_table_during_registration
 
 
 def register_panel_bridge(app, legacy, Job):
@@ -32,7 +33,7 @@ def register_panel_bridge(app, legacy, Job):
         project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), unique=True, index=True)
         access_token_hash: Mapped[str] = mapped_column(String(64))
 
-    PanelProjectLink.__table__.create(bind=legacy.engine, checkfirst=True)
+    create_table_during_registration(PanelProjectLink.__table__, legacy.engine)
 
     def authorized(request: Request):
         expected = os.getenv("PANEL_BRIDGE_TOKEN", "")

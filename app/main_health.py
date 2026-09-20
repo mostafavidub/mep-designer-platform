@@ -62,6 +62,15 @@ register_gsc_routes(app)
 register_commercial_flow(app, main_auto.legacy)
 app.state.panel_bridge = register_panel_bridge(app, main_auto.legacy, DesignJob)
 
+# All model classes have now been registered.  In deployed `migrate_once`
+# mode, only the explicitly designated migration owner executes this single
+# schema transaction; web and other worker replicas perform no startup DDL.
+from .schema_management import migrate_registered_schema
+app.state.schema_migration = migrate_registered_schema(
+    main_auto.legacy.engine,
+    main_auto.legacy.Base.metadata,
+)
+
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
@@ -117,6 +126,7 @@ def integrated_system_health():
         main_auto.legacy.DB_URL,
         set(WORKER_TYPES),
     )
+    status['runtime_topology']['schema_management'].update(app.state.schema_migration)
     if status['runtime_topology']['status'] != 'ok':
         status['status'] = 'error'
     return status

@@ -9,6 +9,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from cad_engine.runtime_contract_sync_gate import assert_runtime_contract_synchronized
+from .schema_management import registration_ddl_enabled
 
 
 def register_commercial_flow(app, legacy):
@@ -53,7 +54,8 @@ def register_commercial_flow(app, legacy):
         price_per_m2: Mapped[int] = mapped_column(Integer)
         updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    legacy.Base.metadata.create_all(legacy.engine)
+    if registration_ddl_enabled():
+        legacy.Base.metadata.create_all(legacy.engine)
 
     DEFAULT_PRICING = {
         "mechanical": {"minimum_price": 4_900_000, "price_per_m2": 28_000},

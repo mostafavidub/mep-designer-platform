@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import create_engine, String, Integer, Text, DateTime, ForeignKey, JSON, LargeBinary
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from .schema_management import registration_ddl_enabled
 
 DATA_DIR = Path(os.getenv('DATA_DIR', '/data'))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -80,7 +81,8 @@ class RuleCandidate(Base):
     candidate_rule: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(engine)
+if registration_ddl_enabled():
+    Base.metadata.create_all(engine)
 
 COMMON = [
     ('location','پروژه در کدام کشور و شهر قرار دارد؟'),('occupancy','کاربری دقیق ساختمان چیست؟'),('codes','مبنای طراحی کدام مقررات و استانداردهاست؟'),('floors','تعداد طبقات، زیرزمین/پارکینگ و بام را دقیق بفرمایید.'),('units','تعداد کل واحدها و تعداد واحد در هر طبقه چقدر است؟'),('typical','کدام طبقات تیپ هستند و کدام پلان متفاوت دارند؟'),('heights','ارتفاع طبقات و وضعیت سقف کاذب را بفرمایید.'),('shafts','شفت‌ها و رایزرهای موجود قطعی هستند یا اجازه پیشنهاد داریم؟'),('roof','روی بام چه فضاها یا تجهیزاتی دارید؟'),('language','زبان خروجی را مشخص کنید؛ پیشنهاد: توضیحات فارسی و Tagهای فنی لاتین.')]

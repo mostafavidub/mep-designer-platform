@@ -20,6 +20,7 @@ from . import artifact_storage
 from . import mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
 from .design_recovery import RecoveryDecision, classify_recovery, get_recovery, record_recovery, repeated_recovery_failure
+from .schema_management import create_table_during_registration
 
 
 POLL_SECONDS = float(os.getenv('JOB_QUEUE_POLL_SECONDS', '2'))
@@ -141,7 +142,7 @@ def register_job_queue(app, legacy):
         created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
         updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    Job.__table__.create(bind=legacy.engine, checkfirst=True)
+    create_table_during_registration(Job.__table__, legacy.engine)
     stop_event = threading.Event()
 
     original_analyze = legacy.analyze_project_job

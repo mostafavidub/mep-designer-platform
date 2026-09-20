@@ -150,7 +150,8 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
         updated_at: Mapped[str] = mapped_column(String(40))
 
     for model in (Handoff, Checkout, Ledger, Profile, Activity, PanelProject):
-        model.__table__.create(bind=legacy.engine, checkfirst=True)
+        from .schema_management import create_table_during_registration
+        create_table_during_registration(model.__table__, legacy.engine)
     Wallet = app.state.commercial["Wallet"]
     pricing_for = app.state.commercial["service_pricing"]
 
