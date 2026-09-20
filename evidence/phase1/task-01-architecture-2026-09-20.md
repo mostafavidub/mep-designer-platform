@@ -2,9 +2,14 @@
 
 ## Status
 
-PARTIAL — implemented and verified fail-closed behavior; final room/shaft boundary reconstruction is still input-required on the real benchmark cohort.
+PARTIAL (cohort) / PASS (benchmark project 4) — evidence-backed linework
+polygonization and adaptive clear-space segmentation are implemented.  The
+engine now reconstructs every room and shaft in project 4 without fabricating
+an enclosing box.  Projects whose source does not contain a resolvable plan
+frame or whose open spaces have no architectural separator remain explicitly
+`INPUT_REQUIRED`.
 
-## Active staging build
+## Baseline staging build before this change
 
 - Web commit: `937277272e78eafe7ff604e10c86150578c46a13`
 - Worker commit: `937277272e78eafe7ff604e10c86150578c46a13`
@@ -19,11 +24,18 @@ Benchmark project 38 (`Task 1 Architecture API Benchmark 04 - f60310f`) was re-a
 - Authoritative levels: one ground floor
 - Pseudo roof: rejected and retained only as non-active candidate evidence
 - Canonical frame: detected, `4388.419454,-5951.757377,4409.419454,-5922.057377`
-- Model status: `INPUT_REQUIRED`
-- Missing evidence: `ROOM_BOUNDARY_GEOMETRY`, `SHAFT_BOUNDARY_GEOMETRY`
+- Model status before: `INPUT_REQUIRED`
+- Model status after: `PASS`
+- Missing evidence after: none
 - Fabricated geometry count: `0`
-- Rooms: 4 label-backed; valid polygons: 0
-- Shafts: 1 label-backed; valid polygons: 0
+- Rooms before/after: 4 label-backed; valid polygons: `0 -> 4`
+- Shafts before/after: 1 label-backed; valid polygons: `0 -> 1`
+- Boundary method: noded source-line polygonization followed by the smallest
+  label-exclusive clear-space offset where an evidenced door gap prevents a
+  direct closed cell
+- Audit evidence retained per polygon: source DXF handles, source layers,
+  source entity count, clearance offset, method, confidence and deterministic
+  geometry fingerprint
 - Fragmented entities previously reported as doors: 180 before, 1 composite symbol after canonical scoping/component grouping
 
 ## Exact artifact reopen
@@ -43,13 +55,32 @@ Roof text in the output is limited to vent termination/details/notes; no roof pl
 
 ## Regression cohort
 
-Architecture files for projects 1, 2, 3, 4 and 7 were evaluated with the same code. Unit inference passed on all five. Canonical print frames were found for all tested levels except project 2. Most room boundaries in these consultant DXFs are not explicit closed room polygons, so the engine now records label-only evidence and does not manufacture room boxes.
+Architecture files for projects 1, 2, 3, 4 and 7 were evaluated with the same
+code. Unit inference passed on all five. Results at the authoritative-level
+model are:
+
+- Project 1: `5/19` room polygons, `1/1` shaft polygons — `INPUT_REQUIRED`
+- Project 2: `0/22` room polygons; no canonical frame — `INPUT_REQUIRED`
+- Project 3: `6/13` room polygons, `2/2` shaft polygons — `INPUT_REQUIRED`
+- Project 4: `4/4` room polygons, `1/1` shaft polygons — `PASS`
+- Project 7: `4/7` room polygons — `INPUT_REQUIRED`
+
+The remaining labels in projects 1, 3 and 7 occupy genuinely shared/open
+cells in the submitted linework.  Splitting these cells by a guessed rectangle
+or Voronoi boundary would fabricate architecture, so the final gate correctly
+requests input. Project 2 must first obtain a confirmed canonical plan frame.
 
 ## Tests
 
-- 42 focused unit/integration tests passed after canonical-frame scoping, composite symbol grouping, shaft-label evidence and fail-closed geometry changes.
-- 8 focused tests and Python compilation passed after user-facing gap disclosure changes.
+- 38 focused architecture/level/fixture integration tests pass.
+- New cases cover open LINE entity polygonization, door-gap segmentation,
+  shaft enclosure recovery, multi-label outline rejection, dimension-layer
+  exclusion, deterministic fingerprints and source-DXF immutability.
 
 ## Remaining acceptance gap
 
-Task 01 cannot be marked PASS under the phase definition until room and shaft boundaries are reconstructed and verified on real files, or a corrected/structured architectural input supplies those boundaries. Per the requested vertical-slice order, Sanitary + Vent must not be declared started or complete before this gap is closed.
+Task 01 is PASS for project 4 but cannot be marked PASS for the full benchmark
+cohort until project 2 has a confirmed frame and the unresolved shared/open
+spaces in projects 1, 3 and 7 receive real architectural separators or an
+explicit user-approved space-zone boundary. Per the requested vertical-slice
+order, Sanitary + Vent must not be declared started for those projects.

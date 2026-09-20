@@ -14,6 +14,7 @@ import ezdxf
 from ezdxf import bbox
 
 from . import auto_inference as base_inference
+from .architecture_geometry_reconstruction import reconstruct_boundaries
 from .dxf_input import read_input_dxf
 
 RECONSTRUCTION_VERSION = "architecture-reconstruction-v1"
@@ -206,6 +207,7 @@ def reconstruct_dxf(path, base_result=None):
             "polygon_confidence": "high" if polygon else "label_only",
         })
 
+    boundary_reconstruction = []
     try:
         from cad_engine.plan_segmentation import analyze_plan_frames
         frame_analysis = analyze_plan_frames(path)
@@ -222,6 +224,26 @@ def reconstruct_dxf(path, base_result=None):
             for row in frame_analysis.get("candidates") or []
             if len(row.get("bounds") or []) == 4
         ]
+        # Reconstruct missing semantic boundaries independently inside each
+        # confirmed architectural frame. Existing exclusive closed polylines
+        # remain authoritative; inferred topology only fills genuine gaps.
+        accepted_by_label = {}
+        for frame in result["architecture_plan_frames"]:
+            if frame.get("drawing_type") not in {"ARCH_FLOOR_PLAN", "ROOF_PLAN"}:
+                continue
+            reconstruction = reconstruct_boundaries(msp, frame["bounds"], semantic_labels)
+            boundary_reconstruction.append({
+                "frame_handle": frame.get("handle"),
+                "frame_bounds": frame.get("bounds"),
+                "diagnostics": reconstruction.get("diagnostics") or [],
+                "quality": reconstruction.get("quality") or {},
+            })
+            for index, geometry in (reconstruction.get("accepted") or {}).items():
+                accepted_by_label.setdefault(index, geometry)
+        for index, room in enumerate(rooms):
+            if room.get("polygon") or index not in accepted_by_label:
+                continue
+            room.update(accepted_by_label[index])
     except Exception as exc:
         result["architecture_plan_frames"] = []
         reconstruction_diagnostics.append(
@@ -232,6 +254,7 @@ def reconstruct_dxf(path, base_result=None):
     result["architecture_primitives"] = primitives[:50000]
     result["architecture_primitive_counts"] = dict(layer_counts)
     result["architecture_rooms"] = rooms[:10000]
+    result["architecture_boundary_reconstruction"] = boundary_reconstruction
     result["architecture_reconstruction_diagnostics"] = reconstruction_diagnostics
     return result
 
