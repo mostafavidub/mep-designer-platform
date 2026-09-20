@@ -1,0 +1,40 @@
+{
+  "change_id":"SWCIS-2026-0265",
+  "summary":"Keep rejected duplicate roof views out of the authoritative fixture graph and approved mechanical scope.",
+  "requester":"project-owner",
+  "change_types":["drawing_output","qa","routing","test","governance","deployment"],
+  "changed_rule_ids":[],
+  "impacted_modules":["cad_designer","deployment","detail_riser","docs","equipment","governance","manifest","manufacturer_selector","migration","qa","routing","sizing","ui_api","versioning"],
+  "impact_notes":{
+    "cad_designer":"Fixture evidence is filtered through the same authoritative level set produced after unreliable roof rejection.",
+    "deployment":"Deploy through the protected PR, then retry retained benchmark project 03.",
+    "docs":"The code comment and regression test define the shared level-authority boundary.",
+    "governance":"No rejected architectural view may re-enter execution through a downstream evidence channel.",
+    "qa":"A duplicated occupied-floor roof view cannot create GAS roof scope without an approved board.",
+    "ui_api":"The deterministic false TARGET_PLAN_BOARD_REQUIRED:GAS:ROOF prompt is removed.",
+    "manifest":"The approved drawing manifest remains authoritative and is not expanded.",
+    "migration":"No data migration.",
+    "versioning":"Git SHA remains authoritative.",
+    "detail_riser":"No change.",
+    "equipment":"A gas appliance on an accepted floor is retained; only evidence owned by a rejected roof view is removed.",
+    "manufacturer_selector":"No change.",
+    "routing":"No gas route is fabricated on an unapproved roof.",
+    "sizing":"No calculation change."
+  },
+  "evidence":{
+    "traceability":["roof reliability decision -> authoritative level names -> fixture evidence filter -> topology"],
+    "tests":["Unreliable roof fixture evidence is rejected while matching first-floor gas evidence remains.","Fifty-one related topology, roof-scope, profile-bridge and workflow tests pass."],
+    "docs":["Regression test is executable boundary documentation."],
+    "contract_diff":["Architecture and fixture evidence now share one accepted-level authority set."],
+    "version_bump":["Patch identified by immutable Git SHA."],
+    "migration":["None."],
+    "semantic_diff":["Rejected duplicate roof content cannot revive a mechanical family omitted by the approved manifest."],
+    "artifact_diff":["Project 03 will no longer request a nonexistent GAS roof plan board."],
+    "numeric_diff":["No engineering formula or threshold changed."],
+    "golden_regression":["Topology, roof scope and mechanical workflow suites must pass."],
+    "deployment_plan":["Protected PR, exact-SHA rollout, retry project 03, reopen output."],
+    "rollback_plan":["Revert the merge SHA and redeploy the prior build."]
+  },
+  "risk":{"likelihood":1,"severity":4,"detectability":1,"score":4,"rationale":"Filtering is restricted to explicit level evidence excluded by the upstream roof-authority decision and preserves accepted-floor fixtures."},
+  "waiver":null
+}

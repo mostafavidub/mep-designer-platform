@@ -49,6 +49,26 @@ class TopologyAuthorityV19Tests(unittest.TestCase):
         self.assertTrue(recognition["detections"])
         self.assertEqual({row["level"] for row in recognition["detections"]}, {"Ground"})
 
+    def test_unreliable_roof_scope_cannot_be_revived_by_fixture_evidence(self):
+        architecture = _architecture_from_evidence({
+            "roof_scope_reliable": False,
+            "levels": [
+                {"name": "بام", "roof": True,
+                 "rooms": [{"id": "R-ROOF", "type": "kitchen", "center": [20, 20]}]},
+                {"name": "طبقه اول", "roof": False,
+                 "rooms": [{"id": "R-FIRST", "type": "kitchen", "center": [2, 2]}]},
+            ],
+        }, {"walls": [], "obstacles": []})
+        recognition = _recognition_from_evidence([
+            {"status": "detected", "type": "gas", "x": 20, "y": 20,
+             "level": "بام", "room_id": "R-ROOF"},
+            {"status": "detected", "type": "gas", "x": 2, "y": 2,
+             "level": "طبقه اول", "room_id": "R-FIRST"},
+        ], {"detections": []}, architecture)
+        self.assertEqual(len(recognition["detections"]), 1)
+        self.assertEqual(recognition["detections"][0]["level"], "طبقه اول")
+        self.assertEqual(recognition["detections"][0]["type"], "stove")
+
     def test_architecture_room_shaft_is_authoritative_not_provisional(self):
         architecture = _architecture_from_evidence({"levels": [{
             "name": "طبقه همکف", "rooms": [{"id": "R-S", "type": "shaft", "center": [8, 8],

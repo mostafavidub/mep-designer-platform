@@ -409,6 +409,7 @@ def _architecture_from_evidence(model, fallback):
     if not isinstance(model, dict) or not model.get("levels"):
         return fallback
     rooms, shafts, wet_cores, walls, obstacles = [], [], [], [], []
+    authorized_level_names = []
     for level in model.get("levels") or []:
         if level.get("roof") and model.get("roof_scope_reliable") is False:
             # A title-like or reused occupied-floor view must not host owner-
@@ -416,6 +417,8 @@ def _architecture_from_evidence(model, fallback):
             # already proved that this project has no reliable roof scope.
             continue
         level_name = level.get("name")
+        if level_name not in (None, ""):
+            authorized_level_names.append(str(level_name))
         for room in level.get("rooms") or []:
             normalized = dict(room)
             normalized["level"] = level_name
@@ -438,18 +441,31 @@ def _architecture_from_evidence(model, fallback):
     merged = dict(fallback)
     merged.update({"rooms": rooms, "shafts": shafts, "wet_cores": wet_cores,
                    "walls": walls or fallback.get("walls") or [],
-                   "obstacles": obstacles or fallback.get("obstacles") or []})
+                   "obstacles": obstacles or fallback.get("obstacles") or [],
+                   # This is the exact set left after rejecting unreliable roof
+                   # views. Fixture evidence must use the same authority set;
+                   # otherwise a duplicated occupied-floor symbol can revive a
+                   # rejected roof and create a system with no approved board.
+                   "authorized_level_names": authorized_level_names})
     return merged
 
 
 def _recognition_from_evidence(rows, fallback, architecture, declared_schedule=None):
     detections = []
     seen = set()
+    authorized_level_names = {
+        str(value) for value in architecture.get("authorized_level_names") or []
+        if value not in (None, "")
+    }
     for index, row in enumerate(rows or [], 1):
         if row.get("status") != "detected" or row.get("x") is None or row.get("y") is None:
             continue
         kind = EVIDENCE_TYPE_MAP.get(str(row.get("type")), str(row.get("type") or ""))
         if kind not in EVIDENCE_PORTS:
+            continue
+        explicit_level = row.get("level")
+        if (authorized_level_names and explicit_level not in (None, "")
+                and str(explicit_level) not in authorized_level_names):
             continue
         signature = (kind, round(float(row["x"]), 5), round(float(row["y"]), 5))
         if signature in seen:
