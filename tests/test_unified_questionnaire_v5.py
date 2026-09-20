@@ -74,6 +74,12 @@ class UnifiedQuestionnaireV5Tests(unittest.TestCase):
                 minimum = 1 if key in {'cooling', 'heating'} else 2
                 self.assertGreaterEqual(len(rendered['options']), minimum, key)
 
+    def test_water_pressure_prompt_does_not_promise_a_hidden_default(self):
+        questions = dict(dynamic_questions({'files': [{'texts': []}]}, 'mechanical', self.auto()))
+        prompt = questions['water_inlet_pressure']
+        self.assertIn('INPUT_REQUIRED', prompt)
+        self.assertNotIn('مبنای محافظه', prompt)
+
     def test_invalid_zip_is_rejected_without_internal_server_error(self):
         response = TestClient(app).post(
             '/api/questionnaire/analyze?discipline=mechanical',

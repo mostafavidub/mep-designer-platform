@@ -337,7 +337,7 @@ def dynamic_questions(analysis, discipline, auto):
         if not auto.get('gas_absence_inferred'):
             q.append(('gas', f'پیشنهاد Rule Book برای پروژه گازدار: پکیج ۲۴ kW، اجاق ۱۰ kW، فشار ۲۱ mbar و کنتور/رگلاتور در ورودی. پاسخ کوتاه: «تأیید»، «بدون گاز» یا اصلاح مورد خاص.'))
         if not auto.get('water_inlet_pressure_inferred') and not re.search(r'\d+(?:[\.,]\d+)?\s*(?:bar|بار)', text, re.I):
-            q.append(('water_inlet_pressure', 'فشار واقعی آب در کنتور چند bar است؟ پاسخ کوتاه عددی؛ اگر اندازه‌گیری نشده: «نامشخص» تا مبنای محافظه‌کارانه ۲٫۵ bar همراه مخزن/بوستر اعمال شود.'))
+            q.append(('water_inlet_pressure', 'فشار واقعی و تأییدشده آب در کنتور چند bar است؟ پاسخ باید عددی و مستند باشد؛ اگر اندازه‌گیری نشده، طراحی نهایی در وضعیت INPUT_REQUIRED می‌ماند و فشار فرضی به‌عنوان مقدار واقعی ثبت نمی‌شود.'))
         if not re.search(r'کنتور آب|مخزن|بوستر|پمپ آب|water meter|storage tank|booster', text, re.I):
             q.append(('water_source', 'آرایش ورودی آب چیست؟ پیشنهاد: «کنتور شهری + مخزن + بوسترپمپ». پاسخ کوتاه: «تأیید» یا حذف/اصلاح اجزا.'))
         if not re.search(r'محل انشعاب آب|نقطه ورود آب|water service|water entry|meter location', text, re.I):
