@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0273",
+  "summary": "Run long architecture questionnaire analysis as owner-bound durable background jobs",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private reference projects are optional; automated regression remains required.",
+  "owner_release_authorization": "2026-09-21: owner explicitly approved secure durable background jobs and polling on Staging; Production remains untouched.",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "ui_api": "changed: authenticated start/status endpoints return real processing state without holding a proxy request open",
+    "qa": "changed: security, deduplication, resume and completion contracts are regression protected",
+    "docs": "added: owner-bound background job lifecycle and privacy contract",
+    "governance": "changed: long analysis is durable and observable instead of surfacing a false storage failure",
+    "manifest": "verified: engineering artifact identities are unchanged",
+    "migration": "verified: no database schema migration; job state uses the existing Staging data volume",
+    "versioning": "verified: additive internal API requires no public/schema version bump",
+    "deployment": "changed: coordinated engine and panel rollout on Staging only; Production untouched"
+  },
+  "evidence": {
+    "traceability": ["customer session -> stored object key -> owner-bound analysis job -> questionnaire result -> saved draft"],
+    "tests": ["questionnaire job authorization/deduplication tests", "panel project delivery tests", "real project 1 upload"],
+    "docs": ["docs/QUESTIONNAIRE_BACKGROUND_JOBS.md"],
+    "version_bump": ["not required: internal additive API and unchanged engineering semantics"],
+    "migration": ["not required: filesystem job state is additive and disposable"],
+    "golden_regression": ["architecture/questionnaire/panel regressions remain mandatory"],
+    "semantic_diff": ["long synchronous subrequest -> authenticated start plus status polling"],
+    "artifact_diff": ["not affected: no issued drawing mutation"],
+    "numeric_diff": ["not affected: identical analyzer and questionnaire builder"],
+    "contract_diff": ["add internal token-and-session-protected start/status endpoints"],
+    "deployment_plan": ["deploy engine first, then panel, then upload and complete project 1 analysis on Staging"],
+    "rollback_plan": ["redeploy engine commit 20d4e49 and prior panel Sites version"]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 2, "score": 20, "rationale": "Private architecture results require strict owner checks; token, signed session and owner metadata are independently enforced."},
+  "waiver": null
+}
