@@ -3,7 +3,8 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from app.architecture_review import _require_admin, _require_mutable, _require_revision, _resolve_boundary, _validate_space
+from app.architecture_review import (_augment_review_geometry, _require_admin, _require_mutable,
+                                     _require_revision, _resolve_boundary, _validate_space)
 
 
 def square_state():
@@ -12,8 +13,10 @@ def square_state():
         {"id": "C", "x": 10, "y": 10}, {"id": "D", "x": 0, "y": 10},
     ]
     segments = [
-        {"a_id": "A", "b_id": "B"}, {"a_id": "B", "b_id": "C"},
-        {"a_id": "C", "b_id": "D"}, {"a_id": "D", "b_id": "A"},
+        {"a_id": "A", "b_id": "B", "a": [0, 0], "b": [10, 0]},
+        {"a_id": "B", "b_id": "C", "a": [10, 0], "b": [10, 10]},
+        {"a_id": "C", "b_id": "D", "a": [10, 10], "b": [0, 10]},
+        {"a_id": "D", "b_id": "A", "a": [0, 10], "b": [0, 0]},
     ]
     return {"source_hash": "abc", "levels": [{"id": "L1", "frame": [-1, -1, 11, 11],
             "snap_points": nodes, "wall_segments": segments}], "spaces": []}
@@ -37,7 +40,33 @@ class ArchitectureReviewTests(unittest.TestCase):
         self.assertIn("architecture-source-text", template)
         review_source = Path("app/architecture_review.py").read_text(encoding="utf-8")
         self.assertIn('"schema": "architecture-review/2"', review_source)
-        self.assertIn('existing.get("visual_underlay_contract") == "source-faithful/1"', review_source)
+        self.assertIn('existing.get("visual_underlay_contract") == "source-faithful/2"', review_source)
+
+    def test_selection_mode_and_automatic_relationship_ui(self):
+        template = Path("app/templates/architecture_review.html").read_text(encoding="utf-8")
+        css = Path("app/static/architecture-review-v2.css").read_text(encoding="utf-8")
+        self.assertIn("mode!=='pan'", template)
+        self.assertIn("applyRelationshipAutomation", template)
+        self.assertIn("candidateSnapPoints(level)", template)
+        self.assertIn("تنظیمات تخصصی (اختیاری)", template)
+        self.assertIn(".architecture-canvas.is-selecting { cursor: crosshair; }", css)
+        self.assertIn(".architecture-space-list-heading > b", css)
+
+    def test_source_backed_jamb_adds_real_graph_endpoints(self):
+        level = square_state()["levels"][0]
+        level["visual_entities"] = [{"kind": "polyline", "entity_type": "LINE",
+                                      "source_layer": "0", "points": [[0, 2], [10, 2]]}]
+        augmented = _augment_review_geometry(level)
+        coords = {(row["x"], row["y"]) for row in augmented["snap_points"]}
+        self.assertIn((0.0, 2.0), coords)
+        self.assertIn((10.0, 2.0), coords)
+        self.assertEqual(augmented["review_bridge_count"], 1)
+
+    def test_standalone_layer_zero_furniture_is_not_promoted(self):
+        level = square_state()["levels"][0]
+        level["visual_entities"] = [{"kind": "polyline", "entity_type": "LINE",
+                                      "source_layer": "0", "points": [[2, 2], [3, 2]]}]
+        self.assertNotIn("review_bridge_count", _augment_review_geometry(level))
 
     def test_confirmed_model_cannot_be_silently_edited(self):
         with self.assertRaises(HTTPException) as error:

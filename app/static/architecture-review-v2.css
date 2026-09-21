@@ -34,7 +34,9 @@
 .architecture-steps .active b { background: #1769d2; color: #fff; }
 .architecture-toolbar { flex-wrap: wrap; }
 .architecture-label { display: none; }
-.architecture-canvas { cursor: grab; touch-action: none; user-select: none; }
+.architecture-canvas { cursor: default; touch-action: none; user-select: none; }
+.architecture-canvas.is-selecting { cursor: crosshair; }
+.architecture-canvas.pan-enabled { cursor: grab; }
 .architecture-canvas.is-panning { cursor: grabbing; }
 .architecture-source-polyline,
 .architecture-source-polygon {
@@ -80,5 +82,12 @@
   font-size: 11px;
 }
 .architecture-space-option.active span em { background: #1769d2; color: #fff; }
+.architecture-space-list-heading > b { display:block; color:#101828; font-size:17px; font-weight:800; }
+.architecture-auto-fields { padding:10px 12px; border:1px solid #b7e4d2; background:#eefbf5; color:#174c3b; border-radius:10px; }
+.architecture-auto-fields small { display:block; margin-top:4px; color:#356756; line-height:1.7; }
+.architecture-advanced { margin-top:10px; border:1px solid #d8e0ea; border-radius:10px; padding:9px 11px; }
+.architecture-advanced summary { cursor:pointer; color:#344054; font-weight:700; }
+.architecture-snap { cursor:pointer; }
+.architecture-view-tools button[aria-pressed="true"] { background:#172033; color:#fff; border-color:#172033; }
 @media (max-width: 980px) { .architecture-steps { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) { .architecture-steps { grid-template-columns: 1fr; } }

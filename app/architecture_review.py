@@ -20,7 +20,8 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
-from shapely.geometry import Point, Polygon
+from shapely.geometry import LineString, Point, Polygon
+from shapely.ops import unary_union
 
 
 SPACE_TYPES = {
@@ -45,6 +46,12 @@ TYPE_MAP = {
     "stair": "STAIR", "parking": "PARKING", "mechanical": "MECHANICAL",
     "shaft": "SHAFT",
 }
+
+_REVIEW_NON_BOUNDARY_LAYER_TOKENS = (
+    "dim", "اندازه", "axis", "grid", "section", "نما", "elev", "text",
+    "note", "title", "frame", "border", "hatch", "furn", "cabinet",
+    "مبلمان", "symbol", "fixture", "sanitary", "mechanic",
+)
 
 
 def _utcnow():
@@ -75,12 +82,69 @@ def _space_id(level_index, kind, label_point, ordinal):
     return "SPACE-" + hashlib.sha256(material.encode()).hexdigest()[:16].upper()
 
 
+def _augment_review_geometry(level):
+    """Admit a rendered straight jamb only when both ends touch the wall graph."""
+    frame = level.get("frame") or []
+    existing = level.get("wall_segments") or []
+    if len(frame) != 4 or not existing:
+        return level
+    diagonal = max(((frame[2] - frame[0]) ** 2 + (frame[3] - frame[1]) ** 2) ** .5, 1e-6)
+    tolerance = max(diagonal * .0003, 1e-5)
+    authoritative = [LineString([row["a"], row["b"]]) for row in existing
+                     if len(row.get("a") or []) == 2 and len(row.get("b") or []) == 2]
+    authority = unary_union(authoritative)
+    additions = []
+    for entity in level.get("visual_entities") or []:
+        if entity.get("kind") not in {"polyline", "polygon"}:
+            continue
+        if entity.get("entity_type") not in {"LINE", "LWPOLYLINE", "POLYLINE"}:
+            continue
+        layer = str(entity.get("source_layer") or "").lower()
+        if any(token in layer for token in _REVIEW_NON_BOUNDARY_LAYER_TOKENS):
+            continue
+        points = entity.get("points") or []
+        for a, b in zip(points, points[1:]):
+            if len(a) != 2 or len(b) != 2 or a == b:
+                continue
+            line = LineString([a, b])
+            if line.length > diagonal * .75:
+                continue
+            if Point(a).distance(authority) <= tolerance * 8 and Point(b).distance(authority) <= tolerance * 8:
+                additions.append(line)
+    if not additions:
+        return level
+    noded = unary_union(authoritative + additions)
+    geometries = list(noded.geoms) if hasattr(noded, "geoms") else [noded]
+    raw = []
+    for geometry in geometries:
+        coords = list(getattr(geometry, "coords", ()))
+        raw.extend(zip(coords, coords[1:]))
+    coordinates = {tuple(round(float(v), 8) for v in point) for edge in raw for point in edge}
+    node_ids = {point: "NODE-" + hashlib.sha256(f"{point[0]:.8f},{point[1]:.8f}".encode()).hexdigest()[:16]
+                for point in coordinates}
+    nodes = [{"id": node_ids[point], "x": round(point[0], 6), "y": round(point[1], 6)}
+             for point in sorted(coordinates)]
+    segments = []
+    seen = set()
+    for a, b in raw:
+        aa, bb = tuple(round(float(v), 8) for v in a), tuple(round(float(v), 8) for v in b)
+        edge = tuple(sorted((node_ids[aa], node_ids[bb])))
+        if edge in seen or edge[0] == edge[1]:
+            continue
+        seen.add(edge)
+        segments.append({"a_id": node_ids[aa], "b_id": node_ids[bb],
+                         "a": [round(v, 6) for v in aa], "b": [round(v, 6) for v in bb],
+                         "kind": "source_backed_review_bridge"})
+    return {**level, "snap_points": nodes, "wall_segments": segments,
+            "review_bridge_count": len(additions)}
+
+
 def _review_state(legacy, project):
     analysis = dict(project.analysis or {})
     existing = dict(analysis.get("architecture_review") or {})
     source_hash = architecture_source_hash(legacy, project.id)
     if (existing.get("source_hash") == source_hash and existing.get("spaces") and
-            existing.get("visual_underlay_contract") == "source-faithful/1"):
+            existing.get("visual_underlay_contract") == "source-faithful/2"):
         return existing
     model = ((analysis.get("architectural_auto") or {}).get("architecture_model") or {})
     spaces = []
@@ -96,7 +160,7 @@ def _review_state(legacy, project):
                 continue
             claimed_visual_ids.add(identity)
             owned_visual_entities.append({**entity, "plan_id": level_id})
-        levels.append({
+        levels.append(_augment_review_geometry({
             "id": level_id, "name": level.get("name") or level_id,
             "frame": (level.get("canonical_frame") or {}).get("bounds"),
             "snap_points": ((level.get("review_geometry") or {}).get("snap_points") or []),
@@ -105,7 +169,7 @@ def _review_state(legacy, project):
             "visual_inventory": visual_underlay.get("inventory") or {},
             "visual_unsupported": visual_underlay.get("unsupported") or {},
             "visual_underlay_status": visual_underlay.get("status") or "FAIL",
-        })
+        }))
         rows = list(level.get("rooms") or []) + [dict(row, type="shaft") for row in level.get("shafts") or []]
         for ordinal, row in enumerate(rows):
             kind = str(row.get("type") or row.get("kind") or "other")
@@ -127,7 +191,7 @@ def _review_state(legacy, project):
             })
     state = {
         "schema": "architecture-review/2", "source_hash": source_hash,
-        "visual_underlay_contract": "source-faithful/1",
+        "visual_underlay_contract": "source-faithful/2",
         "revision": 1,
         "status": "REVIEW_REQUIRED", "levels": levels, "spaces": spaces,
         "instructions_version": "architecture-review-guidance/1",

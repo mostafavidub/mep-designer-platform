@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0274",
+  "summary": "Separate boundary selection from pan and expose source-backed missing jamb endpoints",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private references optional; automated regression mandatory.",
+  "owner_release_authorization": "2026-09-21: owner requested these architecture-review corrections on Staging; Production remains untouched.",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "ui_api": "changed: explicit select/pan modes, automatic relationship metadata, accessible headings and source-backed review nodes",
+    "qa": "changed: positive and destructive tests cover mode separation and safe geometry augmentation",
+    "docs": "added: review interaction and trust contract",
+    "governance": "verified: immutable source node IDs and server-side boundary validation remain mandatory",
+    "manifest": "verified: issued engineering artifacts are unchanged",
+    "migration": "verified: source-faithful/2 deterministically rebuilds review state from the same source hash",
+    "versioning": "verified: contract revision invalidates stale review geometry without runtime version naming",
+    "deployment": "changed: Staging-only rollout and live project verification; Production untouched"
+  },
+  "evidence": {
+    "traceability": ["CAD visual entity -> both-endpoint wall contact -> immutable snap node -> server-resolved boundary"],
+    "tests": ["architecture review unit, destructive, template and geometry regression tests"],
+    "docs": ["docs/ARCHITECTURE_REVIEW_INTERACTION.md"],
+    "version_bump": ["review data contract source-faithful/1 -> source-faithful/2"],
+    "migration": ["lazy deterministic review-state rebuild from retained architecture model"],
+    "golden_regression": ["existing architecture reconstruction and review suites"],
+    "semantic_diff": ["left drag always pan -> explicit pan; technical fields mandatory-looking -> automatic with optional override"],
+    "artifact_diff": ["not affected: no mechanical DXF generation mutation"],
+    "numeric_diff": ["not affected: no engineering calculation mutation"],
+    "contract_diff": ["safe source-backed jamb nodes supplement review graph"],
+    "deployment_plan": ["push exact commit to Staging branch, wait Railway success, verify project 43 in browser"],
+    "rollback_plan": ["redeploy Staging commit e3dabccfd063846e9047654c08dec26b4a48d254"]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "Boundary interaction affects downstream geometry; augmentation is constrained to source lines attached at both endpoints and remains server validated."},
+  "waiver": null
+}
