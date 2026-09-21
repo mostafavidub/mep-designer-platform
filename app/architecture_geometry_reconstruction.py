@@ -354,6 +354,11 @@ def _polygon_coords(poly):
     return [[round(float(x), 6), round(float(y), 6)] for x, y in list(poly.exterior.coords)[:-1]]
 
 
+def _contains_with_tolerance(polygon, point, tolerance):
+    """Tolerance-aware point containment without allocating a new polygon."""
+    return bool(polygon.covers(point) or polygon.distance(point) <= tolerance)
+
+
 def _fingerprint(coords):
     normalized = ";".join(f"{x:.6f},{y:.6f}" for x, y in coords)
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:20]
@@ -442,7 +447,7 @@ def reconstruct_boundaries(msp, frame_bounds, semantic_labels):
     unlabeled_cells = []
     for cell in cells:
         contained = [(idx, kind, point) for idx, kind, point in label_points
-                     if cell.buffer(tolerance).contains(point)]
+                     if _contains_with_tolerance(cell, point, tolerance)]
         if not contained:
             if frame.area * 0.002 <= cell.area <= frame.area * 0.35:
                 evidence = _supporting_evidence(cell, sources + closures, tolerance)
@@ -534,12 +539,12 @@ def reconstruct_boundaries(msp, frame_bounds, semantic_labels):
         adaptive_attempts += 1
         for idx, _kind, label_point in unresolved:
             candidates = [cell for cell in cells_at_offset
-                          if not cell.is_empty and cell.buffer(tolerance).contains(label_point)]
+                          if not cell.is_empty and _contains_with_tolerance(cell, label_point, tolerance)]
             if len(candidates) != 1:
                 continue
             cell = candidates[0]
             occupants = [other_idx for other_idx, _other_kind, point in label_points
-                         if cell.buffer(tolerance).contains(point)]
+                         if _contains_with_tolerance(cell, point, tolerance)]
             if occupants != [idx] or cell.area >= frame.area * 0.35:
                 continue
             minx, miny, maxx, maxy = cell.bounds

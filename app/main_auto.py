@@ -1,10 +1,12 @@
 import asyncio
+import json
 import os
 import re
 import shutil
 import traceback
 import zipfile
 import tempfile
+import uuid
 from collections import Counter
 from pathlib import Path
 
@@ -26,6 +28,13 @@ from .mechanical_rulebook import RULEBOOK_IDENTITY
 from .mechanical_rulebook import is_confirmation
 
 app = legacy.app
+_QUESTIONNAIRE_TASKS = set()
+
+
+def _questionnaire_job_root():
+    root = Path(os.getenv('DATA_DIR', '/data')) / 'questionnaire-jobs'
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def unanswered_questions(questions, answers):
@@ -561,19 +570,24 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
         # DXF reconstruction is CPU-heavy. Running it on the asyncio event
         # loop blocked health, login and customer requests during every upload.
         def build_analysis_and_questions():
-            analysis = {
-                'discipline': discipline,
-                'architecture_analyzer_version': '3.5-project-evidence-gate',
-                'file_count': len(files),
-                'files': [analyze_dxf_enhanced(path) for path in files],
-                'inference_mode': 'architecture-first-v2-spatial',
-            }
-            auto, answers, unresolved = build_unified_questionnaire(
-                analysis,
-                discipline,
-                {'occupancy': occupancy.strip()} if occupancy.strip() else {},
-            )
-            return auto, answers, unresolved
+            from .dxf_input import begin_input_read_cache, end_input_read_cache
+            cache_token = begin_input_read_cache()
+            try:
+                analysis = {
+                    'discipline': discipline,
+                    'architecture_analyzer_version': '3.5-project-evidence-gate',
+                    'file_count': len(files),
+                    'files': [analyze_dxf_enhanced(path) for path in files],
+                    'inference_mode': 'architecture-first-v2-spatial',
+                }
+                auto, answers, unresolved = build_unified_questionnaire(
+                    analysis,
+                    discipline,
+                    {'occupancy': occupancy.strip()} if occupancy.strip() else {},
+                )
+                return auto, answers, unresolved
+            finally:
+                end_input_read_cache(cache_token)
 
         auto, answers, unresolved = await asyncio.to_thread(build_analysis_and_questions)
         from .mechanical_workflow import _question_payload

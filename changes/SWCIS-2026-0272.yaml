@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0272",
+  "summary": "Eliminate repeated polygon buffers from semantic room-cell selection",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private reference projects are optional; automated regression remains required.",
+  "owner_release_authorization": "2026-09-21: owner requested complete correction of the recurring Staging project-file error; Production remains untouched.",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "architecture": "changed: semantic-label containment uses point coverage/boundary distance instead of allocating an equivalent buffered polygon per comparison",
+    "qa": "changed: real-project timing and architecture reconstruction regressions verify semantic equivalence",
+    "docs": "verified: runtime responsiveness evidence includes the downstream geometry hot path",
+    "governance": "verified: tolerance, candidate offsets and acceptance gates are unchanged",
+    "manifest": "verified: build and artifact identities are unchanged",
+    "migration": "verified: no stored data migration is required",
+    "versioning": "verified: implementation optimization requires no schema version bump",
+    "deployment": "changed: Staging-only rollout and real project upload validation; Production untouched"
+  },
+  "evidence": {
+    "traceability": ["architectural linework -> polygonized cells -> tolerance-equivalent semantic containment -> room boundary evidence"],
+    "tests": ["architecture geometry reconstruction suite", "complete repository regression suite", "real project 1 timing"],
+    "docs": ["docs/QUESTIONNAIRE_SINGLE_PARSE.md", "docs/QUESTIONNAIRE_RUNTIME_RESPONSIVENESS.md"],
+    "version_bump": ["not required: geometry selection semantics and contracts are unchanged"],
+    "migration": ["not required: no persisted contract changed"],
+    "golden_regression": ["existing architecture, room reconstruction, questionnaire and mechanical suites remain mandatory"],
+    "semantic_diff": ["buffer(tolerance).contains(point) -> covers(point) or distance(point) <= tolerance"],
+    "artifact_diff": ["not affected: no issued drawing mutation"],
+    "numeric_diff": ["not affected: tolerance and accepted coordinate calculations are unchanged"],
+    "contract_diff": ["not affected: internal performance-only implementation change"],
+    "deployment_plan": ["deploy approved commit to Staging and complete the same customer-panel upload"],
+    "rollback_plan": ["redeploy prior Staging commit a2592b0"]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "Boundary semantics are regression-testable and the unchanged tolerance is directly auditable."},
+  "waiver": null
+}
