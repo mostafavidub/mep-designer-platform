@@ -1,0 +1,69 @@
+{
+  "change_id": "SWCIS-2026-0279",
+  "summary": "Add the owner-provided eNamad trust seal to the shared public site footer.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment"
+  ],
+  "impact_notes": {
+    "ui_api": "The shared public footer gains one eNamad trust-seal link and remotely served logo. Existing navigation, page content, application state, calculations, CAD output, and authenticated flows are unchanged.",
+    "governance": "This file records the mandatory per-change SWCIS classification and evidence for PR #279.",
+    "deployment": "The footer change becomes public only after the protected PR merges and the normal production deployment completes."
+  },
+  "evidence": {
+    "traceability": [
+      "app/templates/base.html footer trust seal -> rendered public pages -> Web Regression Tests / full-site-observability"
+    ],
+    "tests": [
+      "Web Regression Tests / full-site-observability passes on PR #279 after removing target=_blank to preserve the existing editorial brand-shell contract.",
+      "Mechanical Coordination and the remaining required application checks pass on the current PR head."
+    ],
+    "docs": [
+      "changes/SWCIS-2026-0279.yaml",
+      "Owner-provided eNamad trust-seal code is implemented in app/templates/base.html."
+    ],
+    "version_bump": [
+      "not required: this is an additive public-footer trust badge and does not change SWCIS policy, dependency graph, rule traceability, runtime/schema contracts, migrations, or engineering behavior"
+    ],
+    "migration": [
+      "none: static template markup only"
+    ],
+    "golden_regression": [
+      "not applicable to engineering artifacts; no CAD, calculation, routing, PMM, or drawing semantics change"
+    ],
+    "semantic_diff": [
+      "shared footer gains one external eNamad verification link and image; existing footer links and application behavior remain unchanged"
+    ],
+    "artifact_diff": [
+      "no generated engineering artifact change"
+    ],
+    "numeric_diff": [
+      "none"
+    ],
+    "contract_diff": [
+      "The site-wide footer may render the eNamad trust-seal image from trustseal.enamad.ir and navigate to the supplied eNamad verification URL.",
+      "The link intentionally does not use target=_blank because the existing editorial brand-shell regression forbids new-tab targets in shared public markup."
+    ],
+    "deployment_plan": [
+      "merge only after all required GitHub checks are green; allow the normal production deployment and then verify the seal is visible and clickable on a public page"
+    ],
+    "rollback_plan": [
+      "revert the protected merge commit and redeploy the preceding approved commit if the external seal causes a rendering or availability issue"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "The change is isolated to shared footer markup. Failure of the remote eNamad image or link does not affect application state or engineering outputs, and public-page regressions detect markup breakage."
+  },
+  "waiver": null
+}
