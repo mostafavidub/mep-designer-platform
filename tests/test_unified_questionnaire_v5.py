@@ -54,6 +54,18 @@ class UnifiedQuestionnaireV5Tests(unittest.TestCase):
         ).read_text(encoding='utf-8')
         self.assertIn('await asyncio.to_thread(build_analysis_and_questions)', engine_route)
 
+    def test_questionnaire_analyzer_reads_each_dxf_only_once(self):
+        engine_route = (
+            Path(__file__).resolve().parents[1]
+            / 'app/main_auto.py'
+        ).read_text(encoding='utf-8')
+        start = engine_route.index('def analyze_dxf_enhanced(path):')
+        analyzer = engine_route[
+            start:engine_route.index('\ndef analyze_project_job', start)
+        ]
+        self.assertIn('doc, input_recovery = legacy.read_input_dxf(path)', analyzer)
+        self.assertNotIn('legacy.normalize_input_copy(path)', analyzer)
+
     def test_unified_questionnaire_golden_skips_extractable_architecture_facts(self):
         auto = self.auto()
         auto['floor_height_inferred'] = '3.20 متر'

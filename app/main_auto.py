@@ -102,10 +102,13 @@ def _expanded_entities(entities, depth=0):
 
 
 def analyze_dxf_enhanced(path):
-    input_recovery = legacy.normalize_input_copy(path)
-    doc, reader_recovery = legacy.read_input_dxf(path)
-    if reader_recovery.get('recovered'):
-        input_recovery = reader_recovery
+    # Parse once.  The former normalize-then-read sequence loaded every valid
+    # DXF twice, consuming almost the whole panel subrequest budget on real
+    # architecture files.  Recovered documents are still normalized on the
+    # extracted working copy so downstream behavior remains unchanged.
+    doc, input_recovery = legacy.read_input_dxf(path)
+    if input_recovery.get('recovered'):
+        doc.saveas(path)
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
     def normalized(value):

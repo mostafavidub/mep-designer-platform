@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0271",
+  "summary": "Remove the duplicate full-DXF parse from architecture questionnaire analysis",
+  "requester": "project-owner",
+  "reference_inventory_authorization": "2026-09-08: private reference projects are optional; automated regression remains required.",
+  "owner_release_authorization": "2026-09-21: owner requested complete correction of the recurring Staging project-file error; Production remains untouched.",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "manifest", "migration", "versioning", "deployment"],
+  "impact_notes": {
+    "ui_api": "changed: each uploaded DXF is parsed once by the existing strict/recovery reader instead of strict-loading the same file twice",
+    "qa": "changed: regression prevents duplicate parsing and real-file timing verifies the endpoint budget",
+    "docs": "added: single-parse runtime contract and recovery preservation",
+    "governance": "verified: architecture inference and recovery gates are unchanged",
+    "manifest": "verified: build identity and artifact manifests are unchanged",
+    "migration": "verified: no stored data or API payload migration is required",
+    "versioning": "verified: performance correction requires no schema or SWCIS version bump",
+    "deployment": "changed: Staging-only rollout followed by a real customer-panel upload; Production untouched"
+  },
+  "evidence": {
+    "traceability": ["project upload -> canonical DXF reader -> recovered working copy when required -> unchanged architecture inference -> questionnaire"],
+    "tests": ["tests/test_unified_questionnaire_v5.py", "complete repository regression suite"],
+    "docs": ["docs/QUESTIONNAIRE_SINGLE_PARSE.md"],
+    "version_bump": ["not required: no endpoint, schema or engineering semantic changed"],
+    "migration": ["not required: no persisted contract changed"],
+    "golden_regression": ["existing architecture, questionnaire, panel and mechanical suites remain mandatory"],
+    "semantic_diff": ["two identical full-file parses -> one canonical strict/recovery parse"],
+    "artifact_diff": ["not affected: no drawing or downloadable artifact mutation"],
+    "numeric_diff": ["not affected: extracted facts and engineering values are unchanged"],
+    "contract_diff": ["response contract unchanged; single-parse runtime contract added"],
+    "deployment_plan": ["deploy approved commit to Staging web service and complete one real panel analysis"],
+    "rollback_plan": ["redeploy the prior approved Staging Git commit"]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 2, "score": 16, "rationale": "A recovery regression would affect malformed input, but focused recovery suites and real-file testing detect it."},
+  "waiver": null
+}
