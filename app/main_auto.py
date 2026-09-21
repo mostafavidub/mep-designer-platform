@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import shutil
@@ -554,18 +555,24 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
         files = sorted(path for path in inputs.rglob('*.dxf') if legacy.is_real_dxf_path(path))
         if not files or len(files) > 8:
             raise HTTPException(status_code=400, detail='No valid DXF found or package contains too many files')
-        analysis = {
-            'discipline': discipline,
-            'architecture_analyzer_version': '3.5-project-evidence-gate',
-            'file_count': len(files),
-            'files': [analyze_dxf_enhanced(path) for path in files],
-            'inference_mode': 'architecture-first-v2-spatial',
-        }
-        auto, answers, unresolved = build_unified_questionnaire(
-            analysis,
-            discipline,
-            {'occupancy': occupancy.strip()} if occupancy.strip() else {},
-        )
+        # DXF reconstruction is CPU-heavy. Running it on the asyncio event
+        # loop blocked health, login and customer requests during every upload.
+        def build_analysis_and_questions():
+            analysis = {
+                'discipline': discipline,
+                'architecture_analyzer_version': '3.5-project-evidence-gate',
+                'file_count': len(files),
+                'files': [analyze_dxf_enhanced(path) for path in files],
+                'inference_mode': 'architecture-first-v2-spatial',
+            }
+            auto, answers, unresolved = build_unified_questionnaire(
+                analysis,
+                discipline,
+                {'occupancy': occupancy.strip()} if occupancy.strip() else {},
+            )
+            return auto, answers, unresolved
+
+        auto, answers, unresolved = await asyncio.to_thread(build_analysis_and_questions)
         from .mechanical_workflow import _question_payload
         return {
             'identity': QUESTIONNAIRE_IDENTITY,

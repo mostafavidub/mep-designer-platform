@@ -47,6 +47,13 @@ class UnifiedQuestionnaireV5Tests(unittest.TestCase):
         self.assertIn('build_unified_questionnaire(', engine_route)
         self.assertNotIn('questionsForService', engine_route)
 
+    def test_upload_analysis_is_offloaded_from_the_async_web_loop(self):
+        engine_route = (
+            Path(__file__).resolve().parents[1]
+            / 'app/main_auto.py'
+        ).read_text(encoding='utf-8')
+        self.assertIn('await asyncio.to_thread(build_analysis_and_questions)', engine_route)
+
     def test_unified_questionnaire_golden_skips_extractable_architecture_facts(self):
         auto = self.auto()
         auto['floor_height_inferred'] = '3.20 متر'
