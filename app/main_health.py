@@ -124,7 +124,12 @@ async def performance_headers(request, call_next):
             response.headers['Cache-Control'] = 'public, max-age=604800, stale-while-revalidate=86400'
     elif 'text/html' in response.headers.get('content-type', ''):
         response.headers['Cache-Control'] = 'no-cache'
-    if path.startswith('/projects/') or path in {'/login', '/register'}:
+    if (
+        path.startswith('/projects/')
+        or path.startswith('/panel')
+        or path.startswith('/admin/')
+        or path in {'/login', '/register'}
+    ):
         response.headers['X-Robots-Tag'] = 'noindex, nofollow'
     elif host in TEMPORARY_NOINDEX_HOSTS:
         response.headers['X-Robots-Tag'] = 'noindex, follow'
