@@ -1,0 +1,53 @@
+{
+  "change_id": "SWCIS-2026-0107",
+  "summary": "Restore the canonical /robots.txt response after the Planha domain migration by keeping the root IndexNow catch-all behind explicit SEO text routes.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance",
+    "test"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment",
+    "docs",
+    "manifest",
+    "migration",
+    "qa",
+    "versioning"
+  ],
+  "impact_notes": {
+    "ui_api": "Ensures GET /robots.txt on the canonical Planha host resolves to the intended canonical robots response instead of being shadowed by the legacy root-level IndexNow key route.",
+    "governance": "Records the SEO migration correction and locks explicit route precedence with regression coverage.",
+    "deployment": "Normal protected-main Railway deployment applies the route-order correction to production."
+  },
+  "evidence": {
+    "tests": [
+      "tests/test_temporary_domain_noindex.py",
+      "GitHub required checks",
+      "production verification of /robots.txt after deployment"
+    ],
+    "docs": [
+      "changes/SWCIS-2026-0107.yaml"
+    ],
+    "contract_diff": [
+      "Canonical GET /robots.txt changes from an unintended 404 to HTTP 200.",
+      "robots.txt advertises https://planha.com/sitemap.xml.",
+      "The IndexNow root key route remains available but is evaluated after explicit SEO text routes.",
+      "Existing Railway-to-Planha 301 migration behavior is unchanged."
+    ],
+    "version_bump": [
+      "not required: this is an SEO route-precedence correction and does not change engineering output contracts"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "The change only reorders one legacy catch-all route behind explicit SEO routes and is covered by direct robots and unknown-text-path regression tests."
+  },
+  "waiver": null
+}

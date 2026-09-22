@@ -133,8 +133,17 @@ async def performance_headers(request, call_next):
 
 
 # Replace inherited host-derived SEO endpoints with canonical-domain versions.
+# The legacy IndexNow verification route is a root-level catch-all
+# (/{indexnow_key}.txt). Temporarily remove it so /robots.txt is registered
+# before that catch-all, then append it again after the canonical SEO routes.
+_indexnow_route = None
 for route in list(app.router.routes):
-    if getattr(route, 'path', None) in {'/sitemap.xml', '/robots.txt'} and 'GET' in (getattr(route, 'methods', None) or set()):
+    path = getattr(route, 'path', None)
+    methods = getattr(route, 'methods', None) or set()
+    if path == '/{indexnow_key}.txt' and 'GET' in methods:
+        _indexnow_route = route
+        app.router.routes.remove(route)
+    elif path in {'/sitemap.xml', '/robots.txt'} and 'GET' in methods:
         app.router.routes.remove(route)
 
 
@@ -161,6 +170,10 @@ def canonical_robots():
         content=f'User-agent: *\nAllow: /\nSitemap: {PUBLIC_SITE_URL}/sitemap.xml\n',
         media_type='text/plain',
     )
+
+
+if _indexnow_route is not None:
+    app.router.routes.append(_indexnow_route)
 
 
 def integrated_system_health():
