@@ -1,0 +1,55 @@
+{
+  "change_id": "SWCIS-2026-0108",
+  "summary": "Harden Planha technical SEO across all indexable public pages: canonical metadata, site-brand signals, structured data, sitemap/robots contract, and regression coverage.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance",
+    "test"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment",
+    "docs",
+    "manifest",
+    "migration",
+    "qa",
+    "versioning"
+  ],
+  "impact_notes": {
+    "ui_api": "All indexable public templates use the Planha brand consistently in title/Open Graph/visible shell/structured data, and SEO URLs in structured data are pinned to https://planha.com rather than the request host.",
+    "governance": "Adds an explicit public SEO contract covering the full sitemap inventory and prevents reintroduction of the retired EngiTools public brand or non-canonical metadata.",
+    "deployment": "After protected-main merge, the normal Railway production deployment publishes the metadata and template updates."
+  },
+  "evidence": {
+    "tests": [
+      "tests/test_public_seo_contract.py",
+      "tests/test_web_landings.py",
+      "GitHub required checks",
+      "production verification after Railway deployment"
+    ],
+    "docs": [
+      "changes/SWCIS-2026-0108.yaml"
+    ],
+    "contract_diff": [
+      "Indexable public page titles, Open Graph site-name/title signals, organization/article author naming, and shared public shell change from EngiTools to Planha.",
+      "Structured-data URLs for services, blog collections, articles, breadcrumbs, and social images use the canonical https://planha.com origin instead of request-derived hosts.",
+      "Homepage removes incomplete SoftwareApplication rich-result markup that lacked Google's required price plus rating/review fields; Organization, WebSite, and FAQ markup remain.",
+      "The XML sitemap remains limited to the 11 canonical indexable public URLs; /architect remains noindex,follow and outside the sitemap.",
+      "robots.txt continues to advertise the canonical Planha sitemap."
+    ],
+    "version_bump": [
+      "not required: this is public SEO metadata/content-shell hardening and does not change engineering calculation or artifact contracts"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "Changes are limited to public templates, metadata, structured data, and tests; engineering workflows and CAD outputs are untouched."
+  },
+  "waiver": null
+}
