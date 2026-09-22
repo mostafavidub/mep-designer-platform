@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#080808">
-  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=20260821-1716">
+  <link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96.png">
   <meta name="google-site-verification" content="BTvevBqM2NGTer8b6XVxMYE9PdXmewNY7HcgJnmmCeQ" />
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-VGJ540F9HC"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-VGJ540F9HC');</script>
-  <title>{% block title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}EngiTools ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF است؛ با تحلیل خودکار پلان و پرسش فقط درباره اطلاعات ضروری پروژه.{% endblock %}">
+  <title>{% block title %}Planha | طراحی هوشمند تأسیسات ساختمان{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Planha ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF است؛ با تحلیل خودکار پلان و پرسش فقط درباره اطلاعات ضروری پروژه.{% endblock %}">
   <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1{% endblock %}">
   {% set canonical_base = 'https://planha.com' %}
   {% set page_path = request.url.path %}
@@ -20,8 +20,8 @@
   <link rel="canonical" href="{{ canonical_base }}{{ page_path }}">
   <meta property="og:locale" content="fa_IR">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-  <meta property="og:site_name" content="EngiTools">
-  <meta property="og:title" content="{% block og_title %}EngiTools | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
+  <meta property="og:site_name" content="Planha">
+  <meta property="og:title" content="{% block og_title %}Planha | طراحی هوشمند تأسیسات ساختمان{% endblock %}">
   <meta property="og:description" content="{% block og_description %}طراحی هوشمند نقشه‌های تأسیسات برق و مکانیک ساختمان از روی پلان معماری DXF.{% endblock %}">
   <meta property="og:url" content="{{ canonical_base }}{{ page_path }}">
   {% block social_image %}{% endblock %}
@@ -47,19 +47,19 @@
   <link rel="stylesheet" href="/static/account.css?v=20260902-1">
   <link rel="stylesheet" href="/static/admin-pricing.css?v=20260902-1">
   {% block head_extra %}{% endblock %}
-  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://planha.com/#organization","name":"EngiTools","url":"https://planha.com/"},{"@type":"WebSite","@id":"https://planha.com/#website","name":"EngiTools","url":"https://planha.com/","publisher":{"@id":"https://planha.com/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://planha.com/#organization","name":"Planha","alternateName":"پلان‌ها","url":"https://planha.com/","logo":"https://planha.com/static/logo-192.png"},{"@type":"WebSite","@id":"https://planha.com/#website","name":"Planha","alternateName":"پلان‌ها","url":"https://planha.com/","publisher":{"@id":"https://planha.com/#organization"},"inLanguage":"fa-IR","description":"ابزار طراحی هوشمند تأسیسات برق و مکانیک ساختمان از روی پلان معماری"}]}</script>
   {% block structured_data %}{% endblock %}
 </head>
 <body>
 <div class="scroll-progress" aria-hidden="true"><span></span></div>
 <header class="site-header"><div class="navin">
-  <a href="/" class="brand" aria-label="EngiTools - صفحه اصلی"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>EngiTools</strong><small>ENGINEERING WORKSPACE</small></span></a>
+  <a href="/" class="brand" aria-label="Planha - صفحه اصلی"><span class="brand-mark"><span></span><span></span><span></span></span><span class="brand-copy"><strong>Planha</strong><small>ENGINEERING WORKSPACE</small></span></a>
   <button type="button" class="nav-menu" aria-label="باز کردن منو" aria-expanded="false"><span></span></button>
   <nav class="top-nav" aria-label="منوی اصلی"><a href="/mechanical">همراه مکانیک</a><a href="/electrical">همراه برق</a><a href="/architect">همراه معمار</a><a href="/blog">وبلاگ مهندسان</a></nav>
   <a class="nav-cta" href="/panel">پنل کاربری</a>
 </div></header>
 {% block body %}{% endblock %}
-<footer class="site-footer"><div class="footer-inner"><div><strong>EngiTools</strong><p>از پلان معماری تا طراحی مقدماتی تأسیسات.</p></div><div class="footer-links"><a href="/mechanical">طراحی مکانیک</a><a href="/electrical">طراحی برق</a><a href="/blog">وبلاگ مهندسان</a><a href="/blog/mep-input-guide">راهنمای DXF</a><a href="/blog/electrical-plan-scope">نقشه‌های برق</a><a href="/blog/mechanical-plan-scope">نقشه‌های مکانیک</a></div>
+<footer class="site-footer"><div class="footer-inner"><div><strong>Planha</strong><p>از پلان معماری تا طراحی مقدماتی تأسیسات.</p></div><div class="footer-links"><a href="/mechanical">طراحی مکانیک</a><a href="/electrical">طراحی برق</a><a href="/blog">وبلاگ مهندسان</a><a href="/blog/mep-input-guide">راهنمای DXF</a><a href="/blog/electrical-plan-scope">نقشه‌های برق</a><a href="/blog/mechanical-plan-scope">نقشه‌های مکانیک</a></div>
 <a
   referrerpolicy="origin"
   rel="noopener noreferrer"
