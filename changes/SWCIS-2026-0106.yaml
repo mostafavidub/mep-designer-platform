@@ -2,9 +2,22 @@
   "change_id": "SWCIS-2026-0106",
   "summary": "Make the legacy Railway public hostname permanently redirect to the canonical Planha domain while preserving every public path and query string.",
   "requester": "mostafavidub",
-  "change_types": ["ui_api", "governance"],
+  "change_types": [
+    "ui_api",
+    "governance",
+    "test"
+  ],
   "changed_rule_ids": [],
-  "impacted_modules": ["ui_api", "governance", "deployment"],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment",
+    "docs",
+    "manifest",
+    "migration",
+    "qa",
+    "versioning"
+  ],
   "impact_notes": {
     "ui_api": "The legacy public host web-app-production-3d3b.up.railway.app permanently redirects to https://planha.com with HTTP 301 while preserving path and query.",
     "governance": "Updates the repository contract to match the already-applied production domain migration and prevents future variable drift from re-exposing duplicate public pages.",
@@ -16,7 +29,9 @@
       "GitHub required checks",
       "production URL checks for legacy Railway host redirects"
     ],
-    "docs": ["changes/SWCIS-2026-0106.yaml"],
+    "docs": [
+      "changes/SWCIS-2026-0106.yaml"
+    ],
     "contract_diff": [
       "Legacy Railway public URLs change from temporary noindex content to permanent 301 redirects.",
       "Redirects preserve request path and query string, so existing public deep links migrate one-to-one to Planha.",
