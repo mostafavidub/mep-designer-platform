@@ -1,0 +1,60 @@
+{
+  "change_id": "SWCIS-2026-0107",
+  "summary": "Restore SEO continuity for historical public Planha article URLs and the legacy sitemap index by redirecting them one-to-one to their current canonical equivalents.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance",
+    "test"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment",
+    "docs",
+    "manifest",
+    "migration",
+    "qa",
+    "versioning"
+  ],
+  "impact_notes": {
+    "ui_api": "Adds permanent 301 redirects for /blog/dxf-guide, /blog/electrical-drawings and /blog/mechanical-drawings to their exact current canonical destinations, preserving query strings; the historical /sitemap_index.xml remains directly fetchable with HTTP 200 and points to the active sitemap.xml.",
+    "governance": "Records the evidence-based historical URL migration and explicitly avoids blanket redirects or invented legacy URLs.",
+    "deployment": "Protected main deployment applies the redirect map to planha.com, www.planha.com and the legacy Railway hostname.",
+    "migration": "Historical article paths are mapped one-to-one: dxf-guide -> mep-input-guide, electrical-drawings -> electrical-plan-scope, mechanical-drawings -> mechanical-plan-scope; sitemap_index.xml is served as a valid sitemap index that references sitemap.xml.",
+    "qa": "Regression tests verify canonical-host redirects, query preservation, one-hop Railway-host redirects and the legacy sitemap index redirect."
+  },
+  "evidence": {
+    "tests": [
+      "tests/test_temporary_domain_noindex.py",
+      "GitHub required checks",
+      "live production redirect verification after deployment"
+    ],
+    "docs": [
+      "changes/SWCIS-2026-0107.yaml"
+    ],
+    "contract_diff": [
+      "Previously 404 historical public article URLs now return permanent 301 redirects to content-equivalent current pages.",
+      "The historical sitemap_index.xml endpoint returns HTTP 200 with a valid sitemap index referencing the active sitemap.xml, because Search Console does not follow redirects for submitted sitemap URLs.",
+      "No unknown historical URL is redirected to the homepage and current canonical URLs are unchanged."
+    ],
+    "migration": [
+      "/blog/dxf-guide -> /blog/mep-input-guide",
+      "/blog/electrical-drawings -> /blog/electrical-plan-scope",
+      "/blog/mechanical-drawings -> /blog/mechanical-plan-scope",
+      "/sitemap_index.xml = HTTP 200 sitemap index -> /sitemap.xml"
+    ],
+    "version_bump": [
+      "not required: this is an HTTP migration/SEO continuity change and does not change engineering output contracts"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "Redirects are limited to four documented historical paths, map to exact equivalents, preserve query strings and are covered by regression and live checks."
+  },
+  "waiver": null
+}
