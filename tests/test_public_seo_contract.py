@@ -69,6 +69,20 @@ class PublicSEOContractTests(unittest.TestCase):
                 self.assertNotIn("EngiTools", html)
                 self.assertNotIn("ENGITOOLS", html)
 
+    def test_public_shell_exposes_square_png_favicon(self):
+        response = self.client.get("/", headers={"host": "planha.com"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            '<link rel="icon" type="image/png" sizes="96x96" href="/static/favicon-96.png">',
+            response.text,
+        )
+
+        favicon = self.client.get("/static/favicon-96.png")
+        self.assertEqual(favicon.status_code, 200)
+        self.assertTrue(
+            favicon.headers.get("content-type", "").startswith("image/png")
+        )
+
     def test_home_uses_clean_supported_structured_data(self):
         response = self.client.get("/", headers={"host": "planha.com"})
         self.assertEqual(response.status_code, 200)
