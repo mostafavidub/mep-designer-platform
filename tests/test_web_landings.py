@@ -82,7 +82,7 @@ class LandingSmokeTests(unittest.TestCase):
         self.assertNotIn('<meta name="enamad"', self.client.get('/blog').text)
         self.assertNotIn('ENGINEERING TRUST', r.text)
         self.assertNotIn('فرآیندی قابل ردیابی، نه یک خروجی مبهم', r.text)
-        self.assertNotIn('شروع دستی یا EngiTools؟', r.text)
+        self.assertNotIn('شروع دستی یا Planha؟', r.text)
         self.assertNotIn('محدودیت‌ها شفاف‌اند؛ اصلاح هم ممکن است', r.text)
         self.assertIn('FAQPage', r.text)
         self.assertIn('۴ نمونه واقعی از پروژه‌های تأییدشده', r.text)
@@ -188,7 +188,7 @@ class LandingSmokeTests(unittest.TestCase):
     def test_blog_and_articles_use_editorial_brand_shell(self):
         blog = self.client.get('/blog')
         self._assert_brand_shell(blog)
-        self.assertIn('ENGITOOLS ENGINEERING BLOG', blog.text)
+        self.assertIn('PLANHA ENGINEERING BLOG', blog.text)
         for slug in ('mep-input-guide', 'electrical-plan-scope', 'mechanical-plan-scope'):
             article = self.client.get(f'/blog/{slug}')
             self._assert_brand_shell(article)
