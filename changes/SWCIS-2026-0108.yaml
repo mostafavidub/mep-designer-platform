@@ -40,7 +40,8 @@
       "Homepage removes incomplete SoftwareApplication rich-result markup that lacked Google's required price plus rating/review fields; Organization, WebSite, and FAQ markup remain.",
       "The XML sitemap remains limited to the 11 canonical indexable public URLs; /architect remains noindex,follow and outside the sitemap.",
       "robots.txt continues to advertise the canonical Planha sitemap.",
-      "The public favicon changes from SVG-only to a stable square 96x96 PNG reference for search-result compatibility."
+      "The public favicon changes from SVG-only to a stable square 96x96 PNG reference for search-result compatibility.",
+      "Authenticated panel/project/admin routes receive X-Robots-Tag: noindex, nofollow as a second layer beyond page-level meta robots."
     ],
     "version_bump": [
       "not required: this is public SEO metadata/content-shell hardening and does not change engineering calculation or artifact contracts"
