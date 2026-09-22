@@ -90,6 +90,10 @@ class PublicSEOContractTests(unittest.TestCase):
         self.assertIn('"@type":"WebSite"', response.text)
         self.assertIn('"name":"Planha"', response.text)
         self.assertIn('"alternateName":"پلان‌ها"', response.text)
+        self.assertIn('"logo":"https://planha.com/static/logo-192.png"', response.text)
+        logo = self.client.get("/static/logo-192.png")
+        self.assertEqual(logo.status_code, 200)
+        self.assertTrue(logo.headers.get("content-type", "").startswith("image/png"))
         self.assertNotIn('"@type":"SoftwareApplication"', response.text)
 
     def test_sitemap_matches_indexable_public_contract(self):
