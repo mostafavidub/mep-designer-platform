@@ -1,0 +1,46 @@
+{
+  "change_id": "SWCIS-2026-0280",
+  "summary": "Publish approved SEO article 'نقشه لوله کشی ساختمان: راهنمای خواندن و کنترل پیش از اجرا' at /blog/plumbing-plan-verification-checklist.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "ui_api",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "ui_api",
+    "governance",
+    "deployment"
+  ],
+  "impact_notes": {
+    "ui_api": "Adds one approved published article to app/templates/content/articles.json; runtime sanitization and generated article routing remain unchanged.",
+    "governance": "Records the automated SEO publication as a versioned SWCIS change request.",
+    "deployment": "After review and merge, the normal Railway deployment lifecycle makes /blog/plumbing-plan-verification-checklist public."
+  },
+  "evidence": {
+    "tests": [
+      "tests/test_generated_seo_article_registry.py",
+      "GitHub required checks"
+    ],
+    "docs": [
+      "app/templates/content/articles.json",
+      "changes/SWCIS-2026-0280.yaml"
+    ],
+    "contract_diff": [
+      "One new status=published article is added to the private registry for slug plumbing-plan-verification-checklist.",
+      "No direct write to main and no automatic merge are performed; publication requires PR checks and merge.",
+      "Existing runtime HTML sanitization, legacy slug priority, blog routing and sitemap generation remain the publication contract."
+    ],
+    "version_bump": [
+      "not required: this is a content publication using the existing V1.1 runtime contract and introduces no runtime/schema version change"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "The change publishes one pre-approved article through the existing protected registry; GitHub checks, human merge review, runtime sanitization and production routing provide detection and containment."
+  },
+  "waiver": null
+}
