@@ -72,6 +72,12 @@ PUBLIC_SITE_URL = os.getenv('PUBLIC_SITE_URL', 'https://planha.com').strip().rst
 PUBLIC_SITE = urlsplit(PUBLIC_SITE_URL)
 CANONICAL_HOST = (PUBLIC_SITE.hostname or 'planha.com').lower().rstrip('.')
 CANONICAL_SCHEME = PUBLIC_SITE.scheme or 'https'
+LEGACY_PUBLIC_REDIRECTS = {
+    '/blog/dxf-guide': '/blog/mep-input-guide',
+    '/blog/electrical-drawings': '/blog/electrical-plan-scope',
+    '/blog/mechanical-drawings': '/blog/mechanical-plan-scope',
+    '/sitemap_index.xml': '/sitemap.xml',
+}
 CANONICAL_REDIRECT_HOSTS = {
     host.strip().lower().rstrip('.')
     for host in os.getenv(
@@ -100,7 +106,7 @@ def _request_hostname(request):
 
 
 def _canonical_redirect_url(request):
-    path = request.url.path or '/'
+    path = LEGACY_PUBLIC_REDIRECTS.get(request.url.path or '/', request.url.path or '/')
     query = request.url.query
     suffix = f'?{query}' if query else ''
     return f'{CANONICAL_SCHEME}://{CANONICAL_HOST}{path}{suffix}'
@@ -114,6 +120,8 @@ async def performance_headers(request, call_next):
     # duplicate hosts to the single SEO host while preserving path and query.
     is_probe = path in {'/system_health', '/storage_health'} or path.startswith('/internal/')
     if not is_probe and host in CANONICAL_REDIRECT_HOSTS and host != CANONICAL_HOST:
+        return RedirectResponse(url=_canonical_redirect_url(request), status_code=301)
+    if not is_probe and host == CANONICAL_HOST and path in LEGACY_PUBLIC_REDIRECTS:
         return RedirectResponse(url=_canonical_redirect_url(request), status_code=301)
 
     response = await call_next(request)
