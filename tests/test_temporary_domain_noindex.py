@@ -53,5 +53,47 @@ class TemporaryDomainRedirectTests(unittest.TestCase):
         self.assertEqual(response.headers.get('location'), 'https://planha.com/mechanical')
 
 
+    def test_historical_article_paths_redirect_to_current_equivalents(self):
+        redirects = {
+            '/blog/dxf-guide': 'https://planha.com/blog/mep-input-guide',
+            '/blog/electrical-drawings': 'https://planha.com/blog/electrical-plan-scope',
+            '/blog/mechanical-drawings': 'https://planha.com/blog/mechanical-plan-scope',
+            '/sitemap_index.xml': 'https://planha.com/sitemap.xml',
+        }
+        for source, target in redirects.items():
+            with self.subTest(source=source):
+                response = self.client.get(
+                    source,
+                    headers={'host': 'planha.com'},
+                    follow_redirects=False,
+                )
+                self.assertEqual(response.status_code, 301)
+                self.assertEqual(response.headers.get('location'), target)
+
+    def test_historical_redirect_preserves_query(self):
+        response = self.client.get(
+            '/blog/dxf-guide?utm_source=old-sitemap',
+            headers={'host': 'planha.com'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get('location'),
+            'https://planha.com/blog/mep-input-guide?utm_source=old-sitemap',
+        )
+
+    def test_railway_historical_path_redirects_in_one_hop(self):
+        response = self.client.get(
+            '/blog/electrical-drawings',
+            headers={'host': 'web-app-production-3d3b.up.railway.app'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get('location'),
+            'https://planha.com/blog/electrical-plan-scope',
+        )
+
+
 if __name__ == '__main__':
     unittest.main()
