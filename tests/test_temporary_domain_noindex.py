@@ -58,7 +58,6 @@ class TemporaryDomainRedirectTests(unittest.TestCase):
             '/blog/dxf-guide': 'https://planha.com/blog/mep-input-guide',
             '/blog/electrical-drawings': 'https://planha.com/blog/electrical-plan-scope',
             '/blog/mechanical-drawings': 'https://planha.com/blog/mechanical-plan-scope',
-            '/sitemap_index.xml': 'https://planha.com/sitemap.xml',
         }
         for source, target in redirects.items():
             with self.subTest(source=source):
@@ -69,6 +68,19 @@ class TemporaryDomainRedirectTests(unittest.TestCase):
                 )
                 self.assertEqual(response.status_code, 301)
                 self.assertEqual(response.headers.get('location'), target)
+
+
+    def test_historical_sitemap_index_remains_fetchable(self):
+        response = self.client.get(
+            '/sitemap_index.xml',
+            headers={'host': 'planha.com'},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            '<loc>https://planha.com/sitemap.xml</loc>',
+            response.text,
+        )
 
     def test_historical_redirect_preserves_query(self):
         response = self.client.get(
