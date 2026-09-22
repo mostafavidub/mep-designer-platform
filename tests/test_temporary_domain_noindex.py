@@ -50,6 +50,15 @@ class TemporaryDomainRedirectTests(unittest.TestCase):
         response = self.client.get('/not-an-indexnow-key.txt', headers={'host': 'planha.com'})
         self.assertEqual(response.status_code, 404)
 
+    def test_private_panel_and_admin_pages_send_noindex_header(self):
+        for path in ('/panel', '/panel/projects/new', '/admin/pricing'):
+            with self.subTest(path=path):
+                response = self.client.get(path, headers={'host': 'planha.com'})
+                self.assertEqual(
+                    response.headers.get('x-robots-tag'),
+                    'noindex, nofollow',
+                )
+
     def test_forwarded_railway_host_redirects_behind_proxy(self):
         response = self.client.get(
             '/mechanical',
