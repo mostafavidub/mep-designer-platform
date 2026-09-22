@@ -76,7 +76,6 @@ LEGACY_PUBLIC_REDIRECTS = {
     '/blog/dxf-guide': '/blog/mep-input-guide',
     '/blog/electrical-drawings': '/blog/electrical-plan-scope',
     '/blog/mechanical-drawings': '/blog/mechanical-plan-scope',
-    '/sitemap_index.xml': '/sitemap.xml',
 }
 CANONICAL_REDIRECT_HOSTS = {
     host.strip().lower().rstrip('.')
@@ -159,6 +158,17 @@ def canonical_sitemap():
     )
     xml = '<?xml version="1.0" encoding="UTF-8"?>' + (
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + rows + '</urlset>'
+    )
+    return Response(content=xml, media_type='application/xml')
+
+
+@app.get('/sitemap_index.xml', include_in_schema=False)
+def canonical_sitemap_index():
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f'<sitemap><loc>{PUBLIC_SITE_URL}/sitemap.xml</loc></sitemap>'
+        '</sitemapindex>'
     )
     return Response(content=xml, media_type='application/xml')
 
