@@ -40,6 +40,16 @@ class TemporaryDomainRedirectTests(unittest.TestCase):
         response = self.client.get('/login', headers={'host': 'www.example.com'})
         self.assertEqual(response.headers.get('x-robots-tag'), 'noindex, nofollow')
 
+    def test_planha_robots_is_canonical_and_not_shadowed_by_indexnow(self):
+        response = self.client.get('/robots.txt', headers={'host': 'planha.com'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('User-agent: *', response.text)
+        self.assertIn('Sitemap: https://planha.com/sitemap.xml', response.text)
+
+    def test_unknown_root_txt_still_returns_404(self):
+        response = self.client.get('/not-an-indexnow-key.txt', headers={'host': 'planha.com'})
+        self.assertEqual(response.status_code, 404)
+
     def test_forwarded_railway_host_redirects_behind_proxy(self):
         response = self.client.get(
             '/mechanical',
