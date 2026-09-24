@@ -52,6 +52,14 @@ SOURCE_VISIBLE_BY_PROFILE = {
     "DETAIL": set(),
 }
 
+CONTEXT_REQUIRED_BY_PROFILE = {
+    "MECHANICAL_PLAN": {"BUILDING_OVERALL", "GRID", "SHAFT", "STAIR_CORE"},
+    "ROOF_PLAN": {"BUILDING_OVERALL", "GRID", "SHAFT", "STAIR_CORE"},
+    "PARKING_PLAN": {"BUILDING_OVERALL", "GRID", "SHAFT", "STAIR_CORE"},
+    "ARCHITECTURAL_PLAN": {"BUILDING_OVERALL", "GRID", "SHAFT", "STAIR_CORE"},
+}
+DIMENSION_OBSTACLE_TYPES = {"TEXT", "MTEXT", "INSERT", "ARC", "CIRCLE"}
+
 
 def _norm(value):
     return (
@@ -491,6 +499,14 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
     bind_tol = max(span * 0.006, 0.02)
     records = []
     for index, entity in enumerate(doc.modelspace().query("DIMENSION")):
+        # Planha-owned dimensions are output artifacts, never source evidence.
+        try:
+            entity.get_xdata(APPID)
+            continue
+        except Exception:
+            pass
+        if str(getattr(entity.dxf, "layer", "") or "").upper().startswith("PLANHA-"):
+            continue
         p1, p2, base = _dimension_geometry(entity)
         if not p1 or not p2:
             continue
@@ -808,8 +824,195 @@ def governed_requirement_intents(requirements, refs, plan_id):
         })
     return intents,errors
 
+
+def _ref_midpoint(ref):
+    a=ref.get("a") or (0.0,0.0);b=ref.get("b") or a
+    return ((float(a[0])+float(b[0]))/2.0,(float(a[1])+float(b[1]))/2.0)
+
+
+def _project_to_infinite_line(point, ref):
+    a=ref.get("a");b=ref.get("b")
+    if not a or not b:
+        return None
+    ax,ay=map(float,a);bx,by=map(float,b);px,py=map(float,point)
+    vx,vy=bx-ax,by-ay;den=vx*vx+vy*vy
+    if den<=1e-18:
+        return None
+    t=((px-ax)*vx+(py-ay)*vy)/den
+    return (ax+t*vx,ay+t*vy)
+
+
+def _parallel_axis(ref, target_angle, tolerance=math.radians(8.0)):
+    angle=_line_angle(ref["a"],ref["b"])%math.pi
+    return _axis_delta(angle,target_angle%math.pi)<=tolerance
+
+
+def _existing_source_semantics(registry):
+    return {str(row.get("semantic_type") or "") for row in (registry or {}).get("records") or []}
+
+
+def _overall_context_intents(refs, registry, profile):
+    if "BUILDING_OVERALL" not in CONTEXT_REQUIRED_BY_PROFILE.get(profile,set()):
+        return []
+    if "BUILDING_OVERALL" in _existing_source_semantics(registry):
+        return []
+    by_side={}
+    for ref in refs or []:
+        if ref.get("kind")!="WALL_FACE" or not ref.get("envelope_candidate") or not ref.get("envelope_side"):
+            continue
+        side=str(ref["envelope_side"])
+        length=math.dist(ref["a"],ref["b"])
+        if side not in by_side or length>by_side[side][0]:
+            by_side[side]=(length,ref)
+    intents=[]
+    for axis_name,side_a,side_b in (("X","LEFT","RIGHT"),("Y","BOTTOM","TOP")):
+        if side_a not in by_side or side_b not in by_side:
+            continue
+        ra=by_side[side_a][1];rb=by_side[side_b][1]
+        p1=_ref_midpoint(ra);p2=_project_to_infinite_line(p1,rb)
+        if not p2:
+            continue
+        measured=math.dist(p1,p2)
+        if measured<=1e-9:
+            continue
+        intents.append({
+            "id":f"CTX-OVERALL-{axis_name}",
+            "purpose":"BUILDING_OVERALL",
+            "source_kind":"PLANHA_GENERATED_CONTEXT",
+            "reference_a":ra,"reference_b":rb,
+            "world_p1":p1,"world_p2":p2,"world_base":None,
+            "measured_value":measured,"displayed_value":_display_number(measured),
+            "required":True,"priority":92,"placement_zone":"OUTSIDE",
+            "angle_deg":math.degrees(_line_angle(p1,p2)),
+        })
+    return intents
+
+
+def _grid_context_intents(refs, registry, profile, local_axis):
+    if "GRID" not in CONTEXT_REQUIRED_BY_PROFILE.get(profile,set()):
+        return []
+    if "GRID" in _existing_source_semantics(registry):
+        return []
+    grid_refs=[ref for ref in refs or [] if ref.get("kind")=="GRID_AXIS"]
+    intents=[]
+    # Lines perpendicular to a measured axis define coordinates along that axis.
+    for axis_index,measured_axis in enumerate((local_axis,local_axis+math.pi/2.0)):
+        wanted=(measured_axis+math.pi/2.0)%math.pi
+        family=[ref for ref in grid_refs if _parallel_axis(ref,wanted)]
+        unique=[];seen=set()
+        normal=(math.cos(measured_axis),math.sin(measured_axis))
+        for ref in family:
+            mid=_ref_midpoint(ref)
+            coordinate=mid[0]*normal[0]+mid[1]*normal[1]
+            key=round(coordinate,6)
+            if key in seen:
+                continue
+            seen.add(key);unique.append((coordinate,ref))
+        unique.sort(key=lambda item:item[0])
+        for pair_index,((_,ra),(_,rb)) in enumerate(zip(unique,unique[1:]),1):
+            p1=_ref_midpoint(ra);p2=_project_to_infinite_line(p1,rb)
+            if not p2:
+                continue
+            measured=math.dist(p1,p2)
+            if measured<=1e-9:
+                continue
+            intents.append({
+                "id":f"CTX-GRID-{axis_index}-{pair_index:02d}",
+                "purpose":"GRID",
+                "source_kind":"PLANHA_GENERATED_CONTEXT",
+                "reference_a":ra,"reference_b":rb,
+                "world_p1":p1,"world_p2":p2,"world_base":None,
+                "measured_value":measured,"displayed_value":_display_number(measured),
+                "required":True,"priority":96,"placement_zone":"OUTSIDE",
+                "angle_deg":math.degrees(measured_axis),
+            })
+    return intents
+
+
+def _box_context_intents(refs, registry, profile, local_axis, kind, semantic, prefix):
+    if semantic not in CONTEXT_REQUIRED_BY_PROFILE.get(profile,set()):
+        return []
+    if semantic in _existing_source_semantics(registry):
+        return []
+    grouped={}
+    for ref in refs or []:
+        if ref.get("kind")!=kind:
+            continue
+        ref_id=str(ref.get("id") or "")
+        group=ref_id.split("-E",1)[0] if "-E" in ref_id else ref_id
+        grouped.setdefault(group,[]).append(ref)
+    intents=[]
+    ca,sa=math.cos(local_axis),math.sin(local_axis)
+    for group,rows in sorted(grouped.items()):
+        points=[tuple(map(float,p)) for ref in rows for p in (ref.get("a"),ref.get("b")) if p]
+        if len(points)<4:
+            continue
+        uv=[(x*ca+y*sa,-x*sa+y*ca) for x,y in points]
+        us=[p[0] for p in uv];vs=[p[1] for p in uv]
+        uc=(min(us)+max(us))/2.0;vc=(min(vs)+max(vs))/2.0
+        for axis_index,(a1,a2,const,axis_angle) in enumerate((
+            (min(us),max(us),vc,local_axis),
+            (min(vs),max(vs),uc,local_axis+math.pi/2.0),
+        )):
+            if a2-a1<=1e-9:
+                continue
+            if axis_index==0:
+                lp1=(a1,const);lp2=(a2,const)
+            else:
+                lp1=(const,a1);lp2=(const,a2)
+            def world(local):
+                u,v=local
+                return (u*ca-v*sa,u*sa+v*ca)
+            p1=world(lp1);p2=world(lp2)
+            midpoint_a=_ref_midpoint(min(rows,key=lambda r:math.dist(_ref_midpoint(r),p1)))
+            midpoint_b=_ref_midpoint(min(rows,key=lambda r:math.dist(_ref_midpoint(r),p2)))
+            ra=min(rows,key=lambda r:math.dist(_ref_midpoint(r),midpoint_a))
+            rb=min(rows,key=lambda r:math.dist(_ref_midpoint(r),midpoint_b))
+            measured=math.dist(p1,p2)
+            intents.append({
+                "id":f"CTX-{prefix}-{group}-{axis_index}",
+                "purpose":semantic,
+                "source_kind":"PLANHA_GENERATED_CONTEXT",
+                "reference_a":ra,"reference_b":rb,
+                "world_p1":p1,"world_p2":p2,"world_base":None,
+                "measured_value":measured,"displayed_value":_display_number(measured),
+                "required":True,"priority":91,"placement_zone":"LOCAL",
+                "angle_deg":math.degrees(axis_angle),
+            })
+    return intents
+
+
+def context_dimension_intents(refs, registry, profile, local_axis):
+    intents=[]
+    intents.extend(_overall_context_intents(refs,registry,profile))
+    intents.extend(_grid_context_intents(refs,registry,profile,local_axis))
+    intents.extend(_box_context_intents(refs,registry,profile,local_axis,"SHAFT_FACE","SHAFT","SHAFT"))
+    intents.extend(_box_context_intents(refs,registry,profile,local_axis,"STAIR_CORE_FACE","STAIR_CORE","STAIR"))
+    return intents
+
+
+def entity_obstacle_boxes(entities, board):
+    """Return target-board annotation/symbol obstacles for dimension text placement."""
+    plan_area=tuple(board["plan_area"] if isinstance(board,dict) else board.plan_area)
+    obstacles=[]
+    for entity in entities or []:
+        if entity.dxftype().upper() not in DIMENSION_OBSTACLE_TYPES:
+            continue
+        try:
+            ex=bbox.extents([entity],fast=True)
+        except Exception:
+            continue
+        if not ex.has_data:
+            continue
+        box=(float(ex.extmin.x),float(ex.extmin.y),float(ex.extmax.x),float(ex.extmax.y))
+        cx=(box[0]+box[2])/2.0;cy=(box[1]+box[3])/2.0
+        if plan_area[0]-.05<=cx<=plan_area[2]+.05 and plan_area[1]-.05<=cy<=plan_area[3]+.05:
+            obstacles.append(box)
+    return obstacles
+
+
 def select_minimal_dimension_set(intents):
-    """Remove exact semantic duplicates while preserving required check intent."""
+    """Remove semantic duplicates while preserving required/check intent."""
     selected=[];seen=set()
     for row in intents or []:
         ra=row.get("reference_a") or {}; rb=row.get("reference_b") or {}
@@ -817,14 +1020,19 @@ def select_minimal_dimension_set(intents):
             str(ra.get("id") or ra.get("element_id") or ""),
             str(rb.get("id") or rb.get("element_id") or ""),
         ])
-        key=(
+        base=(
             str(row.get("board_id") or ""),
             str(row.get("purpose") or ""),
-            str(row.get("orientation") or row.get("angle_deg") or ""),
+            round(float(row.get("angle_deg") or 0.0)%180.0,4),
             tuple(ids),
-            tuple(round(float(x),6) for x in row.get("world_p1") or ()),
-            tuple(round(float(x),6) for x in row.get("world_p2") or ()),
         )
+        if all(ids):
+            key=base
+        else:
+            key=base+(
+                tuple(round(float(x),6) for x in row.get("world_p1") or ()),
+                tuple(round(float(x),6) for x in row.get("world_p2") or ()),
+            )
         if key in seen:
             continue
         seen.add(key);selected.append(row)
@@ -1039,7 +1247,7 @@ def materialize_dimension_intents(doc, msp, placed_intents):
     return rows
 
 
-def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, pipeline, family, level=None, reference_catalog=None):
+def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, pipeline, family, level=None, reference_catalog=None, obstacle_entities=None):
     plan_id = plan.get("plan_id")
     source_bounds = tuple(plan["bounds"])
     refs = list(reference_catalog) if reference_catalog is not None else build_reference_catalog(doc, source_bounds, architecture=architecture, plan_id=plan_id)
@@ -1053,6 +1261,7 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
     )
     profile = drawing_profile(family, level)
     source_intents = source_dimension_intents(registry, profile)
+    context_intents = context_dimension_intents(refs, registry, profile, axis)
     targets = collect_mechanical_targets(pipeline, plan_id)
     generated_intents, missing = determinacy_intents(targets, refs, axis)
     governed_intents, governed_errors = governed_requirement_intents(
@@ -1060,7 +1269,7 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
     )
     effective_scale=(registry.get("unit_evidence") or {}).get("effective_scale_to_m")
     unit_source=(registry.get("unit_evidence") or {}).get("source")
-    for intent in generated_intents + governed_intents:
+    for intent in context_intents + generated_intents + governed_intents:
         intent["effective_scale_to_m"]=effective_scale
         intent["unit_evidence_source"]=unit_source
         intent["engineering_value_m"]=(intent["measured_value"]*effective_scale if effective_scale is not None else None)
@@ -1073,8 +1282,9 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
                     "actual_m":intent["engineering_value_m"],"minimum_m":float(minimum_m),
                     "rule_id":intent.get("governance_rule_id") or "",
                 })
-    all_intents = select_minimal_dimension_set(source_intents + generated_intents + governed_intents)
-    placed, collisions = place_intents(all_intents, source_bounds, board)
+    all_intents = select_minimal_dimension_set(source_intents + context_intents + generated_intents + governed_intents)
+    obstacles=entity_obstacle_boxes(obstacle_entities or [],board)
+    placed, collisions = place_intents(all_intents, source_bounds, board, obstacles=obstacles)
     materialized = materialize_dimension_intents(doc, msp, placed)
 
     required = {row["id"] for row in all_intents if row.get("required")}
@@ -1111,6 +1321,9 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         "source_dimension_count": len(registry.get("records") or []),
         "source_visible_count": len(source_intents),
         "source_intent_ids":[row["id"] for row in source_intents],
+        "context_intent_count": len(context_intents),
+        "context_intent_ids":[row["id"] for row in context_intents],
+        "obstacle_count":len(obstacles),
         "mechanical_target_count": len(targets),
         "mechanical_setout_intent_count": len(generated_intents),
         "governed_requirement_intent_count": len(governed_intents),
