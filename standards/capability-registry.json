@@ -644,7 +644,15 @@
         "governed_compliance_requirement_input",
         "code_clearance_rule_id_traceability",
         "canonical_clearance_minimum_validation",
-        "source_dimension_type_orientation_evidence"
+        "source_dimension_type_orientation_evidence",
+        "source_dimension_registry_not_raw_graphical_copy",
+        "source_snapshot_isolation",
+        "autonomous_context_overall",
+        "autonomous_context_grid_chain",
+        "autonomous_context_shaft_stair",
+        "architecture_obstacle_placement",
+        "semantic_reference_pair_deduplication",
+        "planha_output_not_source_reingested"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -657,7 +665,13 @@
         "test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres",
         "test_governed_code_clearance_requires_rule_stable_references_and_canonical_minimum",
         "test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_units",
-        "test_source_registry_preserves_linear_and_aligned_dimension_type_orientation"
+        "test_source_registry_preserves_linear_and_aligned_dimension_type_orientation",
+        "test_raw_source_dimension_is_not_copied_into_mechanical_board",
+        "test_context_engine_generates_overall_grid_and_shaft_when_source_dimensions_are_absent",
+        "test_existing_source_grid_dimension_prevents_duplicate_generated_grid_chain",
+        "test_semantic_dedupe_uses_reference_pair_even_when_graphical_base_differs",
+        "test_architecture_obstacle_boxes_force_dimension_text_to_alternate_candidate",
+        "test_planha_owned_dimension_is_not_reingested_as_source_evidence"
       ]
     }
   ]
