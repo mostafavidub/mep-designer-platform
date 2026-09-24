@@ -636,14 +636,17 @@
         "collision_aware_placement",
         "planha_owned_dimension_identity",
         "exact_file_reopen",
-        "count_only_acceptance_forbidden"
+        "count_only_acceptance_forbidden",
+        "reference_pair_and_engineering_value_xdata"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
         "test_numeric_source_override_conflict_is_preserved_and_blocks_critical_truth",
         "test_rotated_local_setout_gets_two_independent_datum_constraints",
         "test_exact_file_semantic_dimension_materialization_and_source_preservation",
-        "test_dimension_count_without_semantic_contract_does_not_pass"
+        "test_dimension_count_without_semantic_contract_does_not_pass",
+        "test_exact_file_xdata_binds_reference_ids_and_engineering_value",
+        "test_critical_non_numeric_override_requires_review_instead_of_numeric_regeneration"
       ]
     }
   ]
