@@ -54,14 +54,27 @@ def build_reference_model_v2(doc,plan_bounds,architecture=None,plan_id=None,leve
             eid=str(w.get("id") or f"WALL-{i:04d}")
             refs.append(_ref(f"{eid}/{wall_sf}",eid,wall_sf,geom,20,"semantic_geometry",1.0,("wall_reference_basis:"+wall_reference_basis,),plan_id,level,"WALL"))
 
+    # Openings are represented by two jamb points plus a centerline.
+    # Treating the whole opening segment as one "jamb" loses size/position semantics.
+    for key in ("openings","doors","windows"):
+        for i,item in enumerate(architecture.get(key) or []):
+            if not isinstance(item,dict) or (plan_id and item.get("plan_id") not in (None,plan_id)):continue
+            eid=str(item.get("id") or f"{key.upper()}-{i:04d}")
+            seg=_seg(item)
+            if seg:
+                a=tuple(seg["a"]);b=tuple(seg["b"]);mid=((a[0]+b[0])/2.0,(a[1]+b[1])/2.0)
+                refs.append(_ref(f"{eid}/JAMB-A",eid,"OPENING_JAMB",{"type":"POINT","point":a},15,"semantic_geometry",1.0,(key,"jamb_a"),plan_id,level,"OPENING"))
+                refs.append(_ref(f"{eid}/JAMB-B",eid,"OPENING_JAMB",{"type":"POINT","point":b},15,"semantic_geometry",1.0,(key,"jamb_b"),plan_id,level,"OPENING"))
+                refs.append(_ref(f"{eid}/CENTERLINE",eid,"OPENING_CENTERLINE",{"type":"SEGMENT","a":a,"b":b},15,"semantic_geometry",1.0,(key,"centerline"),plan_id,level,"OPENING"))
+            else:
+                for j,g in enumerate(_poly_edges(item)):
+                    refs.append(_ref(f"{eid}/JAMB/{j}",eid,"OPENING_JAMB",g,15,"semantic_geometry",.9,(key,"polygon_edge"),plan_id,level,"OPENING"))
+
     mappings=[
       ("grids","GRID_AXIS",0,"GRID"),
       ("columns","STRUCTURAL_FACE",10,"STRUCTURE"),
       ("shafts","SHAFT_FACE",10,"SHAFT"),
       ("stairs","STAIR_CORE_FACE",12,"STAIR"),
-      ("openings","OPENING_JAMB",15,"OPENING"),
-      ("doors","OPENING_JAMB",16,"OPENING"),
-      ("windows","OPENING_JAMB",16,"OPENING"),
       ("property_boundaries","PROPERTY_BOUNDARY",5,"PROPERTY"),
     ]
     for key,sf,priority,datum in mappings:
