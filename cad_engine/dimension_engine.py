@@ -128,3 +128,40 @@ def run_dimension_engine_shadow(doc,plan,architecture,pipeline,profile,board,v1_
       "reconciliation":reconciliation,"placement":placement,"qa":qa,
       "shadow_compare":shadow_compare(v1_report,selected,qa,reconciliation,placement,redundancy),
     }
+
+
+def build_dimension_promotion_report(shadow_reports):
+    """Aggregate representative shadow runs into an explicit promotion gate."""
+    reports=list(shadow_reports or [])
+    blockers=[];rows=[]
+    for report in reports:
+        qa=report.get("qa") or {};shadow=report.get("shadow_compare") or {}
+        row={
+          "plan_id":report.get("plan_id"),"profile":report.get("profile"),
+          "qa_status":qa.get("status"),"missing_critical":len(qa.get("critical_missing") or []),
+          "placement_unresolved":int(shadow.get("placement_unresolved") or 0),
+          "source_review":int(shadow.get("source_reconciliation_human_review") or 0),
+          "duplicates_removed":int(shadow.get("duplicates_removed") or 0),
+          "v1_count":int(shadow.get("v1_count") or 0),"v2_count":int(shadow.get("v2_count") or 0),
+          "visible_output_changed":bool(shadow.get("visible_output_changed")),
+        }
+        rows.append(row)
+        if row["qa_status"]!="PASS":blockers.append({"plan_id":row["plan_id"],"profile":row["profile"],"reason":"QA_NOT_PASS"})
+        if row["missing_critical"]:blockers.append({"plan_id":row["plan_id"],"profile":row["profile"],"reason":"P0_P1_DETERMINACY_DEFECT"})
+        if row["placement_unresolved"]:blockers.append({"plan_id":row["plan_id"],"profile":row["profile"],"reason":"UNRESOLVED_PLACEMENT"})
+        if row["source_review"]:blockers.append({"plan_id":row["plan_id"],"profile":row["profile"],"reason":"SOURCE_RECONCILIATION_REVIEW"})
+        if row["visible_output_changed"]:blockers.append({"plan_id":row["plan_id"],"profile":row["profile"],"reason":"SHADOW_MUTATED_VISIBLE_OUTPUT"})
+    return {
+      "version":"planha-dimension-promotion/1",
+      "status":"PROMOTION_CANDIDATE" if reports and not blockers else "NOT_READY",
+      "reports":rows,"blockers":blockers,
+      "metrics":{
+        "plans":len(rows),
+        "missing_critical":sum(r["missing_critical"] for r in rows),
+        "placement_unresolved":sum(r["placement_unresolved"] for r in rows),
+        "source_review":sum(r["source_review"] for r in rows),
+        "v1_dimensions":sum(r["v1_count"] for r in rows),
+        "v2_dimensions":sum(r["v2_count"] for r in rows),
+      },
+      "policy":"Promotion is evidence-based; dimension count alone never grants readiness."
+    }
