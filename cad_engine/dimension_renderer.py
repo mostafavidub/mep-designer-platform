@@ -32,6 +32,7 @@ def materialize_engineering_dimension_intents(doc,msp,placed_intents):
             entity.set_xdata(APPID_ENGINEERING,trace);dim.render()
             rows.append({"intent_id":row.get("id"),"handle":str(getattr(entity.dxf,"handle","") or ""),"reference_a_id":ra,
                          "reference_b_id":rb,"purpose":row.get("purpose"),"role":row.get("role"),
+                         "rule_id":str(row.get("rule_id") or ""),"datum_class":str(row.get("datum_class") or ""),
                          "measured_value":float(row.get("measured_value") or 0.0),"engineering_value_m":row.get("engineering_value_m")})
         except Exception as exc:
             rows.append({"intent_id":row.get("id"),"error":"RENDER_FAILURE:"+str(exc)})
@@ -52,6 +53,10 @@ def validate_engineering_dimension_exact_file(path,materialized):
             errors.append("ENGINEERING_TRACEABILITY_MISSING:"+str(row.get("intent_id")));continue
         if strings[4]!=str(row.get("reference_a_id")) or strings[5]!=str(row.get("reference_b_id")):
             errors.append("ENGINEERING_REFERENCE_CHANGED:"+str(row.get("intent_id")))
+        if strings[6]!=str(row.get("rule_id") or ""):
+            errors.append("ENGINEERING_RULE_ID_CHANGED:"+str(row.get("intent_id")))
+        if strings[7]!=str(row.get("datum_class") or ""):
+            errors.append("ENGINEERING_DATUM_CLASS_CHANGED:"+str(row.get("intent_id")))
         if not doubles or abs(doubles[0]-float(row.get("measured_value") or 0.0))>1e-9:
             errors.append("ENGINEERING_MEASUREMENT_CHANGED:"+str(row.get("intent_id")))
         ev=row.get("engineering_value_m")
