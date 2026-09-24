@@ -210,6 +210,19 @@ def test_exact_file_semantic_dimension_materialization_and_source_preservation(t
     assert len(generated)==1
 
 
+def test_critical_source_dimension_may_be_suppressed_in_view_without_knowledge_loss():
+    report={
+        "source_registry":{"records":[{
+            "id":"SRC-DIM-P1-0000","critical":True,"conflict":None,
+        }]},
+        "source_intent_ids":[],
+        "materialized":[],
+    }
+    result=source_preservation_complete(report)
+    assert result["pass"] is True
+    assert result["suppressed_but_preserved_critical_dimensions"]==["SRC-DIM-P1-0000"]
+
+
 def test_source_preservation_detects_missing_critical_regeneration():
     doc=_source_doc()
     _add_dim(doc,(0,0),(13,0),(6.5,.5),"13.00")
