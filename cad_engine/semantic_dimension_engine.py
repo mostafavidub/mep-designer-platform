@@ -840,7 +840,7 @@ def materialize_dimension_intents(doc, msp, placed_intents):
             engineering_value_m=intent.get("engineering_value_m")
             effective_scale_to_m=intent.get("effective_scale_to_m")
             unit_source=str(intent.get("unit_evidence_source") or "")
-            entity.set_xdata(APPID,[
+            trace_data=[
                 (1000,marker),
                 (1000,str(intent["id"])),
                 (1000,str(intent.get("purpose") or "")),
@@ -849,9 +849,12 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 (1000,reference_b_id),
                 (1000,unit_source),
                 (1040,measured_value),
-                (1040,float(engineering_value_m) if engineering_value_m is not None else float("nan")),
-                (1040,float(effective_scale_to_m) if effective_scale_to_m is not None else float("nan")),
-            ])
+            ]
+            if engineering_value_m is not None:
+                trace_data.append((1040,float(engineering_value_m)))
+            if effective_scale_to_m is not None:
+                trace_data.append((1040,float(effective_scale_to_m)))
+            entity.set_xdata(APPID,trace_data)
             rows.append({
                 "intent_id": intent["id"],
                 "handle": str(getattr(entity.dxf, "handle", "") or ""),
@@ -927,6 +930,8 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         errors.append("DIMENSION_TEXT_COLLISION")
     if critical_conflicts:
         errors.append("CRITICAL_SOURCE_DIMENSION_CONFLICT")
+    if all_intents and effective_scale is None:
+        errors.append("DIMENSION_UNIT_BASIS_REQUIRED")
 
     return {
         "status": "PASS" if not errors else "FAIL",
