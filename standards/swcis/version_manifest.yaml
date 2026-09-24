@@ -1,61 +1,279 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.38.1",
+  "standard_version": "4.39.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-09-09",
+  "effective_date": "2026-09-24",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
-  "machine_contracts": ["standards/swcis/system_dependency_graph.yaml", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/change_impact_matrix.yaml", "standards/swcis/release_contract.yaml", "standards/swcis/golden_regression_manifest.yaml"],
-  "bump_required_when": ["policy changes", "graph changes", "traceability changes", "gate changes", "migration contract changes", "golden inventory changes"],
+  "machine_contracts": [
+    "standards/swcis/system_dependency_graph.yaml",
+    "standards/swcis/rule_traceability_matrix.yaml",
+    "standards/swcis/change_impact_matrix.yaml",
+    "standards/swcis/release_contract.yaml",
+    "standards/swcis/golden_regression_manifest.yaml"
+  ],
+  "bump_required_when": [
+    "policy changes",
+    "graph changes",
+    "traceability changes",
+    "gate changes",
+    "migration contract changes",
+    "golden inventory changes"
+  ],
   "history": [
-    {"version":"4.38.1","date":"2026-09-14","summary":"Classify canonical application templates as UI/API paths and add homepage-only eNamad verification metadata."},
-    {"version":"4.38.0","date":"2026-09-12","summary":"Require questionnaire completeness and immutable project design basis to pass eighteen provenance, scope, unit, consistency, approval and release controls at 100/100."},
-    {"version":"4.37.0","date":"2026-09-12","summary":"Require project-specific details, schedules, notes and legends to pass eighteen completeness, traceability, constructability, readability and exact-output controls at 100/100."},
-    {"version":"4.36.0","date":"2026-09-12","summary":"Require architecture-only space and equipment recognition to pass eighteen source, geometry, semantic, identity and exact-reopen controls at 100/100."},
-    {"version":"4.35.0","date":"2026-09-12","summary":"Require final Mechanical engineering and the exact issue package to pass eighteen system, coordination, documentation, review and immutability controls at 100/100."},
-    {"version":"4.34.0","date":"2026-09-12","summary":"Require Mechanical equipment selection and placement to pass eighteen calculation, catalogue, spatial, connection and exact-output controls at 100/100."},
-    {"version": "4.33.0", "date": "2026-09-12", "summary": "Require Mechanical topology and routing to pass eighteen deterministic graph, route, coordination, constructability and exact-output controls at 100/100."},
-    {"version": "4.32.0", "date": "2026-09-11", "summary": "Require evidence-backed Mechanical drawing scope to pass eighteen deterministic controls at 100/100 before approval or generation."},
-    {"version": "4.31.0", "date": "2026-09-11", "summary": "Require all eighteen architecture reconstruction and preservation controls to pass with an exact-file score of 100 before delivery."},
-    {"version": "4.30.1", "date": "2026-09-11", "summary": "Replace the inherited health route so integrated queue liveness is the single served health authority."},
-    {"version": "4.30.0", "date": "2026-09-11", "summary": "Supervise persistent analysis and design queue consumers, expose worker heartbeat and fail system health closed when a worker is unavailable."},
-    {"version": "4.29.0", "date": "2026-09-11", "summary": "Require geometry-correlated, elevation-aware and load-accumulating multilevel mechanical risers with exact plan, calculation and schedule reconciliation."},
-    {"version": "4.28.2", "date": "2026-09-11", "summary": "Raise generated mechanical annotation text to the visual minimum and measure collision against painted glyph bounds rather than empty MTEXT wrapping columns."},
-    {"version": "4.28.1", "date": "2026-09-11", "summary": "Limit architectural-underlay visual checks to architectural plan boards, exempt intentional SERVICE schematics, and surface exact all-sheet visual failures through the API."},
-    {"version": "4.28.0", "date": "2026-09-11", "summary": "Require fail-closed exact-file visual QA for every mechanical sheet with plot profiles, per-sheet scoring, baseline comparison and independent review evidence."},
-    {"version": "4.27.0", "date": "2026-09-11", "summary": "Require an independent fail-closed calculation reasonableness gate covering units, geometry, physical limits, network conservation, output identity, equipment capacity, sensitivity and engineer review."},
-    {"version": "4.26.0", "date": "2026-09-11", "summary": "Detect architectural print frames across portrait, landscape and repeated consultant-specific sizes with explainable confidence, multi-level title parsing and fail-closed ambiguity handling."},
-    {"version": "4.25.0", "date": "2026-09-10", "summary": "Place inferred fixtures at scale-aware in-room coordinates and detect terminal wall assemblies from geometric intersections without coordinate rounding."},
-    {"version": "4.24.0", "date": "2026-09-10", "summary": "Treat closely spaced parallel wall faces as one bounded terminal sleeve assembly while retaining fail-closed intermediate-wall routing."},
-    {"version": "4.23.0", "date": "2026-09-10", "summary": "Apply endpoint sleeve semantics by edge geometry rather than optional upstream node-category labels."},
-    {"version": "4.22.0", "date": "2026-09-10", "summary": "Route from enclosed fixtures to enclosed vertical cores through explicit endpoint portals while avoiding every intermediate wall."},
-    {"version": "4.21.0", "date": "2026-09-10", "summary": "Expose non-coordinate route identity, system, plan and routing mode for fail-closed wall-crossing diagnostics."},
-    {"version": "4.20.0", "date": "2026-09-10", "summary": "Route around intermediate walls after coordinated terminal sleeves and assess architecture visibility against the full drawable sheet region while keeping title zones protected."},
-    {"version": "4.19.0", "date": "2026-09-10", "summary": "Model at most one constructible sleeve at route terminals while retaining hard failure for intermediate wall crossings, and identify topology or visibility preservation failures."},
-    {"version": "4.18.0", "date": "2026-09-10", "summary": "Route authoritative mechanical networks through real open-space passages and expose non-geometric preservation diagnostics for failed jobs."},
-    {"version": "4.17.0", "date": "2026-09-10", "summary": "Recover a loopback CAD connection loss through the canonical in-process runtime so draining workers cannot fail paid design jobs."},
-    {"version": "4.16.0", "date": "2026-09-10", "summary": "Store validated fallback artifacts in the shared database so downloads remain available across separate web and worker instances."},
-    {"version": "4.15.0", "date": "2026-09-10", "summary": "Require validated atomic local-volume output retention when object storage is unavailable, without deleting the retained artifact during transient cleanup."},
-    {"version": "4.14.0", "date": "2026-09-10", "summary": "Align runtime with the governed architecture-only Pre-Submission profile: materialize only after graph/size/identity preflight, preserve later input blockers, and forbid Submission Ready claims."},
-    {"version": "4.13.0", "date": "2026-09-10", "summary": "Publish an explicit Rule Book network load, material, sizing, slope and plan-separation profile for architecture/owner-backed endpoints without reference-derived defaults."},
-    {"version": "4.12.0", "date": "2026-09-09", "summary": "Complete fail-closed Mechanical construction-document delivery steps 14-19: parametric details, materialized CAD primitives, manifest-derived index, final schedule, annotation solving and submission QA."},
-    {"version": "4.11.0", "date": "2026-09-09", "summary": "Complete fail-closed Exhaust, roof-rainwater, graph-derived riser and official manufacturer-database packages for steps 10-13 and require them in the final target-design gate."},
-    {"version": "4.10.0", "date": "2026-09-09", "summary": "Require fail-closed final Heating, Gas and Split AC packages for M-131/M-132, M-141/M-142 and M-161/M-162 with PMM/calculation identity and official manufacturer evidence."},
-    {"version": "4.9.0", "date": "2026-09-09", "summary": "Complete Mechanical runtime unversioning by requiring the full reachable production import closure, API identities and CAD artifact metadata to be free of engine release-number identity; schema and governance revisions remain explicit metadata."},
-    {"version": "4.8.0", "date": "2026-09-09", "summary": "Remove release-number identity from active Mechanical runtime and CI surfaces and enforce one canonical unversioned Mechanical entrypoint/identity; historical version-labelled source remains compatibility debt only."},
-    {"version": "4.7.0", "date": "2026-09-09", "summary": "Add fail-closed graph-native topology extraction, explicit segment sizing/material execution contracts, and exact-file v19 network materialization without benchmark-derived numeric defaults."},
-    {"version": "4.6.0", "date": "2026-09-09", "summary": "Make PMM v3 and the v19 engineering pipeline mandatory runtime authority before mechanical CAD materialization; remove the architecture-only authority bypass and restrict legacy v17 to renderer-only compatibility after calculation/network reconciliation passes."},
-    {"version": "4.5.0", "date": "2026-09-09", "summary": "Register the owner-supplied cross-project mechanical reference corpus, freeze anti-overfitting development/validation/evaluation cohorts, and verify Project 10 architecture/mechanical hashes without permitting reference values as hidden generation defaults."},
-    {"version": "4.4.0", "date": "2026-09-09", "summary": "Govern privacy-safe independent-engineer redline promotion and fail-closed quantitative mechanical quality acceptance targets."},
-    {"version": "4.3.0", "date": "2026-09-09", "summary": "Require explicit zero evidence for Submission Ready invariants and prove blind-generation, seal and post-seal-reference ordering for the locked regression cohort."},
-    {"version": "4.2.0", "date": "2026-09-09", "summary": "Classify the official manufacturer database and extend traceability through final system calculations and Plan/PMM/Calc/Catalogue-bound parametric details."},
-    {"version": "4.1.0", "date": "2026-09-09", "summary": "Add explicit PMM source-of-truth classification, semantic reference-truth governance, and PMM-to-calculation-to-plan/riser/schedule traceability coverage without weakening release gates."},
-    {"version": "4.0.0", "date": "2026-09-08", "summary": "Owner removes publication dependency on seven private reference projects; automated regressions and per-artifact engineering checks retained."},
-    {"version": "3.1.0", "date": "2026-09-08", "summary": "Explicit sole-owner approval replaces mandatory independent review; automated, engineering and branch integrity gates retained."},
-    {"version": "3.0.3", "date": "2026-09-08", "summary": "Classify existing app/static customer UI path and reconcile prose version; no gate removed or weakened."},
-    {"version": "3.0.2", "date": "2026-09-06", "change": "Close production-derived cleanout anchoring and sealed architecture-model level-bound gaps."},
-    {"version": "3.0.1", "date": "2026-09-06", "summary": "Classify mechanical annotation, authority orchestration, engineering runner, and plan segmentation under governed CAD output paths"},
-    {"version": "3.0.0", "date": "2026-09-04", "summary": "Adopt Single Living System, automatic Git build identity, canonical runtime paths, and Git-only rollback"},
-    {"version": "2.0.0", "date": "2026-09-04", "summary": "Remove test-project inventory from the programming standard and replace it with a project-agnostic regression contract"},
-    {"version": "1.0.0", "date": "2026-09-04", "summary": "Initial repository-wide fail-closed standard"}
+    {
+      "version": "4.39.0",
+      "date": "2026-09-24",
+      "summary": "Add source-preserving semantic dimension intent, deterministic Mechanical set-out, exact-file dimension QA, and eliminate count-only dimension acceptance."
+    },
+    {
+      "version": "4.38.1",
+      "date": "2026-09-14",
+      "summary": "Classify canonical application templates as UI/API paths and add homepage-only eNamad verification metadata."
+    },
+    {
+      "version": "4.38.0",
+      "date": "2026-09-12",
+      "summary": "Require questionnaire completeness and immutable project design basis to pass eighteen provenance, scope, unit, consistency, approval and release controls at 100/100."
+    },
+    {
+      "version": "4.37.0",
+      "date": "2026-09-12",
+      "summary": "Require project-specific details, schedules, notes and legends to pass eighteen completeness, traceability, constructability, readability and exact-output controls at 100/100."
+    },
+    {
+      "version": "4.36.0",
+      "date": "2026-09-12",
+      "summary": "Require architecture-only space and equipment recognition to pass eighteen source, geometry, semantic, identity and exact-reopen controls at 100/100."
+    },
+    {
+      "version": "4.35.0",
+      "date": "2026-09-12",
+      "summary": "Require final Mechanical engineering and the exact issue package to pass eighteen system, coordination, documentation, review and immutability controls at 100/100."
+    },
+    {
+      "version": "4.34.0",
+      "date": "2026-09-12",
+      "summary": "Require Mechanical equipment selection and placement to pass eighteen calculation, catalogue, spatial, connection and exact-output controls at 100/100."
+    },
+    {
+      "version": "4.33.0",
+      "date": "2026-09-12",
+      "summary": "Require Mechanical topology and routing to pass eighteen deterministic graph, route, coordination, constructability and exact-output controls at 100/100."
+    },
+    {
+      "version": "4.32.0",
+      "date": "2026-09-11",
+      "summary": "Require evidence-backed Mechanical drawing scope to pass eighteen deterministic controls at 100/100 before approval or generation."
+    },
+    {
+      "version": "4.31.0",
+      "date": "2026-09-11",
+      "summary": "Require all eighteen architecture reconstruction and preservation controls to pass with an exact-file score of 100 before delivery."
+    },
+    {
+      "version": "4.30.1",
+      "date": "2026-09-11",
+      "summary": "Replace the inherited health route so integrated queue liveness is the single served health authority."
+    },
+    {
+      "version": "4.30.0",
+      "date": "2026-09-11",
+      "summary": "Supervise persistent analysis and design queue consumers, expose worker heartbeat and fail system health closed when a worker is unavailable."
+    },
+    {
+      "version": "4.29.0",
+      "date": "2026-09-11",
+      "summary": "Require geometry-correlated, elevation-aware and load-accumulating multilevel mechanical risers with exact plan, calculation and schedule reconciliation."
+    },
+    {
+      "version": "4.28.2",
+      "date": "2026-09-11",
+      "summary": "Raise generated mechanical annotation text to the visual minimum and measure collision against painted glyph bounds rather than empty MTEXT wrapping columns."
+    },
+    {
+      "version": "4.28.1",
+      "date": "2026-09-11",
+      "summary": "Limit architectural-underlay visual checks to architectural plan boards, exempt intentional SERVICE schematics, and surface exact all-sheet visual failures through the API."
+    },
+    {
+      "version": "4.28.0",
+      "date": "2026-09-11",
+      "summary": "Require fail-closed exact-file visual QA for every mechanical sheet with plot profiles, per-sheet scoring, baseline comparison and independent review evidence."
+    },
+    {
+      "version": "4.27.0",
+      "date": "2026-09-11",
+      "summary": "Require an independent fail-closed calculation reasonableness gate covering units, geometry, physical limits, network conservation, output identity, equipment capacity, sensitivity and engineer review."
+    },
+    {
+      "version": "4.26.0",
+      "date": "2026-09-11",
+      "summary": "Detect architectural print frames across portrait, landscape and repeated consultant-specific sizes with explainable confidence, multi-level title parsing and fail-closed ambiguity handling."
+    },
+    {
+      "version": "4.25.0",
+      "date": "2026-09-10",
+      "summary": "Place inferred fixtures at scale-aware in-room coordinates and detect terminal wall assemblies from geometric intersections without coordinate rounding."
+    },
+    {
+      "version": "4.24.0",
+      "date": "2026-09-10",
+      "summary": "Treat closely spaced parallel wall faces as one bounded terminal sleeve assembly while retaining fail-closed intermediate-wall routing."
+    },
+    {
+      "version": "4.23.0",
+      "date": "2026-09-10",
+      "summary": "Apply endpoint sleeve semantics by edge geometry rather than optional upstream node-category labels."
+    },
+    {
+      "version": "4.22.0",
+      "date": "2026-09-10",
+      "summary": "Route from enclosed fixtures to enclosed vertical cores through explicit endpoint portals while avoiding every intermediate wall."
+    },
+    {
+      "version": "4.21.0",
+      "date": "2026-09-10",
+      "summary": "Expose non-coordinate route identity, system, plan and routing mode for fail-closed wall-crossing diagnostics."
+    },
+    {
+      "version": "4.20.0",
+      "date": "2026-09-10",
+      "summary": "Route around intermediate walls after coordinated terminal sleeves and assess architecture visibility against the full drawable sheet region while keeping title zones protected."
+    },
+    {
+      "version": "4.19.0",
+      "date": "2026-09-10",
+      "summary": "Model at most one constructible sleeve at route terminals while retaining hard failure for intermediate wall crossings, and identify topology or visibility preservation failures."
+    },
+    {
+      "version": "4.18.0",
+      "date": "2026-09-10",
+      "summary": "Route authoritative mechanical networks through real open-space passages and expose non-geometric preservation diagnostics for failed jobs."
+    },
+    {
+      "version": "4.17.0",
+      "date": "2026-09-10",
+      "summary": "Recover a loopback CAD connection loss through the canonical in-process runtime so draining workers cannot fail paid design jobs."
+    },
+    {
+      "version": "4.16.0",
+      "date": "2026-09-10",
+      "summary": "Store validated fallback artifacts in the shared database so downloads remain available across separate web and worker instances."
+    },
+    {
+      "version": "4.15.0",
+      "date": "2026-09-10",
+      "summary": "Require validated atomic local-volume output retention when object storage is unavailable, without deleting the retained artifact during transient cleanup."
+    },
+    {
+      "version": "4.14.0",
+      "date": "2026-09-10",
+      "summary": "Align runtime with the governed architecture-only Pre-Submission profile: materialize only after graph/size/identity preflight, preserve later input blockers, and forbid Submission Ready claims."
+    },
+    {
+      "version": "4.13.0",
+      "date": "2026-09-10",
+      "summary": "Publish an explicit Rule Book network load, material, sizing, slope and plan-separation profile for architecture/owner-backed endpoints without reference-derived defaults."
+    },
+    {
+      "version": "4.12.0",
+      "date": "2026-09-09",
+      "summary": "Complete fail-closed Mechanical construction-document delivery steps 14-19: parametric details, materialized CAD primitives, manifest-derived index, final schedule, annotation solving and submission QA."
+    },
+    {
+      "version": "4.11.0",
+      "date": "2026-09-09",
+      "summary": "Complete fail-closed Exhaust, roof-rainwater, graph-derived riser and official manufacturer-database packages for steps 10-13 and require them in the final target-design gate."
+    },
+    {
+      "version": "4.10.0",
+      "date": "2026-09-09",
+      "summary": "Require fail-closed final Heating, Gas and Split AC packages for M-131/M-132, M-141/M-142 and M-161/M-162 with PMM/calculation identity and official manufacturer evidence."
+    },
+    {
+      "version": "4.9.0",
+      "date": "2026-09-09",
+      "summary": "Complete Mechanical runtime unversioning by requiring the full reachable production import closure, API identities and CAD artifact metadata to be free of engine release-number identity; schema and governance revisions remain explicit metadata."
+    },
+    {
+      "version": "4.8.0",
+      "date": "2026-09-09",
+      "summary": "Remove release-number identity from active Mechanical runtime and CI surfaces and enforce one canonical unversioned Mechanical entrypoint/identity; historical version-labelled source remains compatibility debt only."
+    },
+    {
+      "version": "4.7.0",
+      "date": "2026-09-09",
+      "summary": "Add fail-closed graph-native topology extraction, explicit segment sizing/material execution contracts, and exact-file v19 network materialization without benchmark-derived numeric defaults."
+    },
+    {
+      "version": "4.6.0",
+      "date": "2026-09-09",
+      "summary": "Make PMM v3 and the v19 engineering pipeline mandatory runtime authority before mechanical CAD materialization; remove the architecture-only authority bypass and restrict legacy v17 to renderer-only compatibility after calculation/network reconciliation passes."
+    },
+    {
+      "version": "4.5.0",
+      "date": "2026-09-09",
+      "summary": "Register the owner-supplied cross-project mechanical reference corpus, freeze anti-overfitting development/validation/evaluation cohorts, and verify Project 10 architecture/mechanical hashes without permitting reference values as hidden generation defaults."
+    },
+    {
+      "version": "4.4.0",
+      "date": "2026-09-09",
+      "summary": "Govern privacy-safe independent-engineer redline promotion and fail-closed quantitative mechanical quality acceptance targets."
+    },
+    {
+      "version": "4.3.0",
+      "date": "2026-09-09",
+      "summary": "Require explicit zero evidence for Submission Ready invariants and prove blind-generation, seal and post-seal-reference ordering for the locked regression cohort."
+    },
+    {
+      "version": "4.2.0",
+      "date": "2026-09-09",
+      "summary": "Classify the official manufacturer database and extend traceability through final system calculations and Plan/PMM/Calc/Catalogue-bound parametric details."
+    },
+    {
+      "version": "4.1.0",
+      "date": "2026-09-09",
+      "summary": "Add explicit PMM source-of-truth classification, semantic reference-truth governance, and PMM-to-calculation-to-plan/riser/schedule traceability coverage without weakening release gates."
+    },
+    {
+      "version": "4.0.0",
+      "date": "2026-09-08",
+      "summary": "Owner removes publication dependency on seven private reference projects; automated regressions and per-artifact engineering checks retained."
+    },
+    {
+      "version": "3.1.0",
+      "date": "2026-09-08",
+      "summary": "Explicit sole-owner approval replaces mandatory independent review; automated, engineering and branch integrity gates retained."
+    },
+    {
+      "version": "3.0.3",
+      "date": "2026-09-08",
+      "summary": "Classify existing app/static customer UI path and reconcile prose version; no gate removed or weakened."
+    },
+    {
+      "version": "3.0.2",
+      "date": "2026-09-06",
+      "change": "Close production-derived cleanout anchoring and sealed architecture-model level-bound gaps."
+    },
+    {
+      "version": "3.0.1",
+      "date": "2026-09-06",
+      "summary": "Classify mechanical annotation, authority orchestration, engineering runner, and plan segmentation under governed CAD output paths"
+    },
+    {
+      "version": "3.0.0",
+      "date": "2026-09-04",
+      "summary": "Adopt Single Living System, automatic Git build identity, canonical runtime paths, and Git-only rollback"
+    },
+    {
+      "version": "2.0.0",
+      "date": "2026-09-04",
+      "summary": "Remove test-project inventory from the programming standard and replace it with a project-agnostic regression contract"
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-09-04",
+      "summary": "Initial repository-wide fail-closed standard"
+    }
   ]
 }
