@@ -893,24 +893,32 @@ def _existing_source_semantics(registry):
     return {str(row.get("semantic_type") or "") for row in (registry or {}).get("records") or []}
 
 
-def _overall_context_intents(refs, registry, profile):
+def _overall_context_intents(refs, registry, profile, local_axis):
     if "BUILDING_OVERALL" not in CONTEXT_REQUIRED_BY_PROFILE.get(profile,set()):
         return []
-    if "BUILDING_OVERALL" in _existing_source_semantics(registry):
-        return []
-    by_side={}
-    for ref in refs or []:
-        if ref.get("kind")!="WALL_FACE" or not ref.get("envelope_candidate") or not ref.get("envelope_side"):
-            continue
-        side=str(ref["envelope_side"])
-        length=math.dist(ref["a"],ref["b"])
-        if side not in by_side or length>by_side[side][0]:
-            by_side[side]=(length,ref)
+    walls=[
+        ref for ref in refs or []
+        if ref.get("kind")=="WALL_FACE" and bool(ref.get("envelope_candidate"))
+    ]
     intents=[]
-    for axis_name,side_a,side_b in (("X","LEFT","RIGHT"),("Y","BOTTOM","TOP")):
-        if side_a not in by_side or side_b not in by_side:
+    for axis_index,measured_axis in enumerate((local_axis,local_axis+math.pi/2.0)):
+        wanted=(measured_axis+math.pi/2.0)%math.pi
+        candidates=[ref for ref in walls if _parallel_axis(ref,wanted)]
+        if len(candidates)<2:
             continue
-        ra=by_side[side_a][1];rb=by_side[side_b][1]
+        normal=(math.cos(measured_axis),math.sin(measured_axis))
+        positioned=[]
+        for ref in candidates:
+            mid=_ref_midpoint(ref)
+            coordinate=mid[0]*normal[0]+mid[1]*normal[1]
+            positioned.append((coordinate,-math.dist(ref["a"],ref["b"]),ref))
+        positioned.sort(key=lambda item:(item[0],item[1],str(item[2].get("id") or "")))
+        low_coord=positioned[0][0];high_coord=positioned[-1][0]
+        tol=max(abs(high_coord-low_coord)*1e-6,1e-8)
+        low_refs=[item for item in positioned if abs(item[0]-low_coord)<=tol]
+        high_refs=[item for item in positioned if abs(item[0]-high_coord)<=tol]
+        ra=min(low_refs,key=lambda item:item[1])[2]
+        rb=min(high_refs,key=lambda item:item[1])[2]
         p1=_ref_midpoint(ra);p2=_project_to_infinite_line(p1,rb)
         if not p2:
             continue
@@ -918,22 +926,19 @@ def _overall_context_intents(refs, registry, profile):
         if measured<=1e-9:
             continue
         intents.append({
-            "id":f"CTX-OVERALL-{axis_name}",
+            "id":f"CTX-OVERALL-{axis_index}",
             "purpose":"BUILDING_OVERALL",
             "source_kind":"PLANHA_GENERATED_CONTEXT",
             "reference_a":ra,"reference_b":rb,
             "world_p1":p1,"world_p2":p2,"world_base":None,
             "measured_value":measured,"displayed_value":_display_number(measured),
             "required":True,"priority":92,"placement_zone":"OUTSIDE",
-            "angle_deg":math.degrees(_line_angle(p1,p2)),
+            "angle_deg":math.degrees(measured_axis),
         })
     return intents
 
-
 def _grid_context_intents(refs, registry, profile, local_axis):
     if "GRID" not in CONTEXT_REQUIRED_BY_PROFILE.get(profile,set()):
-        return []
-    if "GRID" in _existing_source_semantics(registry):
         return []
     grid_refs=[ref for ref in refs or [] if ref.get("kind")=="GRID_AXIS"]
     intents=[]
@@ -973,8 +978,6 @@ def _grid_context_intents(refs, registry, profile, local_axis):
 
 def _box_context_intents(refs, registry, profile, local_axis, kind, semantic, prefix):
     if semantic not in CONTEXT_REQUIRED_BY_PROFILE.get(profile,set()):
-        return []
-    if semantic in _existing_source_semantics(registry):
         return []
     grouped={}
     for ref in refs or []:
@@ -1026,7 +1029,7 @@ def _box_context_intents(refs, registry, profile, local_axis, kind, semantic, pr
 
 def context_dimension_intents(refs, registry, profile, local_axis):
     intents=[]
-    intents.extend(_overall_context_intents(refs,registry,profile))
+    intents.extend(_overall_context_intents(refs,registry,profile,local_axis))
     intents.extend(_grid_context_intents(refs,registry,profile,local_axis))
     intents.extend(_box_context_intents(refs,registry,profile,local_axis,"SHAFT_FACE","SHAFT","SHAFT"))
     intents.extend(_box_context_intents(refs,registry,profile,local_axis,"STAIR_CORE_FACE","STAIR_CORE","STAIR"))
