@@ -460,12 +460,23 @@ def collect_mechanical_targets(pipeline, plan_id):
         if node.get("plan_id") != plan_id or not node.get("point"):
             continue
         kind = _norm(node.get("kind"))
-        if kind in {"shaft", "riser", "vertical", "stack"}:
+        category=_norm(node.get("category"))
+        if kind in {"shaft","riser","vertical","stack"} or category=="vertical_core":
             targets.append({
                 "id": str(node.get("id") or f"VERT-{len(targets)+1}"),
                 "point": tuple(map(float, node["point"][:2])),
                 "kind": "VERTICAL_CONNECTION",
                 "priority": 100,
+            })
+        elif category=="equipment" or kind in {
+            "floor_drain","roof_drain","cleanout","sleeve","penetration",
+            "pump","tank","outdoor_unit","indoor_unit",
+        }:
+            targets.append({
+                "id": str(node.get("id") or f"MECH-{len(targets)+1}"),
+                "point": tuple(map(float, node["point"][:2])),
+                "kind": "CONSTRUCTION_POINT",
+                "priority": 85,
             })
     for equipment in (pipeline.get("hvac") or {}).get("equipment") or []:
         if equipment.get("plan_id") != plan_id or not equipment.get("point"):
