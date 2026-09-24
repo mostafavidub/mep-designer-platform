@@ -2,12 +2,38 @@
   "change_id": "SWCIS-2026-0280",
   "summary": "Add semantic, source-preserving, drawing-profile-aware dimension generation and QA for architectural underlays and Mechanical construction drawings.",
   "requester": "mostafavidub",
-  "change_types": ["rule", "drawing_output", "test", "documentation", "governance"],
-  "changed_rule_ids": ["MEP-ARCH-PRESERVE-001", "MEP-CONSTRUCT-001", "MEP-VISUAL-QA-001"],
+  "change_types": [
+    "rule",
+    "drawing_output",
+    "test",
+    "documentation",
+    "governance"
+  ],
+  "changed_rule_ids": [
+    "MEP-ARCH-PRESERVE-001",
+    "MEP-CONSTRUCT-001",
+    "MEP-VISUAL-QA-001",
+    "MEP-DIM-001"
+  ],
   "impacted_modules": [
-    "rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing",
-    "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api",
-    "docs", "versioning", "migration", "governance", "deployment"
+    "rule_book",
+    "pmm",
+    "questionnaire",
+    "planner",
+    "cad_designer",
+    "routing",
+    "sizing",
+    "equipment",
+    "manufacturer_selector",
+    "detail_riser",
+    "qa",
+    "manifest",
+    "ui_api",
+    "docs",
+    "versioning",
+    "migration",
+    "governance",
+    "deployment"
   ],
   "impact_notes": {
     "rule_book": "Strengthen existing preservation and construction-document rules so dimensions are semantic, reference-bound and QA-gated rather than count-gated.",
@@ -31,19 +57,55 @@
   },
   "evidence": {
     "traceability": [
-      "source DXF DIMENSION -> SourceDimensionRecord -> semantic reference binding -> preservation policy -> dimension requirement -> renderer -> exact-file dimension QA"
+      "MEP-DIM-001 -> cad_engine/semantic_dimension_engine.py -> source registry / reference-bound set-out -> exact-file QA -> tests/test_semantic_dimension_engine.py",
+      "MEP-ARCH-PRESERVE-001 -> mechanical_cad_preservation source-dimension preservation -> exact_entity_diff",
+      "MEP-CONSTRUCT-001 -> dimension_semantics contract -> exact-file post-render authority"
     ],
-    "tests": ["planned: positive and destructive semantic dimension regression tests"],
-    "docs": ["planned: docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md"],
-    "version_bump": ["planned: SWCIS 4.38.1 -> 4.39.0"],
-    "migration": ["none: additive drawing/documentation model; no PMM persistence change"],
-    "golden_regression": ["planned: project-agnostic synthetic dimension fixtures; private customer drawings remain comparison-only"],
-    "semantic_diff": ["planned: dimension semantics become purpose/reference/preservation aware while routing/sizing semantics stay unchanged"],
-    "artifact_diff": ["planned: Planha-owned dimensions replace count-only dimension evidence on applicable plan boards"],
-    "numeric_diff": ["planned: generated values must equal geometry-derived measurements within explicit tolerance; source overrides are evidence, never numeric authority"],
-    "contract_diff": ["planned: no count-only DIMENSION acceptance; source critical dimensions cannot be silently deleted"],
-    "deployment_plan": ["do not deploy during implementation; after owner approval, protected merge then separate staging validation"],
-    "rollback_plan": ["revert the protected merge commit; no data migration or destructive source mutation"]
+    "tests": [
+      "tests/test_semantic_dimension_engine.py: positive, destructive/conflict, rotated-axis determinacy, duplicate removal, exact-file traceability",
+      "tests/test_mechanical_construction_delivery.py: count-only rejection, semantic conflict failure, governed exact-file deferral",
+      "CI execution evidence pending on PR #286"
+    ],
+    "docs": [
+      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md canonical SWCIS 4.39.0",
+      "standards/contract-changelog.json GOV-2026-045"
+    ],
+    "version_bump": [
+      "SWCIS 4.38.1 -> 4.39.0 because dependency graph, traceability and gate semantics changed"
+    ],
+    "migration": [
+      "none: additive drawing/documentation model; no PMM persistence change"
+    ],
+    "golden_regression": [
+      "standards/golden/mechanical-steps-14-19.baseline.json includes dimension_semantics=PASS",
+      "project-agnostic synthetic dimension regressions are mandatory; private customer drawings remain comparison-only",
+      "CI execution evidence pending on PR #286"
+    ],
+    "semantic_diff": [
+      "source dimensions become immutable semantic evidence with measured/displayed separation and conflict status",
+      "Mechanical plans add only reference-bound set-out for construction-critical targets; routing/sizing authority is unchanged",
+      "count-only DIMENSION acceptance is removed as engineering authority"
+    ],
+    "artifact_diff": [
+      "applicable plan boards gain Planha-owned SOURCE/SETOUT dimensions with XData intent/reference/value identity",
+      "source architecture dimensions remain preservation evidence; view suppression never deletes project knowledge"
+    ],
+    "numeric_diff": [
+      "dimension engineering values are geometry-derived and rechecked after exact-file reopen; displayed overrides are never calculation authority",
+      "1% override threshold is anomaly detection only, not an engineering tolerance"
+    ],
+    "contract_diff": [
+      "new locked rule MEP-DIM-001",
+      "construction delivery requires semantic dimension evidence or explicit exact-file post-render authority",
+      "architecture preservation exact_entity_diff now requires source dimension preservation"
+    ],
+    "deployment_plan": [
+      "do not deploy during implementation; after owner approval, protected merge then separate staging validation"
+    ],
+    "rollback_plan": [
+      "revert the protected merge commit; no data migration or destructive source mutation"
+    ]
   },
   "risk": {
     "likelihood": 3,
