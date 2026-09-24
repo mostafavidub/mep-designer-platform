@@ -435,3 +435,25 @@ def test_extension_line_may_leave_host_obstacle_but_dimension_line_may_not_cross
     blocked=solve_dimension_placement([crossing],(0,0,10,10),board,obstacles=[(4.5,3.5,5.5,6.5)])
     assert blocked["status"]=="HUMAN_REVIEW_REQUIRED"
     assert blocked["collision_count"]==1
+
+
+def test_orthogonal_coordinate_setout_for_same_target_is_clean_not_collision():
+    board={"plan_area":(0,0,10,10),"bounds":(-2,-2,12,12),"title_area":(-2,-2,12,-1.5)}
+    x=_intent("X",target="R1",datum="GX",axis=0,value=4)
+    x["world_p1"]=(4,3);x["world_p2"]=(0,3)
+    y=_intent("Y",target="R1",datum="GY",axis=90,value=3)
+    y["world_p1"]=(4,3);y["world_p2"]=(4,0)
+    out=solve_dimension_placement([x,y],(0,0,10,10),board)
+    assert out["status"]=="PASS"
+    assert out["collision_count"]==0
+    assert {r["id"] for r in out["placed"]}=={"X","Y"}
+
+
+def test_orthogonal_global_grid_and_overall_tiers_may_meet_at_clean_outer_corner():
+    board={"plan_area":(0,0,10,8),"bounds":(-2,-2,12,10),"title_area":(-2,-2,12,-1.5)}
+    h=_intent("GH",target="GX0",datum="GX1",axis=0,value=10)
+    h.update({"purpose":"GRID","role":"SETOUT","world_p1":(0,4),"world_p2":(10,4)})
+    v=_intent("OV",target="EB",datum="ET",axis=90,role="CHECK",value=8)
+    v.update({"purpose":"BUILDING_OVERALL","world_p1":(5,0),"world_p2":(5,8)})
+    out=solve_dimension_placement([h,v],(0,0,10,8),board)
+    assert out["status"]=="PASS"
