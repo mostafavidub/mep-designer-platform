@@ -17,6 +17,7 @@ from __future__ import annotations
 from collections import Counter
 import math
 import re
+import statistics
 from pathlib import Path
 from typing import Iterable
 
@@ -29,6 +30,7 @@ SETOUT_LAYER = "PLANHA-M-DIM-SETOUT"
 CHECK_LAYER = "PLANHA-M-DIM-CHECK"
 DIMSTYLE = "PLANHA-DIM"
 APPID = "PLANHA_DIMENSION"
+INSUNITS_TO_M = {1: 0.0254, 2: 0.3048, 4: 0.001, 5: 0.01, 6: 1.0}
 
 CRITICAL_SOURCE_TYPES = {
     "PROPERTY", "SETBACK", "BUILDING_OVERALL", "GRID", "STRUCTURAL_SET_OUT",
@@ -148,6 +150,44 @@ def _display_number(value):
     if abs(value) >= 100 and abs(value - round(value)) < 1e-7:
         return str(int(round(value)))
     return f"{value:.2f}"
+
+
+def infer_dimension_unit_evidence(doc):
+    """Reconcile DXF unit metadata with dimension plausibility.
+
+    This mirrors the existing Planha unit-sanity contract: DXF headers are
+    evidence, never unquestioned authority. Returned scale converts native
+    drawing units to metres and is carried only as traceability metadata.
+    """
+    insunits=int(doc.header.get("$INSUNITS",0) or 0)
+    header_scale=INSUNITS_TO_M.get(insunits)
+    values=[]
+    for entity in doc.modelspace().query("DIMENSION"):
+        try:value=abs(float(entity.get_measurement()))
+        except Exception:continue
+        if 0.001<=value<=100000:
+            values.append(value)
+    median_dim=statistics.median(values) if values else None
+    scale=header_scale
+    source="header" if header_scale else "unknown"
+    confidence="medium" if header_scale else "low"
+    if insunits==4 and median_dim is not None and 0.20<=median_dim<=50.0:
+        scale=1.0
+        source="dimension-measurement-override-mm-header-to-m"
+        confidence="high"
+    elif insunits==6 and median_dim is not None and 200.0<=median_dim<=50000.0:
+        scale=0.001
+        source="dimension-measurement-override-m-header-to-mm"
+        confidence="high"
+    return {
+        "header_insunits":insunits,
+        "header_scale_to_m":header_scale,
+        "effective_scale_to_m":scale,
+        "dimension_count":len(values),
+        "median_dimension_drawing_units":round(median_dim,6) if median_dim is not None else None,
+        "source":source,
+        "confidence":confidence,
+    }
 
 
 def _dimension_geometry(entity):
@@ -328,6 +368,8 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
     if plan_bounds is None:
         return {"status":"INPUT_REQUIRED","records":[],"conflicts":[],"missing_inputs":["PLAN_BOUNDS"]}
     refs = build_reference_catalog(doc, plan_bounds, architecture=architecture, plan_id=plan_id)
+    unit_evidence=infer_dimension_unit_evidence(doc)
+    effective_scale=unit_evidence.get("effective_scale_to_m")
     span = max(
         abs(float(plan_bounds[2]) - float(plan_bounds[0])),
         abs(float(plan_bounds[3]) - float(plan_bounds[1])),
@@ -387,6 +429,8 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
             "dimension_line_point": base,
             "measured_value": measured,
             "raw_measurement": measured,
+            "measured_value_m": (measured*effective_scale if effective_scale is not None else None),
+            "unit_evidence_source": unit_evidence.get("source"),
             "source_display_text": text,
             "displayed_value": displayed,
             "simple_numeric_override": simple_override,
@@ -406,6 +450,7 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
         "plan_id": plan_id,
         "records": records,
         "dimension_count":len(records),
+        "unit_evidence":unit_evidence,
         "reference_count": len(refs),
         "local_axis_deg": math.degrees(detect_local_axis(refs)),
         "counts": dict(Counter(row["semantic_type"] for row in records)),
@@ -445,6 +490,9 @@ def source_dimension_intents(registry, profile):
             "world_p2": row["p2"],
             "world_base": row.get("dimension_line_point"),
             "measured_value": row["measured_value"],
+            "engineering_value_m": row.get("measured_value_m"),
+            "effective_scale_to_m": (registry.get("unit_evidence") or {}).get("effective_scale_to_m"),
+            "unit_evidence_source": (registry.get("unit_evidence") or {}).get("source"),
             "displayed_value": row["displayed_value"],
             "required": bool(row.get("critical")),
             "priority": 100 if row.get("critical") else 60,
@@ -554,6 +602,9 @@ def determinacy_intents(targets, refs, local_axis):
                 "world_p2": datum["projection"],
                 "world_base": None,
                 "measured_value": datum["distance"],
+                "engineering_value_m": None,
+                "effective_scale_to_m": None,
+                "unit_evidence_source": "INHERIT_SOURCE_REGISTRY",
                 "displayed_value": _display_number(datum["distance"]),
                 "required": True,
                 "priority": target.get("priority", 50),
@@ -750,6 +801,9 @@ def materialize_dimension_intents(doc, msp, placed_intents):
             reference_a_id=str((intent.get("reference_a") or {}).get("id") or "")
             reference_b_id=str((intent.get("reference_b") or {}).get("id") or "")
             measured_value=float(intent.get("measured_value") or 0.0)
+            engineering_value_m=intent.get("engineering_value_m")
+            effective_scale_to_m=intent.get("effective_scale_to_m")
+            unit_source=str(intent.get("unit_evidence_source") or "")
             entity.set_xdata(APPID,[
                 (1000,marker),
                 (1000,str(intent["id"])),
@@ -757,7 +811,10 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 (1000,str(intent.get("mechanical_target_id") or intent.get("source_dimension_id") or "")),
                 (1000,reference_a_id),
                 (1000,reference_b_id),
+                (1000,unit_source),
                 (1040,measured_value),
+                (1040,float(engineering_value_m) if engineering_value_m is not None else float("nan")),
+                (1040,float(effective_scale_to_m) if effective_scale_to_m is not None else float("nan")),
             ])
             rows.append({
                 "intent_id": intent["id"],
@@ -765,6 +822,9 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 "layer": layer,
                 "displayed_value": str(intent["displayed_value"]),
                 "measured_value": measured_value,
+                "engineering_value_m": engineering_value_m,
+                "effective_scale_to_m": effective_scale_to_m,
+                "unit_evidence_source": unit_source,
                 "reference_a_id": reference_a_id,
                 "reference_b_id": reference_b_id,
                 "purpose": intent["purpose"],
@@ -800,6 +860,12 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
     source_intents = source_dimension_intents(registry, profile)
     targets = collect_mechanical_targets(pipeline, plan_id)
     generated_intents, missing = determinacy_intents(targets, refs, axis)
+    effective_scale=(registry.get("unit_evidence") or {}).get("effective_scale_to_m")
+    unit_source=(registry.get("unit_evidence") or {}).get("source")
+    for intent in generated_intents:
+        intent["effective_scale_to_m"]=effective_scale
+        intent["unit_evidence_source"]=unit_source
+        intent["engineering_value_m"]=(intent["measured_value"]*effective_scale if effective_scale is not None else None)
     all_intents = select_minimal_dimension_set(source_intents + generated_intents)
     placed, collisions = place_intents(all_intents, source_bounds, board)
     materialized = materialize_dimension_intents(doc, msp, placed)
@@ -891,12 +957,20 @@ def validate_exact_file_dimensions(path, compose_report):
             strings=[value for code,value in trace if code==1000]
             doubles=[float(value) for code,value in trace if code==1040]
             expected_marker="SOURCE_DIMENSION" if item.get("source_kind")=="SOURCE_REGENERATED" else "SEMANTIC_DIMENSION"
-            if len(strings)<6 or strings[0]!=expected_marker or strings[1]!=str(item["intent_id"]):
+            if len(strings)<7 or strings[0]!=expected_marker or strings[1]!=str(item["intent_id"]):
                 sheet_errors.append("DIMENSION_TRACEABILITY_MISSING:" + item["intent_id"])
             elif strings[4]!=str(item.get("reference_a_id") or "") or strings[5]!=str(item.get("reference_b_id") or ""):
                 sheet_errors.append("DIMENSION_REFERENCE_ID_CHANGED:" + item["intent_id"])
+            elif strings[6]!=str(item.get("unit_evidence_source") or ""):
+                sheet_errors.append("DIMENSION_UNIT_EVIDENCE_CHANGED:" + item["intent_id"])
             if not doubles or abs(doubles[0]-float(item.get("measured_value") or 0.0))>1e-9:
                 sheet_errors.append("DIMENSION_ENGINEERING_VALUE_CHANGED:" + item["intent_id"])
+            expected_m=item.get("engineering_value_m")
+            expected_scale=item.get("effective_scale_to_m")
+            if expected_m is not None and (len(doubles)<2 or not math.isfinite(doubles[1]) or abs(doubles[1]-float(expected_m))>1e-9):
+                sheet_errors.append("DIMENSION_CANONICAL_METRE_VALUE_CHANGED:" + item["intent_id"])
+            if expected_scale is not None and (len(doubles)<3 or not math.isfinite(doubles[2]) or abs(doubles[2]-float(expected_scale))>1e-12):
+                sheet_errors.append("DIMENSION_UNIT_SCALE_CHANGED:" + item["intent_id"])
         per_sheet[sheet] = {
             "status": "PASS" if not sheet_errors else "FAIL",
             "errors": sorted(set(sheet_errors)),
