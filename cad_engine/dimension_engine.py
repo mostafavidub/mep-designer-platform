@@ -63,17 +63,28 @@ def _stable_reference_ids(model):
     return [r["id"] for r in model.get("references") or [] if r.get("subfeature") in allowed and float(r.get("confidence",0))>=.85]
 
 
-def shadow_compare(v1_report,v2_selected,v2_qa):
+def shadow_compare(v1_report,v2_selected,v2_qa,reconciliation=None,placement=None,redundancy=None):
     v1=list((v1_report or {}).get("materialized") or [])
+    v2=list(v2_selected or [])
     p1=Counter(str(r.get("purpose") or "UNKNOWN") for r in v1)
-    p2=Counter(str(r.get("purpose") or "UNKNOWN") for r in v2_selected or [])
+    p2=Counter(str(r.get("purpose") or "UNKNOWN") for r in v2)
     purposes=sorted(set(p1)|set(p2))
+    v2_source=[r for r in v2 if r.get("source_kind")=="SOURCE_REGENERATED"]
+    v2_generated=[r for r in v2 if r.get("source_kind")!="SOURCE_REGENERATED"]
     return {
       "mode":"SHADOW","visible_output_changed":False,
-      "v1_count":len(v1),"v2_count":len(v2_selected or []),
+      "v1_count":len(v1),"v2_count":len(v2),
       "purpose_delta":{p:{"v1":p1[p],"v2":p2[p],"delta":p2[p]-p1[p]} for p in purposes},
+      "v2_source_regenerated_count":len(v2_source),
+      "v2_planha_generated_count":len(v2_generated),
+      "v2_source_regenerated_ids":[r.get("source_dimension_id") for r in v2_source if r.get("source_dimension_id")],
+      "v2_intent_ids":[r.get("id") for r in v2],
       "v1_missing_determinacy":len((v1_report or {}).get("missing_determinacy") or []),
       "v2_missing_critical":len((v2_qa or {}).get("critical_missing") or []),
+      "source_reconciliation_counts":dict((reconciliation or {}).get("counts") or {}),
+      "source_reconciliation_human_review":len((reconciliation or {}).get("human_review") or []),
+      "duplicates_removed":int((redundancy or {}).get("duplicate_count") or 0),
+      "placement_unresolved":len((placement or {}).get("unresolved") or []),
       "v2_status":(v2_qa or {}).get("status"),
     }
 
@@ -115,5 +126,5 @@ def run_dimension_engine_shadow(doc,plan,architecture,pipeline,profile,board,v1_
       "candidate_generation":candidate_result,"source_generation":source_generation,"governed_requirements":governed,"intent_errors":intent_errors,
       "selected_intents":selected,"redundancy":redundancy,"determinacy":minimum["determinacy"],
       "reconciliation":reconciliation,"placement":placement,"qa":qa,
-      "shadow_compare":shadow_compare(v1_report,selected,qa),
+      "shadow_compare":shadow_compare(v1_report,selected,qa,reconciliation,placement,redundancy),
     }
