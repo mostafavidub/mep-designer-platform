@@ -60,9 +60,21 @@ def collect_profile_elements(profile,architecture=None,pipeline=None,plan_id=Non
                 p=_point(item)
                 if not p:continue
                 eid=str(item.get("id") or f"{kind}-{i:04d}")
-                rows.append({"id":eid,"kind":kind,"point":p,"geometry_kind":"LINE" if _item_segment(item) else "POINT",
-                             "priority_class":priority,"required_constraints":1 if _item_segment(item) else 2,
-                             "intrinsically_hosted":bool(item.get("host_id"))})
+                seg=_item_segment(item)
+                if seg:
+                    start_host=item.get("start_reference_id") or item.get("start_host_reference_id")
+                    end_host=item.get("end_reference_id") or item.get("end_host_reference_id")
+                    required_dofs=["OFFSET"]
+                    if not start_host: required_dofs.append("START")
+                    if not end_host: required_dofs.append("END")
+                    rows.append({"id":eid,"kind":kind,"point":p,"geometry_kind":"LINE","segment":seg,
+                                 "priority_class":priority,"required_constraints":len(required_dofs),
+                                 "required_dofs":required_dofs,"start_host_reference_id":start_host,
+                                 "end_host_reference_id":end_host,"intrinsically_hosted":False})
+                else:
+                    rows.append({"id":eid,"kind":kind,"point":p,"geometry_kind":"POINT",
+                                 "priority_class":priority,"required_constraints":2,
+                                 "required_dofs":["LOC_0","LOC_1"],"intrinsically_hosted":bool(item.get("host_id"))})
     elif profile=="MECHANICAL_PLAN":
         for i,node in enumerate((pipeline.get("topology") or {}).get("nodes") or []):
             if not isinstance(node,dict) or (plan_id and node.get("plan_id") not in (None,plan_id)):continue
@@ -73,12 +85,17 @@ def collect_profile_elements(profile,architecture=None,pipeline=None,plan_id=Non
             if kind not in policy["targets"]:continue
             rows.append({"id":str(node.get("id") or f"MECH-{i:04d}"),"kind":kind,"point":p,"geometry_kind":"POINT",
                          "priority_class":"P0" if kind in {"RISER","STACK","PENETRATION"} else "P1",
+                         "required_dofs":[] if node.get("host_reference_id") else ["LOC_0","LOC_1"],
+                         "required_constraints":0 if node.get("host_reference_id") else 2,
                          "intrinsically_hosted":bool(node.get("host_reference_id"))})
         for i,e in enumerate((pipeline.get("hvac") or {}).get("equipment") or []):
             if not isinstance(e,dict) or (plan_id and e.get("plan_id") not in (None,plan_id)):continue
             p=_point(e)
             if p:rows.append({"id":str(e.get("id") or f"EQUIPMENT-{i:04d}"),"kind":"EQUIPMENT","point":p,
-                              "geometry_kind":"POINT","priority_class":"P1","intrinsically_hosted":bool(e.get("host_reference_id"))})
+                              "geometry_kind":"POINT","priority_class":"P1",
+                              "required_dofs":[] if e.get("host_reference_id") else ["LOC_0","LOC_1"],
+                              "required_constraints":0 if e.get("host_reference_id") else 2,
+                              "intrinsically_hosted":bool(e.get("host_reference_id"))})
     else:
         # Parking/Roof/Detail use explicit semantic collections; no geometry guessing.
         key={"PARKING_PLAN":"parking_dimension_targets","ROOF_PLAN":"roof_dimension_targets","DETAIL":"detail_dimension_targets"}[profile]
@@ -112,7 +129,26 @@ def _axis_delta(a,b):
     d=abs((a-b)%180.0);return min(d,180.0-d)
 
 
+def _ranked_datum(point,stable,datum_axis,exclude_element_id=None):
+    ranked=[]
+    for ref in stable:
+        if exclude_element_id and str(ref.get("element_id") or "")==str(exclude_element_id):continue
+        seg=_segment(ref)
+        if not seg:continue
+        if _axis_delta(_axis_deg(*seg),datum_axis)>7.5:continue
+        q,dist=_projection(point,*seg)
+        ranked.append((int(ref.get("priority",50)),dist,-float(ref.get("confidence",1.0)),str(ref.get("id")),ref,q))
+    return min(ranked,key=lambda x:(x[0],x[1],x[2],x[3])) if ranked else None
+
+
+def _target_subfeature(kind):
+    if kind in {"RISER","STACK"}:return "PIPE_RISER_CENTER"
+    if kind in {"PENETRATION","SLEEVE"}:return "PENETRATION_CENTER"
+    return "EQUIPMENT_CENTER"
+
+
 def generate_setout_candidates(elements,reference_model,profile):
+    """Generate explainable candidates for every unresolved locating DOF."""
     refs=reference_model.get("references") or [];axis=float(reference_model.get("local_axis_deg") or 0.0)
     stable=[r for r in refs if r.get("subfeature") in {"GRID_AXIS","GRID_INTERSECTION","STRUCTURAL_CENTERLINE","STRUCTURAL_FACE",
         "WALL_CORE_FACE","WALL_INNER_FINISH_FACE","WALL_OUTER_FINISH_FACE","BUILDING_ENVELOPE_FACE","PROPERTY_BOUNDARY",
@@ -120,40 +156,67 @@ def generate_setout_candidates(elements,reference_model,profile):
     intents=[];reviews=[]
     for e in elements or []:
         if e.get("intrinsically_hosted"):continue
-        p=e["point"];constraints=[]
-        for ai,wanted in enumerate((axis,(axis+90.0)%180.0)):
-            datum_axis=(wanted+90.0)%180.0
-            ranked=[]
-            for ref in stable:
-                if str(ref.get("element_id") or "")==str(e.get("id") or ""):
+        required=list(e.get("required_dofs") or (["LOC_0","LOC_1"] if e.get("geometry_kind")=="POINT" else ["OFFSET","START","END"]))
+        created=set()
+        if e.get("geometry_kind")=="POINT":
+            p=e["point"]
+            for ai,wanted in enumerate((axis,(axis+90.0)%180.0)):
+                dof=f"LOC_{ai}"
+                if dof not in required:continue
+                datum_axis=(wanted+90.0)%180.0
+                ranked=_ranked_datum(p,stable,datum_axis,e.get("id"))
+                if not ranked:continue
+                _,dist,_,_,ref,q=ranked
+                if dist<=1e-8:
+                    # Coincidence is valid only when an explicit host says so;
+                    # otherwise it is evidence but not a displayed dimension.
                     continue
-                seg=_segment(ref)
-                if not seg:continue
-                ref_axis=_axis_deg(*seg)
-                # The measured dimension axis is normal to the datum line:
-                # horizontal set-out uses a vertical datum and vice versa.
-                if _axis_delta(ref_axis,datum_axis)>7.5:continue
-                q,dist=_projection(p,*seg)
-                ranked.append((int(ref.get("priority",50)),dist,-float(ref.get("confidence",1.0)),ref,q))
-            if not ranked:continue
-            _,dist,_,ref,q=min(ranked,key=lambda x:(x[0],x[1],x[2],str(x[3].get("id"))))
-            if dist<=1e-8:continue
-            purpose={"RISER":"RISER","SLEEVE":"SLEEVE","PENETRATION":"PENETRATION","EQUIPMENT":"EQUIPMENT_POSITION"}.get(e["kind"],"WALL_SETOUT" if e["geometry_kind"]=="LINE" else "CONSTRUCTION_CLEARANCE")
-            constraints.append({
-                "id":f"V2-{profile}-{e['id']}-{ai}","purpose":purpose,"role":"SETOUT","drawing_profile":profile,
-                "plan_id":ref.get("plan_id"),"priority_class":e.get("priority_class","P1"),"required":False,
-                "reference_a":{"id":e["id"],"element_id":e["id"],"subfeature":"PIPE_RISER_CENTER" if e["kind"] in {"RISER","STACK"} else ("PENETRATION_CENTER" if e["kind"]=="PENETRATION" else "EQUIPMENT_CENTER")},
-                "reference_b":ref,"world_p1":p,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
-                "display_value":None,"orientation":f"LOCAL_AXIS_{ai}","datum_class":ref.get("datum_class"),
-                "axis_deg":wanted,"evidence":("profile_requirement","stable_datum"),
-            })
-        intents.extend(constraints)
-        if e.get("geometry_kind")=="POINT" and len(constraints)<2:
-            reviews.append({"element_id":e["id"],"reason":"INSUFFICIENT_INDEPENDENT_DATUM_CANDIDATES","found":len(constraints),"required":2})
-        elif e.get("geometry_kind")!="POINT" and not constraints:
-            reviews.append({"element_id":e["id"],"reason":"NO_STABLE_DATUM_CANDIDATE","found":0,"required":1})
+                purpose={"RISER":"RISER","SLEEVE":"SLEEVE","PENETRATION":"PENETRATION","EQUIPMENT":"EQUIPMENT_POSITION"}.get(e["kind"],"CONSTRUCTION_CLEARANCE")
+                intents.append({"id":f"V2-{profile}-{e['id']}-{dof}","purpose":purpose,"role":"SETOUT","drawing_profile":profile,
+                    "plan_id":ref.get("plan_id"),"priority_class":e.get("priority_class","P1"),"required":False,
+                    "constraint_dof":dof,"reference_a":{"id":e["id"],"element_id":e["id"],"subfeature":_target_subfeature(e["kind"])},
+                    "reference_b":ref,"world_p1":p,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
+                    "display_value":None,"orientation":f"LOCAL_AXIS_{ai}","datum_class":ref.get("datum_class"),
+                    "axis_deg":wanted,"evidence":("profile_requirement","stable_datum",dof)})
+                created.add(dof)
+        else:
+            seg=e.get("segment")
+            if not seg:
+                reviews.append({"element_id":e["id"],"reason":"LINE_GEOMETRY_REQUIRED","required_dofs":required});continue
+            a,b=seg
+            line_axis=_axis_deg(a,b);normal_axis=(line_axis+90.0)%180.0
+            mid=((a[0]+b[0])/2.0,(a[1]+b[1])/2.0)
+            if "OFFSET" in required:
+                ranked=_ranked_datum(mid,stable,line_axis,e.get("id"))
+                if ranked:
+                    _,dist,_,_,ref,q=ranked
+                    if dist>1e-8:
+                        intents.append({"id":f"V2-{profile}-{e['id']}-OFFSET","purpose":"WALL_SETOUT","role":"SETOUT",
+                          "drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,
+                          "constraint_dof":"OFFSET","reference_a":{"id":e["id"],"element_id":e["id"],"subfeature":"WALL_CORE_FACE"},
+                          "reference_b":ref,"world_p1":mid,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
+                          "display_value":None,"orientation":"NORMAL_OFFSET","datum_class":ref.get("datum_class"),
+                          "axis_deg":normal_axis,"evidence":("profile_requirement","line_offset")})
+                        created.add("OFFSET")
+            for label,p in (("START",a),("END",b)):
+                if label not in required:continue
+                # Endpoint position along the wall axis is located from a datum
+                # perpendicular to that axis.
+                ranked=_ranked_datum(p,stable,normal_axis,e.get("id"))
+                if ranked:
+                    _,dist,_,_,ref,q=ranked
+                    if dist>1e-8:
+                        intents.append({"id":f"V2-{profile}-{e['id']}-{label}","purpose":"WALL_SETOUT","role":"SETOUT",
+                          "drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,
+                          "constraint_dof":label,"reference_a":{"id":f"{e['id']}/{label}","element_id":e["id"],"subfeature":"WALL_CORE_FACE"},
+                          "reference_b":ref,"world_p1":p,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
+                          "display_value":None,"orientation":"ALONG_WALL","datum_class":ref.get("datum_class"),
+                          "axis_deg":line_axis,"evidence":("profile_requirement","line_extent",label)})
+                        created.add(label)
+        missing=[d for d in required if d not in created]
+        if missing:
+            reviews.append({"element_id":e["id"],"reason":"UNRESOLVED_ELEMENT_DOF","missing_dofs":missing,"required_dofs":required})
     return {"status":"HUMAN_REVIEW_REQUIRED" if reviews else "PASS","intents":intents,"human_review":reviews}
-
 
 def _midpoint(ref):
     seg=_segment(ref)
