@@ -327,6 +327,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "runtime_contract_gate", "authority_pipeline_qa": {"status": "FAIL", "errors": contract_errors}}
 
     payload = _authority_payload(answers, plan_analysis)
+    construction_delivery=payload.get("construction_delivery_inputs")
+    if isinstance(construction_delivery,dict):
+        construction_delivery=dict(construction_delivery)
+        required_types=set(construction_delivery.get("required_cad_entity_types") or [])
+        if "DIMENSION" in required_types and not construction_delivery.get("dimension_semantics"):
+            construction_delivery["dimension_semantics"]={
+                "status":"DEFERRED",
+                "authority":"EXACT_FILE_POST_RENDER",
+                "exact_file_gate_required":True,
+            }
+        payload["construction_delivery_inputs"]=construction_delivery
     questionnaire_qa = evaluate_questionnaire_design_basis(payload.get("questionnaire_design_basis_context"))
     # Contradictory or tampered basis evidence can never reach calculation. Missing
     # evidence may continue only far enough to produce a truthful Pre-Submission result.
