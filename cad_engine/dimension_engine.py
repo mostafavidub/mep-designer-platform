@@ -15,7 +15,7 @@ from .dimension_requirement_engine import (
 from .dimension_determinacy_solver import minimum_constraint_set
 from .dimension_source_reconciliation import reconcile_source_dimensions
 from .dimension_redundancy_optimizer import optimize_dimensions
-from .dimension_placement_solver import solve_dimension_placement
+from .dimension_placement_solver import solve_dimension_placement,build_drafting_obstacles
 from .dimension_qa import construction_determinacy_gate
 from .dimension_intent_model import validate_intents
 from .semantic_dimension_engine import extract_source_dimension_registry,_display_number
@@ -95,7 +95,8 @@ def run_dimension_engine_shadow(doc,plan,architecture,pipeline,profile,board,v1_
     redundancy=optimize_dimensions(minimum["selected"])
     selected=redundancy["selected"]
     reconciliation=reconcile_source_dimensions(source_registry,selected,profile=profile)
-    placement=solve_dimension_placement(selected,bounds,board)
+    obstacles=build_drafting_obstacles(architecture,bounds,board)
+    placement=solve_dimension_placement(selected,bounds,board,obstacles=obstacles)
     qa=construction_determinacy_gate(ref_model,elements_result.get("elements") or [],minimum["determinacy"],
         reconciliation,redundancy,placement,selected,source_registry=source_registry,profile=profile)
     if governed.get("errors"):qa["errors"]=sorted(set(qa.get("errors",[])+["GOVERNED_DIMENSION_REQUIREMENT_INVALID"]));qa["status"]="FAIL"
