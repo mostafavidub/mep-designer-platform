@@ -666,6 +666,11 @@ def source_dimension_intents(registry, profile):
             "world_p1": row["p1"],
             "world_p2": row["p2"],
             "world_base": row.get("dimension_line_point"),
+            "angle_deg": (
+                float(row["source_angle_deg"])
+                if row.get("source_angle_deg") is not None
+                else math.degrees(_line_angle(row["p1"],row["p2"]))
+            ),
             "measured_value": row["measured_value"],
             "engineering_value_m": row.get("measured_value_m"),
             "effective_scale_to_m": (registry.get("unit_evidence") or {}).get("effective_scale_to_m"),
