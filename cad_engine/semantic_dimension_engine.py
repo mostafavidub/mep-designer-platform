@@ -121,11 +121,24 @@ def _simple_numeric_override(text):
         return None
 
 
-def _override_status(measured, displayed_text):
-    """Classify source text without promoting it to engineering truth.
+def _display_precision_tolerance(text):
+    """Return the half-unit rounding tolerance implied by literal display precision."""
+    value=str(text or "").strip().replace(",", ".").replace("٫", ".")
+    match=re.fullmatch(r"[-+]?(?:\\d+(?:\\.(\\d*))?|\\.(\\d+))", value)
+    if not match:
+        return None
+    decimals=len(match.group(1) if match.group(1) is not None else (match.group(2) or ""))
+    return 0.5 * (10.0 ** (-decimals))
 
-    The 1% threshold is an anomaly heuristic derived from drafting behavior, not
-    a code tolerance. The exact geometry remains authoritative for calculation.
+
+def _override_status(measured, displayed_text):
+    """Classify explicit source text without inventing an engineering tolerance.
+
+    A numeric override is considered formatting-equivalent only when the
+    geometric measurement lies within the half-unit rounding interval implied
+    by the literal number of displayed decimal places. Any larger difference is
+    preserved as a numeric override and, for critical source dimensions,
+    requires review. Geometry remains calculation authority until resolved.
     """
     text=str(displayed_text or "").strip()
     if not text or text=="<>" or "<>" in text:
@@ -134,10 +147,12 @@ def _override_status(measured, displayed_text):
     if numeric is None:
         return "NON_NUMERIC_OVERRIDE"
     measured=abs(float(measured or 0.0))
-    if measured<=1e-12:
-        return "CONFLICT"
-    delta=abs(float(numeric)-measured)
-    return "MINOR_OVERRIDE" if delta<=max(measured*.03,1e-6) else "CONFLICT"
+    tolerance=_display_precision_tolerance(text)
+    if tolerance is None:
+        return "NON_NUMERIC_OVERRIDE"
+    if abs(float(numeric)-measured) <= tolerance + 1e-12:
+        return "FORMAT_EQUIVALENT"
+    return "NUMERIC_OVERRIDE"
 
 
 def _display_number(value):
@@ -449,8 +464,8 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
         conflict_reason = None
         if measured <= max(span * 1e-9, 1e-9):
             conflict_reason = "ZERO_MEASUREMENT"
-        elif override_status=="CONFLICT":
-            conflict_reason = "DISPLAY_GEOMETRY_CONFLICT"
+        elif override_status=="NUMERIC_OVERRIDE":
+            conflict_reason = "DISPLAY_GEOMETRY_OVERRIDE"
 
         bind_a = _nearest_reference(p1, refs, bind_tol)
         bind_b = _nearest_reference(p2, refs, bind_tol)
