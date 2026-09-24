@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import statistics
 
-INSUNITS_TO_M = {4: 0.001, 5: 0.01, 6: 1.0}
+INSUNITS_TO_M = {1: 0.0254, 2: 0.3048, 4: 0.001, 5: 0.01, 6: 1.0}
 
 
 def dimension_measurements(doc):
