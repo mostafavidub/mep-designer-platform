@@ -1069,7 +1069,15 @@
         "promotion_zero_source_review_blockers",
         "safe_duplicate_cleanup_informational_only",
         "host_extension_exit_not_false_collision",
-        "clean_orthogonal_semantic_corner_not_false_collision"
+        "clean_orthogonal_semantic_corner_not_false_collision",
+        "raw_source_dimension_not_blindly_copied",
+        "source_entity_snapshot_frozen_before_composition",
+        "context_overall_generated_from_proven_envelope",
+        "context_grid_chain_generated_from_semantic_axes",
+        "context_shaft_stair_generated_when_source_absent",
+        "architecture_annotation_obstacle_avoidance",
+        "generated_board_dimension_not_reingested_as_source",
+        "local_axis_outside_dimension_tiering"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",
@@ -1079,7 +1087,8 @@
       "docs": [
         "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
         "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
-        "docs/DIMENSION_ENGINE_V2_STANDARD.md"
+        "docs/DIMENSION_ENGINE_V2_STANDARD.md",
+        "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md"
       ]
     }
   ]
