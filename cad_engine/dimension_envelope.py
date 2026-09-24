@@ -85,9 +85,20 @@ def envelope_edges(model):
     refs=[]
     for env in (model or {}).get("envelopes") or []:
         pts=env.get("points") or []
+        if not pts:continue
+        xs=[p[0] for p in pts];ys=[p[1] for p in pts]
+        minx,maxx,miny,maxy=min(xs),max(xs),min(ys),max(ys)
+        tol=max(maxx-minx,maxy-miny,1.0)*1e-7
         for i,a in enumerate(pts):
             b=pts[(i+1)%len(pts)]
+            side=None
+            if abs(a[0]-b[0])<=tol:
+                if abs(a[0]-minx)<=tol:side="LEFT"
+                elif abs(a[0]-maxx)<=tol:side="RIGHT"
+            elif abs(a[1]-b[1])<=tol:
+                if abs(a[1]-miny)<=tol:side="BOTTOM"
+                elif abs(a[1]-maxy)<=tol:side="TOP"
             refs.append({"id":f"{env['id']}-FACE-{i+1}","element_id":env["id"],"subfeature":"BUILDING_ENVELOPE_FACE",
                          "geometry":{"type":"SEGMENT","a":a,"b":b},"source":env.get("source"),"confidence":env.get("confidence",1.0),
-                         "datum_class":"ENVELOPE","evidence":("semantic_envelope",)})
+                         "datum_class":"ENVELOPE","envelope_side":side,"evidence":("semantic_envelope",)})
     return refs
