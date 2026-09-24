@@ -60,27 +60,51 @@ def build_determinacy_graph(elements,intents,stable_reference_ids):
 
 
 def minimum_constraint_set(candidate_intents,elements,stable_reference_ids):
-    """Greedy deterministic minimum set with mandatory CHECK intents retained.
+    """Select a deterministic minimum element-locating set plus required context/CHECKs.
 
-    Candidate ordering is stable and favors required SETOUT, higher-priority
-    targets and stable-reference connections. This is intentionally explainable,
-    not an opaque numerical optimizer.
+    Candidate dimensions are not individually mandatory. Construction-critical
+    elements are mandatory. Point targets receive the smallest independent pair
+    of constraints; line-like targets receive the best single locating
+    constraint unless explicitly hosted.
     """
-    checks=[r for r in candidate_intents or [] if r.get("role")=="CHECK"]
-    setouts=[r for r in candidate_intents or [] if r.get("role")!="CHECK"]
+    intents=list(candidate_intents or [])
+    elements=list(elements or [])
+    element_ids={str(e.get("id") or "") for e in elements}
+    selected=[];selected_ids=set()
+
+    # Required global/profile context and intentional checks survive by role.
+    for row in intents:
+        a=_ref_id(row.get("reference_a"));b=_ref_id(row.get("reference_b"))
+        touches_element=bool({a,b}&element_ids)
+        if row.get("role")=="CHECK" or (row.get("required") and not touches_element):
+            if row.get("id") not in selected_ids:
+                selected.append(row);selected_ids.add(row.get("id"))
+
     rank={"P0":0,"P1":1,"P2":2,"P3":3}
-    setouts=sorted(setouts,key=lambda r:(rank.get(r.get("priority_class","P1"),1),0 if r.get("required",True) else 1,str(r.get("id"))))
-    selected=[]
-    last_missing=None
-    for row in setouts:
-        trial=selected+[row]
-        state=build_determinacy_graph(elements,trial,stable_reference_ids)
-        missing=len(state["critical_missing"])
-        if last_missing is None or missing<last_missing or row.get("required"):
-            selected.append(row);last_missing=missing
-        if missing==0:
-            # Continue only required P0/P1 set-outs; optional redundancy stops.
+    for e in sorted(elements,key=lambda x:(rank.get(x.get("priority_class","P1"),1),str(x.get("id")))):
+        eid=str(e.get("id") or "")
+        if e.get("intrinsically_hosted"):continue
+        rows=[r for r in intents if eid in {_ref_id(r.get("reference_a")),_ref_id(r.get("reference_b"))} and r.get("role")!="CHECK"]
+        rows=sorted(rows,key=lambda r:(rank.get(r.get("priority_class","P1"),1),str(r.get("datum_class") or ""),str(r.get("id"))))
+        if e.get("geometry_kind","POINT")!="POINT":
+            if rows:
+                row=rows[0]
+                if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
             continue
-    selected.extend(checks)
+        best=None
+        for i,a in enumerate(rows):
+            for b in rows[i+1:]:
+                if _independent_axes([a,b]):
+                    key=(rank.get(a.get("priority_class","P1"),1)+rank.get(b.get("priority_class","P1"),1),
+                         str(a.get("id")),str(b.get("id")))
+                    if best is None or key<best[0]:best=(key,a,b)
+        if best:
+            for row in best[1:]:
+                if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
+        elif rows:
+            # Keep the best available evidence so QA can explain the missing DOF.
+            row=rows[0]
+            if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
+
     final=build_determinacy_graph(elements,selected,stable_reference_ids)
-    return {"selected":selected,"determinacy":final,"removed_count":len(candidate_intents or [])-len(selected)}
+    return {"selected":selected,"determinacy":final,"removed_count":len(intents)-len(selected)}
