@@ -43,6 +43,7 @@ from .semantic_dimension_engine import (
     build_and_materialize_plan_dimensions,
     validate_exact_file_dimensions,
 )
+from .dimension_engine_v2 import run_dimension_engine_v2_shadow
 from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
@@ -810,7 +811,8 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
             try:doc.layouts.new(row["code"])
             except Exception:pass
     shared_north=_shared_architectural_north(doc, arch.get("plans") or [])
-    copy_failures=[];overlay_reports=[];detail_index=0;north_records={};dimensioning={}
+    copy_failures=[];overlay_reports=[];detail_index=0;north_records={};dimensioning={};dimensioning_v2_shadow={}
+    wall_reference_basis=_answer(answers,"dimension_wall_reference_basis","wall_reference_basis",default=None)
     for row in manifest_rows:
         b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
         if b.family in PLAN_FAMILIES:
@@ -822,6 +824,14 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
                 dimensioning[b.code]=build_and_materialize_plan_dimensions(
                     doc,msp,vars(b),plan,arch,pipeline,b.family,b.level
+                )
+                v2_profile="ROOF_PLAN" if (b.family=="ROOF" or b.level=="ROOF") else "MECHANICAL_PLAN"
+                dimensioning_v2_shadow[b.code]=run_dimension_engine_v2_shadow(
+                    doc,plan,arch,pipeline,v2_profile,vars(b),
+                    v1_report=dimensioning[b.code],
+                    wall_reference_basis=wall_reference_basis,
+                    governed_requirements=(pipeline.get("dimension_requirements") or []),
+                    level=b.level,
                 )
             elif b.level=="SERVICE":
                 _ensure_layer(doc,"ENGITOOLS-M-NOTES",7,18)
@@ -870,7 +880,9 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         try:vp=doc.viewports.get("*Active")[0];vp.dxf.center=((min_x+max_x)/2,(min_y+max_y)/2);vp.dxf.height=(max_y-min_y)*1.03
         except Exception:pass
     doc.saveas(dst)
-    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records,"dimensioning":dimensioning}
+    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,
+            "overlay_reports":overlay_reports,"north":north_records,"dimensioning":dimensioning,
+            "dimensioning_v2_shadow":dimensioning_v2_shadow}
 
 
 def _overlap(ex,b):return not (ex.extmax.x < b[0] or ex.extmin.x > b[2] or ex.extmax.y < b[1] or ex.extmin.y > b[3])
