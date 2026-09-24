@@ -41,7 +41,9 @@ def build_reference_model_v2(doc,plan_bounds,architecture=None,plan_id=None,leve
     refs=[];reviews=[]
     env=build_envelope_model(architecture,plan_id)
     for row in envelope_edges(env):
-        refs.append(_ref(row["id"],row["element_id"],row["subfeature"],row["geometry"],5,row["source"],row["confidence"],row["evidence"],plan_id,level,row["datum_class"]))
+        ref=_ref(row["id"],row["element_id"],row["subfeature"],row["geometry"],5,row["source"],row["confidence"],row["evidence"],plan_id,level,row["datum_class"])
+        ref["envelope_side"]=row.get("envelope_side")
+        refs.append(ref)
 
     walls=[w for w in architecture.get("walls") or [] if isinstance(w,dict) and (not plan_id or w.get("plan_id") in (None,plan_id))]
     wall_sf=_wall_subfeature({},wall_reference_basis)
