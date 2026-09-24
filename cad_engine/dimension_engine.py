@@ -32,7 +32,9 @@ def _legacy_reference_catalog(v2_model):
     for r in v2_model.get("references") or []:
         g=r.get("geometry") or {}
         if g.get("type")!="SEGMENT" or r.get("subfeature") not in kind_map:continue
-        row={"id":r["id"],"kind":kind_map[r["subfeature"]],"a":tuple(g["a"]),"b":tuple(g["b"]),
+        row={"id":r["id"],"kind":kind_map[r["subfeature"]],"subfeature":r["subfeature"],
+             "element_id":r.get("element_id"),"datum_class":r.get("datum_class"),
+             "confidence":r.get("confidence",1.0),"a":tuple(g["a"]),"b":tuple(g["b"]),
              "priority":int(r.get("priority",50)),"source":"v2_reference_model"}
         if r.get("subfeature")=="BUILDING_ENVELOPE_FACE":
             row["envelope_candidate"]=True
