@@ -93,7 +93,7 @@
     ],
     "numeric_diff": [
       "dimension engineering values are geometry-derived and rechecked after exact-file reopen; displayed overrides are never calculation authority",
-      "1% override threshold is anomaly detection only, not an engineering tolerance"
+      "3% override threshold is a corpus-calibrated anomaly heuristic only, not an engineering or code tolerance"
     ],
     "contract_diff": [
       "new locked rule MEP-DIM-001",
