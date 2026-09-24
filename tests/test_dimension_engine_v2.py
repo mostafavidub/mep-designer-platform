@@ -415,3 +415,19 @@ def test_promotion_report_requires_zero_p0_p1_placement_and_source_review():
     assert report["status"]=="NOT_READY"
     reasons={b["reason"] for b in report["blockers"]}
     assert {"QA_NOT_PASS","P0_P1_DETERMINACY_DEFECT","UNRESOLVED_PLACEMENT","SOURCE_RECONCILIATION_REVIEW"}<=reasons
+
+
+def test_extension_line_may_leave_host_obstacle_but_dimension_line_may_not_cross_it():
+    board={"plan_area":(0,0,10,10),"bounds":(-2,-2,12,12),"title_area":(-2,-2,12,-1.5)}
+    hosted=_intent("HOSTED",target="R1",datum="G1",axis=0,value=4)
+    hosted["world_p1"]=(4,3);hosted["world_p2"]=(0,3)
+    # Target starts inside the shaft obstacle; extension may legitimately leave it.
+    ok=solve_dimension_placement([hosted],(0,0,10,10),board,obstacles=[(3.8,2.8,5.2,4.2)])
+    assert ok["status"]=="PASS"
+
+    crossing=_intent("CROSS",target="T2",datum="G2",axis=0,value=8)
+    crossing["world_p1"]=(1,5);crossing["world_p2"]=(9,5)
+    # The dimension line itself cannot be routed through an unrelated obstacle.
+    bad=solve_dimension_placement([crossing],(0,0,10,10),board,obstacles=[(4.5,4.5,5.5,5.5)])
+    assert bad["status"]=="HUMAN_REVIEW_REQUIRED"
+    assert bad["collision_count"]==1
