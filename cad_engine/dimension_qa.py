@@ -23,10 +23,16 @@ def validate_chain_closure(intents,tolerance_m=1e-6):
     return errors
 
 
-def construction_determinacy_gate(reference_model,elements,determinacy,reconciliation,redundancy,placement,intents,source_registry=None):
+def construction_determinacy_gate(reference_model,elements,determinacy,reconciliation,redundancy,placement,intents,source_registry=None,profile=None):
     errors=[];reviews=[]
     if reference_model.get("errors"):errors.append("REFERENCE_MODEL_INVALID")
-    reviews.extend(reference_model.get("human_review") or [])
+    ref_reviews=list(reference_model.get("human_review") or [])
+    used_subfeatures={str((r.get("reference_a") or {}).get("subfeature") or "") for r in intents or []}|{str((r.get("reference_b") or {}).get("subfeature") or "") for r in intents or []}
+    wall_review="WALL_REFERENCE_BASIS_REQUIRED" in ref_reviews
+    wall_used=bool(used_subfeatures & {"WALL_CORE_FACE","WALL_INNER_FINISH_FACE","WALL_OUTER_FINISH_FACE"})
+    if wall_review and profile!="ARCHITECTURAL_FLOOR_PLAN" and not wall_used:
+        ref_reviews=[r for r in ref_reviews if r!="WALL_REFERENCE_BASIS_REQUIRED"]
+    reviews.extend(ref_reviews)
     critical_missing=determinacy.get("critical_missing") or []
     if critical_missing:errors.append("UNDER_DETERMINED_P0_P1_GEOMETRY")
     if redundancy.get("status")=="FAIL":errors.append("CONTRADICTORY_DIMENSION_DEFINITION")
