@@ -122,6 +122,7 @@ def generate_setout_candidates(elements,reference_model,profile):
         if e.get("intrinsically_hosted"):continue
         p=e["point"];constraints=[]
         for ai,wanted in enumerate((axis,(axis+90.0)%180.0)):
+            datum_axis=(wanted+90.0)%180.0
             ranked=[]
             for ref in stable:
                 if str(ref.get("element_id") or "")==str(e.get("id") or ""):
@@ -129,8 +130,9 @@ def generate_setout_candidates(elements,reference_model,profile):
                 seg=_segment(ref)
                 if not seg:continue
                 ref_axis=_axis_deg(*seg)
-                # Dimension line is normal to datum; accept datum parallel to target local axis family.
-                if _axis_delta(ref_axis,wanted)>7.5:continue
+                # The measured dimension axis is normal to the datum line:
+                # horizontal set-out uses a vertical datum and vice versa.
+                if _axis_delta(ref_axis,datum_axis)>7.5:continue
                 q,dist=_projection(p,*seg)
                 ranked.append((int(ref.get("priority",50)),dist,-float(ref.get("confidence",1.0)),ref,q))
             if not ranked:continue
