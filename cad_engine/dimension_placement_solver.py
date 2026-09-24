@@ -24,11 +24,29 @@ def _seg_intersect(a,b,c,d):
     o1,o2,o3,o4=orient(a,b,c),orient(a,b,d),orient(c,d,a),orient(c,d,b)
     return (o1*o2<0 and o3*o4<0)
 
+def _point_in_box(p,box,tol=1e-9):
+    return box[0]-tol<=p[0]<=box[2]+tol and box[1]-tol<=p[1]<=box[3]+tol
+
 def _segment_box_intersects(a,b,box):
-    if box[0]<=a[0]<=box[2] and box[1]<=a[1]<=box[3]:return True
-    if box[0]<=b[0]<=box[2] and box[1]<=b[1]<=box[3]:return True
+    if _point_in_box(a,box) or _point_in_box(b,box):return True
     p1=(box[0],box[1]);p2=(box[2],box[1]);p3=(box[2],box[3]);p4=(box[0],box[3])
     return any(_seg_intersect(a,b,x,y) for x,y in ((p1,p2),(p2,p3),(p3,p4),(p4,p1)))
+
+def _dimension_box_conflict(dimsegs,box):
+    """Dimension line may not cross obstacles; extension lines may leave their host.
+
+    dimsegs[0] is the dimension line. dimsegs[1:] start at the measured
+    geometry and terminate at the dimension line. If an extension starts
+    inside/on an architectural obstacle (shaft/core/column), leaving that host
+    is legitimate and must not be misclassified as a collision.
+    """
+    if not dimsegs:return False
+    if _segment_box_intersects(dimsegs[0][0],dimsegs[0][1],box):
+        return True
+    for a,b in dimsegs[1:]:
+        if _segment_box_intersects(a,b,box) and not _point_in_box(a,box):
+            return True
+    return False
 
 def _dimension_segments(p1,p2,base):
     vx,vy=p2[0]-p1[0],p2[1]-p1[1];L=math.hypot(vx,vy)
@@ -95,7 +113,7 @@ def solve_dimension_placement(intents,source_bounds,board,obstacles=None,dimensi
             if tb[0]<bounds[0] or tb[1]<max(bounds[1],title[3]) or tb[2]>bounds[2] or tb[3]>bounds[3]:continue
             if any(_overlap(tb,o) for o in occupied):continue
             dimsegs=_dimension_segments(p1,p2,base)
-            if any(_segment_box_intersects(a,b,o) for a,b in dimsegs for o in occupied):continue
+            if any(_dimension_box_conflict(dimsegs,o) for o in occupied):continue
             if any(_seg_intersect(a,b,s[0],s[1]) for a,b in dimsegs for s in segments):continue
             chosen=(base,tb,dimsegs);break
         if not chosen:
