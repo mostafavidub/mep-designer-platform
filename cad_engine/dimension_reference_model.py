@@ -30,9 +30,12 @@ def _ref(ref_id,element_id,subfeature,geometry,priority,source,confidence,eviden
     return SemanticReference(ref_id,element_id,subfeature,geometry,plan_id,level,priority,source,confidence,tuple(evidence),datum_class).to_dict()
 
 def _wall_subfeature(wall,basis):
+    basis=str(basis or "").upper()
     if basis=="CORE_FACE":return "WALL_CORE_FACE"
     if basis=="INNER_FINISH_FACE":return "WALL_INNER_FINISH_FACE"
     if basis=="OUTER_FINISH_FACE":return "WALL_OUTER_FINISH_FACE"
+    if basis=="STRUCTURAL_FACE":return "STRUCTURAL_FACE"
+    if basis=="CENTERLINE":return "WALL_CENTERLINE"
     return None
 
 
@@ -54,7 +57,9 @@ def build_reference_model_v2(doc,plan_bounds,architecture=None,plan_id=None,leve
         if not geom:continue
         if wall_sf:
             eid=str(w.get("id") or f"WALL-{i:04d}")
-            refs.append(_ref(f"{eid}/{wall_sf}",eid,wall_sf,geom,20,"semantic_geometry",1.0,("wall_reference_basis:"+wall_reference_basis,),plan_id,level,"WALL"))
+            ref=_ref(f"{eid}/{wall_sf}",eid,wall_sf,geom,20,"semantic_geometry",1.0,("wall_reference_basis:"+str(wall_reference_basis),),plan_id,level,"WALL")
+            ref["metadata"]={"wall_reference_basis":str(wall_reference_basis),"wall_type_id":w.get("wall_type_id"),"assembly_id":w.get("assembly_id")}
+            refs.append(ref)
 
     # Openings are represented by two jamb points plus a centerline.
     # Treating the whole opening segment as one "jamb" loses size/position semantics.
@@ -106,6 +111,20 @@ def build_reference_model_v2(doc,plan_bounds,architecture=None,plan_id=None,leve
     # usable for Mechanical set-out. Consumers decide whether the review blocks
     # their drawing profile.
     status="FAIL" if errors else ("HUMAN_REVIEW_REQUIRED" if reviews or env["status"]!="PASS" else "PASS")
+    human_review=sorted(set(reviews+env.get("human_review",[])))
+    checkpoints=[]
+    if "WALL_REFERENCE_BASIS_REQUIRED" in human_review:
+        checkpoints.append({
+          "id":"WALL_REFERENCE_BASIS","type":"POLICY_DECISION","blocking_profiles":["ARCHITECTURAL_FLOOR_PLAN"],
+          "question":"Which wall subfeature is the authoritative dimension datum for this drawing/profile?",
+          "allowed_values":["CORE_FACE","INNER_FINISH_FACE","OUTER_FINISH_FACE","STRUCTURAL_FACE","CENTERLINE"],
+          "reason":"Wall-face meaning cannot be proven from imported geometry alone."
+        })
+    if "BUILDING_ENVELOPE_NOT_PROVEN" in human_review:
+        checkpoints.append({
+          "id":"BUILDING_ENVELOPE_CONFIRMATION","type":"GEOMETRY_REVIEW","blocking_profiles":["ARCHITECTURAL_FLOOR_PLAN"],
+          "reason":"No explicit semantic envelope or proven exterior-wall closed loop is available."
+        })
     return {"status":status,"references":refs,"envelope":env,"local_axis_deg":axis,
             "wall_reference_basis":wall_reference_basis,"wall_references_enabled":bool(wall_sf),
-            "human_review":sorted(set(reviews+env.get("human_review",[]))),"errors":errors}
+            "human_review":human_review,"review_checkpoints":checkpoints,"errors":errors}
