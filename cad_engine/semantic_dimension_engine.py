@@ -114,7 +114,7 @@ def _simple_numeric_override(text):
     if not value or value == "<>" or "<>" in value:
         return None
     value = value.replace(",", ".").replace("٫", ".")
-    if not re.fullmatch(r"[-+]?\d+(?:\.\d+)?", value):
+    if not re.fullmatch(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)", value):
         return None
     try:
         return float(value)
