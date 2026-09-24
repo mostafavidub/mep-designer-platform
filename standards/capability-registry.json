@@ -652,7 +652,8 @@
         "autonomous_context_shaft_stair",
         "architecture_obstacle_placement",
         "semantic_reference_pair_deduplication",
-        "planha_output_not_source_reingested"
+        "planha_output_not_source_reingested",
+        "local_axis_outside_tiering"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -675,7 +676,8 @@
         "test_rotated_exterior_envelope_generates_two_local_axis_overall_dimensions",
         "test_context_unit_evidence_can_correct_misleading_mm_header_from_unique_metric_plan_bounds",
         "test_context_unit_evidence_fails_closed_when_plan_bounds_allow_multiple_unit_interpretations",
-        "test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gate"
+        "test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gate",
+        "test_rotated_context_placement_tiers_outside_plan_area_along_local_normal"
       ]
     }
   ]
