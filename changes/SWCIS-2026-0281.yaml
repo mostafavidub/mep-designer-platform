@@ -61,11 +61,13 @@
       "final authoritative Mechanical targets -> datum policy -> minimal set-out intents -> exact-file XData identity"
     ],
     "tests": [
-      "planned: synthetic context-dimension, obstacle-placement, datum-choice and destructive regressions"
+      "tests/test_semantic_dimension_engine.py covers source suppression, context generation, partial Grid completion, rotated Overall, obstacle placement, exact-file traceability and ambiguous-unit fail-closed behavior",
+      "full repository regression and release workflows required before merge"
     ],
     "docs": [
-      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md benchmark-hardening section",
-      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md SWCIS 4.40.0",
+      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+      "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md canonical SWCIS 4.40.0",
       "standards/contract-changelog.json GOV-2026-046"
     ],
     "version_bump": [
@@ -75,7 +77,10 @@
       "none: additive drawing-output behavior; no persisted PMM migration"
     ],
     "golden_regression": [
-      "private six-project corpus is comparison evidence only; synthetic tests encode discovered generic rules"
+      "six-project private corpus revalidated: 835 dimensions; 810 linear/rotated; 25 aligned; 16 numeric overrides; 18 non-numeric overrides; 7 zero measurements",
+      "187 multi-dimension baseline groups with 132 chain-like groups; maximum chain size 9",
+      "private reference values remain comparison-only; synthetic tests encode only general rules",
+      "full repository regression required before merge"
     ],
     "semantic_diff": [
       "context dimensions may be generated even when consultant DIMENSION entities are absent; placement becomes architecture-aware"
