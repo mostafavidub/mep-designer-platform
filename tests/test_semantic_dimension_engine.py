@@ -4,15 +4,20 @@ from pathlib import Path
 
 import ezdxf
 
+from cad_engine.mechanical_design_core import _entity_should_copy
+
 from cad_engine.semantic_dimension_engine import (
     APPID,
     _override_status,
     apply_semantic_dimension_engine,
     build_and_materialize_plan_dimensions,
     build_reference_catalog,
+    context_dimension_intents,
     determinacy_intents,
+    entity_obstacle_boxes,
     extract_source_dimension_registry,
     governed_requirement_intents,
+    infer_dimension_unit_evidence,
     select_minimal_dimension_set,
     source_dimension_intents,
     source_preservation_complete,
@@ -447,3 +452,193 @@ def test_opposite_envelope_wall_faces_define_overall_but_internal_pair_remains_s
     _add_dim(doc2,(3,4),(6,4),(4.5,4.5),"3.00")
     registry2=extract_source_dimension_registry(doc2,(0,0,10,8),architecture=architecture,plan_id="P1")
     assert registry2["records"][0]["semantic_type"]=="WALL_SETOUT"
+
+
+def test_raw_source_dimension_is_not_copied_into_mechanical_board():
+    doc=_source_doc()
+    source_dim=_add_dim(doc,(0,0),(10,0),(5,.5),"10.00")
+    assert _entity_should_copy(source_dim,(0,0,10,8)) is False
+
+
+def test_context_engine_generates_overall_grid_and_shaft_when_source_dimensions_are_absent():
+    doc=_source_doc()
+    architecture={
+        "walls":[
+            {"id":"EXT-L","plan_id":"P1","start":(0,0),"end":(0,8),"is_exterior":True},
+            {"id":"EXT-R","plan_id":"P1","start":(10,0),"end":(10,8),"is_exterior":True},
+            {"id":"EXT-B","plan_id":"P1","start":(0,0),"end":(10,0),"is_exterior":True},
+            {"id":"EXT-T","plan_id":"P1","start":(0,8),"end":(10,8),"is_exterior":True},
+        ],
+        "grids":[
+            {"plan_id":"P1","start":(2,0),"end":(2,8)},
+            {"plan_id":"P1","start":(5,0),"end":(5,8)},
+            {"plan_id":"P1","start":(8,0),"end":(8,8)},
+            {"plan_id":"P1","start":(0,2),"end":(10,2)},
+            {"plan_id":"P1","start":(0,6),"end":(10,6)},
+        ],
+        "shafts":[{"plan_id":"P1","polygon":[(7,3),(8,3),(8,4.5),(7,4.5)]}],
+        "columns":[],
+    }
+    refs=build_reference_catalog(doc,(0,0,10,8),architecture=architecture,plan_id="P1")
+    registry=extract_source_dimension_registry(
+        doc,(0,0,10,8),architecture=architecture,plan_id="P1",reference_catalog=refs
+    )
+    intents=context_dimension_intents(refs,registry,"MECHANICAL_PLAN",0.0)
+    counts={}
+    for row in intents:counts[row["purpose"]]=counts.get(row["purpose"],0)+1
+    assert counts["BUILDING_OVERALL"]==2
+    assert counts["GRID"]==3
+    assert counts["SHAFT"]==2
+    assert all(row["source_kind"]=="PLANHA_GENERATED_CONTEXT" for row in intents)
+
+
+def test_partial_source_grid_chain_is_completed_without_duplicate_reference_pair():
+    doc=_source_doc()
+    architecture={
+        "grids":[
+            {"plan_id":"P1","start":(2,0),"end":(2,8)},
+            {"plan_id":"P1","start":(5,0),"end":(5,8)},
+            {"plan_id":"P1","start":(8,0),"end":(8,8)},
+        ],
+        "walls":[],
+    }
+    _add_dim(doc,(2,4),(5,4),(3.5,7.5),"3.00")
+    refs=build_reference_catalog(doc,(0,0,10,8),architecture=architecture,plan_id="P1")
+    registry=extract_source_dimension_registry(
+        doc,(0,0,10,8),architecture=architecture,plan_id="P1",reference_catalog=refs
+    )
+    assert registry["records"][0]["semantic_type"]=="GRID"
+    source=source_dimension_intents(registry,"MECHANICAL_PLAN")
+    context=context_dimension_intents(refs,registry,"MECHANICAL_PLAN",0.0)
+    selected=select_minimal_dimension_set(source+context)
+    grid=[row for row in selected if row["purpose"]=="GRID"]
+    assert len(grid)==2
+    assert sum(row["source_kind"]=="SOURCE_REGENERATED" for row in grid)==1
+    assert sum(row["source_kind"]=="PLANHA_GENERATED_CONTEXT" for row in grid)==1
+
+
+def test_semantic_dedupe_uses_reference_pair_even_when_graphical_base_differs():
+    base={
+        "purpose":"GRID","angle_deg":0,
+        "reference_a":{"id":"G-A"},"reference_b":{"id":"G-B"},
+        "world_p1":(0,0),"world_p2":(3,0),
+    }
+    rows=[
+        {"id":"SOURCE",**base,"world_base":(1.5,-1)},
+        {"id":"GENERATED",**base,"world_base":(1.5,-2)},
+    ]
+    selected=select_minimal_dimension_set(rows)
+    assert len(selected)==1
+    assert selected[0]["id"]=="SOURCE"
+
+
+def test_architecture_obstacle_boxes_force_dimension_text_to_alternate_candidate():
+    doc=_source_doc();msp=doc.modelspace()
+    text=msp.add_text("ROOM",dxfattribs={"height":.35})
+    text.dxf.insert=(5.0,4.22)
+    board={"bounds":(0,0,10,8),"plan_area":(0,0,10,8),"title_area":(0,0,10,.5)}
+    obstacles=entity_obstacle_boxes([text],board)
+    assert len(obstacles)==1
+    intent={
+        "id":"SET-X","purpose":"SETOUT","source_kind":"PLANHA_GENERATED",
+        "reference_a":{"id":"M"},"reference_b":{"id":"W"},
+        "world_p1":(4,4),"world_p2":(6,4),"world_base":None,
+        "measured_value":2.0,"displayed_value":"2.00","required":True,
+        "priority":100,"placement_zone":"LOCAL","angle_deg":0.0,
+    }
+    from cad_engine.semantic_dimension_engine import place_intents
+    placed,collisions=place_intents([intent],(0,0,10,8),board,obstacles=obstacles)
+    assert collisions==[]
+    assert placed[0]["render_base"]!=(5.0,4.22)
+
+
+def test_planha_owned_dimension_is_not_reingested_as_source_evidence():
+    doc=_source_doc();msp=doc.modelspace()
+    if APPID not in doc.appids:doc.appids.add(APPID)
+    dim=msp.add_linear_dim(base=(5,.5),p1=(0,0),p2=(10,0),angle=0,text="10.00")
+    dim.render();dim.dimension.set_xdata(APPID,[(1000,"SEMANTIC_DIMENSION")])
+    registry=extract_source_dimension_registry(doc,(0,0,10,8),architecture={},plan_id="P1")
+    assert registry["dimension_count"]==0
+
+
+def test_context_unit_evidence_can_correct_misleading_mm_header_from_unique_metric_plan_bounds():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=4
+    doc.header["$MEASUREMENT"]=1
+    unit=infer_dimension_unit_evidence(doc,(0,0,10,8))
+    assert unit["effective_scale_to_m"]==1.0
+    assert unit["source"]=="plan-bounds-unique-plausibility"
+    assert unit["plan_bounds_plausible"] is True
+
+
+def test_context_unit_evidence_fails_closed_when_plan_bounds_allow_multiple_unit_interpretations():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=0
+    doc.header["$MEASUREMENT"]=0
+    unit=infer_dimension_unit_evidence(doc,(0,0,10,8))
+    assert unit["effective_scale_to_m"] is None
+    assert unit["source"]=="plan-bounds-unit-ambiguous"
+    assert unit["confidence"]=="low"
+
+
+def test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gate():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=0
+    doc.header["$MEASUREMENT"]=0
+    msp=doc.modelspace()
+    plan={"plan_id":"P1","bounds":(0,0,10,8)}
+    architecture={"walls":[
+        {"id":"EXT-L","plan_id":"P1","start":(0,0),"end":(0,8),"is_exterior":True},
+        {"id":"EXT-R","plan_id":"P1","start":(10,0),"end":(10,8),"is_exterior":True},
+        {"id":"EXT-B","plan_id":"P1","start":(0,0),"end":(10,0),"is_exterior":True},
+        {"id":"EXT-T","plan_id":"P1","start":(0,8),"end":(10,8),"is_exterior":True},
+    ],"shafts":[],"columns":[]}
+    board={"bounds":(-2,-2,12,10),"plan_area":(0,0,10,8),"title_area":(-2,-2,12,-1)}
+    report=build_and_materialize_plan_dimensions(
+        doc,msp,board,plan,architecture,
+        {"topology":{"nodes":[]},"hvac":{"equipment":[]}},
+        "WATER","GROUND",
+    )
+    assert report["status"]=="FAIL"
+    assert "DIMENSION_UNIT_BASIS_REQUIRED" in report["errors"]
+    assert report["context_intent_count"]==2
+
+
+def test_rotated_exterior_envelope_generates_two_local_axis_overall_dimensions():
+    doc=_source_doc()
+    root=math.sqrt(2)/2
+    # 10 x 6 rectangle rotated 45 degrees.
+    p0=(0.0,0.0)
+    p1=(10*root,10*root)
+    p3=(-6*root,6*root)
+    p2=(p1[0]+p3[0],p1[1]+p3[1])
+    architecture={"walls":[
+        {"id":"E1","plan_id":"P1","start":p0,"end":p1,"is_exterior":True},
+        {"id":"E2","plan_id":"P1","start":p1,"end":p2,"is_exterior":True},
+        {"id":"E3","plan_id":"P1","start":p2,"end":p3,"is_exterior":True},
+        {"id":"E4","plan_id":"P1","start":p3,"end":p0,"is_exterior":True},
+    ],"grids":[],"shafts":[],"columns":[]}
+    bounds=(-5, -1, 8, 12)
+    refs=build_reference_catalog(doc,bounds,architecture=architecture,plan_id="P1")
+    registry=extract_source_dimension_registry(doc,bounds,architecture=architecture,plan_id="P1",reference_catalog=refs)
+    intents=context_dimension_intents(refs,registry,"MECHANICAL_PLAN",math.radians(45))
+    overall=[row for row in intents if row["purpose"]=="BUILDING_OVERALL"]
+    assert len(overall)==2
+    values=sorted(round(row["measured_value"],6) for row in overall)
+    assert values==[6.0,10.0]
+
+
+def test_rotated_context_placement_tiers_outside_plan_area_along_local_normal():
+    from cad_engine.semantic_dimension_engine import place_intents
+    board={"bounds":(-3,-3,13,13),"plan_area":(0,0,10,10),"title_area":(-3,-3,13,-2.5)}
+    intent={
+        "id":"CTX-ROT","purpose":"BUILDING_OVERALL","source_kind":"PLANHA_GENERATED_CONTEXT",
+        "reference_a":{"id":"E-A"},"reference_b":{"id":"E-B"},
+        "world_p1":(2,2),"world_p2":(8,8),"world_base":None,
+        "measured_value":math.sqrt(72),"displayed_value":"8.49","required":True,
+        "priority":92,"placement_zone":"OUTSIDE","outside_sign":-1,"angle_deg":45.0,
+    }
+    placed,collisions=place_intents([intent],(0,0,10,10),board)
+    assert collisions==[]
+    x,y=placed[0]["render_base"]
+    assert not (0<=x<=10 and 0<=y<=10)

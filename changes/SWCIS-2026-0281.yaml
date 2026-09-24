@@ -1,0 +1,120 @@
+{
+  "change_id": "SWCIS-2026-0281",
+  "summary": "Harden semantic dimensioning against the six-project architectural reference corpus by adding autonomous context dimensions, architecture-aware placement obstacles, and stronger datum/QA behavior without changing routing or sizing authority.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "rule",
+    "drawing_output",
+    "test",
+    "documentation",
+    "governance"
+  ],
+  "changed_rule_ids": [
+    "MEP-DIM-001",
+    "MEP-ARCH-PRESERVE-001",
+    "MEP-CONSTRUCT-001",
+    "MEP-VISUAL-QA-001"
+  ],
+  "impacted_modules": [
+    "rule_book",
+    "pmm",
+    "planner",
+    "cad_designer",
+    "qa",
+    "detail_riser",
+    "manifest",
+    "docs",
+    "versioning",
+    "governance",
+    "deployment",
+    "migration",
+    "ui_api",
+    "equipment",
+    "manufacturer_selector",
+    "questionnaire",
+    "routing",
+    "sizing"
+  ],
+  "impact_notes": {
+    "rule_book": "Strengthen MEP-DIM-001 from source-preserving point set-out to professional context dimension generation and architecture-aware placement.",
+    "pmm": "No PMM calculation/sizing schema change. Dimension intents remain downstream drawing/documentation semantics.",
+    "planner": "Drawing-profile applicability unchanged; plan roles determine context-dimension requirements.",
+    "cad_designer": "Generate Grid/Overall/Shaft context when source dimensions are absent; avoid architectural/text/door/window/grid-bubble obstacles; retain minimum mechanical set-out.",
+    "qa": "Add context completeness, obstacle collision, datum suitability and benchmark regression evidence.",
+    "detail_riser": "No riser engineering identity change; only plan dimension context/placement changes.",
+    "manifest": "No schema change.",
+    "docs": "Update semantic dimension standard with benchmark findings and hardening rules.",
+    "versioning": "SWCIS minor bump required because locked rule/gate semantics change.",
+    "governance": "Add benchmark-derived capability evidence without making private reference values hidden defaults.",
+    "deployment": "No staging/production deployment in this change.",
+    "migration": "No persisted schema/data migration; regeneration of drawing artifacts only.",
+    "ui_api": "No public request/response contract change; UI/API closure remains regression-tested because CAD output behavior changes.",
+    "equipment": "Verified downstream only: equipment points may be dimension targets; equipment selection/capacity/placement authority is unchanged.",
+    "manufacturer_selector": "Verified not affected semantically: catalogue/manufacturer selection remains upstream and unchanged.",
+    "questionnaire": "Verified not affected: no new user question or design-basis fact is required; unresolved unit/reference evidence fails closed rather than asking hidden questions.",
+    "routing": "Verified not affected: dimension generation remains downstream of final authoritative routing and cannot mutate route topology.",
+    "sizing": "Verified not affected: dimension generation consumes final geometry and never changes hydraulic/HVAC/gas sizing or calculation rows."
+  },
+  "evidence": {
+    "traceability": [
+      "semantic architecture/grid/envelope/shaft references -> generated context intents -> obstacle-aware placement -> exact-file QA",
+      "final authoritative Mechanical targets -> datum policy -> minimal set-out intents -> exact-file XData identity"
+    ],
+    "tests": [
+      "tests/test_semantic_dimension_engine.py covers source suppression, context generation, partial Grid completion, rotated Overall generation/tiering, obstacle placement, exact-file traceability and ambiguous-unit fail-closed behavior",
+      "full repository regression and release workflows required before merge"
+    ],
+    "docs": [
+      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+      "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md canonical SWCIS 4.40.0",
+      "standards/contract-changelog.json GOV-2026-046"
+    ],
+    "version_bump": [
+      "SWCIS 4.39.0 -> 4.40.0 because locked dimension/output gate semantics changed"
+    ],
+    "migration": [
+      "none: additive drawing-output behavior; no persisted PMM migration"
+    ],
+    "golden_regression": [
+      "six-project private corpus revalidated: 835 dimensions; 810 linear/rotated; 25 aligned; 16 numeric overrides; 18 non-numeric overrides; 7 zero measurements",
+      "187 multi-dimension baseline groups with 132 chain-like groups; maximum chain size 9",
+      "private reference values remain comparison-only; synthetic tests encode only general rules",
+      "full repository regression required before merge"
+    ],
+    "semantic_diff": [
+      "context dimensions may be generated even when consultant DIMENSION entities are absent; placement becomes architecture-aware"
+    ],
+    "artifact_diff": [
+      "new Planha-owned GRID/BUILDING_OVERALL/SHAFT context dimensions may appear on applicable Mechanical plan boards"
+    ],
+    "numeric_diff": [
+      "no benchmark numeric values become defaults; dimensions derive only from current project geometry and governed units"
+    ],
+    "contract_diff": [
+      "MEP-DIM-001 gains context completeness and architecture-obstacle collision requirements"
+    ],
+    "deployment_plan": [
+      "protected PR/CI only; staging/production require separate owner approval"
+    ],
+    "rollback_plan": [
+      "revert protected merge commit; no data migration"
+    ]
+  },
+  "benchmark_context": {
+    "corpus_dimensions": 835,
+    "dimension_types": "810 linear/rotated + 25 aligned",
+    "overrides": "16 numeric + 18 non-numeric",
+    "zero_measurements": 7,
+    "unit_issue": "all six files declare INSUNITS=4 while dimension plausibility resolves to metre drawing units",
+    "chain_evidence": "187 repeated baseline groups; 132 show adjacent chain behavior; maximum observed group size 9"
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 5,
+    "detectability": 2,
+    "score": 30,
+    "rationale": "Dimension context and placement affect construction-document readability but not engineering calculation authority. Exact-file QA and isolated PR validation provide early detection."
+  },
+  "waiver": null
+}
