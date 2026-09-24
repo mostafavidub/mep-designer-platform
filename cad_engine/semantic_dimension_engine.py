@@ -340,7 +340,7 @@ def _semantic_type(p1, p2, measurement, bind_a, bind_b, plan_bounds):
     return "UNKNOWN"
 
 
-def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architecture=None, plan_id=None):
+def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architecture=None, plan_id=None, reference_catalog=None):
     """Extract source dimensions as immutable evidence, independent of view visibility."""
     doc = (
         ezdxf.readfile(doc_or_path)
@@ -363,7 +363,7 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
             plan_bounds=None
     if plan_bounds is None:
         return {"status":"INPUT_REQUIRED","records":[],"conflicts":[],"missing_inputs":["PLAN_BOUNDS"]}
-    refs = build_reference_catalog(doc, plan_bounds, architecture=architecture, plan_id=plan_id)
+    refs = list(reference_catalog) if reference_catalog is not None else build_reference_catalog(doc, plan_bounds, architecture=architecture, plan_id=plan_id)
     unit_evidence=infer_dimension_unit_evidence(doc)
     effective_scale=unit_evidence.get("effective_scale_to_m")
     span = max(
@@ -916,16 +916,17 @@ def materialize_dimension_intents(doc, msp, placed_intents):
     return rows
 
 
-def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, pipeline, family, level=None):
+def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, pipeline, family, level=None, reference_catalog=None):
     plan_id = plan.get("plan_id")
     source_bounds = tuple(plan["bounds"])
-    refs = build_reference_catalog(doc, source_bounds, architecture=architecture, plan_id=plan_id)
+    refs = list(reference_catalog) if reference_catalog is not None else build_reference_catalog(doc, source_bounds, architecture=architecture, plan_id=plan_id)
     axis = detect_local_axis(refs)
     registry = extract_source_dimension_registry(
         doc,
         source_bounds,
         architecture=architecture,
         plan_id=plan_id,
+        reference_catalog=refs,
     )
     profile = drawing_profile(family, level)
     source_intents = source_dimension_intents(registry, profile)
@@ -983,6 +984,7 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         "status": "PASS" if not errors else "FAIL",
         "profile": profile,
         "source_registry": registry,
+        "reference_catalog":refs,
         "source_dimension_count": len(registry.get("records") or []),
         "source_visible_count": len(source_intents),
         "source_intent_ids":[row["id"] for row in source_intents],
@@ -1184,8 +1186,10 @@ def apply_semantic_dimension_engine(src, dst, base_report, network, architecture
             "hvac":{"equipment":[]},
             "dimension_requirements":list((network or {}).get("dimension_requirements") or []),
         }
+        prior_dimension=((composition.get("dimensioning") or {}).get(str(row.get("code") or row.get("old_sheet"))) or {})
         report=build_and_materialize_plan_dimensions(
-            doc,msp,board,plan,{"walls":[],"shafts":[],"columns":[]},pipeline,family,level_name
+            doc,msp,board,plan,{"walls":[],"shafts":[],"columns":[]},pipeline,family,level_name,
+            reference_catalog=prior_dimension.get("reference_catalog"),
         )
         dimensioning[str(row.get("code") or row.get("old_sheet"))]=report
         generated_count+=sum(
