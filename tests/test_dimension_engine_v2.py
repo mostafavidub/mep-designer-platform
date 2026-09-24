@@ -380,8 +380,8 @@ def test_shadow_candidate_materializes_and_reopens_exact_file_end_to_end(tmp_pat
         doc,{"plan_id":"P1","bounds":(0,0,10,8)},arch,pipeline,
         "MECHANICAL_PLAN",_board(),v1_report=v1
     )
-    assert out["qa"]["status"]=="PASS"
-    assert out["determinacy"]["status"]=="PASS"
+    assert out["qa"]["status"]=="PASS", {"qa":out["qa"],"placement":out["placement"],"reconciliation":out["reconciliation"],"source_generation":out["source_generation"],"candidates":out["candidate_generation"]}
+    assert out["determinacy"]["status"]=="PASS", out["determinacy"]
     assert out["shadow_compare"]["v2_missing_critical"]==0
     candidate=materialize_shadow_candidate(doc,out)
     assert candidate["status"]=="PASS"
