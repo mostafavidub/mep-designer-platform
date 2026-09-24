@@ -1,0 +1,131 @@
+{
+  "change_id": "SWCIS-2026-0282",
+  "summary": "Implement the Planha Full Autonomous Architectural Dimensioning Engine v1 as a semantic, deterministic, traceable and fail-closed construction-document dimension network built on the existing MEP-DIM-001 foundation.",
+  "requester": "project-owner",
+  "change_types": [
+    "architecture",
+    "rule",
+    "drawing_output",
+    "runtime",
+    "test",
+    "documentation",
+    "governance",
+    "versioning"
+  ],
+  "changed_rule_ids": [
+    "MEP-DIM-001",
+    "MEP-ARCH-RECOG-001",
+    "MEP-ARCH-PRESERVE-001",
+    "MEP-CONSTRUCT-001",
+    "MEP-VISUAL-QA-001",
+    "ARCH-DIM-001"
+  ],
+  "impacted_modules": [
+    "planner",
+    "pmm",
+    "cad_designer",
+    "qa",
+    "manifest",
+    "docs",
+    "versioning",
+    "governance",
+    "deployment",
+    "migration",
+    "ui_api",
+    "questionnaire",
+    "routing",
+    "sizing",
+    "equipment",
+    "manufacturer_selector",
+    "detail_riser",
+    "rule_book"
+  ],
+  "impact_notes": {
+    "planner": "Drawing-profile-specific architectural dimension requirements become explicit consumers of approved plan role and semantic zone identity.",
+    "pmm": "No Mechanical calculation authority moves into dimensioning. Stable architectural element/subfeature IDs are consumed downstream; no hidden sizing or routing authority is introduced.",
+    "cad_designer": "Refactor the monolithic semantic dimension implementation toward a governed dimensioning package covering references, profiles, requirements, local frames, determinacy, chains, specialist engines, placement, renderer compatibility and QA.",
+    "qa": "Add fail-closed graph-theoretic under-dimensioning, over-constraint, chain closure, reference-class compatibility, specialist completeness, extension-line readability and exact-file traceability checks.",
+    "manifest": "Dimension QA/report evidence is additive; existing artifact identity remains authoritative.",
+    "docs": "Add the Architectural Dimension Engine v1 specification and preserve benchmark/reference findings as validation evidence only.",
+    "versioning": "Target SWCIS 4.41.0 because dependency graph, traceability, locked gate semantics and golden inventory are expanded.",
+    "governance": "Add ARCH-DIM-001 and bind architectural dimension requirements to governed references, profiles and exact-file QA without benchmark-derived numeric defaults.",
+    "deployment": "No staging or production deployment is authorized by this change record. Staging requires separate explicit owner approval; production requires a separate approval.",
+    "migration": "No database or PMM persistence migration is planned. Drawing artifacts are regenerated from approved semantic geometry.",
+    "ui_api": "No public UI/API schema change is required for v1; existing diagnostics may expose additive architectural-dimension QA evidence.",
+    "questionnaire": "No hidden assumptions are introduced. Ambiguous face basis, zone, code rule, opening host or coordinate frame becomes INPUT_REQUIRED/HUMAN_REVIEW.",
+    "routing": "Verified downstream-only: dimensioning consumes approved geometry and cannot mutate Mechanical routing.",
+    "sizing": "Verified downstream-only: dimensioning cannot mutate Mechanical calculations or sizing.",
+    "equipment": "Equipment may be an obstacle/reference context only; selection/placement authority remains unchanged.",
+    "manufacturer_selector": "No catalogue/manufacturer logic changes.",
+    "detail_riser": "Plan dimensioning must not regress existing riser/detail outputs; compatibility is regression-tested.",
+    "rule_book": "ARCH-DIM-001 formalizes construction determinacy, reference-basis policy, profile-specific requirements, check-dimension semantics and fail-closed architectural dimension QA."
+  },
+  "evidence": {
+    "traceability": [
+      "approved architectural semantic geometry -> stable subfeature references -> drawing profile -> dimension requirements -> determinacy graph -> chains/checks -> placement -> CAD -> exact-file QA",
+      "source dimension registry remains immutable evidence and preserves measured/displayed/unit/override identity",
+      "MEP-DIM-001 existing Mechanical set-out remains compatibility authority while architectural generation is added as a downstream specialization"
+    ],
+    "tests": [
+      "unit tests for references, local frames, determinacy, chain closure and reference compatibility",
+      "contract tests for drawing profiles and specialist requirements",
+      "synthetic golden fixtures for partition chains, room clear, openings, stair/core, shaft, site/setback, parking, rotated/multi-axis, under/over-dimension and collisions",
+      "destructive malformed/conflicting plan tests",
+      "exact-file DXF reopen and XData identity tests",
+      "Mechanical semantic-dimension regression suite",
+      "full affected CI before merge"
+    ],
+    "docs": [
+      "docs/ARCHITECTURAL_DIMENSION_ENGINE_V1.md",
+      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+      "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md"
+    ],
+    "version_bump": [
+      "SWCIS 4.40.0 -> 4.41.0 after implementation/golden/traceability closure"
+    ],
+    "migration": [
+      "none: no destructive data/schema migration; generated drawing artifacts may change"
+    ],
+    "golden_regression": [
+      "private six-project corpus remains comparison-only and never a CI dependency",
+      "project-independent synthetic fixtures encode generic professional dimension logic",
+      "blind unseen-plan validation is required before a Full Autonomous release claim"
+    ],
+    "semantic_diff": [
+      "architectural dimensions become first-class DimensionIntent records with purpose, stable element/subfeature references, zone, coordinate frame, check-group, chain and QA status",
+      "construction-critical references must be determinable from a stable datum or the drawing is UNDER_DIMENSIONED",
+      "intentional CHECK dimensions are distinct from independent construction definitions",
+      "code clearances remain separate from geometric set-out and require rule identity"
+    ],
+    "artifact_diff": [
+      "architectural plan/site/parking/roof outputs may gain governed Planha-owned dimension chains and checks",
+      "existing source dimensions may be regenerated/suppressed by profile while remaining preserved as project evidence"
+    ],
+    "numeric_diff": [
+      "no benchmark numeric values become defaults",
+      "stored engineering values remain separate from presentation formatting",
+      "chain closure uses explicit unit/tolerance policy and never compares incompatible reference classes"
+    ],
+    "contract_diff": [
+      "new locked rule ARCH-DIM-001",
+      "architectural Submission Ready is blocked on all mandatory architectural dimension QA controls",
+      "unknown/ambiguous semantic reference basis is HUMAN_REVIEW or INPUT_REQUIRED rather than guessed"
+    ],
+    "deployment_plan": [
+      "branch -> static review -> targeted tests -> affected CI -> protected PR -> merge",
+      "staging only after separate explicit owner approval",
+      "production only after separate explicit owner approval"
+    ],
+    "rollback_plan": [
+      "revert protected merge commit and regenerate prior approved artifacts; no data rollback required"
+    ]
+  },
+  "risk": {
+    "likelihood": 4,
+    "severity": 5,
+    "detectability": 2,
+    "score": 40,
+    "rationale": "Architectural dimension logic directly affects construction-document determinacy and readability. Fail-closed semantic references, graph QA, specialist fixtures, exact-file verification and Mechanical regression are mandatory before release."
+  },
+  "waiver": null
+}
