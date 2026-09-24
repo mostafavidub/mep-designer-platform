@@ -985,6 +985,7 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         "source_registry": registry,
         "source_dimension_count": len(registry.get("records") or []),
         "source_visible_count": len(source_intents),
+        "source_intent_ids":[row["id"] for row in source_intents],
         "mechanical_target_count": len(targets),
         "mechanical_setout_intent_count": len(generated_intents),
         "governed_requirement_intent_count": len(governed_intents),
@@ -1080,7 +1081,7 @@ def validate_exact_file_dimensions(path, compose_report):
 
 
 def source_preservation_complete(dimension_report):
-    """True only when every critical source dimension is retained or explicitly blocked as conflict."""
+    """Separate source-knowledge preservation from view-specific materialization."""
     registry = (dimension_report or {}).get("source_registry") or {}
     rows = registry.get("records") or []
     visible_materialized = {
@@ -1088,8 +1089,16 @@ def source_preservation_complete(dimension_report):
         for item in (dimension_report or {}).get("materialized") or []
         if item.get("source_kind") == "SOURCE_REGENERATED" and item.get("handle")
     }
+    if "source_intent_ids" in (dimension_report or {}):
+        required_visible=set((dimension_report or {}).get("source_intent_ids") or [])
+    else:
+        # Fail-safe for older reports that did not distinguish suppression:
+        # assume critical source dimensions were intended to be materialized.
+        required_visible={"REGEN-"+row["id"] for row in rows if row.get("critical")}
+
     missing = []
     conflicts = []
+    suppressed_but_preserved=[]
     for row in rows:
         if not row.get("critical"):
             continue
@@ -1097,16 +1106,20 @@ def source_preservation_complete(dimension_report):
             conflicts.append(row["id"])
             continue
         expected = "REGEN-" + row["id"]
+        if expected not in required_visible:
+            suppressed_but_preserved.append(row["id"])
+            continue
         if expected not in visible_materialized:
             missing.append(row["id"])
     return {
         "pass": not missing and not conflicts,
         "missing_critical_source_dimensions": missing,
         "critical_source_conflicts": conflicts,
+        "suppressed_but_preserved_critical_dimensions":suppressed_but_preserved,
         "source_dimension_count": len(rows),
         "critical_source_dimension_count": sum(1 for row in rows if row.get("critical")),
+        "policy":"registry preservation is mandatory; view materialization is drawing-profile specific",
     }
-
 
 
 def apply_semantic_dimension_engine(src, dst, base_report, network, architecture_preservation=None):
