@@ -26,7 +26,9 @@
     "docs",
     "versioning",
     "governance",
-    "deployment"
+    "deployment",
+    "migration",
+    "ui_api"
   ],
   "impact_notes": {
     "rule_book": "Strengthen MEP-DIM-001 from source-preserving point set-out to professional context dimension generation and architecture-aware placement.",
@@ -39,7 +41,9 @@
     "docs": "Update semantic dimension standard with benchmark findings and hardening rules.",
     "versioning": "SWCIS minor bump required because locked rule/gate semantics change.",
     "governance": "Add benchmark-derived capability evidence without making private reference values hidden defaults.",
-    "deployment": "No staging/production deployment in this change."
+    "deployment": "No staging/production deployment in this change.",
+    "migration": "No persisted schema/data migration; regeneration of drawing artifacts only.",
+    "ui_api": "No public request/response contract change; UI/API closure remains regression-tested because CAD output behavior changes."
   },
   "evidence": {
     "traceability": [
@@ -50,10 +54,12 @@
       "planned: synthetic context-dimension, obstacle-placement, datum-choice and destructive regressions"
     ],
     "docs": [
-      "planned: docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md benchmark-hardening section"
+      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md benchmark-hardening section",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md SWCIS 4.40.0",
+      "standards/contract-changelog.json GOV-2026-046"
     ],
     "version_bump": [
-      "planned: SWCIS 4.39.0 -> 4.40.0"
+      "SWCIS 4.39.0 -> 4.40.0 because locked dimension/output gate semantics changed"
     ],
     "migration": [
       "none: additive drawing-output behavior; no persisted PMM migration"
