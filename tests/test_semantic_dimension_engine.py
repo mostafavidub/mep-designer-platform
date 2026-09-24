@@ -46,6 +46,8 @@ def _architectural_source(path: Path):
 def test_override_conflict_distinguishes_rounding_material_and_non_numeric_override():
     assert _override_status(2.97657,"3.00")=="MINOR_OVERRIDE"
     assert _override_status(3.23749,"3.25")=="MINOR_OVERRIDE"
+    assert _override_status(0.9791463441,"1.00")=="MINOR_OVERRIDE"
+    assert _override_status(0.6936889303,".70")=="MINOR_OVERRIDE"
     assert _override_status(5.95,"7.00")=="CONFLICT"
     assert _override_status(2.0,"20-30")=="NON_NUMERIC_OVERRIDE"
 
