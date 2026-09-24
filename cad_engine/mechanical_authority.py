@@ -471,6 +471,13 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
             "exact_file_gate_required":True,
             "release_allowed":False,
         }
+    elif not dst.exists():
+        _restore_target(dst,backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status":"FAIL","stage":"semantic_dimension_exact_output_gate",
+                "semantic_dimension_qa":{"status":"FAIL","errors":["EXACT_DIMENSION_FILE_MISSING"]},
+                "input_required":{"status":"FAIL","missing_inputs":["EXACT_DIMENSION_FILE_MISSING"]}}
     else:
         semantic_dimensions=apply_semantic_dimension_engine(
             src,dst,rendered,payload["network_graph"],
