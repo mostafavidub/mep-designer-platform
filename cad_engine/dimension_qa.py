@@ -1,0 +1,58 @@
+"""Construction Determinacy Gate for Dimension Engine v2."""
+from __future__ import annotations
+from collections import defaultdict
+
+
+def _rid(ref):return str((ref or {}).get("id") or (ref or {}).get("element_id") or "")
+
+
+def validate_chain_closure(intents,tolerance_m=1e-6):
+    """Only close chains inside the same explicit datum class and chain_id."""
+    groups=defaultdict(list);errors=[]
+    for row in intents or []:
+        cid=row.get("chain_id");datum=row.get("datum_class")
+        if cid and datum:groups[(cid,datum)].append(row)
+    for (cid,datum),rows in groups.items():
+        parts=[r for r in rows if r.get("chain_role")=="PART"]
+        totals=[r for r in rows if r.get("chain_role")=="TOTAL"]
+        if not parts or not totals:continue
+        p=sum(float(r.get("engineering_value_m") or 0.0) for r in parts)
+        for total in totals:
+            t=float(total.get("engineering_value_m") or 0.0)
+            if abs(p-t)>tolerance_m:errors.append({"chain_id":cid,"datum_class":datum,"parts_m":p,"total_m":t,"reason":"CHAIN_CLOSURE_FAILURE"})
+    return errors
+
+
+def construction_determinacy_gate(reference_model,elements,determinacy,reconciliation,redundancy,placement,intents,source_registry=None):
+    errors=[];reviews=[]
+    if reference_model.get("errors"):errors.append("REFERENCE_MODEL_INVALID")
+    reviews.extend(reference_model.get("human_review") or [])
+    critical_missing=determinacy.get("critical_missing") or []
+    if critical_missing:errors.append("UNDER_DETERMINED_P0_P1_GEOMETRY")
+    if redundancy.get("status")=="FAIL":errors.append("CONTRADICTORY_DIMENSION_DEFINITION")
+    if int(redundancy.get("duplicate_count") or 0):reviews.append("SEMANTIC_DUPLICATES_REMOVED")
+    if placement.get("status")!="PASS":errors.append("UNRESOLVED_DIMENSION_PLACEMENT")
+    if reconciliation.get("status")!="PASS":reviews.append("SOURCE_RECONCILIATION_REVIEW_REQUIRED")
+    chain_errors=validate_chain_closure(intents)
+    if chain_errors:errors.append("CHAIN_CLOSURE_FAILURE")
+    if source_registry:
+        critical_conflicts=[r for r in source_registry.get("records") or [] if r.get("critical") and r.get("conflict")]
+        if critical_conflicts:errors.append("CRITICAL_SOURCE_DIMENSION_CONFLICT")
+        unit=(source_registry.get("unit_evidence") or {})
+        if intents and unit.get("effective_scale_to_m") is None:errors.append("DIMENSION_UNIT_BASIS_REQUIRED")
+    invalid_intents=[]
+    for r in intents or []:
+        if not _rid(r.get("reference_a")) or not _rid(r.get("reference_b")):invalid_intents.append(r.get("id"))
+        if r.get("purpose")=="CODE_CLEARANCE" and not r.get("rule_id"):invalid_intents.append(r.get("id"))
+    if invalid_intents:errors.append("INVALID_SEMANTIC_REFERENCE_OR_RULE")
+    return {
+      "version":"planha-dimension-v2-qa/1","status":"FAIL" if errors else ("HUMAN_REVIEW_REQUIRED" if reviews else "PASS"),
+      "errors":sorted(set(errors)),"human_review":reviews,"critical_missing":critical_missing,
+      "chain_errors":chain_errors,"invalid_intent_ids":sorted(set(x for x in invalid_intents if x)),
+      "metrics":{
+        "references":len(reference_model.get("references") or []),"critical_elements":sum(1 for e in elements or [] if e.get("priority_class") in {"P0","P1"}),
+        "under_determined":len(critical_missing),"source_review":len(reconciliation.get("human_review") or []),
+        "duplicates_removed":int(redundancy.get("duplicate_count") or 0),"placement_failures":int(placement.get("collision_count") or 0),
+      },
+      "policy":"printed-drawing construction determinacy, not DIMENSION entity count, is the acceptance authority",
+    }
