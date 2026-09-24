@@ -49,7 +49,7 @@
     "detail_riser": "Verify downstream documentation remains readable; plan dimensions do not alter riser/detail engineering identity.",
     "qa": "Replace entity-count dimension acceptance with semantic completeness, source preservation, geometry consistency, redundancy, chain and collision checks.",
     "manifest": "Verified not affected structurally: no manifest schema change; dimension QA is attached to the existing artifact/report.",
-    "ui_api": "Verified not affected: no public request/response field removal or required UI input.",
+    "ui_api": "Shared DXF unit-sanity logic is factored into app/drawing_unit_sanity.py and consumed by app/unit_sanity.py plus the CAD dimension engine. No external UI, route, request/response, questionnaire, pricing or public API contract changes; this is an internal single-authority refactor with stronger unit evidence.",
     "docs": "Document the semantic dimension contract, source preservation policy, drawing profiles and QA behavior.",
     "versioning": "Bump SWCIS minor because locked traceability/gate semantics are strengthened.",
     "migration": "No persisted PMM/schema migration; existing DXF inputs remain accepted and are interpreted through the new registry.",
@@ -101,7 +101,9 @@
     "contract_diff": [
       "new locked rule MEP-DIM-001",
       "construction delivery requires semantic dimension evidence or explicit exact-file post-render authority",
-      "architecture preservation exact_entity_diff now requires source dimension preservation"
+      "architecture preservation exact_entity_diff now requires source dimension preservation",
+      "No externally visible UI/API contract change; app-layer impact is limited to shared internal DXF unit-scale inference authority.",
+      "Unit inference remains fail-closed/evidence-backed and is reused by both analysis and semantic dimension output."
     ],
     "deployment_plan": [
       "do not deploy during implementation; after owner approval, protected merge then separate staging validation"
