@@ -457,3 +457,16 @@ def test_orthogonal_global_grid_and_overall_tiers_may_meet_at_clean_outer_corner
     v.update({"purpose":"BUILDING_OVERALL","world_p1":(5,0),"world_p2":(5,8)})
     out=solve_dimension_placement([h,v],(0,0,10,8),board)
     assert out["status"]=="PASS"
+
+
+def test_exact_duplicate_cleanup_is_informational_not_human_review():
+    from cad_engine.dimension_qa import construction_determinacy_gate
+    refs={"errors":[],"human_review":[],"envelope":{"status":"PASS","envelopes":[{"id":"E"}]},"references":[]}
+    det={"critical_missing":[]}
+    rec={"status":"PASS","rows":[],"human_review":[]}
+    red={"status":"PASS","duplicate_count":1}
+    place={"status":"PASS","collision_count":0}
+    intents=[{"id":"O","purpose":"BUILDING_OVERALL","role":"CHECK","reference_a":{"id":"A"},"reference_b":{"id":"B"}}]
+    qa=construction_determinacy_gate(refs,[],det,rec,red,place,intents,profile="MECHANICAL_PLAN")
+    assert qa["status"]=="PASS"
+    assert "SEMANTIC_DUPLICATES_REMOVED" in qa["informational"]
