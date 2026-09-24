@@ -336,3 +336,36 @@ def test_code_clearance_below_authoritative_minimum_fails_closed():
     }],model,"MECHANICAL_PLAN","P1")
     assert out["status"]=="FAIL"
     assert out["errors"][0]["reason"]=="CODE_CLEARANCE_BELOW_MINIMUM"
+
+
+def test_opening_requires_size_and_position_and_uses_distinct_jamb_references():
+    arch=_arch_rect()
+    arch["openings"]=[{"id":"OP-1","plan_id":"P1","start":(3,0),"end":(4,0),"host_id":"W-EXT"}]
+    model=build_reference_model_v2(_doc(),(0,0,10,8),arch,"P1")
+    jambs=[r for r in model["references"] if r["element_id"]=="OP-1" and r["subfeature"]=="OPENING_JAMB"]
+    assert len(jambs)==2
+    elements=collect_profile_elements("ARCHITECTURAL_FLOOR_PLAN",arch,{},plan_id="P1")["elements"]
+    opening=next(e for e in elements if e["id"]=="OP-1")
+    assert opening["required_dofs"]==["POSITION","SIZE"]
+    gen=generate_setout_candidates([opening],model,"ARCHITECTURAL_FLOOR_PLAN")
+    assert any(r["purpose"]=="OPENING_SIZE" and r["constraint_dof"]=="SIZE" for r in gen["intents"])
+
+
+def test_rectangular_shaft_requires_location_and_two_size_dimensions():
+    arch=_arch_rect()
+    model=build_reference_model_v2(_doc(),(0,0,10,8),arch,"P1")
+    elements=collect_profile_elements("ARCHITECTURAL_FLOOR_PLAN",arch,{},plan_id="P1")["elements"]
+    shaft=next(e for e in elements if e["id"]=="SH-1")
+    assert shaft["geometry_kind"]=="RECT"
+    assert shaft["required_dofs"]==["LOC_0","LOC_1","SIZE_0","SIZE_1"]
+    gen=generate_setout_candidates([shaft],model,"ARCHITECTURAL_FLOOR_PLAN")
+    dofs={r["constraint_dof"] for r in gen["intents"]}
+    assert {"SIZE_0","SIZE_1"}<=dofs
+
+
+def test_profile_reconciliation_suppresses_nonvisible_wall_dimensions_without_deleting_evidence():
+    src={"records":[{"id":"S1","semantic_type":"WALL_SETOUT","critical":False,"measured_value_m":2.0,
+                      "source_display_text":"2.00","reference_a":{"id":"A"},"reference_b":{"id":"B"}}]}
+    out=reconcile_source_dimensions(src,[],profile="MECHANICAL_PLAN")
+    assert out["rows"][0]["status"]=="SUPPRESSED_IN_VIEW"
+    assert out["status"]=="PASS"
