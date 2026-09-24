@@ -617,6 +617,74 @@ def determinacy_intents(targets, refs, local_axis):
     return intents, missing
 
 
+
+def governed_requirement_intents(requirements, refs, plan_id):
+    """Convert explicit rule/compliance dimension requirements into intents.
+
+    Regulatory clearances are never inferred from a visually similar gap. The
+    upstream rule authority must provide a Rule ID, two stable semantic
+    references and actual geometry. The dimension displays the actual designed
+    clearance; the minimum is validation evidence only.
+    """
+    intents=[];errors=[]
+    ref_by_id={str(ref.get("id")):ref for ref in refs or [] if ref.get("id")}
+    allowed={"CODE_CLEARANCE","OPENING","SETOUT","CHECK"}
+    for index,row in enumerate(requirements or []):
+        if not isinstance(row,dict):
+            errors.append({"id":f"REQ-{index}","reason":"INVALID_REQUIREMENT"})
+            continue
+        if row.get("plan_id") not in (None,plan_id):
+            continue
+        req_id=str(row.get("id") or f"REQ-{index:04d}")
+        purpose=str(row.get("purpose") or "").upper()
+        rule_id=str(row.get("rule_id") or "")
+        if purpose not in allowed:
+            errors.append({"id":req_id,"reason":"UNSUPPORTED_DIMENSION_PURPOSE"})
+            continue
+        if purpose=="CODE_CLEARANCE" and not rule_id:
+            errors.append({"id":req_id,"reason":"CODE_CLEARANCE_RULE_ID_REQUIRED"})
+            continue
+        try:
+            p1=tuple(map(float,row["p1"][:2]));p2=tuple(map(float,row["p2"][:2]))
+        except Exception:
+            errors.append({"id":req_id,"reason":"REQUIREMENT_GEOMETRY_REQUIRED"})
+            continue
+        ref_a_id=str(row.get("reference_a_id") or "")
+        ref_b_id=str(row.get("reference_b_id") or "")
+        ref_a=ref_by_id.get(ref_a_id);ref_b=ref_by_id.get(ref_b_id)
+        if not ref_a or not ref_b:
+            errors.append({"id":req_id,"reason":"STABLE_REFERENCE_PAIR_REQUIRED"})
+            continue
+        measured=math.dist(p1,p2)
+        minimum=row.get("minimum_value")
+        if minimum is not None:
+            try:minimum=float(minimum)
+            except Exception:
+                errors.append({"id":req_id,"reason":"INVALID_MINIMUM_VALUE"})
+                continue
+            if measured+1e-9<minimum:
+                errors.append({"id":req_id,"reason":"CODE_CLEARANCE_NOT_SATISFIED","actual":measured,"minimum":minimum,"rule_id":rule_id})
+                continue
+        intents.append({
+            "id":"REQ-"+req_id,
+            "purpose":purpose,
+            "source_kind":"GOVERNED_REQUIREMENT",
+            "governance_rule_id":rule_id,
+            "reference_a":ref_a,
+            "reference_b":ref_b,
+            "world_p1":p1,
+            "world_p2":p2,
+            "world_base":tuple(row.get("base")) if row.get("base") else None,
+            "measured_value":measured,
+            "displayed_value":_display_number(measured),
+            "minimum_value":minimum,
+            "required":bool(row.get("required",True)),
+            "priority":int(row.get("priority",95)),
+            "placement_zone":"LOCAL",
+            "angle_deg":math.degrees(_line_angle(p1,p2)),
+        })
+    return intents,errors
+
 def select_minimal_dimension_set(intents):
     """Remove exact semantic duplicates while preserving required check intent."""
     selected=[];seen=set()
@@ -801,6 +869,7 @@ def materialize_dimension_intents(doc, msp, placed_intents):
             engineering_value_m=intent.get("engineering_value_m")
             effective_scale_to_m=intent.get("effective_scale_to_m")
             unit_source=str(intent.get("unit_evidence_source") or "")
+            governance_rule_id=str(intent.get("governance_rule_id") or "")
             trace_data=[
                 (1000,marker),
                 (1000,str(intent["id"])),
@@ -809,6 +878,7 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 (1000,reference_a_id),
                 (1000,reference_b_id),
                 (1000,unit_source),
+                (1000,governance_rule_id),
                 (1040,measured_value),
             ]
             if engineering_value_m is not None:
@@ -825,6 +895,7 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 "engineering_value_m": engineering_value_m,
                 "effective_scale_to_m": effective_scale_to_m,
                 "unit_evidence_source": unit_source,
+                "governance_rule_id": governance_rule_id,
                 "reference_a_id": reference_a_id,
                 "reference_b_id": reference_b_id,
                 "purpose": intent["purpose"],
@@ -860,13 +931,16 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
     source_intents = source_dimension_intents(registry, profile)
     targets = collect_mechanical_targets(pipeline, plan_id)
     generated_intents, missing = determinacy_intents(targets, refs, axis)
+    governed_intents, governed_errors = governed_requirement_intents(
+        pipeline.get("dimension_requirements") or [], refs, plan_id
+    )
     effective_scale=(registry.get("unit_evidence") or {}).get("effective_scale_to_m")
     unit_source=(registry.get("unit_evidence") or {}).get("source")
-    for intent in generated_intents:
+    for intent in generated_intents + governed_intents:
         intent["effective_scale_to_m"]=effective_scale
         intent["unit_evidence_source"]=unit_source
         intent["engineering_value_m"]=(intent["measured_value"]*effective_scale if effective_scale is not None else None)
-    all_intents = select_minimal_dimension_set(source_intents + generated_intents)
+    all_intents = select_minimal_dimension_set(source_intents + generated_intents + governed_intents)
     placed, collisions = place_intents(all_intents, source_bounds, board)
     materialized = materialize_dimension_intents(doc, msp, placed)
 
@@ -891,6 +965,8 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         errors.append("DIMENSION_TEXT_COLLISION")
     if critical_conflicts:
         errors.append("CRITICAL_SOURCE_DIMENSION_CONFLICT")
+    if governed_errors:
+        errors.append("GOVERNED_DIMENSION_REQUIREMENT_INVALID")
     if all_intents and effective_scale is None:
         errors.append("DIMENSION_UNIT_BASIS_REQUIRED")
 
@@ -902,6 +978,8 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         "source_visible_count": len(source_intents),
         "mechanical_target_count": len(targets),
         "mechanical_setout_intent_count": len(generated_intents),
+        "governed_requirement_intent_count": len(governed_intents),
+        "governed_requirement_errors": governed_errors,
         "intent_count": len(all_intents),
         "materialized": materialized,
         "missing_determinacy": missing,
@@ -959,12 +1037,14 @@ def validate_exact_file_dimensions(path, compose_report):
             strings=[value for code,value in trace if code==1000]
             doubles=[float(value) for code,value in trace if code==1040]
             expected_marker="SOURCE_DIMENSION" if item.get("source_kind")=="SOURCE_REGENERATED" else "SEMANTIC_DIMENSION"
-            if len(strings)<7 or strings[0]!=expected_marker or strings[1]!=str(item["intent_id"]):
+            if len(strings)<8 or strings[0]!=expected_marker or strings[1]!=str(item["intent_id"]):
                 sheet_errors.append("DIMENSION_TRACEABILITY_MISSING:" + item["intent_id"])
             elif strings[4]!=str(item.get("reference_a_id") or "") or strings[5]!=str(item.get("reference_b_id") or ""):
                 sheet_errors.append("DIMENSION_REFERENCE_ID_CHANGED:" + item["intent_id"])
             elif strings[6]!=str(item.get("unit_evidence_source") or ""):
                 sheet_errors.append("DIMENSION_UNIT_EVIDENCE_CHANGED:" + item["intent_id"])
+            elif strings[7]!=str(item.get("governance_rule_id") or ""):
+                sheet_errors.append("DIMENSION_RULE_ID_CHANGED:" + item["intent_id"])
             if not doubles or abs(doubles[0]-float(item.get("measured_value") or 0.0))>1e-9:
                 sheet_errors.append("DIMENSION_ENGINEERING_VALUE_CHANGED:" + item["intent_id"])
             expected_m=item.get("engineering_value_m")
