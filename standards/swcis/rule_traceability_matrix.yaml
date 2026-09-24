@@ -1029,7 +1029,9 @@
         "full-plan determinacy report",
         "source/geometry/Planha reconciliation report",
         "v1-v2 shadow comparison",
-        "construction determinacy QA report"
+        "construction determinacy QA report",
+        "v2 composed-package sidecar exact-file report",
+        "v1-v2 promotion cohort report"
       ],
       "qa_rules": [
         "source_dimension_evidence_preserved",
@@ -1059,7 +1061,15 @@
         "over_dimensioning_detection",
         "professional_dimension_placement",
         "ambiguous_import_human_review",
-        "shadow_mode_before_promotion"
+        "shadow_mode_before_promotion",
+        "composed_package_shadow_exact_file_sidecar",
+        "issued_package_immutable_during_shadow_validation",
+        "promotion_zero_p0_p1_defects",
+        "promotion_zero_unresolved_placement",
+        "promotion_zero_source_review_blockers",
+        "safe_duplicate_cleanup_informational_only",
+        "host_extension_exit_not_false_collision",
+        "clean_orthogonal_semantic_corner_not_false_collision"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",

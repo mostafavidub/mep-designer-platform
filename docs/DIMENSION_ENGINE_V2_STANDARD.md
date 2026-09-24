@@ -200,3 +200,21 @@ Promotion to visible v2 output requires:
 6. owner-approved staging test after implementation closure.
 
 Production deployment remains separately owner-approved.
+
+
+## 18. Closure and promotion evidence
+
+The v2 implementation is closed by two different exact-file proofs:
+
+1. a synthetic promotion candidate that runs the complete shadow pipeline, materializes the selected v2 intent network, saves DXF, reopens it and validates intent/reference/rule/datum/value XData; and
+2. a composed-package sidecar that reopens the actual Planha output package, materializes only QA-clean v2 shadow reports into a temporary copy, saves/reopens that copy, and proves the original issued package remains byte-identical.
+
+The promotion cohort is not approved by dimension count. `build_dimension_promotion_report()` returns `PROMOTION_CANDIDATE` only when every included report has QA PASS, zero P0/P1 determinacy defects, zero unresolved placement, zero source-reconciliation review blockers and `visible_output_changed=false`.
+
+The six private-reference benchmark remains comparison-only. Aggregate evidence is 835 source dimensions (810 linear/rotated, 25 aligned), 34 explicit overrides (16 numeric, 18 non-numeric) and 7 zero-measurement dimensions. Conservative safe binding is 423/835; counting unresolved wall candidates only as potential evidence raises it to 530/835. These rates justify fail-closed human checkpoints and do not create generation defaults.
+
+Implementation head `9b585e669db1a2ccf1d5ab71ec0fc12aa26a1a84` passed all 12 required PR workflows before this closure-only evidence commit.
+
+## 19. Release boundary
+
+Dimension Engine v2 remains shadow-first. A staging deployment may validate runtime/report behavior without replacing visible v1 dimensions. Promotion of visible v2 output is a separate controlled decision after user/engineer staging review. Production remains independently owner-approved.

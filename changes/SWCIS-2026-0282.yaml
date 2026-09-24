@@ -2,12 +2,41 @@
   "change_id": "SWCIS-2026-0282",
   "summary": "Build Planha Dimension Engine v2 with Building Reference Model v2, full-plan determinacy, profile policies, source reconciliation, semantic redundancy optimization, professional placement, construction-determinacy QA, shadow mode and reference benchmarking.",
   "requester": "mostafavidub",
-  "change_types": ["rule","drawing_output","test","documentation","governance","versioning","migration","ui_api"],
-  "changed_rule_ids": ["MEP-DIM-001","MEP-ARCH-PRESERVE-001","MEP-CONSTRUCT-001","MEP-VISUAL-QA-001"],
+  "change_types": [
+    "rule",
+    "drawing_output",
+    "test",
+    "documentation",
+    "governance",
+    "versioning",
+    "migration",
+    "ui_api"
+  ],
+  "changed_rule_ids": [
+    "MEP-DIM-001",
+    "MEP-ARCH-PRESERVE-001",
+    "MEP-CONSTRUCT-001",
+    "MEP-VISUAL-QA-001"
+  ],
   "impacted_modules": [
-    "rule_book","pmm","questionnaire","planner","cad_designer","routing","sizing","equipment",
-    "manufacturer_selector","detail_riser","qa","manifest","ui_api","docs","versioning",
-    "migration","governance","deployment"
+    "rule_book",
+    "pmm",
+    "questionnaire",
+    "planner",
+    "cad_designer",
+    "routing",
+    "sizing",
+    "equipment",
+    "manufacturer_selector",
+    "detail_riser",
+    "qa",
+    "manifest",
+    "ui_api",
+    "docs",
+    "versioning",
+    "migration",
+    "governance",
+    "deployment"
   ],
   "impact_notes": {
     "rule_book": "MEP-DIM-001 is extended from point-level Mechanical semantic set-out to shared v2 reference, determinacy, reconciliation, profile and constructability contracts without weakening v1 invariants.",
@@ -35,26 +64,64 @@
       "final engineering geometry -> Dimension Requirement Engine -> Determinacy Graph -> intents -> renderer; dimensioning never routes/sizes"
     ],
     "tests": [
-      "planned: preserve all tests/test_semantic_dimension_engine.py v1 invariants",
-      "planned: v2 ontology/reference/envelope/determinacy/profile/reconciliation/redundancy/placement/QA synthetic destructive corpus"
+      "tests/test_semantic_dimension_engine.py preserves the complete locked MEP-DIM-001 v1 baseline.",
+      "tests/test_dimension_engine_v2.py covers ontology, stable semantic references, human checkpoints, semantic envelope, DOF-aware determinacy, drawing profiles, source reconciliation, role-aware redundancy, professional placement, governed clearance failure, exact-file identity, promotion gating and destructive cases.",
+      "test_shadow_candidate_materializes_and_reopens_exact_file_end_to_end: PASS — a QA-clean shadow network materializes to DXF and reopens with semantic identity preserved.",
+      "test_composed_package_sidecar_exact_file_qa_is_immutable: PASS — v2 is materialized/reopened on a temporary copy of a composed Planha package while the issued package remains byte-identical.",
+      "test_promotion_report_requires_zero_p0_p1_placement_and_source_review: PASS — promotion is blocked by any P0/P1 determinacy defect, unresolved placement or source review."
     ],
-    "docs": ["planned: docs/DIMENSION_ENGINE_V2_STANDARD.md"],
-    "version_bump": ["planned: SWCIS 4.39.0 -> 4.40.0"],
-    "migration": ["additive/shadow-first; no persisted schema or customer-data migration"],
+    "docs": [
+      "docs/DIMENSION_ENGINE_V2_STANDARD.md",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+    ],
+    "version_bump": [
+      "SWCIS 4.39.0 -> 4.40.0 complete"
+    ],
+    "migration": [
+      "additive/shadow-first; no persisted schema or customer-data migration"
+    ],
     "golden_regression": [
-      "freeze current v1 semantic-dimension baseline before behavior promotion",
-      "private six-DXF corpus remains benchmark-only; synthetic/anonymized fixtures are committed instead"
+      "standards/golden/dimension-engine-v1.baseline.json freezes the protected v1 contract at merged baseline d2355876efa7934a09cfbec855e7505a2f9c7519.",
+      "standards/test-suites/dimension-v2-regression.json locks the 25-scenario project-agnostic synthetic corpus.",
+      "standards/golden/dimension-v2-private-reference-benchmark.json records anonymized comparison-only evidence from six private architectural DXFs; private binaries and filenames are not committed.",
+      "Implementation head 9b585e669db1a2ccf1d5ab71ec0fc12aa26a1a84 passed all 12 PR workflows before closure-only documentation changes."
     ],
     "semantic_diff": [
-      "dimension completeness changes from point set-out sufficiency to profile-aware full construction determinacy",
-      "references change from mostly geometric candidates to stable semantic subfeatures with evidence/confidence",
-      "redundancy becomes role-aware so intentional CHECK dimensions survive"
+      "Dimension completeness changes from point set-out sufficiency to profile-aware DOF construction determinacy.",
+      "Point targets require independent LOC_0/LOC_1 constraints unless explicitly hosted; line elements prove OFFSET/START/END; rectangular shaft/stair/structure geometry can prove LOC_0/LOC_1/SIZE_0/SIZE_1.",
+      "References change from mostly geometric candidates to stable semantic subfeatures with evidence, confidence, datum class and local-axis context.",
+      "Wall finish/core/structural/centerline basis is an explicit human checkpoint; ambiguous wall-face authority is never guessed.",
+      "Building overall derives from semantic envelope faces; a raw drawing bounding box is not envelope authority.",
+      "Openings separate jamb-to-jamb SIZE from POSITION/OFFSET.",
+      "Source dimensions are reconciled as VERIFIED/REGENERATED/PRESERVED_AS_EVIDENCE/SUPPRESSED_IN_VIEW/CONFLICT/UNKNOWN; historical clearance recurrence never becomes code authority.",
+      "Redundancy is role-aware: exact SETOUT duplicates are removed informationally while intentional CHECK dimensions survive.",
+      "Placement distinguishes true collisions from legitimate host-bound extension exits and clean orthogonal semantic dimension corners."
     ],
-    "artifact_diff": ["v2 initially emits shadow reports; visible dimension replacement occurs only after v1-v2 parity/quality gates pass"],
-    "numeric_diff": ["no benchmark-derived numeric engineering defaults; unit and code minima retain explicit authority/provenance"],
-    "contract_diff": ["new v2 ontology/reference/determinacy/reconciliation/profile/placement/QA contracts extend MEP-DIM-001"],
-    "deployment_plan": ["do not deploy during implementation; present staging test plan after merge-ready closure"],
-    "rollback_plan": ["revert protected merge; v1 baseline remains available; no destructive migration"]
+    "artifact_diff": [
+      "Visible runtime remains v1 during shadow mode; dimensioning_v2_shadow is additive report evidence.",
+      "QA-clean v2 shadow intents can be materialized only into a controlled candidate copy for exact-file validation.",
+      "The composed/issued package is byte-immutable during v2 sidecar validation."
+    ],
+    "numeric_diff": [
+      "Six-DXF aggregate comparison reproduced 835 source dimensions = 810 linear/rotated + 25 aligned; 34 explicit overrides = 16 numeric + 18 non-numeric; 7 zero-measurement dimensions.",
+      "All six references declare $INSUNITS=4 while dimension plausibility resolves effective metre scale with high confidence.",
+      "Conservative safe semantic binding is 423/835 (50.66%); potential binding including unresolved wall candidates is 530/835 (63.47%). Ambiguity remains review evidence, not a heuristic default.",
+      "No benchmark-derived engineering number or code minimum is used by generation."
+    ],
+    "contract_diff": [
+      "MEP-DIM-001 now governs Dimension Intent ontology, Building Reference Model v2, semantic envelope authority, DOF determinacy, drawing-profile requirements, source reconciliation, SETOUT/CHECK optimization, professional placement, exact-file sidecar QA and promotion gating.",
+      "Construction determinacy, not DIMENSION entity count, is the acceptance authority.",
+      "Shadow promotion requires QA PASS, zero unresolved P0/P1 determinacy defects, zero unresolved placement, zero source-review blockers and no visible-output mutation."
+    ],
+    "deployment_plan": [
+      "After final closure CI, deploy the validated PR head to the dedicated staging project only and verify https://stage.planha.com plus /system_health.",
+      "Do not merge to main in this task without separate production approval because Railway production auto-deploys main."
+    ],
+    "rollback_plan": [
+      "Staging: restore the backup staging branch/ref and redeploy the prior validated staging commit.",
+      "Code: revert the Dimension Engine v2 PR; v1 remains the protected visible baseline because v2 is shadow-first.",
+      "No destructive database or customer-data migration exists."
+    ]
   },
   "risk": {
     "likelihood": 3,

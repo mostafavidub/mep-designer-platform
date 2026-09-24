@@ -660,7 +660,14 @@
         "construction_determinacy_gate",
         "datum_class_chain_closure",
         "synthetic_25_scenario_regression",
-        "shadow_v1_v2_comparison"
+        "shadow_v1_v2_comparison",
+        "composed_package_shadow_exact_file_sidecar",
+        "shadow_validation_does_not_mutate_issued_package",
+        "promotion_requires_zero_p0_p1_determinacy_defects",
+        "promotion_requires_zero_unresolved_placement",
+        "promotion_requires_zero_source_review_blockers",
+        "host_bound_extension_line_collision_policy",
+        "clean_orthogonal_semantic_dimension_corner_policy"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -681,7 +688,15 @@
         "test_intentional_check_survives_minimum_solver_even_when_redundant",
         "test_source_reconciliation_distinguishes_verified_conflict_and_unknown",
         "test_chain_closure_never_mixes_grid_and_envelope_datum_classes",
-        "test_shadow_engine_does_not_change_visible_output_and_resolves_mm_header_metre_geometry"
+        "test_shadow_engine_does_not_change_visible_output_and_resolves_mm_header_metre_geometry",
+        "test_shadow_candidate_materializes_and_reopens_exact_file_end_to_end",
+        "test_composed_package_sidecar_exact_file_qa_is_immutable",
+        "test_promotion_report_requires_zero_p0_p1_placement_and_source_review",
+        "test_extension_line_may_leave_host_obstacle_but_dimension_line_may_not_cross_it",
+        "test_orthogonal_coordinate_setout_for_same_target_is_clean_not_collision",
+        "test_exact_duplicate_cleanup_is_informational_not_human_review",
+        "test_opening_requires_size_and_position_and_uses_distinct_jamb_references",
+        "test_rectangular_shaft_requires_location_and_two_size_dimensions"
       ]
     }
   ]
