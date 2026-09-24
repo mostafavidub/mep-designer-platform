@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.39.0
+**Canonical version:** 4.39.1
 
 **Status:** LOCKED
 
@@ -203,6 +203,10 @@ Only an immutable 100/100 basis permits a Submission Ready claim.
 
 CODEOWNERS provides the repository-level owner mapping. At the sole owner's explicit request on 2026-09-08, this single-owner repository accepts the owner's recorded release approval instead of an independent pull-request approval. This fulfils owner review in the workflow above; an additional person is not mandatory. Keep pull requests and mandatory `swcis-governance` checks, no force pushes, no branch deletion and no administrator bypass. This does not waive engineering evidence, failing tests, golden/E2E checks or waiver restrictions. CI configuration alone cannot enable branch protection.
 
+
+## Staging canonical-origin governance
+
+The dedicated Railway staging project `mep-designer-platform-staging` has one user-facing origin: `https://stage.planha.com`. Railway `*.up.railway.app` hostnames are technical-only and must never be presented as the staging URL. Staging runtime must fail closed when `PUBLIC_SITE_URL` or `PANEL_PUBLIC_URL` differs from `https://stage.planha.com`. The staging technical hostname redirects to the canonical staging host, and staging remains noindex.
 
 ## Semantic dimension governance
 

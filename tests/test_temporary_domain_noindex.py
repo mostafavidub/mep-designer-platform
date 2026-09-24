@@ -2,13 +2,36 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from app.main_health import app
+from app.main_health import app, _validate_staging_public_origin
 
 
 class TemporaryDomainRedirectTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.client = TestClient(app)
+
+    def test_staging_project_accepts_only_stage_planha_public_origins(self):
+        _validate_staging_public_origin(
+            'mep-designer-platform-staging',
+            'https://stage.planha.com',
+            'https://stage.planha.com',
+        )
+
+    def test_staging_project_rejects_wrong_public_site_url(self):
+        with self.assertRaisesRegex(RuntimeError, 'STAGING_PUBLIC_SITE_URL_MISMATCH'):
+            _validate_staging_public_origin(
+                'mep-designer-platform-staging',
+                'https://web-app-staging-production.up.railway.app',
+                'https://stage.planha.com',
+            )
+
+    def test_staging_project_rejects_wrong_panel_public_url(self):
+        with self.assertRaisesRegex(RuntimeError, 'STAGING_PANEL_PUBLIC_URL_MISMATCH'):
+            _validate_staging_public_origin(
+                'mep-designer-platform-staging',
+                'https://stage.planha.com',
+                'https://web-app-staging-production.up.railway.app',
+            )
 
     def test_railway_hostname_redirects_to_planha(self):
         response = self.client.get(
