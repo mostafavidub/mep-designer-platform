@@ -1,0 +1,62 @@
+{
+  "change_id": "SWCIS-2026-0281",
+  "summary": "Lock Planha staging to https://stage.planha.com and prevent Railway technical hostnames from becoming user-facing staging links.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "governance", "deployment", "test", "documentation", "versioning"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "versioning", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "Staging runtime validates its canonical public origin and redirects the Railway technical hostname to stage.planha.com.",
+    "qa": "Adds positive and destructive tests for staging canonical URL enforcement, technical-host redirects, and noindex behavior.",
+    "docs": "Records stage.planha.com as the sole shareable staging origin.",
+    "versioning": "Patch-bump SWCIS because deployment guard behavior is strengthened without changing engineering semantics.",
+    "governance": "Adds an explicit fail-closed deployment-origin contract for the dedicated staging Railway project.",
+    "deployment": "Staging service must use PUBLIC_SITE_URL and PANEL_PUBLIC_URL = https://stage.planha.com; Railway *.up.railway.app remains technical-only."
+  },
+  "evidence": {
+    "traceability": [
+      "Railway staging project identity -> staging canonical origin validation -> redirect/noindex middleware -> /system_health deployment identity -> staging-domain tests"
+    ],
+    "tests": [
+      "planned: tests/test_temporary_domain_noindex.py staging canonical-origin positive/destructive coverage"
+    ],
+    "docs": [
+      "planned: docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md staging deployment-origin contract"
+    ],
+    "version_bump": [
+      "planned: SWCIS 4.39.0 -> 4.39.1"
+    ],
+    "migration": [
+      "Runtime environment already migrated: PUBLIC_SITE_URL and PANEL_PUBLIC_URL set to https://stage.planha.com on web-app-staging"
+    ],
+    "golden_regression": [
+      "not affected: engineering artifact semantics and golden drawing baselines are unchanged"
+    ],
+    "semantic_diff": [
+      "Staging public-link authority changes from host discovery/Railway technical domain to explicit stage.planha.com"
+    ],
+    "artifact_diff": [
+      "not affected: no Mechanical drawing artifact changes"
+    ],
+    "numeric_diff": [
+      "not affected"
+    ],
+    "contract_diff": [
+      "Dedicated staging runtime fails closed if configured public/panel origin differs from https://stage.planha.com"
+    ],
+    "deployment_plan": [
+      "Merge after all checks pass; redeploy staging only; production project remains unchanged"
+    ],
+    "rollback_plan": [
+      "Revert merge commit; restore prior staging variables if necessary. No database migration."
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "Low-risk deployment safety guard. Misconfiguration becomes immediately visible through startup/health failure instead of silently surfacing a wrong user-facing link."
+  },
+  "waiver": null
+}
