@@ -81,13 +81,14 @@
     "golden_regression": [
       "standards/golden/mechanical-steps-14-19.baseline.json includes dimension_semantics=PASS",
       "project-agnostic synthetic dimension regressions passed; private source drawings remain comparison-only and are not committed",
-      "aggregate private-reference benchmark rechecked 6 architectural DXFs: 835 dimensions total = 810 linear/rotated + 25 aligned; 34 explicit text overrides and 7 zero-measurement dimensions"
+      "aggregate private-reference benchmark rechecked 6 architectural DXFs: 835 dimensions total = 810 linear/rotated + 25 aligned; 34 explicit text overrides and 7 zero-measurement dimensions; source type split 810 linear/rotated + 25 aligned is now explicitly covered by registry evidence"
     ],
     "semantic_diff": [
       "source dimensions become immutable semantic evidence with measured/displayed separation, unit evidence and conflict status",
       "Mechanical plans add only reference-bound set-out for construction-critical targets; routing/sizing authority is unchanged",
       "code/regulatory clearances are accepted only as explicit governed requirements with Rule ID, stable references and canonical metre minimums; no visual inference",
-      "count-only DIMENSION acceptance is removed as engineering authority"
+      "count-only DIMENSION acceptance is removed as engineering authority",
+      "source registry preserves raw/base DIMTYPE, source dimension family and source orientation/angle; Planha may standardize rendered entity type without losing consultant evidence"
     ],
     "artifact_diff": [
       "applicable plan boards gain Planha-owned SOURCE/SETOUT dimensions with XData intent/reference/value identity",
