@@ -28,7 +28,12 @@
     "governance",
     "deployment",
     "migration",
-    "ui_api"
+    "ui_api",
+    "equipment",
+    "manufacturer_selector",
+    "questionnaire",
+    "routing",
+    "sizing"
   ],
   "impact_notes": {
     "rule_book": "Strengthen MEP-DIM-001 from source-preserving point set-out to professional context dimension generation and architecture-aware placement.",
@@ -43,7 +48,12 @@
     "governance": "Add benchmark-derived capability evidence without making private reference values hidden defaults.",
     "deployment": "No staging/production deployment in this change.",
     "migration": "No persisted schema/data migration; regeneration of drawing artifacts only.",
-    "ui_api": "No public request/response contract change; UI/API closure remains regression-tested because CAD output behavior changes."
+    "ui_api": "No public request/response contract change; UI/API closure remains regression-tested because CAD output behavior changes.",
+    "equipment": "Verified downstream only: equipment points may be dimension targets; equipment selection/capacity/placement authority is unchanged.",
+    "manufacturer_selector": "Verified not affected semantically: catalogue/manufacturer selection remains upstream and unchanged.",
+    "questionnaire": "Verified not affected: no new user question or design-basis fact is required; unresolved unit/reference evidence fails closed rather than asking hidden questions.",
+    "routing": "Verified not affected: dimension generation remains downstream of final authoritative routing and cannot mutate route topology.",
+    "sizing": "Verified not affected: dimension generation consumes final geometry and never changes hydraulic/HVAC/gas sizing or calculation rows."
   },
   "evidence": {
     "traceability": [
