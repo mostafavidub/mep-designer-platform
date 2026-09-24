@@ -82,7 +82,8 @@
         "cad_engine/project_hvac.py",
         "cad_engine/architecture_reconstruction.py",
         "app/dxf_output.py",
-        "cad_engine/semantic_dimension_engine.py"
+        "cad_engine/semantic_dimension_engine.py",
+        "cad_engine/dimension_*.py"
       ],
       "depends_on": [
         "planner"
