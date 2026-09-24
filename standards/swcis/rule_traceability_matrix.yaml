@@ -1025,7 +1025,10 @@
         "exact_file_dimension_identity",
         "dimension_count_not_authority",
         "unit_metadata_geometry_reconciliation",
-        "canonical_metre_value_traceability"
+        "canonical_metre_value_traceability",
+        "governed_requirement_rule_identity",
+        "code_clearance_canonical_minimum",
+        "code_clearance_actual_geometry_compliance"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",
