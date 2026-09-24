@@ -115,7 +115,7 @@ The benchmark exposed five implementation defects that are corrected by SWCIS-20
 | Adjacent Grid chains | common | Aligned for proven axes |
 | Partial-chain completion | common need | Aligned |
 | Shaft/Core local sizing | common | Aligned when semantic geometry is proven |
-| Rotated building context | geometry-driven | Aligned for proven envelope faces |
+| Rotated building context | geometry-driven | Aligned for proven envelope faces and tiered along local outward normals |
 | Collision-aware dimension text | visually coordinated | Improved; text/symbol obstacles enforced |
 | Full architectural partition graph | rich and project-specific | Not yet complete |
 | Intentional closure/check graph | present in professional drawings | Partial |
