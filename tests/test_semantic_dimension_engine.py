@@ -73,6 +73,21 @@ def test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric
     assert row["conflict"] is None
 
 
+def test_source_registry_preserves_linear_and_aligned_dimension_type_orientation():
+    doc=_source_doc()
+    _add_dim(doc,(0,0),(10,0),(5,.5),"10.00")
+    aligned=doc.modelspace().add_aligned_dim(p1=(0,0),p2=(3,4),distance=.8)
+    aligned.render()
+    registry=extract_source_dimension_registry(doc,(0,0,10,8),architecture={},plan_id="P1")
+    kinds={row["source_dimension_kind"] for row in registry["records"]}
+    assert "LINEAR_ROTATED" in kinds
+    assert "ALIGNED" in kinds
+    aligned_row=next(row for row in registry["records"] if row["source_dimension_kind"]=="ALIGNED")
+    assert aligned_row["source_dimtype_base"]==1
+    assert aligned_row["source_orientation"]=="ALIGNED"
+    assert abs(aligned_row["source_angle_deg"]-53.1301023542)<1e-6
+
+
 def test_registry_can_derive_simple_plan_bounds_without_trusting_units():
     doc=_source_doc();msp=doc.modelspace()
     msp.add_line((0,0),(10,0),dxfattribs={"layer":"WALL"})
