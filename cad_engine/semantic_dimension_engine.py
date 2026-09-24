@@ -143,8 +143,8 @@ def _display_number(value):
     if value is None:
         return ""
     value = float(value)
-    # Source drawings reviewed for Planha overwhelmingly use two-decimal
-    # architectural dimensions; integer millimetre-like values remain integers.
+    # Planha presentation convention only: formatting never changes the
+    # engineering measurement. This is not inferred from the reference corpus.
     if abs(value) >= 100 and abs(value - round(value)) < 1e-7:
         return str(int(round(value)))
     return f"{value:.2f}"
@@ -361,6 +361,8 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
         bind_a = _nearest_reference(p1, refs, bind_tol)
         bind_b = _nearest_reference(p2, refs, bind_tol)
         semantic = _semantic_type(p1, p2, measured, bind_a, bind_b, plan_bounds)
+        if override_status=="NON_NUMERIC_OVERRIDE" and semantic in CRITICAL_SOURCE_TYPES:
+            conflict_reason = "NON_NUMERIC_CRITICAL_OVERRIDE"
         if conflict_reason and semantic in CRITICAL_SOURCE_TYPES:
             preservation = "FLAG_CONFLICT"
         elif semantic in CRITICAL_SOURCE_TYPES:
@@ -425,6 +427,10 @@ def source_dimension_intents(registry, profile):
     intents = []
     for row in registry.get("records") or []:
         if row.get("conflict") and row.get("critical"):
+            continue
+        if row.get("override_status")=="NON_NUMERIC_OVERRIDE":
+            # Preserve consultant drafting text as source evidence. Never turn
+            # non-numeric content such as "20-30" into a fabricated measurement.
             continue
         if row.get("semantic_type") not in visible:
             continue
@@ -730,17 +736,26 @@ def materialize_dimension_intents(doc, msp, placed_intents):
             dim.render()
             entity = dim.dimension
             marker="SOURCE_DIMENSION" if intent.get("source_kind")=="SOURCE_REGENERATED" else "SEMANTIC_DIMENSION"
+            reference_a_id=str((intent.get("reference_a") or {}).get("id") or "")
+            reference_b_id=str((intent.get("reference_b") or {}).get("id") or "")
+            measured_value=float(intent.get("measured_value") or 0.0)
             entity.set_xdata(APPID,[
                 (1000,marker),
                 (1000,str(intent["id"])),
                 (1000,str(intent.get("purpose") or "")),
                 (1000,str(intent.get("mechanical_target_id") or intent.get("source_dimension_id") or "")),
+                (1000,reference_a_id),
+                (1000,reference_b_id),
+                (1040,measured_value),
             ])
             rows.append({
                 "intent_id": intent["id"],
                 "handle": str(getattr(entity.dxf, "handle", "") or ""),
                 "layer": layer,
                 "displayed_value": str(intent["displayed_value"]),
+                "measured_value": measured_value,
+                "reference_a_id": reference_a_id,
+                "reference_b_id": reference_b_id,
                 "purpose": intent["purpose"],
                 "source_kind": intent["source_kind"],
                 "required": bool(intent.get("required")),
@@ -858,6 +873,19 @@ def validate_exact_file_dimensions(path, compose_report):
             actual_text = str(getattr(entity.dxf, "text", "") or "")
             if actual_text != str(item.get("displayed_value") or ""):
                 sheet_errors.append("DIMENSION_DISPLAY_CHANGED:" + item["intent_id"])
+            try:
+                trace=entity.get_xdata(APPID)
+            except Exception:
+                trace=[]
+            strings=[value for code,value in trace if code==1000]
+            doubles=[float(value) for code,value in trace if code==1040]
+            expected_marker="SOURCE_DIMENSION" if item.get("source_kind")=="SOURCE_REGENERATED" else "SEMANTIC_DIMENSION"
+            if len(strings)<6 or strings[0]!=expected_marker or strings[1]!=str(item["intent_id"]):
+                sheet_errors.append("DIMENSION_TRACEABILITY_MISSING:" + item["intent_id"])
+            elif strings[4]!=str(item.get("reference_a_id") or "") or strings[5]!=str(item.get("reference_b_id") or ""):
+                sheet_errors.append("DIMENSION_REFERENCE_ID_CHANGED:" + item["intent_id"])
+            if not doubles or abs(doubles[0]-float(item.get("measured_value") or 0.0))>1e-9:
+                sheet_errors.append("DIMENSION_ENGINEERING_VALUE_CHANGED:" + item["intent_id"])
         per_sheet[sheet] = {
             "status": "PASS" if not sheet_errors else "FAIL",
             "errors": sorted(set(sheet_errors)),
