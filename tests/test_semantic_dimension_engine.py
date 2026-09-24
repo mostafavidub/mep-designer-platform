@@ -157,6 +157,21 @@ def test_target_on_one_datum_uses_implicit_constraint_and_only_one_displayed_dim
     assert intents[0]["purpose"]=="SETOUT"
 
 
+def test_reference_catalog_prefers_explicit_semantic_grid_stair_and_opening_geometry():
+    doc=_source_doc()
+    architecture={
+        "grids":[{"plan_id":"P1","start":(2,0),"end":(2,8)}],
+        "stairs":[{"plan_id":"P1","bounds":[4,2,6,5]}],
+        "openings":[{"plan_id":"P1","start":(7,0),"end":(7,1)}],
+    }
+    refs=build_reference_catalog(doc,(0,0,10,8),architecture=architecture,plan_id="P1")
+    kinds={row["kind"] for row in refs}
+    assert "GRID_AXIS" in kinds
+    assert "STAIR_CORE_FACE" in kinds
+    assert "OPENING_JAMB" in kinds
+    assert any(row.get("source")=="semantic_geometry" for row in refs if row["kind"]=="GRID_AXIS")
+
+
 def test_reference_catalog_does_not_require_dimension_layer_names():
     doc=_source_doc();msp=doc.modelspace()
     msp.add_line((0,0),(10,0),dxfattribs={"layer":"0"})
