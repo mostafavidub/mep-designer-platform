@@ -7,9 +7,22 @@
     "cad_materialization": "PASS",
     "drawing_index": "PASS",
     "equipment_schedule": "PASS",
-    "parametric_details": "PASS"
+    "parametric_details": "PASS",
+    "dimension_semantics": "PASS"
   },
   "drawing_index_identity": "manifest sheets == index sheets == DXF layouts",
-  "required_schedule_columns": ["Tag", "Level", "Room", "Type", "Manufacturer", "Model", "Capacity", "Flow", "Power", "Connection Size", "Status"],
+  "required_schedule_columns": [
+    "Tag",
+    "Level",
+    "Room",
+    "Type",
+    "Manufacturer",
+    "Model",
+    "Capacity",
+    "Flow",
+    "Power",
+    "Connection Size",
+    "Status"
+  ],
   "submission_policy": "all required evidence is explicit; missing evidence is never assumed zero"
 }
