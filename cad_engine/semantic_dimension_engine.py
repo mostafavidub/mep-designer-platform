@@ -938,6 +938,7 @@ def _overall_context_intents(refs, registry, profile, local_axis):
             "world_p1":p1,"world_p2":p2,"world_base":None,
             "measured_value":measured,"displayed_value":_display_number(measured),
             "required":True,"priority":92,"placement_zone":"OUTSIDE",
+            "outside_sign":(-1 if axis_index==0 else 1),
             "angle_deg":math.degrees(measured_axis),
         })
     return intents
@@ -976,6 +977,7 @@ def _grid_context_intents(refs, registry, profile, local_axis):
                 "world_p1":p1,"world_p2":p2,"world_base":None,
                 "measured_value":measured,"displayed_value":_display_number(measured),
                 "required":True,"priority":96,"placement_zone":"OUTSIDE",
+                "outside_sign":(-1 if axis_index==0 else 1),
                 "angle_deg":math.degrees(measured_axis),
             })
     return intents
@@ -1128,6 +1130,24 @@ def _text_box(base, text):
     return (base[0] - width / 2, base[1] - height / 2, base[0] + width / 2, base[1] + height / 2)
 
 
+def _ray_box_exit_distance(point, direction, box):
+    px,py=map(float,point);dx,dy=map(float,direction)
+    x1,y1,x2,y2=map(float,box);candidates=[]
+    for boundary,origin,delta,lo,hi,other_origin,other_delta in (
+        (x1,px,dx,y1,y2,py,dy),(x2,px,dx,y1,y2,py,dy),
+        (y1,py,dy,x1,x2,px,dx),(y2,py,dy,x1,x2,px,dx),
+    ):
+        if abs(delta)<=1e-12:
+            continue
+        t=(boundary-origin)/delta
+        if t<=1e-9:
+            continue
+        other=other_origin+t*other_delta
+        if lo-1e-9<=other<=hi+1e-9:
+            candidates.append(t)
+    return min(candidates) if candidates else None
+
+
 def place_intents(intents, source_bounds, board, obstacles=None):
     obstacles = list(obstacles or [])
     placed = []
@@ -1152,15 +1172,31 @@ def place_intents(intents, source_bounds, board, obstacles=None):
             )
             candidates = [base,fallback]
         elif intent.get("purpose") in {"BUILDING_OVERALL", "GRID", "PROPERTY", "SETBACK", "CHECK"}:
-            horizontal = abs(math.cos(angle)) >= abs(math.sin(angle))
-            key = "H" if horizontal else "V"
-            tier[key] += 1
-            if horizontal:
-                y = max(plan_area[1] - 0.28 * tier[key], title_area[3] + 0.12)
-                candidates = [((p1[0] + p2[0]) / 2, y)]
-            else:
-                x = max(board_bounds[0] + 0.18, plan_area[0] - 0.28 * tier[key])
-                candidates = [(x, (p1[1] + p2[1]) / 2)]
+            axis_key=round((math.degrees(angle)%180.0)/2.0)*2.0
+            key=f"A{axis_key:.0f}"
+            tier[key]=tier.get(key,0)+1
+            midpoint=((p1[0]+p2[0])/2.0,(p1[1]+p2[1])/2.0)
+            normal=(-math.sin(angle),math.cos(angle))
+            preferred=int(intent.get("outside_sign") or -1)
+            candidates=[]
+            for sign in (preferred,-preferred):
+                direction=(normal[0]*sign,normal[1]*sign)
+                t_plan=_ray_box_exit_distance(midpoint,direction,plan_area)
+                t_board=_ray_box_exit_distance(midpoint,direction,board_bounds)
+                if t_plan is None or t_board is None:
+                    continue
+                desired=t_plan+0.10+0.16*tier[key]
+                if desired>=t_board-0.08:
+                    continue
+                candidates.append((midpoint[0]+direction[0]*desired,midpoint[1]+direction[1]*desired))
+            if not candidates:
+                horizontal = abs(math.cos(angle)) >= abs(math.sin(angle))
+                if horizontal:
+                    y=max(plan_area[1]-0.18,title_area[3]+0.12)
+                    candidates=[(midpoint[0],y)]
+                else:
+                    x=max(board_bounds[0]+0.18,plan_area[0]-0.18)
+                    candidates=[(x,midpoint[1])]
         else:
             midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
             normal = (-math.sin(angle), math.cos(angle))
