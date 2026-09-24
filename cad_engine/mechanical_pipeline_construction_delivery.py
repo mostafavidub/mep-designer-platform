@@ -55,6 +55,16 @@ def validate_dimension_semantics(dimension_semantics, required_types):
         return {"status":"PASS","required":False,"policy":"dimension semantics not required by scope"}
     if not isinstance(dimension_semantics,dict) or not dimension_semantics:
         return {"status":"INPUT_REQUIRED","missing_inputs":["DIMENSION_SEMANTICS"],"required":True}
+    if (
+        dimension_semantics.get("status")=="DEFERRED"
+        and dimension_semantics.get("authority")=="EXACT_FILE_POST_RENDER"
+        and dimension_semantics.get("exact_file_gate_required") is True
+    ):
+        return {
+            "status":"PASS","required":True,"deferred":True,
+            "authority":"EXACT_FILE_POST_RENDER",
+            "policy":"pre-render contract explicitly delegates dimension proof to the mandatory exact-file semantic gate",
+        }
     missing=[]
     required_fields={
         "status","source_preservation_complete","missing_required_dimensions",
