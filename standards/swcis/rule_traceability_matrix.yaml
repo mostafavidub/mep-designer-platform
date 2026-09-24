@@ -1023,7 +1023,9 @@
         "exact_duplicate_dimension_zero",
         "dimension_collision_zero",
         "exact_file_dimension_identity",
-        "dimension_count_not_authority"
+        "dimension_count_not_authority",
+        "unit_metadata_geometry_reconciliation",
+        "canonical_metre_value_traceability"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",
