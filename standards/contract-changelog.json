@@ -1,494 +1,1531 @@
 {
-  "schema_version":"1.0.0",
-  "changes":[
+  "schema_version": "1.0.0",
+  "changes": [
     {
-      "id":"GOV-2026-040","status":"APPROVED",
-      "summary":"Require all eighteen topology and routing controls to pass at exactly 100 before Mechanical CAD delivery.",
-      "affected_capabilities":["topology_routing_100","mechanical_runtime_authority","parametric_detail_riser_identity","structural_rcp_25d_coordination"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute and complete all eighteen topology and routing steps"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_exact_build":"must_pass before deployment claim"},
-      "migration":{"forward":"Regenerate existing projects to attach topology-routing/1 evidence.","rollback":"Revert and redeploy the preceding approved Git SHA; never bypass the gate."}
+      "id": "GOV-2026-040",
+      "status": "APPROVED",
+      "summary": "Require all eighteen topology and routing controls to pass at exactly 100 before Mechanical CAD delivery.",
+      "affected_capabilities": [
+        "topology_routing_100",
+        "mechanical_runtime_authority",
+        "parametric_detail_riser_identity",
+        "structural_rcp_25d_coordination"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute and complete all eighteen topology and routing steps"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_exact_build": "must_pass before deployment claim"
+      },
+      "migration": {
+        "forward": "Regenerate existing projects to attach topology-routing/1 evidence.",
+        "rollback": "Revert and redeploy the preceding approved Git SHA; never bypass the gate."
+      }
     },
     {
-      "id":"GOV-2026-039","status":"APPROVED",
-      "summary":"Unify all eighteen architecture reconstruction and preservation controls into a scored fail-closed exact-file release gate.",
-      "affected_capabilities":["architecture_preservation","all_sheet_visual_qa","mechanical_release_qa"],
-      "affected_projects":["all","project-4","project-6","project-8","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete all eighteen steps and publish them to Staging"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","staging_exact_build":"must_pass","four_project_evaluation":"run when private inputs are available; never claim pass without execution"},
-      "migration":{"forward":"Regenerate an artifact to obtain the additive eighteen-control report; all prior source uploads remain immutable.","rollback":"Revert and redeploy the preceding approved Git SHA; never bypass a failed architecture gate."}
+      "id": "GOV-2026-039",
+      "status": "APPROVED",
+      "summary": "Unify all eighteen architecture reconstruction and preservation controls into a scored fail-closed exact-file release gate.",
+      "affected_capabilities": [
+        "architecture_preservation",
+        "all_sheet_visual_qa",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all",
+        "project-4",
+        "project-6",
+        "project-8",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to complete all eighteen steps and publish them to Staging"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "staging_exact_build": "must_pass",
+        "four_project_evaluation": "run when private inputs are available; never claim pass without execution"
+      },
+      "migration": {
+        "forward": "Regenerate an artifact to obtain the additive eighteen-control report; all prior source uploads remain immutable.",
+        "rollback": "Revert and redeploy the preceding approved Git SHA; never bypass a failed architecture gate."
+      }
     },
     {
-      "id":"GOV-2026-031",
-      "status":"APPROVED",
-      "summary":"Require multilevel risers to preserve elevations, shaft correspondence, declared offsets, cumulative downstream loads and exact Plan/Riser/Calc/Schedule identity.",
-      "affected_capabilities":["mechanical_routing","mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa"],
-      "affected_projects":["all","project-4","project-6","project-8"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to implement, merge and deploy the complete riser improvement"},
-      "verification":{"positive_multilevel_test":"must_pass","destructive_shaft_test":"must_pass","destructive_elevation_load_offset_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Require explicit evidence and preserve incomplete output as INPUT_REQUIRED/FAIL.","rollback":"Redeploy the prior approved Git SHA; never restore assumed vertical facts."}
+      "id": "GOV-2026-031",
+      "status": "APPROVED",
+      "summary": "Require multilevel risers to preserve elevations, shaft correspondence, declared offsets, cumulative downstream loads and exact Plan/Riser/Calc/Schedule identity.",
+      "affected_capabilities": [
+        "mechanical_routing",
+        "mechanical_network_sizing",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all",
+        "project-4",
+        "project-6",
+        "project-8"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to implement, merge and deploy the complete riser improvement"
+      },
+      "verification": {
+        "positive_multilevel_test": "must_pass",
+        "destructive_shaft_test": "must_pass",
+        "destructive_elevation_load_offset_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Require explicit evidence and preserve incomplete output as INPUT_REQUIRED/FAIL.",
+        "rollback": "Redeploy the prior approved Git SHA; never restore assumed vertical facts."
+      }
     },
     {
-      "id":"GOV-2026-032",
-      "status":"APPROVED",
-      "summary":"Repair panel-to-CAD Mechanical transport to use the single canonical runtime contract, canonical engineering input contract and unversioned production design entrypoint.",
-      "affected_capabilities":["active_version_synchronization","mechanical_release_qa","paid_generation"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to fix the Staging runtime-contract blocker and complete all eight Mechanical projects"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","live_staging_e2e":"must_pass before completion claim","required_ci":"must_pass before merge"},
-      "migration":{"forward":"Retry preserved projects with the canonical contract after deploying the exact approved commit.","rollback":"Redeploy the prior approved Git commit; never weaken runtime_contract_gate."}
+      "id": "GOV-2026-032",
+      "status": "APPROVED",
+      "summary": "Repair panel-to-CAD Mechanical transport to use the single canonical runtime contract, canonical engineering input contract and unversioned production design entrypoint.",
+      "affected_capabilities": [
+        "active_version_synchronization",
+        "mechanical_release_qa",
+        "paid_generation"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to fix the Staging runtime-contract blocker and complete all eight Mechanical projects"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "full_regression": "must_pass",
+        "live_staging_e2e": "must_pass before completion claim",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Retry preserved projects with the canonical contract after deploying the exact approved commit.",
+        "rollback": "Redeploy the prior approved Git commit; never weaken runtime_contract_gate."
+      }
     },
     {
-      "id":"GOV-2026-031",
-      "status":"APPROVED",
-      "summary":"Complete Mechanical construction-document delivery steps 14-19 as one fail-closed package with plan-bound parametric details, actual CAD inventory, manifest/layout identity, public schedules, annotation solving and expanded submission QA.",
-      "affected_capabilities":["construction_document_delivery","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner request to execute and complete through step 19"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
-      "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete construction-delivery evidence.","rollback":"Revert the protected commit; never infer missing CAD, schedule, detail, annotation or QA evidence."}
+      "id": "GOV-2026-031",
+      "status": "APPROVED",
+      "summary": "Complete Mechanical construction-document delivery steps 14-19 as one fail-closed package with plan-bound parametric details, actual CAD inventory, manifest/layout identity, public schedules, annotation solving and expanded submission QA.",
+      "affected_capabilities": [
+        "construction_document_delivery",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner request to execute and complete through step 19"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Existing inputs remain readable; final issue additionally requires complete construction-delivery evidence.",
+        "rollback": "Revert the protected commit; never infer missing CAD, schedule, detail, annotation or QA evidence."
+      }
     },
     {
-      "id":"GOV-2026-030",
-      "status":"APPROVED",
-      "summary":"Add privacy-safe independent-engineer redline triage and enforce the final quantitative quality targets without promoting project-specific findings into shared rules.",
-      "affected_capabilities":["mechanical_release_qa","engineering_feedback","quality_acceptance","active_version_synchronization"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 19 and 20"},
-      "verification":{"redline_classification_test":"must_pass","overfit_quarantine_test":"must_pass","reusable_finding_governance_test":"must_pass","quality_boundary_test":"must_pass","missing_metric_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Require hashed independent review evidence and measured quality metrics before acceptance.","rollback":"Revert additive consumers only; never promote project-only facts or accept open major redlines/missing quality evidence."}
+      "id": "GOV-2026-030",
+      "status": "APPROVED",
+      "summary": "Add privacy-safe independent-engineer redline triage and enforce the final quantitative quality targets without promoting project-specific findings into shared rules.",
+      "affected_capabilities": [
+        "mechanical_release_qa",
+        "engineering_feedback",
+        "quality_acceptance",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 19 and 20"
+      },
+      "verification": {
+        "redline_classification_test": "must_pass",
+        "overfit_quarantine_test": "must_pass",
+        "reusable_finding_governance_test": "must_pass",
+        "quality_boundary_test": "must_pass",
+        "missing_metric_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Require hashed independent review evidence and measured quality metrics before acceptance.",
+        "rollback": "Revert additive consumers only; never promote project-only facts or accept open major redlines/missing quality evidence."
+      }
     },
     {
-      "id":"GOV-2026-029",
-      "status":"APPROVED",
-      "summary":"Require explicit zero evidence for ten Submission Ready invariants and enforce a unique complete seven-project blind-generation, seal and post-seal comparison sequence.",
-      "affected_capabilities":["mechanical_release_qa","sealed_seven_project_regression","active_version_synchronization"],
-      "affected_projects":["all","project-1","project-3","project-4","project-6","project-7","project-8","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 17 and 18"},
-      "verification":{"ten_zero_gate_tests":"must_pass","blind_order_negative_test":"must_pass","exact_reopen_test":"must_pass","seven_project_golden":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Require explicit QA evidence and ordered regression metadata before granting Submission Ready.","rollback":"Revert additive consumers only; never treat missing evidence, reference leakage or a nonzero invariant as PASS."}
+      "id": "GOV-2026-029",
+      "status": "APPROVED",
+      "summary": "Require explicit zero evidence for ten Submission Ready invariants and enforce a unique complete seven-project blind-generation, seal and post-seal comparison sequence.",
+      "affected_capabilities": [
+        "mechanical_release_qa",
+        "sealed_seven_project_regression",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-1",
+        "project-3",
+        "project-4",
+        "project-6",
+        "project-7",
+        "project-8",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 17 and 18"
+      },
+      "verification": {
+        "ten_zero_gate_tests": "must_pass",
+        "blind_order_negative_test": "must_pass",
+        "exact_reopen_test": "must_pass",
+        "seven_project_golden": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Require explicit QA evidence and ordered regression metadata before granting Submission Ready.",
+        "rollback": "Revert additive consumers only; never treat missing evidence, reference leakage or a nonzero invariant as PASS."
+      }
     },
     {
-      "id":"GOV-2026-028",
-      "status":"APPROVED",
-      "summary":"Add manufacturer-aware calculation-book selection checks with pump/fan curve verification and a priority, collision, print-scale and automatic-enlargement annotation solver.",
-      "affected_capabilities":["mechanical_network_sizing","manufacturer_selection","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 15 and 16"},
-      "verification":{"equipment_selection_coverage_test":"must_pass","manufacturer_limit_test":"must_pass","pump_fan_curve_test":"must_pass","annotation_collision_test":"must_pass","automatic_enlargement_test":"must_pass","unreadable_annotation_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Use additive calculation-book and optimized annotation records only when required identities, curves, geometry and scale inputs are complete.","rollback":"Revert additive consumers; never restore nominal equipment labels or colliding/unreadable annotations as proof of final design."}
+      "id": "GOV-2026-028",
+      "status": "APPROVED",
+      "summary": "Add manufacturer-aware calculation-book selection checks with pump/fan curve verification and a priority, collision, print-scale and automatic-enlargement annotation solver.",
+      "affected_capabilities": [
+        "mechanical_network_sizing",
+        "manufacturer_selection",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 15 and 16"
+      },
+      "verification": {
+        "equipment_selection_coverage_test": "must_pass",
+        "manufacturer_limit_test": "must_pass",
+        "pump_fan_curve_test": "must_pass",
+        "annotation_collision_test": "must_pass",
+        "automatic_enlargement_test": "must_pass",
+        "unreadable_annotation_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Use additive calculation-book and optimized annotation records only when required identities, curves, geometry and scale inputs are complete.",
+        "rollback": "Revert additive consumers; never restore nominal equipment labels or colliding/unreadable annotations as proof of final design."
+      }
     },
     {
-      "id":"GOV-2026-027",
-      "status":"APPROVED",
-      "summary":"Add a complete official-document, hash-only manufacturer record database and system-specific executable radiator, ODU and sanitary details bound to Plan, PMM, Calc and Catalogue identities.",
-      "affected_capabilities":["manufacturer_selection","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 13 and 14"},
-      "verification":{"official_record_completeness_test":"must_pass","nonofficial_source_test":"must_pass","stable_catalogue_identity_test":"must_pass","radiator_odu_sanitary_detail_test":"must_pass","dimension_mismatch_test":"must_pass","pipeline_fail_closed_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Admit final equipment and details only from complete official semantic records with stable identities; keep missing external records INPUT_REQUIRED.","rollback":"Revert additive registry/detail consumers; never restore reseller data, private binaries or label-only details as issue-ready output."}
+      "id": "GOV-2026-027",
+      "status": "APPROVED",
+      "summary": "Add a complete official-document, hash-only manufacturer record database and system-specific executable radiator, ODU and sanitary details bound to Plan, PMM, Calc and Catalogue identities.",
+      "affected_capabilities": [
+        "manufacturer_selection",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 13 and 14"
+      },
+      "verification": {
+        "official_record_completeness_test": "must_pass",
+        "nonofficial_source_test": "must_pass",
+        "stable_catalogue_identity_test": "must_pass",
+        "radiator_odu_sanitary_detail_test": "must_pass",
+        "dimension_mismatch_test": "must_pass",
+        "pipeline_fail_closed_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Admit final equipment and details only from complete official semantic records with stable identities; keep missing external records INPUT_REQUIRED.",
+        "rollback": "Revert additive registry/detail consumers; never restore reseller data, private binaries or label-only details as issue-ready output."
+      }
     },
     {
-      "id":"GOV-2026-026",
-      "status":"APPROVED",
-      "summary":"Require real roof catchment/low-point/drain/overflow/downpipe calculations and reject detail-sheet contamination from plan-graph-derived typed-level risers.",
-      "affected_capabilities":["mechanical_network_sizing","mechanical_routing","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 11 and 12"},
-      "verification":{"catchment_rainfall_test":"must_pass","lowpoint_slope_capacity_test":"must_pass","rainwater_identity_test":"must_pass","detail_level_contamination_test":"must_pass","plan_graph_hash_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Use final rainwater and strict riser outputs only with complete project geometry, design basis and typed levels; otherwise preserve INPUT_REQUIRED/FAIL.","rollback":"Revert additive consumers; never restore invented drain locations or allow detail sheets into the riser level topology."}
+      "id": "GOV-2026-026",
+      "status": "APPROVED",
+      "summary": "Require real roof catchment/low-point/drain/overflow/downpipe calculations and reject detail-sheet contamination from plan-graph-derived typed-level risers.",
+      "affected_capabilities": [
+        "mechanical_network_sizing",
+        "mechanical_routing",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 11 and 12"
+      },
+      "verification": {
+        "catchment_rainfall_test": "must_pass",
+        "lowpoint_slope_capacity_test": "must_pass",
+        "rainwater_identity_test": "must_pass",
+        "detail_level_contamination_test": "must_pass",
+        "plan_graph_hash_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Use final rainwater and strict riser outputs only with complete project geometry, design basis and typed levels; otherwise preserve INPUT_REQUIRED/FAIL.",
+        "rollback": "Revert additive consumers; never restore invented drain locations or allow detail sheets into the riser level topology."
+      }
     },
     {
-      "id":"GOV-2026-025",
-      "status":"APPROVED",
-      "summary":"Replace proxy split and exhaust outputs with explicit component cooling loads, zone diversity, official IDU/ODU route validation, exhaustive room coverage and fan selection against both airflow and ESP.",
-      "affected_capabilities":["mechanical_load_calculation","manufacturer_selection","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 9 and 10"},
-      "verification":{"component_load_test":"must_pass","idu_odu_route_test":"must_pass","connected_ratio_test":"must_pass","exhaust_scope_test":"must_pass","flow_esp_fan_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Use final split/exhaust outputs only when project basis, routes and official manufacturer evidence are complete; otherwise preserve INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Revert additive consumers; never use held-out reference capacities or legacy proxy CFM as final engineering inputs."}
+      "id": "GOV-2026-025",
+      "status": "APPROVED",
+      "summary": "Replace proxy split and exhaust outputs with explicit component cooling loads, zone diversity, official IDU/ODU route validation, exhaustive room coverage and fan selection against both airflow and ESP.",
+      "affected_capabilities": [
+        "mechanical_load_calculation",
+        "manufacturer_selection",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 9 and 10"
+      },
+      "verification": {
+        "component_load_test": "must_pass",
+        "idu_odu_route_test": "must_pass",
+        "connected_ratio_test": "must_pass",
+        "exhaust_scope_test": "must_pass",
+        "flow_esp_fan_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Use final split/exhaust outputs only when project basis, routes and official manufacturer evidence are complete; otherwise preserve INPUT_REQUIRED/PRE_SUBMISSION.",
+        "rollback": "Revert additive consumers; never use held-out reference capacities or legacy proxy CFM as final engineering inputs."
+      }
     },
     {
-      "id":"GOV-2026-024",
-      "status":"APPROVED",
-      "summary":"Replace preliminary heating and gas issue data with exact evidence-backed radiator/package selection, cumulative heating-pipe sizing, and appliance-to-segment gas calculations carrying Flow, Leq, DN and Calc ID.",
-      "affected_capabilities":["manufacturer_selection","mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 7 and 8"},
-      "verification":{"radiator_temperature_match_test":"must_pass","package_combined_demand_test":"must_pass","cumulative_heating_test":"must_pass","gas_evidence_and_segment_identity_test":"must_pass","final_detail_propagation_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Use final heating/gas records only when project basis and official revisioned evidence are complete; otherwise retain INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Revert the additive consumers; never restore a preliminary radiator output or hidden gas-sizing default as issue-ready engineering."}
+      "id": "GOV-2026-024",
+      "status": "APPROVED",
+      "summary": "Replace preliminary heating and gas issue data with exact evidence-backed radiator/package selection, cumulative heating-pipe sizing, and appliance-to-segment gas calculations carrying Flow, Leq, DN and Calc ID.",
+      "affected_capabilities": [
+        "manufacturer_selection",
+        "mechanical_network_sizing",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 7 and 8"
+      },
+      "verification": {
+        "radiator_temperature_match_test": "must_pass",
+        "package_combined_demand_test": "must_pass",
+        "cumulative_heating_test": "must_pass",
+        "gas_evidence_and_segment_identity_test": "must_pass",
+        "final_detail_propagation_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Use final heating/gas records only when project basis and official revisioned evidence are complete; otherwise retain INPUT_REQUIRED/PRE_SUBMISSION.",
+        "rollback": "Revert the additive consumers; never restore a preliminary radiator output or hidden gas-sizing default as issue-ready engineering."
+      }
     },
     {
-      "id":"GOV-2026-023",
-      "status":"APPROVED",
-      "summary":"Require calculation-derived cold/hot-water segment diameters and reducers, plus explicit critical-path pump duty and evidence-basis tank capacity without hidden benchmark defaults.",
-      "affected_capabilities":["mechanical_network_sizing","parametric_detail_riser_identity","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete agreed phases 5 and 6"},
-      "verification":{"positive_hydraulic_test":"must_pass","destructive_dn_mismatch_test":"must_pass","pump_tank_input_required_test":"must_pass","schedule_traceability_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Use additive hydraulic and water-service records when complete project basis is available; preserve legacy preliminary output only as PRE_SUBMISSION.","rollback":"Revert the additive consumer path; never substitute held-out project-10 values as defaults."}
+      "id": "GOV-2026-023",
+      "status": "APPROVED",
+      "summary": "Require calculation-derived cold/hot-water segment diameters and reducers, plus explicit critical-path pump duty and evidence-basis tank capacity without hidden benchmark defaults.",
+      "affected_capabilities": [
+        "mechanical_network_sizing",
+        "parametric_detail_riser_identity",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete agreed phases 5 and 6"
+      },
+      "verification": {
+        "positive_hydraulic_test": "must_pass",
+        "destructive_dn_mismatch_test": "must_pass",
+        "pump_tank_input_required_test": "must_pass",
+        "schedule_traceability_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Use additive hydraulic and water-service records when complete project basis is available; preserve legacy preliminary output only as PRE_SUBMISSION.",
+        "rollback": "Revert the additive consumer path; never substitute held-out project-10 values as defaults."
+      }
     },
     {
-      "id":"GOV-2026-022",
-      "status":"APPROVED",
-      "summary":"Adopt architecture-only PRE-SUBMISSION as the temporary production profile when Structural/RCP drawings are unavailable, while prohibiting coordinated or Submission Ready claims.",
-      "affected_capabilities":["production_v19_runtime_authority","structural_rcp_25d_coordination","manufacturer_selection","active_version_synchronization"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction that all current projects lack structural drawings and must always produce Pre-Submission output"},
-      "verification":{"architecture_only_generation":"must_pass","not_coordinated_claim":"must_pass","runtime_version_parity":"must_pass","full_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Generate architecture-only drawings through the current v19 pipeline and label every result PRE_SUBMISSION and NOT_COORDINATED.","rollback":"When Structural/RCP becomes mandatory, supersede this temporary profile without reclassifying historical Pre-Submission outputs."}
+      "id": "GOV-2026-022",
+      "status": "APPROVED",
+      "summary": "Adopt architecture-only PRE-SUBMISSION as the temporary production profile when Structural/RCP drawings are unavailable, while prohibiting coordinated or Submission Ready claims.",
+      "affected_capabilities": [
+        "production_v19_runtime_authority",
+        "structural_rcp_25d_coordination",
+        "manufacturer_selection",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction that all current projects lack structural drawings and must always produce Pre-Submission output"
+      },
+      "verification": {
+        "architecture_only_generation": "must_pass",
+        "not_coordinated_claim": "must_pass",
+        "runtime_version_parity": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Generate architecture-only drawings through the current v19 pipeline and label every result PRE_SUBMISSION and NOT_COORDINATED.",
+        "rollback": "When Structural/RCP becomes mandatory, supersede this temporary profile without reclassifying historical Pre-Submission outputs."
+      }
     },
     {
-      "id":"GOV-2026-021",
-      "status":"APPROVED",
-      "summary":"Add fail-closed Structural/RCP 2.5D coordination, official-datasheet manufacturer selection, graph-native parametric details/risers and sealed seven-project strict regression.",
-      "affected_capabilities":["structural_rcp_25d_coordination","manufacturer_selection","parametric_detail_riser_identity","sealed_seven_project_regression","active_version_synchronization"],
-      "affected_projects":["all","project-1","project-3","project-4","project-6","project-7","project-8","project-10"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to implement all four ordered fail-closed phases"},
-      "verification":{"focused_tests":"must_pass","full_regression":"must_pass","seven_project_golden":"must_pass","exact_reopen":"must_pass","montage":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Require each phase to pass before the next and expose missing authoritative inputs as INPUT_REQUIRED/PRE_SUBMISSION.","rollback":"Supersede only with a stricter contract; never fabricate structural/RCP or manufacturer facts."}
+      "id": "GOV-2026-021",
+      "status": "APPROVED",
+      "summary": "Add fail-closed Structural/RCP 2.5D coordination, official-datasheet manufacturer selection, graph-native parametric details/risers and sealed seven-project strict regression.",
+      "affected_capabilities": [
+        "structural_rcp_25d_coordination",
+        "manufacturer_selection",
+        "parametric_detail_riser_identity",
+        "sealed_seven_project_regression",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-1",
+        "project-3",
+        "project-4",
+        "project-6",
+        "project-7",
+        "project-8",
+        "project-10"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to implement all four ordered fail-closed phases"
+      },
+      "verification": {
+        "focused_tests": "must_pass",
+        "full_regression": "must_pass",
+        "seven_project_golden": "must_pass",
+        "exact_reopen": "must_pass",
+        "montage": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Require each phase to pass before the next and expose missing authoritative inputs as INPUT_REQUIRED/PRE_SUBMISSION.",
+        "rollback": "Supersede only with a stricter contract; never fabricate structural/RCP or manufacturer facts."
+      }
     },
     {
-      "id":"GOV-2026-001",
-      "status":"APPROVED",
-      "summary":"Establish the ten-step mechanical design governance contract and project-1 golden baseline.",
-      "affected_capabilities":["all_locked_capabilities"],
-      "affected_projects":["project-1"],
-      "approval":{"status":"APPROVED","basis":"user instruction in project task"},
-      "migration":{"forward":"Adopt governance v1 and validate all future releases.","rollback":"Not permitted after adoption; supersede with a new approved governance version."}
+      "id": "GOV-2026-001",
+      "status": "APPROVED",
+      "summary": "Establish the ten-step mechanical design governance contract and project-1 golden baseline.",
+      "affected_capabilities": [
+        "all_locked_capabilities"
+      ],
+      "affected_projects": [
+        "project-1"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "user instruction in project task"
+      },
+      "migration": {
+        "forward": "Adopt governance v1 and validate all future releases.",
+        "rollback": "Not permitted after adoption; supersede with a new approved governance version."
+      }
     },
     {
-      "id":"GOV-2026-002",
-      "status":"APPROVED",
-      "summary":"Separate pre-composition manifest semantics from post-composition physical board enforcement; preserve fail-closed production board identity.",
-      "affected_capabilities":["sheet_layout","content_completeness"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"CI regression repair under the user-approved ten-step governance task"},
-      "verification":{"focused_tests":"22 PASS","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Run semantic role validation before composition and full board identity validation when physical boards exist.","rollback":"Revert only through a superseding approved migration; never disable production board identity."}
+      "id": "GOV-2026-002",
+      "status": "APPROVED",
+      "summary": "Separate pre-composition manifest semantics from post-composition physical board enforcement; preserve fail-closed production board identity.",
+      "affected_capabilities": [
+        "sheet_layout",
+        "content_completeness"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "CI regression repair under the user-approved ten-step governance task"
+      },
+      "verification": {
+        "focused_tests": "22 PASS",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Run semantic role validation before composition and full board identity validation when physical boards exist.",
+        "rollback": "Revert only through a superseding approved migration; never disable production board identity."
+      }
     },
     {
-      "id":"GOV-2026-003",
-      "status":"APPROVED",
-      "summary":"Persist and display real milestone-based CAD design progress in the flow API, queue API, upload modal and project page.",
-      "affected_capabilities":["design_progress_visibility"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user request to show the active design stage and completion percentage"},
-      "verification":{"focused_tests":"5 PASS","javascript_syntax":"PASS","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Initialize queued jobs at 3 percent and advance only at completed backend milestones through 100 percent.","rollback":"Supersede with an approved progress contract; do not remove progress visibility."}
+      "id": "GOV-2026-003",
+      "status": "APPROVED",
+      "summary": "Persist and display real milestone-based CAD design progress in the flow API, queue API, upload modal and project page.",
+      "affected_capabilities": [
+        "design_progress_visibility"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request to show the active design stage and completion percentage"
+      },
+      "verification": {
+        "focused_tests": "5 PASS",
+        "javascript_syntax": "PASS",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Initialize queued jobs at 3 percent and advance only at completed backend milestones through 100 percent.",
+        "rollback": "Supersede with an approved progress contract; do not remove progress visibility."
+      }
     },
     {
-      "id":"GOV-2026-004",
-      "status":"APPROVED",
-      "summary":"Make Split-AC delivery fail closed on labeled standard IDU/ODU blocks, equipment callouts and leaders, airflow, linked routes, minimum plotted symbol size, and independent per-sheet visual previews; keep water equipment and hot-water-return sheets bound to the user's explicit system scope.",
-      "affected_capabilities":["split_ac","content_completeness","visual_release"],
-      "affected_projects":["all","project-1"],
-      "approval":{"status":"APPROVED","basis":"explicit user request after Split-AC equipment was not visibly recognizable in project-1 previews"},
-      "verification":{"focused_tests":"must_pass","golden_regression":"must_pass","exact_file_reopen":"must_pass","per_sheet_visual_qa":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Release only when semantic linkage and per-sheet visual legibility both pass.","rollback":"Supersede with an approved stricter contract; never return to layer-count-only acceptance."}
+      "id": "GOV-2026-004",
+      "status": "APPROVED",
+      "summary": "Make Split-AC delivery fail closed on labeled standard IDU/ODU blocks, equipment callouts and leaders, airflow, linked routes, minimum plotted symbol size, and independent per-sheet visual previews; keep water equipment and hot-water-return sheets bound to the user's explicit system scope.",
+      "affected_capabilities": [
+        "split_ac",
+        "content_completeness",
+        "visual_release"
+      ],
+      "affected_projects": [
+        "all",
+        "project-1"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request after Split-AC equipment was not visibly recognizable in project-1 previews"
+      },
+      "verification": {
+        "focused_tests": "must_pass",
+        "golden_regression": "must_pass",
+        "exact_file_reopen": "must_pass",
+        "per_sheet_visual_qa": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Release only when semantic linkage and per-sheet visual legibility both pass.",
+        "rollback": "Supersede with an approved stricter contract; never return to layer-count-only acceptance."
+      }
     },
     {
-      "id":"GOV-2026-005",
-      "status":"APPROVED",
-      "summary":"Expose the mechanical release QA phase and a durable completed/current/pending progress timeline in both customer progress interfaces.",
-      "affected_capabilities":["design_progress_visibility","split_ac","visual_release"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user request to show newly added output-production steps on the site"},
-      "verification":{"focused_tests":"must_pass","web_regression":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Report only persisted backend milestones and aggregate synchronous engine gates into a truthful mechanical release QA phase.","rollback":"Supersede through an approved contract change; do not replace real milestones with simulated percentages."}
+      "id": "GOV-2026-005",
+      "status": "APPROVED",
+      "summary": "Expose the mechanical release QA phase and a durable completed/current/pending progress timeline in both customer progress interfaces.",
+      "affected_capabilities": [
+        "design_progress_visibility",
+        "split_ac",
+        "visual_release"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request to show newly added output-production steps on the site"
+      },
+      "verification": {
+        "focused_tests": "must_pass",
+        "web_regression": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Report only persisted backend milestones and aggregate synchronous engine gates into a truthful mechanical release QA phase.",
+        "rollback": "Supersede through an approved contract change; do not replace real milestones with simulated percentages."
+      }
     },
     {
-      "id":"GOV-2026-006",
-      "status":"APPROVED",
-      "summary":"Make architectural north the sole directional authority and remove source print frames, inner borders and legacy footer/subtitle bands from every issued plan.",
-      "affected_capabilities":["architecture_preservation","sheet_layout","safe_zones","visual_release"],
-      "affected_projects":["all","project-1"],
-      "approval":{"status":"APPROVED","basis":"explicit user request based on three annotated project-1 output images"},
-      "verification":{"focused_tests":"must_pass","architecture_preservation":"must_pass","exact_file_reopen":"must_pass","montage":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Preserve the source architectural north symbol through the plan transform, suppress generated north arrows, and remove only positively identified source presentation furniture.","rollback":"Supersede only with a stricter approved contract; never restore duplicate north graphics or source sheet furniture."}
+      "id": "GOV-2026-006",
+      "status": "APPROVED",
+      "summary": "Make architectural north the sole directional authority and remove source print frames, inner borders and legacy footer/subtitle bands from every issued plan.",
+      "affected_capabilities": [
+        "architecture_preservation",
+        "sheet_layout",
+        "safe_zones",
+        "visual_release"
+      ],
+      "affected_projects": [
+        "all",
+        "project-1"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request based on three annotated project-1 output images"
+      },
+      "verification": {
+        "focused_tests": "must_pass",
+        "architecture_preservation": "must_pass",
+        "exact_file_reopen": "must_pass",
+        "montage": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Preserve the source architectural north symbol through the plan transform, suppress generated north arrows, and remove only positively identified source presentation furniture.",
+        "rollback": "Supersede only with a stricter approved contract; never restore duplicate north graphics or source sheet furniture."
+      }
     },
     {
-      "id":"GOV-2026-009",
-      "status":"APPROVED",
-      "summary":"Migrate the project-1 golden entity floor after removing all generated north arrows, legacy subtitle bands, source MEN presentation entities and the tank/pump symbol forbidden by the approved direct-city water basis; preserve every semantic sheet, equipment and visual minimum.",
-      "affected_capabilities":["architecture_preservation","sheet_layout","safe_zones","content_completeness","active_version_synchronization"],
-      "affected_projects":["project-1"],
-      "approval":{"status":"APPROVED","basis":"user-approved continuation of the seven-step correction, architectural-north/frame standards and locked project-1 direct_city answer"},
-      "verification":{"removed_generated_north_entities":76,"removed_subtitle_entities":40,"removed_source_presentation_entities":19,"direct_city_service_delta":1,"all_semantic_minimums_unchanged":true,"required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Set the project-1 modelspace floor to the clean v18.4 exact-file result while retaining all per-family, plan, equipment, detail and visual gates.","rollback":"Do not restore forbidden presentation furniture or unapproved water equipment; supersede with a stricter semantic baseline."}
+      "id": "GOV-2026-009",
+      "status": "APPROVED",
+      "summary": "Migrate the project-1 golden entity floor after removing all generated north arrows, legacy subtitle bands, source MEN presentation entities and the tank/pump symbol forbidden by the approved direct-city water basis; preserve every semantic sheet, equipment and visual minimum.",
+      "affected_capabilities": [
+        "architecture_preservation",
+        "sheet_layout",
+        "safe_zones",
+        "content_completeness",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "project-1"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "user-approved continuation of the seven-step correction, architectural-north/frame standards and locked project-1 direct_city answer"
+      },
+      "verification": {
+        "removed_generated_north_entities": 76,
+        "removed_subtitle_entities": 40,
+        "removed_source_presentation_entities": 19,
+        "direct_city_service_delta": 1,
+        "all_semantic_minimums_unchanged": true,
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Set the project-1 modelspace floor to the clean v18.4 exact-file result while retaining all per-family, plan, equipment, detail and visual gates.",
+        "rollback": "Do not restore forbidden presentation furniture or unapproved water equipment; supersede with a stricter semantic baseline."
+      }
     },
     {
-      "id":"GOV-2026-008",
-      "status":"APPROVED",
-      "summary":"Make the active version manifest the permanent authority for the website, CAD engine, application and generated Rule Books, current documentation, release record and production launchers; block merge and deployment on any drift.",
-      "affected_capabilities":["active_version_synchronization"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user request that every site and engine change remain synchronized with the latest healthy release"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","site_health_contract":"must_pass","cad_version_contract":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Derive active runtime versions from cad_engine/version_manifest.py and validate every replicated release surface in fail-closed CI.","rollback":"Supersede only with a stricter approved synchronization contract; never restore independently maintained active-version literals."}
+      "id": "GOV-2026-008",
+      "status": "APPROVED",
+      "summary": "Make the active version manifest the permanent authority for the website, CAD engine, application and generated Rule Books, current documentation, release record and production launchers; block merge and deployment on any drift.",
+      "affected_capabilities": [
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request that every site and engine change remain synchronized with the latest healthy release"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "site_health_contract": "must_pass",
+        "cad_version_contract": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Derive active runtime versions from cad_engine/version_manifest.py and validate every replicated release surface in fail-closed CI.",
+        "rollback": "Supersede only with a stricter approved synchronization contract; never restore independently maintained active-version literals."
+      }
     },
     {
-      "id":"GOV-2026-007",
-      "status":"APPROVED",
-      "summary":"Add allow-listed, maximum-three-attempt automatic design recovery with durable audit history and customer-visible repair state.",
-      "affected_capabilities":["controlled_design_recovery","design_progress_visibility","visual_release"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user request to let the site repair and retry failed design stages when safely possible"},
-      "verification":{"focused_tests":"must_pass","recovery_regression":"must_pass","web_regression":"must_pass","governance":"must_pass","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Classify failures through the allow-list, restore durable input/clean transient state, retry the same revision up to three attempts, and expose/persist every recovery action.","rollback":"Supersede only with a stricter approved recovery policy; never enable unlimited retries or autonomous engineering guesses."}
+      "id": "GOV-2026-007",
+      "status": "APPROVED",
+      "summary": "Add allow-listed, maximum-three-attempt automatic design recovery with durable audit history and customer-visible repair state.",
+      "affected_capabilities": [
+        "controlled_design_recovery",
+        "design_progress_visibility",
+        "visual_release"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request to let the site repair and retry failed design stages when safely possible"
+      },
+      "verification": {
+        "focused_tests": "must_pass",
+        "recovery_regression": "must_pass",
+        "web_regression": "must_pass",
+        "governance": "must_pass",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Classify failures through the allow-list, restore durable input/clean transient state, retry the same revision up to three attempts, and expose/persist every recovery action.",
+        "rollback": "Supersede only with a stricter approved recovery policy; never enable unlimited retries or autonomous engineering guesses."
+      }
     },
     {
-      "id":"GOV-2026-010",
-      "status":"APPROVED",
-      "summary":"Unify website, persistence and CAD authority inputs for city, rainfall and mechanical-shaft approval; return late missing-input failures to exact questions without exposing raw QA or repeating architectural analysis.",
-      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","active_version_synchronization"],
-      "affected_projects":["all","project-82"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to execute all seven corrective steps"},
-      "verification":{"focused_tests":"PASS","negative_tests":"PASS","database_reload":"PASS","web_regression":"PASS","full_regression":"422 PASS","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Normalize legacy and new explicit answers into the v18.5 basis contract, require the same fields before queueing and at authority QA, and resume missing-input work at authority_contract.","rollback":"Supersede only with a stricter contract; never restore free-text equality, divergent preflight requirements or raw QA exposure."}
+      "id": "GOV-2026-010",
+      "status": "APPROVED",
+      "summary": "Unify website, persistence and CAD authority inputs for city, rainfall and mechanical-shaft approval; return late missing-input failures to exact questions without exposing raw QA or repeating architectural analysis.",
+      "affected_capabilities": [
+        "mechanical_basis_contract",
+        "controlled_design_recovery",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-82"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to execute all seven corrective steps"
+      },
+      "verification": {
+        "focused_tests": "PASS",
+        "negative_tests": "PASS",
+        "database_reload": "PASS",
+        "web_regression": "PASS",
+        "full_regression": "422 PASS",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Normalize legacy and new explicit answers into the v18.5 basis contract, require the same fields before queueing and at authority QA, and resume missing-input work at authority_contract.",
+        "rollback": "Supersede only with a stricter contract; never restore free-text equality, divergent preflight requirements or raw QA exposure."
+      }
     },
     {
-      "id":"GOV-2026-011",
-      "status":"APPROVED",
-      "summary":"Migrate failed pre-v18.5 authority runs into explicit rainfall and shaft questions before retrying, including jobs already queued during a rolling deployment; consume each legacy failure once and preserve prior analysis.",
-      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all","project-84"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to complete all corrective stages and eliminate the production failure"},
-      "verification":{"focused_tests":"35 PASS","full_regression":"424 PASS","production_project_84":"must_request_missing_inputs","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Inspect only unconsumed failed revision reports, map allow-listed authority errors to explicit questions, and block both new and already-queued design execution until answers are persisted.","rollback":"Supersede only with a stricter migration; never blindly requeue a known missing-input authority failure."}
+      "id": "GOV-2026-011",
+      "status": "APPROVED",
+      "summary": "Migrate failed pre-v18.5 authority runs into explicit rainfall and shaft questions before retrying, including jobs already queued during a rolling deployment; consume each legacy failure once and preserve prior analysis.",
+      "affected_capabilities": [
+        "mechanical_basis_contract",
+        "controlled_design_recovery",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-84"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to complete all corrective stages and eliminate the production failure"
+      },
+      "verification": {
+        "focused_tests": "35 PASS",
+        "full_regression": "424 PASS",
+        "production_project_84": "must_request_missing_inputs",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Inspect only unconsumed failed revision reports, map allow-listed authority errors to explicit questions, and block both new and already-queued design execution until answers are persisted.",
+        "rollback": "Supersede only with a stricter migration; never blindly requeue a known missing-input authority failure."
+      }
     },
     {
-      "id":"GOV-2026-012",
-      "status":"APPROVED",
-      "summary":"Make questionnaire submissions idempotent and automatically retry transient gateway failures without losing the entered answer or advancing more than one question.",
-      "affected_capabilities":["questionnaire_persistence","web_resilience","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user request to prevent the observed Railway 502 answer-submission failure"},
-      "verification":{"idempotent_replay":"must_pass","transient_retry_ui":"must_pass","full_regression":"must_pass","production_project_85":"must_resume_without_prior-answer_loss","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Send the expected question index with every answer, treat replays as successful state reads, retry 5xx/network failures four times with backoff, and retain the answer in the page if all attempts fail.","rollback":"Supersede only with a stricter submission protocol; never return to non-idempotent answer advancement."}
+      "id": "GOV-2026-012",
+      "status": "APPROVED",
+      "summary": "Make questionnaire submissions idempotent and automatically retry transient gateway failures without losing the entered answer or advancing more than one question.",
+      "affected_capabilities": [
+        "questionnaire_persistence",
+        "web_resilience",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user request to prevent the observed Railway 502 answer-submission failure"
+      },
+      "verification": {
+        "idempotent_replay": "must_pass",
+        "transient_retry_ui": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_resume_without_prior-answer_loss",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Send the expected question index with every answer, treat replays as successful state reads, retry 5xx/network failures four times with backoff, and retain the answer in the page if all attempts fail.",
+        "rollback": "Supersede only with a stricter submission protocol; never return to non-idempotent answer advancement."
+      }
     },
     {
-      "id":"GOV-2026-013",
-      "status":"APPROVED",
-      "summary":"Unify the website and CAD cooling contract, offer only authority-supported wall-mounted split AC, reject unsupported cooling without substitution, and recover existing missing-cooling failures at the exact question without repeating architecture analysis.",
-      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to eliminate the observed project-85 cooling_system failure"},
-      "verification":{"focused_tests":"must_pass","negative_cooling_tests":"must_pass","project_85_recovery":"must_pass","full_regression":"must_pass","production_project_85":"must_reopen_supported_cooling_question","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Canonicalize explicit wall-mounted split answers once across website, persistence and CAD; reopen old cooling failures exactly once and preserve prior analysis.","rollback":"Supersede only after complete authority gates exist for another cooling system; never restore unsupported choices or silent substitution."}
+      "id": "GOV-2026-013",
+      "status": "APPROVED",
+      "summary": "Unify the website and CAD cooling contract, offer only authority-supported wall-mounted split AC, reject unsupported cooling without substitution, and recover existing missing-cooling failures at the exact question without repeating architecture analysis.",
+      "affected_capabilities": [
+        "mechanical_basis_contract",
+        "controlled_design_recovery",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to eliminate the observed project-85 cooling_system failure"
+      },
+      "verification": {
+        "focused_tests": "must_pass",
+        "negative_cooling_tests": "must_pass",
+        "project_85_recovery": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_reopen_supported_cooling_question",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Canonicalize explicit wall-mounted split answers once across website, persistence and CAD; reopen old cooling failures exactly once and preserve prior analysis.",
+        "rollback": "Supersede only after complete authority gates exist for another cooling system; never restore unsupported choices or silent substitution."
+      }
     },
     {
-      "id":"GOV-2026-014",
-      "status":"APPROVED",
-      "summary":"Preserve the last architectural source across failed and retryable projects, prohibit automatic deletion of durable R2 inputs, and route irrecoverable legacy projects to explicit re-upload without discarding answers or analysis.",
-      "affected_capabilities":["controlled_design_recovery","artifact_storage","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction after project 85 lost its architecture source during retry"},
-      "verification":{"focused_storage_tests":"must_pass","negative_cleanup_test":"must_pass","reupload_fallback":"must_pass","full_regression":"must_pass","production_project_85":"must_show_reupload_form","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Remove local source only after a durable copy is verified; retain durable inputs across all processing states; require re-upload only for already-orphaned legacy projects.","rollback":"Never restore automatic deletion of the sole local source or durable input."}
+      "id": "GOV-2026-014",
+      "status": "APPROVED",
+      "summary": "Preserve the last architectural source across failed and retryable projects, prohibit automatic deletion of durable R2 inputs, and route irrecoverable legacy projects to explicit re-upload without discarding answers or analysis.",
+      "affected_capabilities": [
+        "controlled_design_recovery",
+        "artifact_storage",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction after project 85 lost its architecture source during retry"
+      },
+      "verification": {
+        "focused_storage_tests": "must_pass",
+        "negative_cleanup_test": "must_pass",
+        "reupload_fallback": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_show_reupload_form",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Remove local source only after a durable copy is verified; retain durable inputs across all processing states; require re-upload only for already-orphaned legacy projects.",
+        "rollback": "Never restore automatic deletion of the sole local source or durable input."
+      }
     },
     {
-      "id":"GOV-2026-015",
-      "status":"APPROVED",
-      "summary":"Require a legacy architecture object to materialize into an actual DXF before a retry revision can be queued; false durable markers route directly to safe re-upload.",
-      "affected_capabilities":["controlled_design_recovery","artifact_storage","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to eliminate the observed project-85 missing-source retry loop"},
-      "verification":{"materialization_negative_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_reupload_form_without_new_failed_revision","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Restore and extract the source during retry preflight; enqueue design only after at least one DXF is physically present.","rollback":"Never use object-list presence alone as proof that a design input can be consumed."}
+      "id": "GOV-2026-015",
+      "status": "APPROVED",
+      "summary": "Require a legacy architecture object to materialize into an actual DXF before a retry revision can be queued; false durable markers route directly to safe re-upload.",
+      "affected_capabilities": [
+        "controlled_design_recovery",
+        "artifact_storage",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to eliminate the observed project-85 missing-source retry loop"
+      },
+      "verification": {
+        "materialization_negative_test": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_show_reupload_form_without_new_failed_revision",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Restore and extract the source during retry preflight; enqueue design only after at least one DXF is physically present.",
+        "rollback": "Never use object-list presence alone as proof that a design input can be consumed."
+      }
     },
     {
-      "id":"GOV-2026-016",
-      "status":"APPROVED",
-      "summary":"Render scalar design-basis questions as unit-aware numeric controls, preserve their canonical keys through every presentation adapter, and retain structured CAD QA evidence for deterministic recovery.",
-      "affected_capabilities":["mechanical_basis_contract","controlled_design_recovery","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction after the gas-pressure question displayed gas-system choices and R7 hid its failing QA gate"},
-      "verification":{"numeric_gas_pressure_ui":"must_pass","late_gas_alias_recovery":"must_pass","customer_safe_error":"must_pass","full_regression":"must_pass","production_project_85":"must_resume_at_numeric_pressure_or expose actionable QA","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Re-present invalid legacy gas-pressure answers as a numeric mbar question; map CAD gas_service_pressure to gas_pressure; preserve internal structured failures while keeping the customer view safe.","rollback":"Never infer a semantic gas-system question from an explicit scalar pressure key or discard the failing structured QA evidence."}
+      "id": "GOV-2026-016",
+      "status": "APPROVED",
+      "summary": "Render scalar design-basis questions as unit-aware numeric controls, preserve their canonical keys through every presentation adapter, and retain structured CAD QA evidence for deterministic recovery.",
+      "affected_capabilities": [
+        "mechanical_basis_contract",
+        "controlled_design_recovery",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction after the gas-pressure question displayed gas-system choices and R7 hid its failing QA gate"
+      },
+      "verification": {
+        "numeric_gas_pressure_ui": "must_pass",
+        "late_gas_alias_recovery": "must_pass",
+        "customer_safe_error": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_resume_at_numeric_pressure_or expose actionable QA",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Re-present invalid legacy gas-pressure answers as a numeric mbar question; map CAD gas_service_pressure to gas_pressure; preserve internal structured failures while keeping the customer view safe.",
+        "rollback": "Never infer a semantic gas-system question from an explicit scalar pressure key or discard the failing structured QA evidence."
+      }
     },
     {
-      "id":"GOV-2026-017",
-      "status":"APPROVED",
-      "summary":"Expose allow-listed CAD QA gate codes in customer-safe failure messages so a failed revision is actionable without leaking internal dictionaries, paths, or stack traces.",
-      "affected_capabilities":["customer_safe_errors","controlled_design_recovery","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to diagnose and eliminate the project-85 final technical failure"},
-      "verification":{"safe_gate_code_test":"must_pass","full_regression":"must_pass","production_project_85":"must_display_actionable_gate_code","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Render only normalized allow-listed QA identifiers and keep raw structured evidence internal.","rollback":"Never return to an opaque generic failure that prevents deterministic repair."}
+      "id": "GOV-2026-017",
+      "status": "APPROVED",
+      "summary": "Expose allow-listed CAD QA gate codes in customer-safe failure messages so a failed revision is actionable without leaking internal dictionaries, paths, or stack traces.",
+      "affected_capabilities": [
+        "customer_safe_errors",
+        "controlled_design_recovery",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to diagnose and eliminate the project-85 final technical failure"
+      },
+      "verification": {
+        "safe_gate_code_test": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_display_actionable_gate_code",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Render only normalized allow-listed QA identifiers and keep raw structured evidence internal.",
+        "rollback": "Never return to an opaque generic failure that prevents deterministic repair."
+      }
     },
     {
-      "id":"GOV-2026-018",
-      "status":"APPROVED",
-      "summary":"Propagate the exact failed CAD stage and its QA record across the CAD-to-site boundary so every fail-closed revision is diagnosable and repairable.",
-      "affected_capabilities":["mechanical_release_qa","customer_safe_errors","controlled_design_recovery","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction to identify and eliminate the project-85 R9 mechanical_qa_failed result"},
-      "verification":{"failed_stage_contract_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_failed_stage","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Include failed_stage_qa selected from the report stage and retain its normalized error codes in the site revision.","rollback":"Never collapse an actionable failed CAD stage into MECHANICAL_QA_FAILED alone."}
+      "id": "GOV-2026-018",
+      "status": "APPROVED",
+      "summary": "Propagate the exact failed CAD stage and its QA record across the CAD-to-site boundary so every fail-closed revision is diagnosable and repairable.",
+      "affected_capabilities": [
+        "mechanical_release_qa",
+        "customer_safe_errors",
+        "controlled_design_recovery",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction to identify and eliminate the project-85 R9 mechanical_qa_failed result"
+      },
+      "verification": {
+        "failed_stage_contract_test": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_report_exact_failed_stage",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Include failed_stage_qa selected from the report stage and retain its normalized error codes in the site revision.",
+        "rollback": "Never collapse an actionable failed CAD stage into MECHANICAL_QA_FAILED alone."
+      }
     },
     {
-      "id":"GOV-2026-019",
-      "status":"APPROVED",
-      "summary":"Include approved_manifest_qa in the failed-stage transport contract so plan-count, family and board mismatches are preserved for deterministic correction.",
-      "affected_capabilities":["mechanical_release_qa","approved_drawing_manifest","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"project-85 R10 identified approved_manifest_gate after explicit user request to fix the failure"},
-      "verification":{"manifest_gate_mapping_test":"must_pass","full_regression":"must_pass","production_project_85":"must_report_exact_manifest_mismatch","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Transport approved_manifest_qa whenever approved_manifest_gate fails.","rollback":"Never discard the manifest mismatch that caused a fail-closed revision."}
+      "id": "GOV-2026-019",
+      "status": "APPROVED",
+      "summary": "Include approved_manifest_qa in the failed-stage transport contract so plan-count, family and board mismatches are preserved for deterministic correction.",
+      "affected_capabilities": [
+        "mechanical_release_qa",
+        "approved_drawing_manifest",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "project-85 R10 identified approved_manifest_gate after explicit user request to fix the failure"
+      },
+      "verification": {
+        "manifest_gate_mapping_test": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_report_exact_manifest_mismatch",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Transport approved_manifest_qa whenever approved_manifest_gate fails.",
+        "rollback": "Never discard the manifest mismatch that caused a fail-closed revision."
+      }
     },
     {
-      "id":"GOV-2026-020",
-      "status":"APPROVED",
-      "summary":"Prioritize the failed stage and its exact errors ahead of large upstream reports so actionable QA evidence can never be truncated.",
-      "affected_capabilities":["customer_safe_errors","mechanical_release_qa","active_version_synchronization"],
-      "affected_projects":["all","project-85"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction after project-85 R12 retained the gate but truncated its mismatch errors"},
-      "verification":{"large_report_truncation_test":"must_pass","full_regression":"must_pass","production_project_85":"must_show_exact_manifest_error","required_ci":"must_pass_before_merge"},
-      "migration":{"forward":"Serialize failed stage and failed_stage_qa.errors before all other diagnostic evidence.","rollback":"Never allow generic upstream data to truncate the cause of the active failed gate."}
+      "id": "GOV-2026-020",
+      "status": "APPROVED",
+      "summary": "Prioritize the failed stage and its exact errors ahead of large upstream reports so actionable QA evidence can never be truncated.",
+      "affected_capabilities": [
+        "customer_safe_errors",
+        "mechanical_release_qa",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-85"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction after project-85 R12 retained the gate but truncated its mismatch errors"
+      },
+      "verification": {
+        "large_report_truncation_test": "must_pass",
+        "full_regression": "must_pass",
+        "production_project_85": "must_show_exact_manifest_error",
+        "required_ci": "must_pass_before_merge"
+      },
+      "migration": {
+        "forward": "Serialize failed stage and failed_stage_qa.errors before all other diagnostic evidence.",
+        "rollback": "Never allow generic upstream data to truncate the cause of the active failed gate."
+      }
     },
     {
-      "id":"GOV-2026-021",
-      "status":"APPROVED",
-      "summary":"Treat a missing source architectural north symbol as an explicit coordination warning instead of a terminal mechanical CAD failure, while continuing to prohibit fabricated north arrows.",
-      "affected_capabilities":["mechanical_release_qa","architecture_preservation","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction after a new production project failed only because its architectural plans contained no north symbol"},
-      "verification":{"missing_north_warning_test":"PASS","no_fabricated_north_test":"PASS","full_regression":"559 PASS in production container; runtime version guard PASS separately because the runtime image intentionally excludes git","production_retry":"must_complete_without architectural_north_missing","required_ci":"must_pass before deployment"},
-      "migration":{"forward":"Issue plan sheets without inventing direction when the architectural source has no north symbol; record architectural_north_not_provided per affected sheet as a coordination warning.","rollback":"Supersede only with a source-backed orientation requirement; never generate an assumed north arrow."}
+      "id": "GOV-2026-021",
+      "status": "APPROVED",
+      "summary": "Treat a missing source architectural north symbol as an explicit coordination warning instead of a terminal mechanical CAD failure, while continuing to prohibit fabricated north arrows.",
+      "affected_capabilities": [
+        "mechanical_release_qa",
+        "architecture_preservation",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction after a new production project failed only because its architectural plans contained no north symbol"
+      },
+      "verification": {
+        "missing_north_warning_test": "PASS",
+        "no_fabricated_north_test": "PASS",
+        "full_regression": "559 PASS in production container; runtime version guard PASS separately because the runtime image intentionally excludes git",
+        "production_retry": "must_complete_without architectural_north_missing",
+        "required_ci": "must_pass before deployment"
+      },
+      "migration": {
+        "forward": "Issue plan sheets without inventing direction when the architectural source has no north symbol; record architectural_north_not_provided per affected sheet as a coordination warning.",
+        "rollback": "Supersede only with a source-backed orientation requirement; never generate an assumed north arrow."
+      }
     },
     {
-      "id":"GOV-2026-022",
-      "status":"APPROVED",
-      "summary":"Assign traceable project loads by recognized endpoint type and a conservative system minimum for accepted proprietary endpoints, classify shaft-wall entry as a coordinated terminal penetration, and exclude non-blocking warnings from the customer-facing failure cause.",
-      "affected_capabilities":["mechanical_network_sizing","mechanical_routing","customer_safe_errors","active_version_synchronization"],
-      "affected_projects":["all","project-100"],
-      "approval":{"status":"APPROVED","basis":"explicit user instruction after project 100 failed at pipeline QA while the UI incorrectly foregrounded north warnings"},
-      "verification":{"focused_regression":"must pass including category-drift and proprietary-endpoint minimum sizing","full_regression":"562 PASS before production proprietary endpoint discovery; runtime guard executed separately because production image intentionally excludes git","runtime_version_guard":"PASS","production_retry":"two retries isolated endpoint metadata variants; next retry must pass route sizing and wall-crossing acceptance","required_ci":"must_pass before deployment"},
-      "migration":{"forward":"Use traceable endpoint-type loads and a conservative per-system minimum when an already accepted endpoint has unknown source metadata; preserve non-terminal wall clashes as failures and report only actual error arrays as the failure cause.","rollback":"Never restore metadata-dependent zero-load sizing, allow non-terminal wall crossings, or present warnings as failures."}
+      "id": "GOV-2026-022",
+      "status": "APPROVED",
+      "summary": "Assign traceable project loads by recognized endpoint type and a conservative system minimum for accepted proprietary endpoints, classify shaft-wall entry as a coordinated terminal penetration, and exclude non-blocking warnings from the customer-facing failure cause.",
+      "affected_capabilities": [
+        "mechanical_network_sizing",
+        "mechanical_routing",
+        "customer_safe_errors",
+        "active_version_synchronization"
+      ],
+      "affected_projects": [
+        "all",
+        "project-100"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit user instruction after project 100 failed at pipeline QA while the UI incorrectly foregrounded north warnings"
+      },
+      "verification": {
+        "focused_regression": "must pass including category-drift and proprietary-endpoint minimum sizing",
+        "full_regression": "562 PASS before production proprietary endpoint discovery; runtime guard executed separately because production image intentionally excludes git",
+        "runtime_version_guard": "PASS",
+        "production_retry": "two retries isolated endpoint metadata variants; next retry must pass route sizing and wall-crossing acceptance",
+        "required_ci": "must_pass before deployment"
+      },
+      "migration": {
+        "forward": "Use traceable endpoint-type loads and a conservative per-system minimum when an already accepted endpoint has unknown source metadata; preserve non-terminal wall clashes as failures and report only actual error arrays as the failure cause.",
+        "rollback": "Never restore metadata-dependent zero-load sizing, allow non-terminal wall crossings, or present warnings as failures."
+      }
     },
     {
-      "id":"GOV-2026-023",
-      "status":"APPROVED",
-      "summary":"Complete fail-closed final Heating, Gas and Split AC design packages for target sheets with exact manufacturer and PMM/calculation traceability.",
-      "affected_capabilities":["package_radiator","gas","split_ac","mechanical_network_sizing","mechanical_release_qa"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 7, 8 and 9 after closing prerequisite gates"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
-      "migration":{"forward":"Existing PMM v3 inputs remain readable; final issue requires the additive engineering and manufacturer evidence.","rollback":"Revert the protected commit; never downgrade missing final evidence to PASS."}
+      "id": "GOV-2026-023",
+      "status": "APPROVED",
+      "summary": "Complete fail-closed final Heating, Gas and Split AC design packages for target sheets with exact manufacturer and PMM/calculation traceability.",
+      "affected_capabilities": [
+        "package_radiator",
+        "gas",
+        "split_ac",
+        "mechanical_network_sizing",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner request to complete steps 7, 8 and 9 after closing prerequisite gates"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Existing PMM v3 inputs remain readable; final issue requires the additive engineering and manufacturer evidence.",
+        "rollback": "Revert the protected commit; never downgrade missing final evidence to PASS."
+      }
     },
     {
-      "id":"GOV-2026-024",
-      "status":"APPROVED",
-      "summary":"Complete steps 10-13 as one fail-closed final-design chain for Exhaust, roof rainwater, graph-derived riser and the official hash-only manufacturer database.",
-      "affected_capabilities":["exhaust","roof_rainwater","detail_riser","manufacturer_selector","mechanical_release_qa"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner request to complete steps 10 through 13"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge"},
-      "migration":{"forward":"Existing inputs remain readable; final issue additionally requires complete Exhaust/Rainwater/Riser/Manufacturer database evidence.","rollback":"Revert the protected commit; never treat incomplete or unofficial evidence as final."}
+      "id": "GOV-2026-024",
+      "status": "APPROVED",
+      "summary": "Complete steps 10-13 as one fail-closed final-design chain for Exhaust, roof rainwater, graph-derived riser and the official hash-only manufacturer database.",
+      "affected_capabilities": [
+        "exhaust",
+        "roof_rainwater",
+        "detail_riser",
+        "manufacturer_selector",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner request to complete steps 10 through 13"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Existing inputs remain readable; final issue additionally requires complete Exhaust/Rainwater/Riser/Manufacturer database evidence.",
+        "rollback": "Revert the protected commit; never treat incomplete or unofficial evidence as final."
+      }
     },
     {
-      "id":"GOV-2026-033",
-      "status":"APPROVED",
-      "summary":"Preserve explicit architectural typical-floor ranges through canonical topology, riser and board materialization; compare integrated build identities truthfully; block Mechanical payment when runtime synchronization preflight fails.",
-      "affected_capabilities":["mechanical_routing","detail_riser","approved_drawing_manifest","runtime_health","commercial_payment_preflight"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs and complete the eight-project Staging evaluation"},
-      "verification":{"positive_typical_floor_tests":"must_pass","destructive_detail_level_test":"must_pass","payment_preflight_test":"must_pass","full_regression":"must_pass","staging_smoke":"must_pass before eight-project generation"},
-      "migration":{"forward":"Fresh retries derive one TYPICAL_n_m identity from an explicit source range; no stored-data migration.","rollback":"Revert the protected commit; never infer levels from unknown or detail labels and never charge against an unsynchronized Mechanical runtime."}
+      "id": "GOV-2026-033",
+      "status": "APPROVED",
+      "summary": "Preserve explicit architectural typical-floor ranges through canonical topology, riser and board materialization; compare integrated build identities truthfully; block Mechanical payment when runtime synchronization preflight fails.",
+      "affected_capabilities": [
+        "mechanical_routing",
+        "detail_riser",
+        "approved_drawing_manifest",
+        "runtime_health",
+        "commercial_payment_preflight"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute all repairs and complete the eight-project Staging evaluation"
+      },
+      "verification": {
+        "positive_typical_floor_tests": "must_pass",
+        "destructive_detail_level_test": "must_pass",
+        "payment_preflight_test": "must_pass",
+        "full_regression": "must_pass",
+        "staging_smoke": "must_pass before eight-project generation"
+      },
+      "migration": {
+        "forward": "Fresh retries derive one TYPICAL_n_m identity from an explicit source range; no stored-data migration.",
+        "rollback": "Revert the protected commit; never infer levels from unknown or detail labels and never charge against an unsynchronized Mechanical runtime."
+      }
     },
     {
-      "id":"GOV-2026-034",
-      "status":"APPROVED",
-      "summary":"Package canonical dependency, README and runtime-matrix evidence into panel and CAD images so the fail-closed pre-payment synchronization gate can execute in Railway.",
-      "affected_capabilities":["deployment","runtime_identity","commercial_payment_preflight"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute all repairs after live Staging preflight correctly rejected an incomplete image"},
-      "verification":{"image_contract_test":"must_pass","full_regression":"must_pass","live_payment_preflight":"must_pass before generation"},
-      "migration":{"forward":"Rebuild images with canonical release evidence paths.","rollback":"Do not bypass the preflight; redeploy only a complete prior image."}
+      "id": "GOV-2026-034",
+      "status": "APPROVED",
+      "summary": "Package canonical dependency, README and runtime-matrix evidence into panel and CAD images so the fail-closed pre-payment synchronization gate can execute in Railway.",
+      "affected_capabilities": [
+        "deployment",
+        "runtime_identity",
+        "commercial_payment_preflight"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute all repairs after live Staging preflight correctly rejected an incomplete image"
+      },
+      "verification": {
+        "image_contract_test": "must_pass",
+        "full_regression": "must_pass",
+        "live_payment_preflight": "must_pass before generation"
+      },
+      "migration": {
+        "forward": "Rebuild images with canonical release evidence paths.",
+        "rollback": "Do not bypass the preflight; redeploy only a complete prior image."
+      }
     },
     {
-      "id":"GOV-2026-035",
-      "status":"APPROVED",
-      "summary":"Resolve source nodes in nested architectural plan regions using the unique smallest containing boundary while retaining equal-boundary ambiguity as fail-closed.",
-      "affected_capabilities":["mechanical_routing","level_identity","approved_drawing_manifest"],
-      "affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete all repairs after blind Staging project 3 exposed overlapping source regions"},
-      "verification":{"nested_region_test":"must_pass","equal_region_negative_test":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
-      "migration":{"forward":"Fresh topology rebuild resolves only a unique most-specific source boundary.","rollback":"Revert; never choose among equal minimum regions."}
+      "id": "GOV-2026-035",
+      "status": "APPROVED",
+      "summary": "Resolve source nodes in nested architectural plan regions using the unique smallest containing boundary while retaining equal-boundary ambiguity as fail-closed.",
+      "affected_capabilities": [
+        "mechanical_routing",
+        "level_identity",
+        "approved_drawing_manifest"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to complete all repairs after blind Staging project 3 exposed overlapping source regions"
+      },
+      "verification": {
+        "nested_region_test": "must_pass",
+        "equal_region_negative_test": "must_pass",
+        "full_regression": "must_pass",
+        "staging_project_3": "must_retry"
+      },
+      "migration": {
+        "forward": "Fresh topology rebuild resolves only a unique most-specific source boundary.",
+        "rollback": "Revert; never choose among equal minimum regions."
+      }
     },
     {
-      "id":"GOV-2026-036","status":"APPROVED",
-      "summary":"Preserve exact architecture-model level bounds in PMM when profile summaries omit them, using strict same-name matching only.",
-      "affected_capabilities":["pmm","mechanical_routing","level_identity"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction after blind Staging project 3 proved valid architecture bounds were discarded by the PMM bridge"},
-      "verification":{"exact_match_test":"must_pass","nonmatch_negative":"must_pass","full_regression":"must_pass","staging_project_3":"must_retry"},
-      "migration":{"forward":"Fresh PMM rebuild copies existing exact-name bounds.","rollback":"Revert; never fuzzy-match level names or invent bounds."}
+      "id": "GOV-2026-036",
+      "status": "APPROVED",
+      "summary": "Preserve exact architecture-model level bounds in PMM when profile summaries omit them, using strict same-name matching only.",
+      "affected_capabilities": [
+        "pmm",
+        "mechanical_routing",
+        "level_identity"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction after blind Staging project 3 proved valid architecture bounds were discarded by the PMM bridge"
+      },
+      "verification": {
+        "exact_match_test": "must_pass",
+        "nonmatch_negative": "must_pass",
+        "full_regression": "must_pass",
+        "staging_project_3": "must_retry"
+      },
+      "migration": {
+        "forward": "Fresh PMM rebuild copies existing exact-name bounds.",
+        "rollback": "Revert; never fuzzy-match level names or invent bounds."
+      }
     },
     {
-      "id":"GOV-2026-037","status":"APPROVED",
-      "summary":"Keep persistent queue consumers alive after transient claim failures and expose their heartbeat through fail-closed integrated health.",
-      "affected_capabilities":["deployment","job_queue","runtime_health","mechanical_generation"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to perform the next step after Staging accepted a design job but returned no terminal state"},
-      "verification":{"supervisor_test":"must_pass","health_contract_test":"must_pass","full_regression":"must_pass","staging_queue_smoke":"must_pass before project reruns"},
-      "migration":{"forward":"Restart the deployed process so supervised consumers register fresh heartbeats; queued rows remain persistent.","rollback":"Redeploy the prior approved SHA; do not report healthy when consumers are unavailable."}
+      "id": "GOV-2026-037",
+      "status": "APPROVED",
+      "summary": "Keep persistent queue consumers alive after transient claim failures and expose their heartbeat through fail-closed integrated health.",
+      "affected_capabilities": [
+        "deployment",
+        "job_queue",
+        "runtime_health",
+        "mechanical_generation"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to perform the next step after Staging accepted a design job but returned no terminal state"
+      },
+      "verification": {
+        "supervisor_test": "must_pass",
+        "health_contract_test": "must_pass",
+        "full_regression": "must_pass",
+        "staging_queue_smoke": "must_pass before project reruns"
+      },
+      "migration": {
+        "forward": "Restart the deployed process so supervised consumers register fresh heartbeats; queued rows remain persistent.",
+        "rollback": "Redeploy the prior approved SHA; do not report healthy when consumers are unavailable."
+      }
     },
     {
-      "id":"GOV-2026-038","status":"APPROVED",
-      "summary":"Replace the inherited legacy health route with the integrated queue-aware health authority.",
-      "affected_capabilities":["runtime_health","job_queue","deployment"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit owner instruction to complete the next Staging recovery step"},
-      "verification":{"route_authority_test":"must_pass","full_regression":"must_pass","live_queue_heartbeat":"must_pass"},
-      "migration":{"forward":"Restart only.","rollback":"Redeploy the prior SHA."}
+      "id": "GOV-2026-038",
+      "status": "APPROVED",
+      "summary": "Replace the inherited legacy health route with the integrated queue-aware health authority.",
+      "affected_capabilities": [
+        "runtime_health",
+        "job_queue",
+        "deployment"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit owner instruction to complete the next Staging recovery step"
+      },
+      "verification": {
+        "route_authority_test": "must_pass",
+        "full_regression": "must_pass",
+        "live_queue_heartbeat": "must_pass"
+      },
+      "migration": {
+        "forward": "Restart only.",
+        "rollback": "Redeploy the prior SHA."
+      }
     },
     {
-      "id":"GOV-2026-039","status":"APPROVED",
-      "summary":"Require evidence-backed Mechanical drawing scope to satisfy eighteen deterministic controls at 100/100 before approval and generation.",
-      "affected_capabilities":["drawing_scope_100","approved_drawing_manifest","mechanical_generation"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to complete the eighteen drawing-scope improvements and publish them to Staging"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
-      "migration":{"forward":"Recalculate legacy 3.1 proposals as deterministic 3.2 manifests.","rollback":"Revert the protected commit; never approve an ambiguous or incomplete scope."}
+      "id": "GOV-2026-039",
+      "status": "APPROVED",
+      "summary": "Require evidence-backed Mechanical drawing scope to satisfy eighteen deterministic controls at 100/100 before approval and generation.",
+      "affected_capabilities": [
+        "drawing_scope_100",
+        "approved_drawing_manifest",
+        "mechanical_generation"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to complete the eighteen drawing-scope improvements and publish them to Staging"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_identity": "must_match merged SHA"
+      },
+      "migration": {
+        "forward": "Recalculate legacy 3.1 proposals as deterministic 3.2 manifests.",
+        "rollback": "Revert the protected commit; never approve an ambiguous or incomplete scope."
+      }
     },
     {
-      "id":"GOV-2026-040","status":"APPROVED",
-      "summary":"Require calculated, catalogue-backed Mechanical equipment selection and architecture-hosted placement to satisfy eighteen controls at 100/100.",
-      "affected_capabilities":["manufacturer_selection","equipment_selection_placement_100","mechanical_release_qa"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen equipment selection and placement improvements"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","golden_regression":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
-      "migration":{"forward":"Regenerate existing equipment selections and exact outputs to create the additive 100-point evidence.","rollback":"Revert the protected commit; never downgrade missing selection or placement evidence to PASS."}
+      "id": "GOV-2026-040",
+      "status": "APPROVED",
+      "summary": "Require calculated, catalogue-backed Mechanical equipment selection and architecture-hosted placement to satisfy eighteen controls at 100/100.",
+      "affected_capabilities": [
+        "manufacturer_selection",
+        "equipment_selection_placement_100",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute, finalize and deploy all eighteen equipment selection and placement improvements"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_identity": "must_match merged SHA"
+      },
+      "migration": {
+        "forward": "Regenerate existing equipment selections and exact outputs to create the additive 100-point evidence.",
+        "rollback": "Revert the protected commit; never downgrade missing selection or placement evidence to PASS."
+      }
     },
     {
-      "id":"GOV-2026-041","status":"APPROVED",
-      "summary":"Require final Mechanical engineering and the exact issue package to satisfy eighteen system, coordination, documentation, review and immutability controls at 100/100.",
-      "affected_capabilities":["final_engineering_release_100","mechanical_release_qa","all_sheet_visual_qa","equipment_selection_placement_100"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen final engineering and issue-readiness improvements"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA","live_health":"must_pass"},
-      "migration":{"forward":"Regenerate release evidence and exact package hashes before claiming Submission Ready.","rollback":"Revert the protected commit; never bypass a missing or failed final engineering control."}
+      "id": "GOV-2026-041",
+      "status": "APPROVED",
+      "summary": "Require final Mechanical engineering and the exact issue package to satisfy eighteen system, coordination, documentation, review and immutability controls at 100/100.",
+      "affected_capabilities": [
+        "final_engineering_release_100",
+        "mechanical_release_qa",
+        "all_sheet_visual_qa",
+        "equipment_selection_placement_100"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute, finalize and deploy all eighteen final engineering and issue-readiness improvements"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_identity": "must_match merged SHA",
+        "live_health": "must_pass"
+      },
+      "migration": {
+        "forward": "Regenerate release evidence and exact package hashes before claiming Submission Ready.",
+        "rollback": "Revert the protected commit; never bypass a missing or failed final engineering control."
+      }
     },
     {
-      "id":"GOV-2026-042","status":"APPROVED",
-      "summary":"Require architecture-only space and equipment recognition to satisfy eighteen source, geometry, semantic, identity and exact-reopen controls at 100/100.",
-      "affected_capabilities":["architecture_space_equipment_recognition_100","architecture_preservation","mechanical_runtime_authority"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen architecture space and equipment recognition improvements"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
-      "migration":{"forward":"Reanalyze approved architectural sources to produce the additive recognition evidence.","rollback":"Revert the protected commit; never infer ambiguous spaces or equipment and never use mechanical references for generation."}
+      "id": "GOV-2026-042",
+      "status": "APPROVED",
+      "summary": "Require architecture-only space and equipment recognition to satisfy eighteen source, geometry, semantic, identity and exact-reopen controls at 100/100.",
+      "affected_capabilities": [
+        "architecture_space_equipment_recognition_100",
+        "architecture_preservation",
+        "mechanical_runtime_authority"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute, finalize and deploy all eighteen architecture space and equipment recognition improvements"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_identity": "must_match merged SHA"
+      },
+      "migration": {
+        "forward": "Reanalyze approved architectural sources to produce the additive recognition evidence.",
+        "rollback": "Revert the protected commit; never infer ambiguous spaces or equipment and never use mechanical references for generation."
+      }
     },
     {
-      "id":"GOV-2026-043","status":"APPROVED",
-      "summary":"Require project-specific details, schedules, notes and legends to satisfy eighteen completeness, traceability, constructability, readability and exact-output controls at 100/100.",
-      "affected_capabilities":["documentation_content_100","construction_document_delivery","mechanical_release_qa"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen details, schedules, notes and legends improvements"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
-      "migration":{"forward":"Regenerate documents and exact outputs to create documentation-content/1 evidence.","rollback":"Revert and redeploy the previous approved SHA; never treat missing or inconsistent documentation as PASS."}
+      "id": "GOV-2026-043",
+      "status": "APPROVED",
+      "summary": "Require project-specific details, schedules, notes and legends to satisfy eighteen completeness, traceability, constructability, readability and exact-output controls at 100/100.",
+      "affected_capabilities": [
+        "documentation_content_100",
+        "construction_document_delivery",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute, finalize and deploy all eighteen details, schedules, notes and legends improvements"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_identity": "must_match merged SHA"
+      },
+      "migration": {
+        "forward": "Regenerate documents and exact outputs to create documentation-content/1 evidence.",
+        "rollback": "Revert and redeploy the previous approved SHA; never treat missing or inconsistent documentation as PASS."
+      }
     },
     {
-      "id":"GOV-2026-044","status":"APPROVED",
-      "summary":"Require questionnaire completeness and immutable project design basis to satisfy eighteen controls at 100/100.",
-      "affected_capabilities":["questionnaire_design_basis_100","mechanical_basis_contract","mechanical_runtime_authority"],"affected_projects":["all"],
-      "approval":{"status":"APPROVED","basis":"explicit project-owner instruction to execute, finalize and deploy all eighteen questionnaire and design-basis improvements"},
-      "verification":{"positive_test":"must_pass","destructive_test":"must_pass","full_regression":"must_pass","required_ci":"must_pass before merge","staging_identity":"must_match merged SHA"},
-      "migration":{"forward":"Revalidate, summarize and lock existing answers as questionnaire-design-basis/1.","rollback":"Revert and redeploy prior approved SHA; never silently reuse or invent design-basis facts."}
+      "id": "GOV-2026-044",
+      "status": "APPROVED",
+      "summary": "Require questionnaire completeness and immutable project design basis to satisfy eighteen controls at 100/100.",
+      "affected_capabilities": [
+        "questionnaire_design_basis_100",
+        "mechanical_basis_contract",
+        "mechanical_runtime_authority"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute, finalize and deploy all eighteen questionnaire and design-basis improvements"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge",
+        "staging_identity": "must_match merged SHA"
+      },
+      "migration": {
+        "forward": "Revalidate, summarize and lock existing answers as questionnaire-design-basis/1.",
+        "rollback": "Revert and redeploy prior approved SHA; never silently reuse or invent design-basis facts."
+      }
+    },
+    {
+      "id": "GOV-2026-045",
+      "status": "APPROVED",
+      "summary": "Add source-preserving semantic dimension intent, deterministic Mechanical set-out and exact-file reference/value traceability; a positive DIMENSION entity count is no longer construction-document proof.",
+      "affected_capabilities": [
+        "semantic_dimensioning",
+        "architecture_preservation",
+        "construction_document_delivery",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction on 2026-09-24 to implement the new Semantic Dimension Engine completely and validate it against the supplied architectural logic"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "exact_reopen": "must_pass",
+        "source_preservation": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Regenerate dimension evidence and Planha-owned set-out on applicable plan boards; preserve consultant source dimensions as evidence and fail closed on critical conflicts.",
+        "rollback": "Revert the protected merge commit; no source drawing or persisted PMM data migration is destructive."
+      }
     }
   ]
 }
