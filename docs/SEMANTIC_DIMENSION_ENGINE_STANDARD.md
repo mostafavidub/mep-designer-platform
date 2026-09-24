@@ -103,7 +103,7 @@ A count such as `DIMENSION > 0` proves only CAD inventory. It never proves engin
 
 ## 9. Units
 
-DXF `$INSUNITS` is evidence, not absolute truth. Unit normalization remains upstream and must reconcile metadata with geometry/dimension plausibility. The Dimension Engine does not fabricate a unit conversion.
+DXF `$INSUNITS` is evidence, not absolute truth. Analyzer and Dimension Engine use the same pure Unit Sanity function to reconcile metadata with dimension plausibility. Each intent retains the native drawing measurement plus its canonical engineering value in metres and the unit-evidence source. Rendered set-out follows the issued drawing coordinate convention; the canonical metre value is retained separately for traceability. The Dimension Engine does not invent a conversion.
 
 ## 10. Source-reference corpus
 
