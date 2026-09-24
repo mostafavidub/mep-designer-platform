@@ -19,8 +19,8 @@ from cad_engine.dimension_source_reconciliation import reconcile_source_dimensio
 from cad_engine.dimension_redundancy_optimizer import optimize_dimensions
 from cad_engine.dimension_placement_solver import solve_dimension_placement
 from cad_engine.dimension_qa import validate_chain_closure
-from cad_engine.dimension_renderer_v2 import materialize_v2_intents, validate_v2_exact_file
-from cad_engine.dimension_engine_v2 import run_dimension_engine_v2_shadow
+from cad_engine.dimension_renderer import materialize_engineering_dimension_intents, validate_engineering_dimension_exact_file
+from cad_engine.dimension_engine import run_dimension_engine_shadow
 
 
 def _doc(insunits=6, dim_value=10.0):
@@ -266,9 +266,9 @@ def test_v2_renderer_round_trips_semantic_reference_identity(tmp_path):
     doc=_doc();msp=doc.modelspace()
     row=_intent("D1",datum="G1",axis=0,value=2)
     row.update({"render_p1":(2,2),"render_p2":(0,2),"render_base":(1,2.4)})
-    materialized=materialize_v2_intents(doc,msp,[row])
+    materialized=materialize_engineering_dimension_intents(doc,msp,[row])
     path=tmp_path/"v2.dxf";doc.saveas(path)
-    out=validate_v2_exact_file(path,materialized)
+    out=validate_engineering_dimension_exact_file(path,materialized)
     assert out["status"]=="PASS"
     assert out["checked"]==1
 
@@ -278,7 +278,7 @@ def test_shadow_engine_does_not_change_visible_output_and_resolves_mm_header_met
     arch=_arch_rect()
     pipeline={"topology":{"nodes":[{"id":"R1","kind":"riser","plan_id":"P1","point":(4,3)}]},"hvac":{"equipment":[]}}
     v1={"materialized":[],"missing_determinacy":[]}
-    out=run_dimension_engine_v2_shadow(doc,{"plan_id":"P1","bounds":(0,0,10,8)},arch,pipeline,"MECHANICAL_PLAN",_board(),v1_report=v1)
+    out=run_dimension_engine_shadow(doc,{"plan_id":"P1","bounds":(0,0,10,8)},arch,pipeline,"MECHANICAL_PLAN",_board(),v1_report=v1)
     assert out["mode"]=="SHADOW"
     assert out["shadow_compare"]["visible_output_changed"] is False
     assert out["source_registry"]["unit_evidence"]["effective_scale_to_m"]==1.0
