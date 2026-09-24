@@ -124,7 +124,7 @@ def _simple_numeric_override(text):
 def _display_precision_tolerance(text):
     """Return the half-unit rounding tolerance implied by literal display precision."""
     value=str(text or "").strip().replace(",", ".").replace("٫", ".")
-    match=re.fullmatch(r"[-+]?(?:\\d+(?:\\.(\\d*))?|\\.(\\d+))", value)
+    match=re.fullmatch(r"[-+]?(?:\d+(?:\.(\d*))?|\.(\d+))", value)
     if not match:
         return None
     decimals=len(match.group(1) if match.group(1) is not None else (match.group(2) or ""))
