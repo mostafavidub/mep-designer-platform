@@ -43,7 +43,7 @@ from .semantic_dimension_engine import (
     build_and_materialize_plan_dimensions,
     validate_exact_file_dimensions,
 )
-from .dimension_engine_v2 import run_dimension_engine_v2_shadow
+from .dimension_engine import run_dimension_engine_shadow
 from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
@@ -826,7 +826,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                     doc,msp,vars(b),plan,arch,pipeline,b.family,b.level
                 )
                 v2_profile="ROOF_PLAN" if (b.family=="ROOF" or b.level=="ROOF") else "MECHANICAL_PLAN"
-                dimensioning_v2_shadow[b.code]=run_dimension_engine_v2_shadow(
+                dimensioning_v2_shadow[b.code]=run_dimension_engine_shadow(
                     doc,plan,arch,pipeline,v2_profile,vars(b),
                     v1_report=dimensioning[b.code],
                     wall_reference_basis=wall_reference_basis,
