@@ -24,86 +24,67 @@ def _independent_axes(constraints,tol_deg=5.0):
 
 
 def build_determinacy_graph(elements,intents,stable_reference_ids):
-    """Build a bipartite element/reference constraint graph."""
+    """Prove each required locating DOF from stable datum paths."""
     graph=defaultdict(set)
-    evidence=defaultdict(list)
+    stable=set(str(x) for x in stable_reference_ids or [])
     for row in intents or []:
         a=_ref_id(row.get("reference_a"));b=_ref_id(row.get("reference_b"))
         if not a or not b:continue
-        graph[a].add(b);graph[b].add(a);evidence[a].append(row);evidence[b].append(row)
-    stable=set(str(x) for x in stable_reference_ids or [])
+        graph[a].add(b);graph[b].add(a)
     reachable=set(stable);q=deque(stable)
     while q:
         n=q.popleft()
         for nxt in graph.get(n,()):
             if nxt not in reachable:reachable.add(nxt);q.append(nxt)
+
     results=[]
     for e in elements or []:
         eid=str(e.get("id") or "")
-        kind=e.get("geometry_kind","POINT")
-        rows=[r for r in intents or [] if eid in {_ref_id(r.get("reference_a")),_ref_id(r.get("reference_b"))}]
-        if kind=="POINT":
-            complete=eid in reachable and (_independent_axes(rows) or bool(e.get("intrinsically_hosted")))
-            dof_required=0 if e.get("intrinsically_hosted") else 2
-            dof_proven=2 if complete else min(1,len(rows))
-        else:
-            complete=eid in reachable or bool(e.get("intrinsically_hosted"))
-            dof_required=int(e.get("required_constraints",1))
-            dof_proven=dof_required if complete else min(dof_required,len(rows))
-        results.append({"element_id":eid,"priority_class":e.get("priority_class","P1"),"complete":bool(complete),
-                        "required_constraints":dof_required,"proven_constraints":dof_proven,
-                        "datum_path_exists":eid in reachable or bool(e.get("intrinsically_hosted")),
+        required=list(e.get("required_dofs") or ([] if e.get("intrinsically_hosted") else (["LOC_0","LOC_1"] if e.get("geometry_kind","POINT")=="POINT" else ["OFFSET","START","END"])))
+        rows=[r for r in intents or [] if eid==str(((r.get("reference_a") or {}).get("element_id") or (r.get("reference_a") or {}).get("id") or ""))]
+        proven={str(r.get("constraint_dof")) for r in rows if r.get("constraint_dof") and _ref_id(r.get("reference_b")) in reachable}
+        if e.get("intrinsically_hosted"):
+            proven.update(required)
+        missing=[d for d in required if d not in proven]
+        complete=not missing
+        results.append({"element_id":eid,"priority_class":e.get("priority_class","P1"),"complete":complete,
+                        "required_dofs":required,"proven_dofs":sorted(proven),"missing_dofs":missing,
+                        "required_constraints":len(required),"proven_constraints":len([d for d in required if d in proven]),
+                        "datum_path_exists":bool(proven) or bool(e.get("intrinsically_hosted")),
                         "intent_ids":[r.get("id") for r in rows]})
     critical=[r for r in results if r["priority_class"] in {"P0","P1"} and not r["complete"]]
     return {"status":"PASS" if not critical else "FAIL","elements":results,"critical_missing":critical,
             "stable_reference_ids":sorted(stable),"graph_nodes":len(graph)}
 
 
+
 def minimum_constraint_set(candidate_intents,elements,stable_reference_ids):
-    """Select a deterministic minimum element-locating set plus required context/CHECKs.
-
-    Candidate dimensions are not individually mandatory. Construction-critical
-    elements are mandatory. Point targets receive the smallest independent pair
-    of constraints; line-like targets receive the best single locating
-    constraint unless explicitly hosted.
-    """
-    intents=list(candidate_intents or [])
-    elements=list(elements or [])
-    element_ids={str(e.get("id") or "") for e in elements}
+    """Select one best constraint per unresolved DOF plus intentional CHECKs."""
+    intents=list(candidate_intents or []);elements=list(elements or [])
     selected=[];selected_ids=set()
-
-    # Required global/profile context and intentional checks survive by role.
-    for row in intents:
-        a=_ref_id(row.get("reference_a"));b=_ref_id(row.get("reference_b"))
-        touches_element=bool({a,b}&element_ids)
-        if row.get("role")=="CHECK" or (row.get("required") and not touches_element):
-            if row.get("id") not in selected_ids:
-                selected.append(row);selected_ids.add(row.get("id"))
-
+    element_ids={str(e.get("id") or "") for e in elements}
     rank={"P0":0,"P1":1,"P2":2,"P3":3}
+
+    # Global/context requirements and explicit CHECKs survive.
+    for row in intents:
+        a=str(((row.get("reference_a") or {}).get("element_id") or (row.get("reference_a") or {}).get("id") or ""))
+        touches=a in element_ids
+        if row.get("role")=="CHECK" or (row.get("required") and not touches):
+            if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
+
     for e in sorted(elements,key=lambda x:(rank.get(x.get("priority_class","P1"),1),str(x.get("id")))):
-        eid=str(e.get("id") or "")
         if e.get("intrinsically_hosted"):continue
-        rows=[r for r in intents if eid in {_ref_id(r.get("reference_a")),_ref_id(r.get("reference_b"))} and r.get("role")!="CHECK"]
-        rows=sorted(rows,key=lambda r:(rank.get(r.get("priority_class","P1"),1),str(r.get("datum_class") or ""),str(r.get("id"))))
-        if e.get("geometry_kind","POINT")!="POINT":
-            if rows:
-                row=rows[0]
-                if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
-            continue
-        best=None
-        for i,a in enumerate(rows):
-            for b in rows[i+1:]:
-                if _independent_axes([a,b]):
-                    key=(rank.get(a.get("priority_class","P1"),1)+rank.get(b.get("priority_class","P1"),1),
-                         str(a.get("id")),str(b.get("id")))
-                    if best is None or key<best[0]:best=(key,a,b)
-        if best:
-            for row in best[1:]:
-                if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
-        elif rows:
-            # Keep the best available evidence so QA can explain the missing DOF.
-            row=rows[0]
+        eid=str(e.get("id") or "")
+        required=list(e.get("required_dofs") or (["LOC_0","LOC_1"] if e.get("geometry_kind","POINT")=="POINT" else ["OFFSET","START","END"]))
+        rows=[r for r in intents if str(((r.get("reference_a") or {}).get("element_id") or ""))==eid and r.get("role")!="CHECK"]
+        for dof in required:
+            options=[r for r in rows if r.get("constraint_dof")==dof]
+            if not options:continue
+            options=sorted(options,key=lambda r:(rank.get(r.get("priority_class","P1"),1),
+                int((r.get("reference_b") or {}).get("priority",50)),
+                -float((r.get("reference_b") or {}).get("confidence",1.0)),
+                float(r.get("measured_value") or 0.0),str(r.get("id"))))
+            row=options[0]
             if row.get("id") not in selected_ids:selected.append(row);selected_ids.add(row.get("id"))
 
     final=build_determinacy_graph(elements,selected,stable_reference_ids)
