@@ -1035,7 +1035,8 @@
         "context_grid_chain_generated_from_semantic_axes",
         "context_shaft_stair_generated_when_source_absent",
         "architecture_annotation_obstacle_avoidance",
-        "generated_board_dimension_not_reingested_as_source"
+        "generated_board_dimension_not_reingested_as_source",
+        "local_axis_outside_dimension_tiering"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",
