@@ -7,7 +7,8 @@
     "drawing_output",
     "test",
     "documentation",
-    "governance"
+    "governance",
+    "ui_api"
   ],
   "changed_rule_ids": [
     "MEP-ARCH-PRESERVE-001",
