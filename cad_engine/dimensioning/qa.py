@@ -62,8 +62,14 @@ def evaluate_architectural_dimension_qa(*,profile,intents,references,reference_r
         keys.append(key)
     controls.append(_control("no_semantic_duplicates","FAIL" if dups else "PASS",dups))
     sp=source_preservation or {}
-    controls.append(_control("no_source_value_corruption","PASS" if sp.get("source_value_corruption") in (None,False,[]) else "FAIL",sp.get("source_value_corruption") or []))
-    controls.append(_control("source_evidence_preserved","PASS" if sp.get("pass",True) else "FAIL",sp.get("missing_critical_source_dimensions") or []))
+    sp_missing=not bool(source_preservation)
+    corruption=sp.get("source_value_corruption") or []
+    controls.append(_control("no_source_value_corruption",
+                             "INPUT_REQUIRED" if sp_missing and stage=="FINAL" else ("FAIL" if corruption else "PASS"),
+                             corruption if corruption else ([] if not sp_missing else ["SOURCE_PRESERVATION_EVIDENCE_REQUIRED"])))
+    source_status=("INPUT_REQUIRED" if sp_missing and stage=="FINAL" else ("PASS" if sp.get("pass",not sp_missing) else "FAIL"))
+    controls.append(_control("source_evidence_preserved",source_status,
+                             sp.get("missing_critical_source_dimensions") or ([] if not sp_missing else ["SOURCE_PRESERVATION_EVIDENCE_REQUIRED"])))
     conflicts=sp.get("critical_source_conflicts") or []
     controls.append(_control("no_unresolved_critical_override","FAIL" if conflicts else "PASS",conflicts))
     zeros=[r.get("id") for r in intents if r.get("source_kind")!="SOURCE_REGENERATED" and float(r.get("measured_value") or 0)<=1e-12]
