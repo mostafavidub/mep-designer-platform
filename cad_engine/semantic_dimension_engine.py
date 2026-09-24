@@ -1499,6 +1499,16 @@ def validate_exact_file_dimensions(path, compose_report):
                 sheet_errors.append("DIMENSION_UNIT_EVIDENCE_CHANGED:" + item["intent_id"])
             elif strings[7]!=str(item.get("governance_rule_id") or ""):
                 sheet_errors.append("DIMENSION_RULE_ID_CHANGED:" + item["intent_id"])
+            else:
+                expected_trace=[
+                    str(item.get("chain_id") or ""),
+                    str(item.get("check_group_id") or ""),
+                    str(item.get("zone_id") or ""),
+                    str(item.get("coordinate_frame_id") or ""),
+                    str(item.get("tier") if item.get("tier") is not None else ""),
+                ]
+                if len(strings)<13 or strings[8:13]!=expected_trace:
+                    sheet_errors.append("DIMENSION_GRAPH_IDENTITY_CHANGED:" + item["intent_id"])
             if not doubles or abs(doubles[0]-float(item.get("measured_value") or 0.0))>1e-9:
                 sheet_errors.append("DIMENSION_ENGINEERING_VALUE_CHANGED:" + item["intent_id"])
             expected_m=item.get("engineering_value_m")
@@ -1520,6 +1530,7 @@ def validate_exact_file_dimensions(path, compose_report):
         "errors": sorted(set(errors)),
         "per_sheet": per_sheet,
         "exact_file_reopened": True,
+        "generated_reingested_as_source": [],
         "policy": "semantic completeness, source preservation, determinacy and exact-file materialization",
     }
 
