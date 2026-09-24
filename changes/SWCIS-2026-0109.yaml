@@ -12,7 +12,11 @@
     "ui_api",
     "governance",
     "deployment",
-    "qa"
+    "docs",
+    "manifest",
+    "migration",
+    "qa",
+    "versioning"
   ],
   "impact_notes": {
     "ui_api": "Requests for planha.com that arrive with x-forwarded-proto=http are permanently redirected to the canonical https://planha.com URL while preserving path and query string.",
