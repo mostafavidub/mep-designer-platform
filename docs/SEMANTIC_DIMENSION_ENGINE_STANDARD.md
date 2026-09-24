@@ -30,7 +30,7 @@ No source dimension with geometric, construction, regulatory or coordination val
 - purpose/criticality;
 - preservation policy.
 
-Policies are `KEEP_VISIBLE`, `PRESERVE_AS_EVIDENCE`, `REGENERATE_OR_PRESERVE`, and `FLAG_CONFLICT`.
+Policies are `REGENERATE`, `PRESERVE_AS_EVIDENCE`, and `FLAG_CONFLICT`. Visibility is a separate drawing-profile decision; therefore suppression from a view never changes the preservation policy.
 
 Suppression from a Mechanical view is not deletion from project knowledge.
 
@@ -108,3 +108,12 @@ DXF `$INSUNITS` is evidence, not absolute truth. Unit normalization remains upst
 ## 10. Source-reference corpus
 
 Private customer/source drawings remain outside Git. They may be used as comparison evidence, never as hidden generation defaults. Synthetic tests cover source preservation, override conflicts, determinacy, generated Mechanical set-out and exact-file identity.
+
+
+## 11. Final network reconciliation
+
+The legacy CAD shell is not the engineering source of truth for final set-out. After the graph-native authoritative Mechanical network is materialized, Planha removes only its own provisional dimension entities, rebuilds set-out from the final authoritative network, and runs exact-file dimension QA again. Routing and sizing are never recomputed by the Dimension Engine.
+
+## 12. CAD identity
+
+Every Planha-owned dimension carries the registered DXF application identity `PLANHA_DIMENSION`. Regenerated source evidence is marked `SOURCE_DIMENSION`; Planha-created Mechanical set-out is marked `SEMANTIC_DIMENSION`. Source consultant entities are never reclassified as Planha-owned merely by layer name.
