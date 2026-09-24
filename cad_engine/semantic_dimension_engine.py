@@ -1166,7 +1166,11 @@ def apply_semantic_dimension_engine(src, dst, base_report, network, architecture
             if str(node.get("level") or "") not in {"",level_name,plan_id}:
                 continue
             item=dict(node);item["plan_id"]=plan_id;adapted.append(item)
-        pipeline={"topology":{"nodes":adapted},"hvac":{"equipment":[]}}
+        pipeline={
+            "topology":{"nodes":adapted},
+            "hvac":{"equipment":[]},
+            "dimension_requirements":list((network or {}).get("dimension_requirements") or []),
+        }
         report=build_and_materialize_plan_dimensions(
             doc,msp,board,plan,{"walls":[],"shafts":[],"columns":[]},pipeline,family,level_name
         )
