@@ -49,7 +49,7 @@ def build_semantic_references(architecture: dict, *, zone_id=None) -> dict:
     architecture=architecture or {}
     refs=[]; errors=[]; checkpoints=[]
     collections={
-        "walls": ("WALL","FINISH_FACE"),
+        "walls": ("WALL",None),
         "structural_walls": ("STRUCTURAL_WALL","CORE_FACE"),
         "columns": ("COLUMN","COLUMN_CENTER"),
         "grids": ("GRID","GRID_AXIS"),
@@ -73,26 +73,30 @@ def build_semantic_references(architecture: dict, *, zone_id=None) -> dict:
                 if p:
                     refs.append(_ref(eid,kind,"COLUMN_CENTER",p,p,zone_id=zone_id,confidence=item.get("confidence",1.0)))
                 continue
-            for edge_i,(a,b) in enumerate(edges):
-                subfeature=str(item.get("subfeature") or default_subfeature)
-                side=str(item.get("side") or edge_i)
-                refs.append(_ref(eid,kind,subfeature,a,b,side=side,zone_id=zone_id,confidence=item.get("confidence",1.0),
-                                 metadata={"edge_index":edge_i,"exterior":bool(item.get("exterior") or item.get("is_exterior"))}))
-            # Wall centreline is safe only when explicitly provided or the semantic
-            # wall itself is declared centreline geometry.
+            explicit_subfeature=str(item.get("subfeature") or "").upper()
+            face_basis=str(item.get("face_basis") or "").upper()
+            if kind=="WALL":
+                basis_map={"FINISH":"FINISH_FACE","CORE":"CORE_FACE","CENTERLINE":"CENTERLINE"}
+                subfeature=explicit_subfeature or basis_map.get(face_basis)
+                if not subfeature:
+                    checkpoints.append({"element_id":eid,"reason":"WALL_FACE_BASIS_AMBIGUOUS"})
+                else:
+                    for edge_i,(a,b) in enumerate(edges):
+                        side=str(item.get("side") or edge_i)
+                        refs.append(_ref(eid,kind,subfeature,a,b,side=side,zone_id=zone_id,confidence=item.get("confidence",1.0),
+                                         metadata={"edge_index":edge_i,"exterior":bool(item.get("exterior") or item.get("is_exterior"))}))
+            else:
+                subfeature=explicit_subfeature or default_subfeature
+                for edge_i,(a,b) in enumerate(edges):
+                    side=str(item.get("side") or edge_i)
+                    refs.append(_ref(eid,kind,subfeature,a,b,side=side,zone_id=zone_id,confidence=item.get("confidence",1.0),
+                                     metadata={"edge_index":edge_i,"exterior":bool(item.get("exterior") or item.get("is_exterior"))}))
+            # A distinct wall centreline is added only from explicit semantic evidence.
             centerline=item.get("centerline")
-            if kind in {"WALL","STRUCTURAL_WALL"} and centerline:
+            if kind in {"WALL","STRUCTURAL_WALL"} and centerline and (kind!="WALL" or (explicit_subfeature or face_basis)!="CENTERLINE"):
                 cedges=_edges({"points":centerline} if isinstance(centerline,list) else centerline)
                 for edge_i,(a,b) in enumerate(cedges):
                     refs.append(_ref(eid,kind,"CENTERLINE",a,b,side=edge_i,zone_id=zone_id))
-            if kind=="WALL":
-                face_basis=str(item.get("face_basis") or "").upper()
-                if face_basis in {"FINISH","CORE"}:
-                    for sf in (["FINISH_FACE"] if face_basis=="FINISH" else ["CORE_FACE"]):
-                        for edge_i,(a,b) in enumerate(edges):
-                            refs.append(_ref(eid,kind,sf,a,b,side=edge_i,zone_id=zone_id))
-                elif item.get("thickness") is not None and not item.get("polygon"):
-                    checkpoints.append({"element_id":eid,"reason":"WALL_FACE_BASIS_AMBIGUOUS"})
     for collection in ("doors","windows","openings"):
         for idx,item in enumerate(architecture.get(collection) or []):
             if not isinstance(item,dict):
