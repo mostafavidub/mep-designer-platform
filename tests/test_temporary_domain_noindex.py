@@ -31,6 +31,32 @@ class TemporaryDomainRedirectTests(unittest.TestCase):
             'https://planha.com/blog/electrical-building-plan?utm_source=legacy',
         )
 
+    def test_canonical_http_redirects_to_https_and_preserves_path_query(self):
+        response = self.client.get(
+            '/mechanical?utm_source=http',
+            headers={
+                'host': 'planha.com',
+                'x-forwarded-proto': 'http',
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 301)
+        self.assertEqual(
+            response.headers.get('location'),
+            'https://planha.com/mechanical?utm_source=http',
+        )
+
+    def test_canonical_https_is_not_redirected(self):
+        response = self.client.get(
+            '/mechanical',
+            headers={
+                'host': 'planha.com',
+                'x-forwarded-proto': 'https',
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_future_custom_domain_remains_indexable(self):
         response = self.client.get('/', headers={'host': 'www.example.com'})
         self.assertEqual(response.status_code, 200)
