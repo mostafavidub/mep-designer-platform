@@ -640,7 +640,10 @@
         "reference_pair_and_engineering_value_xdata",
         "unit_metadata_geometry_reconciliation",
         "canonical_metre_value_traceability",
-        "unknown_unit_fail_closed"
+        "unknown_unit_fail_closed",
+        "governed_compliance_requirement_input",
+        "code_clearance_rule_id_traceability",
+        "canonical_clearance_minimum_validation"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -650,7 +653,9 @@
         "test_dimension_count_without_semantic_contract_does_not_pass",
         "test_exact_file_xdata_binds_reference_ids_and_engineering_value",
         "test_critical_non_numeric_override_requires_review_instead_of_numeric_regeneration",
-        "test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres"
+        "test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres",
+        "test_governed_code_clearance_requires_rule_stable_references_and_canonical_minimum",
+        "test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_units"
       ]
     }
   ]
