@@ -380,7 +380,8 @@ def test_shadow_candidate_materializes_and_reopens_exact_file_end_to_end(tmp_pat
         doc,{"plan_id":"P1","bounds":(0,0,10,8)},arch,pipeline,
         "MECHANICAL_PLAN",_board(),v1_report=v1
     )
-    assert out["qa"]["status"]=="PASS", {"qa":out["qa"],"placement":out["placement"],"reconciliation":out["reconciliation"],"source_generation":out["source_generation"],"candidates":out["candidate_generation"]}
+    assert out["placement"]["status"]=="PASS", out["placement"]["unresolved"]
+    assert out["qa"]["status"]=="PASS", out["qa"]
     assert out["determinacy"]["status"]=="PASS", out["determinacy"]
     assert out["shadow_compare"]["v2_missing_critical"]==0
     candidate=materialize_shadow_candidate(doc,out)
@@ -428,6 +429,9 @@ def test_extension_line_may_leave_host_obstacle_but_dimension_line_may_not_cross
     crossing=_intent("CROSS",target="T2",datum="G2",axis=0,value=8)
     crossing["world_p1"]=(1,5);crossing["world_p2"]=(9,5)
     # The dimension line itself cannot be routed through an unrelated obstacle.
-    bad=solve_dimension_placement([crossing],(0,0,10,10),board,obstacles=[(4.5,4.5,5.5,5.5)])
-    assert bad["status"]=="HUMAN_REVIEW_REQUIRED"
-    assert bad["collision_count"]==1
+    movable=solve_dimension_placement([crossing],(0,0,10,10),board,obstacles=[(4.5,4.5,5.5,5.5)])
+    assert movable["status"]=="PASS"
+
+    blocked=solve_dimension_placement([crossing],(0,0,10,10),board,obstacles=[(4.5,3.5,5.5,6.5)])
+    assert blocked["status"]=="HUMAN_REVIEW_REQUIRED"
+    assert blocked["collision_count"]==1
