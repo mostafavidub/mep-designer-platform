@@ -35,14 +35,14 @@ def _building_overall(references, frame, zone_id):
         if len(rows)<2:
             errors.append({"reason":"BUILDING_OVERALL_AXIS_INCOMPLETE","axis":axis});continue
         result=build_dimension_chain(rows,frame,purpose="BUILDING_OVERALL",axis=axis,
-                                     chain_id=f"OVERALL-{zone_id}-{idx}",add_check=False,zone_id=zone_id)
+                                     chain_id=f"OVERALL-{zone_id}-{frame['id']}-{idx}",add_check=False,zone_id=zone_id)
         if result["intents"]:
             # Only the extreme overall is wanted, not intermediate envelope segments.
             ints=result["intents"]
             if len(ints)>1:
                 first=ints[0]["reference_a"]; last=ints[-1]["reference_b"]
                 p1=ints[0]["world_p1"]; p2=ints[-1]["world_p2"]
-                out.append(intent(f"OVERALL-{zone_id}-{idx}","BUILDING_OVERALL",first,last,p1,p2,
+                out.append(intent(f"OVERALL-{zone_id}-{frame['id']}-{idx}","BUILDING_OVERALL",first,last,p1,p2,
                                   priority=98,zone_id=zone_id,coordinate_frame_id=frame["id"],tier=1))
             else:
                 row=ints[0];row["tier"]=1;out.append(row)
@@ -57,7 +57,7 @@ def _grid_chains(references, frame, zone_id):
     out=[];errors=[]
     for idx,(rows,axis) in enumerate(groups):
         if len(rows)<2:continue
-        r=build_dimension_chain(rows,frame,purpose="GRID",axis=axis,chain_id=f"GRID-{zone_id}-{idx}",
+        r=build_dimension_chain(rows,frame,purpose="GRID",axis=axis,chain_id=f"GRID-{zone_id}-{frame['id']}-{idx}",
                                 add_check=True,zone_id=zone_id)
         for row in r["intents"]:row["tier"]=2
         out.extend(r["intents"]);errors.extend(r["errors"])
@@ -76,7 +76,7 @@ def _wall_chains(references, frame, zone_id):
         for cls,subset in by_class.items():
             if len(subset)<2:continue
             result=build_dimension_chain(subset,frame,purpose="WALL_SETOUT",axis=axis,
-                                         chain_id=f"WALL-{zone_id}-{idx}-{cls}",add_check=True,zone_id=zone_id)
+                                         chain_id=f"WALL-{zone_id}-{frame['id']}-{idx}-{cls}",add_check=True,zone_id=zone_id)
             out.extend(result["intents"]);errors.extend(result["errors"])
     return out,errors
 
