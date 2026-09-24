@@ -656,14 +656,14 @@ def governed_requirement_intents(requirements, refs, plan_id):
             errors.append({"id":req_id,"reason":"STABLE_REFERENCE_PAIR_REQUIRED"})
             continue
         measured=math.dist(p1,p2)
-        minimum=row.get("minimum_value")
-        if minimum is not None:
-            try:minimum=float(minimum)
+        minimum_m=row.get("minimum_value_m")
+        if purpose=="CODE_CLEARANCE" and minimum_m is None:
+            errors.append({"id":req_id,"reason":"CODE_CLEARANCE_MINIMUM_METRE_VALUE_REQUIRED","rule_id":rule_id})
+            continue
+        if minimum_m is not None:
+            try:minimum_m=float(minimum_m)
             except Exception:
-                errors.append({"id":req_id,"reason":"INVALID_MINIMUM_VALUE"})
-                continue
-            if measured+1e-9<minimum:
-                errors.append({"id":req_id,"reason":"CODE_CLEARANCE_NOT_SATISFIED","actual":measured,"minimum":minimum,"rule_id":rule_id})
+                errors.append({"id":req_id,"reason":"INVALID_MINIMUM_METRE_VALUE","rule_id":rule_id})
                 continue
         intents.append({
             "id":"REQ-"+req_id,
@@ -677,7 +677,7 @@ def governed_requirement_intents(requirements, refs, plan_id):
             "world_base":tuple(row.get("base")) if row.get("base") else None,
             "measured_value":measured,
             "displayed_value":_display_number(measured),
-            "minimum_value":minimum,
+            "minimum_value_m":minimum_m,
             "required":bool(row.get("required",True)),
             "priority":int(row.get("priority",95)),
             "placement_zone":"LOCAL",
@@ -940,6 +940,15 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
         intent["effective_scale_to_m"]=effective_scale
         intent["unit_evidence_source"]=unit_source
         intent["engineering_value_m"]=(intent["measured_value"]*effective_scale if effective_scale is not None else None)
+    if effective_scale is not None:
+        for intent in governed_intents:
+            minimum_m=intent.get("minimum_value_m")
+            if minimum_m is not None and intent.get("engineering_value_m") is not None and intent["engineering_value_m"]+1e-9<float(minimum_m):
+                governed_errors.append({
+                    "id":intent["id"],"reason":"CODE_CLEARANCE_NOT_SATISFIED",
+                    "actual_m":intent["engineering_value_m"],"minimum_m":float(minimum_m),
+                    "rule_id":intent.get("governance_rule_id") or "",
+                })
     all_intents = select_minimal_dimension_set(source_intents + generated_intents + governed_intents)
     placed, collisions = place_intents(all_intents, source_bounds, board)
     materialized = materialize_dimension_intents(doc, msp, placed)
