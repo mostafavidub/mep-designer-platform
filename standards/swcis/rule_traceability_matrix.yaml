@@ -1043,7 +1043,8 @@
       ],
       "docs": [
         "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
-        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
+        "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md"
       ]
     }
   ]
