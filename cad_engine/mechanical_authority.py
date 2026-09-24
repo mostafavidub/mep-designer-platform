@@ -27,6 +27,7 @@ from .equipment_selection_placement_gate import (
     exact_equipment_output_evidence,
 )
 from .final_engineering_release_gate import evaluate_final_engineering_release
+from .semantic_dimension_engine import apply_semantic_dimension_engine
 from .architecture_space_equipment_gate import (
     evaluate_architecture_space_equipment,
     exact_architecture_source_evidence,
@@ -463,6 +464,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "materialization_qa": materialization,
                 "input_required": {"status": "INPUT_REQUIRED" if materialization.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": materialization.get("missing_inputs") or materialization.get("errors") or []}}
+    semantic_dimensions=apply_semantic_dimension_engine(
+        src,dst,rendered,payload["network_graph"],
+        architecture_preservation=rendered.get("architecture_preservation_qa"),
+    )
+    if semantic_dimensions.get("status")!="PASS":
+        _restore_target(dst,backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status":"FAIL","stage":"semantic_dimension_exact_output_gate",
+                "semantic_dimension_qa":semantic_dimensions,
+                "input_required":{"status":"FAIL","missing_inputs":semantic_dimensions.get("errors") or ["SEMANTIC_DIMENSION_QA_FAILED"]}}
     final_topology_routing = evaluate_topology_routing(
         payload["network_graph"], calculation_rows=payload["calculation_rows"],
         coordination=(payload.get("topology_routing_coordination") or {}),
@@ -514,6 +526,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
 
     rendered["network_authority_qa"] = network_authority
     rendered["materialization_qa"] = materialization
+    rendered["semantic_dimension_qa"] = semantic_dimensions
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
     rendered["calculation_reasonableness_qa"] = reasonableness
