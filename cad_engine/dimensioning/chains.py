@@ -2,7 +2,7 @@
 from __future__ import annotations
 import math
 from .model import intent, reference_class
-from .coordinate_frames import project
+from .coordinate_frames import project, unproject
 
 def _anchor(ref):
     a=ref.get("a") or (0.0,0.0); b=ref.get("b") or a
@@ -28,8 +28,14 @@ def build_dimension_chain(references, frame, *, purpose="WALL_SETOUT", axis="PRI
             continue
         collapsed.append(row)
     out=[]
+    # Measure only along the selected local axis. Midpoints of unequal-length
+    # parallel references must not create a diagonal/euclidean false value.
+    common_other=sum(row[1] for row in collapsed)/len(collapsed)
+    def measure_point(row):
+        local=(row[0],common_other) if axis_index==0 else (common_other,row[0])
+        return unproject(local,frame)
     for idx,(left,right) in enumerate(zip(collapsed,collapsed[1:])):
-        a=left[3]; b=right[3]
+        a=measure_point(left); b=measure_point(right)
         if math.dist(a,b)<=tolerance:
             continue
         out.append(intent(
@@ -38,7 +44,7 @@ def build_dimension_chain(references, frame, *, purpose="WALL_SETOUT", axis="PRI
             metadata={"chain_role":"SEGMENT","reference_class":reference_class(left[2])},
         ))
     if add_check and len(collapsed)>=3:
-        a=collapsed[0][3]; b=collapsed[-1][3]
+        a=measure_point(collapsed[0]); b=measure_point(collapsed[-1])
         out.append(intent(
             f"{chain_id}-CHECK","CHECK",collapsed[0][2],collapsed[-1][2],a,b,
             required=False,priority=55,chain_id=chain_id,check_group_id=chain_id,
