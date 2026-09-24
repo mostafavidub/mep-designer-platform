@@ -492,12 +492,13 @@ def test_context_engine_generates_overall_grid_and_shaft_when_source_dimensions_
     assert all(row["source_kind"]=="PLANHA_GENERATED_CONTEXT" for row in intents)
 
 
-def test_existing_source_grid_dimension_prevents_duplicate_generated_grid_chain():
+def test_partial_source_grid_chain_is_completed_without_duplicate_reference_pair():
     doc=_source_doc()
     architecture={
         "grids":[
             {"plan_id":"P1","start":(2,0),"end":(2,8)},
             {"plan_id":"P1","start":(5,0),"end":(5,8)},
+            {"plan_id":"P1","start":(8,0),"end":(8,8)},
         ],
         "walls":[],
     }
@@ -507,8 +508,13 @@ def test_existing_source_grid_dimension_prevents_duplicate_generated_grid_chain(
         doc,(0,0,10,8),architecture=architecture,plan_id="P1",reference_catalog=refs
     )
     assert registry["records"][0]["semantic_type"]=="GRID"
-    intents=context_dimension_intents(refs,registry,"MECHANICAL_PLAN",0.0)
-    assert not any(row["purpose"]=="GRID" for row in intents)
+    source=source_dimension_intents(registry,"MECHANICAL_PLAN")
+    context=context_dimension_intents(refs,registry,"MECHANICAL_PLAN",0.0)
+    selected=select_minimal_dimension_set(source+context)
+    grid=[row for row in selected if row["purpose"]=="GRID"]
+    assert len(grid)==2
+    assert sum(row["source_kind"]=="SOURCE_REGENERATED" for row in grid)==1
+    assert sum(row["source_kind"]=="PLANHA_GENERATED_CONTEXT" for row in grid)==1
 
 
 def test_semantic_dedupe_uses_reference_pair_even_when_graphical_base_differs():
@@ -596,3 +602,27 @@ def test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gat
     assert report["status"]=="FAIL"
     assert "DIMENSION_UNIT_BASIS_REQUIRED" in report["errors"]
     assert report["context_intent_count"]==2
+
+
+def test_rotated_exterior_envelope_generates_two_local_axis_overall_dimensions():
+    doc=_source_doc()
+    root=math.sqrt(2)/2
+    # 10 x 6 rectangle rotated 45 degrees.
+    p0=(0.0,0.0)
+    p1=(10*root,10*root)
+    p3=(-6*root,6*root)
+    p2=(p1[0]+p3[0],p1[1]+p3[1])
+    architecture={"walls":[
+        {"id":"E1","plan_id":"P1","start":p0,"end":p1,"is_exterior":True},
+        {"id":"E2","plan_id":"P1","start":p1,"end":p2,"is_exterior":True},
+        {"id":"E3","plan_id":"P1","start":p2,"end":p3,"is_exterior":True},
+        {"id":"E4","plan_id":"P1","start":p3,"end":p0,"is_exterior":True},
+    ],"grids":[],"shafts":[],"columns":[]}
+    bounds=(-5, -1, 8, 12)
+    refs=build_reference_catalog(doc,bounds,architecture=architecture,plan_id="P1")
+    registry=extract_source_dimension_registry(doc,bounds,architecture=architecture,plan_id="P1",reference_catalog=refs)
+    intents=context_dimension_intents(refs,registry,"MECHANICAL_PLAN",math.radians(45))
+    overall=[row for row in intents if row["purpose"]=="BUILDING_OVERALL"]
+    assert len(overall)==2
+    values=sorted(round(row["measured_value"],6) for row in overall)
+    assert values==[6.0,10.0]
