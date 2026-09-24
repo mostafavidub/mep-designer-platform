@@ -25,7 +25,7 @@ def _legacy_reference_catalog(v2_model):
     kind_map={
       "GRID_AXIS":"GRID_AXIS","PROPERTY_BOUNDARY":"PROPERTY_BOUNDARY","SHAFT_FACE":"SHAFT_FACE",
       "STAIR_CORE_FACE":"STAIR_CORE_FACE","OPENING_JAMB":"OPENING_JAMB","STRUCTURAL_FACE":"STRUCTURAL_FACE",
-      "WALL_CORE_FACE":"WALL_FACE","WALL_INNER_FINISH_FACE":"WALL_FACE","WALL_OUTER_FINISH_FACE":"WALL_FACE",
+      "WALL_CORE_FACE":"WALL_FACE","WALL_INNER_FINISH_FACE":"WALL_FACE","WALL_OUTER_FINISH_FACE":"WALL_FACE","WALL_CENTERLINE":"WALL_FACE",
       "BUILDING_ENVELOPE_FACE":"WALL_FACE",
     }
     rows=[]
@@ -58,7 +58,7 @@ def _apply_units_and_display(intents,source_registry):
 
 def _stable_reference_ids(model):
     allowed={"GRID_AXIS","GRID_INTERSECTION","STRUCTURAL_CENTERLINE","STRUCTURAL_FACE",
-             "WALL_CORE_FACE","WALL_INNER_FINISH_FACE","WALL_OUTER_FINISH_FACE",
+             "WALL_CORE_FACE","WALL_INNER_FINISH_FACE","WALL_OUTER_FINISH_FACE","WALL_CENTERLINE",
              "BUILDING_ENVELOPE_FACE","PROPERTY_BOUNDARY","SHAFT_FACE","STAIR_CORE_FACE","OPENING_JAMB"}
     return [r["id"] for r in model.get("references") or [] if r.get("subfeature") in allowed and float(r.get("confidence",0))>=.85]
 
