@@ -64,3 +64,22 @@ def validate_engineering_dimension_exact_file(path,materialized):
             errors.append("ENGINEERING_ENGINEERING_VALUE_CHANGED:"+str(row.get("intent_id")))
     return {"status":"PASS" if not errors else "FAIL","errors":errors,"exact_file_reopened":True,
             "checked":len(materialized or [])}
+
+
+def materialize_shadow_candidate(doc,shadow_report):
+    """Materialize a shadow candidate only when its engineering QA is PASS.
+
+    This helper is intentionally explicit and is not wired into visible runtime.
+    It exists for controlled exact-file validation/promotion evidence.
+    """
+    if (shadow_report or {}).get("mode")!="SHADOW":
+        return {"status":"FAIL","errors":["SHADOW_REPORT_REQUIRED"],"materialized":[]}
+    qa=(shadow_report or {}).get("qa") or {}
+    if qa.get("status")!="PASS":
+        return {"status":"FAIL","errors":["SHADOW_QA_NOT_PASS"],"materialized":[]}
+    placed=((shadow_report or {}).get("placement") or {}).get("placed") or []
+    if not placed:
+        return {"status":"FAIL","errors":["NO_PLACED_DIMENSION_INTENTS"],"materialized":[]}
+    rows=materialize_engineering_dimension_intents(doc,doc.modelspace(),placed)
+    errors=[r.get("error") for r in rows if r.get("error")]
+    return {"status":"PASS" if not errors else "FAIL","errors":errors,"materialized":rows}
