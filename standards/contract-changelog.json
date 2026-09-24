@@ -1526,6 +1526,36 @@
         "forward": "Regenerate dimension evidence and Planha-owned set-out on applicable plan boards; preserve consultant source dimensions as evidence and fail closed on critical conflicts.",
         "rollback": "Revert the protected merge commit; no source drawing or persisted PMM data migration is destructive."
       }
+    },
+    {
+      "id": "GOV-2026-046",
+      "status": "APPROVED",
+      "summary": "Require source-dimension knowledge preservation without blind graphical carry-through, autonomous semantic Grid/Overall/Shaft/Stair context, frozen source-entity composition and architecture-aware dimension placement.",
+      "affected_capabilities": [
+        "semantic_dimensioning",
+        "architecture_preservation",
+        "construction_document_delivery",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to continue the Semantic Dimension Engine task and re-validate the system against the supplied architectural reference drawings"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "exact_reopen": "must_pass",
+        "architecture_preservation": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Regenerate applicable Mechanical plan boards using the semantic registry/context engine; source uploads and PMM data remain immutable.",
+        "rollback": "Revert the protected merge commit; no destructive data migration."
+      }
     }
   ]
 }
