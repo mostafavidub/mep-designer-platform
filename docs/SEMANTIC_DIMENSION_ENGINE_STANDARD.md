@@ -38,7 +38,7 @@ Suppression from a Mechanical view is not deletion from project knowledge.
 
 Displayed text is never numeric source of truth. Geometry and displayed values remain separate.
 
-The 3% relative difference used by the registry is only an **anomaly-detection heuristic**, calibrated to separate small nominal/source-drafting overrides from clear contradictions in the reviewed corpus. It is not an engineering/code tolerance and never changes the geometry-derived engineering value. A contradiction such as 5.95 geometry displayed as 7.00 remains a conflict. Zero geometric dimensions and material numeric overrides require review before a Submission Ready claim. Non-numeric drafting text is preserved as evidence and is not converted into a design number.
+Numeric source text is classified against the **literal precision actually displayed**. A value is formatting-equivalent only when the geometric measurement lies inside the half-unit rounding interval implied by the displayed decimal places; otherwise it remains an explicit numeric override for review. This is a drafting-consistency rule, not an engineering/code tolerance, and it never changes the geometry-derived engineering value. A contradiction such as 5.95 geometry displayed as 7.00 remains a conflict. Zero geometric dimensions and material numeric overrides require review before a Submission Ready claim. Non-numeric drafting text is preserved as evidence and is not converted into a design number.
 
 ## 4. Dimension purposes
 
