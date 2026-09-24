@@ -184,11 +184,17 @@ def _source_dimension_orientation(entity, p1, p2):
     raw=int(getattr(entity.dxf,"dimtype",0) or 0)
     base=raw & 7
     angle=None
-    try:
-        angle=float(getattr(entity.dxf,"angle"))
-    except Exception:
-        if p1 and p2:
-            angle=math.degrees(_line_angle(p1,p2))
+    # Aligned source dimensions are defined by their reference points. Some
+    # DXFs expose a default/zero dxf.angle even when the aligned axis is oblique,
+    # so point geometry is the source of truth for base type 1.
+    if base==1 and p1 and p2:
+        angle=math.degrees(_line_angle(p1,p2))
+    else:
+        try:
+            angle=float(getattr(entity.dxf,"angle"))
+        except Exception:
+            if p1 and p2:
+                angle=math.degrees(_line_angle(p1,p2))
     if angle is not None:
         angle=float(angle)%180.0
     if base==1:
