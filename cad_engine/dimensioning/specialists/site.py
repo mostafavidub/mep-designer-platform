@@ -6,11 +6,24 @@ from ..model import intent
 def _mid(ref):
     a=ref["a"];b=ref["b"];return ((a[0]+b[0])/2,(a[1]+b[1])/2)
 
+def _project(point, ref):
+    a=ref["a"]; b=ref["b"]; vx=b[0]-a[0]; vy=b[1]-a[1]; den=vx*vx+vy*vy
+    if den<=1e-18:return a
+    t=((point[0]-a[0])*vx+(point[1]-a[1])*vy)/den
+    t=max(0.0,min(1.0,t))
+    return (a[0]+t*vx,a[1]+t*vy)
+
 def _nearest_pair(a_refs,b_refs):
+    """Exact shortest segment-to-segment setback witnesses."""
     best=None
     for a in a_refs:
         for b in b_refs:
-            pa=_mid(a);pb=_mid(b);d=math.dist(pa,pb)
+            candidates=[]
+            for pa in (a["a"],a["b"]):
+                pb=_project(pa,b); candidates.append((math.dist(pa,pb),pa,pb))
+            for pb in (b["a"],b["b"]):
+                pa=_project(pb,a); candidates.append((math.dist(pa,pb),pa,pb))
+            d,pa,pb=min(candidates,key=lambda row:row[0])
             if best is None or d<best[0]:best=(d,a,b,pa,pb)
     return best
 
