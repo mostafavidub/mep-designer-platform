@@ -15,6 +15,9 @@ def payload():
     return {"details":[detail],"plan_detail_references":[{"detail_id":"DT-RAD-1","source_plan_id":"M-131"}],
       "manufacturer_database":{"records":[{"catalogue_id":catalogue_id}]},
       "required_cad_entity_types":required,"cad_inventory":{key:1 for key in required},
+      "dimension_semantics":{"status":"PASS","source_preservation_complete":True,
+        "missing_required_dimensions":0,"critical_source_conflicts":0,"dimension_collisions":0,
+        "setout_determinacy_complete":True},
       "manifest_sheets":[{"code":"M-001","title":"DRAWING INDEX","revision":"R1","status":"FINAL"},
                          {"code":"M-131","title":"HEATING PLAN","revision":"R1","status":"FINAL"}],
       "dxf_layouts":["M-001","M-131"],
@@ -75,3 +78,25 @@ def test_missing_schedule_field_and_unknown_catalogue_identity_do_not_pass():
     assert build_construction_delivery(value)["status"]=="INPUT_REQUIRED"
     value=payload(); value["details"][0]["detail"]["identity"]["manufacturer_catalogue_id"]="UNKNOWN"
     assert build_construction_delivery(value)["status"]=="FAIL"
+
+
+def test_dimension_count_without_semantic_contract_does_not_pass():
+    value=payload(); value.pop("dimension_semantics")
+    result=build_construction_delivery(value)
+    assert result["status"]=="INPUT_REQUIRED"
+    assert result["phases"]["dimension_semantics"]["status"]=="INPUT_REQUIRED"
+
+
+def test_dimension_semantic_conflict_fails_even_when_entity_count_is_positive():
+    value=payload(); value["dimension_semantics"]["critical_source_conflicts"]=1
+    result=build_construction_delivery(value)
+    assert result["status"]=="FAIL"
+    assert "CRITICAL_SOURCE_DIMENSION_CONFLICT" in result["phases"]["dimension_semantics"]["errors"]
+
+
+def test_pre_render_contract_may_defer_only_to_exact_file_authority():
+    value=payload()
+    value["dimension_semantics"]={"status":"DEFERRED","authority":"EXACT_FILE_POST_RENDER","exact_file_gate_required":True}
+    result=build_construction_delivery(value)
+    assert result["status"]=="PASS",result
+    assert result["phases"]["dimension_semantics"]["deferred"] is True
