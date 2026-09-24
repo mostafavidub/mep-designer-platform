@@ -117,3 +117,8 @@ The legacy CAD shell is not the engineering source of truth for final set-out. A
 ## 12. CAD identity
 
 Every Planha-owned dimension carries the registered DXF application identity `PLANHA_DIMENSION`. Regenerated source evidence is marked `SOURCE_DIMENSION`; Planha-created Mechanical set-out is marked `SEMANTIC_DIMENSION`. Source consultant entities are never reclassified as Planha-owned merely by layer name.
+
+
+## 11. Governed compliance dimensions
+
+`CODE_CLEARANCE` is never inferred from a visually similar gap. A compliance or Rule layer must provide an explicit requirement containing a Rule ID, two stable semantic references, actual geometry and a canonical `minimum_value_m`. Planha dimensions the actual designed geometry; the minimum is QA evidence. Missing Rule ID, unstable references, missing canonical minimum, or actual clearance below the minimum fails closed. This contract also supports explicit governed `OPENING`, `SETOUT` and `CHECK` intents without turning source-drawing recurrence into a design default.
