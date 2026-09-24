@@ -61,7 +61,7 @@
       "final authoritative Mechanical targets -> datum policy -> minimal set-out intents -> exact-file XData identity"
     ],
     "tests": [
-      "tests/test_semantic_dimension_engine.py covers source suppression, context generation, partial Grid completion, rotated Overall, obstacle placement, exact-file traceability and ambiguous-unit fail-closed behavior",
+      "tests/test_semantic_dimension_engine.py covers source suppression, context generation, partial Grid completion, rotated Overall generation/tiering, obstacle placement, exact-file traceability and ambiguous-unit fail-closed behavior",
       "full repository regression and release workflows required before merge"
     ],
     "docs": [
