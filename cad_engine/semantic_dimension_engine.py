@@ -629,7 +629,14 @@ def place_intents(intents, source_bounds, board, obstacles=None):
         angle = math.radians(float(intent.get("angle_deg", math.degrees(_line_angle(intent["world_p1"], intent["world_p2"])))))
         if intent.get("source_kind") == "SOURCE_REGENERATED" and intent.get("world_base"):
             base = _map_point(intent["world_base"], source_bounds, plan_area)
-            candidates = [base]
+            midpoint=((p1[0]+p2[0])/2,(p1[1]+p2[1])/2)
+            horizontal=abs(math.cos(angle))>=abs(math.sin(angle))
+            fallback=(
+                (midpoint[0],min(max(plan_area[1]+.20,title_area[3]+.12),plan_area[3]-.20))
+                if horizontal else
+                (min(max(plan_area[0]+.20,board_bounds[0]+.20),plan_area[2]-.20),midpoint[1])
+            )
+            candidates = [base,fallback]
         elif intent.get("purpose") in {"BUILDING_OVERALL", "GRID", "PROPERTY", "SETBACK", "CHECK"}:
             horizontal = abs(math.cos(angle)) >= abs(math.sin(angle))
             key = "H" if horizontal else "V"
