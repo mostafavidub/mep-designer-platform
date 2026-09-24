@@ -19,8 +19,8 @@ from cad_engine.dimension_source_reconciliation import reconcile_source_dimensio
 from cad_engine.dimension_redundancy_optimizer import optimize_dimensions
 from cad_engine.dimension_placement_solver import solve_dimension_placement
 from cad_engine.dimension_qa import validate_chain_closure
-from cad_engine.dimension_renderer import materialize_engineering_dimension_intents, validate_engineering_dimension_exact_file
-from cad_engine.dimension_engine import run_dimension_engine_shadow
+from cad_engine.dimension_renderer import materialize_engineering_dimension_intents, validate_engineering_dimension_exact_file, materialize_shadow_candidate
+from cad_engine.dimension_engine import run_dimension_engine_shadow, build_dimension_promotion_report
 
 
 def _doc(insunits=6, dim_value=10.0):
@@ -369,3 +369,49 @@ def test_profile_reconciliation_suppresses_nonvisible_wall_dimensions_without_de
     out=reconcile_source_dimensions(src,[],profile="MECHANICAL_PLAN")
     assert out["rows"][0]["status"]=="SUPPRESSED_IN_VIEW"
     assert out["status"]=="PASS"
+
+
+def test_shadow_candidate_materializes_and_reopens_exact_file_end_to_end(tmp_path):
+    doc=_doc(insunits=4,dim_value=10.0)
+    arch=_arch_rect()
+    pipeline={"topology":{"nodes":[{"id":"R1","kind":"riser","plan_id":"P1","point":(4,3)}]},"hvac":{"equipment":[]}}
+    v1={"materialized":[],"missing_determinacy":[]}
+    out=run_dimension_engine_shadow(
+        doc,{"plan_id":"P1","bounds":(0,0,10,8)},arch,pipeline,
+        "MECHANICAL_PLAN",_board(),v1_report=v1
+    )
+    assert out["qa"]["status"]=="PASS"
+    assert out["determinacy"]["status"]=="PASS"
+    assert out["shadow_compare"]["v2_missing_critical"]==0
+    candidate=materialize_shadow_candidate(doc,out)
+    assert candidate["status"]=="PASS"
+    assert len(candidate["materialized"])==len(out["placement"]["placed"])>0
+    path=tmp_path/"dimension-v2-promotion-candidate.dxf"
+    doc.saveas(path)
+    exact=validate_engineering_dimension_exact_file(path,candidate["materialized"])
+    assert exact["status"]=="PASS"
+    assert exact["exact_file_reopened"] is True
+    assert exact["checked"]==len(candidate["materialized"])
+
+
+def test_promotion_report_requires_zero_p0_p1_placement_and_source_review():
+    good={
+      "plan_id":"P1","profile":"MECHANICAL_PLAN",
+      "qa":{"status":"PASS","critical_missing":[]},
+      "shadow_compare":{"placement_unresolved":0,"source_reconciliation_human_review":0,
+                        "duplicates_removed":0,"v1_count":5,"v2_count":7,"visible_output_changed":False},
+    }
+    report=build_dimension_promotion_report([good])
+    assert report["status"]=="PROMOTION_CANDIDATE"
+    assert report["metrics"]["missing_critical"]==0
+
+    bad={
+      "plan_id":"P2","profile":"ARCHITECTURAL_FLOOR_PLAN",
+      "qa":{"status":"HUMAN_REVIEW_REQUIRED","critical_missing":[{"element_id":"W1"}]},
+      "shadow_compare":{"placement_unresolved":1,"source_reconciliation_human_review":1,
+                        "duplicates_removed":0,"v1_count":4,"v2_count":4,"visible_output_changed":False},
+    }
+    report=build_dimension_promotion_report([good,bad])
+    assert report["status"]=="NOT_READY"
+    reasons={b["reason"] for b in report["blockers"]}
+    assert {"QA_NOT_PASS","P0_P1_DETERMINACY_DEFECT","UNRESOLVED_PLACEMENT","SOURCE_RECONCILIATION_REVIEW"}<=reasons
