@@ -21,6 +21,7 @@ from cad_engine.dimension_placement_solver import solve_dimension_placement
 from cad_engine.dimension_qa import validate_chain_closure
 from cad_engine.dimension_renderer import materialize_engineering_dimension_intents, validate_engineering_dimension_exact_file, materialize_shadow_candidate
 from cad_engine.dimension_engine import run_dimension_engine_shadow, build_dimension_promotion_report
+from cad_engine.mechanical_design_core import _validate_v2_shadow_exact_file_on_composed_package
 
 
 def _doc(insunits=6, dim_value=10.0):
@@ -470,3 +471,32 @@ def test_exact_duplicate_cleanup_is_informational_not_human_review():
     qa=construction_determinacy_gate(refs,[],det,rec,red,place,intents,profile="MECHANICAL_PLAN")
     assert qa["status"]=="PASS"
     assert "SEMANTIC_DUPLICATES_REMOVED" in qa["informational"]
+
+
+def test_composed_package_sidecar_exact_file_qa_is_immutable(tmp_path):
+    doc=_doc(insunits=4,dim_value=10.0)
+    doc.modelspace().add_line((0,0),(10,8),dxfattribs={"layer":"0"})
+    path=tmp_path/"composed-planha-package.dxf"
+    doc.saveas(path)
+    before=path.read_bytes()
+    before_dims=len(ezdxf.readfile(path).modelspace().query("DIMENSION"))
+
+    arch=_arch_rect()
+    pipeline={"topology":{"nodes":[{"id":"R1","kind":"riser","plan_id":"P1","point":(4,3)}]},"hvac":{"equipment":[]}}
+    shadow=run_dimension_engine_shadow(
+        ezdxf.readfile(path),{"plan_id":"P1","bounds":(0,0,10,8)},arch,pipeline,
+        "MECHANICAL_PLAN",_board(),v1_report={"materialized":[],"missing_determinacy":[]}
+    )
+    assert shadow["qa"]["status"]=="PASS", shadow["qa"]
+    report=_validate_v2_shadow_exact_file_on_composed_package(
+        path,{"dimensioning_v2_shadow":{"M-TEST":shadow}}
+    )
+    assert report["status"]=="PASS", report
+    assert report["exact_file_reopened"] is True
+    assert report["validated_dimensions"]>0
+    assert report["visible_output_changed"] is False
+
+    # Sidecar validation may create a temporary candidate, but must never alter
+    # the issued/composed package supplied to QA.
+    assert path.read_bytes()==before
+    assert len(ezdxf.readfile(path).modelspace().query("DIMENSION"))==before_dims
