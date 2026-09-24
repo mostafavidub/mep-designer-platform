@@ -1028,7 +1028,14 @@
         "canonical_metre_value_traceability",
         "governed_requirement_rule_identity",
         "code_clearance_canonical_minimum",
-        "code_clearance_actual_geometry_compliance"
+        "code_clearance_actual_geometry_compliance",
+        "raw_source_dimension_not_blindly_copied",
+        "source_entity_snapshot_frozen_before_composition",
+        "context_overall_generated_from_proven_envelope",
+        "context_grid_chain_generated_from_semantic_axes",
+        "context_shaft_stair_generated_when_source_absent",
+        "architecture_annotation_obstacle_avoidance",
+        "generated_board_dimension_not_reingested_as_source"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",
