@@ -48,6 +48,23 @@ def _point(item):
     seg=_item_segment(item)
     return _mid(seg) if seg else None
 
+def _rect_geometry(item,tol=1e-6):
+    pts=item.get("polygon") or item.get("points") or []
+    pts=[(float(p[0]),float(p[1])) for p in pts if len(p)>=2]
+    if len(pts)>1 and pts[0]==pts[-1]:pts=pts[:-1]
+    if len(pts)!=4:return None
+    vec=[];lengths=[]
+    for i in range(4):
+        a=pts[i];b=pts[(i+1)%4];v=(b[0]-a[0],b[1]-a[1]);L=math.hypot(*v)
+        if L<=tol:return None
+        vec.append((v[0]/L,v[1]/L));lengths.append(L)
+    if abs(vec[0][0]*vec[1][0]+vec[0][1]*vec[1][1])>1e-4:return None
+    if abs(lengths[0]-lengths[2])>max(tol,lengths[0]*1e-4) or abs(lengths[1]-lengths[3])>max(tol,lengths[1]*1e-4):return None
+    center=(sum(p[0] for p in pts)/4.0,sum(p[1] for p in pts)/4.0)
+    return {"points":pts,"center":center,"axis0_deg":math.degrees(math.atan2(vec[0][1],vec[0][0]))%180.0,
+            "axis1_deg":math.degrees(math.atan2(vec[1][1],vec[1][0]))%180.0,
+            "size0":lengths[0],"size1":lengths[1]}
+
 
 def collect_profile_elements(profile,architecture=None,pipeline=None,plan_id=None):
     policy=PROFILE_POLICIES.get(profile)
@@ -58,20 +75,30 @@ def collect_profile_elements(profile,architecture=None,pipeline=None,plan_id=Non
             for i,item in enumerate(architecture.get(key) or []):
                 if not isinstance(item,dict) or (plan_id and item.get("plan_id") not in (None,plan_id)):continue
                 p=_point(item)
-                if not p:continue
                 eid=str(item.get("id") or f"{kind}-{i:04d}")
+                rect=_rect_geometry(item) if kind in {"SHAFT","STAIR","STRUCTURE"} else None
                 seg=_item_segment(item)
-                if seg:
+                if rect:
+                    rows.append({"id":eid,"kind":kind,"point":rect["center"],"geometry_kind":"RECT",
+                                 "rect":rect,"priority_class":priority,"required_constraints":4,
+                                 "required_dofs":["LOC_0","LOC_1","SIZE_0","SIZE_1"],"intrinsically_hosted":False})
+                elif kind=="OPENING" and seg:
+                    host=item.get("host_id") or item.get("host_reference_id")
+                    rows.append({"id":eid,"kind":kind,"point":_mid(seg),"geometry_kind":"OPENING","segment":seg,
+                                 "priority_class":priority,"required_constraints":2 if host else 3,
+                                 "required_dofs":(["POSITION","SIZE"] if host else ["OFFSET","POSITION","SIZE"]),
+                                 "host_reference_id":host,"intrinsically_hosted":False})
+                elif seg:
                     start_host=item.get("start_reference_id") or item.get("start_host_reference_id")
                     end_host=item.get("end_reference_id") or item.get("end_host_reference_id")
                     required_dofs=["OFFSET"]
                     if not start_host: required_dofs.append("START")
                     if not end_host: required_dofs.append("END")
-                    rows.append({"id":eid,"kind":kind,"point":p,"geometry_kind":"LINE","segment":seg,
+                    rows.append({"id":eid,"kind":kind,"point":p or _mid(seg),"geometry_kind":"LINE","segment":seg,
                                  "priority_class":priority,"required_constraints":len(required_dofs),
                                  "required_dofs":required_dofs,"start_host_reference_id":start_host,
                                  "end_host_reference_id":end_host,"intrinsically_hosted":False})
-                else:
+                elif p:
                     rows.append({"id":eid,"kind":kind,"point":p,"geometry_kind":"POINT",
                                  "priority_class":priority,"required_constraints":2,
                                  "required_dofs":["LOC_0","LOC_1"],"intrinsically_hosted":bool(item.get("host_id"))})
@@ -144,6 +171,7 @@ def _ranked_datum(point,stable,datum_axis,exclude_element_id=None):
 def _target_subfeature(kind):
     if kind in {"RISER","STACK"}:return "PIPE_RISER_CENTER"
     if kind in {"PENETRATION","SLEEVE"}:return "PENETRATION_CENTER"
+    if kind=="OPENING":return "OPENING_CENTERLINE"
     return "EQUIPMENT_CENTER"
 
 
@@ -179,6 +207,78 @@ def generate_setout_candidates(elements,reference_model,profile):
                     "display_value":None,"orientation":f"LOCAL_AXIS_{ai}","datum_class":ref.get("datum_class"),
                     "axis_deg":wanted,"evidence":("profile_requirement","stable_datum",dof)})
                 created.add(dof)
+        elif e.get("geometry_kind")=="RECT":
+            rect=e.get("rect") or {};center=tuple(rect.get("center") or e.get("point") or ())
+            # Locate center in the two local rectangle axes from external stable datums.
+            for ai,key in enumerate(("LOC_0","LOC_1")):
+                if key not in required:continue
+                wanted=float(rect.get(f"axis{ai}_deg",axis if ai==0 else (axis+90.0)%180.0))
+                ranked=_ranked_datum(center,stable,(wanted+90.0)%180.0,e.get("id"))
+                if ranked:
+                    _,dist,_,_,ref,q=ranked
+                    if dist>1e-8:
+                        intents.append({"id":f"V2-{profile}-{e['id']}-{key}","purpose":e["kind"] if e["kind"] in {"SHAFT","STAIR"} else "STRUCTURAL_SETOUT",
+                          "role":"SETOUT","drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,
+                          "constraint_dof":key,"reference_a":{"id":e["id"],"element_id":e["id"],"subfeature":"SHAFT_FACE" if e["kind"]=="SHAFT" else ("STAIR_CORE_FACE" if e["kind"]=="STAIR" else "STRUCTURAL_FACE")},
+                          "reference_b":ref,"world_p1":center,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
+                          "display_value":None,"orientation":key,"datum_class":ref.get("datum_class"),"axis_deg":wanted,
+                          "evidence":("profile_requirement","rect_location",key)})
+                        created.add(key)
+            # Size is intrinsic geometry, but still needs printable dimensions.
+            pts=rect.get("points") or []
+            for ai,key in enumerate(("SIZE_0","SIZE_1")):
+                if key not in required or len(pts)!=4:continue
+                if ai==0:
+                    p1=pts[0];p2=pts[1];value=float(rect.get("size0") or math.dist(p1,p2))
+                else:
+                    p1=pts[1];p2=pts[2];value=float(rect.get("size1") or math.dist(p1,p2))
+                sf="SHAFT_FACE" if e["kind"]=="SHAFT" else ("STAIR_CORE_FACE" if e["kind"]=="STAIR" else "STRUCTURAL_FACE")
+                intents.append({"id":f"V2-{profile}-{e['id']}-{key}","purpose":e["kind"] if e["kind"] in {"SHAFT","STAIR"} else "STRUCTURAL_SETOUT",
+                    "role":"SETOUT","drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,
+                    "constraint_dof":key,"reference_a":{"id":f"{e['id']}/{key}/A","element_id":e["id"],"subfeature":sf},
+                    "reference_b":{"id":f"{e['id']}/{key}/B","element_id":e["id"],"subfeature":sf},
+                    "world_p1":p1,"world_p2":p2,"measured_value":value,"engineering_value_m":None,
+                    "display_value":None,"orientation":key,"datum_class":e["kind"],"axis_deg":float(rect.get(f"axis{ai}_deg",0.0)),
+                    "evidence":("profile_requirement","rect_size",key)})
+                created.add(key)
+        elif e.get("geometry_kind")=="OPENING":
+            seg=e.get("segment")
+            if not seg:
+                reviews.append({"element_id":e["id"],"reason":"OPENING_GEOMETRY_REQUIRED","required_dofs":required});continue
+            a,b=seg;line_axis=_axis_deg(a,b);mid=((a[0]+b[0])/2.0,(a[1]+b[1])/2.0)
+            if "SIZE" in required:
+                intents.append({"id":f"V2-{profile}-{e['id']}-SIZE","purpose":"OPENING_SIZE","role":"SETOUT",
+                  "drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,"constraint_dof":"SIZE",
+                  "reference_a":{"id":f"{e['id']}/JAMB-A","element_id":e["id"],"subfeature":"OPENING_JAMB"},
+                  "reference_b":{"id":f"{e['id']}/JAMB-B","element_id":e["id"],"subfeature":"OPENING_JAMB"},
+                  "world_p1":a,"world_p2":b,"measured_value":math.dist(a,b),"engineering_value_m":None,
+                  "display_value":None,"orientation":"OPENING_SIZE","datum_class":"OPENING","axis_deg":line_axis,
+                  "evidence":("profile_requirement","opening_size")})
+                created.add("SIZE")
+            if "POSITION" in required:
+                ranked=_ranked_datum(mid,stable,(line_axis+90.0)%180.0,e.get("id"))
+                if ranked:
+                    _,dist,_,_,ref,q=ranked
+                    if dist>1e-8:
+                        intents.append({"id":f"V2-{profile}-{e['id']}-POSITION","purpose":"OPENING_POSITION","role":"SETOUT",
+                          "drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,"constraint_dof":"POSITION",
+                          "reference_a":{"id":f"{e['id']}/CENTERLINE","element_id":e["id"],"subfeature":"OPENING_CENTERLINE"},
+                          "reference_b":ref,"world_p1":mid,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
+                          "display_value":None,"orientation":"OPENING_POSITION","datum_class":ref.get("datum_class"),"axis_deg":line_axis,
+                          "evidence":("profile_requirement","opening_position")})
+                        created.add("POSITION")
+            if "OFFSET" in required:
+                ranked=_ranked_datum(mid,stable,line_axis,e.get("id"))
+                if ranked:
+                    _,dist,_,_,ref,q=ranked
+                    if dist>1e-8:
+                        intents.append({"id":f"V2-{profile}-{e['id']}-OFFSET","purpose":"OPENING_POSITION","role":"SETOUT",
+                          "drawing_profile":profile,"priority_class":e.get("priority_class","P1"),"required":False,"constraint_dof":"OFFSET",
+                          "reference_a":{"id":f"{e['id']}/CENTERLINE","element_id":e["id"],"subfeature":"OPENING_CENTERLINE"},
+                          "reference_b":ref,"world_p1":mid,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
+                          "display_value":None,"orientation":"OPENING_OFFSET","datum_class":ref.get("datum_class"),"axis_deg":(line_axis+90.0)%180.0,
+                          "evidence":("profile_requirement","opening_offset")})
+                        created.add("OFFSET")
         else:
             seg=e.get("segment")
             if not seg:
