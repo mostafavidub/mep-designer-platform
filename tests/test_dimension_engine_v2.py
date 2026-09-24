@@ -70,7 +70,9 @@ def _intent(i, target="T1", datum="G1", axis=0.0, role="SETOUT", required=False,
             "reference_b":{"id":datum,"element_id":datum,"subfeature":"GRID_AXIS"},
             "world_p1":(2,2),"world_p2":(0,2),"measured_value":value,"engineering_value_m":value,
             "display_value":f"{value:.2f}","priority_class":"P1","required":required,
-            "datum_class":"GRID","axis_deg":axis,"evidence":("test",)}
+            "datum_class":"GRID","axis_deg":axis,
+            "constraint_dof":"LOC_1" if abs((axis%180)-90)<1e-6 else "LOC_0",
+            "evidence":("test",)}
 
 
 def test_v1_golden_baseline_is_explicit_and_protected():
@@ -299,3 +301,38 @@ SCENARIO_CATALOG=[
 @pytest.mark.parametrize("scenario",SCENARIO_CATALOG)
 def test_synthetic_regression_corpus_inventory_is_stable(scenario):
     assert isinstance(scenario,str) and scenario
+
+
+def test_architectural_line_is_not_determinate_with_offset_only_when_extents_are_unhosted():
+    elements=[{"id":"W1","geometry_kind":"LINE","priority_class":"P0","intrinsically_hosted":False,
+               "required_dofs":["OFFSET","START","END"]}]
+    rows=[
+      {**_intent("O",target="W1",datum="G0",axis=90),"constraint_dof":"OFFSET"},
+    ]
+    state=build_determinacy_graph(elements,rows,["G0"])
+    assert state["status"]=="FAIL"
+    assert state["critical_missing"][0]["missing_dofs"]==["START","END"]
+
+
+def test_architectural_line_passes_only_when_offset_start_and_end_are_proven():
+    elements=[{"id":"W1","geometry_kind":"LINE","priority_class":"P0","intrinsically_hosted":False,
+               "required_dofs":["OFFSET","START","END"]}]
+    rows=[
+      {**_intent("O",target="W1",datum="G0",axis=90),"constraint_dof":"OFFSET"},
+      {**_intent("S",target="W1",datum="G1",axis=0),"constraint_dof":"START"},
+      {**_intent("E",target="W1",datum="G2",axis=0),"constraint_dof":"END"},
+    ]
+    state=build_determinacy_graph(elements,rows,["G0","G1","G2"])
+    assert state["status"]=="PASS"
+
+
+def test_code_clearance_below_authoritative_minimum_fails_closed():
+    model=build_reference_model_v2(_doc(),(0,0,10,8),_arch_rect(),"P1")
+    refs=[r for r in model["references"] if r["subfeature"]=="GRID_AXIS"]
+    out=generate_governed_requirement_intents([{
+      "id":"C","purpose":"CODE_CLEARANCE","rule_id":"IR-RULE-X",
+      "reference_a_id":refs[0]["id"],"reference_b_id":refs[1]["id"],
+      "p1":(0,0),"p2":(.9,0),"minimum_value_m":1.0,"actual_value_m":.9
+    }],model,"MECHANICAL_PLAN","P1")
+    assert out["status"]=="FAIL"
+    assert out["errors"][0]["reason"]=="CODE_CLEARANCE_BELOW_MINIMUM"
