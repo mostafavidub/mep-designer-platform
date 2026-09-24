@@ -643,7 +643,8 @@
         "unknown_unit_fail_closed",
         "governed_compliance_requirement_input",
         "code_clearance_rule_id_traceability",
-        "canonical_clearance_minimum_validation"
+        "canonical_clearance_minimum_validation",
+        "source_dimension_type_orientation_evidence"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -655,7 +656,8 @@
         "test_critical_non_numeric_override_requires_review_instead_of_numeric_regeneration",
         "test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres",
         "test_governed_code_clearance_requires_rule_stable_references_and_canonical_minimum",
-        "test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_units"
+        "test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_units",
+        "test_source_registry_preserves_linear_and_aligned_dimension_type_orientation"
       ]
     }
   ]
