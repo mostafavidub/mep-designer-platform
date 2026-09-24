@@ -83,8 +83,9 @@
       "CI execution evidence pending on PR #286"
     ],
     "semantic_diff": [
-      "source dimensions become immutable semantic evidence with measured/displayed separation and conflict status",
+      "source dimensions become immutable semantic evidence with measured/displayed separation, unit evidence and conflict status",
       "Mechanical plans add only reference-bound set-out for construction-critical targets; routing/sizing authority is unchanged",
+      "code/regulatory clearances are accepted only as explicit governed requirements with Rule ID, stable references and canonical metre minimums; no visual inference",
       "count-only DIMENSION acceptance is removed as engineering authority"
     ],
     "artifact_diff": [
