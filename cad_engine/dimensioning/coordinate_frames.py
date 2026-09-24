@@ -77,3 +77,23 @@ def project(point, frame):
 def unproject(local, frame):
     ox,oy=frame["origin"]; ux,uy=frame["primary_axis"]; vx,vy=frame["secondary_axis"]
     return (ox+local[0]*ux+local[1]*vx, oy+local[0]*uy+local[1]*vy)
+
+
+def references_for_frame(references, frame, *, angular_tolerance_deg=8.0):
+    """Return line references compatible with one local frame plus point refs.
+
+    A reference is compatible when its axis is parallel to either frame axis.
+    This prevents unrelated rotated wings from entering the same chain.
+    """
+    tol=math.radians(float(angular_tolerance_deg))
+    target=math.radians(float(frame.get("angle_deg") or 0.0)) % math.pi
+    out=[]
+    for ref in references or []:
+        seg=_segment(ref)
+        if not seg:
+            out.append(ref)
+            continue
+        angle=seg[3]
+        if _axis_delta(angle,target)<=tol or _axis_delta(angle,target+math.pi/2)<=tol:
+            out.append(ref)
+    return out
