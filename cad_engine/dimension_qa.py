@@ -36,7 +36,8 @@ def construction_determinacy_gate(reference_model,elements,determinacy,reconcili
     critical_missing=determinacy.get("critical_missing") or []
     if critical_missing:errors.append("UNDER_DETERMINED_P0_P1_GEOMETRY")
     if redundancy.get("status")=="FAIL":errors.append("CONTRADICTORY_DIMENSION_DEFINITION")
-    if int(redundancy.get("duplicate_count") or 0):reviews.append("SEMANTIC_DUPLICATES_REMOVED")
+    informational=[]
+    if int(redundancy.get("duplicate_count") or 0):informational.append("SEMANTIC_DUPLICATES_REMOVED")
     if placement.get("status")!="PASS":errors.append("UNRESOLVED_DIMENSION_PLACEMENT")
     if reconciliation.get("status")!="PASS":reviews.append("SOURCE_RECONCILIATION_REVIEW_REQUIRED")
     chain_errors=validate_chain_closure(intents)
@@ -79,6 +80,7 @@ def construction_determinacy_gate(reference_model,elements,determinacy,reconcili
       "version":"planha-dimension-v2-qa/1","status":"FAIL" if errors else ("HUMAN_REVIEW_REQUIRED" if reviews else "PASS"),
       "errors":sorted(set(errors)),"human_review":reviews,"critical_missing":critical_missing,
       "chain_errors":chain_errors,"invalid_intent_ids":sorted(set(x for x in invalid_intents if x)),
+      "informational":informational,
       "metrics":{
         "references":len(reference_model.get("references") or []),"critical_elements":sum(1 for e in elements or [] if e.get("priority_class") in {"P0","P1"}),
         "under_determined":len(critical_missing),"source_review":len(reconciliation.get("human_review") or []),
