@@ -94,7 +94,7 @@ def run_dimension_engine_shadow(doc,plan,architecture,pipeline,profile,board,v1_
     minimum=minimum_constraint_set(candidates,elements_result.get("elements") or [],stable)
     redundancy=optimize_dimensions(minimum["selected"])
     selected=redundancy["selected"]
-    reconciliation=reconcile_source_dimensions(source_registry,selected)
+    reconciliation=reconcile_source_dimensions(source_registry,selected,profile=profile)
     placement=solve_dimension_placement(selected,bounds,board)
     qa=construction_determinacy_gate(ref_model,elements_result.get("elements") or [],minimum["determinacy"],
         reconciliation,redundancy,placement,selected,source_registry=source_registry,profile=profile)
