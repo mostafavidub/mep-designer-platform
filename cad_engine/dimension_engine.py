@@ -13,7 +13,7 @@ from .dimension_requirement_engine import (
     generate_governed_requirement_intents,
 )
 from .dimension_determinacy_solver import minimum_constraint_set
-from .dimension_source_reconciliation import reconcile_source_dimensions
+from .dimension_source_reconciliation import reconcile_source_dimensions,source_regeneration_intents
 from .dimension_redundancy_optimizer import optimize_dimensions
 from .dimension_placement_solver import solve_dimension_placement,build_drafting_obstacles
 from .dimension_qa import construction_determinacy_gate
@@ -85,7 +85,8 @@ def run_dimension_engine_shadow(doc,plan,architecture,pipeline,profile,board,v1_
     candidate_result=generate_setout_candidates(elements_result.get("elements") or [],ref_model,profile)
     context=generate_context_intents(ref_model,profile)
     governed=generate_governed_requirement_intents(governed_requirements or [],ref_model,profile,plan_id)
-    candidates=_apply_units_and_display(context+candidate_result.get("intents",[])+governed.get("intents",[]),source_registry)
+    source_generation=source_regeneration_intents(source_registry,profile)
+    candidates=_apply_units_and_display(source_generation.get("intents",[])+context+candidate_result.get("intents",[])+governed.get("intents",[]),source_registry)
     intent_errors=validate_intents([{k:v for k,v in r.items() if k in {
         "id","purpose","role","reference_a","reference_b","measured_value","engineering_value_m","drawing_profile",
         "plan_id","level","priority_class","required","rule_id","source_kind","source_dimension_id","display_value",
@@ -101,13 +102,14 @@ def run_dimension_engine_shadow(doc,plan,architecture,pipeline,profile,board,v1_
         reconciliation,redundancy,placement,selected,source_registry=source_registry,profile=profile)
     if governed.get("errors"):qa["errors"]=sorted(set(qa.get("errors",[])+["GOVERNED_DIMENSION_REQUIREMENT_INVALID"]));qa["status"]="FAIL"
     if intent_errors:qa["errors"]=sorted(set(qa.get("errors",[])+["DIMENSION_INTENT_SCHEMA_INVALID"]));qa["status"]="FAIL"
-    if candidate_result.get("human_review"):
-        qa["human_review"]=list(qa.get("human_review") or [])+candidate_result["human_review"]
+    combined_review=list(candidate_result.get("human_review") or [])+list(source_generation.get("human_review") or [])
+    if combined_review:
+        qa["human_review"]=list(qa.get("human_review") or [])+combined_review
         if qa["status"]=="PASS":qa["status"]="HUMAN_REVIEW_REQUIRED"
     return {
       "version":"planha-dimension-engine/2","mode":"SHADOW","profile":profile,"plan_id":plan_id,
       "reference_model":ref_model,"source_registry":source_registry,"elements":elements_result,
-      "candidate_generation":candidate_result,"governed_requirements":governed,"intent_errors":intent_errors,
+      "candidate_generation":candidate_result,"source_generation":source_generation,"governed_requirements":governed,"intent_errors":intent_errors,
       "selected_intents":selected,"redundancy":redundancy,"determinacy":minimum["determinacy"],
       "reconciliation":reconciliation,"placement":placement,"qa":qa,
       "shadow_compare":shadow_compare(v1_report,selected,qa),
