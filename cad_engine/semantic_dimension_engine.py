@@ -28,6 +28,7 @@ SOURCE_LAYER = "PLANHA-A-DIM-SOURCE"
 SETOUT_LAYER = "PLANHA-M-DIM-SETOUT"
 CHECK_LAYER = "PLANHA-M-DIM-CHECK"
 DIMSTYLE = "PLANHA-DIM"
+APPID = "PLANHA_DIMENSION"
 
 CRITICAL_SOURCE_TYPES = {
     "PROPERTY", "SETBACK", "BUILDING_OVERALL", "GRID", "STRUCTURAL_SET_OUT",
@@ -117,6 +118,25 @@ def _simple_numeric_override(text):
         return float(value)
     except ValueError:
         return None
+
+
+def _override_status(measured, displayed_text):
+    """Classify source text without promoting it to engineering truth.
+
+    The 1% threshold is an anomaly heuristic derived from drafting behavior, not
+    a code tolerance. The exact geometry remains authoritative for calculation.
+    """
+    text=str(displayed_text or "").strip()
+    if not text or text=="<>" or "<>" in text:
+        return "EXACT"
+    numeric=_simple_numeric_override(text)
+    if numeric is None:
+        return "NON_NUMERIC_OVERRIDE"
+    measured=abs(float(measured or 0.0))
+    if measured<=1e-12:
+        return "CONFLICT"
+    delta=abs(float(numeric)-measured)
+    return "MINOR_OVERRIDE" if delta<=max(measured*.01,1e-6) else "CONFLICT"
 
 
 def _display_number(value):
@@ -284,13 +304,29 @@ def _semantic_type(p1, p2, measurement, bind_a, bind_b, plan_bounds):
     return "UNKNOWN"
 
 
-def extract_source_dimension_registry(doc_or_path, plan_bounds, architecture=None, plan_id=None):
+def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architecture=None, plan_id=None):
     """Extract source dimensions as immutable evidence, independent of view visibility."""
     doc = (
         ezdxf.readfile(doc_or_path)
         if isinstance(doc_or_path, (str, bytes, Path))
         else doc_or_path
     )
+    if plan_bounds is None:
+        geometry=[
+            e for e in doc.modelspace()
+            if e.dxftype() not in {"DIMENSION","TEXT","MTEXT","LEADER","MLEADER"}
+        ]
+        try:
+            ext=bbox.extents(geometry or list(doc.modelspace()),fast=True)
+            if ext.has_data:
+                plan_bounds=(
+                    float(ext.extmin.x),float(ext.extmin.y),
+                    float(ext.extmax.x),float(ext.extmax.y),
+                )
+        except Exception:
+            plan_bounds=None
+    if plan_bounds is None:
+        return {"status":"INPUT_REQUIRED","records":[],"conflicts":[],"missing_inputs":["PLAN_BOUNDS"]}
     refs = build_reference_catalog(doc, plan_bounds, architecture=architecture, plan_id=plan_id)
     span = max(
         abs(float(plan_bounds[2]) - float(plan_bounds[0])),
@@ -315,14 +351,12 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds, architecture=Non
             measured = math.dist(p1, p2)
         text = str(getattr(entity.dxf, "text", "") or "").strip()
         simple_override = _simple_numeric_override(text)
+        override_status=_override_status(measured,text)
         conflict_reason = None
         if measured <= max(span * 1e-9, 1e-9):
             conflict_reason = "ZERO_MEASUREMENT"
-        elif simple_override is not None:
-            delta = abs(simple_override - measured)
-            tolerance = max(abs(measured) * 0.02, span * 0.0015)
-            if delta > tolerance:
-                conflict_reason = "DISPLAY_GEOMETRY_CONFLICT"
+        elif override_status=="CONFLICT":
+            conflict_reason = "DISPLAY_GEOMETRY_CONFLICT"
 
         bind_a = _nearest_reference(p1, refs, bind_tol)
         bind_b = _nearest_reference(p2, refs, bind_tol)
@@ -350,10 +384,15 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds, architecture=Non
             "p2": p2,
             "dimension_line_point": base,
             "measured_value": measured,
+            "raw_measurement": measured,
             "source_display_text": text,
             "displayed_value": displayed,
             "simple_numeric_override": simple_override,
+            "override_status": override_status,
             "semantic_type": semantic,
+            "purpose": semantic,
+            "reference_point_a": p1,
+            "reference_point_b": p2,
             "reference_a": (bind_a or {}).get("reference"),
             "reference_b": (bind_b or {}).get("reference"),
             "conflict": conflict_reason,
@@ -364,10 +403,12 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds, architecture=Non
         "status": "PASS",
         "plan_id": plan_id,
         "records": records,
+        "dimension_count":len(records),
         "reference_count": len(refs),
         "local_axis_deg": math.degrees(detect_local_axis(refs)),
         "counts": dict(Counter(row["semantic_type"] for row in records)),
         "conflicts": [row["id"] for row in records if row["conflict"]],
+        "override_conflict_count":sum(1 for row in records if row["conflict"]),
     }
 
 
@@ -511,6 +552,29 @@ def determinacy_intents(targets, refs, local_axis):
     return intents, missing
 
 
+def select_minimal_dimension_set(intents):
+    """Remove exact semantic duplicates while preserving required check intent."""
+    selected=[];seen=set()
+    for row in intents or []:
+        ra=row.get("reference_a") or {}; rb=row.get("reference_b") or {}
+        ids=sorted([
+            str(ra.get("id") or ra.get("element_id") or ""),
+            str(rb.get("id") or rb.get("element_id") or ""),
+        ])
+        key=(
+            str(row.get("board_id") or ""),
+            str(row.get("purpose") or ""),
+            str(row.get("orientation") or row.get("angle_deg") or ""),
+            tuple(ids),
+            tuple(round(float(x),6) for x in row.get("world_p1") or ()),
+            tuple(round(float(x),6) for x in row.get("world_p2") or ()),
+        )
+        if key in seen:
+            continue
+        seen.add(key);selected.append(row)
+    return selected
+
+
 def _fit_transform(source_bounds, target_bounds):
     sx1, sy1, sx2, sy2 = map(float, source_bounds)
     tx1, ty1, tx2, ty2 = map(float, target_bounds)
@@ -630,6 +694,10 @@ def _ensure_dimension_style(doc):
     for name, color in ((SOURCE_LAYER, 8), (SETOUT_LAYER, 2), (CHECK_LAYER, 6)):
         if name not in doc.layers:
             doc.layers.add(name, color=color)
+    try:
+        doc.appids.get(APPID)
+    except Exception:
+        doc.appids.add(APPID)
 
 
 def materialize_dimension_intents(doc, msp, placed_intents):
@@ -654,6 +722,13 @@ def materialize_dimension_intents(doc, msp, placed_intents):
             )
             dim.render()
             entity = dim.dimension
+            marker="SOURCE_DIMENSION" if intent.get("source_kind")=="SOURCE_REGENERATED" else "SEMANTIC_DIMENSION"
+            entity.set_xdata(APPID,[
+                (1000,marker),
+                (1000,str(intent["id"])),
+                (1000,str(intent.get("purpose") or "")),
+                (1000,str(intent.get("mechanical_target_id") or intent.get("source_dimension_id") or "")),
+            ])
             rows.append({
                 "intent_id": intent["id"],
                 "handle": str(getattr(entity.dxf, "handle", "") or ""),
@@ -692,7 +767,7 @@ def build_and_materialize_plan_dimensions(doc, msp, board, plan, architecture, p
     source_intents = source_dimension_intents(registry, profile)
     targets = collect_mechanical_targets(pipeline, plan_id)
     generated_intents, missing = determinacy_intents(targets, refs, axis)
-    all_intents = source_intents + generated_intents
+    all_intents = select_minimal_dimension_set(source_intents + generated_intents)
     placed, collisions = place_intents(all_intents, source_bounds, board)
     materialized = materialize_dimension_intents(doc, msp, placed)
 
@@ -819,4 +894,73 @@ def source_preservation_complete(dimension_report):
         "critical_source_conflicts": conflicts,
         "source_dimension_count": len(rows),
         "critical_source_dimension_count": sum(1 for row in rows if row.get("critical")),
+    }
+
+
+
+def apply_semantic_dimension_engine(src, dst, base_report, network, architecture_preservation=None):
+    """Standalone governed adapter used by synthetic/golden validation.
+
+    Production composition invokes the same primitives from mechanical_design_core.
+    This adapter never changes network topology, sizing or equipment selection.
+    """
+    if architecture_preservation and architecture_preservation.get("status")!="PASS":
+        return {"status":"FAIL","errors":["ARCHITECTURE_PRESERVATION_NOT_PASS"]}
+    src=Path(src);dst=Path(dst)
+    doc=ezdxf.readfile(dst);msp=doc.modelspace()
+    composition=(base_report or {}).get("composition") or {}
+    rows=composition.get("manifest") or []; boards=composition.get("boards") or {}
+    dimensioning={}; generated_count=0
+    levels={str(row.get("id") or row.get("name") or ""):row for row in (network or {}).get("levels") or []}
+    nodes=list((network or {}).get("nodes") or [])
+    for row in rows:
+        family=str(row.get("family") or "")
+        if family not in {"ROOF","SANITARY_VENT","WATER","HEATING","GAS","SPLIT_AC","EXHAUST"}:
+            continue
+        board=dict(boards.get(row.get("old_sheet")) or {})
+        if not board.get("plan_area"):
+            continue
+        level_name=str(row.get("level") or "")
+        level=levels.get(level_name)
+        if level is None and levels:
+            level=next(iter(levels.values()))
+        bounds=(level or {}).get("region_bounds")
+        if not bounds:
+            continue
+        plan_id=str((level or {}).get("id") or level_name or row.get("code") or "PLAN")
+        plan={"plan_id":plan_id,"bounds":tuple(map(float,bounds))}
+        board.setdefault("bounds",(
+            float(board["plan_area"][0])-.5,float(board["plan_area"][1])-.5,
+            float(board["plan_area"][2])+.5,float(board["plan_area"][3])+.5,
+        ))
+        board.setdefault("title_area",(
+            float(board["bounds"][0]),float(board["bounds"][1]),
+            float(board["bounds"][2]),float(board["plan_area"][1])-.1,
+        ))
+        adapted=[]
+        for node in nodes:
+            if str(node.get("level") or "") not in {"",level_name,plan_id}:
+                continue
+            item=dict(node);item["plan_id"]=plan_id;adapted.append(item)
+        pipeline={"topology":{"nodes":adapted},"hvac":{"equipment":[]}}
+        report=build_and_materialize_plan_dimensions(
+            doc,msp,board,plan,{"walls":[],"shafts":[],"columns":[]},pipeline,family,level_name
+        )
+        dimensioning[str(row.get("code") or row.get("old_sheet"))]=report
+        generated_count+=sum(
+            1 for item in report.get("materialized") or []
+            if item.get("source_kind")=="PLANHA_GENERATED" and item.get("handle")
+        )
+    doc.saveas(dst)
+    exact=validate_exact_file_dimensions(dst,{"dimensioning":dimensioning})
+    preservation=[source_preservation_complete(report) for report in dimensioning.values()]
+    source_ok=all(item.get("pass") for item in preservation) if preservation else True
+    status="PASS" if exact.get("status")=="PASS" and source_ok else "FAIL"
+    return {
+        "status":status,
+        "dimensioning":dimensioning,
+        "generated_dimension_count":generated_count,
+        "source_preservation_proven":source_ok,
+        "exact_file_qa":exact,
+        "exact_file_reopened":True,
     }
