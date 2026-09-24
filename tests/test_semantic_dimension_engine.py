@@ -626,3 +626,19 @@ def test_rotated_exterior_envelope_generates_two_local_axis_overall_dimensions()
     assert len(overall)==2
     values=sorted(round(row["measured_value"],6) for row in overall)
     assert values==[6.0,10.0]
+
+
+def test_rotated_context_placement_tiers_outside_plan_area_along_local_normal():
+    from cad_engine.semantic_dimension_engine import place_intents
+    board={"bounds":(-3,-3,13,13),"plan_area":(0,0,10,10),"title_area":(-3,-3,13,-2.5)}
+    intent={
+        "id":"CTX-ROT","purpose":"BUILDING_OVERALL","source_kind":"PLANHA_GENERATED_CONTEXT",
+        "reference_a":{"id":"E-A"},"reference_b":{"id":"E-B"},
+        "world_p1":(2,2),"world_p2":(8,8),"world_base":None,
+        "measured_value":math.sqrt(72),"displayed_value":"8.49","required":True,
+        "priority":92,"placement_zone":"OUTSIDE","outside_sign":-1,"angle_deg":45.0,
+    }
+    placed,collisions=place_intents([intent],(0,0,10,10),board)
+    assert collisions==[]
+    x,y=placed[0]["render_base"]
+    assert not (0<=x<=10 and 0<=y<=10)
