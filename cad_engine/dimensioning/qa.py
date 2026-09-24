@@ -65,9 +65,9 @@ def evaluate_architectural_dimension_qa(*,profile,intents,references,reference_r
     sp_missing=not bool(source_preservation)
     corruption=sp.get("source_value_corruption") or []
     controls.append(_control("no_source_value_corruption",
-                             "INPUT_REQUIRED" if sp_missing and stage=="FINAL" else ("FAIL" if corruption else "PASS"),
+                             "INPUT_REQUIRED" if sp_missing else ("FAIL" if corruption else "PASS"),
                              corruption if corruption else ([] if not sp_missing else ["SOURCE_PRESERVATION_EVIDENCE_REQUIRED"])))
-    source_status=("INPUT_REQUIRED" if sp_missing and stage=="FINAL" else ("PASS" if sp.get("pass",not sp_missing) else "FAIL"))
+    source_status=("INPUT_REQUIRED" if sp_missing else ("PASS" if sp.get("pass") else "FAIL"))
     controls.append(_control("source_evidence_preserved",source_status,
                              sp.get("missing_critical_source_dimensions") or ([] if not sp_missing else ["SOURCE_PRESERVATION_EVIDENCE_REQUIRED"])))
     conflicts=sp.get("critical_source_conflicts") or []
