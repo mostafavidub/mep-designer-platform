@@ -68,15 +68,38 @@ register_panel_bridge(app, main_auto.legacy, DesignJob)
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
+STAGING_PROJECT_NAME = 'mep-designer-platform-staging'
+STAGING_PUBLIC_URL = 'https://stage.planha.com'
+STAGING_TECHNICAL_HOST = 'web-app-staging-production.up.railway.app'
+
 PUBLIC_SITE_URL = os.getenv('PUBLIC_SITE_URL', 'https://planha.com').strip().rstrip('/') or 'https://planha.com'
+PANEL_PUBLIC_URL = os.getenv('PANEL_PUBLIC_URL', PUBLIC_SITE_URL).strip().rstrip('/') or PUBLIC_SITE_URL
+RAILWAY_PROJECT_NAME = os.getenv('RAILWAY_PROJECT_NAME', '').strip()
+
+
+def _validate_staging_public_origin(project_name, public_site_url, panel_public_url):
+    if project_name != STAGING_PROJECT_NAME:
+        return
+    if public_site_url != STAGING_PUBLIC_URL:
+        raise RuntimeError(f'STAGING_PUBLIC_SITE_URL_MISMATCH:{public_site_url}')
+    if panel_public_url != STAGING_PUBLIC_URL:
+        raise RuntimeError(f'STAGING_PANEL_PUBLIC_URL_MISMATCH:{panel_public_url}')
+
+
+_validate_staging_public_origin(RAILWAY_PROJECT_NAME, PUBLIC_SITE_URL, PANEL_PUBLIC_URL)
+
 PUBLIC_SITE = urlsplit(PUBLIC_SITE_URL)
 CANONICAL_HOST = (PUBLIC_SITE.hostname or 'planha.com').lower().rstrip('.')
 CANONICAL_SCHEME = PUBLIC_SITE.scheme or 'https'
+_default_redirect_hosts = (
+    STAGING_TECHNICAL_HOST if RAILWAY_PROJECT_NAME == STAGING_PROJECT_NAME
+    else 'www.planha.com,web-app-production-3d3b.up.railway.app'
+)
 CANONICAL_REDIRECT_HOSTS = {
     host.strip().lower().rstrip('.')
     for host in os.getenv(
         'CANONICAL_REDIRECT_HOSTS',
-        'www.planha.com,web-app-production-3d3b.up.railway.app',
+        _default_redirect_hosts,
     ).split(',')
     if host.strip()
 }
@@ -87,7 +110,11 @@ TEMPORARY_NOINDEX_HOSTS = {
     host.strip().lower().rstrip('.')
     for host in os.getenv(
         'TEMPORARY_NOINDEX_HOSTS',
-        'web-app-production-3d3b.up.railway.app',
+        (
+            f'{STAGING_PUBLIC_URL.removeprefix("https://")},{STAGING_TECHNICAL_HOST}'
+            if RAILWAY_PROJECT_NAME == STAGING_PROJECT_NAME
+            else 'web-app-production-3d3b.up.railway.app'
+        ),
     ).split(',')
     if host.strip()
 }
@@ -189,6 +216,13 @@ def integrated_system_health():
         status['status'] = 'error'
     status['build_identity'] = build_identity()
     status['mechanical'] = release_contract_status()
+    status['deployment_identity'] = {
+        'railway_project': RAILWAY_PROJECT_NAME or None,
+        'canonical_public_url': PUBLIC_SITE_URL,
+        'panel_public_url': PANEL_PUBLIC_URL,
+        'technical_host': STAGING_TECHNICAL_HOST if RAILWAY_PROJECT_NAME == STAGING_PROJECT_NAME else None,
+        'shareable_url': STAGING_PUBLIC_URL if RAILWAY_PROJECT_NAME == STAGING_PROJECT_NAME else PUBLIC_SITE_URL,
+    }
     return status
 
 
