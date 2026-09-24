@@ -1296,6 +1296,11 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 (1000,reference_b_id),
                 (1000,unit_source),
                 (1000,governance_rule_id),
+                (1000,str(intent.get("chain_id") or "")),
+                (1000,str(intent.get("check_group_id") or "")),
+                (1000,str(intent.get("zone_id") or "")),
+                (1000,str(intent.get("coordinate_frame_id") or "")),
+                (1000,str(intent.get("tier") if intent.get("tier") is not None else "")),
                 (1040,measured_value),
             ]
             if engineering_value_m is not None:
@@ -1317,6 +1322,11 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 "reference_b_id": reference_b_id,
                 "purpose": intent["purpose"],
                 "source_kind": intent["source_kind"],
+                "chain_id": intent.get("chain_id"),
+                "check_group_id": intent.get("check_group_id"),
+                "zone_id": intent.get("zone_id"),
+                "coordinate_frame_id": intent.get("coordinate_frame_id"),
+                "tier": intent.get("tier"),
                 "required": bool(intent.get("required")),
             })
         except Exception as exc:
