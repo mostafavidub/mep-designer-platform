@@ -265,6 +265,37 @@ def test_standalone_adapter_generates_two_reference_bound_setout_dimensions(tmp_
     assert len(generated)==2
 
 
+def test_final_reconciliation_reuses_proven_semantic_reference_catalog(tmp_path):
+    src=tmp_path/"source_refs.dxf";out=tmp_path/"out_refs.dxf"
+    _architectural_source(src);shutil.copy2(src,out)
+    proven_refs=[
+        {"id":"G-A","kind":"GRID_AXIS","a":(2.0,0.0),"b":(2.0,10.0),"priority":0,"source":"semantic_geometry"},
+        {"id":"G-1","kind":"GRID_AXIS","a":(0.0,1.0),"b":(10.0,1.0),"priority":0,"source":"semantic_geometry"},
+        {"id":"PLAN-LEFT","kind":"PLAN_EDGE","a":(0.0,0.0),"b":(0.0,10.0),"priority":40},
+        {"id":"PLAN-BOTTOM","kind":"PLAN_EDGE","a":(0.0,0.0),"b":(10.0,0.0),"priority":40},
+    ]
+    network={
+        "levels":[{"id":"L1","name":"Ground","type":"GROUND","region_bounds":[0,0,10,10]}],
+        "nodes":[{"id":"S1","kind":"shaft","category":"vertical_core","point":(4,3),"level":"L1"}],
+        "edges":[],
+    }
+    report={"composition":{
+        "manifest":[{"family":"WATER","purpose":"PLAN","level":"GROUND","old_sheet":"B1","code":"M-W-01"}],
+        "boards":{"B1":{"plan_area":[20,20,120,120]}},
+        "dimensioning":{"M-W-01":{"reference_catalog":proven_refs}},
+    }}
+    result=apply_semantic_dimension_engine(
+        src,out,report,network,
+        architecture_preservation={"status":"PASS","critical_missing_count":0,"important_missing_count":0},
+    )
+    assert result["status"]=="PASS",result
+    rows=result["dimensioning"]["M-W-01"]["materialized"]
+    generated=[row for row in rows if row["source_kind"]=="PLANHA_GENERATED"]
+    assert len(generated)==2
+    used={row["reference_b_id"] for row in generated}
+    assert used=={"G-A","G-1"}
+
+
 def test_exact_file_xdata_binds_reference_ids_and_engineering_value(tmp_path):
     doc=_source_doc()
     _add_dim(doc,(0,0),(13,0),(6.5,.5),"13.00")
