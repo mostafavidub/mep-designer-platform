@@ -82,6 +82,10 @@ class DimensionIntentV2:
         for label,ref in (("A",self.reference_a),("B",self.reference_b)):
             if not isinstance(ref,dict) or not (ref.get("id") or ref.get("element_id")):
                 errors.append(f"REFERENCE_{label}_REQUIRED")
+                continue
+            sf=ref.get("subfeature")
+            if sf and sf not in REFERENCE_SUBFEATURES:
+                errors.append(f"REFERENCE_{label}_SUBFEATURE_UNSUPPORTED")
         if self.purpose=="CODE_CLEARANCE" and not self.rule_id:
             errors.append("CODE_CLEARANCE_RULE_ID_REQUIRED")
         if self.priority_class not in {"P0","P1","P2","P3"}:
