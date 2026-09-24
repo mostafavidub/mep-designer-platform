@@ -76,8 +76,16 @@ def test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric
 def test_source_registry_preserves_linear_and_aligned_dimension_type_orientation():
     doc=_source_doc()
     _add_dim(doc,(0,0),(10,0),(5,.5),"10.00")
-    aligned=doc.modelspace().add_aligned_dim(p1=(0,0),p2=(3,4),distance=.8)
-    aligned.render()
+    # add_aligned_dim() normalizes to rotated-linear DIMTYPE in ezdxf.
+    # Build a raw source DIMENSION with base type 1 to represent consultant
+    # files that carry true ALIGNED entities, as observed in the reference corpus.
+    doc.modelspace().new_entity("DIMENSION",dxfattribs={
+        "dimtype":1,
+        "defpoint":(1,1,0),
+        "defpoint2":(0,0,0),
+        "defpoint3":(3,4,0),
+        "dimstyle":"Standard",
+    })
     registry=extract_source_dimension_registry(doc,(0,0,10,8),architecture={},plan_id="P1")
     kinds={row["source_dimension_kind"] for row in registry["records"]}
     assert "LINEAR_ROTATED" in kinds
