@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0281",
-  "summary": "Harden semantic dimensioning against the six-project architectural reference corpus by adding autonomous context dimensions, architecture-aware placement obstacles, and stronger datum/QA behavior without changing routing or sizing authority.",
+  "summary": "Integrate architectural-reference benchmark hardening into the existing shadow-first Dimension Engine v2 staging baseline without replacing v2 or changing routing/sizing authority.",
   "requester": "mostafavidub",
   "change_types": [
     "rule",
@@ -44,7 +44,7 @@
     "detail_riser": "No riser engineering identity change; only plan dimension context/placement changes.",
     "manifest": "No schema change.",
     "docs": "Update semantic dimension standard with benchmark findings and hardening rules.",
-    "versioning": "SWCIS minor bump required because locked rule/gate semantics change.",
+    "versioning": "Staging integration bumps SWCIS to 4.41.0; production/main promotion remains a separate controlled decision.",
     "governance": "Add benchmark-derived capability evidence without making private reference values hidden defaults.",
     "deployment": "No staging/production deployment in this change.",
     "migration": "No persisted schema/data migration; regeneration of drawing artifacts only.",
@@ -71,7 +71,7 @@
       "standards/contract-changelog.json GOV-2026-046"
     ],
     "version_bump": [
-      "SWCIS 4.39.0 -> 4.40.0 because locked dimension/output gate semantics changed"
+      "staging integration SWCIS 4.40.0 -> 4.41.0 because two independently approved dimension-contract streams are reconciled"
     ],
     "migration": [
       "none: additive drawing-output behavior; no persisted PMM migration"
@@ -83,7 +83,9 @@
       "full repository regression required before merge"
     ],
     "semantic_diff": [
-      "context dimensions may be generated even when consultant DIMENSION entities are absent; placement becomes architecture-aware"
+      "Dimension Engine v2 remains the shadow-first target architecture and visible-output promotion boundary.",
+      "v1-compatible source registry/compositor gains raw-source-dimension isolation, source snapshot isolation, autonomous semantic context and architecture-aware placement.",
+      "No private reference-project numeric values become defaults."
     ],
     "artifact_diff": [
       "new Planha-owned GRID/BUILDING_OVERALL/SHAFT context dimensions may appear on applicable Mechanical plan boards"
