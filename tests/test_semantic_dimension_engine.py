@@ -17,6 +17,7 @@ from cad_engine.semantic_dimension_engine import (
     entity_obstacle_boxes,
     extract_source_dimension_registry,
     governed_requirement_intents,
+    infer_dimension_unit_evidence,
     select_minimal_dimension_set,
     source_dimension_intents,
     source_preservation_complete,
@@ -552,3 +553,46 @@ def test_planha_owned_dimension_is_not_reingested_as_source_evidence():
     dim.render();dim.dimension.set_xdata(APPID,[(1000,"SEMANTIC_DIMENSION")])
     registry=extract_source_dimension_registry(doc,(0,0,10,8),architecture={},plan_id="P1")
     assert registry["dimension_count"]==0
+
+
+def test_context_unit_evidence_can_correct_misleading_mm_header_from_unique_metric_plan_bounds():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=4
+    doc.header["$MEASUREMENT"]=1
+    unit=infer_dimension_unit_evidence(doc,(0,0,10,8))
+    assert unit["effective_scale_to_m"]==1.0
+    assert unit["source"]=="plan-bounds-unique-plausibility"
+    assert unit["plan_bounds_plausible"] is True
+
+
+def test_context_unit_evidence_fails_closed_when_plan_bounds_allow_multiple_unit_interpretations():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=0
+    doc.header["$MEASUREMENT"]=0
+    unit=infer_dimension_unit_evidence(doc,(0,0,10,8))
+    assert unit["effective_scale_to_m"] is None
+    assert unit["source"]=="plan-bounds-unit-ambiguous"
+    assert unit["confidence"]=="low"
+
+
+def test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gate():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=0
+    doc.header["$MEASUREMENT"]=0
+    msp=doc.modelspace()
+    plan={"plan_id":"P1","bounds":(0,0,10,8)}
+    architecture={"walls":[
+        {"id":"EXT-L","plan_id":"P1","start":(0,0),"end":(0,8),"is_exterior":True},
+        {"id":"EXT-R","plan_id":"P1","start":(10,0),"end":(10,8),"is_exterior":True},
+        {"id":"EXT-B","plan_id":"P1","start":(0,0),"end":(10,0),"is_exterior":True},
+        {"id":"EXT-T","plan_id":"P1","start":(0,8),"end":(10,8),"is_exterior":True},
+    ],"shafts":[],"columns":[]}
+    board={"bounds":(-2,-2,12,10),"plan_area":(0,0,10,8),"title_area":(-2,-2,12,-1)}
+    report=build_and_materialize_plan_dimensions(
+        doc,msp,board,plan,architecture,
+        {"topology":{"nodes":[]},"hvac":{"equipment":[]}},
+        "WATER","GROUND",
+    )
+    assert report["status"]=="FAIL"
+    assert "DIMENSION_UNIT_BASIS_REQUIRED" in report["errors"]
+    assert report["context_intent_count"]==2
