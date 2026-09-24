@@ -166,6 +166,46 @@ def _display_number(value):
     return f"{value:.2f}"
 
 
+def _source_dimension_kind(raw_dimtype):
+    """Preserve the consultant DXF dimension family as source evidence."""
+    base=int(raw_dimtype or 0) & 7
+    return {
+        0:"LINEAR_ROTATED",
+        1:"ALIGNED",
+        2:"ANGULAR",
+        3:"DIAMETER",
+        4:"RADIUS",
+        5:"ANGULAR_3POINT",
+        6:"ORDINATE",
+    }.get(base,"UNKNOWN")
+
+
+def _source_dimension_orientation(entity, p1, p2):
+    raw=int(getattr(entity.dxf,"dimtype",0) or 0)
+    base=raw & 7
+    angle=None
+    try:
+        angle=float(getattr(entity.dxf,"angle"))
+    except Exception:
+        if p1 and p2:
+            angle=math.degrees(_line_angle(p1,p2))
+    if angle is not None:
+        angle=float(angle)%180.0
+    if base==1:
+        orientation="ALIGNED"
+    elif base==0 and angle is not None:
+        axis=min(abs(angle),abs(180.0-angle))
+        if axis<=1e-7:
+            orientation="HORIZONTAL"
+        elif abs(angle-90.0)<=1e-7:
+            orientation="VERTICAL"
+        else:
+            orientation="ROTATED"
+    else:
+        orientation=_source_dimension_kind(raw)
+    return raw,base,orientation,angle
+
+
 def _dimension_geometry(entity):
     p1 = _xy(getattr(entity.dxf, "defpoint2", None))
     p2 = _xy(getattr(entity.dxf, "defpoint3", None))
@@ -459,6 +499,7 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
         except Exception:
             measured = math.dist(p1, p2)
         text = str(getattr(entity.dxf, "text", "") or "").strip()
+        source_dimtype_raw,source_dimtype_base,source_orientation,source_angle_deg=_source_dimension_orientation(entity,p1,p2)
         simple_override = _simple_numeric_override(text)
         override_status=_override_status(measured,text)
         conflict_reason = None
@@ -491,6 +532,11 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
             "source_handle": str(getattr(entity.dxf, "handle", "") or ""),
             "source_layer": str(getattr(entity.dxf, "layer", "") or ""),
             "source_style": str(getattr(entity.dxf, "dimstyle", "") or ""),
+            "source_dimtype_raw": source_dimtype_raw,
+            "source_dimtype_base": source_dimtype_base,
+            "source_dimension_kind": _source_dimension_kind(source_dimtype_raw),
+            "source_orientation": source_orientation,
+            "source_angle_deg": source_angle_deg,
             "p1": p1,
             "p2": p2,
             "dimension_line_point": base,
