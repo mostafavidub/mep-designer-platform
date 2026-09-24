@@ -174,6 +174,48 @@ def _display_number(value):
     return f"{value:.2f}"
 
 
+
+def _plan_scale_plausible(plan_bounds, scale):
+    if not plan_bounds or scale in (None,0):
+        return False
+    width=abs(float(plan_bounds[2])-float(plan_bounds[0]))*float(scale)
+    height=abs(float(plan_bounds[3])-float(plan_bounds[1]))*float(scale)
+    aspect=max(width,height)/max(min(width,height),1e-9)
+    # Reuse Planha's existing single-plan plausibility envelope. These are
+    # unit-resolution sanity bounds, not building design defaults.
+    return 2.0<=width<=500.0 and 2.0<=height<=500.0 and aspect<=12.0
+
+
+def infer_dimension_unit_evidence(doc, plan_bounds):
+    """Resolve unit evidence for dimensioning without trusting header metadata."""
+    unit=dict(infer_drawing_unit_scale(doc))
+    current=unit.get("effective_scale_to_m")
+    if _plan_scale_plausible(plan_bounds,current):
+        unit["plan_bounds_plausible"]=True
+        return unit
+    # When the current/header interpretation is implausible, allow only a
+    # unique plausible alternative. Metric drawings never silently switch to
+    # imperial units.
+    measurement=int(doc.header.get("$MEASUREMENT",0) or 0)
+    candidates=[1.0,0.01,0.001] if measurement==1 else [1.0,0.01,0.001,0.0254,0.3048]
+    plausible=[]
+    for scale in candidates:
+        if _plan_scale_plausible(plan_bounds,scale) and scale not in plausible:
+            plausible.append(scale)
+    unit["plan_bounds_plausible_scales_to_m"]=plausible
+    if len(plausible)==1:
+        unit["effective_scale_to_m"]=plausible[0]
+        unit["source"]="plan-bounds-unique-plausibility"
+        unit["confidence"]="medium"
+        unit["plan_bounds_plausible"]=True
+    else:
+        unit["effective_scale_to_m"]=None
+        unit["source"]="plan-bounds-unit-ambiguous"
+        unit["confidence"]="low"
+        unit["plan_bounds_plausible"]=False
+    return unit
+
+
 def _source_dimension_kind(raw_dimtype):
     """Preserve the consultant DXF dimension family as source evidence."""
     base=int(raw_dimtype or 0) & 7
@@ -489,7 +531,7 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
     if plan_bounds is None:
         return {"status":"INPUT_REQUIRED","records":[],"conflicts":[],"missing_inputs":["PLAN_BOUNDS"]}
     refs = list(reference_catalog) if reference_catalog is not None else build_reference_catalog(doc, plan_bounds, architecture=architecture, plan_id=plan_id)
-    unit_evidence=infer_drawing_unit_scale(doc)
+    unit_evidence=infer_dimension_unit_evidence(doc,plan_bounds)
     effective_scale=unit_evidence.get("effective_scale_to_m")
     span = max(
         abs(float(plan_bounds[2]) - float(plan_bounds[0])),
