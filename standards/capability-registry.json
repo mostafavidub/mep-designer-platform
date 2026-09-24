@@ -667,7 +667,16 @@
         "promotion_requires_zero_unresolved_placement",
         "promotion_requires_zero_source_review_blockers",
         "host_bound_extension_line_collision_policy",
-        "clean_orthogonal_semantic_dimension_corner_policy"
+        "clean_orthogonal_semantic_dimension_corner_policy",
+        "source_dimension_registry_not_raw_graphical_copy",
+        "source_snapshot_isolation",
+        "autonomous_context_overall",
+        "autonomous_context_grid_chain",
+        "autonomous_context_shaft_stair",
+        "architecture_obstacle_placement",
+        "semantic_reference_pair_deduplication",
+        "planha_output_not_source_reingested",
+        "local_axis_outside_tiering"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -696,7 +705,18 @@
         "test_orthogonal_coordinate_setout_for_same_target_is_clean_not_collision",
         "test_exact_duplicate_cleanup_is_informational_not_human_review",
         "test_opening_requires_size_and_position_and_uses_distinct_jamb_references",
-        "test_rectangular_shaft_requires_location_and_two_size_dimensions"
+        "test_rectangular_shaft_requires_location_and_two_size_dimensions",
+        "test_raw_source_dimension_is_not_copied_into_mechanical_board",
+        "test_context_engine_generates_overall_grid_and_shaft_when_source_dimensions_are_absent",
+        "test_partial_source_grid_chain_is_completed_without_duplicate_reference_pair",
+        "test_semantic_dedupe_uses_reference_pair_even_when_graphical_base_differs",
+        "test_architecture_obstacle_boxes_force_dimension_text_to_alternate_candidate",
+        "test_planha_owned_dimension_is_not_reingested_as_source_evidence",
+        "test_rotated_exterior_envelope_generates_two_local_axis_overall_dimensions",
+        "test_context_unit_evidence_can_correct_misleading_mm_header_from_unique_metric_plan_bounds",
+        "test_context_unit_evidence_fails_closed_when_plan_bounds_allow_multiple_unit_interpretations",
+        "test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gate",
+        "test_rotated_context_placement_tiers_outside_plan_area_along_local_normal"
       ]
     }
   ]
