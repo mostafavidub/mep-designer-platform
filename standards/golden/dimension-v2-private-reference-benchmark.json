@@ -1,0 +1,41 @@
+{
+  "contract": "planha-dimension-v2-private-reference-benchmark",
+  "status": "COMPARISON_ONLY",
+  "private_sources_committed": false,
+  "generation_authority": false,
+  "method": "Independent conservative DXF evidence audit. Safe binding requires explicit semantic/reference evidence; unresolved wall-face candidates are reported separately and never promoted to engineering truth.",
+  "aggregate": {
+    "reference_files": 6,
+    "source_dimensions": 835,
+    "linear_rotated": 810,
+    "aligned": 25,
+    "explicit_text_overrides": 34,
+    "numeric_overrides": 16,
+    "non_numeric_overrides": 18,
+    "zero_measurement": 7,
+    "header_insunits_4_files": 6,
+    "high_confidence_effective_metre_files": 6,
+    "safe_bound_dimensions": 423,
+    "safe_binding_rate": 0.5065868263,
+    "potential_bound_including_unresolved_wall_candidates": 530,
+    "potential_binding_rate_including_unresolved_wall_candidates": 0.6347305389,
+    "diagnostic_unknown_dimensions": 228,
+    "diagnostic_unknown_rate": 0.2730538922
+  },
+  "anonymized_cases": [
+    {"id":"REF-01","dimensions":177,"linear_rotated":172,"aligned":5,"overrides":0,"zero_measurement":5,"effective_scale_to_m":1.0,"unit_confidence":"high","safe_binding_rate":0.9774011299,"potential_binding_rate":0.9774011299},
+    {"id":"REF-02","dimensions":102,"linear_rotated":95,"aligned":7,"overrides":8,"zero_measurement":2,"effective_scale_to_m":1.0,"unit_confidence":"high","safe_binding_rate":0.0,"potential_binding_rate":0.0},
+    {"id":"REF-03","dimensions":199,"linear_rotated":199,"aligned":0,"overrides":3,"zero_measurement":0,"effective_scale_to_m":1.0,"unit_confidence":"high","safe_binding_rate":0.0854271357,"potential_binding_rate":0.2261306533},
+    {"id":"REF-04","dimensions":130,"linear_rotated":130,"aligned":0,"overrides":6,"zero_measurement":0,"effective_scale_to_m":1.0,"unit_confidence":"high","safe_binding_rate":0.1615384615,"potential_binding_rate":0.7692307692},
+    {"id":"REF-05","dimensions":102,"linear_rotated":100,"aligned":2,"overrides":4,"zero_measurement":0,"effective_scale_to_m":1.0,"unit_confidence":"high","safe_binding_rate":0.9019607843,"potential_binding_rate":0.9019607843},
+    {"id":"REF-06","dimensions":125,"linear_rotated":114,"aligned":11,"overrides":13,"zero_measurement":0,"effective_scale_to_m":1.0,"unit_confidence":"high","safe_binding_rate":0.96,"potential_binding_rate":0.96}
+  ],
+  "interpretation": [
+    "All six files reproduce the protected v1 aggregate counts exactly: 835 total, 810 linear/rotated, 25 aligned, 34 explicit overrides, 16 numeric overrides, 18 non-numeric overrides, 7 zero-measurement dimensions.",
+    "All six declare $INSUNITS=4 while dimension plausibility resolves effective metre units with high confidence; header metadata cannot be sole numeric authority.",
+    "Safe semantic binding varies from 0% to 97.7%, proving that imported drafting conventions are heterogeneous and that a production engine must not infer semantic certainty from recurrence, layer names or visual proximity alone.",
+    "Including unresolved wall candidates raises aggregate potential binding only from 50.7% to 63.5%; wall reference basis and ambiguous geometry therefore remain legitimate human checkpoints rather than defects to hide with heuristics.",
+    "Per-file semantic-class labels from the audit are diagnostic only and are intentionally not stored as generation rules because raw layer vocabulary can be misleading."
+  ],
+  "promotion_effect": "Benchmark supports shadow-first v2 and fail-closed human review. It does not authorize visible-output promotion or any benchmark-derived engineering default."
+}

@@ -21,6 +21,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 import math
 import re
+import tempfile
 from pathlib import Path
 
 import ezdxf
@@ -43,6 +44,8 @@ from .semantic_dimension_engine import (
     build_and_materialize_plan_dimensions,
     validate_exact_file_dimensions,
 )
+from .dimension_engine import run_dimension_engine_shadow
+from .dimension_renderer import materialize_shadow_candidate, validate_engineering_dimension_exact_file
 from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
@@ -810,7 +813,8 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
             try:doc.layouts.new(row["code"])
             except Exception:pass
     shared_north=_shared_architectural_north(doc, arch.get("plans") or [])
-    copy_failures=[];overlay_reports=[];detail_index=0;north_records={};dimensioning={}
+    copy_failures=[];overlay_reports=[];detail_index=0;north_records={};dimensioning={};dimensioning_v2_shadow={}
+    wall_reference_basis=_answer(answers,"dimension_wall_reference_basis","wall_reference_basis",default=None)
     for row in manifest_rows:
         b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
         if b.family in PLAN_FAMILIES:
@@ -822,6 +826,14 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
                 dimensioning[b.code]=build_and_materialize_plan_dimensions(
                     doc,msp,vars(b),plan,arch,pipeline,b.family,b.level
+                )
+                v2_profile="ROOF_PLAN" if (b.family=="ROOF" or b.level=="ROOF") else "MECHANICAL_PLAN"
+                dimensioning_v2_shadow[b.code]=run_dimension_engine_shadow(
+                    doc,plan,arch,pipeline,v2_profile,vars(b),
+                    v1_report=dimensioning[b.code],
+                    wall_reference_basis=wall_reference_basis,
+                    governed_requirements=(pipeline.get("dimension_requirements") or []),
+                    level=b.level,
                 )
             elif b.level=="SERVICE":
                 _ensure_layer(doc,"ENGITOOLS-M-NOTES",7,18)
@@ -870,10 +882,98 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         try:vp=doc.viewports.get("*Active")[0];vp.dxf.center=((min_x+max_x)/2,(min_y+max_y)/2);vp.dxf.height=(max_y-min_y)*1.03
         except Exception:pass
     doc.saveas(dst)
-    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records,"dimensioning":dimensioning}
+    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,
+            "overlay_reports":overlay_reports,"north":north_records,"dimensioning":dimensioning,
+            "dimensioning_v2_shadow":dimensioning_v2_shadow}
 
 
 def _overlap(ex,b):return not (ex.extmax.x < b[0] or ex.extmin.x > b[2] or ex.extmax.y < b[1] or ex.extmin.y > b[3])
+
+
+def _validate_v2_shadow_exact_file_on_composed_package(path: Path, compose_report: dict) -> dict:
+    """Validate v2 against the actual composed Planha package without mutating it.
+
+    Shadow reports with PASS engineering QA are materialized only into an
+    in-memory/candidate copy, saved to a temporary DXF, reopened, and verified
+    for semantic/XData identity. Reports that legitimately require human review
+    remain explicit deferrals and never become silent release evidence.
+    """
+    reports=dict((compose_report or {}).get("dimensioning_v2_shadow") or {})
+    if not reports:
+        return {
+            "status":"PASS","mode":"SHADOW_SIDECAR","checked_sheets":0,
+            "deferred_sheets":[],"errors":[],
+            "exact_file_reopened":True,"visible_output_changed":False,
+            "reason":"NO_APPLICABLE_V2_SHADOW_REPORTS",
+        }
+
+    candidate=ezdxf.readfile(path)
+    all_materialized=[]
+    per_sheet={}
+    deferred=[]
+    errors=[]
+    for sheet,report in sorted(reports.items()):
+        qa=dict((report or {}).get("qa") or {})
+        if qa.get("status")!="PASS":
+            deferred.append({
+                "sheet":sheet,
+                "qa_status":qa.get("status"),
+                "errors":list(qa.get("errors") or []),
+                "human_review":list(qa.get("human_review") or []),
+            })
+            per_sheet[sheet]={
+                "status":"DEFERRED",
+                "qa_status":qa.get("status"),
+                "materialized":0,
+            }
+            continue
+
+        result=materialize_shadow_candidate(candidate,report)
+        per_sheet[sheet]={
+            "status":result.get("status"),
+            "qa_status":"PASS",
+            "materialized":len(result.get("materialized") or []),
+            "errors":list(result.get("errors") or []),
+        }
+        if result.get("status")!="PASS":
+            errors.extend(f"{sheet}:{e}" for e in (result.get("errors") or ["SHADOW_CANDIDATE_MATERIALIZATION_FAILED"]))
+            continue
+        all_materialized.extend(result.get("materialized") or [])
+
+    if errors:
+        return {
+            "status":"FAIL","mode":"SHADOW_SIDECAR","checked_sheets":len(per_sheet),
+            "deferred_sheets":deferred,"per_sheet":per_sheet,"errors":errors,
+            "exact_file_reopened":False,"visible_output_changed":False,
+        }
+
+    if not all_materialized:
+        return {
+            "status":"DEFERRED" if deferred else "PASS",
+            "mode":"SHADOW_SIDECAR","checked_sheets":len(per_sheet),
+            "deferred_sheets":deferred,"per_sheet":per_sheet,"errors":[],
+            "exact_file_reopened":True,"visible_output_changed":False,
+            "reason":"NO_PASS_SHADOW_DIMENSIONS_TO_MATERIALIZE" if deferred else "NO_V2_DIMENSIONS_REQUIRED",
+        }
+
+    with tempfile.TemporaryDirectory(prefix="planha-dimension-v2-") as td:
+        candidate_path=Path(td)/"dimension-v2-shadow-candidate.dxf"
+        candidate.saveas(candidate_path)
+        exact=validate_engineering_dimension_exact_file(candidate_path,all_materialized)
+
+    exact_errors=list(exact.get("errors") or [])
+    return {
+        "status":"FAIL" if exact.get("status")!="PASS" else ("DEFERRED" if deferred else "PASS"),
+        "mode":"SHADOW_SIDECAR",
+        "checked_sheets":len(per_sheet),
+        "validated_dimensions":int(exact.get("checked") or 0),
+        "deferred_sheets":deferred,
+        "per_sheet":per_sheet,
+        "errors":exact_errors,
+        "exact_file_reopened":bool(exact.get("exact_file_reopened")),
+        "visible_output_changed":False,
+        "policy":"candidate copy only; issued v1 package is immutable during v2 shadow validation",
+    }
 
 
 def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
@@ -890,7 +990,9 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
                 break
     errors=[]
     dimension_qa=validate_exact_file_dimensions(path,compose_report)
+    dimension_v2_shadow_qa=_validate_v2_shadow_exact_file_on_composed_package(path,compose_report)
     if dimension_qa.get("status")!="PASS":errors.append("semantic_dimension_qa")
+    if dimension_v2_shadow_qa.get("status")=="FAIL":errors.append("dimension_v2_shadow_exact_file_qa")
     if compose_report.get("copy_failures"):errors.append("architecture_copy_failures")
     if sum(len(v) for v in title_overlaps.values()):errors.append("drawing_titleblock_overlap")
     if any(sheet_content[k]==0 for k in boards):errors.append("blank_sheet")
@@ -904,7 +1006,18 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     # directional authority (never fabricate an arrow), but allow the drawing
     # set to be issued with an explicit machine-readable coordination warning.
     warnings=[f"architectural_north_not_provided:{x}" for x in missing_north]
-    return {"version":"mechanical-authority-dxf-qa-canonical.2","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"dimension_qa":dimension_qa,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north),"semantic_dimension_sheets":len((compose_report.get("dimensioning") or {}))}}
+    return {"version":"mechanical-authority-dxf-qa-canonical.2","status":"PASS" if not errors else "FAIL",
+            "errors":errors,"warnings":warnings,"dimension_qa":dimension_qa,
+            "dimension_v2_shadow_exact_file":dimension_v2_shadow_qa,
+            "metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),
+                       "copy_failures":len(compose_report.get("copy_failures") or []),
+                       "blank_sheets":sum(1 for k in boards if sheet_content[k]==0),
+                       "north_from_architecture":len(plan_boards)-len(missing_north),
+                       "north_coordination_warnings":len(missing_north),
+                       "semantic_dimension_sheets":len((compose_report.get("dimensioning") or {})),
+                       "dimension_v2_shadow_sheets":len((compose_report.get("dimensioning_v2_shadow") or {})),
+                       "dimension_v2_shadow_validated":int(dimension_v2_shadow_qa.get("validated_dimensions") or 0),
+                       "dimension_v2_shadow_deferred":len(dimension_v2_shadow_qa.get("deferred_sheets") or [])}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:

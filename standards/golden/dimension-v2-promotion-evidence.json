@@ -1,0 +1,49 @@
+{
+  "contract": "planha-dimension-v2-promotion-evidence",
+  "status": "IMPLEMENTATION_VALIDATED_SHADOW_FIRST",
+  "implementation_head": "9b585e669db1a2ccf1d5ab71ec0fc12aa26a1a84",
+  "pr": 288,
+  "protected_visible_runtime": "v1",
+  "implementation_ci": {
+    "required_workflows": 12,
+    "all_success": true,
+    "workflows": [
+      "Web Regression Tests",
+      "Mechanical Coordination",
+      "Mechanical Authority",
+      "Mechanical Hardening Validation",
+      "Mechanical Governance",
+      "Engineering Acceptance Gate",
+      "Architecture Preservation Gate",
+      "Reference Parity Generalization",
+      "Runtime Contract Synchronization",
+      "SWCIS Governance",
+      "Authority Architecture",
+      "Plan Isolation Acceptance"
+    ]
+  },
+  "exact_file_evidence": {
+    "shadow_candidate_materialize_save_reopen": "PASS",
+    "composed_package_sidecar_materialize_save_reopen": "PASS",
+    "issued_package_byte_immutable": "PASS",
+    "semantic_reference_rule_datum_value_identity": "PASS"
+  },
+  "promotion_gate": {
+    "policy": "QA PASS + zero P0/P1 determinacy defects + zero unresolved placement + zero source review blockers + no visible mutation",
+    "positive_and_destructive_tests": "PASS",
+    "visible_v2_promotion_authorized": false
+  },
+  "reference_benchmark": {
+    "private_files_committed": false,
+    "source_dimensions": 835,
+    "linear_rotated": 810,
+    "aligned": 25,
+    "explicit_overrides": 34,
+    "numeric_overrides": 16,
+    "non_numeric_overrides": 18,
+    "zero_measurement": 7,
+    "safe_bound": 423,
+    "potential_bound_including_unresolved_wall_candidates": 530
+  },
+  "release_boundary": "Ready for staging shadow validation after final closure CI. Main/production merge requires separate owner approval."
+}

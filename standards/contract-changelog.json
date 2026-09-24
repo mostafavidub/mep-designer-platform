@@ -1526,6 +1526,37 @@
         "forward": "Regenerate dimension evidence and Planha-owned set-out on applicable plan boards; preserve consultant source dimensions as evidence and fail closed on critical conflicts.",
         "rollback": "Revert the protected merge commit; no source drawing or persisted PMM data migration is destructive."
       }
+    },
+    {
+      "id": "GOV-2026-046",
+      "status": "APPROVED",
+      "summary": "Upgrade Planha dimensioning to v2 with stable building references, full construction determinacy, profile requirements, source reconciliation, semantic redundancy/check roles, professional placement and shadow-first promotion.",
+      "affected_capabilities": [
+        "semantic_dimensioning",
+        "architecture_preservation",
+        "construction_document_delivery",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction on 2026-09-24 to execute the complete Dimension Engine v2 root-cause redesign and validation workflow"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "golden_regression": "must_pass",
+        "shadow_comparison": "must_pass",
+        "reference_benchmark": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Run v2 as shadow alongside protected v1, benchmark and validate before any visible-output promotion.",
+        "rollback": "Revert protected merge; v1 remains the visible baseline and no persisted engineering data migration is destructive."
+      }
     }
   ]
 }

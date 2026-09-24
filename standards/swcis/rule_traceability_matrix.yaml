@@ -992,7 +992,7 @@
     },
     {
       "rule_id": "MEP-DIM-001",
-      "title": "Semantic dimensioning preserves source evidence and produces minimum reference-bound construction set-out",
+      "title": "Dimension Engine v2 preserves source truth and proves profile-aware construction determinacy from stable semantic datums",
       "status": "LOCKED",
       "pmm_fields": [
         "typed_levels",
@@ -1006,13 +1006,32 @@
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/mechanical_design_core.py",
         "cad_engine/mechanical_cad_preservation.py",
-        "cad_engine/mechanical_pipeline_construction_delivery.py"
+        "cad_engine/mechanical_pipeline_construction_delivery.py",
+        "cad_engine/dimension_intent_model.py",
+        "cad_engine/dimension_reference_model.py",
+        "cad_engine/dimension_envelope.py",
+        "cad_engine/dimension_requirement_engine.py",
+        "cad_engine/dimension_determinacy_solver.py",
+        "cad_engine/dimension_source_reconciliation.py",
+        "cad_engine/dimension_redundancy_optimizer.py",
+        "cad_engine/dimension_placement_solver.py",
+        "cad_engine/dimension_renderer.py",
+        "cad_engine/dimension_qa.py",
+        "cad_engine/dimension_engine.py"
       ],
       "drawing_outputs": [
         "source dimension registry",
         "regenerated critical architectural reference dimensions",
         "Mechanical set-out dimensions",
-        "semantic dimension QA report"
+        "semantic dimension QA report",
+        "Building Reference Model v2",
+        "profile-specific dimension requirements",
+        "full-plan determinacy report",
+        "source/geometry/Planha reconciliation report",
+        "v1-v2 shadow comparison",
+        "construction determinacy QA report",
+        "v2 composed-package sidecar exact-file report",
+        "v1-v2 promotion cohort report"
       ],
       "qa_rules": [
         "source_dimension_evidence_preserved",
@@ -1028,15 +1047,39 @@
         "canonical_metre_value_traceability",
         "governed_requirement_rule_identity",
         "code_clearance_canonical_minimum",
-        "code_clearance_actual_geometry_compliance"
+        "code_clearance_actual_geometry_compliance",
+        "explicit_setout_vs_check_role",
+        "wall_reference_basis_human_checkpoint",
+        "semantic_envelope_not_bbox_authority",
+        "full_plan_p0_p1_determinacy",
+        "stable_datum_path_required",
+        "profile_specific_requirement_policy",
+        "source_geometry_intent_reconciliation",
+        "semantic_redundancy_check_preservation",
+        "datum_class_chain_closure",
+        "under_dimensioning_detection",
+        "over_dimensioning_detection",
+        "professional_dimension_placement",
+        "ambiguous_import_human_review",
+        "shadow_mode_before_promotion",
+        "composed_package_shadow_exact_file_sidecar",
+        "issued_package_immutable_during_shadow_validation",
+        "promotion_zero_p0_p1_defects",
+        "promotion_zero_unresolved_placement",
+        "promotion_zero_source_review_blockers",
+        "safe_duplicate_cleanup_informational_only",
+        "host_extension_exit_not_false_collision",
+        "clean_orthogonal_semantic_corner_not_false_collision"
       ],
       "regression_tests": [
         "tests/test_semantic_dimension_engine.py",
-        "tests/test_mechanical_construction_delivery.py"
+        "tests/test_mechanical_construction_delivery.py",
+        "tests/test_dimension_engine_v2.py"
       ],
       "docs": [
         "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
-        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
+        "docs/DIMENSION_ENGINE_V2_STANDARD.md"
       ]
     }
   ]

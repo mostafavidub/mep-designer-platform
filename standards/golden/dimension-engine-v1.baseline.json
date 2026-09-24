@@ -1,0 +1,29 @@
+{
+  "contract": "planha-dimension-v1-protected-baseline",
+  "baseline_commit": "d2355876efa7934a09cfbec855e7505a2f9c7519",
+  "rule": "MEP-DIM-001",
+  "swcis": "4.39.0",
+  "protected_invariants": [
+    "source_dimension_registry",
+    "critical_source_preservation",
+    "measured_displayed_separation",
+    "literal_precision_override_classification",
+    "unit_metadata_geometry_reconciliation",
+    "source_dimtype_orientation_evidence",
+    "local_axis_detection",
+    "mechanical_two_axis_setout",
+    "exact_duplicate_removal",
+    "collision_aware_placement",
+    "governed_code_clearance_rule_identity",
+    "canonical_metre_traceability",
+    "planha_owned_xdata_identity",
+    "exact_file_reopen",
+    "count_only_acceptance_forbidden",
+    "final_network_reconciliation"
+  ],
+  "regression_authority": [
+    "tests/test_semantic_dimension_engine.py",
+    "tests/test_mechanical_construction_delivery.py"
+  ],
+  "promotion_rule": "Dimension Engine v2 may not replace visible v1 output until all protected invariants pass plus v2 shadow/benchmark gates."
+}

@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.39.0
+**Canonical version:** 4.40.0
 
 **Status:** LOCKED
 
@@ -34,6 +34,16 @@ automatic build identity. Rollback redeploys an approved Git commit or tag.
 - `version_manifest.yaml`: canonical version and coordinated bump rules.
 
 All `.yaml` contracts use the JSON-compatible subset of YAML so the validator is deterministic and has no third-party parser dependency.
+
+## Dimension Engine v2 governance
+
+Dimension Engine v2 extends MEP-DIM-001 from source-preserving Mechanical set-out to shared construction-determinacy intelligence.
+
+The locked v2 pipeline is:
+
+`Semantic Building Model -> Building Reference Model v2 -> Drawing Profile -> Requirement Engine -> Determinacy Solver -> Source Reconciliation -> Redundancy/Check Optimizer -> Placement Solver -> Renderer -> Exact-file QA -> Construction Determinacy Gate`.
+
+V2 is shadow-first. It may not replace visible v1 dimensions until the protected v1 baseline, v2 synthetic/destructive regression, private-reference benchmark, exact-file identity and owner-approved staging test all pass. Wall reference basis and ambiguous imported geometry are explicit human checkpoints; historical drawing recurrence never becomes a hidden code rule.
 
 ## PMM and reference-truth governance
 
