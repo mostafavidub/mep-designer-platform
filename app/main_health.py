@@ -99,6 +99,10 @@ def _request_hostname(request):
     return host.split(':', 1)[0].lower().rstrip('.')
 
 
+def _forwarded_scheme(request):
+    return request.headers.get('x-forwarded-proto', '').split(',')[0].strip().lower()
+
+
 def _canonical_redirect_url(request):
     path = request.url.path or '/'
     query = request.url.query
@@ -114,6 +118,13 @@ async def performance_headers(request, call_next):
     # duplicate hosts to the single SEO host while preserving path and query.
     is_probe = path in {'/system_health', '/storage_health'} or path.startswith('/internal/')
     if not is_probe and host in CANONICAL_REDIRECT_HOSTS and host != CANONICAL_HOST:
+        return RedirectResponse(url=_canonical_redirect_url(request), status_code=301)
+    if (
+        not is_probe
+        and host == CANONICAL_HOST
+        and CANONICAL_SCHEME == 'https'
+        and _forwarded_scheme(request) == 'http'
+    ):
         return RedirectResponse(url=_canonical_redirect_url(request), status_code=301)
 
     response = await call_next(request)
