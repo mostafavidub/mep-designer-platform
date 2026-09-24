@@ -12,6 +12,7 @@ from cad_engine.semantic_dimension_engine import (
     build_reference_catalog,
     determinacy_intents,
     extract_source_dimension_registry,
+    governed_requirement_intents,
     select_minimal_dimension_set,
     source_dimension_intents,
     source_preservation_complete,
@@ -298,3 +299,65 @@ def test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres()
     assert registry["unit_evidence"]["effective_scale_to_m"]==0.001
     assert registry["unit_evidence"]["source"]=="header"
     assert registry["records"][0]["measured_value_m"]==3.0
+
+
+def test_governed_code_clearance_requires_rule_stable_references_and_canonical_minimum():
+    doc=_source_doc();msp=doc.modelspace()
+    msp.add_line((0,0),(0,8),dxfattribs={"layer":"WALL"})
+    msp.add_line((3,0),(3,8),dxfattribs={"layer":"WALL"})
+    refs=build_reference_catalog(doc,(0,0,10,8),architecture={
+        "walls":[
+            {"plan_id":"P1","start":(0,0),"end":(0,8)},
+            {"plan_id":"P1","start":(3,0),"end":(3,8)},
+        ]
+    },plan_id="P1")
+    wall_ids=[r["id"] for r in refs if r["kind"]=="WALL_FACE"]
+    assert len(wall_ids)>=2
+    intents,errors=governed_requirement_intents([{
+        "id":"CLR-1","plan_id":"P1","purpose":"CODE_CLEARANCE","rule_id":"TEST-RULE-001",
+        "reference_a_id":wall_ids[0],"reference_b_id":wall_ids[1],
+        "p1":(0,2),"p2":(3,2),"minimum_value_m":2.5,
+    }],refs,"P1")
+    assert errors==[]
+    assert len(intents)==1
+    assert intents[0]["governance_rule_id"]=="TEST-RULE-001"
+    assert intents[0]["minimum_value_m"]==2.5
+
+    _,missing_rule=governed_requirement_intents([{
+        "id":"CLR-2","plan_id":"P1","purpose":"CODE_CLEARANCE",
+        "reference_a_id":wall_ids[0],"reference_b_id":wall_ids[1],
+        "p1":(0,2),"p2":(3,2),"minimum_value_m":2.5,
+    }],refs,"P1")
+    assert missing_rule[0]["reason"]=="CODE_CLEARANCE_RULE_ID_REQUIRED"
+
+
+def test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_units():
+    doc=ezdxf.new("R2013");doc.header["$INSUNITS"]=4;msp=doc.modelspace()
+    msp.add_line((0,0),(0,5000),dxfattribs={"layer":"WALL"})
+    msp.add_line((1000,0),(1000,5000),dxfattribs={"layer":"WALL"})
+    _add_dim(doc,(0,0),(3000,0),(1500,400),"3000")
+    plan={"plan_id":"P1","bounds":(0,0,3000,5000)}
+    architecture={"walls":[
+        {"plan_id":"P1","start":(0,0),"end":(0,5000)},
+        {"plan_id":"P1","start":(1000,0),"end":(1000,5000)},
+    ],"shafts":[],"columns":[]}
+    refs=build_reference_catalog(doc,plan["bounds"],architecture=architecture,plan_id="P1")
+    wall_ids=[r["id"] for r in refs if r["kind"]=="WALL_FACE"]
+    board={"bounds":(-500,-500,3500,5500),"plan_area":(0,0,3000,5000),"title_area":(-500,-500,3500,-100)}
+    pipeline={"topology":{"nodes":[]},"hvac":{"equipment":[]},"dimension_requirements":[{
+        "id":"CLR-MM","plan_id":"P1","purpose":"CODE_CLEARANCE","rule_id":"TEST-RULE-001",
+        "reference_a_id":wall_ids[0],"reference_b_id":wall_ids[1],
+        "p1":(0,2000),"p2":(1000,2000),"minimum_value_m":0.9,
+    }]}
+    report=build_and_materialize_plan_dimensions(doc,msp,board,plan,architecture,pipeline,"WATER","GROUND")
+    assert report["status"]=="PASS",report
+    req=[x for x in report["materialized"] if x["source_kind"]=="GOVERNED_REQUIREMENT"]
+    assert len(req)==1
+    assert req[0]["measured_value"]==1000.0
+    assert req[0]["engineering_value_m"]==1.0
+
+    pipeline["dimension_requirements"][0]["minimum_value_m"]=1.1
+    report_fail=build_and_materialize_plan_dimensions(doc,msp,board,plan,architecture,pipeline,"WATER","GROUND")
+    assert report_fail["status"]=="FAIL"
+    assert "GOVERNED_DIMENSION_REQUIREMENT_INVALID" in report_fail["errors"]
+    assert report_fail["governed_requirement_errors"][0]["reason"]=="CODE_CLEARANCE_NOT_SATISFIED"
