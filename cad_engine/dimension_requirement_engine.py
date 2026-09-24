@@ -139,7 +139,7 @@ def generate_setout_candidates(elements,reference_model,profile):
             purpose={"RISER":"RISER","SLEEVE":"SLEEVE","PENETRATION":"PENETRATION","EQUIPMENT":"EQUIPMENT_POSITION"}.get(e["kind"],"WALL_SETOUT" if e["geometry_kind"]=="LINE" else "CONSTRUCTION_CLEARANCE")
             constraints.append({
                 "id":f"V2-{profile}-{e['id']}-{ai}","purpose":purpose,"role":"SETOUT","drawing_profile":profile,
-                "plan_id":ref.get("plan_id"),"priority_class":e.get("priority_class","P1"),"required":True,
+                "plan_id":ref.get("plan_id"),"priority_class":e.get("priority_class","P1"),"required":False,
                 "reference_a":{"id":e["id"],"element_id":e["id"],"subfeature":"PIPE_RISER_CENTER" if e["kind"] in {"RISER","STACK"} else ("PENETRATION_CENTER" if e["kind"]=="PENETRATION" else "EQUIPMENT_CENTER")},
                 "reference_b":ref,"world_p1":p,"world_p2":q,"measured_value":dist,"engineering_value_m":None,
                 "display_value":None,"orientation":f"LOCAL_AXIS_{ai}","datum_class":ref.get("datum_class"),
