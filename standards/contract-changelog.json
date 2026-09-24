@@ -1557,6 +1557,37 @@
         "forward": "Run v2 as shadow alongside protected v1, benchmark and validate before any visible-output promotion.",
         "rollback": "Revert protected merge; v1 remains the visible baseline and no persisted engineering data migration is destructive."
       }
+    },
+    {
+      "id": "GOV-2026-047",
+      "status": "APPROVED",
+      "summary": "Integrate source-dimension isolation, autonomous Grid/Overall/Shaft/Stair context, local-axis tiering and architecture-aware placement hardening into the existing shadow-first Dimension Engine v2 staging baseline.",
+      "affected_capabilities": [
+        "semantic_dimensioning",
+        "architecture_preservation",
+        "construction_document_delivery",
+        "mechanical_release_qa"
+      ],
+      "affected_projects": [
+        "staging"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner approval to deploy the completed Semantic Dimension Engine work to staging and continue the full autonomous architectural dimensioning program"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "full_regression": "must_pass",
+        "golden_regression": "must_pass",
+        "shadow_comparison": "must_pass",
+        "architecture_preservation": "must_pass",
+        "required_ci": "must_pass before staging merge"
+      },
+      "migration": {
+        "forward": "Regenerate staging artifacts only; v2 remains shadow-first and source uploads/PMM stay immutable.",
+        "rollback": "Revert the staging integration merge; no destructive persisted engineering migration."
+      }
     }
   ]
 }
