@@ -61,6 +61,10 @@ def test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric
     row=registry["records"][0]
     assert row["raw_measurement"]==13.0
     assert row["measured_value"]==13.0
+    assert registry["unit_evidence"]["header_insunits"]==4
+    assert registry["unit_evidence"]["effective_scale_to_m"]==1.0
+    assert registry["unit_evidence"]["source"]=="dimension-measurement-override-mm-header-to-m"
+    assert row["measured_value_m"]==13.0
     assert row["semantic_type"]=="BUILDING_OVERALL"
     assert row["critical"] is True
     assert row["preservation_policy"]=="REGENERATE"
@@ -253,7 +257,10 @@ def test_exact_file_xdata_binds_reference_ids_and_engineering_value(tmp_path):
     assert strings[1]==generated["intent_id"]
     assert strings[4]==generated["reference_a_id"]
     assert strings[5]==generated["reference_b_id"]
-    assert doubles==[generated["measured_value"]]
+    assert strings[6]==generated["unit_evidence_source"]
+    assert doubles[0]==generated["measured_value"]
+    assert doubles[1]==generated["engineering_value_m"]
+    assert doubles[2]==generated["effective_scale_to_m"]
 
 
 def test_critical_non_numeric_override_requires_review_instead_of_numeric_regeneration():
@@ -266,3 +273,13 @@ def test_critical_non_numeric_override_requires_review_instead_of_numeric_regene
     assert row["conflict"]=="NON_NUMERIC_CRITICAL_OVERRIDE"
     assert row["preservation_policy"]=="FLAG_CONFLICT"
     assert source_dimension_intents(registry,"MECHANICAL_PLAN")==[]
+
+
+def test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres():
+    doc=ezdxf.new("R2013")
+    doc.header["$INSUNITS"]=4
+    _add_dim(doc,(0,0),(3000,0),(1500,400),"3000")
+    registry=extract_source_dimension_registry(doc,(0,0,3000,2000),architecture={},plan_id="P1")
+    assert registry["unit_evidence"]["effective_scale_to_m"]==0.001
+    assert registry["unit_evidence"]["source"]=="header"
+    assert registry["records"][0]["measured_value_m"]==3.0
