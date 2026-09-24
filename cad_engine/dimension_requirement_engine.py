@@ -124,6 +124,8 @@ def generate_setout_candidates(elements,reference_model,profile):
         for ai,wanted in enumerate((axis,(axis+90.0)%180.0)):
             ranked=[]
             for ref in stable:
+                if str(ref.get("element_id") or "")==str(e.get("id") or ""):
+                    continue
                 seg=_segment(ref)
                 if not seg:continue
                 ref_axis=_axis_deg(*seg)
