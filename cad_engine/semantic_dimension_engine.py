@@ -226,6 +226,29 @@ def _poly_edges(points):
     return edges
 
 
+def _semantic_item_edges(item):
+    """Return only geometry explicitly carried by an upstream semantic item."""
+    if not isinstance(item, dict):
+        return []
+    start=tuple(item.get("start") or ())
+    end=tuple(item.get("end") or ())
+    if len(start)==2 and len(end)==2 and start!=end:
+        return [(tuple(map(float,start)),tuple(map(float,end)))]
+    points=item.get("polygon") or item.get("points")
+    edges=_poly_edges(points)
+    if edges:
+        return edges
+    bounds=item.get("bounds")
+    if isinstance(bounds,(list,tuple)) and len(bounds)==4:
+        x1,y1,x2,y2=map(float,bounds)
+        if x2>x1 and y2>y1:
+            return [
+                ((x1,y1),(x2,y1)),((x2,y1),(x2,y2)),
+                ((x2,y2),(x1,y2)),((x1,y2),(x1,y1)),
+            ]
+    return []
+
+
 def build_reference_catalog(doc, plan_bounds, architecture=None, plan_id=None):
     """Build stable datums without trusting consultant layer names as authority."""
     architecture = architecture or {}
@@ -249,16 +272,24 @@ def build_reference_catalog(doc, plan_bounds, architecture=None, plan_id=None):
             continue
         refs.append(_reference("WALL_FACE", f"WALL-{index:04d}", a, b, 20))
 
-    for prefix, kind, collection in (
-        ("SHAFT", "SHAFT_FACE", architecture.get("shafts") or []),
-        ("COLUMN", "STRUCTURAL_FACE", architecture.get("columns") or []),
+    for prefix, kind, collection, priority in (
+        ("SHAFT", "SHAFT_FACE", architecture.get("shafts") or [], 10),
+        ("COLUMN", "STRUCTURAL_FACE", architecture.get("columns") or [], 10),
+        ("GRID", "GRID_AXIS", architecture.get("grids") or [], 0),
+        ("PROPERTY", "PROPERTY_BOUNDARY", architecture.get("property_boundaries") or [], 5),
+        ("STAIR", "STAIR_CORE_FACE", architecture.get("stairs") or [], 12),
+        ("OPENING", "OPENING_JAMB", architecture.get("openings") or [], 15),
+        ("DOOR", "OPENING_JAMB", architecture.get("doors") or [], 16),
+        ("WINDOW", "OPENING_JAMB", architecture.get("windows") or [], 16),
     ):
         for index, item in enumerate(collection):
+            if not isinstance(item,dict):
+                continue
             if plan_id and item.get("plan_id") not in (None, plan_id):
                 continue
-            for edge_i, (a, b) in enumerate(_poly_edges(item.get("polygon") or item.get("points"))):
+            for edge_i, (a, b) in enumerate(_semantic_item_edges(item)):
                 if _inside(a, plan_bounds, 0.5) or _inside(b, plan_bounds, 0.5):
-                    refs.append(_reference(kind, f"{prefix}-{index:03d}-E{edge_i}", a, b, 10))
+                    refs.append(_reference(kind, f"{prefix}-{index:03d}-E{edge_i}", a, b, priority, source="semantic_geometry"))
 
     # Grid/property recognition may use layer vocabulary only as weak candidate
     # evidence; final binding still relies on actual geometry and proximity.
@@ -285,7 +316,7 @@ def detect_local_axis(reference_catalog):
     """Detect the dominant local building axis; world X/Y is only the fallback."""
     weighted = []
     for ref in reference_catalog or []:
-        if ref["kind"] not in {"GRID_AXIS", "WALL_FACE", "STRUCTURAL_FACE"}:
+        if ref["kind"] not in {"GRID_AXIS", "WALL_FACE", "STRUCTURAL_FACE", "SHAFT_FACE", "STAIR_CORE_FACE"}:
             continue
         a, b = ref["a"], ref["b"]
         length = math.dist(a, b)
@@ -331,6 +362,10 @@ def _semantic_type(p1, p2, measurement, bind_a, bind_b, plan_bounds):
         return "PROPERTY"
     if "SHAFT_FACE" in kinds:
         return "SHAFT"
+    if "STAIR_CORE_FACE" in kinds:
+        return "STAIR_CORE"
+    if "OPENING_JAMB" in kinds:
+        return "OPENING"
     if "STRUCTURAL_FACE" in kinds:
         return "STRUCTURAL_SET_OUT"
     if kinds and kinds <= {"WALL_FACE"}:
@@ -551,7 +586,8 @@ def _axis_reference_candidates(refs, measured_axis, tolerance=math.radians(8)):
     rows = []
     for ref in refs or []:
         if ref["kind"] not in {
-            "GRID_AXIS", "WALL_FACE", "SHAFT_FACE", "STRUCTURAL_FACE", "PLAN_EDGE"
+            "GRID_AXIS", "WALL_FACE", "SHAFT_FACE", "STRUCTURAL_FACE",
+            "STAIR_CORE_FACE", "PROPERTY_BOUNDARY", "PLAN_EDGE"
         }:
             continue
         angle = _line_angle(ref["a"], ref["b"]) % math.pi
