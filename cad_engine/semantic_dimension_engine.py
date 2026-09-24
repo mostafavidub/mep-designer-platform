@@ -17,12 +17,12 @@ from __future__ import annotations
 from collections import Counter
 import math
 import re
-import statistics
 from pathlib import Path
 from typing import Iterable
 
 import ezdxf
 from ezdxf import bbox
+from app.drawing_unit_sanity import infer_drawing_unit_scale as infer_dimension_unit_evidence
 
 
 SOURCE_LAYER = "PLANHA-A-DIM-SOURCE"
@@ -30,7 +30,6 @@ SETOUT_LAYER = "PLANHA-M-DIM-SETOUT"
 CHECK_LAYER = "PLANHA-M-DIM-CHECK"
 DIMSTYLE = "PLANHA-DIM"
 APPID = "PLANHA_DIMENSION"
-INSUNITS_TO_M = {1: 0.0254, 2: 0.3048, 4: 0.001, 5: 0.01, 6: 1.0}
 
 CRITICAL_SOURCE_TYPES = {
     "PROPERTY", "SETBACK", "BUILDING_OVERALL", "GRID", "STRUCTURAL_SET_OUT",
@@ -150,44 +149,6 @@ def _display_number(value):
     if abs(value) >= 100 and abs(value - round(value)) < 1e-7:
         return str(int(round(value)))
     return f"{value:.2f}"
-
-
-def infer_dimension_unit_evidence(doc):
-    """Reconcile DXF unit metadata with dimension plausibility.
-
-    This mirrors the existing Planha unit-sanity contract: DXF headers are
-    evidence, never unquestioned authority. Returned scale converts native
-    drawing units to metres and is carried only as traceability metadata.
-    """
-    insunits=int(doc.header.get("$INSUNITS",0) or 0)
-    header_scale=INSUNITS_TO_M.get(insunits)
-    values=[]
-    for entity in doc.modelspace().query("DIMENSION"):
-        try:value=abs(float(entity.get_measurement()))
-        except Exception:continue
-        if 0.001<=value<=100000:
-            values.append(value)
-    median_dim=statistics.median(values) if values else None
-    scale=header_scale
-    source="header" if header_scale else "unknown"
-    confidence="medium" if header_scale else "low"
-    if insunits==4 and median_dim is not None and 0.20<=median_dim<=50.0:
-        scale=1.0
-        source="dimension-measurement-override-mm-header-to-m"
-        confidence="high"
-    elif insunits==6 and median_dim is not None and 200.0<=median_dim<=50000.0:
-        scale=0.001
-        source="dimension-measurement-override-m-header-to-mm"
-        confidence="high"
-    return {
-        "header_insunits":insunits,
-        "header_scale_to_m":header_scale,
-        "effective_scale_to_m":scale,
-        "dimension_count":len(values),
-        "median_dimension_drawing_units":round(median_dim,6) if median_dim is not None else None,
-        "source":source,
-        "confidence":confidence,
-    }
 
 
 def _dimension_geometry(entity):
