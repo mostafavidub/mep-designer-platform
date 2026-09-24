@@ -86,5 +86,11 @@ def build_reference_model_v2(doc,plan_bounds,architecture=None,plan_id=None,leve
     errors=[]
     for r in refs:
         errors.extend({"reference_id":r["id"],"error":e} for e in SemanticReference(**{k:r[k] for k in SemanticReference.__dataclass_fields__}).validate())
+    # Wall-basis ambiguity is scoped: wall-face references are withheld until
+    # confirmed, while independent GRID/ENVELOPE/STRUCTURE/SHAFT datums remain
+    # usable for Mechanical set-out. Consumers decide whether the review blocks
+    # their drawing profile.
     status="FAIL" if errors else ("HUMAN_REVIEW_REQUIRED" if reviews or env["status"]!="PASS" else "PASS")
-    return {"status":status,"references":refs,"envelope":env,"local_axis_deg":axis,"human_review":sorted(set(reviews+env.get("human_review",[]))),"errors":errors}
+    return {"status":status,"references":refs,"envelope":env,"local_axis_deg":axis,
+            "wall_reference_basis":wall_reference_basis,"wall_references_enabled":bool(wall_sf),
+            "human_review":sorted(set(reviews+env.get("human_review",[]))),"errors":errors}
