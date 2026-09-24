@@ -23,7 +23,6 @@ from typing import Iterable
 import ezdxf
 from ezdxf import bbox
 from app.drawing_unit_sanity import infer_drawing_unit_scale
-from app.drawing_unit_sanity import infer_drawing_unit_scale as infer_dimension_unit_evidence
 
 
 SOURCE_LAYER = "PLANHA-A-DIM-SOURCE"
@@ -240,19 +239,30 @@ def build_reference_catalog(doc, plan_bounds, architecture=None, plan_id=None):
         xs=[p[0] for p in wall_points];ys=[p[1] for p in wall_points]
         wall_extents=(min(xs),min(ys),max(xs),max(ys))
     for index,wall,a,b in valid_walls:
-        envelope=bool(wall.get("exterior") is True or wall.get("is_exterior") is True)
-        if wall_extents and not envelope:
+        explicit_exterior=bool(wall.get("exterior") is True or wall.get("is_exterior") is True)
+        envelope_side=None
+        inferred_envelope=False
+        if wall_extents:
             wx1,wy1,wx2,wy2=wall_extents
             tol=max(max(wx2-wx1,wy2-wy1)*.012,1e-6)
             vertical=abs(a[0]-b[0])<=max(abs(a[1]-b[1])*.02,1e-9)
             horizontal=abs(a[1]-b[1])<=max(abs(a[0]-b[0])*.02,1e-9)
-            envelope=(
-                (vertical and (abs(a[0]-wx1)<=tol or abs(a[0]-wx2)<=tol))
-                or (horizontal and (abs(a[1]-wy1)<=tol or abs(a[1]-wy2)<=tol))
-            )
+            if vertical:
+                if abs(a[0]-wx1)<=tol:
+                    envelope_side="LEFT"
+                elif abs(a[0]-wx2)<=tol:
+                    envelope_side="RIGHT"
+            elif horizontal:
+                if abs(a[1]-wy1)<=tol:
+                    envelope_side="BOTTOM"
+                elif abs(a[1]-wy2)<=tol:
+                    envelope_side="TOP"
+            inferred_envelope=envelope_side is not None
         refs.append(_reference(
             "WALL_FACE",f"WALL-{index:04d}",a,b,20,
-            envelope_candidate=envelope,
+            envelope_candidate=bool(explicit_exterior or inferred_envelope),
+            envelope_side=envelope_side,
+            envelope_evidence=("explicit_exterior" if explicit_exterior else ("wall_extents" if inferred_envelope else None)),
             wall_id=str(wall.get("id") or f"WALL-{index:04d}"),
             source="semantic_geometry",
         ))
@@ -370,13 +380,14 @@ def _semantic_type(p1, p2, measurement, bind_a, bind_b, plan_bounds):
         min(abs(coord1-low),abs(coord2-low))<=boundary_tol
         and min(abs(coord1-high),abs(coord2-high))<=boundary_tol
     )
-    envelope_pair=(
+    envelope_sides={ra.get("envelope_side"),rb.get("envelope_side")}
+    opposite_envelope_pair=(
         ra.get("kind")=="WALL_FACE" and rb.get("kind")=="WALL_FACE"
         and bool(ra.get("envelope_candidate")) and bool(rb.get("envelope_candidate"))
+        and envelope_sides in ({"LEFT","RIGHT"},{"TOP","BOTTOM"})
     )
-    if measured_span>=axis_span*.70 and (
-        opposite_bounds or envelope_pair or "PLAN_EDGE" in kinds
-    ):
+    plan_edge_overall=("PLAN_EDGE" in kinds and opposite_bounds)
+    if measured_span>=axis_span*.70 and (opposite_envelope_pair or plan_edge_overall):
         return "BUILDING_OVERALL"
     if kinds and kinds <= {"WALL_FACE"}:
         return "WALL_SETOUT"
