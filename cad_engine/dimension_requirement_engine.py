@@ -289,11 +289,15 @@ def generate_governed_requirement_intents(requirements,reference_model,profile,p
             errors.append({"id":rid,"reason":"ACTUAL_GEOMETRY_REQUIRED"});continue
         measured=math.dist(p1,p2)
         minimum=req.get("minimum_value_m")
+        actual_m=req.get("actual_value_m")
         if purpose=="CODE_CLEARANCE" and minimum is None:errors.append({"id":rid,"reason":"CANONICAL_MINIMUM_REQUIRED"});continue
+        if purpose=="CODE_CLEARANCE" and actual_m is None:errors.append({"id":rid,"reason":"ACTUAL_CANONICAL_VALUE_REQUIRED"});continue
+        if purpose=="CODE_CLEARANCE" and float(actual_m)+1e-12<float(minimum):
+            errors.append({"id":rid,"reason":"CODE_CLEARANCE_BELOW_MINIMUM","actual_value_m":float(actual_m),"minimum_value_m":float(minimum)});continue
         rows.append({"id":rid,"purpose":purpose,"role":"CHECK" if purpose in {"CODE_CLEARANCE","CHECK"} else "SETOUT",
           "drawing_profile":profile,"plan_id":plan_id,"priority_class":"P0" if purpose=="CODE_CLEARANCE" else "P1",
           "required":bool(req.get("required",True)),"rule_id":rule_id or None,"reference_a":ra,"reference_b":rb,
-          "world_p1":p1,"world_p2":p2,"measured_value":measured,"engineering_value_m":req.get("actual_value_m"),
+          "world_p1":p1,"world_p2":p2,"measured_value":measured,"engineering_value_m":actual_m,
           "minimum_value_m":minimum,"display_value":None,"orientation":req.get("orientation"),"datum_class":req.get("datum_class"),
           "axis_deg":float(req.get("axis_deg",_axis_deg(p1,p2))),"evidence":("governed_requirement",rule_id) if rule_id else ("governed_requirement",)})
     return {"status":"FAIL" if errors else "PASS","intents":rows,"errors":errors}
