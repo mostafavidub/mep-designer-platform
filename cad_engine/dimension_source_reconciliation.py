@@ -23,6 +23,54 @@ PROFILE_VISIBLE={
 }
 
 
+SOURCE_ROLE_BY_TYPE={
+ "PROPERTY":"CHECK","SETBACK":"SETOUT","BUILDING_OVERALL":"CHECK","GRID":"SETOUT",
+ "STRUCTURAL_SET_OUT":"SETOUT","WALL_SETOUT":"SETOUT","SHAFT":"SETOUT",
+ "STAIR_CORE":"SETOUT","CODE_CLEARANCE":"CHECK","OPENING":"SETOUT",
+}
+
+def _unwrap_source_ref(binding):
+    if not isinstance(binding,dict):return None
+    ref=binding.get("reference") if isinstance(binding.get("reference"),dict) else binding
+    rid=str(ref.get("id") or "")
+    if not rid:return None
+    return {
+      "id":rid,"element_id":str(ref.get("element_id") or rid),
+      "subfeature":str(ref.get("subfeature") or ref.get("kind") or "PLAN_EDGE"),
+      "priority":int(ref.get("priority",50)),"confidence":float(ref.get("confidence",1.0)),
+      "datum_class":ref.get("datum_class"),"source":ref.get("source","source_dimension_binding"),
+    }
+
+def source_regeneration_intents(source_registry,profile):
+    visible=PROFILE_VISIBLE.get(profile,set());rows=[];review=[]
+    for src in (source_registry or {}).get("records") or []:
+        stype=src.get("semantic_type")
+        if stype not in visible:continue
+        if src.get("conflict"):
+            if src.get("critical"):review.append({"source_dimension_id":src.get("id"),"reason":src.get("conflict")})
+            continue
+        if src.get("override_status")=="NON_NUMERIC_OVERRIDE":
+            continue
+        ra=_unwrap_source_ref(src.get("reference_a"));rb=_unwrap_source_ref(src.get("reference_b"))
+        if not ra or not rb:
+            if src.get("critical"):review.append({"source_dimension_id":src.get("id"),"reason":"STABLE_SOURCE_REFERENCE_REQUIRED"})
+            continue
+        p1=src.get("reference_point_a") or src.get("p1");p2=src.get("reference_point_b") or src.get("p2")
+        if not p1 or not p2:continue
+        rows.append({
+          "id":"SRC-"+str(src.get("id")),"purpose":stype,"role":SOURCE_ROLE_BY_TYPE.get(stype,"SETOUT"),
+          "drawing_profile":profile,"priority_class":"P0" if src.get("critical") else "P2",
+          "required":bool(src.get("critical")),"reference_a":ra,"reference_b":rb,
+          "world_p1":tuple(p1),"world_p2":tuple(p2),"world_base":src.get("dimension_line_point"),
+          "measured_value":float(src.get("measured_value") or src.get("raw_measurement") or 0.0),
+          "engineering_value_m":src.get("measured_value_m"),"display_value":src.get("displayed_value"),
+          "source_kind":"SOURCE_REGENERATED","source_dimension_id":src.get("id"),
+          "orientation":src.get("source_orientation"),"datum_class":ra.get("datum_class") if ra.get("datum_class")==rb.get("datum_class") else None,
+          "axis_deg":src.get("source_angle_deg"),"evidence":("source_dimension_registry","semantic_binding"),
+        })
+    return {"status":"HUMAN_REVIEW_REQUIRED" if review else "PASS","intents":rows,"human_review":review}
+
+
 def reconcile_source_dimensions(source_registry,planha_intents,tolerance_m=1e-6,profile=None):
     intents=list(planha_intents or []);rows=[];visible=PROFILE_VISIBLE.get(profile)
     for src in (source_registry or {}).get("records") or []:
