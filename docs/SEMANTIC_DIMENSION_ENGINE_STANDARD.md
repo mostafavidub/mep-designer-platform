@@ -122,3 +122,47 @@ Every Planha-owned dimension carries the registered DXF application identity `PL
 ## 11. Governed compliance dimensions
 
 `CODE_CLEARANCE` is never inferred from a visually similar gap. A compliance or Rule layer must provide an explicit requirement containing a Rule ID, two stable semantic references, actual geometry and a canonical `minimum_value_m`. Planha dimensions the actual designed geometry; the minimum is QA evidence. Missing Rule ID, unstable references, missing canonical minimum, or actual clearance below the minimum fails closed. This contract also supports explicit governed `OPENING`, `SETOUT` and `CHECK` intents without turning source-drawing recurrence into a design default.
+
+
+## 11. Architectural-reference benchmark hardening
+
+The six-project private reference corpus is comparison evidence, never a source of hidden project values. Aggregate benchmark facts used to test generality are:
+
+- 835 source dimensions;
+- 810 linear/rotated and 25 aligned;
+- 16 numeric text overrides, 18 non-numeric overrides and 7 zero measurements;
+- every reviewed file carried misleading `$INSUNITS=4` metadata while dimension plausibility resolved the working geometry to metre drawing units;
+- repeated dimension baselines and chained adjacency are common, confirming that professional drawings use structured dimension networks rather than independent nearest-line labels.
+
+These observations do **not** become numeric design defaults.
+
+### 11.1 Raw source entity vs preserved source knowledge
+
+A consultant `DIMENSION` is never copied blindly into a Mechanical board. Its evidence is first captured in the `SourceDimensionRegistry`. The Mechanical drawing profile then decides whether the dimension is regenerated, suppressed in the view, or blocked for review.
+
+This prevents duplicate raw+Planha dimensions while preserving the original handle, geometry, style, displayed text, override status and semantic references.
+
+### 11.2 Context completeness
+
+Applicable plan profiles must not depend on the consultant having already drawn every useful dimension. When semantic geometry proves the required references and the equivalent source dimension is absent, Planha may generate:
+
+- consecutive structural Grid spacing;
+- Building Overall dimensions between proven opposite envelope faces;
+- Shaft dimensions;
+- Stair/Core dimensions.
+
+Generated context dimensions use only the current project's semantic geometry and unit evidence. They are not inferred from reference-project sizes.
+
+### 11.3 Source snapshot isolation
+
+The architectural source entity set is frozen before board composition begins. Entities created for earlier generated boards may never be reclassified as source architecture for later boards.
+
+### 11.4 Placement obstacles
+
+Dimension text placement must consider architectural and mechanical presentation obstacles, including room text, MTEXT, block inserts, arcs and circles carried into the target board. Dimension-vs-dimension collision checks alone are insufficient.
+
+If no collision-free candidate exists, the dimension gate fails closed rather than moving or changing the engineering measurement.
+
+### 11.5 Remaining architectural-discipline boundary
+
+The current Mechanical profile implements professional context plus Mechanical set-out. Full autonomous Architectural dimension-chain synthesis for every partition, opening, stair flight, room and site condition belongs to the Architecture discipline phase and must use the same semantic contract rather than introducing a parallel engine.
