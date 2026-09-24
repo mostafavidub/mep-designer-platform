@@ -58,6 +58,55 @@ def _dimension_segments(p1,p2,base):
     q1,q2=project(p1),project(p2)
     return [(q1,q2),(p1,q1),(p2,q2)]
 
+def _semantic_ids(row):
+    ids=set()
+    for key in ("reference_a","reference_b"):
+        ref=(row or {}).get(key) or {}
+        for name in ("id","element_id"):
+            value=str(ref.get(name) or "")
+            if value:ids.add(value)
+    return ids
+
+def _segment_axis(seg):
+    a,b=seg
+    return math.degrees(math.atan2(b[1]-a[1],b[0]-a[0]))%180.0
+
+def _axis_separation(a,b):
+    d=abs((a-b)%180.0)
+    return min(d,180.0-d)
+
+def _segment_meta(raw,row,tier):
+    kinds=("DIMENSION_LINE","EXTENSION","EXTENSION")
+    return [
+      {"segment":seg,"kind":kinds[i] if i<len(kinds) else "UNKNOWN","semantic_ids":_semantic_ids(row),
+       "tier":tier,"intent_id":row.get("id")}
+      for i,seg in enumerate(raw)
+    ]
+
+def _normalize_existing_segment(item):
+    if isinstance(item,dict) and item.get("segment"):
+        return item
+    return {"segment":item,"kind":"UNKNOWN","semantic_ids":set(),"tier":0,"intent_id":None}
+
+def _dimension_segment_conflict(new,old):
+    a,b=new["segment"];c,d=old["segment"]
+    if not _seg_intersect(a,b,c,d):return False
+    shared=bool(set(new.get("semantic_ids") or ()) & set(old.get("semantic_ids") or ()))
+    sep=_axis_separation(_segment_axis((a,b)),_segment_axis((c,d)))
+    orthogonal=abs(sep-90.0)<=5.0
+
+    # Clean orthogonal coordinate corners are standard drafting, not clutter:
+    # - two constraints locating the same semantic target; or
+    # - global dimension tiers (grid/overall/site) meeting outside the plan.
+    if orthogonal and (shared or (int(new.get("tier",0))>=2 and int(old.get("tier",0))>=2)):
+        return False
+
+    # Extension lines that share the same semantic datum/target may meet an
+    # associated dimension line without being treated as a foreign crossing.
+    if shared and ("EXTENSION" in {new.get("kind"),old.get("kind")}):
+        return False
+    return True
+
 def build_drafting_obstacles(architecture,source_bounds,board):
     """Map trusted semantic/text/symbol obstacles into board coordinates."""
     boxes=[]
@@ -90,7 +139,7 @@ TIER_ORDER={"WALL_SETOUT":1,"OPENING_POSITION":1,"EQUIPMENT_POSITION":1,"RISER":
 def solve_dimension_placement(intents,source_bounds,board,obstacles=None,dimension_segments=None):
     """Place complete dimension line/text hierarchy without changing engineering refs."""
     plan=tuple(board["plan_area"]);bounds=tuple(board["bounds"]);title=tuple(board["title_area"])
-    occupied=list(obstacles or []);segments=list(dimension_segments or []);placed=[];unresolved=[]
+    occupied=list(obstacles or []);segments=[_normalize_existing_segment(x) for x in (dimension_segments or [])];placed=[];unresolved=[]
     tier_counters={}
     for row in sorted(intents or [],key=lambda r:(TIER_ORDER.get(r.get("purpose"),1),str(r.get("id")))):
         p1=_map(tuple(row["world_p1"]),source_bounds,plan);p2=_map(tuple(row["world_p2"]),source_bounds,plan)
@@ -114,14 +163,16 @@ def solve_dimension_placement(intents,source_bounds,board,obstacles=None,dimensi
             if any(_overlap(tb,o) for o in occupied):continue
             dimsegs=_dimension_segments(p1,p2,base)
             if any(_dimension_box_conflict(dimsegs,o) for o in occupied):continue
-            if any(_seg_intersect(a,b,s[0],s[1]) for a,b in dimsegs for s in segments):continue
-            chosen=(base,tb,dimsegs);break
+            meta=_segment_meta(dimsegs,row,tier)
+            if any(_dimension_segment_conflict(n,s) for n in meta for s in segments):continue
+            chosen=(base,tb,dimsegs,meta);break
         if not chosen:
             unresolved.append({"intent_id":row.get("id"),"reason":"NO_COLLISION_FREE_DIMENSION_PLACEMENT"})
             base=candidates[0];tb=_text_box(base,row.get("display_value") or row.get("measured_value"))
-        else:base,tb,dimsegs=chosen
+        else:base,tb,dimsegs,meta=chosen
         occupied.append(tb)
-        segments.extend(dimsegs if chosen is not None else _dimension_segments(p1,p2,base))
+        raw=dimsegs if chosen is not None else _dimension_segments(p1,p2,base)
+        segments.extend(meta if chosen is not None else _segment_meta(raw,row,tier))
         placed.append({**row,"render_p1":p1,"render_p2":p2,"render_base":base,"text_box":tb})
     return {"status":"HUMAN_REVIEW_REQUIRED" if unresolved else "PASS","placed":placed,"unresolved":unresolved,
             "collision_count":len(unresolved),"occupied_count":len(occupied)}
