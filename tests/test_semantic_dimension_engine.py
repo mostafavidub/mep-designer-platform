@@ -215,3 +215,39 @@ def test_standalone_adapter_generates_two_reference_bound_setout_dimensions(tmp_
         values=[value for code,value in data if code==1000]
         if "SEMANTIC_DIMENSION" in values:generated.append(entity)
     assert len(generated)==2
+
+
+def test_exact_file_xdata_binds_reference_ids_and_engineering_value(tmp_path):
+    doc=_source_doc()
+    _add_dim(doc,(0,0),(13,0),(6.5,.5),"13.00")
+    plan={"plan_id":"P1","bounds":(0,0,13,10)}
+    board={"bounds":(-2,-2,15,12),"plan_area":(0,0,13,10),"title_area":(-2,-2,15,-1)}
+    report=build_and_materialize_plan_dimensions(
+        doc,doc.modelspace(),board,plan,{"walls":[],"shafts":[],"columns":[]},
+        {"topology":{"nodes":[]},"hvac":{"equipment":[]}},"WATER","GROUND"
+    )
+    path=tmp_path/"trace.dxf";doc.saveas(path)
+    assert validate_exact_file_dimensions(path,{"dimensioning":{"M-W-01":report}})["status"]=="PASS"
+    generated=next(item for item in report["materialized"] if item["source_kind"]=="SOURCE_REGENERATED")
+    reopened=ezdxf.readfile(path)
+    entity=next(e for e in reopened.modelspace().query("DIMENSION") if str(getattr(e.dxf,"handle",""))==generated["handle"])
+    xdata=entity.get_xdata(APPID)
+    strings=[value for code,value in xdata if code==1000]
+    doubles=[float(value) for code,value in xdata if code==1040]
+    assert strings[0]=="SOURCE_DIMENSION"
+    assert strings[1]==generated["intent_id"]
+    assert strings[4]==generated["reference_a_id"]
+    assert strings[5]==generated["reference_b_id"]
+    assert doubles==[generated["measured_value"]]
+
+
+def test_critical_non_numeric_override_requires_review_instead_of_numeric_regeneration():
+    doc=_source_doc()
+    _add_dim(doc,(0,0),(13,0),(6.5,.5),"20-30")
+    registry=extract_source_dimension_registry(doc,(0,0,13,10),architecture={},plan_id="P1")
+    row=registry["records"][0]
+    assert row["critical"] is True
+    assert row["override_status"]=="NON_NUMERIC_OVERRIDE"
+    assert row["conflict"]=="NON_NUMERIC_CRITICAL_OVERRIDE"
+    assert row["preservation_policy"]=="FLAG_CONFLICT"
+    assert source_dimension_intents(registry,"MECHANICAL_PLAN")==[]
