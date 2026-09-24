@@ -44,12 +44,13 @@ def _architectural_source(path: Path):
     doc.saveas(path)
 
 
-def test_override_conflict_distinguishes_rounding_material_and_non_numeric_override():
-    assert _override_status(2.97657,"3.00")=="MINOR_OVERRIDE"
-    assert _override_status(3.23749,"3.25")=="MINOR_OVERRIDE"
-    assert _override_status(0.9791463441,"1.00")=="MINOR_OVERRIDE"
-    assert _override_status(0.6936889303,".70")=="MINOR_OVERRIDE"
-    assert _override_status(5.95,"7.00")=="CONFLICT"
+def test_override_status_uses_literal_precision_not_percentage_heuristic():
+    assert _override_status(3.0,"3.00")=="FORMAT_EQUIVALENT"
+    assert _override_status(2.97657,"3.00")=="NUMERIC_OVERRIDE"
+    assert _override_status(3.23749,"3.25")=="NUMERIC_OVERRIDE"
+    assert _override_status(0.9791463441,"1.00")=="NUMERIC_OVERRIDE"
+    assert _override_status(0.6936889303,".70")=="NUMERIC_OVERRIDE"
+    assert _override_status(5.95,"7.00")=="NUMERIC_OVERRIDE"
     assert _override_status(2.0,"20-30")=="NON_NUMERIC_OVERRIDE"
 
 
@@ -91,8 +92,8 @@ def test_numeric_source_override_conflict_is_preserved_and_blocks_critical_truth
     assert row["semantic_type"]=="BUILDING_OVERALL"
     assert row["measured_value"]==5.95
     assert row["source_display_text"]=="7.00"
-    assert row["override_status"]=="CONFLICT"
-    assert row["conflict"]=="DISPLAY_GEOMETRY_CONFLICT"
+    assert row["override_status"]=="NUMERIC_OVERRIDE"
+    assert row["conflict"]=="DISPLAY_GEOMETRY_OVERRIDE"
     assert row["preservation_policy"]=="FLAG_CONFLICT"
     assert registry["override_conflict_count"]==1
     assert source_dimension_intents(registry,"MECHANICAL_PLAN")==[]
@@ -405,3 +406,21 @@ def test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_
     assert report_fail["status"]=="FAIL"
     assert "GOVERNED_DIMENSION_REQUIREMENT_INVALID" in report_fail["errors"]
     assert report_fail["governed_requirement_errors"][0]["reason"]=="CODE_CLEARANCE_NOT_SATISFIED"
+
+
+def test_opposite_envelope_wall_faces_define_overall_but_internal_pair_remains_setout():
+    doc=_source_doc()
+    _add_dim(doc,(0,4),(10,4),(5,4.5),"10.00")
+    architecture={"walls":[
+        {"id":"EXT-L","plan_id":"P1","start":(0,0),"end":(0,8),"is_exterior":True},
+        {"id":"INT-L","plan_id":"P1","start":(3,0),"end":(3,8)},
+        {"id":"INT-R","plan_id":"P1","start":(6,0),"end":(6,8)},
+        {"id":"EXT-R","plan_id":"P1","start":(10,0),"end":(10,8),"is_exterior":True},
+    ]}
+    registry=extract_source_dimension_registry(doc,(0,0,10,8),architecture=architecture,plan_id="P1")
+    assert registry["records"][0]["semantic_type"]=="BUILDING_OVERALL"
+
+    doc2=_source_doc()
+    _add_dim(doc2,(3,4),(6,4),(4.5,4.5),"3.00")
+    registry2=extract_source_dimension_registry(doc2,(0,0,10,8),architecture=architecture,plan_id="P1")
+    assert registry2["records"][0]["semantic_type"]=="WALL_SETOUT"
