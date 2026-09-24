@@ -126,7 +126,7 @@ def test_minimal_dimension_set_removes_exact_duplicate_reference_definition():
 
 
 def test_rotated_local_setout_gets_two_independent_datum_constraints():
-    target={"id":"R-01","point":(5.0,3.0),"kind":"VERTICAL_CONNECTION","priority":100}
+    target={"id":"R-01","point":(5.0,4.0),"kind":"VERTICAL_CONNECTION","priority":100}
     root=math.sqrt(2)/2
     refs=[
         {"id":"G-A","kind":"GRID_AXIS","a":(0,0),"b":(10*root,10*root),"priority":0},
