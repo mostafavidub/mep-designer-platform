@@ -138,6 +138,19 @@ def test_rotated_local_setout_gets_two_independent_datum_constraints():
     assert all(row["purpose"]=="SETOUT" and row["required"] for row in intents)
 
 
+def test_target_on_one_datum_uses_implicit_constraint_and_only_one_displayed_dimension():
+    target={"id":"R-ON-GRID","point":(5.0,3.0),"kind":"VERTICAL_CONNECTION","priority":100}
+    root=math.sqrt(2)/2
+    refs=[
+        {"id":"G-A","kind":"GRID_AXIS","a":(0,0),"b":(10*root,10*root),"priority":0},
+        {"id":"G-1","kind":"GRID_AXIS","a":(0,8),"b":(8*root,-8*root+8),"priority":0},
+    ]
+    intents,missing=determinacy_intents([target],refs,math.radians(45))
+    assert missing==[]
+    assert len(intents)==1
+    assert intents[0]["purpose"]=="SETOUT"
+
+
 def test_reference_catalog_does_not_require_dimension_layer_names():
     doc=_source_doc();msp=doc.modelspace()
     msp.add_line((0,0),(10,0),dxfattribs={"layer":"0"})
