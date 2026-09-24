@@ -1015,9 +1015,9 @@
         "cad_engine/dimension_source_reconciliation.py",
         "cad_engine/dimension_redundancy_optimizer.py",
         "cad_engine/dimension_placement_solver.py",
-        "cad_engine/dimension_renderer_v2.py",
+        "cad_engine/dimension_renderer.py",
         "cad_engine/dimension_qa.py",
-        "cad_engine/dimension_engine_v2.py"
+        "cad_engine/dimension_engine.py"
       ],
       "drawing_outputs": [
         "source dimension registry",
