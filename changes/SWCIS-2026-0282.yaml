@@ -1,0 +1,67 @@
+{
+  "change_id": "SWCIS-2026-0282",
+  "summary": "Build Planha Dimension Engine v2 with Building Reference Model v2, full-plan determinacy, profile policies, source reconciliation, semantic redundancy optimization, professional placement, construction-determinacy QA, shadow mode and reference benchmarking.",
+  "requester": "mostafavidub",
+  "change_types": ["rule","drawing_output","test","documentation","governance","versioning","migration","ui_api"],
+  "changed_rule_ids": ["MEP-DIM-001","MEP-ARCH-PRESERVE-001","MEP-CONSTRUCT-001","MEP-VISUAL-QA-001"],
+  "impacted_modules": [
+    "rule_book","pmm","questionnaire","planner","cad_designer","routing","sizing","equipment",
+    "manufacturer_selector","detail_riser","qa","manifest","ui_api","docs","versioning",
+    "migration","governance","deployment"
+  ],
+  "impact_notes": {
+    "rule_book": "MEP-DIM-001 is extended from point-level Mechanical semantic set-out to shared v2 reference, determinacy, reconciliation, profile and constructability contracts without weakening v1 invariants.",
+    "pmm": "No persisted PMM schema migration is required. V2 consumes existing semantic building/mechanical identities and adds drawing-documentation contracts downstream.",
+    "questionnaire": "No new mandatory user question is introduced by default. Ambiguous wall reference basis or imported geometry becomes explicit HUMAN_REVIEW_REQUIRED rather than hidden inference.",
+    "planner": "Drawing role/profile becomes explicit input to the requirement engine; approved drawing scope remains authoritative.",
+    "cad_designer": "Add modular v2 reference model, ontology, requirement engine, determinacy solver, source reconciliation, redundancy optimizer, placement solver, renderer adapter and dimension QA.",
+    "routing": "Verified not affected as authority. Dimension v2 consumes final routing geometry only.",
+    "sizing": "Verified not affected as authority. Dimension v2 never changes pipe/duct/equipment sizing.",
+    "equipment": "Equipment identity/placement may be dimension targets; selection authority remains unchanged.",
+    "manufacturer_selector": "Verified not affected.",
+    "detail_riser": "Detail profile gets scoped dimension requirements; riser engineering authority remains unchanged.",
+    "qa": "Introduce construction-determinacy gate, datum-class-aware chain checks, over/under-dimensioning, reconciliation and professional placement controls.",
+    "manifest": "Dimension v2/shadow reports attach to existing artifact/report lineage; manifest schema remains backward compatible.",
+    "ui_api": "No breaking public API change. Human-review findings and shadow metrics may be exposed additively through existing report payloads.",
+    "docs": "Add v2 architecture, ontology, profiles, human checkpoints, QA and benchmark contract.",
+    "versioning": "Bump SWCIS 4.39.0 -> 4.40.0 because dimension rule/gate/traceability architecture expands materially.",
+    "migration": "No destructive data migration. V1 remains protected baseline and v2 can run in shadow mode before visible promotion.",
+    "governance": "Lock v2 capability and traceability; private reference drawings remain benchmark-only and outside Git.",
+    "deployment": "No staging or production deployment in this implementation task without separate owner approval."
+  },
+  "evidence": {
+    "traceability": [
+      "v1 MEP-DIM-001 baseline -> v2 modules -> shadow comparison -> exact-file QA -> construction-determinacy gate",
+      "final engineering geometry -> Dimension Requirement Engine -> Determinacy Graph -> intents -> renderer; dimensioning never routes/sizes"
+    ],
+    "tests": [
+      "planned: preserve all tests/test_semantic_dimension_engine.py v1 invariants",
+      "planned: v2 ontology/reference/envelope/determinacy/profile/reconciliation/redundancy/placement/QA synthetic destructive corpus"
+    ],
+    "docs": ["planned: docs/DIMENSION_ENGINE_V2_STANDARD.md"],
+    "version_bump": ["planned: SWCIS 4.39.0 -> 4.40.0"],
+    "migration": ["additive/shadow-first; no persisted schema or customer-data migration"],
+    "golden_regression": [
+      "freeze current v1 semantic-dimension baseline before behavior promotion",
+      "private six-DXF corpus remains benchmark-only; synthetic/anonymized fixtures are committed instead"
+    ],
+    "semantic_diff": [
+      "dimension completeness changes from point set-out sufficiency to profile-aware full construction determinacy",
+      "references change from mostly geometric candidates to stable semantic subfeatures with evidence/confidence",
+      "redundancy becomes role-aware so intentional CHECK dimensions survive"
+    ],
+    "artifact_diff": ["v2 initially emits shadow reports; visible dimension replacement occurs only after v1-v2 parity/quality gates pass"],
+    "numeric_diff": ["no benchmark-derived numeric engineering defaults; unit and code minima retain explicit authority/provenance"],
+    "contract_diff": ["new v2 ontology/reference/determinacy/reconciliation/profile/placement/QA contracts extend MEP-DIM-001"],
+    "deployment_plan": ["do not deploy during implementation; present staging test plan after merge-ready closure"],
+    "rollback_plan": ["revert protected merge; v1 baseline remains available; no destructive migration"]
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 5,
+    "detectability": 2,
+    "score": 30,
+    "rationale": "Core construction-document dimension semantics change. Shadow-first rollout, locked v1 regression, exact-file QA and fail-closed human checkpoints keep defects detectable before release."
+  },
+  "waiver": null
+}
