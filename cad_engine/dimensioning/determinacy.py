@@ -43,11 +43,14 @@ def analyze_overdimensioning(intents):
             continue
         a=_rid(row.get("reference_a")); b=_rid(row.get("reference_b"))
         if a and b:
-            pairs[tuple(sorted((a,b)))].append(row)
+            # Different engineering purposes are not automatically competing
+            # definitions (e.g. geometric setback vs governed code clearance).
+            pairs[(tuple(sorted((a,b))),str(row.get("purpose") or ""))].append(row)
     errors=[]
-    for pair,rows in pairs.items():
+    for key,rows in pairs.items():
+        pair,purpose=key
         independent=[r for r in rows if not r.get("check_group_id")]
         if len(independent)>1:
-            errors.append({"pair":pair,"reason":"MULTIPLE_INDEPENDENT_DEFINITIONS",
+            errors.append({"pair":pair,"purpose":purpose,"reason":"MULTIPLE_INDEPENDENT_DEFINITIONS",
                            "intent_ids":[r.get("id") for r in independent]})
     return {"status":"PASS" if not errors else "OVER_DIMENSIONED","errors":errors}
