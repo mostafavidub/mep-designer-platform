@@ -28,6 +28,11 @@ SOURCE_ROLE_BY_TYPE={
  "STRUCTURAL_SET_OUT":"SETOUT","WALL_SETOUT":"SETOUT","SHAFT":"SETOUT",
  "STAIR_CORE":"SETOUT","CODE_CLEARANCE":"CHECK","OPENING":"SETOUT",
 }
+SOURCE_PURPOSE_TO_V2={
+ "STRUCTURAL_SET_OUT":"STRUCTURAL_SETOUT",
+ "STAIR_CORE":"STAIR",
+ "OPENING":"OPENING_POSITION",
+}
 
 def _unwrap_source_ref(binding):
     if not isinstance(binding,dict):return None
@@ -58,7 +63,7 @@ def source_regeneration_intents(source_registry,profile):
         p1=src.get("reference_point_a") or src.get("p1");p2=src.get("reference_point_b") or src.get("p2")
         if not p1 or not p2:continue
         rows.append({
-          "id":"SRC-"+str(src.get("id")),"purpose":stype,"role":SOURCE_ROLE_BY_TYPE.get(stype,"SETOUT"),
+          "id":"SRC-"+str(src.get("id")),"purpose":SOURCE_PURPOSE_TO_V2.get(stype,stype),"role":SOURCE_ROLE_BY_TYPE.get(stype,"SETOUT"),
           "drawing_profile":profile,"priority_class":"P0" if src.get("critical") else "P2",
           "required":bool(src.get("critical")),"reference_a":ra,"reference_b":rb,
           "world_p1":tuple(p1),"world_p2":tuple(p2),"world_base":src.get("dimension_line_point"),
