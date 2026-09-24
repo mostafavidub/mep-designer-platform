@@ -223,6 +223,7 @@ def build_reference_catalog(doc, plan_bounds, architecture=None, plan_id=None):
         _reference("PLAN_EDGE", "PLAN-TOP", (x1, y2), (x2, y2), 40, side="TOP"),
     ])
 
+    valid_walls=[]
     for index, wall in enumerate(architecture.get("walls") or []):
         if plan_id and wall.get("plan_id") not in (None, plan_id):
             continue
@@ -232,7 +233,29 @@ def build_reference_catalog(doc, plan_bounds, architecture=None, plan_id=None):
             continue
         if not (_inside(a, plan_bounds, 0.5) or _inside(b, plan_bounds, 0.5)):
             continue
-        refs.append(_reference("WALL_FACE", f"WALL-{index:04d}", a, b, 20))
+        valid_walls.append((index,wall,tuple(map(float,a)),tuple(map(float,b))))
+    wall_points=[p for _,_,a,b in valid_walls for p in (a,b)]
+    wall_extents=None
+    if wall_points:
+        xs=[p[0] for p in wall_points];ys=[p[1] for p in wall_points]
+        wall_extents=(min(xs),min(ys),max(xs),max(ys))
+    for index,wall,a,b in valid_walls:
+        envelope=bool(wall.get("exterior") is True or wall.get("is_exterior") is True)
+        if wall_extents and not envelope:
+            wx1,wy1,wx2,wy2=wall_extents
+            tol=max(max(wx2-wx1,wy2-wy1)*.012,1e-6)
+            vertical=abs(a[0]-b[0])<=max(abs(a[1]-b[1])*.02,1e-9)
+            horizontal=abs(a[1]-b[1])<=max(abs(a[0]-b[0])*.02,1e-9)
+            envelope=(
+                (vertical and (abs(a[0]-wx1)<=tol or abs(a[0]-wx2)<=tol))
+                or (horizontal and (abs(a[1]-wy1)<=tol or abs(a[1]-wy2)<=tol))
+            )
+        refs.append(_reference(
+            "WALL_FACE",f"WALL-{index:04d}",a,b,20,
+            envelope_candidate=envelope,
+            wall_id=str(wall.get("id") or f"WALL-{index:04d}"),
+            source="semantic_geometry",
+        ))
 
     for prefix, kind, collection, priority in (
         ("SHAFT", "SHAFT_FACE", architecture.get("shafts") or [], 10),
@@ -311,14 +334,15 @@ def _nearest_reference(point, refs, tolerance):
 
 
 def _semantic_type(p1, p2, measurement, bind_a, bind_b, plan_bounds):
-    kinds = {
-        (bind_a or {}).get("reference", {}).get("kind"),
-        (bind_b or {}).get("reference", {}).get("kind"),
-    }
+    ra=(bind_a or {}).get("reference", {})
+    rb=(bind_b or {}).get("reference", {})
+    kinds={ra.get("kind"),rb.get("kind")}
     kinds.discard(None)
     if kinds == {"GRID_AXIS"}:
         return "GRID"
-    if "PROPERTY_BOUNDARY" in kinds and "PLAN_EDGE" in kinds:
+    if "PROPERTY_BOUNDARY" in kinds and (
+        "PLAN_EDGE" in kinds or "WALL_FACE" in kinds or "STRUCTURAL_FACE" in kinds
+    ):
         return "SETBACK"
     if kinds == {"PROPERTY_BOUNDARY"}:
         return "PROPERTY"
@@ -330,13 +354,33 @@ def _semantic_type(p1, p2, measurement, bind_a, bind_b, plan_bounds):
         return "OPENING"
     if "STRUCTURAL_FACE" in kinds:
         return "STRUCTURAL_SET_OUT"
+
+    width=abs(float(plan_bounds[2])-float(plan_bounds[0]))
+    height=abs(float(plan_bounds[3])-float(plan_bounds[1]))
+    dx=abs(float(p2[0])-float(p1[0]));dy=abs(float(p2[1])-float(p1[1]))
+    horizontal=dx>=dy
+    axis_span=width if horizontal else height
+    measured_span=max(abs(float(measurement or 0)),dx if horizontal else dy)
+    coord1=float(p1[0] if horizontal else p1[1])
+    coord2=float(p2[0] if horizontal else p2[1])
+    low=float(plan_bounds[0] if horizontal else plan_bounds[1])
+    high=float(plan_bounds[2] if horizontal else plan_bounds[3])
+    boundary_tol=max(axis_span*.08,1e-6)
+    opposite_bounds=(
+        min(abs(coord1-low),abs(coord2-low))<=boundary_tol
+        and min(abs(coord1-high),abs(coord2-high))<=boundary_tol
+    )
+    envelope_pair=(
+        ra.get("kind")=="WALL_FACE" and rb.get("kind")=="WALL_FACE"
+        and bool(ra.get("envelope_candidate")) and bool(rb.get("envelope_candidate"))
+    )
+    if measured_span>=axis_span*.70 and (
+        opposite_bounds or envelope_pair or "PLAN_EDGE" in kinds
+    ):
+        return "BUILDING_OVERALL"
     if kinds and kinds <= {"WALL_FACE"}:
         return "WALL_SETOUT"
-
-    width = abs(float(plan_bounds[2]) - float(plan_bounds[0]))
-    height = abs(float(plan_bounds[3]) - float(plan_bounds[1]))
-    span = max(float(measurement or 0), math.dist(p1, p2))
-    if "PLAN_EDGE" in kinds or span >= 0.78 * max(width, height, 1e-9):
+    if "PLAN_EDGE" in kinds and measured_span>=axis_span*.70:
         return "BUILDING_OVERALL"
     return "UNKNOWN"
 
