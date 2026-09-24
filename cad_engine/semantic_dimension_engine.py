@@ -915,10 +915,23 @@ def apply_semantic_dimension_engine(src, dst, base_report, network, architecture
         return {"status":"FAIL","errors":["ARCHITECTURE_PRESERVATION_NOT_PASS"]}
     src=Path(src);dst=Path(dst)
     doc=ezdxf.readfile(dst);msp=doc.modelspace()
+    # The CAD shell may have created provisional Planha dimensions before the
+    # graph-native authoritative network is materialized. Remove only Planha-
+    # owned dimension entities and regenerate from final authority below.
+    for entity in list(msp.query("DIMENSION")):
+        try:
+            entity.get_xdata(APPID)
+        except Exception:
+            continue
+        msp.delete_entity(entity)
     composition=(base_report or {}).get("composition") or {}
     rows=composition.get("manifest") or []; boards=composition.get("boards") or {}
     dimensioning={}; generated_count=0
-    levels={str(row.get("id") or row.get("name") or ""):row for row in (network or {}).get("levels") or []}
+    levels={}
+    for level_row in (network or {}).get("levels") or []:
+        for key in ("id","name","type"):
+            value=str(level_row.get(key) or "")
+            if value:levels[value]=level_row
     nodes=list((network or {}).get("nodes") or [])
     for row in rows:
         family=str(row.get("family") or "")
