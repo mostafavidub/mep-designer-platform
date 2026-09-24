@@ -439,7 +439,11 @@ def design_mechanical_authority_site(src:Path,dst:Path,answers:dict|None=None,pl
         'mutation_prohibition':preservation.get('critical_missing_count')==0 and preservation.get('important_missing_count')==0,
         'work_copy_only':Path(src).resolve()!=Path(dst).resolve() and evidence.get('source_immutable') is True,
         'atomic_rollback':True,
-        'exact_entity_diff':preservation.get('all_missing_count')==0 and all(semantic_counts),
+        'exact_entity_diff':(
+            preservation.get('all_missing_count')==0
+            and all(semantic_counts)
+            and evidence.get('source_dimension_preservation_complete') is True
+        ),
         'topology_preservation':all((s.get('topology') or {}).get('pass') is True for s in matched),
         'per_sheet_visibility':all((s.get('visibility') or {}).get('pass') is True for s in matched),
         'graphical_sheet_qa':(report.get('all_sheet_visual_qa') or {}).get('status')=='PASS',

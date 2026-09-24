@@ -27,6 +27,7 @@ from .equipment_selection_placement_gate import (
     exact_equipment_output_evidence,
 )
 from .final_engineering_release_gate import evaluate_final_engineering_release
+from .semantic_dimension_engine import apply_semantic_dimension_engine
 from .architecture_space_equipment_gate import (
     evaluate_architecture_space_equipment,
     exact_architecture_source_evidence,
@@ -327,6 +328,17 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
         return {"status": "FAIL", "stage": "runtime_contract_gate", "authority_pipeline_qa": {"status": "FAIL", "errors": contract_errors}}
 
     payload = _authority_payload(answers, plan_analysis)
+    construction_delivery=payload.get("construction_delivery_inputs")
+    if isinstance(construction_delivery,dict):
+        construction_delivery=dict(construction_delivery)
+        required_types=set(construction_delivery.get("required_cad_entity_types") or [])
+        if "DIMENSION" in required_types and not construction_delivery.get("dimension_semantics"):
+            construction_delivery["dimension_semantics"]={
+                "status":"DEFERRED",
+                "authority":"EXACT_FILE_POST_RENDER",
+                "exact_file_gate_required":True,
+            }
+        payload["construction_delivery_inputs"]=construction_delivery
     questionnaire_qa = evaluate_questionnaire_design_basis(payload.get("questionnaire_design_basis_context"))
     # Contradictory or tampered basis evidence can never reach calculation. Missing
     # evidence may continue only far enough to produce a truthful Pre-Submission result.
@@ -452,6 +464,32 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
                 "materialization_qa": materialization,
                 "input_required": {"status": "INPUT_REQUIRED" if materialization.get("status") == "INPUT_REQUIRED" else "FAIL",
                                    "missing_inputs": materialization.get("missing_inputs") or materialization.get("errors") or []}}
+    if not dst.exists() and pre_submission:
+        semantic_dimensions={
+            "status":"DEFERRED",
+            "reason":"PRE_SUBMISSION_EXACT_FILE_NOT_AVAILABLE",
+            "exact_file_gate_required":True,
+            "release_allowed":False,
+        }
+    elif not dst.exists():
+        _restore_target(dst,backup)
+        if backup:
+            backup.unlink(missing_ok=True)
+        return {"status":"FAIL","stage":"semantic_dimension_exact_output_gate",
+                "semantic_dimension_qa":{"status":"FAIL","errors":["EXACT_DIMENSION_FILE_MISSING"]},
+                "input_required":{"status":"FAIL","missing_inputs":["EXACT_DIMENSION_FILE_MISSING"]}}
+    else:
+        semantic_dimensions=apply_semantic_dimension_engine(
+            src,dst,rendered,payload["network_graph"],
+            architecture_preservation=rendered.get("architecture_preservation_qa"),
+        )
+        if semantic_dimensions.get("status")!="PASS":
+            _restore_target(dst,backup)
+            if backup:
+                backup.unlink(missing_ok=True)
+            return {"status":"FAIL","stage":"semantic_dimension_exact_output_gate",
+                    "semantic_dimension_qa":semantic_dimensions,
+                    "input_required":{"status":"FAIL","missing_inputs":semantic_dimensions.get("errors") or ["SEMANTIC_DIMENSION_QA_FAILED"]}}
     final_topology_routing = evaluate_topology_routing(
         payload["network_graph"], calculation_rows=payload["calculation_rows"],
         coordination=(payload.get("topology_routing_coordination") or {}),
@@ -503,6 +541,7 @@ def design_mechanical_authority_site(src: Path, dst: Path, answers: dict | None 
 
     rendered["network_authority_qa"] = network_authority
     rendered["materialization_qa"] = materialization
+    rendered["semantic_dimension_qa"] = semantic_dimensions
     rendered["authority_pipeline_qa"] = result
     rendered["traceability_preflight"] = traceability
     rendered["calculation_reasonableness_qa"] = reasonableness

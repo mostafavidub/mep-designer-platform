@@ -14,7 +14,7 @@ from ezdxf.math import Matrix44
 
 CRITICAL_CLASSES={"WALL","DOOR","WINDOW","OPENING","SHAFT","COLUMN","GRID","STAIR","RAMP","SLAB","ROOM_BOUNDARY","STRUCTURAL"}
 IMPORTANT_CLASSES={"DIMENSION","LEVEL","NORTH","ROOM_TEXT"}
-PRESENTATION_CLASSES={"TITLE","SCALE_TEXT","SHEET_FRAME","DECORATION"}
+PRESENTATION_CLASSES={"TITLE","SCALE_TEXT","SHEET_FRAME","DECORATION","PLANHA_DIMENSION"}
 REMOVABLE_CLASSES={"LEGACY_TITLE","LEGACY_SEPARATOR","LEGACY_FOOTER_ARTIFACT"}
 CLASS_LAYER_HINTS={
  "WALL":("wall","walls","a-wall","دیوار"),"DOOR":("door","doors","a-door","در"),"WINDOW":("window","windows","a-glaz","پنجره"),
@@ -69,6 +69,7 @@ def classify_entity(e):
         if any(h in blob for h in hints):return cls,.97
     for cls,markers in TEXT_MARKERS.items():
         if any(m in txt for m in markers):return cls,.96
+    if typ=="DIMENSION" and layer.startswith("planha-"):return "PLANHA_DIMENSION",.99
     if typ=="DIMENSION":return "DIMENSION",.99
     if typ=="INSERT":
         if any(x in block for x in ("door","در")):return "DOOR",.95

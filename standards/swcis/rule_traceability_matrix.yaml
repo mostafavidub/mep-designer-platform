@@ -1,24 +1,1043 @@
 {
   "schema_version": "1.0.0",
   "standard": "SWCIS",
-  "required_chain": ["rule_id", "pmm_fields", "engines", "drawing_outputs", "qa_rules", "regression_tests", "docs"],
+  "required_chain": [
+    "rule_id",
+    "pmm_fields",
+    "engines",
+    "drawing_outputs",
+    "qa_rules",
+    "regression_tests",
+    "docs"
+  ],
   "rules": [
-    {"rule_id": "MEP-INPUT-001", "title": "Missing authoritative input fails closed", "status": "LOCKED", "pmm_fields": ["input_completeness", "input_required", "identity_registry", "traceability_contract"], "engines": ["app/project_mechanical_model.py", "app/mechanical_basis_contract.py", "cad_engine/system_requirements_v14.py"], "drawing_outputs": ["all mechanical sheets / Pre-Submission status"], "qa_rules": ["required_input_present", "no_invented_authority_data", "unique_pmm_entity_identity"], "regression_tests": ["tests/test_project_mechanical_model.py", "tests/test_mechanical_basis_contract_v18_5.py", "tests/test_stage03_requirements_v13.py"], "docs": ["docs/DESIGN_BASIS_INPUT_CONTROL_STANDARD.md", "docs/PMM_TRACEABILITY_STANDARD.md"]},
-    {"rule_id": "MEP-ROUTE-001", "title": "Topology and routing require eighteen controls and an exact score of 100", "status": "LOCKED", "pmm_fields": ["systems", "levels", "rooms", "fixtures", "equipment", "shafts", "obstructions", "coordination_inputs", "network_graph", "calculation_rows", "equipment_selection_checks"], "engines": ["cad_engine/mechanical_network_topology.py", "cad_engine/routing.py", "cad_engine/mechanical_coordination.py", "cad_engine/mechanical_segment_execution.py", "cad_engine/topology_routing_gate.py", "cad_engine/mechanical_network_materializer.py", "cad_engine/mechanical_authority.py"], "drawing_outputs": ["mechanical plans", "network graph", "riser diagrams", "calculation and schedule identities", "topology/routing QA report"], "qa_rules": ["typed_space_graph", "hosted_endpoint_inventory", "system_graph_separation", "authoritative_sources_and_destinations", "endpoint_exactly_once", "branch_main_continuity", "authoritative_shaft_selection", "vertical_level_continuity", "vertical_alignment", "orthogonal_plan_routes", "legal_terminal_penetrations", "zero_critical_clashes", "system_physical_constraints", "bounded_route_efficiency", "constructability_and_access", "equipment_route_envelope", "plan_riser_calc_schedule_identity", "deterministic_exact_output_contract", "score_exactly_100"], "regression_tests": ["tests/test_topology_routing_100.py", "tests/test_mechanical_network_authority_v19.py", "tests/test_routing_v14.py", "tests/test_topology_v14.py", "tests/test_coordination_v19.py", "tests/test_mechanical_pre_submission_delivery.py"], "docs": ["docs/TOPOLOGY_ROUTING_100_STANDARD.md", "docs/MECHANICAL_COORDINATION_V19.md", "docs/PMM_TRACEABILITY_STANDARD.md"]},
-    {"rule_id": "MEP-SIZE-001", "title": "Sizing is derived from declared design basis", "status": "LOCKED", "pmm_fields": ["fixtures", "loads", "design_criteria", "identity_registry", "traceability_contract", "water_service", "heating_network", "gas_network", "cooling_rooms", "cooling_zones", "exhaust_rooms", "equipment_selection_checks"], "engines": ["app/project_mechanical_model.py", "cad_engine/mechanical_execution_sizing.py", "cad_engine/mechanical_calculations.py", "cad_engine/hvac_calculations.py", "cad_engine/calculation_book.py", "cad_engine/engineering_runner.py", "cad_engine/detail_library.py", "cad_engine/mechanical_documentation.py", "cad_engine/mechanical_target_design.py"], "drawing_outputs": ["plans", "water segment annotations", "reducer entities", "pump schedule", "tank schedule", "equipment selection calculation book", "M-131/M-132 radiator and heating network", "M-141/M-142 gas network and components", "M-161/M-162 split IDU/ODU details", "exhaust fan schedules", "risers"], "qa_rules": ["calculation_provenance", "size_consistency", "calculation_id_unique", "equipment_selection_check_coverage", "selection_margin_recalculation", "manufacturer_route_elevation_limits", "pump_operating_point_on_curve", "fan_cfm__sp_on_curve", "water_segment_hydraulic_limits", "heating_cumulative_load_sizing", "gas_flow_leq_dn_calc_identity", "cooling_component_load_and_zone_diversity", "split_route_and_connected_ratio", "exhaust_flow_esp_and_room_coverage", "drawing_dn_equals_calculation_dn", "no_orphan_engineering_output", "plan_riser_calc_schedule_identity"], "regression_tests": ["tests/test_project_mechanical_model.py", "tests/test_sizing_v14.py", "tests/test_mechanical_calculations_v14.py", "tests/test_hvac_calculations_v19.py", "tests/test_calculation_book_v19.py", "tests/test_manufacturer_selector_v19.py", "tests/test_detail_library_v14.py", "tests/test_mechanical_target_design.py"], "docs": ["docs/MECHANICAL_DESIGN_BASIS_CONTRACT.md", "docs/WATER_NETWORK_PUMP_TANK_STANDARD.md", "docs/HEATING_GAS_DESIGN_STANDARD.md", "docs/SPLIT_EXHAUST_DESIGN_STANDARD.md", "docs/CALCULATION_BOOK_ANNOTATION_STANDARD.md", "docs/PMM_TRACEABILITY_STANDARD.md"]},
-    {"rule_id": "MEP-EQUIP-001", "title": "Equipment selection is evidence backed", "status": "LOCKED", "pmm_fields": ["equipment_requirements", "manufacturer_constraints", "manufacturer_catalogue_id", "room_heat_loss", "heating_design_temperatures", "gas_appliances", "cooling_loads", "split_routes", "exhaust_duties"], "engines": ["cad_engine/manufacturer_database.py", "cad_engine/mechanical_manufacturer_selector.py", "cad_engine/hvac_calculations.py", "cad_engine/equipment_representation.py", "cad_engine/detail_library.py", "cad_engine/mechanical_documentation.py", "cad_engine/mechanical_target_design.py"], "drawing_outputs": ["equipment schedules", "radiator details", "package schedule", "gas appliance details", "IDU/ODU details", "exhaust fan schedules", "manufacturer-locked construction details"], "qa_rules": ["official_manufacturer_source", "stable_catalogue_identity", "full_engineering_record", "no_private_document_binary", "selection_compatibility", "manufacturer_dimension_match", "radiator_exact_model_and_dimensions", "package_space_dhw_combined_capacity", "gas_consumption_provenance", "idu_odu_capacity_route_elevation_clearance", "fan_flow_and_esp", "unserved_exhaust_room_zero"], "regression_tests": ["tests/test_manufacturer_database.py", "tests/test_manufacturer_selector_v19.py", "tests/test_hvac_calculations_v19.py", "tests/test_mechanical_target_design.py", "tests/test_detail_library_v14.py", "tests/test_fixture_detection_v2.py"], "docs": ["docs/FIXTURE_EQUIPMENT_DETECTION_STANDARD.md", "docs/HEATING_GAS_DESIGN_STANDARD.md", "docs/SPLIT_EXHAUST_DESIGN_STANDARD.md", "docs/MANUFACTURER_DATABASE_PARAMETRIC_DETAIL_STANDARD.md"]},
-    {"rule_id": "MEP-SUBMIT-001", "title": "Submission gates are fail closed", "status": "LOCKED", "pmm_fields": ["release_status", "required_gates", "identity_registry", "traceability_contract", "typed_levels", "rainwater_design", "manufacturer_catalogue_id", "final_detail_identities", "annotation_layout"], "engines": ["cad_engine/manufacturer_database.py", "cad_engine/calculation_book.py", "cad_engine/annotation_solver.py", "cad_engine/parametric_documentation_v19.py", "cad_engine/rainwater_calculations.py", "cad_engine/submission_qa_v19.py", "cad_engine/final_delivery_gate_v17.py"], "drawing_outputs": ["submission set", "release manifest", "plans", "roof catchment plan", "risers", "schedules", "calculation book", "executable manufacturer-locked details", "collision-free annotations", "source-bound enlarged plans"], "qa_rules": ["all_required_gates_pass", "golden_non_regression", "no_orphan_engineering_output", "plan_riser_calc_schedule_identity", "detail_plan_pmm_calc_catalogue_identity", "manufacturer_dimension_match", "equipment_selection_check_coverage", "pump_fan_curve_compliance", "annotation_collision_zero", "unreadable_annotation_zero", "minimum_plotted_text_height", "enlarged_plan_source_identity", "invalid_riser_level_zero", "rainwater_catchment_coverage", "mandatory_detail_family_coverage", "annotation_network_identity", "blind_seal_before_reference", "semantic_artifact_numeric_diff"], "regression_tests": ["tests/test_manufacturer_database.py", "tests/test_calculation_book.py", "tests/test_annotation_solver.py", "tests/test_parametric_documentation_v19.py", "tests/test_rainwater_calculations.py", "tests/test_submission_qa_v19.py", "tests/test_mechanical_pipeline_v19.py", "tests/test_final_mechanical_delivery_gate_v17.py", "tests/test_mechanical_runtime_v19.py"], "docs": ["docs/MECHANICAL_DRAWING_SET_STANDARD.md", "docs/MECHANICAL_COORDINATION_V19.md", "docs/RAINWATER_RISER_DESIGN_STANDARD.md", "docs/MANUFACTURER_DATABASE_PARAMETRIC_DETAIL_STANDARD.md", "docs/CALCULATION_BOOK_ANNOTATION_STANDARD.md", "docs/PMM_TRACEABILITY_STANDARD.md", "docs/REFERENCE_TRUTH_SET_STANDARD.md"]}
-    ,{"rule_id": "MEP-SUBMIT-002", "title": "Submission readiness and golden evidence are explicit and ordered", "status": "LOCKED", "pmm_fields": ["submission_zero_checks", "blind_output", "blind_seal", "comparison_contract"], "engines": ["cad_engine/submission_qa_v19.py", "cad_engine/golden_artifacts_v19.py", "cad_engine/mechanical_pipeline_v19.py"], "drawing_outputs": ["submission QA report", "sealed semantic previews", "golden diff report"], "qa_rules": ["explicit_ten_zero_submission_checks", "golden_cohort_unique_complete", "blind_generation_seal_reference_order", "exact_reopen", "no_private_source_filename", "semantic_artifact_numeric_diff"], "regression_tests": ["tests/test_submission_qa_v19.py", "tests/test_golden_artifacts_v19.py", "tests/test_mechanical_pipeline_v19.py"], "docs": ["docs/SUBMISSION_QA_GOLDEN_REGRESSION_STANDARD.md", "docs/MECHANICAL_COORDINATION_V19.md"]}
-    ,{"rule_id": "MEP-CONSTRUCT-001", "title": "Construction-document delivery is complete and source-bound", "status": "LOCKED", "pmm_fields": ["final_detail_identities", "cad_inventory", "release_manifest", "equipment_schedule", "annotation_layout", "submission_zero_checks"], "engines": ["cad_engine/mechanical_pipeline_construction_delivery.py", "cad_engine/annotation_solver.py", "cad_engine/mechanical_submission_qa.py", "cad_engine/mechanical_pipeline.py"], "drawing_outputs": ["plan-bound construction details", "materialized CAD primitives", "manifest-derived drawing index", "public equipment schedule", "source-bound enlarged plans", "submission QA report"], "qa_rules": ["detail_plan_pmm_calc_catalogue_identity", "cad_entity_materialized", "manifest_index_layout_identity", "public_schedule_complete", "annotation_collision_zero", "unreadable_annotation_zero", "explicit_submission_zero_checks"], "regression_tests": ["tests/test_mechanical_construction_delivery.py", "tests/test_submission_qa_v19.py", "tests/test_mechanical_pipeline_v19.py"], "docs": ["docs/CONSTRUCTION_DOCUMENT_DELIVERY_STANDARD.md", "docs/MECHANICAL_DRAWING_SET_STANDARD.md", "docs/CALCULATION_BOOK_ANNOTATION_STANDARD.md"]}
-    ,{"rule_id": "MEP-REVIEW-001", "title": "Independent feedback improves shared rules without project overfit", "status": "LOCKED", "pmm_fields": ["engineer_review", "redline_category", "review_evidence_sha256", "quality_metrics"], "engines": ["cad_engine/engineering_feedback.py", "cad_engine/quality_acceptance.py", "cad_engine/mechanical_pipeline_v19.py"], "drawing_outputs": ["redline triage report", "quality acceptance report"], "qa_rules": ["project_specific_quarantined", "rulebook_finding_has_rule_and_regression", "engine_bug_has_reproduction_and_regression", "open_major_redline_zero", "route_efficiency_minimum_90", "equipment_placement_minimum_90", "detail_completeness_minimum_95", "each_main_plan_minimum_85", "package_average_minimum_90"], "regression_tests": ["tests/test_engineering_feedback.py", "tests/test_quality_acceptance.py", "tests/test_mechanical_pipeline_v19.py"], "docs": ["docs/ENGINEER_FEEDBACK_QUALITY_ACCEPTANCE_STANDARD.md", "docs/MECHANICAL_COORDINATION_V19.md"]}
-    ,{"rule_id": "MEP-CALC-SANITY-001", "title": "Mechanical calculation results are physically plausible and independently reviewed", "status": "LOCKED", "pmm_fields": ["network_design_basis", "calculation_rows", "calculation_totals", "sensitivity_checks", "selected_equipment", "engineer_review"], "engines": ["cad_engine/calculation_reasonableness.py", "cad_engine/mechanical_authority.py"], "drawing_outputs": ["calculation QA report", "submission-ready mechanical artifact"], "qa_rules": ["canonical_units", "finite_bounded_values", "geometry_length_sanity", "network_conservation", "plan_riser_schedule_identity", "aggregate_sanity", "equipment_selection", "sensitivity", "calculation_provenance", "independent_engineer_review"], "regression_tests": ["tests/test_calculation_reasonableness.py", "tests/test_mechanical_pre_submission_delivery.py"], "docs": ["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id": "MEP-VISUAL-QA-001", "title": "Every issued mechanical sheet is independently rendered and visually release-gated", "status": "LOCKED", "pmm_fields": ["approved_drawing_manifest", "visual_qa", "independent_visual_review", "board_level"], "engines": ["cad_engine/sheet_visual_qa.py", "cad_engine/mechanical_cad_shell.py", "cad_engine/main_transport.py"], "drawing_outputs": ["per-sheet color preview", "per-sheet monochrome preview", "per-sheet zoom previews", "visual QA JSON report", "mechanical artifact"], "qa_rules": ["manifest_board_identity", "valid_frame_and_scale", "architecture_underlay_readability_on_architectural_plans", "service_schematic_underlay_exemption", "mechanical_network_readability", "minimum_plotted_text", "annotation_overlap_zero", "symbol_and_route_gate_crosslinks", "visual_density", "riser_detail_schedule_note_legend_coverage", "color_monochrome_survival", "multi_zoom_render", "baseline_non_regression", "per_sheet_score", "exact_file_immutable", "independent_visual_review_for_submission", "failed_visual_stage_diagnostics"], "regression_tests": ["tests/test_sheet_visual_qa.py", "tests/test_mechanical_error_surface.py", "tests/test_mechanical_release_hardening_v18.py", "tests/test_mechanical_pre_submission_delivery.py"], "docs": ["docs/ALL_SHEET_VISUAL_QA_STANDARD.md", "docs/MECHANICAL_DRAWING_SET_STANDARD.md"]}
-    ,{"rule_id":"MEP-ARCH-PRESERVE-001","title":"Architecture reconstruction and preservation requires all eighteen controls and an exact-file score of 100","status":"LOCKED","pmm_fields":["approved_drawing_manifest","typed_levels","rooms","shafts","architecture_preservation_qa","visual_qa"],"engines":["cad_engine/plan_segmentation.py","cad_engine/architecture_reconstruction.py","cad_engine/architecture_preservation_gate.py","cad_engine/mechanical_cad_preservation.py","cad_engine/mechanical_cad_shell.py"],"drawing_outputs":["architectural underlay on every plan board","architecture preservation QA report","six-category preservation score"],"qa_rules":["immutable_snapshot","coordinate_calibration","drawing_separation","level_binding","wall_reconstruction","typed_openings_and_verticals","closed_room_identity","shaft_wet_core_evidence","safe_deduplication","mutation_prohibition","work_copy_only","atomic_rollback","exact_entity_diff","topology_preservation","per_sheet_visibility","graphical_sheet_qa","destructive_regression","exact_file_reopen","score_exactly_100"],"regression_tests":["tests/test_architecture_preservation_100.py","tests/test_architecture_preservation_gate_v16.py","tests/test_architecture_preservation_integration_v16.py","tests/test_sheet_visual_qa.py"],"docs":["docs/ARCHITECTURE_PRESERVATION_100_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id":"MEP-DRAWING-SCOPE-001","title":"Mechanical drawing scope requires eighteen deterministic controls and a score of 100 before approval","status":"LOCKED","pmm_fields":["approved_drawing_manifest","typed_levels","typical_groups","system_scope","level_system_matrix","scope_qa"],"engines":["app/mechanical_workflow.py","app/mechanical_drawing_set.py","cad_engine/mechanical_release_scope.py","app/manifest_contract_v2.py"],"drawing_outputs":["mechanical drawing proposal","level-by-system matrix","frozen approved manifest","scope QA report"],"qa_rules":["drawing_inventory","drawing_type_classification","level_binding","typical_floor_evidence","system_scope_evidence","unsupported_system_zero","required_system_omission_zero","drawing_role_separation","level_system_matrix","deterministic_manifest_identity","manifest_reconciliation","plan_riser_calc_schedule_identity","ambiguity_fail_closed","pre_calculation_scope_gate","exact_output_parity_contract","destructive_regression_contract","blind_reference_isolation","exact_reopen_contract","score_exactly_100"],"regression_tests":["tests/test_drawing_scope_100.py","tests/test_mechanical_drawing_set.py","tests/test_mechanical_workflow.py","tests/test_manifest_contract_v2.py"],"docs":["docs/DRAWING_SCOPE_100_STANDARD.md","docs/MECHANICAL_DRAWING_SET_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id":"MEP-EQUIP-002","title":"Equipment selection and placement require eighteen controls and an exact score of 100","status":"LOCKED","pmm_fields":["rooms","equipment_requirements","calculation_rows","selected_equipment","manufacturer_catalogue_id","placement_candidates","equipment_routes","equipment_schedule","equipment_risers","visual_qa"],"engines":["cad_engine/mechanical_manufacturer_selector.py","cad_engine/equipment_selection_placement_gate.py","cad_engine/mechanical_authority.py"],"drawing_outputs":["equipment plans","equipment risers","equipment schedule","equipment selection and placement QA report"],"qa_rules":["typed_room_model","existing_equipment_classification","design_basis_complete","space_by_space_demand","water_service_duties","ventilation_duties","official_catalogue_evidence","deterministic_selection","capacity_match","candidate_location_evidence","architectural_host_validity","service_clearance","network_connection_complete","safety_and_code_clearance","multi_criteria_placement","plan_riser_schedule_identity","equipment_visual_qa","exact_output_release_evidence","score_exactly_100"],"regression_tests":["tests/test_equipment_selection_placement_100.py","tests/test_manufacturer_selector_v19.py","tests/test_mechanical_pre_submission_delivery.py"],"docs":["docs/EQUIPMENT_SELECTION_PLACEMENT_100_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id":"MEP-FINAL-ISSUE-001","title":"Final engineering and exact issue package require eighteen controls and an exact score of 100","status":"LOCKED","pmm_fields":["approved_drawing_manifest","approved_architecture_revision","architecture_sha256","active_systems","network_graph","calculation_rows","selected_equipment","submission_checklist","engineer_review","release_artifact_hashes"],"engines":["cad_engine/final_engineering_release_gate.py","cad_engine/mechanical_authority.py","cad_engine/mechanical_release_contract.py"],"drawing_outputs":["final CAD","final PDF","calculation book","clash report","equipment schedule","datasheet package","signed submission checklist","final engineering release QA report"],"qa_rules":["governed_submission_checklist","drawing_scope_complete","current_architecture_bound","cross_sheet_consistency","plan_riser_reconciliation","calculation_traceability","hvac_engineering_complete","water_engineering_complete","sanitary_vent_engineering_complete","gas_engineering_complete","equipment_release_complete","coordination_constructability","executable_details_complete","sheet_documentation_complete","all_sheet_visual_qa","exact_file_technical_qa","independent_engineer_review","immutable_release_package","score_exactly_100"],"regression_tests":["tests/test_final_engineering_release_100.py","tests/test_mechanical_pre_submission_delivery.py","tests/test_mechanical_network_authority_v19.py"],"docs":["docs/FINAL_ENGINEERING_RELEASE_100_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id":"MEP-ARCH-RECOG-001","title":"Architecture space and equipment recognition requires eighteen controls and an exact score of 100","status":"LOCKED","pmm_fields":["architecture_sha256","approved_architecture_revision","calibration","frames","levels","geometry","rooms","shafts","fixtures","equipment","recognition_evidence","visual_overlay_qa"],"engines":["cad_engine/plan_segmentation.py","cad_engine/architecture_reconstruction.py","cad_engine/fixture_recognition.py","cad_engine/architecture_space_equipment_gate.py","cad_engine/mechanical_authority.py"],"drawing_outputs":["typed architecture model","space inventory","fixture and equipment inventory","recognition visual overlays","recognition QA report"],"qa_rules":["immutable_source_identity","units_scale_orientation_bounds","deterministic_frame_separation","level_view_binding","wall_geometry_reconstruction","opening_vertical_obstruction_typing","closed_space_boundaries","multilingual_label_binding","space_use_classification","shaft_wet_core_recognition","multi_signal_object_recognition","object_status_confidence","object_type_orientation","host_and_port_binding","view_aware_deduplication","semantic_spatial_consistency","frame_visual_overlay_qa","exact_source_reopen_and_completeness","score_exactly_100"],"regression_tests":["tests/test_architecture_space_equipment_100.py","tests/test_fixture_recognition_v14.py","tests/test_plan_frame_separation.py","tests/test_mechanical_pre_submission_delivery.py"],"docs":["docs/ARCHITECTURE_SPACE_EQUIPMENT_100_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id":"MEP-DOC-CONTENT-001","title":"Details, schedules, notes and legends require eighteen controls and an exact score of 100","status":"LOCKED","pmm_fields":["active_systems","levels","spaces","equipment","network_graph","calculation_rows","document_requirements","detail_ids","schedule_ids","note_ids","legend_symbols"],"engines":["cad_engine/mechanical_documentation.py","cad_engine/detail_library.py","cad_engine/dynamic_detail_engine.py","cad_engine/documentation_content_gate.py","cad_engine/mechanical_authority.py"],"drawing_outputs":["executable details","equipment schedules","network schedules","project notes","legends","documentation QA report"],"qa_rules":["project_scope_inventory","required_document_matrix","standard_detail_library","calculation_bound_parameters","active_system_detail_selection","constructability_detail_coverage","equipment_schedule_from_model","network_schedule_complete","plan_riser_schedule_detail_identity","project_specific_notes","standards_provenance","used_symbol_legend","symbol_code_uniqueness","sheet_composition","printed_readability","coordination_constructability","sheet_by_sheet_document_qa","exact_output_document_parity","score_exactly_100"],"regression_tests":["tests/test_documentation_content_100.py","tests/test_parametric_documentation_v19.py","tests/test_dynamic_detail_engine_v14.py","tests/test_mechanical_pre_submission_delivery.py"],"docs":["docs/DOCUMENTATION_CONTENT_100_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
-    ,{"rule_id":"MEP-BASIS-002","title":"Questionnaire and immutable design basis require eighteen controls and an exact score of 100","status":"LOCKED","pmm_fields":["architecture_facts","answer_records","system_scope","numeric_inputs","climate_basis","system_design_basis","equipment_preferences","regulatory_facts","approved_summary","locked_revision"],"engines":["app/mechanical_basis_contract.py","app/design_basis_questionnaire_gate.py","app/mechanical_workflow.py","cad_engine/mechanical_authority.py"],"drawing_outputs":["questionnaire","design-basis summary","design-basis QA report","submission-ready mechanical artifact"],"qa_rules":["architecture_fact_extraction","fact_source_classification","system_scope_resolution","dynamic_question_applicability","governed_prior_answer_reuse","cross_project_answer_scope","canonical_answer_normalization","numeric_value_unit_validation","climate_location_basis","system_engineering_basis","equipment_owner_preferences","regulatory_project_facts","architecture_answer_consistency","question_dependency_graph","human_readable_basis_summary","immutable_approved_revision","persistence_and_destructive_qa","generation_release_gate","score_exactly_100"],"regression_tests":["tests/test_questionnaire_design_basis_100.py","tests/test_mechanical_basis_contract_v18_5.py","tests/test_mechanical_workflow.py","tests/test_unified_questionnaire_v5.py","tests/test_mechanical_pre_submission_delivery.py"],"docs":["docs/QUESTIONNAIRE_DESIGN_BASIS_100_STANDARD.md","docs/MECHANICAL_DESIGN_BASIS_CONTRACT.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]}
+    {
+      "rule_id": "MEP-INPUT-001",
+      "title": "Missing authoritative input fails closed",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "input_completeness",
+        "input_required",
+        "identity_registry",
+        "traceability_contract"
+      ],
+      "engines": [
+        "app/project_mechanical_model.py",
+        "app/mechanical_basis_contract.py",
+        "cad_engine/system_requirements_v14.py"
+      ],
+      "drawing_outputs": [
+        "all mechanical sheets / Pre-Submission status"
+      ],
+      "qa_rules": [
+        "required_input_present",
+        "no_invented_authority_data",
+        "unique_pmm_entity_identity"
+      ],
+      "regression_tests": [
+        "tests/test_project_mechanical_model.py",
+        "tests/test_mechanical_basis_contract_v18_5.py",
+        "tests/test_stage03_requirements_v13.py"
+      ],
+      "docs": [
+        "docs/DESIGN_BASIS_INPUT_CONTROL_STANDARD.md",
+        "docs/PMM_TRACEABILITY_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-ROUTE-001",
+      "title": "Topology and routing require eighteen controls and an exact score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "systems",
+        "levels",
+        "rooms",
+        "fixtures",
+        "equipment",
+        "shafts",
+        "obstructions",
+        "coordination_inputs",
+        "network_graph",
+        "calculation_rows",
+        "equipment_selection_checks"
+      ],
+      "engines": [
+        "cad_engine/mechanical_network_topology.py",
+        "cad_engine/routing.py",
+        "cad_engine/mechanical_coordination.py",
+        "cad_engine/mechanical_segment_execution.py",
+        "cad_engine/topology_routing_gate.py",
+        "cad_engine/mechanical_network_materializer.py",
+        "cad_engine/mechanical_authority.py"
+      ],
+      "drawing_outputs": [
+        "mechanical plans",
+        "network graph",
+        "riser diagrams",
+        "calculation and schedule identities",
+        "topology/routing QA report"
+      ],
+      "qa_rules": [
+        "typed_space_graph",
+        "hosted_endpoint_inventory",
+        "system_graph_separation",
+        "authoritative_sources_and_destinations",
+        "endpoint_exactly_once",
+        "branch_main_continuity",
+        "authoritative_shaft_selection",
+        "vertical_level_continuity",
+        "vertical_alignment",
+        "orthogonal_plan_routes",
+        "legal_terminal_penetrations",
+        "zero_critical_clashes",
+        "system_physical_constraints",
+        "bounded_route_efficiency",
+        "constructability_and_access",
+        "equipment_route_envelope",
+        "plan_riser_calc_schedule_identity",
+        "deterministic_exact_output_contract",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_topology_routing_100.py",
+        "tests/test_mechanical_network_authority_v19.py",
+        "tests/test_routing_v14.py",
+        "tests/test_topology_v14.py",
+        "tests/test_coordination_v19.py",
+        "tests/test_mechanical_pre_submission_delivery.py"
+      ],
+      "docs": [
+        "docs/TOPOLOGY_ROUTING_100_STANDARD.md",
+        "docs/MECHANICAL_COORDINATION_V19.md",
+        "docs/PMM_TRACEABILITY_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-SIZE-001",
+      "title": "Sizing is derived from declared design basis",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "fixtures",
+        "loads",
+        "design_criteria",
+        "identity_registry",
+        "traceability_contract",
+        "water_service",
+        "heating_network",
+        "gas_network",
+        "cooling_rooms",
+        "cooling_zones",
+        "exhaust_rooms",
+        "equipment_selection_checks"
+      ],
+      "engines": [
+        "app/project_mechanical_model.py",
+        "cad_engine/mechanical_execution_sizing.py",
+        "cad_engine/mechanical_calculations.py",
+        "cad_engine/hvac_calculations.py",
+        "cad_engine/calculation_book.py",
+        "cad_engine/engineering_runner.py",
+        "cad_engine/detail_library.py",
+        "cad_engine/mechanical_documentation.py",
+        "cad_engine/mechanical_target_design.py"
+      ],
+      "drawing_outputs": [
+        "plans",
+        "water segment annotations",
+        "reducer entities",
+        "pump schedule",
+        "tank schedule",
+        "equipment selection calculation book",
+        "M-131/M-132 radiator and heating network",
+        "M-141/M-142 gas network and components",
+        "M-161/M-162 split IDU/ODU details",
+        "exhaust fan schedules",
+        "risers"
+      ],
+      "qa_rules": [
+        "calculation_provenance",
+        "size_consistency",
+        "calculation_id_unique",
+        "equipment_selection_check_coverage",
+        "selection_margin_recalculation",
+        "manufacturer_route_elevation_limits",
+        "pump_operating_point_on_curve",
+        "fan_cfm__sp_on_curve",
+        "water_segment_hydraulic_limits",
+        "heating_cumulative_load_sizing",
+        "gas_flow_leq_dn_calc_identity",
+        "cooling_component_load_and_zone_diversity",
+        "split_route_and_connected_ratio",
+        "exhaust_flow_esp_and_room_coverage",
+        "drawing_dn_equals_calculation_dn",
+        "no_orphan_engineering_output",
+        "plan_riser_calc_schedule_identity"
+      ],
+      "regression_tests": [
+        "tests/test_project_mechanical_model.py",
+        "tests/test_sizing_v14.py",
+        "tests/test_mechanical_calculations_v14.py",
+        "tests/test_hvac_calculations_v19.py",
+        "tests/test_calculation_book_v19.py",
+        "tests/test_manufacturer_selector_v19.py",
+        "tests/test_detail_library_v14.py",
+        "tests/test_mechanical_target_design.py"
+      ],
+      "docs": [
+        "docs/MECHANICAL_DESIGN_BASIS_CONTRACT.md",
+        "docs/WATER_NETWORK_PUMP_TANK_STANDARD.md",
+        "docs/HEATING_GAS_DESIGN_STANDARD.md",
+        "docs/SPLIT_EXHAUST_DESIGN_STANDARD.md",
+        "docs/CALCULATION_BOOK_ANNOTATION_STANDARD.md",
+        "docs/PMM_TRACEABILITY_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-EQUIP-001",
+      "title": "Equipment selection is evidence backed",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "equipment_requirements",
+        "manufacturer_constraints",
+        "manufacturer_catalogue_id",
+        "room_heat_loss",
+        "heating_design_temperatures",
+        "gas_appliances",
+        "cooling_loads",
+        "split_routes",
+        "exhaust_duties"
+      ],
+      "engines": [
+        "cad_engine/manufacturer_database.py",
+        "cad_engine/mechanical_manufacturer_selector.py",
+        "cad_engine/hvac_calculations.py",
+        "cad_engine/equipment_representation.py",
+        "cad_engine/detail_library.py",
+        "cad_engine/mechanical_documentation.py",
+        "cad_engine/mechanical_target_design.py"
+      ],
+      "drawing_outputs": [
+        "equipment schedules",
+        "radiator details",
+        "package schedule",
+        "gas appliance details",
+        "IDU/ODU details",
+        "exhaust fan schedules",
+        "manufacturer-locked construction details"
+      ],
+      "qa_rules": [
+        "official_manufacturer_source",
+        "stable_catalogue_identity",
+        "full_engineering_record",
+        "no_private_document_binary",
+        "selection_compatibility",
+        "manufacturer_dimension_match",
+        "radiator_exact_model_and_dimensions",
+        "package_space_dhw_combined_capacity",
+        "gas_consumption_provenance",
+        "idu_odu_capacity_route_elevation_clearance",
+        "fan_flow_and_esp",
+        "unserved_exhaust_room_zero"
+      ],
+      "regression_tests": [
+        "tests/test_manufacturer_database.py",
+        "tests/test_manufacturer_selector_v19.py",
+        "tests/test_hvac_calculations_v19.py",
+        "tests/test_mechanical_target_design.py",
+        "tests/test_detail_library_v14.py",
+        "tests/test_fixture_detection_v2.py"
+      ],
+      "docs": [
+        "docs/FIXTURE_EQUIPMENT_DETECTION_STANDARD.md",
+        "docs/HEATING_GAS_DESIGN_STANDARD.md",
+        "docs/SPLIT_EXHAUST_DESIGN_STANDARD.md",
+        "docs/MANUFACTURER_DATABASE_PARAMETRIC_DETAIL_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-SUBMIT-001",
+      "title": "Submission gates are fail closed",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "release_status",
+        "required_gates",
+        "identity_registry",
+        "traceability_contract",
+        "typed_levels",
+        "rainwater_design",
+        "manufacturer_catalogue_id",
+        "final_detail_identities",
+        "annotation_layout"
+      ],
+      "engines": [
+        "cad_engine/manufacturer_database.py",
+        "cad_engine/calculation_book.py",
+        "cad_engine/annotation_solver.py",
+        "cad_engine/parametric_documentation_v19.py",
+        "cad_engine/rainwater_calculations.py",
+        "cad_engine/submission_qa_v19.py",
+        "cad_engine/final_delivery_gate_v17.py"
+      ],
+      "drawing_outputs": [
+        "submission set",
+        "release manifest",
+        "plans",
+        "roof catchment plan",
+        "risers",
+        "schedules",
+        "calculation book",
+        "executable manufacturer-locked details",
+        "collision-free annotations",
+        "source-bound enlarged plans"
+      ],
+      "qa_rules": [
+        "all_required_gates_pass",
+        "golden_non_regression",
+        "no_orphan_engineering_output",
+        "plan_riser_calc_schedule_identity",
+        "detail_plan_pmm_calc_catalogue_identity",
+        "manufacturer_dimension_match",
+        "equipment_selection_check_coverage",
+        "pump_fan_curve_compliance",
+        "annotation_collision_zero",
+        "unreadable_annotation_zero",
+        "minimum_plotted_text_height",
+        "enlarged_plan_source_identity",
+        "invalid_riser_level_zero",
+        "rainwater_catchment_coverage",
+        "mandatory_detail_family_coverage",
+        "annotation_network_identity",
+        "blind_seal_before_reference",
+        "semantic_artifact_numeric_diff"
+      ],
+      "regression_tests": [
+        "tests/test_manufacturer_database.py",
+        "tests/test_calculation_book.py",
+        "tests/test_annotation_solver.py",
+        "tests/test_parametric_documentation_v19.py",
+        "tests/test_rainwater_calculations.py",
+        "tests/test_submission_qa_v19.py",
+        "tests/test_mechanical_pipeline_v19.py",
+        "tests/test_final_mechanical_delivery_gate_v17.py",
+        "tests/test_mechanical_runtime_v19.py"
+      ],
+      "docs": [
+        "docs/MECHANICAL_DRAWING_SET_STANDARD.md",
+        "docs/MECHANICAL_COORDINATION_V19.md",
+        "docs/RAINWATER_RISER_DESIGN_STANDARD.md",
+        "docs/MANUFACTURER_DATABASE_PARAMETRIC_DETAIL_STANDARD.md",
+        "docs/CALCULATION_BOOK_ANNOTATION_STANDARD.md",
+        "docs/PMM_TRACEABILITY_STANDARD.md",
+        "docs/REFERENCE_TRUTH_SET_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-SUBMIT-002",
+      "title": "Submission readiness and golden evidence are explicit and ordered",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "submission_zero_checks",
+        "blind_output",
+        "blind_seal",
+        "comparison_contract"
+      ],
+      "engines": [
+        "cad_engine/submission_qa_v19.py",
+        "cad_engine/golden_artifacts_v19.py",
+        "cad_engine/mechanical_pipeline_v19.py"
+      ],
+      "drawing_outputs": [
+        "submission QA report",
+        "sealed semantic previews",
+        "golden diff report"
+      ],
+      "qa_rules": [
+        "explicit_ten_zero_submission_checks",
+        "golden_cohort_unique_complete",
+        "blind_generation_seal_reference_order",
+        "exact_reopen",
+        "no_private_source_filename",
+        "semantic_artifact_numeric_diff"
+      ],
+      "regression_tests": [
+        "tests/test_submission_qa_v19.py",
+        "tests/test_golden_artifacts_v19.py",
+        "tests/test_mechanical_pipeline_v19.py"
+      ],
+      "docs": [
+        "docs/SUBMISSION_QA_GOLDEN_REGRESSION_STANDARD.md",
+        "docs/MECHANICAL_COORDINATION_V19.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-CONSTRUCT-001",
+      "title": "Construction-document delivery is complete and source-bound",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "final_detail_identities",
+        "cad_inventory",
+        "release_manifest",
+        "equipment_schedule",
+        "annotation_layout",
+        "submission_zero_checks",
+        "dimension_semantics"
+      ],
+      "engines": [
+        "cad_engine/mechanical_pipeline_construction_delivery.py",
+        "cad_engine/annotation_solver.py",
+        "cad_engine/mechanical_submission_qa.py",
+        "cad_engine/mechanical_pipeline.py",
+        "cad_engine/semantic_dimension_engine.py"
+      ],
+      "drawing_outputs": [
+        "plan-bound construction details",
+        "materialized CAD primitives",
+        "manifest-derived drawing index",
+        "public equipment schedule",
+        "source-bound enlarged plans",
+        "submission QA report",
+        "reference-bound semantic plan dimensions"
+      ],
+      "qa_rules": [
+        "detail_plan_pmm_calc_catalogue_identity",
+        "cad_entity_materialized",
+        "manifest_index_layout_identity",
+        "public_schedule_complete",
+        "annotation_collision_zero",
+        "unreadable_annotation_zero",
+        "explicit_submission_zero_checks",
+        "dimension_semantic_contract",
+        "setout_determinacy_complete",
+        "dimension_entity_count_not_authority"
+      ],
+      "regression_tests": [
+        "tests/test_mechanical_construction_delivery.py",
+        "tests/test_submission_qa_v19.py",
+        "tests/test_mechanical_pipeline_v19.py",
+        "tests/test_semantic_dimension_engine.py"
+      ],
+      "docs": [
+        "docs/CONSTRUCTION_DOCUMENT_DELIVERY_STANDARD.md",
+        "docs/MECHANICAL_DRAWING_SET_STANDARD.md",
+        "docs/CALCULATION_BOOK_ANNOTATION_STANDARD.md",
+        "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-REVIEW-001",
+      "title": "Independent feedback improves shared rules without project overfit",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "engineer_review",
+        "redline_category",
+        "review_evidence_sha256",
+        "quality_metrics"
+      ],
+      "engines": [
+        "cad_engine/engineering_feedback.py",
+        "cad_engine/quality_acceptance.py",
+        "cad_engine/mechanical_pipeline_v19.py"
+      ],
+      "drawing_outputs": [
+        "redline triage report",
+        "quality acceptance report"
+      ],
+      "qa_rules": [
+        "project_specific_quarantined",
+        "rulebook_finding_has_rule_and_regression",
+        "engine_bug_has_reproduction_and_regression",
+        "open_major_redline_zero",
+        "route_efficiency_minimum_90",
+        "equipment_placement_minimum_90",
+        "detail_completeness_minimum_95",
+        "each_main_plan_minimum_85",
+        "package_average_minimum_90"
+      ],
+      "regression_tests": [
+        "tests/test_engineering_feedback.py",
+        "tests/test_quality_acceptance.py",
+        "tests/test_mechanical_pipeline_v19.py"
+      ],
+      "docs": [
+        "docs/ENGINEER_FEEDBACK_QUALITY_ACCEPTANCE_STANDARD.md",
+        "docs/MECHANICAL_COORDINATION_V19.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-CALC-SANITY-001",
+      "title": "Mechanical calculation results are physically plausible and independently reviewed",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "network_design_basis",
+        "calculation_rows",
+        "calculation_totals",
+        "sensitivity_checks",
+        "selected_equipment",
+        "engineer_review"
+      ],
+      "engines": [
+        "cad_engine/calculation_reasonableness.py",
+        "cad_engine/mechanical_authority.py"
+      ],
+      "drawing_outputs": [
+        "calculation QA report",
+        "submission-ready mechanical artifact"
+      ],
+      "qa_rules": [
+        "canonical_units",
+        "finite_bounded_values",
+        "geometry_length_sanity",
+        "network_conservation",
+        "plan_riser_schedule_identity",
+        "aggregate_sanity",
+        "equipment_selection",
+        "sensitivity",
+        "calculation_provenance",
+        "independent_engineer_review"
+      ],
+      "regression_tests": [
+        "tests/test_calculation_reasonableness.py",
+        "tests/test_mechanical_pre_submission_delivery.py"
+      ],
+      "docs": [
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-VISUAL-QA-001",
+      "title": "Every issued mechanical sheet is independently rendered and visually release-gated",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "approved_drawing_manifest",
+        "visual_qa",
+        "independent_visual_review",
+        "board_level"
+      ],
+      "engines": [
+        "cad_engine/sheet_visual_qa.py",
+        "cad_engine/mechanical_cad_shell.py",
+        "cad_engine/main_transport.py",
+        "cad_engine/semantic_dimension_engine.py"
+      ],
+      "drawing_outputs": [
+        "per-sheet color preview",
+        "per-sheet monochrome preview",
+        "per-sheet zoom previews",
+        "visual QA JSON report",
+        "mechanical artifact",
+        "collision-checked plan dimensions"
+      ],
+      "qa_rules": [
+        "manifest_board_identity",
+        "valid_frame_and_scale",
+        "architecture_underlay_readability_on_architectural_plans",
+        "service_schematic_underlay_exemption",
+        "mechanical_network_readability",
+        "minimum_plotted_text",
+        "annotation_overlap_zero",
+        "symbol_and_route_gate_crosslinks",
+        "visual_density",
+        "riser_detail_schedule_note_legend_coverage",
+        "color_monochrome_survival",
+        "multi_zoom_render",
+        "baseline_non_regression",
+        "per_sheet_score",
+        "exact_file_immutable",
+        "independent_visual_review_for_submission",
+        "failed_visual_stage_diagnostics",
+        "dimension_collision_zero",
+        "dimension_exact_file_reopen"
+      ],
+      "regression_tests": [
+        "tests/test_sheet_visual_qa.py",
+        "tests/test_mechanical_error_surface.py",
+        "tests/test_mechanical_release_hardening_v18.py",
+        "tests/test_mechanical_pre_submission_delivery.py",
+        "tests/test_semantic_dimension_engine.py"
+      ],
+      "docs": [
+        "docs/ALL_SHEET_VISUAL_QA_STANDARD.md",
+        "docs/MECHANICAL_DRAWING_SET_STANDARD.md",
+        "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-ARCH-PRESERVE-001",
+      "title": "Architecture reconstruction and preservation requires all eighteen controls and an exact-file score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "approved_drawing_manifest",
+        "typed_levels",
+        "rooms",
+        "shafts",
+        "architecture_preservation_qa",
+        "visual_qa"
+      ],
+      "engines": [
+        "cad_engine/plan_segmentation.py",
+        "cad_engine/architecture_reconstruction.py",
+        "cad_engine/architecture_preservation_gate.py",
+        "cad_engine/mechanical_cad_preservation.py",
+        "cad_engine/mechanical_cad_shell.py",
+        "cad_engine/semantic_dimension_engine.py"
+      ],
+      "drawing_outputs": [
+        "architectural underlay on every plan board",
+        "architecture preservation QA report",
+        "six-category preservation score",
+        "source dimension evidence registry"
+      ],
+      "qa_rules": [
+        "immutable_snapshot",
+        "coordinate_calibration",
+        "drawing_separation",
+        "level_binding",
+        "wall_reconstruction",
+        "typed_openings_and_verticals",
+        "closed_room_identity",
+        "shaft_wet_core_evidence",
+        "safe_deduplication",
+        "mutation_prohibition",
+        "work_copy_only",
+        "atomic_rollback",
+        "exact_entity_diff",
+        "topology_preservation",
+        "per_sheet_visibility",
+        "graphical_sheet_qa",
+        "destructive_regression",
+        "exact_file_reopen",
+        "score_exactly_100",
+        "critical_source_dimension_preservation",
+        "critical_source_dimension_conflict_zero"
+      ],
+      "regression_tests": [
+        "tests/test_architecture_preservation_100.py",
+        "tests/test_architecture_preservation_gate_v16.py",
+        "tests/test_architecture_preservation_integration_v16.py",
+        "tests/test_sheet_visual_qa.py",
+        "tests/test_semantic_dimension_engine.py"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE_PRESERVATION_100_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
+        "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-DRAWING-SCOPE-001",
+      "title": "Mechanical drawing scope requires eighteen deterministic controls and a score of 100 before approval",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "approved_drawing_manifest",
+        "typed_levels",
+        "typical_groups",
+        "system_scope",
+        "level_system_matrix",
+        "scope_qa"
+      ],
+      "engines": [
+        "app/mechanical_workflow.py",
+        "app/mechanical_drawing_set.py",
+        "cad_engine/mechanical_release_scope.py",
+        "app/manifest_contract_v2.py"
+      ],
+      "drawing_outputs": [
+        "mechanical drawing proposal",
+        "level-by-system matrix",
+        "frozen approved manifest",
+        "scope QA report"
+      ],
+      "qa_rules": [
+        "drawing_inventory",
+        "drawing_type_classification",
+        "level_binding",
+        "typical_floor_evidence",
+        "system_scope_evidence",
+        "unsupported_system_zero",
+        "required_system_omission_zero",
+        "drawing_role_separation",
+        "level_system_matrix",
+        "deterministic_manifest_identity",
+        "manifest_reconciliation",
+        "plan_riser_calc_schedule_identity",
+        "ambiguity_fail_closed",
+        "pre_calculation_scope_gate",
+        "exact_output_parity_contract",
+        "destructive_regression_contract",
+        "blind_reference_isolation",
+        "exact_reopen_contract",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_drawing_scope_100.py",
+        "tests/test_mechanical_drawing_set.py",
+        "tests/test_mechanical_workflow.py",
+        "tests/test_manifest_contract_v2.py"
+      ],
+      "docs": [
+        "docs/DRAWING_SCOPE_100_STANDARD.md",
+        "docs/MECHANICAL_DRAWING_SET_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-EQUIP-002",
+      "title": "Equipment selection and placement require eighteen controls and an exact score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "rooms",
+        "equipment_requirements",
+        "calculation_rows",
+        "selected_equipment",
+        "manufacturer_catalogue_id",
+        "placement_candidates",
+        "equipment_routes",
+        "equipment_schedule",
+        "equipment_risers",
+        "visual_qa"
+      ],
+      "engines": [
+        "cad_engine/mechanical_manufacturer_selector.py",
+        "cad_engine/equipment_selection_placement_gate.py",
+        "cad_engine/mechanical_authority.py"
+      ],
+      "drawing_outputs": [
+        "equipment plans",
+        "equipment risers",
+        "equipment schedule",
+        "equipment selection and placement QA report"
+      ],
+      "qa_rules": [
+        "typed_room_model",
+        "existing_equipment_classification",
+        "design_basis_complete",
+        "space_by_space_demand",
+        "water_service_duties",
+        "ventilation_duties",
+        "official_catalogue_evidence",
+        "deterministic_selection",
+        "capacity_match",
+        "candidate_location_evidence",
+        "architectural_host_validity",
+        "service_clearance",
+        "network_connection_complete",
+        "safety_and_code_clearance",
+        "multi_criteria_placement",
+        "plan_riser_schedule_identity",
+        "equipment_visual_qa",
+        "exact_output_release_evidence",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_equipment_selection_placement_100.py",
+        "tests/test_manufacturer_selector_v19.py",
+        "tests/test_mechanical_pre_submission_delivery.py"
+      ],
+      "docs": [
+        "docs/EQUIPMENT_SELECTION_PLACEMENT_100_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-FINAL-ISSUE-001",
+      "title": "Final engineering and exact issue package require eighteen controls and an exact score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "approved_drawing_manifest",
+        "approved_architecture_revision",
+        "architecture_sha256",
+        "active_systems",
+        "network_graph",
+        "calculation_rows",
+        "selected_equipment",
+        "submission_checklist",
+        "engineer_review",
+        "release_artifact_hashes"
+      ],
+      "engines": [
+        "cad_engine/final_engineering_release_gate.py",
+        "cad_engine/mechanical_authority.py",
+        "cad_engine/mechanical_release_contract.py"
+      ],
+      "drawing_outputs": [
+        "final CAD",
+        "final PDF",
+        "calculation book",
+        "clash report",
+        "equipment schedule",
+        "datasheet package",
+        "signed submission checklist",
+        "final engineering release QA report"
+      ],
+      "qa_rules": [
+        "governed_submission_checklist",
+        "drawing_scope_complete",
+        "current_architecture_bound",
+        "cross_sheet_consistency",
+        "plan_riser_reconciliation",
+        "calculation_traceability",
+        "hvac_engineering_complete",
+        "water_engineering_complete",
+        "sanitary_vent_engineering_complete",
+        "gas_engineering_complete",
+        "equipment_release_complete",
+        "coordination_constructability",
+        "executable_details_complete",
+        "sheet_documentation_complete",
+        "all_sheet_visual_qa",
+        "exact_file_technical_qa",
+        "independent_engineer_review",
+        "immutable_release_package",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_final_engineering_release_100.py",
+        "tests/test_mechanical_pre_submission_delivery.py",
+        "tests/test_mechanical_network_authority_v19.py"
+      ],
+      "docs": [
+        "docs/FINAL_ENGINEERING_RELEASE_100_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-ARCH-RECOG-001",
+      "title": "Architecture space and equipment recognition requires eighteen controls and an exact score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "architecture_sha256",
+        "approved_architecture_revision",
+        "calibration",
+        "frames",
+        "levels",
+        "geometry",
+        "rooms",
+        "shafts",
+        "fixtures",
+        "equipment",
+        "recognition_evidence",
+        "visual_overlay_qa"
+      ],
+      "engines": [
+        "cad_engine/plan_segmentation.py",
+        "cad_engine/architecture_reconstruction.py",
+        "cad_engine/fixture_recognition.py",
+        "cad_engine/architecture_space_equipment_gate.py",
+        "cad_engine/mechanical_authority.py"
+      ],
+      "drawing_outputs": [
+        "typed architecture model",
+        "space inventory",
+        "fixture and equipment inventory",
+        "recognition visual overlays",
+        "recognition QA report"
+      ],
+      "qa_rules": [
+        "immutable_source_identity",
+        "units_scale_orientation_bounds",
+        "deterministic_frame_separation",
+        "level_view_binding",
+        "wall_geometry_reconstruction",
+        "opening_vertical_obstruction_typing",
+        "closed_space_boundaries",
+        "multilingual_label_binding",
+        "space_use_classification",
+        "shaft_wet_core_recognition",
+        "multi_signal_object_recognition",
+        "object_status_confidence",
+        "object_type_orientation",
+        "host_and_port_binding",
+        "view_aware_deduplication",
+        "semantic_spatial_consistency",
+        "frame_visual_overlay_qa",
+        "exact_source_reopen_and_completeness",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_architecture_space_equipment_100.py",
+        "tests/test_fixture_recognition_v14.py",
+        "tests/test_plan_frame_separation.py",
+        "tests/test_mechanical_pre_submission_delivery.py"
+      ],
+      "docs": [
+        "docs/ARCHITECTURE_SPACE_EQUIPMENT_100_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-DOC-CONTENT-001",
+      "title": "Details, schedules, notes and legends require eighteen controls and an exact score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "active_systems",
+        "levels",
+        "spaces",
+        "equipment",
+        "network_graph",
+        "calculation_rows",
+        "document_requirements",
+        "detail_ids",
+        "schedule_ids",
+        "note_ids",
+        "legend_symbols"
+      ],
+      "engines": [
+        "cad_engine/mechanical_documentation.py",
+        "cad_engine/detail_library.py",
+        "cad_engine/dynamic_detail_engine.py",
+        "cad_engine/documentation_content_gate.py",
+        "cad_engine/mechanical_authority.py"
+      ],
+      "drawing_outputs": [
+        "executable details",
+        "equipment schedules",
+        "network schedules",
+        "project notes",
+        "legends",
+        "documentation QA report"
+      ],
+      "qa_rules": [
+        "project_scope_inventory",
+        "required_document_matrix",
+        "standard_detail_library",
+        "calculation_bound_parameters",
+        "active_system_detail_selection",
+        "constructability_detail_coverage",
+        "equipment_schedule_from_model",
+        "network_schedule_complete",
+        "plan_riser_schedule_detail_identity",
+        "project_specific_notes",
+        "standards_provenance",
+        "used_symbol_legend",
+        "symbol_code_uniqueness",
+        "sheet_composition",
+        "printed_readability",
+        "coordination_constructability",
+        "sheet_by_sheet_document_qa",
+        "exact_output_document_parity",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_documentation_content_100.py",
+        "tests/test_parametric_documentation_v19.py",
+        "tests/test_dynamic_detail_engine_v14.py",
+        "tests/test_mechanical_pre_submission_delivery.py"
+      ],
+      "docs": [
+        "docs/DOCUMENTATION_CONTENT_100_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-BASIS-002",
+      "title": "Questionnaire and immutable design basis require eighteen controls and an exact score of 100",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "architecture_facts",
+        "answer_records",
+        "system_scope",
+        "numeric_inputs",
+        "climate_basis",
+        "system_design_basis",
+        "equipment_preferences",
+        "regulatory_facts",
+        "approved_summary",
+        "locked_revision"
+      ],
+      "engines": [
+        "app/mechanical_basis_contract.py",
+        "app/design_basis_questionnaire_gate.py",
+        "app/mechanical_workflow.py",
+        "cad_engine/mechanical_authority.py"
+      ],
+      "drawing_outputs": [
+        "questionnaire",
+        "design-basis summary",
+        "design-basis QA report",
+        "submission-ready mechanical artifact"
+      ],
+      "qa_rules": [
+        "architecture_fact_extraction",
+        "fact_source_classification",
+        "system_scope_resolution",
+        "dynamic_question_applicability",
+        "governed_prior_answer_reuse",
+        "cross_project_answer_scope",
+        "canonical_answer_normalization",
+        "numeric_value_unit_validation",
+        "climate_location_basis",
+        "system_engineering_basis",
+        "equipment_owner_preferences",
+        "regulatory_project_facts",
+        "architecture_answer_consistency",
+        "question_dependency_graph",
+        "human_readable_basis_summary",
+        "immutable_approved_revision",
+        "persistence_and_destructive_qa",
+        "generation_release_gate",
+        "score_exactly_100"
+      ],
+      "regression_tests": [
+        "tests/test_questionnaire_design_basis_100.py",
+        "tests/test_mechanical_basis_contract_v18_5.py",
+        "tests/test_mechanical_workflow.py",
+        "tests/test_unified_questionnaire_v5.py",
+        "tests/test_mechanical_pre_submission_delivery.py"
+      ],
+      "docs": [
+        "docs/QUESTIONNAIRE_DESIGN_BASIS_100_STANDARD.md",
+        "docs/MECHANICAL_DESIGN_BASIS_CONTRACT.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-DIM-001",
+      "title": "Semantic dimensioning preserves source evidence and produces minimum reference-bound construction set-out",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "typed_levels",
+        "rooms",
+        "shafts",
+        "network_graph",
+        "approved_drawing_manifest",
+        "dimension_semantics"
+      ],
+      "engines": [
+        "cad_engine/semantic_dimension_engine.py",
+        "cad_engine/mechanical_design_core.py",
+        "cad_engine/mechanical_cad_preservation.py",
+        "cad_engine/mechanical_pipeline_construction_delivery.py"
+      ],
+      "drawing_outputs": [
+        "source dimension registry",
+        "regenerated critical architectural reference dimensions",
+        "Mechanical set-out dimensions",
+        "semantic dimension QA report"
+      ],
+      "qa_rules": [
+        "source_dimension_evidence_preserved",
+        "displayed_override_not_numeric_authority",
+        "critical_source_conflict_zero",
+        "stable_reference_binding",
+        "minimum_two_axis_setout_for_free_targets",
+        "exact_duplicate_dimension_zero",
+        "dimension_collision_zero",
+        "exact_file_dimension_identity",
+        "dimension_count_not_authority",
+        "unit_metadata_geometry_reconciliation",
+        "canonical_metre_value_traceability",
+        "governed_requirement_rule_identity",
+        "code_clearance_canonical_minimum",
+        "code_clearance_actual_geometry_compliance"
+      ],
+      "regression_tests": [
+        "tests/test_semantic_dimension_engine.py",
+        "tests/test_mechanical_construction_delivery.py"
+      ],
+      "docs": [
+        "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    }
   ]
 }

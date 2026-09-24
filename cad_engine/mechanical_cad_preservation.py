@@ -34,6 +34,7 @@ from .architecture_preservation_gate import (
     validate_visibility,
     finalize_gate,
 )
+from .semantic_dimension_engine import source_preservation_complete
 
 PLAN_FAMILIES={"ROOF","SANITARY_VENT","WATER","HEATING","GAS","SPLIT_AC","EXHAUST"}
 PROTECTED={"CRITICAL","IMPORTANT"}
@@ -306,8 +307,8 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
     compose=base_report.get("composition") or {}
     boards=compose.get("boards") or {}
     rows=compose.get("manifest") or []
-    sheet_results=[]; all_missing=[]; topology_ok=True; visibility_ok=True
-    coordinate_evidence=[]
+    sheet_results=[]; all_missing=[]; topology_ok=True; visibility_ok=True; source_dimensions_ok=True
+    coordinate_evidence=[]; source_dimension_evidence=[]
 
     for row in rows:
         if row.get("family") not in PLAN_FAMILIES:
@@ -339,6 +340,13 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
         out_entities=_entities_in_output_board(out_doc,plan_area,source_layers)
         after=_snapshot_selected(out_entities,f"OUT-{row.get('code')}")
         match=_match_transformed_architecture(before,after,tuple(plan["bounds"]),plan_area)
+        dimension_report=((compose.get("dimensioning") or {}).get(row.get("code")) or {})
+        dimension_preservation=source_preservation_complete(dimension_report)
+        source_dimensions_ok=source_dimensions_ok and bool(dimension_preservation.get("pass"))
+        source_dimension_evidence.append({
+            "sheet":row.get("code"),
+            **dimension_preservation,
+        })
         topo=validate_topology(before,_snapshot_in_source_coordinates(after,tuple(plan["bounds"]),plan_area))
         # Visibility is assessed against the actual drawable sheet region, not
         # only the fitting rectangle.  Architectural blocks/text may extend
@@ -358,6 +366,7 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
             "status":"PASS" if match["pass"] and topo["pass"] and vis["pass"] else "FAIL",
             "source_architecture_count":before["entity_count"],"output_architecture_count":after["entity_count"],
             "preservation_match":match,"topology":topo,"visibility":vis,
+            "source_dimension_preservation":dimension_preservation,
         })
 
     diff={"critical_deleted":[m for m in all_missing if (m.get("source") or {}).get("criticality")=="CRITICAL"]}
@@ -368,6 +377,12 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
     mechanical={"pass":not all_missing and (base_report.get("dxf_qa") or {}).get("status")=="PASS"}
     regression={"pass":True,"source":"architecture-preservation-canonical CI release gate"}
     final=finalize_gate(diff=diff,topology=topology,visibility=visibility,mechanical=mechanical,regression=regression)
+    if not source_dimensions_ok:
+        final["status"]="FAIL"; final["action"]="ROLLBACK_AND_BLOCK_DELIVERY"
+        final.setdefault("failures",[]).append("source_dimension_preservation_failed")
+        final.setdefault("checks",{})["source_dimension_preservation"]=False
+    else:
+        final.setdefault("checks",{})["source_dimension_preservation"]=True
     if important_missing:
         final["status"]="FAIL"; final["action"]="ROLLBACK_AND_BLOCK_DELIVERY"
         final.setdefault("failures",[]).append("important_architecture_deleted")
@@ -400,6 +415,8 @@ def evaluate_architecture_preservation(src:Path,dst:Path,base_report:dict,answer
                 shaft.get("plan_id") and shaft.get("polygon") and float(shaft.get("area") or 0)>0
                 for shaft in detected_shafts
             ),
+            "source_dimension_preservation_complete":source_dimensions_ok,
+            "source_dimension_evidence":source_dimension_evidence,
         },
     }
 

@@ -1,0 +1,126 @@
+{
+  "change_id": "SWCIS-2026-0280",
+  "summary": "Add semantic, source-preserving, drawing-profile-aware dimension generation and QA for architectural underlays and Mechanical construction drawings.",
+  "requester": "mostafavidub",
+  "change_types": [
+    "rule",
+    "drawing_output",
+    "test",
+    "documentation",
+    "governance",
+    "ui_api"
+  ],
+  "changed_rule_ids": [
+    "MEP-ARCH-PRESERVE-001",
+    "MEP-CONSTRUCT-001",
+    "MEP-VISUAL-QA-001",
+    "MEP-DIM-001"
+  ],
+  "impacted_modules": [
+    "rule_book",
+    "pmm",
+    "questionnaire",
+    "planner",
+    "cad_designer",
+    "routing",
+    "sizing",
+    "equipment",
+    "manufacturer_selector",
+    "detail_riser",
+    "qa",
+    "manifest",
+    "ui_api",
+    "docs",
+    "versioning",
+    "migration",
+    "governance",
+    "deployment"
+  ],
+  "impact_notes": {
+    "rule_book": "Strengthen existing preservation and construction-document rules so dimensions are semantic, reference-bound and QA-gated rather than count-gated.",
+    "pmm": "Verified not affected: no PMM schema or mechanical design-basis field changes; dimension intent remains a drawing/documentation model.",
+    "questionnaire": "Verified not affected: no new user questionnaire input is required for deterministic dimensioning.",
+    "planner": "Verified not affected: approved drawing scope remains authoritative; dimension profiles consume the existing drawing role.",
+    "cad_designer": "Add source-dimension registry, semantic classification, determinacy-based requirement selection, placement and associative Planha-owned DXF dimensions.",
+    "routing": "Verified not affected: dimensioning consumes final geometry and never changes route topology.",
+    "sizing": "Verified not affected: dimensioning never changes engineering sizing or calculation authority.",
+    "equipment": "Verified not affected: equipment geometry may be a dimension target but equipment selection remains unchanged.",
+    "manufacturer_selector": "Verified not affected: manufacturer selection and catalogue evidence are unchanged.",
+    "detail_riser": "Verify downstream documentation remains readable; plan dimensions do not alter riser/detail engineering identity.",
+    "qa": "Replace entity-count dimension acceptance with semantic completeness, source preservation, geometry consistency, redundancy, chain and collision checks.",
+    "manifest": "Verified not affected structurally: no manifest schema change; dimension QA is attached to the existing artifact/report.",
+    "ui_api": "Shared DXF unit-sanity logic is factored into app/drawing_unit_sanity.py and consumed by app/unit_sanity.py plus the CAD dimension engine. No external UI, route, request/response, questionnaire, pricing or public API contract changes; this is an internal single-authority refactor with stronger unit evidence.",
+    "docs": "Document the semantic dimension contract, source preservation policy, drawing profiles and QA behavior.",
+    "versioning": "Bump SWCIS minor because locked traceability/gate semantics are strengthened.",
+    "migration": "No persisted PMM/schema migration; existing DXF inputs remain accepted and are interpreted through the new registry.",
+    "governance": "Update traceability, capability/path classification and versioned change evidence.",
+    "deployment": "No deployment in this change execution; protected merge and staging/production remain owner-controlled."
+  },
+  "evidence": {
+    "traceability": [
+      "MEP-DIM-001 -> cad_engine/semantic_dimension_engine.py -> source registry / reference-bound set-out -> exact-file QA -> tests/test_semantic_dimension_engine.py",
+      "MEP-ARCH-PRESERVE-001 -> mechanical_cad_preservation source-dimension preservation -> exact_entity_diff",
+      "MEP-CONSTRUCT-001 -> dimension_semantics contract -> exact-file post-render authority"
+    ],
+    "tests": [
+      "tests/test_semantic_dimension_engine.py covers literal-precision override classification, source preservation, zero dimensions, unit mismatch, local/rotated axes, determinacy, duplicate removal, governed clearances and exact-file XData traceability",
+      "tests/test_mechanical_construction_delivery.py covers count-only rejection, semantic conflict failure and governed exact-file deferral",
+      "PR #286 head 404f9f3b45f4f2ec128d100332705fbba9cea590: all 13 required GitHub workflows completed successfully, including Web Regression Tests, Mechanical Coordination, Mechanical Authority, SWCIS Governance, Architecture Preservation, Reference Parity and Engineering Acceptance"
+    ],
+    "docs": [
+      "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md canonical SWCIS 4.39.0",
+      "standards/contract-changelog.json GOV-2026-045"
+    ],
+    "version_bump": [
+      "SWCIS 4.38.1 -> 4.39.0 because dependency graph, traceability and gate semantics changed"
+    ],
+    "migration": [
+      "none: additive drawing/documentation model; no PMM persistence change"
+    ],
+    "golden_regression": [
+      "standards/golden/mechanical-steps-14-19.baseline.json includes dimension_semantics=PASS",
+      "project-agnostic synthetic dimension regressions passed; private source drawings remain comparison-only and are not committed",
+      "aggregate private-reference benchmark rechecked 6 architectural DXFs: 835 dimensions total = 810 linear/rotated + 25 aligned; 34 explicit text overrides and 7 zero-measurement dimensions; source type split 810 linear/rotated + 25 aligned is now explicitly covered by registry evidence"
+    ],
+    "semantic_diff": [
+      "source dimensions become immutable semantic evidence with measured/displayed separation, unit evidence and conflict status",
+      "Mechanical plans add only reference-bound set-out for construction-critical targets; routing/sizing authority is unchanged",
+      "code/regulatory clearances are accepted only as explicit governed requirements with Rule ID, stable references and canonical metre minimums; no visual inference",
+      "count-only DIMENSION acceptance is removed as engineering authority",
+      "source registry preserves raw/base DIMTYPE, source dimension family and source orientation/angle; Planha may standardize rendered entity type without losing consultant evidence"
+    ],
+    "artifact_diff": [
+      "applicable plan boards gain Planha-owned SOURCE/SETOUT dimensions with XData intent/reference/value identity",
+      "source architecture dimensions remain preservation evidence; view suppression never deletes project knowledge"
+    ],
+    "numeric_diff": [
+      "native drawing-unit measurement, effective scale-to-metre and canonical metre value are independently traceable through exact-file XData",
+      "all 6 comparison DXFs report $INSUNITS=4 but dimension medians are 2.10-4.55 drawing units; unit sanity consistently resolves effective_scale_to_m=1.0 with high-confidence mm-header-to-m evidence",
+      "current literal-precision classifier identifies 16 numeric overrides and 18 non-numeric overrides across the 6 comparison drawings; displayed text remains evidence, never calculation authority",
+      "material contradiction evidence remains visible, including a 5.95 geometric measurement displayed as 7.00; zero-measurement dimensions remain review blockers when semantically critical"
+    ],
+    "contract_diff": [
+      "new locked rule MEP-DIM-001",
+      "construction delivery requires semantic dimension evidence or explicit exact-file post-render authority",
+      "architecture preservation exact_entity_diff now requires source dimension preservation",
+      "No externally visible UI/API contract change; app-layer impact is limited to shared internal DXF unit-scale inference authority.",
+      "Unit inference remains fail-closed/evidence-backed and is reused by both analysis and semantic dimension output."
+    ],
+    "deployment_plan": [
+      "merge the fully validated PR into main after required checks pass",
+      "do not run staging or production deployment in this task; staging/production remain separate owner-approved actions"
+    ],
+    "rollback_plan": [
+      "revert the protected merge commit; no data migration or destructive source mutation"
+    ]
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 5,
+    "detectability": 2,
+    "score": 30,
+    "rationale": "Dimensioning changes construction-document semantics and source preservation. Fail-closed semantic QA, exact-file reopen checks and isolated branch/PR validation make defects detectable before release."
+  },
+  "waiver": null
+}

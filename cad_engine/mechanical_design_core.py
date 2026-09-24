@@ -39,6 +39,10 @@ from .authority_architecture import (
     validate_authority_contract,
 )
 from .equipment_representation import validate_split_representation
+from .semantic_dimension_engine import (
+    build_and_materialize_plan_dimensions,
+    validate_exact_file_dimensions,
+)
 from app.mechanical_basis_contract import canonical_cooling_system, canonical_heating_system, normalize_answers
 
 
@@ -806,7 +810,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
             try:doc.layouts.new(row["code"])
             except Exception:pass
     shared_north=_shared_architectural_north(doc, arch.get("plans") or [])
-    copy_failures=[];overlay_reports=[];detail_index=0;north_records={}
+    copy_failures=[];overlay_reports=[];detail_index=0;north_records={};dimensioning={}
     for row in manifest_rows:
         b=boards[row["old_sheet"]];_draw_titleblock(doc,msp,b,project_name=project_name);plan=None
         if b.family in PLAN_FAMILIES:
@@ -816,6 +820,9 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
                 if b.family=="ROOF" or (b.family=="SPLIT_AC" and b.level=="ROOF"):
                     overlay_reports.append({"sheet":b.code,"roof_outdoor_units":_draw_roof_hvac_equipment(doc,msp,b,pipeline)})
                 else:overlay_reports.append({"sheet":b.code,**_draw_plan_overlay(doc,msp,b,plan,pipeline)})
+                dimensioning[b.code]=build_and_materialize_plan_dimensions(
+                    doc,msp,vars(b),plan,arch,pipeline,b.family,b.level
+                )
             elif b.level=="SERVICE":
                 _ensure_layer(doc,"ENGITOOLS-M-NOTES",7,18)
                 x1,y1,x2,y2=b.plan_area
@@ -863,7 +870,7 @@ def compose_authority_dxf(src: Path, dst: Path, pipeline: dict, authority: dict,
         try:vp=doc.viewports.get("*Active")[0];vp.dxf.center=((min_x+max_x)/2,(min_y+max_y)/2);vp.dxf.height=(max_y-min_y)*1.03
         except Exception:pass
     doc.saveas(dst)
-    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records}
+    return {"manifest":manifest_rows,"boards":{k:vars(v) for k,v in boards.items()},"copy_failures":copy_failures,"overlay_reports":overlay_reports,"north":north_records,"dimensioning":dimensioning}
 
 
 def _overlap(ex,b):return not (ex.extmax.x < b[0] or ex.extmin.x > b[2] or ex.extmax.y < b[1] or ex.extmin.y > b[3])
@@ -882,6 +889,8 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
                 if _overlap(ex,b.title_area):title_overlaps[key].append(str(getattr(e.dxf,"handle","")))
                 break
     errors=[]
+    dimension_qa=validate_exact_file_dimensions(path,compose_report)
+    if dimension_qa.get("status")!="PASS":errors.append("semantic_dimension_qa")
     if compose_report.get("copy_failures"):errors.append("architecture_copy_failures")
     if sum(len(v) for v in title_overlaps.values()):errors.append("drawing_titleblock_overlap")
     if any(sheet_content[k]==0 for k in boards):errors.append("blank_sheet")
@@ -895,7 +904,7 @@ def qa_authority_dxf(path: Path, compose_report: dict) -> dict:
     # directional authority (never fabricate an arrow), but allow the drawing
     # set to be issued with an explicit machine-readable coordination warning.
     warnings=[f"architectural_north_not_provided:{x}" for x in missing_north]
-    return {"version":"mechanical-authority-dxf-qa-canonical.1","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north)}}
+    return {"version":"mechanical-authority-dxf-qa-canonical.2","status":"PASS" if not errors else "FAIL","errors":errors,"warnings":warnings,"dimension_qa":dimension_qa,"metrics":{"sheets":len(boards),"titleblock_overlap":sum(len(v) for v in title_overlaps.values()),"copy_failures":len(compose_report.get("copy_failures") or []),"blank_sheets":sum(1 for k in boards if sheet_content[k]==0),"north_from_architecture":len(plan_boards)-len(missing_north),"north_coordination_warnings":len(missing_north),"semantic_dimension_sheets":len((compose_report.get("dimensioning") or {}))}}
 
 
 def design_mechanical_authority(src: Path, dst: Path, answers: dict | None=None, plan_analysis: dict | None=None) -> dict:

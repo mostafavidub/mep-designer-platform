@@ -49,6 +49,52 @@ def validate_cad_construction_inventory(inventory, required_types):
             "inventory":{key:(inventory or {}).get(key) for key in sorted(required)},
             "policy":"Construction entities are scope-driven; reference entity counts are not targets"}
 
+def validate_dimension_semantics(dimension_semantics, required_types):
+    """A positive DIMENSION count is never proof of a constructible drawing."""
+    if "DIMENSION" not in set(required_types or []):
+        return {"status":"PASS","required":False,"policy":"dimension semantics not required by scope"}
+    if not isinstance(dimension_semantics,dict) or not dimension_semantics:
+        return {"status":"INPUT_REQUIRED","missing_inputs":["DIMENSION_SEMANTICS"],"required":True}
+    if (
+        dimension_semantics.get("status")=="DEFERRED"
+        and dimension_semantics.get("authority")=="EXACT_FILE_POST_RENDER"
+        and dimension_semantics.get("exact_file_gate_required") is True
+    ):
+        return {
+            "status":"PASS","required":True,"deferred":True,
+            "authority":"EXACT_FILE_POST_RENDER",
+            "policy":"pre-render contract explicitly delegates dimension proof to the mandatory exact-file semantic gate",
+        }
+    missing=[]
+    required_fields={
+        "status","source_preservation_complete","missing_required_dimensions",
+        "critical_source_conflicts","dimension_collisions","setout_determinacy_complete",
+    }
+    for field in sorted(required_fields):
+        if field not in dimension_semantics:missing.append("dimension_semantics."+field)
+    if missing:
+        return {"status":"INPUT_REQUIRED","missing_inputs":missing,"required":True}
+    errors=[]
+    if dimension_semantics.get("status")!="PASS":errors.append("DIMENSION_SEMANTICS_NOT_PASS")
+    if dimension_semantics.get("source_preservation_complete") is not True:errors.append("SOURCE_DIMENSION_PRESERVATION_INCOMPLETE")
+    if int(dimension_semantics.get("missing_required_dimensions") or 0)!=0:errors.append("MISSING_REQUIRED_DIMENSIONS")
+    if int(dimension_semantics.get("critical_source_conflicts") or 0)!=0:errors.append("CRITICAL_SOURCE_DIMENSION_CONFLICT")
+    if int(dimension_semantics.get("dimension_collisions") or 0)!=0:errors.append("DIMENSION_COLLISION")
+    if dimension_semantics.get("setout_determinacy_complete") is not True:errors.append("SETOUT_DETERMINACY_INCOMPLETE")
+    return {
+        "status":"PASS" if not errors else "FAIL",
+        "errors":errors,
+        "required":True,
+        "summary":{
+            "source_preservation_complete":dimension_semantics.get("source_preservation_complete"),
+            "missing_required_dimensions":dimension_semantics.get("missing_required_dimensions"),
+            "critical_source_conflicts":dimension_semantics.get("critical_source_conflicts"),
+            "dimension_collisions":dimension_semantics.get("dimension_collisions"),
+            "setout_determinacy_complete":dimension_semantics.get("setout_determinacy_complete"),
+        },
+        "policy":"semantic dimension completeness replaces entity-count acceptance",
+    }
+
 
 def build_drawing_index(manifest_sheets, dxf_layouts):
     required={"code","title","revision","status"};missing=[];rows=[]
@@ -89,12 +135,14 @@ def build_final_equipment_schedule(equipment_rows):
 def build_construction_delivery(payload):
     details=validate_parametric_detail_register(payload.get("details") or [],payload.get("plan_detail_references") or [],
                                                 payload.get("manufacturer_database") or {})
-    cad=validate_cad_construction_inventory(payload.get("cad_inventory") or {},payload.get("required_cad_entity_types") or [])
+    required_cad=payload.get("required_cad_entity_types") or []
+    cad=validate_cad_construction_inventory(payload.get("cad_inventory") or {},required_cad)
+    dimensions=validate_dimension_semantics(payload.get("dimension_semantics"),required_cad)
     index=build_drawing_index(payload.get("manifest_sheets") or [],payload.get("dxf_layouts") or [])
     schedule=build_final_equipment_schedule(payload.get("equipment_schedule") or [])
     request=payload.get("annotation_solver") or {}
     annotations=solve_annotations(request.get("plan") or {},request.get("requests") or [],request.get("config") or {})
-    phases={"parametric_details":details,"cad_materialization":cad,"drawing_index":index,
+    phases={"parametric_details":details,"cad_materialization":cad,"dimension_semantics":dimensions,"drawing_index":index,
             "equipment_schedule":schedule,"annotations":annotations}
     failed=[name for name,result in phases.items() if result.get("status")=="FAIL"]
     unresolved=[name for name,result in phases.items() if result.get("status")!="PASS" and name not in failed]
