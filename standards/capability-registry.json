@@ -644,7 +644,23 @@
         "governed_compliance_requirement_input",
         "code_clearance_rule_id_traceability",
         "canonical_clearance_minimum_validation",
-        "source_dimension_type_orientation_evidence"
+        "source_dimension_type_orientation_evidence",
+        "dimension_intent_v2_ontology",
+        "setout_check_role",
+        "building_reference_model_v2",
+        "wall_reference_basis_checkpoint",
+        "semantic_building_envelope",
+        "grid_intersection_references",
+        "full_plan_determinacy_graph",
+        "minimum_determining_set",
+        "drawing_profile_requirement_engine",
+        "source_geometry_intent_reconciliation",
+        "role_aware_redundancy",
+        "professional_dimension_placement",
+        "construction_determinacy_gate",
+        "datum_class_chain_closure",
+        "synthetic_25_scenario_regression",
+        "shadow_v1_v2_comparison"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -657,7 +673,15 @@
         "test_true_millimetre_dimension_keeps_header_scale_and_normalizes_to_metres",
         "test_governed_code_clearance_requires_rule_stable_references_and_canonical_minimum",
         "test_governed_code_clearance_compares_actual_geometry_in_metres_not_raw_dxf_units",
-        "test_source_registry_preserves_linear_and_aligned_dimension_type_orientation"
+        "test_source_registry_preserves_linear_and_aligned_dimension_type_orientation",
+        "test_wall_reference_basis_is_a_real_human_checkpoint_not_a_hidden_guess",
+        "test_envelope_uses_semantic_polygon_not_bounding_box",
+        "test_point_target_requires_two_independent_constraints",
+        "test_minimum_solver_selects_two_independent_constraints_not_all_candidates",
+        "test_intentional_check_survives_minimum_solver_even_when_redundant",
+        "test_source_reconciliation_distinguishes_verified_conflict_and_unknown",
+        "test_chain_closure_never_mixes_grid_and_envelope_datum_classes",
+        "test_shadow_engine_does_not_change_visible_output_and_resolves_mm_header_metre_geometry"
       ]
     }
   ]
