@@ -136,7 +136,7 @@ def _override_status(measured, displayed_text):
     if measured<=1e-12:
         return "CONFLICT"
     delta=abs(float(numeric)-measured)
-    return "MINOR_OVERRIDE" if delta<=max(measured*.01,1e-6) else "CONFLICT"
+    return "MINOR_OVERRIDE" if delta<=max(measured*.03,1e-6) else "CONFLICT"
 
 
 def _display_number(value):
