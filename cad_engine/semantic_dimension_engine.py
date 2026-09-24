@@ -22,6 +22,7 @@ from typing import Iterable
 
 import ezdxf
 from ezdxf import bbox
+from app.drawing_unit_sanity import infer_drawing_unit_scale
 from app.drawing_unit_sanity import infer_drawing_unit_scale as infer_dimension_unit_evidence
 
 
@@ -364,7 +365,7 @@ def extract_source_dimension_registry(doc_or_path, plan_bounds=None, architectur
     if plan_bounds is None:
         return {"status":"INPUT_REQUIRED","records":[],"conflicts":[],"missing_inputs":["PLAN_BOUNDS"]}
     refs = list(reference_catalog) if reference_catalog is not None else build_reference_catalog(doc, plan_bounds, architecture=architecture, plan_id=plan_id)
-    unit_evidence=infer_dimension_unit_evidence(doc)
+    unit_evidence=infer_drawing_unit_scale(doc)
     effective_scale=unit_evidence.get("effective_scale_to_m")
     span = max(
         abs(float(plan_bounds[2]) - float(plan_bounds[0])),
