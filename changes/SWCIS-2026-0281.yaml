@@ -2,16 +2,34 @@
   "change_id": "SWCIS-2026-0281",
   "summary": "Lock Planha staging to https://stage.planha.com and prevent Railway technical hostnames from becoming user-facing staging links.",
   "requester": "mostafavidub",
-  "change_types": ["ui_api", "governance", "deployment", "test", "documentation", "versioning"],
+  "change_types": [
+    "ui_api",
+    "governance",
+    "deployment",
+    "test",
+    "documentation",
+    "versioning"
+  ],
   "changed_rule_ids": [],
-  "impacted_modules": ["ui_api", "qa", "docs", "versioning", "governance", "deployment"],
+  "impacted_modules": [
+    "ui_api",
+    "qa",
+    "docs",
+    "versioning",
+    "governance",
+    "deployment",
+    "manifest",
+    "migration"
+  ],
   "impact_notes": {
     "ui_api": "Staging runtime validates its canonical public origin and redirects the Railway technical hostname to stage.planha.com.",
     "qa": "Adds positive and destructive tests for staging canonical URL enforcement, technical-host redirects, and noindex behavior.",
     "docs": "Records stage.planha.com as the sole shareable staging origin.",
     "versioning": "Patch-bump SWCIS because deployment guard behavior is strengthened without changing engineering semantics.",
     "governance": "Adds an explicit fail-closed deployment-origin contract for the dedicated staging Railway project.",
-    "deployment": "Staging service must use PUBLIC_SITE_URL and PANEL_PUBLIC_URL = https://stage.planha.com; Railway *.up.railway.app remains technical-only."
+    "deployment": "Staging service must use PUBLIC_SITE_URL and PANEL_PUBLIC_URL = https://stage.planha.com; Railway *.up.railway.app remains technical-only.",
+    "manifest": "Verified not affected structurally: artifact/release manifest schemas are unchanged; staging canonical URL is exposed only through runtime deployment identity/health.",
+    "migration": "No database or PMM migration. Runtime environment variables are already migrated to https://stage.planha.com; rollback is Git + environment-variable reversal."
   },
   "evidence": {
     "traceability": [
@@ -27,7 +45,9 @@
       "planned: SWCIS 4.39.0 -> 4.39.1"
     ],
     "migration": [
-      "Runtime environment already migrated: PUBLIC_SITE_URL and PANEL_PUBLIC_URL set to https://stage.planha.com on web-app-staging"
+      "No database, PMM, artifact-schema or customer-data migration.",
+      "web-app-staging runtime variables migrated to PUBLIC_SITE_URL=https://stage.planha.com and PANEL_PUBLIC_URL=https://stage.planha.com.",
+      "Rollback restores prior Git commit/environment variables; production project remains unchanged."
     ],
     "golden_regression": [
       "not affected: engineering artifact semantics and golden drawing baselines are unchanged"
