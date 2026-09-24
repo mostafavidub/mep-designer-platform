@@ -41,7 +41,31 @@ def construction_determinacy_gate(reference_model,elements,determinacy,reconcili
     if reconciliation.get("status")!="PASS":reviews.append("SOURCE_RECONCILIATION_REVIEW_REQUIRED")
     chain_errors=validate_chain_closure(intents)
     if chain_errors:errors.append("CHAIN_CLOSURE_FAILURE")
+
+    # Over-dimensioning is evaluated against explicit element DOFs, not raw count.
+    over=[]
+    by_element=defaultdict(set)
+    for r in intents or []:
+        if r.get("role")!="SETOUT" or not r.get("constraint_dof"):continue
+        eid=str(((r.get("reference_a") or {}).get("element_id") or ""))
+        if eid:by_element[eid].add(str(r.get("constraint_dof")))
+    for e in elements or []:
+        eid=str(e.get("id") or "");required=set(e.get("required_dofs") or [])
+        extra=sorted(by_element.get(eid,set())-required)
+        if extra:over.append({"element_id":eid,"extra_dofs":extra})
+    if over:errors.append("OVER_DIMENSIONED_ELEMENT_CONSTRAINTS")
+
+    envelope_valid=(reference_model.get("envelope") or {}).get("status")=="PASS" and bool((reference_model.get("envelope") or {}).get("envelopes"))
+    overall_required=profile in {"ARCHITECTURAL_FLOOR_PLAN","MECHANICAL_PLAN","PARKING_PLAN","ROOF_PLAN"} and envelope_valid
+    overall_present=any(r.get("purpose")=="BUILDING_OVERALL" and r.get("role")=="CHECK" for r in intents or [])
+    if overall_required and not overall_present:errors.append("MISSING_BUILDING_OVERALL_CHECK")
+
+    source_coverage_ok=True
     if source_registry:
+        source_count=len(source_registry.get("records") or [])
+        reconciled_count=len(reconciliation.get("rows") or [])
+        source_coverage_ok=source_count==reconciled_count
+        if not source_coverage_ok:errors.append("SOURCE_DIMENSION_RECONCILIATION_INCOMPLETE")
         critical_conflicts=[r for r in source_registry.get("records") or [] if r.get("critical") and r.get("conflict")]
         if critical_conflicts:errors.append("CRITICAL_SOURCE_DIMENSION_CONFLICT")
         unit=(source_registry.get("unit_evidence") or {})
@@ -59,6 +83,8 @@ def construction_determinacy_gate(reference_model,elements,determinacy,reconcili
         "references":len(reference_model.get("references") or []),"critical_elements":sum(1 for e in elements or [] if e.get("priority_class") in {"P0","P1"}),
         "under_determined":len(critical_missing),"source_review":len(reconciliation.get("human_review") or []),
         "duplicates_removed":int(redundancy.get("duplicate_count") or 0),"placement_failures":int(placement.get("collision_count") or 0),
+        "over_dimensioned_elements":len(over),"source_reconciliation_complete":source_coverage_ok,
+        "overall_check_required":overall_required,"overall_check_present":overall_present,
       },
       "policy":"printed-drawing construction determinacy, not DIMENSION entity count, is the acceptance authority",
     }
