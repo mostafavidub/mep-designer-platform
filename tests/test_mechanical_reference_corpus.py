@@ -85,7 +85,7 @@ class MechanicalReferenceCorpusTests(unittest.TestCase):
 
     def test_golden_inventory_lists_all_complete_pairs_without_misrepresenting_execution(self):
         golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
-        self.assertEqual(golden["schema_revision"], "golden-regression-inventory/3")
+        self.assertEqual(golden["schema_revision"], "golden-regression-inventory/4")
         self.assertEqual(set(golden["optional_reference_projects"]), {1, 3, 4, 5, 6, 7, 8, 9, 10})
         self.assertEqual(golden["development_reference_projects"], [1, 3, 5, 6, 8, 10])
         self.assertEqual(golden["validation_reference_projects"], [4, 7])
