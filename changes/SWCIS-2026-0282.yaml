@@ -67,29 +67,28 @@
       "MEP-DIM-001 existing Mechanical set-out remains compatibility authority while architectural generation is added as a downstream specialization"
     ],
     "tests": [
-      "unit tests for references, local frames, determinacy, chain closure and reference compatibility",
-      "contract tests for drawing profiles and specialist requirements",
-      "synthetic golden fixtures for partition chains, room clear, openings, stair/core, shaft, site/setback, parking, rotated/multi-axis, under/over-dimension and collisions",
-      "destructive malformed/conflicting plan tests",
-      "exact-file DXF reopen and XData identity tests",
-      "Mechanical semantic-dimension regression suite",
-      "full affected CI before merge"
+      "tests/test_architectural_dimension_engine.py covers fail-closed face basis, rotated local-axis chain closure, partition/overall/grid generation, multi-axis frames, opening host checkpoints, shortest setback geometry, governed clearance rejection, over-constraint purpose separation and final exact/visual evidence requirements",
+      "tests/test_semantic_dimension_engine.py remains the protected MEP-DIM-001 regression suite",
+      "tests/test_mechanical_construction_delivery.py remains required for Mechanical construction-document regression",
+      "full affected CI required before merge"
     ],
     "docs": [
       "docs/ARCHITECTURAL_DIMENSION_ENGINE_V1.md",
       "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
-      "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md"
+      "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
+      "standards/contract-changelog.json GOV-2026-047"
     ],
     "version_bump": [
-      "SWCIS 4.40.0 -> 4.41.0 after implementation/golden/traceability closure"
+      "SWCIS 4.40.0 -> 4.41.0 because a locked architectural dimension rule, dependency/path classification, exact-file graph identity and golden inventory are added"
     ],
     "migration": [
       "none: no destructive data/schema migration; generated drawing artifacts may change"
     ],
     "golden_regression": [
+      "standards/test-suites/golden-regression.json registers project-independent architectural dimension synthetic cases",
       "private six-project corpus remains comparison-only and never a CI dependency",
-      "project-independent synthetic fixtures encode generic professional dimension logic",
-      "blind unseen-plan validation is required before a Full Autonomous release claim"
+      "blind unseen-plan validation is explicitly required before a Full Autonomous release claim"
     ],
     "semantic_diff": [
       "architectural dimensions become first-class DimensionIntent records with purpose, stable element/subfeature references, zone, coordinate frame, check-group, chain and QA status",
