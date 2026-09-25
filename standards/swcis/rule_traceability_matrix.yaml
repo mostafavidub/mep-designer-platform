@@ -991,6 +991,67 @@
       ]
     },
     {
+      "rule_id": "ARCH-DIM-001",
+      "title": "Autonomous architectural dimension networks are semantic, deterministic, profile-specific and fail closed on ambiguous construction references",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "approved_architectural_geometry",
+        "stable_element_identity",
+        "drawing_profile",
+        "dimension_semantics"
+      ],
+      "engines": [
+        "cad_engine/dimensioning/architecture.py",
+        "cad_engine/dimensioning/references.py",
+        "cad_engine/dimensioning/requirements.py",
+        "cad_engine/dimensioning/determinacy.py",
+        "cad_engine/dimensioning/chains.py",
+        "cad_engine/dimensioning/coordinate_frames.py",
+        "cad_engine/dimensioning/placement.py",
+        "cad_engine/dimensioning/qa.py",
+        "cad_engine/dimensioning/specialists/**",
+        "cad_engine/semantic_dimension_engine.py"
+      ],
+      "drawing_outputs": [
+        "architectural DimensionIntent network",
+        "wall and partition chains",
+        "opening/stair/shaft/site/parking dimensions",
+        "intentional check dimensions",
+        "architectural dimension QA report"
+      ],
+      "qa_rules": [
+        "wall_face_basis_never_guessed",
+        "stable_subfeature_reference_required",
+        "drawing_profile_specific_requirements",
+        "local_coordinate_frame_required",
+        "unrelated_zones_not_connected",
+        "consecutive_chain_not_all_pairs",
+        "compatible_reference_class_closure",
+        "critical_reference_datum_path_required",
+        "check_dimension_not_independent_definition",
+        "opening_host_required",
+        "specialist_stair_shaft_site_parking_logic",
+        "geometric_setout_separate_from_code_clearance",
+        "code_clearance_rule_id_required",
+        "under_dimensioning_fail_closed",
+        "accidental_over_dimensioning_fail_closed",
+        "extension_line_readability",
+        "dimension_graph_identity_exact_reopen",
+        "visual_qa_required_for_final"
+      ],
+      "regression_tests": [
+        "tests/test_architectural_dimension_engine.py",
+        "tests/test_semantic_dimension_engine.py",
+        "tests/test_mechanical_construction_delivery.py"
+      ],
+      "docs": [
+        "docs/ARCHITECTURAL_DIMENSION_ENGINE_V1.md",
+        "docs/SEMANTIC_DIMENSION_ENGINE_STANDARD.md",
+        "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
       "rule_id": "MEP-DIM-001",
       "title": "Semantic dimensioning preserves source evidence and produces minimum reference-bound construction set-out",
       "status": "LOCKED",
