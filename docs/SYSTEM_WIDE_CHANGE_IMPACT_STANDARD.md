@@ -207,3 +207,19 @@ CODEOWNERS provides the repository-level owner mapping. At the sole owner's expl
 ## Semantic dimension governance
 
 SWCIS 4.39.0 makes semantic dimensioning a locked drawing-output capability. A CAD `DIMENSION` count is inventory only and can never prove construction-document completeness. Source dimensions are preserved as evidence, geometry and displayed overrides remain separate, critical conflicts fail closed, and applicable issued Mechanical plans require deterministic set-out references plus exact-file reopen QA. Suppression from a drawing profile is not deletion from project knowledge. Private reference drawings remain comparison evidence only and never become hidden numeric defaults.
+
+
+## Autonomous architectural dimension release gate
+
+Architectural dimension generation is governed by locked rule `ARCH-DIM-001`
+and the shared `MEP-DIM-001` source-preservation contract. The implementation
+must use stable semantic subfeature references, drawing-profile-specific
+requirements, local coordinate frames, consecutive chains, graph determinacy,
+intentional CHECK dimensions and specialist Opening/Stair/Shaft/Site/Parking
+logic. Wall face basis, opening host, code authority, zone/frame ambiguity and
+irregular determinacy fail closed to human review.
+
+A final architectural issue cannot be Submission Ready until exact-file
+DimensionIntent identity and visual QA pass. The six-project architectural
+reference corpus is validation evidence only and cannot supply hidden numeric or
+regulatory defaults.
