@@ -125,7 +125,8 @@
         "cad_engine/output_sanitizer.py",
         "cad_engine/plan_isolation_acceptance.py",
         "app/dxf_output.py",
-        "cad_engine/semantic_dimension_engine.py"
+        "cad_engine/semantic_dimension_engine.py",
+        "cad_engine/dimensioning/**"
       ],
       "seed_modules": [
         "cad_designer",
