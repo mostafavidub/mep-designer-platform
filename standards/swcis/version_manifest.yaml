@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.40.0",
+  "standard_version": "4.41.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-24",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "4.41.0",
+      "date": "2026-09-25",
+      "summary": "Add the autonomous architectural dimension network contract with stable subfeature references, profile-specific multi-axis chains, graph determinacy, specialist engines and fail-closed Architectural Dimension QA."
+    },
     {
       "version": "4.40.0",
       "date": "2026-09-24",
