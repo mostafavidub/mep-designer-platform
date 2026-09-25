@@ -1,12 +1,38 @@
 {
-  "schema_revision": "golden-regression-inventory/3",
+  "schema_revision": "golden-regression-inventory/4",
   "required_project_contracts": [],
-  "optional_reference_projects": [1, 3, 4, 5, 6, 7, 8, 9, 10],
-  "development_reference_projects": [1, 3, 5, 6, 8, 10],
-  "validation_reference_projects": [4, 7],
-  "reference_sealed_evaluation_projects": [9],
-  "reference_only_projects": [12],
-  "excluded_projects": [11],
+  "optional_reference_projects": [
+    1,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "development_reference_projects": [
+    1,
+    3,
+    5,
+    6,
+    8,
+    10
+  ],
+  "validation_reference_projects": [
+    4,
+    7
+  ],
+  "reference_sealed_evaluation_projects": [
+    9
+  ],
+  "reference_only_projects": [
+    12
+  ],
+  "excluded_projects": [
+    11
+  ],
   "corpus_contract": "standards/test-suites/mechanical-reference-corpus.json",
   "synthetic_cases": [
     "missing_authoritative_input",
@@ -17,5 +43,28 @@
   ],
   "pass_policy": "Automated regressions and synthetic cases remain required. Private reference projects are optional comparison material and their absence does not block publication. Cohorts prevent future tuning leakage but, because the supplied references have been inspected for corpus classification, no project in this inventory is claimed strictly unseen. Do not claim unexecuted comparisons passed.",
   "owner_authorized_at": "2026-09-09",
-  "artifact_engineering_checks": "unchanged"
+  "artifact_engineering_checks": "unchanged",
+  "architectural_dimension_synthetic_cases": [
+    "architectural_dimension_simple_rectangular_plan",
+    "architectural_dimension_grid_vs_overall",
+    "architectural_dimension_partition_chain",
+    "architectural_dimension_partition_chain_with_check",
+    "architectural_dimension_room_clear",
+    "architectural_dimension_shaft_core",
+    "architectural_dimension_stair_core",
+    "architectural_dimension_door_jamb_position",
+    "architectural_dimension_rotated_plan",
+    "architectural_dimension_multi_axis_building",
+    "architectural_dimension_site_setback",
+    "architectural_dimension_parking_plan",
+    "architectural_dimension_wrong_insunits",
+    "architectural_dimension_under_dimensioned",
+    "architectural_dimension_over_dimensioned",
+    "architectural_dimension_extension_collision"
+  ],
+  "architectural_dimension_blind_validation": {
+    "required": true,
+    "policy": "Use multiple architectural plans not used to tune the implementation; absence of unseen evidence blocks a Full Autonomous release claim but does not fabricate a pass.",
+    "reference_corpus_role": "comparison_only"
+  }
 }

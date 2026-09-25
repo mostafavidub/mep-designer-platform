@@ -40,6 +40,13 @@ SOURCE_VISIBLE_BY_PROFILE = {
         "PROPERTY", "SETBACK", "BUILDING_OVERALL", "GRID", "STRUCTURAL_SET_OUT",
         "WALL_SETOUT", "SHAFT", "STAIR_CORE", "CODE_CLEARANCE", "OPENING",
     },
+    "ARCHITECTURAL_FLOOR_PLAN": {
+        "BUILDING_OVERALL", "GRID", "STRUCTURAL_SET_OUT", "WALL_SETOUT",
+        "SHAFT", "STAIR_CORE", "CODE_CLEARANCE", "OPENING",
+    },
+    "SITE_PLAN": {"PROPERTY", "SETBACK", "BUILDING_OVERALL", "GRID", "CODE_CLEARANCE"},
+    "OPENING_LINTEL_PLAN": {"GRID", "STRUCTURAL_SET_OUT", "OPENING", "CODE_CLEARANCE"},
+    "FURNITURE_PLAN": {"BUILDING_OVERALL", "GRID"},
     "MECHANICAL_PLAN": {
         "BUILDING_OVERALL", "GRID", "STRUCTURAL_SET_OUT", "SHAFT",
         "STAIR_CORE", "CODE_CLEARANCE",
@@ -58,7 +65,10 @@ CONTEXT_REQUIRED_BY_PROFILE = {
     "PARKING_PLAN": {"BUILDING_OVERALL", "GRID", "SHAFT", "STAIR_CORE"},
     "ARCHITECTURAL_PLAN": {"BUILDING_OVERALL", "GRID", "SHAFT", "STAIR_CORE"},
 }
-DIMENSION_OBSTACLE_TYPES = {"TEXT", "MTEXT", "INSERT", "ARC", "CIRCLE"}
+DIMENSION_OBSTACLE_TYPES = {
+    "TEXT", "MTEXT", "INSERT", "ARC", "CIRCLE", "HATCH", "DIMENSION",
+    "LEADER", "MULTILEADER", "SOLID", "WIPEOUT",
+}
 
 
 def _norm(value):
@@ -1296,6 +1306,11 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 (1000,reference_b_id),
                 (1000,unit_source),
                 (1000,governance_rule_id),
+                (1000,str(intent.get("chain_id") or "")),
+                (1000,str(intent.get("check_group_id") or "")),
+                (1000,str(intent.get("zone_id") or "")),
+                (1000,str(intent.get("coordinate_frame_id") or "")),
+                (1000,str(intent.get("tier") if intent.get("tier") is not None else "")),
                 (1040,measured_value),
             ]
             if engineering_value_m is not None:
@@ -1317,6 +1332,11 @@ def materialize_dimension_intents(doc, msp, placed_intents):
                 "reference_b_id": reference_b_id,
                 "purpose": intent["purpose"],
                 "source_kind": intent["source_kind"],
+                "chain_id": intent.get("chain_id"),
+                "check_group_id": intent.get("check_group_id"),
+                "zone_id": intent.get("zone_id"),
+                "coordinate_frame_id": intent.get("coordinate_frame_id"),
+                "tier": intent.get("tier"),
                 "required": bool(intent.get("required")),
             })
         except Exception as exc:
@@ -1479,6 +1499,16 @@ def validate_exact_file_dimensions(path, compose_report):
                 sheet_errors.append("DIMENSION_UNIT_EVIDENCE_CHANGED:" + item["intent_id"])
             elif strings[7]!=str(item.get("governance_rule_id") or ""):
                 sheet_errors.append("DIMENSION_RULE_ID_CHANGED:" + item["intent_id"])
+            else:
+                expected_trace=[
+                    str(item.get("chain_id") or ""),
+                    str(item.get("check_group_id") or ""),
+                    str(item.get("zone_id") or ""),
+                    str(item.get("coordinate_frame_id") or ""),
+                    str(item.get("tier") if item.get("tier") is not None else ""),
+                ]
+                if len(strings)<13 or strings[8:13]!=expected_trace:
+                    sheet_errors.append("DIMENSION_GRAPH_IDENTITY_CHANGED:" + item["intent_id"])
             if not doubles or abs(doubles[0]-float(item.get("measured_value") or 0.0))>1e-9:
                 sheet_errors.append("DIMENSION_ENGINEERING_VALUE_CHANGED:" + item["intent_id"])
             expected_m=item.get("engineering_value_m")
@@ -1500,6 +1530,7 @@ def validate_exact_file_dimensions(path, compose_report):
         "errors": sorted(set(errors)),
         "per_sheet": per_sheet,
         "exact_file_reopened": True,
+        "generated_reingested_as_source": [],
         "policy": "semantic completeness, source preservation, determinacy and exact-file materialization",
     }
 
@@ -1631,3 +1662,101 @@ def apply_semantic_dimension_engine(src, dst, base_report, network, architecture
         "exact_file_qa":exact,
         "exact_file_reopened":True,
     }
+
+
+def build_and_materialize_architectural_dimensions(
+    doc, msp, board, plan, architecture, drawing_profile_name,
+    *, code_requirements=None, obstacle_entities=None
+):
+    """Compatibility facade for the autonomous Architectural Dimension Engine.
+
+    Mechanical callers continue using build_and_materialize_plan_dimensions().
+    This adapter consumes approved architectural semantics, preserves source
+    dimensions as evidence, builds the architectural network before rendering,
+    then uses the proven Planha placement/materialization primitives.
+    """
+    from .dimensioning.architecture import build_architectural_dimension_network
+    from .dimensioning.placement import extension_line_qa
+
+    plan_id=str(plan.get("plan_id") or "ARCH")
+    source_bounds=tuple(plan["bounds"])
+    legacy_refs=build_reference_catalog(
+        doc,source_bounds,architecture=architecture,plan_id=plan_id
+    )
+    registry=extract_source_dimension_registry(
+        doc,source_bounds,architecture=architecture,plan_id=plan_id,
+        reference_catalog=legacy_refs,
+    )
+    unit_evidence=registry.get("unit_evidence") or {}
+    critical_conflicts=[
+        row["id"] for row in registry.get("records") or []
+        if row.get("critical") and row.get("conflict")
+    ]
+    source_knowledge={
+        "pass":not critical_conflicts,
+        "critical_source_conflicts":critical_conflicts,
+        "missing_critical_source_dimensions":[],
+        "source_value_corruption":[],
+    }
+    network=build_architectural_dimension_network(
+        architecture,drawing_profile_name,
+        unit_evidence=unit_evidence,code_requirements=code_requirements or [],
+        source_preservation=source_knowledge,stage="PRE_RENDER",
+    )
+    source_profile=network["profile"]
+    source_intents=source_dimension_intents(registry,source_profile)
+    generated=list(network.get("intents") or [])
+    effective_scale=unit_evidence.get("effective_scale_to_m")
+    unit_source=unit_evidence.get("source")
+    for row in generated:
+        row["effective_scale_to_m"]=effective_scale
+        row["unit_evidence_source"]=unit_source
+        row["engineering_value_m"]=(
+            float(row.get("measured_value") or 0.0)*float(effective_scale)
+            if effective_scale is not None else None
+        )
+    all_intents=select_minimal_dimension_set(source_intents+generated)
+    obstacle_boxes=entity_obstacle_boxes(obstacle_entities or [],board)
+    placed,collisions=place_intents(all_intents,source_bounds,board,obstacles=obstacle_boxes)
+    extension=extension_line_qa(placed,obstacle_boxes)
+    materialized=materialize_dimension_intents(doc,msp,placed)
+    required={row["id"] for row in all_intents if row.get("required")}
+    successful={
+        row["intent_id"] for row in materialized
+        if row.get("handle") and not row.get("error")
+    }
+    report={
+        "status":"PASS",
+        "profile":network["profile"],
+        "source_registry":registry,
+        "reference_catalog":network.get("references") or [],
+        "source_dimension_count":len(registry.get("records") or []),
+        "source_intent_ids":[row["id"] for row in source_intents],
+        "architectural_intent_count":len(generated),
+        "intent_count":len(all_intents),
+        "materialized":materialized,
+        "missing_required":sorted(required-successful),
+        "collision_intents":collisions,
+        "extension_line_errors":extension.get("errors") or [],
+        "critical_source_conflicts":critical_conflicts,
+        "network":network,
+        "errors":[],
+    }
+    preservation=source_preservation_complete(report)
+    report["source_preservation"]=preservation
+    if network.get("status")=="FAIL":
+        report["errors"].append("ARCHITECTURAL_DIMENSION_NETWORK_FAILED")
+    if network.get("human_checkpoints"):
+        report["errors"].append("ARCHITECTURAL_DIMENSION_HUMAN_REVIEW_REQUIRED")
+    if report["missing_required"]:
+        report["errors"].append("REQUIRED_DIMENSION_NOT_MATERIALIZED")
+    if collisions:
+        report["errors"].append("DIMENSION_TEXT_COLLISION")
+    if extension.get("status")!="PASS":
+        report["errors"].append("DIMENSION_EXTENSION_LINE_COLLISION")
+    if not preservation.get("pass"):
+        report["errors"].append("SOURCE_DIMENSION_PRESERVATION_FAILED")
+    if all_intents and effective_scale is None:
+        report["errors"].append("DIMENSION_UNIT_BASIS_REQUIRED")
+    report["status"]="PASS" if not report["errors"] else "FAIL"
+    return report

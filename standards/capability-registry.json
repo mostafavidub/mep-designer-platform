@@ -653,7 +653,18 @@
         "architecture_obstacle_placement",
         "semantic_reference_pair_deduplication",
         "planha_output_not_source_reingested",
-        "local_axis_outside_tiering"
+        "local_axis_outside_tiering",
+        "architectural_reference_model_v2",
+        "architectural_drawing_profiles",
+        "multi_zone_local_coordinate_frames",
+        "consecutive_dimension_chains",
+        "intentional_check_dimensions",
+        "graph_under_dimension_detection",
+        "architectural_over_dimension_detection",
+        "opening_stair_shaft_site_parking_specialists",
+        "extension_line_qa",
+        "dimension_graph_identity_xdata",
+        "architectural_final_visual_gate"
       ],
       "tests": [
         "test_source_registry_uses_geometry_not_insunits_layer_or_dimstyle_as_numeric_truth",
@@ -677,7 +688,12 @@
         "test_context_unit_evidence_can_correct_misleading_mm_header_from_unique_metric_plan_bounds",
         "test_context_unit_evidence_fails_closed_when_plan_bounds_allow_multiple_unit_interpretations",
         "test_context_generation_with_ambiguous_units_cannot_pass_exact_dimension_gate",
-        "test_rotated_context_placement_tiers_outside_plan_area_along_local_normal"
+        "test_rotated_context_placement_tiers_outside_plan_area_along_local_normal",
+        "test_wall_face_basis_is_never_guessed",
+        "test_rotated_chain_measures_in_local_axis_and_closes",
+        "test_architectural_floor_plan_builds_partition_chain_and_overall",
+        "test_multi_axis_building_produces_multiple_coordinate_frames",
+        "test_final_release_cannot_pass_without_exact_file_and_visual_evidence"
       ]
     }
   ]

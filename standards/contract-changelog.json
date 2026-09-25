@@ -1556,6 +1556,37 @@
         "forward": "Regenerate applicable Mechanical plan boards using the semantic registry/context engine; source uploads and PMM data remain immutable.",
         "rollback": "Revert the protected merge commit; no destructive data migration."
       }
+    },
+    {
+      "id": "GOV-2026-047",
+      "status": "APPROVED",
+      "summary": "Add the autonomous architectural dimension network contract with stable subfeature references, profile-specific requirements, multi-axis chain/determinacy logic, specialist dimension engines and fail-closed Architectural Dimension QA.",
+      "affected_capabilities": [
+        "semantic_dimensioning",
+        "architecture_preservation",
+        "construction_document_delivery"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to execute Full Autonomous Architectural Dimensioning Engine v1 from Phase 0 through final validation while preserving Mechanical behavior"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "golden_regression": "must_pass",
+        "exact_reopen": "must_pass",
+        "mechanical_regression": "must_pass",
+        "visual_qa": "must_pass before final release",
+        "blind_validation": "must_pass before Full Autonomous claim",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Regenerate applicable architectural drawing artifacts from approved semantic geometry; no persisted project data rewrite.",
+        "rollback": "Revert the protected merge commit; no destructive data migration."
+      }
     }
   ]
 }
