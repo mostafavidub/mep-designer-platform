@@ -21,8 +21,10 @@ def _segment(row):
 
 def detect_local_coordinate_frames(references, *, zone_id="ZONE-1", angular_tolerance_deg=6.0):
     candidates=[]
+    supported_kinds={"GRID_AXIS","WALL_FACE","STRUCTURAL_FACE","SHAFT_FACE","STAIR_EDGE","PROPERTY_BOUNDARY","GRID","WALL","STRUCTURAL_WALL","SHAFT","LIGHTWELL","STAIR","LANDING","PROPERTY","SITE"}
+    supported_subfeatures={"GRID_AXIS","FINISH_FACE","OUTER_FACE","INNER_FACE","CORE_FACE","CENTERLINE","SHAFT_FACE","STAIR_EDGE","LANDING_EDGE","PROPERTY_EDGE"}
     for ref in references or []:
-        if ref.get("kind") not in {"GRID_AXIS","WALL_FACE","STRUCTURAL_FACE","SHAFT_FACE","STAIR_EDGE","PROPERTY_BOUNDARY"}:
+        if ref.get("kind") not in supported_kinds and ref.get("subfeature") not in supported_subfeatures:
             continue
         seg=_segment(ref)
         if seg:
@@ -57,13 +59,16 @@ def detect_local_coordinate_frames(references, *, zone_id="ZONE-1", angular_tole
         points=[p for _,a,b,_,_ in g["rows"] for p in (a,b)]
         origin=(sum(p[0] for p in points)/len(points),sum(p[1] for p in points)/len(points))
         confidence=min(1.0,g["weight"]/total)
+        evidence_count=len(g["rows"])
+        reliable=(confidence >= 0.20) or (evidence_count >= 2 and confidence >= 0.08)
         frames.append({
             "id":f"FRAME-{zone_id}-{idx}", "zone_id":zone_id, "origin":origin,
             "primary_axis":(math.cos(angle),math.sin(angle)),
             "secondary_axis":(-math.sin(angle),math.cos(angle)),
             "angle_deg":math.degrees(angle), "confidence":confidence,
             "semantic_evidence":[str(r[0].get("id")) for r in g["rows"]],
-            "status":"PASS" if confidence >= 0.20 else "HUMAN_REVIEW",
+            "evidence_count":evidence_count,
+            "status":"PASS" if reliable else "HUMAN_REVIEW",
         })
     return frames
 
