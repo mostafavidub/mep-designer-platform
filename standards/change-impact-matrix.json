@@ -190,7 +190,8 @@
       "paths": [
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/mechanical_pipeline_construction_delivery.py",
-        "tests/test_semantic_dimension_engine.py"
+        "tests/test_semantic_dimension_engine.py",
+        "cad_engine/dimensioning/**"
       ],
       "capabilities": [
         "semantic_dimensioning",
