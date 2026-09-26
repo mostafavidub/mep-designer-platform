@@ -109,6 +109,7 @@
         "cad_engine/engineering_acceptance.py",
         "cad_engine/authority_architecture.py",
         "cad_engine/architecture_reconstruction.py",
+        "cad_engine/architectural_space_engine.py",
         "cad_engine/mechanical_authority*.py",
         "cad_engine/mechanical_cad*.py",
         "cad_engine/mechanical_design_core.py",
@@ -254,6 +255,8 @@
       "path_patterns": [
         "Dockerfile",
         "cad_engine/Dockerfile",
+        "requirements.txt",
+        "cad_engine/requirements.txt",
         "docker-compose*.yml",
         "start_services.sh",
         ".github/workflows/**"
