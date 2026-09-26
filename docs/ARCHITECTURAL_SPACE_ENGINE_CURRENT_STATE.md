@@ -80,6 +80,33 @@ computed. Completeness therefore remains `CONFLICT` and Mechanical remains
 fail-closed. Open passage reconstruction, window reconstruction, envelope-first
 classification, weak-edge merging and Golden scoring are still release blockers.
 
+### Topology-closure baseline and independent Golden gate
+
+The topology-closure phase deliberately made no further runtime reconstruction
+change before creating measurable QA infrastructure. The selected independent
+review floors are Fasihi Ground, Fasihi Level 01, P1 Ground and P3 Ground. A
+source-only annotation package renders raw DXF primitives for those frame bounds
+without importing the reconstruction engine, and creates an initially PENDING
+Golden document. The scorer refuses to calculate metrics until an independent
+reviewer marks the annotation APPROVED and includes reviewed space polygons.
+Golden data lives under test-suite governance and has no runtime import path.
+
+Per-frame diagnostics explain distinct failure modes. P1 has high area coverage
+but remains over-segmented/semantically unresolved: its authoritative floors
+contain 40--47 remaining cells while only 7--14 architectural labels are hosted.
+P3 is a separate envelope failure: every authoritative frame has less than 40%
+accounted coverage, and its Ground frame retains 50 cells with only 3 hosted
+labels. P7 Ground/Mezzanine primarily combine over-segmentation and semantic
+binding failure; its roof frames have envelope failure. Fasihi's two primary
+floors are geometrically closer, but semantic binding and real portal detection
+remain incomplete. These classifications are diagnostic evidence, not new
+project-specific production rules.
+
+Baseline Golden precision/recall/IoU is currently `INCOMPLETE_GOLDEN`, not zero:
+the four source-only packages still require independent polygon/portal review.
+Runtime envelope, merge and portal changes remain prohibited until this review
+establishes the measurable baseline required by the closure specification.
+
 ## Runtime authority
 
 The deployed canonical application enters through `cad_engine.main:app`; the web

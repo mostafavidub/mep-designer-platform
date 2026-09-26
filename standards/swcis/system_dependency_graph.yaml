@@ -303,6 +303,7 @@
         "changes/**",
         "tools/swcis_*.py",
         "tools/*_diagnostics.py",
+        "tools/architectural_*.py",
         "tools/runtime_version_guard.py",
         "tools/complete_mechanical_unversioning.py",
         "cad_engine/version_sync_gate.py",

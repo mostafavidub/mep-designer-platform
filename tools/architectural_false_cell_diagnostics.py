@@ -10,10 +10,13 @@ from pathlib import Path
 import argparse
 import json
 
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.strtree import STRtree
 
-from cad_engine.architectural_space_engine import _extract, _ingest, normalize_text, reconstruct_architecture
+from cad_engine.architectural_space_engine import (
+    _classify_text, _extract, _ingest, _polygonize_spaces, normalize_text,
+    reconstruct_architecture,
+)
 
 
 TOKENS = {
@@ -75,6 +78,39 @@ def diagnose(path):
     if ordered_lengths:
         quantiles={name:ordered_lengths[int((len(ordered_lengths)-1)*fraction)] for name,fraction in
                    (("min",0),("p25",.25),("median",.5),("p75",.75),("p95",.95),("max",1))}
+    frame_rows=[]
+    for frame in model["frames"]:
+        if frame.get("scope_relevance")=="REFERENCE_ONLY": continue
+        bounds=frame.get("bounds"); frame_box=box(*bounds) if bounds else None
+        raw=[line for line in lines if frame_box is None or line.intersects(frame_box)]
+        segments=[row for row in model.get("architectural_segments",[]) if row.get("frame_id")==frame["frame_id"]]
+        accepted=[row for row in segments if row.get("status")=="ACCEPTED"]
+        secondary=[row for row in accepted if row.get("semantic_class")=="PARTITION_FACE"]
+        spaces=[row for row in model["physical_spaces"] if row.get("frame_id")==frame["frame_id"]]
+        coverage=next((row for row in model["coverage"]["frames"] if row["frame_id"]==frame["frame_id"]),{})
+        labels=[]
+        for text in extracted["texts"]:
+            category,_=_classify_text(text.get("text")); point=text.get("point")
+            if not category or not point or (frame_box is not None and not frame_box.covers(Point(point))): continue
+            hosted=next((space["physical_space_id"] for space in spaces if Polygon(space["polygon"],space.get("interior_rings") or []).covers(Point(point))),None)
+            labels.append({"handle":text.get("handle"),"category":category,"host_space_id":hosted,"status":"HOSTED" if hosted else "UNHOSTED"})
+        initial=_polygonize_spaces([LineString(row["geometry"]) for row in accepted],frame,tolerance)
+        ratio=float(coverage.get("coverage_ratio") or 0)
+        unknown=sum(space.get("status")=="INPUT_REQUIRED" for space in spaces)
+        failure=[]
+        if ratio<.4: failure.append("ENVELOPE_FAILURE")
+        if len(spaces)>max(20,len(labels)*4): failure.append("OVER_SEGMENTATION")
+        if ratio>.85 and unknown>len(labels)*2: failure.append("SEMANTIC_BINDING_FAILURE")
+        if not any(opening.get("status")=="VERIFIED" for opening in model.get("openings",[])): failure.append("PORTAL_FAILURE")
+        frame_rows.append({"frame_id":frame["frame_id"],"level":frame.get("level_candidate"),"frame_bounds":bounds,
+                           "inferred_building_footprint":None,"footprint_status":"NOT_IMPLEMENTED",
+                           "raw_source_segments":len(raw),"accepted_high_confidence_wall_segments":len(accepted)-len(secondary),
+                           "accepted_secondary_partition_segments":len(secondary),"rejected_geometry":len(segments)-len(accepted),
+                           "wall_objects":sum(1 for wall in model.get("canonical_walls",[]) if frame_box is None or frame_box.intersects(LineString(wall["geometry"]))),
+                           "initial_polygons":len(initial),"merged_polygons":None,"remaining_spaces":len(spaces),
+                           "hosted_labels":sum(row["status"]=="HOSTED" for row in labels),"unhosted_labels":sum(row["status"]=="UNHOSTED" for row in labels),
+                           "unresolved_interior_area":coverage.get("unresolved_area"),"unexplained_frame_area":coverage.get("unexplained_frame_area"),
+                           "failure_modes":failure})
     return {"source":str(Path(path).name),"status":model["completeness"]["status"],
             "raw_boundary_segments":len(lines),"candidate_spaces":len(model["physical_spaces"]),
             "verified_spaces":sum(s["status"]=="VERIFIED" for s in model["physical_spaces"]),
@@ -84,7 +120,7 @@ def diagnose(path):
             "all_boundary_contributions":dict(contributing),
             "unknown_geometry_profile":{"top_layers":unknown_layers.most_common(15),
                                         "entity_types":dict(unknown_types),"length_quantiles":quantiles},
-            "cells":cell_rows,
+            "cells":cell_rows,"authoritative_frames":frame_rows,
             "coverage":model["coverage"],"runtime":model["diagnostics"]}
 
 
