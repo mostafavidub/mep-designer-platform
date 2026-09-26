@@ -81,6 +81,7 @@
         "cad_engine/reference_parity_engine.py",
         "cad_engine/project_hvac.py",
         "cad_engine/architecture_reconstruction.py",
+        "cad_engine/architectural_space_engine.py",
         "app/dxf_output.py",
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**"
@@ -336,6 +337,8 @@
       "paths": [
         "Dockerfile",
         "cad_engine/Dockerfile",
+        "requirements.txt",
+        "cad_engine/requirements.txt",
         "docker-compose*.yml",
         "start_services.sh",
         ".github/workflows/**"
