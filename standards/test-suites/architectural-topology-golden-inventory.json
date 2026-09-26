@@ -3,10 +3,10 @@
   "runtime_access": "FORBIDDEN",
   "selection_policy": "Two Fasihi authoritative floors plus one P1 and one geometrically different P3 floor",
   "cases": [
-    {"case_id": "fasihi-ground", "level": "GROUND", "source_role": "private_qa", "annotation_status": "PENDING"},
-    {"case_id": "fasihi-first", "level": "LEVEL-01", "source_role": "private_qa", "annotation_status": "PENDING"},
-    {"case_id": "p1-ground", "level": "GROUND", "source_role": "private_qa", "annotation_status": "PENDING"},
-    {"case_id": "p3-ground", "level": "GROUND", "source_role": "private_qa", "annotation_status": "PENDING"}
+    {"case_id": "fasihi-ground", "level": "GROUND", "source_role": "private_qa", "annotation_status": "DRAFT"},
+    {"case_id": "fasihi-first", "level": "LEVEL-01", "source_role": "private_qa", "annotation_status": "DRAFT"},
+    {"case_id": "p1-ground", "level": "GROUND", "source_role": "private_qa", "annotation_status": "DRAFT"},
+    {"case_id": "p3-ground", "level": "GROUND", "source_role": "private_qa", "annotation_status": "DRAFT"}
   ],
   "blocking_policy": "No Golden metric may be reported until each annotation is independently reviewed and APPROVED. UNKNOWN is preferred to invented truth."
 }

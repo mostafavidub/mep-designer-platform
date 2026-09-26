@@ -83,7 +83,7 @@ def score(golden, model):
     for expected_index,detected_index,_ in matches:
         category=expected[expected_index].get("category")
         if category and category!="UNKNOWN": semantic.append(category==detected[detected_index].get("category"))
-    golden_edges=_edge_set(golden.get("adjacency",[]))
+    golden_edges=_edge_set(golden.get("geometric_adjacency",golden.get("adjacency",[])))
     detected_edges=set()
     expected_ids={row.get("golden_space_id"):index for index,row in enumerate(expected)}
     reverse={detected_index:expected[expected_index].get("golden_space_id") for expected_index,detected_index,_ in matches}
