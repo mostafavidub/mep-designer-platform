@@ -49,7 +49,7 @@ def _source_svg(doc,bounds,case_id):
 
 
 def _viewer(svg,case_id,level,bounds,golden):
-    initial=" ".join(str(v) for v in (bounds[0],-bounds[3],bounds[2]-bounds[0],bounds[3]-bounds[1]))
+    initial=",".join(str(v) for v in (bounds[0],-bounds[3],bounds[2]-bounds[0],bounds[3]-bounds[1]))
     seed=json.dumps(golden,ensure_ascii=False).replace("</","<\\/")
     return f'''<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>بازبینی مستقل پلان — {html.escape(case_id)}</title><style>
