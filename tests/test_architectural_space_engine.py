@@ -1,9 +1,11 @@
 from pathlib import Path
 
 import ezdxf
+from shapely.geometry import LineString
 
 from cad_engine.architectural_space_engine import (
-    SCHEMA, _completeness, normalize_text, reconstruct_architecture, require_complete_architecture,
+    SCHEMA, _completeness, _semantic_segment_classification, normalize_text,
+    reconstruct_architecture, require_complete_architecture,
 )
 
 
@@ -33,6 +35,17 @@ def _drawing_with_opening(path, *, orphan=False, kind="door"):
         msp.add_line(a,b,dxfattribs={"layer":"WALL"})
     block=doc.blocks.new(kind.upper()); block.add_line((0,0),(0.8,0),dxfattribs={"layer":kind})
     msp.add_blockref(kind.upper(), (30,30) if orphan else (5,3), dxfattribs={"layer":kind})
+    msp.add_text("خواب",dxfattribs={"height":.2,"insert":(2,3)})
+    msp.add_text("آشپزخانه",dxfattribs={"height":.2,"insert":(8,3)})
+    doc.saveas(path); return path
+
+
+def _drawing_with_anonymous_door(path, *, leaf=True):
+    doc=ezdxf.new("R2013"); doc.header["$INSUNITS"]=6; msp=doc.modelspace(); doc.layers.add("WALL")
+    for a,b in [((0,0),(10,0)),((10,0),(10,6)),((10,6),(0,6)),((0,6),(0,0)),((5,0),(5,6))]:
+        msp.add_line(a,b,dxfattribs={"layer":"WALL"})
+    if leaf: msp.add_line((5,3),(5.8,3),dxfattribs={"layer":"0"})
+    msp.add_arc((5,3),.8,0,90,dxfattribs={"layer":"0"})
     msp.add_text("خواب",dxfattribs={"height":.2,"insert":(2,3)})
     msp.add_text("آشپزخانه",dxfattribs={"height":.2,"insert":(8,3)})
     doc.saveas(path); return path
@@ -165,3 +178,47 @@ def test_dimension_conflict_is_never_silently_resolved(tmp_path):
     assert model["dimension_reconciliation"]["status"] in {"PASS","CONFLICT"}
     assert all("annotated_measurement_m" in row and "geometric_measurement_m" in row
                for row in model["dimension_reconciliation"]["rows"])
+
+
+def test_anonymous_leaf_arc_and_host_wall_reconstruct_door_without_merging_rooms(tmp_path):
+    model=reconstruct_architecture(_drawing_with_anonymous_door(tmp_path/"anonymous-door.dxf"))
+    geometric=[door for door in model["doors"] if any(e["class"]=="SWING_ARC" for e in door["evidence"])]
+    assert len(geometric)==1 and geometric[0]["status"]=="VERIFIED"
+    assert geometric[0]["space_a"] != geometric[0]["space_b"]
+    assert len(model["physical_spaces"])==2
+
+
+def test_random_arc_without_leaf_is_not_a_door(tmp_path):
+    model=reconstruct_architecture(_drawing_with_anonymous_door(tmp_path/"random-arc.dxf",leaf=False))
+    assert not any(any(e["class"]=="SWING_ARC" for e in door["evidence"]) for door in model["doors"])
+
+
+def test_unknown_furniture_and_annotation_lines_never_silently_become_walls():
+    lines=[LineString(((1,1),(2,1))),LineString(((1,2),(2,2)))]
+    metadata=[
+        {"handle":"F1","layer":"0","entity_type":"LINE","closed":False},
+        {"handle":"A1","layer":"notes","entity_type":"LINE","closed":False},
+    ]
+    records,accepted=_semantic_segment_classification(lines,metadata,1.0,.001)
+    assert accepted == []
+    assert {row["semantic_class"] for row in records} == {"UNKNOWN_GEOMETRY"}
+    assert all(row["status"] == "REJECTED" for row in records)
+
+
+def test_recurring_double_line_wall_faces_are_inferred_without_layer_names():
+    lines=[]; metadata=[]
+    for index,y in enumerate((0,.2,2,2.2,4,4.2)):
+        lines.append(LineString(((0,y),(8,y))))
+        metadata.append({"handle":f"L{index}","layer":"0","entity_type":"LINE","closed":False})
+    records,accepted=_semantic_segment_classification(lines,metadata,1.0,.001)
+    assert len(accepted) == len(lines)
+    assert all(row["semantic_class"] == "WALL_FACE" for row in records)
+    assert all(any(e["class"] == "RECURRING_PARALLEL_FACE_PAIR" for e in row["evidence"]) for row in records)
+
+
+def test_repeat_reconstruction_is_deterministic_with_anonymous_portal(tmp_path):
+    path=_drawing_with_anonymous_door(tmp_path/"repeat-door.dxf")
+    first=reconstruct_architecture(path); second=reconstruct_architecture(path)
+    assert first["architectural_segments"] == second["architectural_segments"]
+    assert first["topology_refinement"] == second["topology_refinement"]
+    assert first["doors"] == second["doors"]

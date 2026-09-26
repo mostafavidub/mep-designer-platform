@@ -19,6 +19,7 @@ import time
 import ezdxf
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import polygonize, unary_union
+from shapely.strtree import STRtree
 
 
 SCHEMA = "canonical-architectural-model/1.0"
@@ -296,6 +297,39 @@ def _opening_candidates(extracted, source_hash):
     return [unique[key] for key in sorted(unique)]
 
 
+def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, metres_per_unit):
+    """Recognize anonymous doors only from combined independent evidence."""
+    tol=max(float(tolerance or .001)*5,1e-8); scale=metres_per_unit or 1.0
+    leaves=[]
+    for primitive in extracted["primitives"]:
+        if primitive.get("entity_type")!="LINE" or primitive.get("source_block"): continue
+        pts=_primitive_points(primitive)
+        if len(pts)==2: leaves.append((primitive,LineString(pts)))
+    walls=STRtree(wall_lines) if wall_lines else None; rows=[]
+    for arc in extracted["primitives"]:
+        if arc.get("entity_type")!="ARC" or arc.get("source_block") or not arc.get("center") or not arc.get("radius"): continue
+        radius=float(arc["radius"]); radius_m=radius*scale
+        if not .45<=radius_m<=2.5: continue
+        pivot=Point(arc["center"]); matching=[]
+        for leaf_record,leaf in leaves:
+            coords=list(leaf.coords)
+            if min(pivot.distance(Point(coords[0])),pivot.distance(Point(coords[-1])))<=tol and .65*radius<=leaf.length<=1.35*radius:
+                matching.append((leaf_record,leaf))
+        if not matching or walls is None: continue
+        wall_indexes=walls.query(pivot.buffer(max(tol,.20/scale)))
+        near=[wall_lines[int(index)] for index in wall_indexes if wall_lines[int(index)].distance(pivot)<=max(tol,.20/scale)]
+        if not near: continue
+        leaf_record,leaf=min(matching,key=lambda row:abs(row[1].length-radius))
+        rows.append({"opening_id":_stable_id("DOOR",[source_hash,arc.get("handle"),leaf_record.get("handle")]),
+                     "kind":"door","geometry":{"point":[pivot.x,pivot.y],"points":list(leaf.coords),"arc_points":arc.get("points")},
+                     "source_handle":arc.get("handle"),"source_handles":sorted([arc.get("handle"),leaf_record.get("handle")]),
+                     "width_drawing_units":leaf.length,
+                     "evidence":[{"class":"SWING_ARC","handle":arc.get("handle")},
+                                 {"class":"DOOR_LEAF","handle":leaf_record.get("handle")},
+                                 {"class":"HOST_WALL_PROXIMITY"}],"status":"CANDIDATE"})
+    return rows
+
+
 def _ingest(path):
     source = Path(path)
     data = source.read_bytes()
@@ -321,7 +355,7 @@ def _extract(doc):
             if a and b and a != b:
                 record.update(start=a, end=b); primitives.append(record)
                 if _is_boundary_geometry(layer, transform_source, kind):
-                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle})
+                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":False})
         elif kind in {"LWPOLYLINE", "POLYLINE"}:
             try:
                 pts = ([(float(x), float(y)) for x, y, *_ in entity.get_points()] if kind == "LWPOLYLINE"
@@ -333,15 +367,19 @@ def _extract(doc):
                 if _is_boundary_geometry(layer, transform_source, kind):
                     for a, b in zip(pts, pts[1:] + ([pts[0]] if closed else [])):
                         if a != b:
-                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle})
+                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":closed})
         elif kind == "ARC":
             try:
                 pts = [(float(p.x), float(p.y)) for p in entity.flattening(0.5)]
             except Exception: pts = []
             if len(pts) >= 2:
-                record["points"] = pts; primitives.append(record)
+                center=_point(entity,"center")
+                record.update(points=pts,center=center,radius=float(getattr(entity.dxf,"radius",0) or 0),
+                              start_angle=float(getattr(entity.dxf,"start_angle",0) or 0),
+                              end_angle=float(getattr(entity.dxf,"end_angle",0) or 0))
+                primitives.append(record)
                 if _is_boundary_geometry(layer, transform_source, kind):
-                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle})
+                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":False})
         elif kind in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
             value = _entity_text(entity).strip(); p = _point(entity)
             if value and p: record.update(text=value, point=p); texts.append(record); primitives.append(record)
@@ -444,6 +482,153 @@ def _line_in_frame(line, frame):
     return bounds[0] <= point.x <= bounds[2] and bounds[1] <= point.y <= bounds[3]
 
 
+def _segment_direction(line):
+    coords=list(line.coords); dx=coords[-1][0]-coords[0][0]; dy=coords[-1][1]-coords[0][1]
+    length=math.hypot(dx,dy)
+    return ((dx/length,dy/length),length) if length else ((0.0,0.0),0.0)
+
+
+def _parallel_overlap(left, right):
+    (ux,uy),left_length=_segment_direction(left); (vx,vy),right_length=_segment_direction(right)
+    parallel=abs(ux*vx+uy*vy)
+    if parallel < math.cos(math.radians(3)): return 0.0
+    origin=list(left.coords)[0]
+    def projection(point): return (point[0]-origin[0])*ux+(point[1]-origin[1])*uy
+    a=sorted(projection(point) for point in right.coords)
+    overlap=max(0.0,min(left_length,a[1])-max(0.0,a[0]))
+    return overlap/max(min(left_length,right_length),1e-12)
+
+
+def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
+    """Classify boundary candidates from geometry before polygonization.
+
+    Layer/style metadata is supporting evidence only.  Unknown geometry is
+    retained in diagnostics but cannot silently become an architectural wall.
+    """
+    if not lines: return [],[]
+    scale=metres_per_unit or 1.0; tol=max(float(tolerance or .001),1e-9)
+    min_thickness=.04/scale; max_thickness=.65/scale
+    tree=STRtree(lines); pair_rows=[]
+    for index,line in enumerate(lines):
+        _,length=_segment_direction(line)
+        if length < min_thickness: continue
+        for raw in tree.query(line.buffer(max_thickness)):
+            other_index=int(raw)
+            if other_index<=index: continue
+            other=lines[other_index]; distance=line.distance(other)
+            if not min_thickness<=distance<=max_thickness: continue
+            overlap=_parallel_overlap(line,other)
+            if overlap>=.60: pair_rows.append((index,other_index,distance,overlap))
+    cluster_step=max(.005/scale,tol)
+    clusters=Counter(round(distance/cluster_step) for _,_,distance,_ in pair_rows)
+    recurring={bucket for bucket,count in clusters.items() if count>=3}
+    paired=defaultdict(list)
+    for left,right,distance,overlap in pair_rows:
+        bucket=round(distance/cluster_step)
+        if bucket in recurring:
+            paired[left].append((right,distance,overlap)); paired[right].append((left,distance,overlap))
+    endpoint_degree=Counter()
+    def node(point): return (round(point[0]/(tol*2)),round(point[1]/(tol*2)))
+    for line in lines:
+        coords=list(line.coords); endpoint_degree[node(coords[0])]+=1; endpoint_degree[node(coords[-1])]+=1
+    small_coherent=len(lines)<=20 and all(endpoint_degree[node(point)]>=2 for line in lines for point in (list(line.coords)[0],list(line.coords)[-1]))
+    records=[]; accepted=[]
+    for index,(line,meta) in enumerate(zip(lines,metas)):
+        context=normalize_text(meta.get("layer")); evidence=[]; semantic="UNKNOWN_GEOMETRY"; probability=0.0
+        if any(token in context for token in WALL_TOKENS):
+            semantic="WALL_FACE"; probability=.95; evidence.append({"class":"SOURCE_CONTEXT","value":meta.get("layer")})
+        elif paired[index]:
+            semantic="WALL_FACE"; probability=.90
+            evidence.append({"class":"RECURRING_PARALLEL_FACE_PAIR","pair_count":len(paired[index]),
+                             "thicknesses":[round(row[1]*scale,4) for row in paired[index]]})
+        elif small_coherent:
+            semantic="EXTERIOR_BOUNDARY"; probability=.80; evidence.append({"class":"COHERENT_SMALL_SINGLE_LINE_NETWORK"})
+        coords=list(line.coords); degrees=[endpoint_degree[node(coords[0])],endpoint_degree[node(coords[-1])]]
+        if max(degrees)>=3: evidence.append({"class":"JUNCTION_SUPPORT","endpoint_degrees":degrees})
+        record={"segment_id":_stable_id("SEG",[meta.get("handle"),_round_points(coords)]),
+                "source_handle":meta.get("handle"),"geometry":coords,
+                "source_context":{"layer":meta.get("layer"),"entity_type":meta.get("entity_type"),"closed":meta.get("closed")},
+                "semantic_class":semantic,"wall_probability":probability,"evidence":evidence,
+                "status":"ACCEPTED" if semantic in {"WALL_FACE","PARTITION_FACE","EXTERIOR_BOUNDARY","SITE_BOUNDARY"} else "REJECTED"}
+        records.append(record)
+        if record["status"]=="ACCEPTED": accepted.append(line)
+    return records,accepted
+
+
+def _recognized_label_hosts(polygons, texts):
+    hosts=[]
+    for poly in polygons:
+        categories=[]
+        for text in texts:
+            category,_=_classify_text(text.get("text"))
+            if category and poly.covers(Point(text["point"])): categories.append(category)
+        if categories: hosts.append(tuple(sorted(set(categories))))
+    return sorted(hosts)
+
+
+def _connected_line_components(lines, tolerance):
+    if not lines: return []
+    tree=STRtree(lines); parents=list(range(len(lines)))
+    def find(value):
+        while parents[value]!=value:
+            parents[value]=parents[parents[value]]; value=parents[value]
+        return value
+    def union(left,right):
+        left,right=find(left),find(right)
+        if left!=right: parents[right]=left
+    for index,line in enumerate(lines):
+        for raw in tree.query(line.buffer(tolerance)):
+            other=int(raw)
+            if other>index and line.distance(lines[other])<=tolerance: union(index,other)
+    groups=defaultdict(list)
+    for index,line in enumerate(lines): groups[find(index)].append(index)
+    return list(groups.values())
+
+
+def _admit_label_supported_partitions(accepted, classified, frame, tolerance, extracted):
+    """Selectively admit medium evidence only when topology demonstrably improves."""
+    rejected=[record for record in classified if record["status"]=="REJECTED"]
+    lines=[LineString(record["geometry"]) for record in rejected]
+    components=_connected_line_components(lines,max(float(tolerance or .001)*2,1e-8))
+    current=list(accepted); decisions=[]; iterations=[]; wall_union=unary_union(current) if current else None
+    bounds=frame.get("bounds") or [-math.inf,-math.inf,math.inf,math.inf]
+    label_points=[]
+    for text in extracted["texts"]:
+        category,_=_classify_text(text.get("text")); point=text.get("point")
+        if category and point and bounds[0]<=point[0]<=bounds[2] and bounds[1]<=point[1]<=bounds[3]: label_points.append((Point(point),category))
+    for iteration,component in enumerate(sorted(components,key=lambda indexes:-sum(lines[i].length for i in indexes))[:200],start=1):
+        component_lines=[lines[i] for i in component]
+        endpoints=[Point(point) for line in component_lines for point in (list(line.coords)[0],list(line.coords)[-1])]
+        supports=sum(wall_union is not None and wall_union.distance(point)<=max(float(tolerance or .001)*2,1e-8) for point in endpoints)
+        if supports<2: continue
+        axis=max(component_lines,key=lambda line:line.length); a,b=list(axis.coords)[0],list(axis.coords)[-1]
+        (ux,uy),axis_length=_segment_direction(axis); normal=(-uy,ux)
+        component_points=[point for line in component_lines for point in line.coords]
+        projections=[(point[0]-a[0])*ux+(point[1]-a[1])*uy for point in component_points]
+        low,high=min(projections),max(projections); local_depth=max(sum(line.length for line in component_lines),axis_length)
+        sides=[]
+        for point,category in label_points:
+            along=(point.x-a[0])*ux+(point.y-a[1])*uy
+            signed=(point.x-a[0])*normal[0]+(point.y-a[1])*normal[1]
+            if low-max(float(tolerance or .001)*5,1e-8)<=along<=high+max(float(tolerance or .001)*5,1e-8) and abs(signed)<=local_depth:
+                if abs(signed)>max(float(tolerance or .001)*5,1e-8): sides.append((1 if signed>0 else -1,category))
+        distinct_sides={side for side,_ in sides}; distinct_categories={category for _,category in sides}
+        # The component must be tied into the accepted wall graph and separate
+        # independent architectural label evidence.  No polygon is accepted
+        # merely because the component can close a cycle.
+        if len(distinct_sides)==2 and len(distinct_categories)>=2:
+            current.extend(component_lines); wall_union=unary_union(current)
+            ids=[]
+            for index in component:
+                record=rejected[index]; record["semantic_class"]="PARTITION_FACE"; record["wall_probability"]=.75; record["status"]="ACCEPTED"
+                record["evidence"].append({"class":"LABEL_SUPPORTED_TOPOLOGICAL_IMPROVEMENT","wall_support_endpoints":supports})
+                ids.append(record["segment_id"])
+            decisions.append({"iteration":iteration,"segment_ids":ids,"action":"ADMIT","reason":"LABEL_SUPPORTED_TOPOLOGICAL_IMPROVEMENT",
+                              "wall_support_endpoints":supports,"separated_label_categories":sorted(distinct_categories)})
+            iterations.append({"iteration":iteration,"accepted_segment_count":len(component),"accepted_total":len(current)})
+    return current,decisions,iterations
+
+
 def _polygonize_spaces(lines, frame, tolerance):
     if frame["frame_type"] not in {"PRIMARY_FLOOR", "ROOF", "SITE", "FURNITURE_PLAN"}: return []
     merged = unary_union(lines)
@@ -469,6 +654,34 @@ def _polygonize_spaces(lines, frame, tolerance):
                 accepted.append(fragment)
         occupied=unary_union(accepted) if accepted else None
     return accepted
+
+
+def _derived_wall_thicknesses(segment_records):
+    values=[]
+    for record in segment_records:
+        for evidence in record.get("evidence") or []:
+            if evidence.get("class")=="RECURRING_PARALLEL_FACE_PAIR": values.extend(evidence.get("thicknesses") or [])
+    if not values: return []
+    # The classifier has already established recurring geometric clusters;
+    # rounding only deduplicates evidence emitted by both faces.
+    return sorted(set(round(float(value),3) for value in values if value>0))
+
+
+def _filter_wall_solid_cells(polygons, segment_records, extracted, metres_per_unit):
+    thicknesses=_derived_wall_thicknesses(segment_records); accepted=[]; rejected=[]; scale=metres_per_unit or 1.0
+    for poly in polygons:
+        labels,objects=_evidence_for_cell(poly,extracted)
+        rectangle=poly.minimum_rotated_rectangle; coords=list(rectangle.exterior.coords)
+        sides=sorted(math.dist(a,b)*scale for a,b in zip(coords,coords[1:]) if a!=b)
+        short=sides[0] if sides else 0; long=sides[-1] if sides else 0
+        matched=next((value for value in thicknesses if abs(short-value)<=max(value*.25,.01)),None)
+        if matched and long/max(short,1e-12)>=2.5 and not labels and not objects:
+            rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
+                             "reason":"WALL_SOLID_STRIP","derived_wall_thickness_m":matched,
+                             "short_dimension_m":short,"long_dimension_m":long,
+                             "status":"REJECTED"})
+        else: accepted.append(poly)
+    return accepted,rejected
 
 
 def _evidence_for_cell(poly, extracted):
@@ -710,23 +923,37 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     source = _calibrate_scale(source, frames, extracted["dimensions"])
     tolerance = _adaptive_tolerance(extracted["boundary_lines"], source["metres_per_unit"])
     timings["frame_and_scale_resolution"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
-    spaces = []
+    spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
         clip=box(*frame["bounds"]) if frame.get("bounds") else None
-        local_lines=[]
-        for line in extracted["boundary_lines"]:
+        local_lines=[]; local_metas=[]
+        for line,meta in zip(extracted["boundary_lines"],extracted["boundary_meta"]):
             if clip is None or not line.intersects(clip): continue
             clipped=line.intersection(clip)
-            if clipped.geom_type=="LineString" and not clipped.is_empty: local_lines.append(clipped)
-            elif clipped.geom_type=="MultiLineString": local_lines.extend(g for g in clipped.geoms if not g.is_empty)
-        polygons = _polygonize_spaces(local_lines, frame, tolerance)
+            if clipped.geom_type=="LineString" and not clipped.is_empty: local_lines.append(clipped); local_metas.append(meta)
+            elif clipped.geom_type=="MultiLineString":
+                for geometry in clipped.geoms:
+                    if not geometry.is_empty: local_lines.append(geometry); local_metas.append(meta)
+        classified,accepted=_semantic_segment_classification(local_lines,local_metas,source["metres_per_unit"],tolerance)
+        for record in classified: record["frame_id"]=frame["frame_id"]
+        accepted,decisions,iterations=_admit_label_supported_partitions(accepted,classified,frame,tolerance,extracted)
+        for row in decisions: row["frame_id"]=frame["frame_id"]
+        for row in iterations: row["frame_id"]=frame["frame_id"]
+        refinement_decisions.extend(decisions); refinement_iterations.extend(iterations)
+        segment_records.extend(classified); accepted_wall_lines.extend(accepted)
+        polygons = _polygonize_spaces(accepted, frame, tolerance)
+        polygons,rejected=_filter_wall_solid_cells(polygons,classified,extracted,source["metres_per_unit"])
+        for row in rejected: row["frame_id"]=frame["frame_id"]
+        rejected_cells.extend(rejected)
         spaces.extend(_space_record(p, frame, source["source_sha256"], extracted, source["metres_per_unit"]) for p in polygons)
     timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
     opening_candidates=_opening_candidates(extracted, source["source_sha256"])
-    openings,walls=_bind_openings(opening_candidates,spaces,extracted["boundary_lines"],source["source_sha256"],tolerance)
+    opening_candidates.extend(_geometric_door_candidates(extracted,accepted_wall_lines,source["source_sha256"],tolerance,source["metres_per_unit"]))
+    opening_candidates=list({row["opening_id"]:row for row in opening_candidates}.values())
+    openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,source["source_sha256"],tolerance)
     timings["topology"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     coverage=_coverage(frames,spaces)
     dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
@@ -756,9 +983,13 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     model = {"schema": SCHEMA, "source": source, "frames": frames, "levels": [], "physical_spaces": spaces,
              "functional_zones": [z for s in spaces for z in s["functional_zones"]], "architectural_objects": extracted["objects"],
              "dimensions": extracted["dimensions"], "dimension_reconciliation":dimension_reconciliation,
-             "openings":openings,"canonical_walls":walls,"coverage":coverage,"review":review,
+             "openings":openings,"canonical_walls":walls,"architectural_segments":segment_records,
+             "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
+             "rejected_candidate_cells":rejected_cells,"coverage":coverage,"review":review,
              "completeness": completeness, "vision_reconciliation": vision,
              "diagnostics": {"entity_counts": extracted["entity_counts"], "adaptive_tolerance": tolerance,
+                             "raw_boundary_segment_count":len(extracted["boundary_lines"]),
+                             "accepted_wall_segment_count":sum(r["status"]=="ACCEPTED" for r in segment_records),
                              "space_candidate_count": len(spaces), "stage_runtime_seconds":{k:round(v,6) for k,v in timings.items()},
                              "dxf_parse_count":1,"runtime_seconds": round(time.perf_counter()-started,6)},
              # Backward-compatible projection; canonical consumers use fields above.

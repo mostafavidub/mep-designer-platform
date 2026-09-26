@@ -45,6 +45,41 @@ This table is intentionally a release blocker, not a claim of completion. It
 shows that overlap preservation is fixed across the corpus while semantic wall
 and portal reconstruction remains the dominant unsolved capability.
 
+## General wall reconstruction iteration — 2026-09-26
+
+Boundary-to-source diagnostics were run before changing production inference.
+They show that the dominant false-cell source is anonymous top-level geometry,
+not short lines: UNKNOWN_GEOMETRY accounts for 98.04% of unresolved Fasihi
+cells, 99.07% in P1, 37.79% in P3 and 100% in P7. P3 additionally has 62.21%
+of unresolved cells dominated by wall-face geometry. Layer `0` is the largest
+unknown contributor in Fasihi, P1 and P7. The unknown segments include both
+LINE and LWPOLYLINE entities with long tails up to roughly 30--43 drawing
+units, so a generic length cutoff would delete legitimate architecture while
+retaining many drafting objects.
+
+The current branch now classifies segments before polygonization, infers
+recurring parallel wall-face offsets through a spatial index, keeps unknown
+geometry out of the wall graph, selectively admits only label-supported
+partitions connected to the accepted wall network, and rejects wall-solid
+strip cells using thicknesses inferred from the drawing. Every admission and
+rejection is traceable. Anonymous door candidates require combined swing-arc,
+leaf and host-wall proximity evidence; an arc alone is rejected.
+
+| Project | Before candidates | After candidates | After verified | After unknown | Coverage | Overlap | Runtime |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| P1 | 444 | 132 | 9 | 123 | 97.96% | 0 | 16.79 s |
+| P3 | 268 | 160 | 4 | 156 | 11.00% | 0 | 11.00 s |
+| P7 | 399 | 146 | 3 | 143 | 59.22% | 0 | 10.30 s |
+| Fasihi | 157 | 33 | 4 | 29 | 71.52% | 0 | 23.30 s |
+
+These numbers demonstrate general reduction of false topology without restoring
+overlap, but they are not exit evidence. The four real drawings still have zero
+verified geometry-derived doors and windows, many unknown regions, and no
+independent Golden polygons/portals from which precision, recall or IoU can be
+computed. Completeness therefore remains `CONFLICT` and Mechanical remains
+fail-closed. Open passage reconstruction, window reconstruction, envelope-first
+classification, weak-edge merging and Golden scoring are still release blockers.
+
 ## Runtime authority
 
 The deployed canonical application enters through `cad_engine.main:app`; the web
