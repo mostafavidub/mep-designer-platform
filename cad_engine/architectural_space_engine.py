@@ -163,6 +163,43 @@ def _unit_scale(insunits):
     return {4: .001, 5: .01, 6: 1.0}.get(int(insunits or 0))
 
 
+def _calibrate_scale(source, frames, dimensions):
+    """Resolve the effective drawing scale from independent CAD evidence.
+
+    Consultant files frequently retain an incorrect INSUNITS header after a
+    unit conversion.  Frame spans and native DIMENSION measurements provide an
+    independent signal.  A disagreement is retained as explicit provenance;
+    it is never silently presented as PROJECT_INPUT.
+    """
+    declared = source.get("declared_metres_per_unit")
+    relevant = [f for f in frames if f.get("scope_relevance") == "MECHANICAL_AUTHORITY" and f.get("bounds")]
+    spans = [max(f["bounds"][2] - f["bounds"][0], f["bounds"][3] - f["bounds"][1]) for f in relevant]
+    measurements = sorted(float(d["measurement"]) for d in dimensions if 0 < float(d.get("measurement") or 0) < 1e7)
+    votes = []
+    if spans:
+        span = sorted(spans)[len(spans)//2]
+        if 5 <= span <= 200: votes.append((1.0, "authoritative_frame_span"))
+        elif 500 <= span <= 200000: votes.append((.001, "authoritative_frame_span"))
+    if measurements:
+        measurement = measurements[len(measurements)//2]
+        if .1 <= measurement <= 50: votes.append((1.0, "native_dimension_distribution"))
+        elif 100 <= measurement <= 50000: votes.append((.001, "native_dimension_distribution"))
+    counts = Counter(scale for scale, _ in votes)
+    inferred = counts.most_common(1)[0][0] if counts else None
+    effective = inferred or declared
+    agreeing = [reason for scale, reason in votes if scale == effective]
+    status = "DECLARED"
+    conflict = False
+    if inferred is not None:
+        status = "INFERRED"
+        conflict = declared is not None and not math.isclose(inferred, declared)
+    return {**source, "metres_per_unit": effective,
+            "unit_calibration": {"status": status, "declared_metres_per_unit": declared,
+                                 "effective_metres_per_unit": effective, "evidence": agreeing,
+                                 "declared_unit_conflict": conflict,
+                                 "confidence": 1.0 if len(set(reason for _, reason in votes)) >= 2 else .85}}
+
+
 def _adaptive_tolerance(lines, scale):
     lengths = sorted(line.length for line in lines if line.length > 0)
     if not lengths: return None
@@ -196,8 +233,10 @@ def _ingest(path):
     if len(data) > 250 * 1024 * 1024: raise ValueError("DXF_TOO_LARGE")
     doc = ezdxf.readfile(source)
     insunits = int(doc.header.get("$INSUNITS", 0) or 0)
+    declared_scale = _unit_scale(insunits)
     return doc, {"source_sha256": sha256(data).hexdigest(), "source_size": len(data), "dxf_version": doc.dxfversion,
-                 "insunits": insunits, "metres_per_unit": _unit_scale(insunits)}
+                 "insunits": insunits, "declared_metres_per_unit": declared_scale,
+                 "metres_per_unit": declared_scale}
 
 
 def _extract(doc):
@@ -245,14 +284,16 @@ def _extract(doc):
         elif kind == "INSERT":
             p = _point(entity); name = str(getattr(entity.dxf, "name", "") or "")
             kinds = _classify_object(name, layer)
+            try:
+                children = list(entity.virtual_entities())
+            except Exception:
+                children = []
             if p:
                 row = {**record, "name": name, "point": p, "object_types": kinds}; objects.append(row); primitives.append(row)
             key = (handle, depth)
             if key not in seen_nested:
                 seen_nested.add(key)
-                try:
-                    for child in entity.virtual_entities(): visit(child, name, depth + 1)
-                except Exception: pass
+                for child in children: visit(child, name, depth + 1)
         elif kind in {"CIRCLE", "SPLINE", "HATCH", "SOLID", "TRACE", "LEADER", "MLEADER"}:
             primitives.append(record)
 
@@ -293,12 +334,17 @@ def _detected_frames(path, source_hash, fallback):
     frames = []
     for plan in plans:
         bounds = plan.get("bounds"); frame_type = mapped.get(plan.get("drawing_type"), "UNKNOWN")
+        role = str(plan.get("mechanical_role") or "EXCLUDE")
+        relevant = role in {"PRIMARY_FLOOR", "ROOF_SUPPORT"}
         frames.append({"frame_id": _stable_id("FRAME", [source_hash, plan.get("plan_id"), bounds]),
                        "frame_type": frame_type, "bounds": bounds, "level_candidate": plan.get("level"),
                        "represented_levels": plan.get("represented_levels") or [],
+                       "source_plan_id": plan.get("plan_id"), "mechanical_role": role,
+                       "scope_relevance": "MECHANICAL_AUTHORITY" if relevant else "REFERENCE_ONLY",
                        "confidence": min(1.0, float(plan.get("frame_confidence") or 0)/100.0),
                        "evidence": ["governed_print_frame_detector"] + sorted(k for k,v in (plan.get("frame_evidence") or {}).items() if v),
-                       "status": "VERIFIED" if frame_type in {"PRIMARY_FLOOR","ROOF","SITE","FURNITURE_PLAN"} else "INPUT_REQUIRED"})
+                       "status": ("VERIFIED" if relevant and frame_type in {"PRIMARY_FLOOR", "ROOF", "SITE"}
+                                  else "REFERENCE_ONLY")})
     return frames or [fallback]
 
 
@@ -321,7 +367,12 @@ def _polygonize_spaces(lines, frame, tolerance):
     cells.sort(key=lambda p: p.area)
     accepted = []
     for cell in cells:
-        if accepted and sum(p.area for p in accepted if cell.covers(p.representative_point())) >= cell.area * .90: continue
+        # Polygonize can return both real faces and a larger enclosing loop when
+        # consultant drawings repeat an outer wall/frame.  An enclosing loop is
+        # not a second physical space once it contains a smaller independent
+        # face; retaining it duplicates every label inside the floor.
+        if any(cell.covers(p.representative_point()) and p.area < cell.area * .95 for p in accepted):
+            continue
         accepted.append(cell)
     return accepted
 
@@ -408,7 +459,8 @@ def _adjacency(spaces, tolerance):
 def _completeness(frames, spaces, units_known):
     issues = []
     for frame in frames:
-        if frame["frame_type"] == "UNKNOWN": issues.append({"code": "UNKNOWN_FRAME", "frame_id": frame["frame_id"], "status": "INPUT_REQUIRED"})
+        if frame.get("scope_relevance") == "MECHANICAL_AUTHORITY" and frame["frame_type"] == "UNKNOWN":
+            issues.append({"code": "UNKNOWN_FRAME", "frame_id": frame["frame_id"], "status": "INPUT_REQUIRED"})
     for space in spaces:
         if space["status"] in {"INPUT_REQUIRED", "CONFLICT", "AMBIGUOUS"}:
             issues.append({"code": "UNRESOLVED_SPACE", "space_id": space["physical_space_id"], "frame_id": space["frame_id"], "status": space["status"]})
@@ -440,9 +492,12 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     started = time.perf_counter(); doc, source = _ingest(path); extracted = _extract(doc)
     fallback = _frame_from_extent(extracted, source["source_sha256"])
     frames = _detected_frames(path, source["source_sha256"], fallback)
+    source = _calibrate_scale(source, frames, extracted["dimensions"])
     tolerance = _adaptive_tolerance(extracted["boundary_lines"], source["metres_per_unit"])
     spaces = []
     for frame in frames:
+        if frame.get("scope_relevance") == "REFERENCE_ONLY":
+            continue
         local_lines = [line for line in extracted["boundary_lines"] if _line_in_frame(line, frame)]
         polygons = _polygonize_spaces(local_lines, frame, tolerance)
         spaces.extend(_space_record(p, frame, source["source_sha256"], extracted, source["metres_per_unit"]) for p in polygons)

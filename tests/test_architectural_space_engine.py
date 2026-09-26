@@ -3,7 +3,7 @@ from pathlib import Path
 import ezdxf
 
 from cad_engine.architectural_space_engine import (
-    SCHEMA, normalize_text, reconstruct_architecture, require_complete_architecture,
+    SCHEMA, _completeness, normalize_text, reconstruct_architecture, require_complete_architecture,
 )
 
 
@@ -88,8 +88,28 @@ def test_missing_units_fail_closed(tmp_path):
     assert any(i["code"] == "UNIT_CALIBRATION_REQUIRED" for i in model["completeness"]["issues"])
 
 
+def test_incorrect_mm_header_is_overridden_by_frame_and_dimension_evidence(tmp_path):
+    model = reconstruct_architecture(_drawing(tmp_path/"misdeclared.dxf", labels=(("living", (3,3)),), units=4, dimension=True))
+    calibration = model["source"]["unit_calibration"]
+    assert calibration["status"] == "INFERRED"
+    assert calibration["declared_unit_conflict"] is True
+    assert calibration["effective_metres_per_unit"] == 1.0
+    assert model["physical_spaces"][0]["area_m2"] == 60
+
+
 def test_non_floor_section_never_silently_becomes_floor(tmp_path):
     model = reconstruct_architecture(_drawing(tmp_path/"section.dxf", labels=(("SECTION A-A",(3,3)),)))
     assert model["frames"][0]["frame_type"] == "SECTION"
     assert not model["physical_spaces"]
     assert model["completeness"]["status"] == "INPUT_REQUIRED"
+
+
+def test_reference_only_frames_do_not_duplicate_spaces_or_block_authoritative_floor():
+    frames = [
+        {"frame_id": "FLOOR", "frame_type": "PRIMARY_FLOOR", "scope_relevance": "MECHANICAL_AUTHORITY"},
+        {"frame_id": "FURN", "frame_type": "FURNITURE_PLAN", "scope_relevance": "REFERENCE_ONLY"},
+        {"frame_id": "VIEW", "frame_type": "UNKNOWN", "scope_relevance": "REFERENCE_ONLY"},
+    ]
+    result = _completeness(frames, [{"physical_space_id": "S1", "frame_id": "FLOOR", "status": "VERIFIED", "area_m2": 12}], True)
+    assert result["status"] == "VERIFIED"
+    assert result["relevant_space_count"] == 1
