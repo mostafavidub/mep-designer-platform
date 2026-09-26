@@ -1,10 +1,10 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.40.0
+**Canonical version:** 4.42.0
 
 **Status:** LOCKED
 
-**Effective:** 2026-09-24
+**Effective:** 2026-09-26
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
 

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha/architectural-topology-golden/1.0",
+  "title": "Independent architectural topology Golden Truth",
+  "type": "object",
+  "required": ["schema", "case_id", "source_sha256", "review_status", "review", "frame", "building_envelope", "spaces", "functional_zones", "portals", "geometric_adjacency", "access_connectivity"],
+  "properties": {
+    "schema": {"const": "architectural-topology-golden/1.0"},
+    "case_id": {"type": "string"},
+    "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "review_status": {"enum": ["DRAFT", "REVIEWED", "APPROVED"]},
+    "review": {
+      "type": "object",
+      "properties": {
+        "method": {"const": "INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW"},
+        "annotator": {"type": ["string", "null"]},
+        "annotation_date": {"type": ["string", "null"]},
+        "reviewer": {"type": ["string", "null"]},
+        "reviewed_at": {"type": ["string", "null"]},
+        "approved_at": {"type": ["string", "null"]},
+        "runtime_output_visible_during_annotation": {"const": false}
+      },
+      "required": ["method", "annotator", "annotation_date", "reviewer", "reviewed_at", "approved_at", "runtime_output_visible_during_annotation"]
+    },
+    "frame": {
+      "type": "object",
+      "required": ["runtime_frame_id", "level", "bounds"],
+      "properties": {
+        "runtime_frame_id": {"type": "string"},
+        "level": {"type": "string"},
+        "bounds": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}}
+      }
+    },
+    "building_envelope": {
+      "type": "object",
+      "required": ["status", "outer_ring", "interior_voids"],
+      "properties": {
+        "status": {"enum": ["VERIFIED", "UNKNOWN", "CONFLICT"]},
+        "outer_ring": {"$ref": "#/$defs/draft_ring"},
+        "interior_voids": {"type": "array", "items": {"$ref": "#/$defs/draft_ring"}}
+      }
+    },
+    "spaces": {"type": "array", "items": {"$ref": "#/$defs/space"}},
+    "functional_zones": {"type": "array", "items": {"$ref": "#/$defs/zone"}},
+    "portals": {"type": "array", "items": {"$ref": "#/$defs/portal"}},
+    "geometric_adjacency": {"type": "array", "items": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string"}}},
+    "access_connectivity": {"type": "array", "items": {"type": "object", "required": ["space_a", "space_b", "portal_id"], "properties": {"space_a": {"type": "string"}, "space_b": {"type": "string"}, "portal_id": {"type": "string"}}}}
+  },
+  "$defs": {
+    "point": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
+    "ring": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/point"}},
+    "draft_ring": {"type": "array", "items": {"$ref": "#/$defs/point"}},
+    "space": {
+      "type": "object",
+      "required": ["golden_space_id", "status", "polygon", "category"],
+      "properties": {
+        "golden_space_id": {"type": "string"},
+        "status": {"enum": ["VERIFIED", "UNKNOWN", "CONFLICT"]},
+        "polygon": {"$ref": "#/$defs/ring"},
+        "interior_rings": {"type": "array", "items": {"$ref": "#/$defs/ring"}},
+        "category": {"type": "string"},
+        "open_plan_group": {"type": ["string", "null"]}
+      }
+    },
+    "zone": {
+      "type": "object",
+      "required": ["golden_zone_id", "physical_space_id", "status", "category"],
+      "properties": {
+        "golden_zone_id": {"type": "string"},
+        "physical_space_id": {"type": "string"},
+        "status": {"enum": ["VERIFIED", "UNKNOWN", "CONFLICT"]},
+        "category": {"type": "string"},
+        "polygon": {"$ref": "#/$defs/draft_ring"}
+      }
+    },
+    "portal": {
+      "type": "object",
+      "required": ["golden_portal_id", "kind", "status"],
+      "properties": {
+        "golden_portal_id": {"type": "string"},
+        "kind": {"enum": ["door", "window", "open_passage"]},
+        "status": {"enum": ["VERIFIED", "UNKNOWN", "CONFLICT"]},
+        "point": {"$ref": "#/$defs/point"},
+        "space_a": {"type": ["string", "null"]},
+        "space_b": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

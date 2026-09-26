@@ -109,6 +109,7 @@
         "cad_engine/engineering_acceptance.py",
         "cad_engine/authority_architecture.py",
         "cad_engine/architecture_reconstruction.py",
+        "cad_engine/architectural_space_engine.py",
         "cad_engine/mechanical_authority*.py",
         "cad_engine/mechanical_cad*.py",
         "cad_engine/mechanical_design_core.py",
@@ -189,6 +190,8 @@
         "standards/mechanical-design-governance*.json",
         "changes/**",
         "tools/swcis_*.py",
+        "tools/*_diagnostics.py",
+        "tools/architectural_*.py",
         "tools/runtime_version_guard.py",
         "tools/complete_mechanical_unversioning.py",
         "cad_engine/version_sync_gate.py",
@@ -254,6 +257,8 @@
       "path_patterns": [
         "Dockerfile",
         "cad_engine/Dockerfile",
+        "requirements.txt",
+        "cad_engine/requirements.txt",
         "docker-compose*.yml",
         "start_services.sh",
         ".github/workflows/**"

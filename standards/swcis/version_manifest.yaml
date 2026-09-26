@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.41.0",
+  "standard_version": "4.42.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-09-24",
+  "effective_date": "2026-09-26",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "4.42.0",
+      "date": "2026-09-26",
+      "summary": "Add the canonical deterministic-first architectural-space model, separate physical spaces from functional zones, preserve evidence provenance, and fail closed before downstream Mechanical engineering when critical architecture remains unresolved."
+    },
     {
       "version": "4.41.0",
       "date": "2026-09-25",

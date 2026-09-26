@@ -164,6 +164,7 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
     scope = scope or {}
     proposal = proposal or {}
     auto = analysis.get("architectural_auto") or {}
+    canonical_architecture = deepcopy(auto.get("architecture_model") or {})
 
     levels = _level_rows(auto)
     level_names = _unique(row.get("name") for row in levels)
@@ -213,6 +214,11 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         "drawing_manifest_count": len(manifest),
         "planner_total_plans": int(proposal.get("total_plans") or proposal.get("deliverable_sheet_count") or len(manifest)),
         "identity_registry": identity_registry,
+        "canonical_architecture": canonical_architecture if canonical_architecture.get("schema") == "canonical-architectural-model/1.0" else None,
+        "architecture_completeness": deepcopy(canonical_architecture.get("completeness") or {
+            "status": "INPUT_REQUIRED", "downstream_engineering_allowed": False,
+            "issues": [{"code": "CANONICAL_ARCHITECTURE_MODEL_REQUIRED"}],
+        }),
         "traceability_contract": {
             "required_chain": ["PMM_ENTITY_ID", "CALC_ID", "PLAN_ID", "RISER_ID", "SCHEDULE_ID", "QA"],
             "policy": "NO_ORPHAN_ENGINEERING_OUTPUT",
@@ -237,13 +243,16 @@ def build_project_mechanical_model(analysis, answers=None, scope=None, proposal=
         diagnostics.append("no_architecture_levels_in_pmm")
     if model["candidate_levels"]:
         diagnostics.append("unresolved_candidate_levels_present")
+    if canonical_architecture.get("schema") == "canonical-architectural-model/1.0" and model["architecture_completeness"].get("downstream_engineering_allowed") is not True:
+        diagnostics.append("architecture_completeness_input_required")
     entity_ids = [row["entity_id"] for row in identity_registry["entities"]]
     if len(entity_ids) != len(set(entity_ids)):
         diagnostics.append("duplicate_pmm_entity_id")
     diagnostics.extend(auto.get("level_detection_diagnostics") or [])
     model["diagnostics"] = list(dict.fromkeys(diagnostics))
     model["valid"] = not any(x in model["diagnostics"] for x in (
-        "planner_total_does_not_match_manifest_count", "no_architecture_levels_in_pmm", "duplicate_pmm_entity_id"
+        "planner_total_does_not_match_manifest_count", "no_architecture_levels_in_pmm", "duplicate_pmm_entity_id",
+        "architecture_completeness_input_required"
     ))
     return model
 

@@ -811,6 +811,11 @@
         "frames",
         "levels",
         "geometry",
+        "canonical_architecture",
+        "architecture_completeness",
+        "physical_spaces",
+        "functional_zones",
+        "dimension_provenance",
         "rooms",
         "shafts",
         "fixtures",
@@ -821,6 +826,9 @@
       "engines": [
         "cad_engine/plan_segmentation.py",
         "cad_engine/architecture_reconstruction.py",
+        "cad_engine/architectural_space_engine.py",
+        "app/architecture_reconstruction_v1.py",
+        "app/project_mechanical_model.py",
         "cad_engine/fixture_recognition.py",
         "cad_engine/architecture_space_equipment_gate.py",
         "cad_engine/mechanical_authority.py"
@@ -840,6 +848,10 @@
         "wall_geometry_reconstruction",
         "opening_vertical_obstruction_typing",
         "closed_space_boundaries",
+        "physical_space_functional_zone_separation",
+        "canonical_architecture_completeness_gate",
+        "stable_geometry_identity",
+        "dimension_provenance_and_conflict_disclosure",
         "multilingual_label_binding",
         "space_use_classification",
         "shaft_wet_core_recognition",
@@ -854,12 +866,16 @@
         "score_exactly_100"
       ],
       "regression_tests": [
+        "tests/test_architectural_space_engine.py",
         "tests/test_architecture_space_equipment_100.py",
         "tests/test_fixture_recognition_v14.py",
         "tests/test_plan_frame_separation.py",
         "tests/test_mechanical_pre_submission_delivery.py"
       ],
       "docs": [
+        "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
+        "docs/ARCHITECTURAL_SPACE_ENGINE_CURRENT_STATE.md",
+        "docs/adr/ADR-ARCH-CANONICAL-SPACE-ENGINE.md",
         "docs/ARCHITECTURE_SPACE_EQUIPMENT_100_STANDARD.md",
         "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
       ]
