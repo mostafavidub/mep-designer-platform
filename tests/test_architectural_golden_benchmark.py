@@ -60,6 +60,8 @@ def test_annotation_package_is_source_only_and_pending(tmp_path):
     assert "const initial=[0,-2,4,2]" in viewer
     assert 'id="snap-points"' in svg and 'class="snap-point"' in svg
     assert manifest["rendered_primitive_counts"]["SNAP_POINTS"] >= 4
+    assert "opening_segment:[a,b]" in viewer
+    assert "روی دو سر دهانهٔ در کلیک کنید" in viewer
     assert manifest["excluded_runtime_material"] is True
     assert "UNKNOWN" in instructions
     report=validate(golden,source.read_bytes())
