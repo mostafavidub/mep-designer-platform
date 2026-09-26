@@ -6,6 +6,8 @@ from hashlib import sha256
 from pathlib import Path
 import ezdxf
 from ezdxf.disassemble import recursive_decompose
+from shapely.geometry import LineString, box
+from shapely.ops import unary_union
 
 
 def _points(entity):
@@ -28,7 +30,7 @@ def _text(entity):
 
 
 def _source_svg(doc,bounds,case_id):
-    minx,miny,maxx,maxy=bounds; graphics=[]; texts=[]; counts={}
+    minx,miny,maxx,maxy=bounds; graphics=[]; texts=[]; counts={}; segments=[]; clip=box(minx,miny,maxx,maxy)
     for entity in recursive_decompose(doc.modelspace()):
         kind=entity.dxftype(); counts[kind]=counts.get(kind,0)+1; points=_points(entity)
         visible=points and max(x for x,_ in points)>=minx and min(x for x,_ in points)<=maxx and max(y for _,y in points)>=miny and min(y for _,y in points)<=maxy
@@ -36,15 +38,31 @@ def _source_svg(doc,bounds,case_id):
             if bool(getattr(entity,"closed",False)) and points[0]!=points[-1]: points.append(points[0])
             encoded=" ".join(f"{x:.6f},{-y:.6f}" for x,y in points)
             graphics.append(f'<polyline points="{encoded}" fill="none" stroke="#263442" stroke-width="0.010" vector-effect="non-scaling-stroke"/>')
+            if kind in {"LINE","LWPOLYLINE","POLYLINE"}:
+                for start,end in zip(points,points[1:]):
+                    if start!=end:
+                        cut=LineString((start,end)).intersection(clip)
+                        if not cut.is_empty:
+                            if cut.geom_type=="LineString": segments.append(cut)
+                            elif cut.geom_type=="MultiLineString": segments.extend(cut.geoms)
         label=_text(entity)
         if label:
             value,(x,y),height=label
             if minx<=x<=maxx and miny<=y<=maxy:
                 texts.append(f'<text x="{x:.6f}" y="{-y:.6f}" font-size="{max(height,.08):.6f}" fill="#111827">{html.escape(value)}</text>')
+    snap=set()
+    if segments:
+        noded=unary_union(segments)
+        lines=[noded] if noded.geom_type=="LineString" else list(getattr(noded,"geoms",()))
+        for line in lines:
+            if line.geom_type=="LineString":
+                for x,y in line.coords: snap.add((round(float(x),6),round(float(y),6)))
+    counts["SNAP_POINTS"]=len(snap)
+    snap_svg='<g id="snap-points">'+''.join(f'<circle class="snap-point" cx="{x:.6f}" cy="{-y:.6f}" r="0.04" data-x="{x:.6f}" data-y="{y:.6f}"/>' for x,y in sorted(snap))+'</g>'
     width=maxx-minx; height=maxy-miny
     svg=(f'<svg id="source-plan" xmlns="http://www.w3.org/2000/svg" viewBox="{minx} {-maxy} {width} {height}" '
          f'data-case="{html.escape(case_id)}"><rect x="{minx}" y="{-maxy}" width="{width}" height="{height}" fill="white"/>'
-         +"".join(graphics)+"".join(texts)+"</svg>")
+         +"".join(graphics)+"".join(texts)+snap_svg+"</svg>")
     return svg,counts
 
 
@@ -61,7 +79,7 @@ h2{{font-size:17px;margin:0 0 8px}}h3{{font-size:14px;margin:18px 0 7px}}p{{line
 .tools{{display:grid;grid-template-columns:1fr 1fr;gap:7px}}button,.file-label,select,input{{font:inherit}}button,.file-label{{border:1px solid #94a3b8;background:#fff;border-radius:9px;padding:9px;cursor:pointer;text-align:center}}
 button:hover,.file-label:hover{{background:#f1f5f9}}button.active{{background:#1d4ed8;color:#fff;border-color:#1d4ed8}}button.primary{{background:#059669;color:#fff;border-color:#047857;width:100%;font-weight:700}}button.danger{{color:#b91c1c}}
 select,input{{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}}label{{display:block;margin:8px 0 4px;color:#334155;font-weight:600}}#status{{padding:9px;border-radius:8px;background:#f1f5f9;margin:9px 0;line-height:1.6}}#canvas{{position:absolute;inset:0;overflow:hidden}}
-svg{{width:100%;height:100%;touch-action:none;cursor:crosshair;background:#fff}}#source-plan polyline{{stroke:#334155!important;stroke-width:1.15px!important}}#source-plan text{{fill:#111827!important;font-weight:500}}.ann{{vector-effect:non-scaling-stroke;stroke-width:2px}}.vertex{{vector-effect:non-scaling-stroke;stroke-width:1.5px}}
+svg{{width:100%;height:100%;touch-action:none;cursor:crosshair;background:#fff}}#source-plan polyline{{stroke:#334155!important;stroke-width:1.15px!important}}#source-plan text{{fill:#111827!important;font-weight:500}}.snap-point{{fill:#fff;stroke:#2563eb;stroke-width:1.5px;vector-effect:non-scaling-stroke;cursor:crosshair}}.snap-point:hover{{fill:#f59e0b;stroke:#b45309}}.ann{{vector-effect:non-scaling-stroke;stroke-width:2px}}.vertex{{vector-effect:non-scaling-stroke;stroke-width:1.5px}}
 #help{{position:absolute;direction:rtl;left:14px;bottom:14px;background:#111827e8;color:#fff;border-radius:10px;padding:9px 12px;max-width:470px}}#empty{{color:#64748b}}.row{{display:flex;gap:7px}}.row>*{{flex:1}}
 @media(max-width:850px){{#app{{grid-template-columns:1fr;grid-template-rows:45vh 1fr}}aside{{grid-row:2;border-left:0;border-top:1px solid #cbd5e1}}}}
 </style><header data-source="RAW DXF ONLY"><b>بازبینی مستقل پلان</b><span class="badge">{html.escape(case_id)}</span><span class="badge">{html.escape(level)}</span><span class="badge safe">فقط نقشه خام؛ بدون خروجی موتور</span><span id="xy">مختصات: —</span></header>
@@ -70,7 +88,7 @@ svg{{width:100%;height:100%;touch-action:none;cursor:crosshair;background:#fff}}
 <h3>ابزار ترسیم</h3><div class="tools">
 <button data-mode="pan" class="active">✋ جابه‌جایی پلان</button><button data-mode="envelope">⬡ محدوده ساختمان</button>
 <button data-mode="space">▣ فضای واقعی</button><button data-mode="void">◌ حیاط‌خلوت / Void</button>
-<button data-mode="door">🚪 در</button><button data-mode="window">▭ پنجره</button><button data-mode="passage">↔ مسیر باز</button><button id="fit">نمایش کامل پلان</button></div>
+<button data-mode="door">🚪 در</button><button data-mode="window">▭ پنجره</button><button data-mode="passage">↔ مسیر باز</button><button id="fit">نمایش کامل پلان</button><button id="toggle-points">پنهان‌کردن نقاط آبی</button></div>
 <div id="draw-options"><label>نوع فضا</label><select id="category"><option value="UNKNOWN">نامشخص / نیازمند بررسی</option><option value="living">پذیرایی / نشیمن</option><option value="dining">ناهارخوری</option><option value="kitchen">آشپزخانه</option><option value="bedroom">اتاق خواب</option><option value="bathroom">حمام</option><option value="toilet">سرویس بهداشتی</option><option value="corridor">راهرو / هال</option><option value="stair">راه‌پله</option><option value="elevator">آسانسور</option><option value="parking">پارکینگ</option><option value="balcony">بالکن / تراس</option><option value="shaft">شفت</option><option value="utility">فضای خدماتی</option><option value="exterior">فضای نیمه‌باز / بیرونی</option></select>
 <label>نام نمایشی اختیاری</label><input id="label" placeholder="مثلاً اتاق خواب والدین"></div>
 <div id="status">حالت جابه‌جایی فعال است. پلان را بکشید و با چرخ ماوس زوم کنید.</div>
@@ -84,10 +102,10 @@ const s=document.querySelector('#source-plan'),xy=document.querySelector('#xy'),
 const initial=[{initial}],key='planha-golden-review:{html.escape(case_id)}';let view=[...initial],drag=null,mode='pan',draft=[],seq=1;
 let golden=JSON.parse(localStorage.getItem(key)||document.querySelector('#golden-seed').textContent);
 const NS='http://www.w3.org/2000/svg';const overlay=document.createElementNS(NS,'g');overlay.id='human-annotations';s.appendChild(overlay);
-function applyView(){{s.setAttribute('viewBox',view.join(' '))}}applyView();
+function applyView(){{s.setAttribute('viewBox',view.join(' '));const r=Math.max(view[2],view[3])*.0032;s.querySelectorAll('.snap-point').forEach(x=>x.setAttribute('r',r))}}applyView();
 function svgPoint(e){{let p=s.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(s.getScreenCTM().inverse())}}
 function sourcePoint(e){{const p=svgPoint(e);return [p.x,-p.y]}}
-function snap(e){{let best=sourcePoint(e),dist=14;const candidates=s.querySelectorAll('polyline');for(const line of candidates){{const pts=line.points;for(let i=0;i<pts.numberOfItems;i++){{const q=pts.getItem(i),spt=s.createSVGPoint();spt.x=q.x;spt.y=q.y;const c=spt.matrixTransform(s.getScreenCTM());const d=Math.hypot(c.x-e.clientX,c.y-e.clientY);if(d<dist){{dist=d;best=[q.x,-q.y]}}}}}}return best}}
+function snap(e){{let best=sourcePoint(e),dist=16;for(const point of s.querySelectorAll('.snap-point')){{const spt=s.createSVGPoint();spt.x=Number(point.dataset.x);spt.y=-Number(point.dataset.y);const c=spt.matrixTransform(s.getScreenCTM()),d=Math.hypot(c.x-e.clientX,c.y-e.clientY);if(d<dist){{dist=d;best=[spt.x,-spt.y]}}}}return best}}
 function path(points,closed,color,fill='none'){{if(!points.length)return;const p=document.createElementNS(NS,closed?'polygon':'polyline');p.setAttribute('points',points.map(q=>q[0]+','+(-q[1])).join(' '));p.setAttribute('class','ann');p.setAttribute('stroke',color);p.setAttribute('fill',fill);overlay.appendChild(p);return p}}
 function dot(point,color){{const c=document.createElementNS(NS,'circle');c.setAttribute('cx',point[0]);c.setAttribute('cy',-point[1]);c.setAttribute('r',Math.max(view[2],view[3])*.004);c.setAttribute('fill','#fff');c.setAttribute('stroke',color);c.setAttribute('class','vertex');overlay.appendChild(c)}}
 function render(){{overlay.innerHTML='';const env=golden.building_envelope||{{}};path(env.outer_ring||[],true,'#7c3aed','#7c3aed18');(env.interior_voids||[]).forEach(x=>path(x,true,'#dc2626','#dc262618'));(golden.spaces||[]).forEach((x,i)=>path(x.polygon,true,'#0284c7',i%2?'#38bdf822':'#0ea5e922'));(golden.portals||[]).forEach(x=>{{const colors={{door:'#ea580c',window:'#16a34a',open_passage:'#db2777'}};dot(x.point,colors[x.kind])}});path(draft,false,'#f59e0b');draft.forEach(x=>dot(x,'#f59e0b'));summary()}}
@@ -100,6 +118,7 @@ s.onpointerdown=e=>{{if(mode==='pan'){{drag=[e.clientX,e.clientY,...view];s.setP
 s.onpointermove=e=>{{const p=sourcePoint(e);xy.textContent=`مختصات X: ${{p[0].toFixed(3)}} ، Y: ${{p[1].toFixed(3)}}`;if(drag){{view[0]=drag[2]-(e.clientX-drag[0])*view[2]/s.clientWidth;view[1]=drag[3]-(e.clientY-drag[1])*view[3]/s.clientHeight;applyView();render()}}}};s.onpointerup=()=>drag=null;
 document.querySelector('#finish').onclick=()=>{{if(!['envelope','space','void'].includes(mode)){{statusBox.textContent='ابتدا یکی از ابزارهای محدوده یا فضا را انتخاب کنید.';return}}if(draft.length<3){{statusBox.textContent='حداقل سه گوشه لازم است.';return}}const ring=[...draft,draft[0]];if(mode==='envelope')golden.building_envelope={{status:'VERIFIED',outer_ring:ring,interior_voids:golden.building_envelope?.interior_voids||[]}};if(mode==='void')golden.building_envelope.interior_voids.push(ring);if(mode==='space'){{const id=`SPACE-${{String(golden.spaces.length+1).padStart(3,'0')}}`;golden.spaces.push({{golden_space_id:id,status:document.querySelector('#category').value==='UNKNOWN'?'UNKNOWN':'VERIFIED',polygon:ring,interior_rings:[],category:document.querySelector('#category').value,display_name:document.querySelector('#label').value||null,open_plan_group:null}})}}draft=[];save();statusBox.textContent='محدوده ثبت شد. می‌توانید مورد بعدی را رسم کنید.'}};
 document.querySelector('#undo').onclick=()=>{{draft.pop();render()}};document.querySelector('#fit').onclick=()=>{{view=[...initial];applyView();render()}};
+document.querySelector('#toggle-points').onclick=e=>{{const g=document.querySelector('#snap-points'),hidden=g.style.display==='none';g.style.display=hidden?'':'none';e.target.textContent=hidden?'پنهان‌کردن نقاط آبی':'نمایش نقاط آبی'}};
 document.querySelector('#download').onclick=()=>{{golden.review.annotation_date=new Date().toISOString().slice(0,10);const blob=new Blob([JSON.stringify(golden,null,2)+'\\n'],{{type:'application/json'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='{html.escape(case_id)}-golden-DRAFT.json';a.click();URL.revokeObjectURL(a.href)}};
 document.querySelector('#import').onchange=async e=>{{try{{golden=JSON.parse(await e.target.files[0].text());save();statusBox.textContent='فایل قبلی با موفقیت باز شد.'}}catch{{statusBox.textContent='فایل انتخاب‌شده معتبر نیست.'}}}};
 document.querySelector('#clear').onclick=()=>{{if(confirm('پیش‌نویس این پلان پاک شود؟')){{localStorage.removeItem(key);golden=JSON.parse(document.querySelector('#golden-seed').textContent);draft=[];render()}}}};render();
