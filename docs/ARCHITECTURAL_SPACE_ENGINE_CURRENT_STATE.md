@@ -1,5 +1,50 @@
 # Architectural Space Engine — Current State and Root Cause
 
+## Blind real-project validation — 2026-09-26
+
+The private Fasihi architectural DXF was processed blind. Reference Mechanical
+drawings were not opened or used during generation.
+
+| Check | Expected from independent drawing evidence | Detected | Status |
+|---|---:|---:|---|
+| Authoritative frames | Roof, Level 01, Ground | 3 | PASS |
+| Reference-only views | sections/elevations/furniture excluded | excluded | PASS |
+| Unit calibration | metres despite an incorrect mm header | metres + declared conflict | PASS |
+| Overlapping space area | 0 | 0 after interior-ring preservation | PASS |
+| Label-evidenced uses | yard, toilet, terrace, bathroom, duct, bedroom, living, closet, reception, kitchen | extracted; mostly not bound to valid cells | PARTIAL |
+| Physical spaces | all real rooms, no drafting cells | 157 candidates, 153 unresolved | FAIL |
+| Door/window topology | every accepted opening hosted and linked | no reliable source openings accepted | FAIL |
+| Geometric accounted coverage | all authoritative usable area, without overlap | 56.88% | FAIL |
+| Vision runtime | localized ambiguity adapter | interface complete; provider absent | CONFIG_REQUIRED |
+| Mechanical release | blocked while critical architecture is unresolved | blocked | PASS |
+
+### New root causes and fixes
+
+Exploded SHX/graphic geometry and nested block graphics were entering the wall
+graph. Polygon interior rings were also lost during canonical materialization,
+recreating overlap after correct polygonization. The implementation now admits
+nested/curved boundaries conservatively, rejects high-density glyph layers by
+their drawing signature, preserves interior rings in identity and QA, models
+accepted openings with host-wall/space topology, reports geometric coverage and
+dimension reconciliation, and exposes only unresolved regions for review.
+
+The branch is **not ready for Staging**. The remaining unresolved cells require
+a general portal/wall-semantic reconstruction slice. No Fasihi coordinate, name
+or dimension has been encoded.
+
+### Multi-project blind regression
+
+| Project | Authority frames | Candidates | Verified | Unknown | Accounted coverage | Overlap | Result |
+|---|---:|---:|---:|---:|---:|---:|---|
+| P1 | 4 | 444 | 12 | 432 | 47.18% | 0 | CONFLICT |
+| P3 | 4 | 268 | 6 | 261 | 9.06% | 0 | CONFLICT |
+| P7 | 4 | 399 | 6 | 393 | 48.85% | 0 | CONFLICT |
+| Fasihi | 3 | 157 | 4 | 153 | 56.88% | 0 | CONFLICT |
+
+This table is intentionally a release blocker, not a claim of completion. It
+shows that overlap preservation is fixed across the corpus while semantic wall
+and portal reconstruction remains the dominant unsolved capability.
+
 ## Runtime authority
 
 The deployed canonical application enters through `cad_engine.main:app`; the web

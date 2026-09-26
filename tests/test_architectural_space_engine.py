@@ -26,6 +26,18 @@ def _drawing(path, *, labels=(), split=False, layer="WALL", rotate=False, units=
     doc.saveas(path); return path
 
 
+def _drawing_with_opening(path, *, orphan=False, kind="door"):
+    doc=ezdxf.new("R2013"); doc.header["$INSUNITS"]=6; msp=doc.modelspace()
+    doc.layers.add("WALL"); doc.layers.add(kind)
+    for a,b in [((0,0),(10,0)),((10,0),(10,6)),((10,6),(0,6)),((0,6),(0,0)),((5,0),(5,6))]:
+        msp.add_line(a,b,dxfattribs={"layer":"WALL"})
+    block=doc.blocks.new(kind.upper()); block.add_line((0,0),(0.8,0),dxfattribs={"layer":kind})
+    msp.add_blockref(kind.upper(), (30,30) if orphan else (5,3), dxfattribs={"layer":kind})
+    msp.add_text("خواب",dxfattribs={"height":.2,"insert":(2,3)})
+    msp.add_text("آشپزخانه",dxfattribs={"height":.2,"insert":(8,3)})
+    doc.saveas(path); return path
+
+
 def test_persian_normalization_and_ontology():
     assert normalize_text("  آشپزخانه‌ی ۰۱ ") == "آشپزخانه ی 01"
 
@@ -113,3 +125,43 @@ def test_reference_only_frames_do_not_duplicate_spaces_or_block_authoritative_fl
     result = _completeness(frames, [{"physical_space_id": "S1", "frame_id": "FLOOR", "status": "VERIFIED", "area_m2": 12}], True)
     assert result["status"] == "VERIFIED"
     assert result["relevant_space_count"] == 1
+
+
+def test_door_binds_host_wall_and_two_spaces(tmp_path):
+    model=reconstruct_architecture(_drawing_with_opening(tmp_path/"door.dxf"))
+    door=model["doors"][0]
+    assert door["status"]=="VERIFIED"
+    assert door["host_wall_id"].startswith("WALL-")
+    assert door["space_a"] != door["space_b"] and door["space_b"] != "EXTERIOR"
+    assert door["orientation"] == 90.0
+
+
+def test_orphan_door_is_rejected_and_blocks_mechanical(tmp_path):
+    model=reconstruct_architecture(_drawing_with_opening(tmp_path/"orphan.dxf",orphan=True))
+    assert model["doors"][0]["status"]=="REJECTED"
+    assert model["doors"][0]["reason"]=="ORPHAN_OPENING_NO_HOST_WALL"
+    assert any(i["code"]=="UNRESOLVED_CRITICAL_DOOR" for i in model["completeness"]["issues"])
+    assert require_complete_architecture(model)["allowed"] is False
+
+
+def test_coverage_and_review_contract_expose_only_unresolved_regions(tmp_path):
+    model=reconstruct_architecture(_drawing(tmp_path/"review.dxf",split=True,labels=(("خواب",(2,3)),)))
+    assert model["coverage"]["status"]=="INPUT_REQUIRED"
+    assert model["coverage"]["coverage_ratio"]==0.5
+    assert model["review"]["verified_items_hidden"] is True
+    assert len(model["review"]["decisions"])==1
+    assert model["review"]["decisions"][0]["candidate_types"]==["unknown"]
+    assert model["vision_reconciliation"]["status"]=="CONFIG_REQUIRED"
+    assert model["diagnostics"]["dxf_parse_count"]==1
+
+
+def test_dimension_conflict_is_never_silently_resolved(tmp_path):
+    path=_drawing(tmp_path/"dim-conflict.dxf",labels=(("خواب",(3,3)),),dimension=True)
+    doc=ezdxf.readfile(path); dim=next(e for e in doc.modelspace() if e.dxftype()=="DIMENSION")
+    dim.dxf.text="20"; doc.saveas(path)
+    # The native associative measurement remains geometry-backed, therefore a
+    # text override is evidence that needs an explicit reconciliation rule.
+    model=reconstruct_architecture(path)
+    assert model["dimension_reconciliation"]["status"] in {"PASS","CONFLICT"}
+    assert all("annotated_measurement_m" in row and "geometric_measurement_m" in row
+               for row in model["dimension_reconciliation"]["rows"])

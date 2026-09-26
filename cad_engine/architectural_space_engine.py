@@ -82,10 +82,13 @@ OBJECT_TERMS = {
     "dining_table": ("dining", "table", "میز ناهار"), "car": ("car", "vehicle", "خودرو"),
     "stair": ("stair", "پله"), "elevator": ("elevator", "lift", "آسانسور"),
     "cabinet": ("cabinet", "کابینت"),
+    "door": ("door", "در ورودی", "درب"),
+    "window": ("window", "پنجره"),
 }
 
 FRAME_TYPES = {"PRIMARY_FLOOR", "ROOF", "SITE", "FURNITURE_PLAN", "SECTION", "ELEVATION", "DETAIL", "SCHEDULE", "LEGEND", "UNKNOWN"}
-NON_BOUNDARY_TOKENS = ("dim", "dimension", "اندازه", "text", "anno", "hatch", "furn", "furniture", "مبلمان", "grid", "axis", "محور")
+NON_BOUNDARY_TOKENS = ("dim", "dimension", "اندازه", "text", "anno", "hatch", "furn", "furniture", "مبلمان", "grid", "axis", "محور",
+                       "door", "درب", "window", "پنجره", "opening")
 WALL_TOKENS = ("wall", "a-wall", "دیوار", "partition")
 
 
@@ -111,6 +114,10 @@ def _round_points(points, precision=6):
     for seq in (rows, list(reversed(rows))):
         rotations.extend(seq[i:] + seq[:i] for i in range(len(seq)))
     return min(rotations)
+
+
+def _space_polygon(space):
+    return Polygon(space["polygon"], space.get("interior_rings") or [])
 
 
 def _entity_text(entity):
@@ -156,6 +163,22 @@ def _classify_object(name, layer):
     for kind, aliases in OBJECT_TERMS.items():
         if any(normalize_text(alias) in text for alias in aliases): found.append(kind)
     return sorted(set(found))
+
+
+def _is_boundary_geometry(layer, source_block, entity_type):
+    """Conservative wall-boundary admission policy.
+
+    Exploded furniture, sanitary fixtures, SHX glyphs and door swings are a
+    major source of phantom cells.  Top-level straight/polyline drafting can
+    participate unless explicitly non-architectural.  Nested geometry and
+    curves need positive wall evidence.
+    """
+    context=normalize_text(f"{layer} {source_block or ''}")
+    if any(token in context for token in NON_BOUNDARY_TOKENS): return False
+    wall_evidence=any(token in context for token in WALL_TOKENS)
+    if source_block and not wall_evidence: return False
+    if entity_type in {"ARC","SPLINE"} and not wall_evidence: return False
+    return True
 
 
 def _unit_scale(insunits):
@@ -217,6 +240,15 @@ class VisionCandidate:
     evidence: tuple[str, ...]
     uncertainty: str = ""
 
+    def as_evidence(self, *, frame_id, region_id):
+        return {"frame_id": frame_id, "region_id": region_id,
+                "candidate_semantic_type": self.candidate_type,
+                "objects_seen": [], "text_seen": [],
+                "reason": list(self.evidence), "confidence": float(self.confidence),
+                "ambiguity": self.uncertainty,
+                "suggested_classification": self.candidate_type,
+                "authority": "SUPPORTING_EVIDENCE_ONLY"}
+
 
 class VisionAdapter(Protocol):
     def analyze(self, *, image_path: str, frame_id: str, regions: list[dict]) -> list[VisionCandidate]: ...
@@ -225,6 +257,43 @@ class VisionAdapter(Protocol):
 class NoVisionAdapter:
     def analyze(self, *, image_path: str, frame_id: str, regions: list[dict]) -> list[VisionCandidate]:
         return []
+
+
+def _primitive_points(record):
+    if record.get("start") and record.get("end"):
+        return [record["start"], record["end"]]
+    return list(record.get("points") or [])
+
+
+def _opening_candidates(extracted, source_hash):
+    """Return explicit opening evidence without pretending every symbol is valid.
+
+    Inserts are preferred.  Exploded line/arc symbols remain candidates and
+    require a host-wall/topology match before acceptance.
+    """
+    rows = []
+    for obj in extracted["objects"]:
+        kinds = set(obj.get("object_types") or [])
+        if not kinds.intersection({"door", "window"}):
+            continue
+        for kind in sorted(kinds.intersection({"door", "window"})):
+            rows.append({"opening_id": _stable_id(kind.upper(), [source_hash, obj.get("handle"), obj.get("point")]),
+                         "kind": kind, "geometry": {"point": obj.get("point"), "bounds": obj.get("bounds")},
+                         "source_handle": obj.get("handle"), "evidence": [{"class": "CAD_BLOCK", "name": obj.get("name"), "layer": obj.get("layer")}],
+                         "status": "CANDIDATE"})
+    for primitive in extracted["primitives"]:
+        if primitive.get("source_block"):
+            continue
+        layer = normalize_text(primitive.get("layer"))
+        kind = "door" if "door" in layer or "درب" in layer else ("window" if "window" in layer or "پنجره" in layer else None)
+        pts = _primitive_points(primitive)
+        if not kind or len(pts) < 2:
+            continue
+        rows.append({"opening_id": _stable_id(kind.upper(), [source_hash, primitive.get("handle"), _round_points(pts)]),
+                     "kind": kind, "geometry": {"points": pts}, "source_handle": primitive.get("handle"),
+                     "evidence": [{"class": "CAD_LAYER_SYMBOL", "layer": primitive.get("layer")}], "status": "CANDIDATE"})
+    unique = {row["opening_id"]: row for row in rows}
+    return [unique[key] for key in sorted(unique)]
 
 
 def _ingest(path):
@@ -240,7 +309,7 @@ def _ingest(path):
 
 
 def _extract(doc):
-    primitives, texts, objects, dimensions, boundary_lines = [], [], [], [], []
+    primitives, texts, objects, dimensions, boundary_lines, boundary_meta = [], [], [], [], [], []
     counts = Counter(); seen_nested = set()
 
     def visit(entity, transform_source=None, depth=0):
@@ -251,7 +320,8 @@ def _extract(doc):
             a, b = _point(entity, "start"), _point(entity, "end")
             if a and b and a != b:
                 record.update(start=a, end=b); primitives.append(record)
-                if not any(t in normalize_text(layer) for t in NON_BOUNDARY_TOKENS): boundary_lines.append(LineString([a, b]))
+                if _is_boundary_geometry(layer, transform_source, kind):
+                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle})
         elif kind in {"LWPOLYLINE", "POLYLINE"}:
             try:
                 pts = ([(float(x), float(y)) for x, y, *_ in entity.get_points()] if kind == "LWPOLYLINE"
@@ -260,16 +330,18 @@ def _extract(doc):
             if len(pts) >= 2:
                 closed = bool(getattr(entity, "closed", False)) or pts[0] == pts[-1]
                 record.update(points=pts, closed=closed); primitives.append(record)
-                if not any(t in normalize_text(layer) for t in NON_BOUNDARY_TOKENS):
+                if _is_boundary_geometry(layer, transform_source, kind):
                     for a, b in zip(pts, pts[1:] + ([pts[0]] if closed else [])):
-                        if a != b: boundary_lines.append(LineString([a, b]))
+                        if a != b:
+                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle})
         elif kind == "ARC":
             try:
                 pts = [(float(p.x), float(p.y)) for p in entity.flattening(0.5)]
             except Exception: pts = []
             if len(pts) >= 2:
                 record["points"] = pts; primitives.append(record)
-                if not any(t in normalize_text(layer) for t in NON_BOUNDARY_TOKENS): boundary_lines.append(LineString(pts))
+                if _is_boundary_geometry(layer, transform_source, kind):
+                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle})
         elif kind in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
             value = _entity_text(entity).strip(); p = _point(entity)
             if value and p: record.update(text=value, point=p); texts.append(record); primitives.append(record)
@@ -298,8 +370,25 @@ def _extract(doc):
             primitives.append(record)
 
     for entity in doc.modelspace(): visit(entity)
+    # Exploded SHX glyphs often arrive as thousands of tiny top-level segments
+    # on a neutral layer.  Detect the drafting signature statistically rather
+    # than hard-coding a consultant layer name.
+    lengths=defaultdict(list)
+    for line,meta in zip(boundary_lines,boundary_meta): lengths[meta["layer"]].append(line.length)
+    arc_counts=Counter(p.get("layer") for p in primitives if p.get("entity_type")=="ARC" and not p.get("source_block"))
+    glyph_layers=set()
+    for layer,values in lengths.items():
+        ordered=sorted(v for v in values if v>0)
+        median=ordered[len(ordered)//2] if ordered else 0
+        metric_signature=ordered and median < .05 and ordered[-1] < 1.0
+        scale_independent_glyph_signature=ordered and arc_counts[layer] >= len(ordered) and ordered[-1]/max(median,1e-12) < 30
+        if len(ordered)>=100 and (metric_signature or scale_independent_glyph_signature):
+            glyph_layers.add(layer)
+    retained=[(line,meta) for line,meta in zip(boundary_lines,boundary_meta) if meta["layer"] not in glyph_layers]
+    boundary_lines=[line for line,_ in retained]; boundary_meta=[meta for _,meta in retained]
     return {"primitives": primitives, "texts": texts, "objects": objects, "dimensions": dimensions,
-            "boundary_lines": boundary_lines, "entity_counts": dict(counts)}
+            "boundary_lines": boundary_lines, "boundary_meta":boundary_meta,
+            "excluded_graphic_glyph_layers":sorted(glyph_layers), "entity_counts": dict(counts)}
 
 
 def _frame_from_extent(extracted, source_hash):
@@ -365,15 +454,20 @@ def _polygonize_spaces(lines, frame, tolerance):
         cells.append(poly)
     # Drop a containing outer frame when it duplicates the union of smaller cells.
     cells.sort(key=lambda p: p.area)
-    accepted = []
+    accepted = []; occupied=None
     for cell in cells:
         # Polygonize can return both real faces and a larger enclosing loop when
         # consultant drawings repeat an outer wall/frame.  An enclosing loop is
         # not a second physical space once it contains a smaller independent
         # face; retaining it duplicates every label inside the floor.
-        if any(cell.covers(p.representative_point()) and p.area < cell.area * .95 for p in accepted):
-            continue
-        accepted.append(cell)
+        remainder=cell if occupied is None else cell.difference(occupied)
+        fragments=[]
+        if remainder.geom_type=="Polygon": fragments=[remainder]
+        elif remainder.geom_type=="MultiPolygon": fragments=list(remainder.geoms)
+        for fragment in fragments:
+            if fragment.is_valid and fragment.area > max((tolerance or .001)**2*4,1e-9):
+                accepted.append(fragment)
+        occupied=unary_union(accepted) if accepted else None
     return accepted
 
 
@@ -419,7 +513,8 @@ def _associate_dimensions(poly, dimensions, metres_per_unit):
 
 
 def _space_record(poly, frame, source_hash, extracted, metres_per_unit):
-    ring = _round_points(list(poly.exterior.coords)); physical_id = _stable_id("PS", [source_hash, frame["frame_id"], ring])
+    ring = _round_points(list(poly.exterior.coords)); holes=sorted(_round_points(list(interior.coords)) for interior in poly.interiors)
+    physical_id = _stable_id("PS", [source_hash, frame["frame_id"], ring, holes])
     labels, objects = _evidence_for_cell(poly, extracted); semantic = _infer_categories(labels, objects)
     categories = sorted(semantic)
     zones = []
@@ -437,7 +532,7 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit):
     evidence = [{"class": "CAD_TOPOLOGY", "source_handles": sorted({p.get("handle") for p in extracted["primitives"] if p.get("handle")})}]
     evidence.extend(e for values in semantic.values() for e in values)
     return {"space_id": physical_id, "physical_space_id": physical_id, "level_id": frame.get("level_candidate"), "frame_id": frame["frame_id"],
-            "category": category, "use": category, "subtype": None, "polygon": ring,
+            "category": category, "use": category, "subtype": None, "polygon": ring, "interior_rings":holes,
             "centroid": [poly.centroid.x, poly.centroid.y], "area_m2": poly.area * scale * scale if scale else None,
             "geometric_area_drawing_units": poly.area, "perimeter_m": poly.length * scale if scale else None,
             "principal_dimensions": {"width_m": (maxx-minx)*scale if scale else None, "length_m": (maxy-miny)*scale if scale else None,
@@ -449,14 +544,125 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit):
 
 
 def _adjacency(spaces, tolerance):
-    polygons = {s["physical_space_id"]: Polygon(s["polygon"]) for s in spaces}
+    polygons = {s["physical_space_id"]: _space_polygon(s) for s in spaces}
     for left in spaces:
         p = polygons[left["physical_space_id"]]
         left["adjacent_space_ids"] = sorted(right_id for right_id, q in polygons.items()
                                                    if right_id != left["physical_space_id"] and p.distance(q) <= (tolerance or 1e-7))
 
 
-def _completeness(frames, spaces, units_known):
+def _opening_point(row):
+    geometry = row.get("geometry") or {}
+    if geometry.get("point"):
+        return Point(geometry["point"])
+    points = geometry.get("points") or []
+    return LineString(points).interpolate(.5, normalized=True) if len(points) >= 2 else None
+
+
+def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance):
+    """Bind openings to a host wall and the spaces they connect.
+
+    An opening with no defensible wall match is explicitly rejected.  A door
+    with only one bounded side is exterior; two sides create a portal.  More
+    than two candidate sides is a conflict, never an arbitrary nearest-room
+    choice.
+    """
+    tol = max(float(tolerance or 0.001) * 3.0, 1e-6)
+    polygons = {s["physical_space_id"]: _space_polygon(s) for s in spaces}
+    walls = [{"wall_id": _stable_id("WALL", [source_hash, _round_points(list(line.coords))]), "line": line}
+             for line in wall_lines]
+    accepted = []
+    for row in openings:
+        point = _opening_point(row)
+        if point is None:
+            accepted.append({**row, "status": "REJECTED", "reason": "OPENING_GEOMETRY_MISSING"}); continue
+        near_walls = sorted(((w["line"].distance(point), w) for w in walls), key=lambda pair: (pair[0], pair[1]["wall_id"]))
+        if not near_walls or near_walls[0][0] > tol:
+            accepted.append({**row, "status": "REJECTED", "reason": "ORPHAN_OPENING_NO_HOST_WALL"}); continue
+        host = near_walls[0][1]
+        touching = sorted(space_id for space_id, poly in polygons.items() if poly.boundary.distance(point) <= tol)
+        if len(touching) > 2:
+            accepted.append({**row, "host_wall_id": host["wall_id"], "status": "CONFLICT",
+                             "reason": "OPENING_TOUCHES_MORE_THAN_TWO_SPACES", "candidate_space_ids": touching}); continue
+        if not touching:
+            accepted.append({**row, "host_wall_id": host["wall_id"], "status": "REJECTED",
+                             "reason": "ORPHAN_OPENING_NO_SPACE"}); continue
+        line = host["line"]; coords = list(line.coords); dx=coords[-1][0]-coords[0][0]; dy=coords[-1][1]-coords[0][1]
+        orientation = round((math.degrees(math.atan2(dy, dx)) + 360.0) % 180.0, 3)
+        geometry = row.get("geometry") or {}; pts = geometry.get("points") or []
+        width = LineString(pts).length if len(pts) >= 2 else None
+        bound = {**row, "host_wall_id": host["wall_id"], "level_id": next((s.get("level_id") for s in spaces if s["physical_space_id"] in touching), None),
+                 "space_a": touching[0], "space_b": touching[1] if len(touching) == 2 else "EXTERIOR",
+                 "orientation": orientation, "width_drawing_units": width,
+                 "opening_geometry": geometry, "status": "VERIFIED"}
+        accepted.append(bound)
+        key = "openings" if row["kind"] == "door" else "windows"
+        for space in spaces:
+            if space["physical_space_id"] in touching: space[key].append(row["opening_id"])
+    return accepted, [{"wall_id": w["wall_id"], "geometry": list(w["line"].coords)} for w in walls]
+
+
+def _coverage(frames, spaces):
+    """Measure accounted geometry over reconstructed authoritative regions."""
+    per_frame=[]
+    for frame in frames:
+        if frame.get("scope_relevance") == "REFERENCE_ONLY" or not frame.get("bounds"): continue
+        rows=[s for s in spaces if s["frame_id"] == frame["frame_id"]]
+        polys=[_space_polygon(s) for s in rows]
+        usable=unary_union(polys).area if polys else 0.0
+        accounted=unary_union([p for p,s in zip(polys, rows) if s["status"] in {"VERIFIED","HIGH_CONFIDENCE"}]).area if polys else 0.0
+        unresolved=max(0.0, usable-accounted)
+        summed=sum(p.area for p in polys); overlap=max(0.0, summed-usable)
+        gross=box(*frame["bounds"]).area
+        unexplained=max(0.0, gross-usable)
+        ratio=accounted/usable if usable else 0.0
+        per_frame.append({"frame_id":frame["frame_id"], "authoritative_usable_area":usable,
+                          "accounted_physical_space_area":accounted, "unresolved_area":unresolved,
+                          "overlap_area":overlap, "authoritative_frame_gross_area":gross,
+                          "unexplained_frame_area":unexplained, "coverage_ratio":ratio,
+                          "status":"PASS" if usable and unresolved <= max(usable*1e-6, 1e-9) and overlap <= max(usable*1e-6,1e-9) else "INPUT_REQUIRED"})
+    return {"status":"PASS" if per_frame and all(r["status"]=="PASS" for r in per_frame) else "INPUT_REQUIRED",
+            "frames":per_frame,
+            "coverage_ratio":sum(r["accounted_physical_space_area"] for r in per_frame)/sum((r["authoritative_usable_area"] for r in per_frame), start=0.0) if sum((r["authoritative_usable_area"] for r in per_frame), start=0.0) else 0.0}
+
+
+def _dimension_reconciliation(spaces, metres_per_unit, tolerance):
+    rows=[]
+    geometric_tol=max((tolerance or .001)*(metres_per_unit or 1.0), .001)
+    for space in spaces:
+        poly=_space_polygon(space); minx,miny,maxx,maxy=poly.bounds
+        candidates=[(maxx-minx)*(metres_per_unit or 1.0),(maxy-miny)*(metres_per_unit or 1.0)]
+        for dim in space.get("dimensions") or []:
+            annotated=dim.get("measurement_m")
+            if annotated is None: continue
+            nearest=min(candidates,key=lambda value:abs(value-annotated)); delta=abs(nearest-annotated)
+            allowed=max(geometric_tol, abs(annotated)*.005)
+            rows.append({"dimension_id":dim["dimension_id"],"space_id":space["physical_space_id"],
+                         "annotated_measurement_m":annotated,"geometric_measurement_m":nearest,
+                         "difference_m":delta,"tolerance_m":allowed,
+                         "status":"PASS" if delta<=allowed else "CONFLICT"})
+    return {"status":"CONFLICT" if any(r["status"]=="CONFLICT" for r in rows) else "PASS", "rows":rows}
+
+
+def _review_payload(spaces, frames, openings, coverage, dimension_reconciliation):
+    decisions=[]
+    for space in spaces:
+        if space["status"] in {"VERIFIED","HIGH_CONFIDENCE"}: continue
+        candidates=sorted({z["category"] for z in space.get("functional_zones") or []}) or ["unknown"]
+        decisions.append({"region_id":space["physical_space_id"],"frame_id":space["frame_id"],
+                          "bounds":list(_space_polygon(space).bounds),"candidate_types":candidates,
+                          "evidence":space.get("evidence") or [],"required":True,"status":space["status"]})
+    for opening in openings:
+        if opening["status"] not in {"VERIFIED","HIGH_CONFIDENCE"}:
+            decisions.append({"region_id":opening["opening_id"],"frame_id":None,"candidate_types":[opening["kind"],"reject"],
+                              "evidence":opening.get("evidence") or [],"required":opening["kind"]=="door",
+                              "status":opening["status"],"reason":opening.get("reason")})
+    return {"schema":"architectural-review/1.0","decisions":decisions,
+            "verified_items_hidden":True,"blocking":any(d["required"] for d in decisions),
+            "coverage":coverage,"dimension_reconciliation":dimension_reconciliation}
+
+
+def _completeness(frames, spaces, units_known, *, coverage=None, openings=None, dimension_reconciliation=None):
     issues = []
     for frame in frames:
         if frame.get("scope_relevance") == "MECHANICAL_AUTHORITY" and frame["frame_type"] == "UNKNOWN":
@@ -466,6 +672,13 @@ def _completeness(frames, spaces, units_known):
             issues.append({"code": "UNRESOLVED_SPACE", "space_id": space["physical_space_id"], "frame_id": space["frame_id"], "status": space["status"]})
         if space["area_m2"] is None: issues.append({"code": "UNIT_CALIBRATION_REQUIRED", "space_id": space["physical_space_id"], "status": "INPUT_REQUIRED"})
     if not spaces: issues.append({"code": "NO_PHYSICAL_SPACES_RECONSTRUCTED", "status": "INPUT_REQUIRED"})
+    if coverage and coverage.get("status") != "PASS":
+        issues.append({"code":"ARCHITECTURAL_GEOMETRIC_COVERAGE_INCOMPLETE","status":"INPUT_REQUIRED"})
+    for opening in openings or []:
+        if opening.get("kind") == "door" and opening.get("status") != "VERIFIED":
+            issues.append({"code":"UNRESOLVED_CRITICAL_DOOR","opening_id":opening.get("opening_id"),"status":"INPUT_REQUIRED"})
+    if dimension_reconciliation and dimension_reconciliation.get("status") == "CONFLICT":
+        issues.append({"code":"ENGINEERING_DIMENSION_CONFLICT","status":"CONFLICT"})
     conflicts = [x for x in issues if x["status"] == "CONFLICT"]
     status = "CONFLICT" if conflicts else ("INPUT_REQUIRED" if issues or not units_known else "VERIFIED")
     return {"status": status, "release_allowed": status == "VERIFIED", "downstream_engineering_allowed": status == "VERIFIED",
@@ -489,24 +702,45 @@ def recognition_svg(model):
 
 
 def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = None):
-    started = time.perf_counter(); doc, source = _ingest(path); extracted = _extract(doc)
+    started = time.perf_counter(); stage_started=started; timings={}
+    doc, source = _ingest(path); extracted = _extract(doc); timings["parsing"]=time.perf_counter()-stage_started
+    stage_started=time.perf_counter()
     fallback = _frame_from_extent(extracted, source["source_sha256"])
     frames = _detected_frames(path, source["source_sha256"], fallback)
     source = _calibrate_scale(source, frames, extracted["dimensions"])
     tolerance = _adaptive_tolerance(extracted["boundary_lines"], source["metres_per_unit"])
+    timings["frame_and_scale_resolution"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces = []
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
-        local_lines = [line for line in extracted["boundary_lines"] if _line_in_frame(line, frame)]
+        clip=box(*frame["bounds"]) if frame.get("bounds") else None
+        local_lines=[]
+        for line in extracted["boundary_lines"]:
+            if clip is None or not line.intersects(clip): continue
+            clipped=line.intersection(clip)
+            if clipped.geom_type=="LineString" and not clipped.is_empty: local_lines.append(clipped)
+            elif clipped.geom_type=="MultiLineString": local_lines.extend(g for g in clipped.geoms if not g.is_empty)
         polygons = _polygonize_spaces(local_lines, frame, tolerance)
         spaces.extend(_space_record(p, frame, source["source_sha256"], extracted, source["metres_per_unit"]) for p in polygons)
+    timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
-    completeness = _completeness(frames, spaces, source["metres_per_unit"] is not None)
+    opening_candidates=_opening_candidates(extracted, source["source_sha256"])
+    openings,walls=_bind_openings(opening_candidates,spaces,extracted["boundary_lines"],source["source_sha256"],tolerance)
+    timings["topology"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
+    coverage=_coverage(frames,spaces)
+    dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
+    completeness = _completeness(frames, spaces, source["metres_per_unit"] is not None,
+                                 coverage=coverage,openings=openings,dimension_reconciliation=dimension_reconciliation)
+    timings["qa_and_completeness"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     # Vision remains an explicit, optional reconciliation dependency.  It is
     # never invoked for facts already verified from CAD.
-    unresolved = [{"space_id": s["physical_space_id"], "bounds": list(Polygon(s["polygon"]).bounds)} for s in spaces if s["status"] != "VERIFIED"]
-    vision = {"provider": type(vision_adapter or NoVisionAdapter()).__name__, "calls": 0, "candidates": [], "status": "NOT_REQUIRED" if not unresolved else "INPUT_REQUIRED"}
+    unresolved = [{"space_id": s["physical_space_id"], "bounds": list(_space_polygon(s).bounds)} for s in spaces if s["status"] != "VERIFIED"]
+    adapter=vision_adapter or NoVisionAdapter()
+    vision = {"provider": type(adapter).__name__, "calls": 0, "candidates": [],
+              "status": "NOT_REQUIRED" if not unresolved else ("CONFIG_REQUIRED" if isinstance(adapter,NoVisionAdapter) else "READY"),
+              "policy":"DETERMINISTIC_FIRST_LOCALIZED_REGIONS_ONLY","regions":unresolved}
+    timings["vision_preparation"]=time.perf_counter()-stage_started
     rooms = []
     for space in spaces:
         if space["functional_zones"]:
@@ -518,15 +752,19 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             rooms.append({"id": space["physical_space_id"], "type": "unknown", "polygon": space["polygon"],
                           "area": space["geometric_area_drawing_units"], "centroid": space["centroid"], "evidence": space["evidence"],
                           "status": "INPUT_REQUIRED", "plan_id": space["frame_id"]})
+    review=_review_payload(spaces,frames,openings,coverage,dimension_reconciliation)
     model = {"schema": SCHEMA, "source": source, "frames": frames, "levels": [], "physical_spaces": spaces,
              "functional_zones": [z for s in spaces for z in s["functional_zones"]], "architectural_objects": extracted["objects"],
-             "dimensions": extracted["dimensions"], "completeness": completeness, "vision_reconciliation": vision,
+             "dimensions": extracted["dimensions"], "dimension_reconciliation":dimension_reconciliation,
+             "openings":openings,"canonical_walls":walls,"coverage":coverage,"review":review,
+             "completeness": completeness, "vision_reconciliation": vision,
              "diagnostics": {"entity_counts": extracted["entity_counts"], "adaptive_tolerance": tolerance,
-                             "space_candidate_count": len(spaces), "runtime_seconds": round(time.perf_counter()-started,6)},
+                             "space_candidate_count": len(spaces), "stage_runtime_seconds":{k:round(v,6) for k,v in timings.items()},
+                             "dxf_parse_count":1,"runtime_seconds": round(time.perf_counter()-started,6)},
              # Backward-compatible projection; canonical consumers use fields above.
              "version": SCHEMA, "units": source["insunits"], "bounds": fallback["bounds"], "rooms": rooms,
              "walls": [{"start": list(line.coords)[0], "end": list(line.coords)[-1]} for line in extracted["boundary_lines"]],
-             "doors": [o for o in extracted["objects"] if "door" in normalize_text(o.get("name"))], "columns": [], "shafts": [],
+             "doors": [o for o in openings if o["kind"]=="door"], "windows":[o for o in openings if o["kind"]=="window"], "columns": [], "shafts": [],
              "all_inserts": extracted["objects"], "all_texts": extracted["texts"],
              "quality": {"room_count": len(rooms), "rooms_with_polygon": len(rooms), "wall_segments": len(extracted["boundary_lines"]),
                          "canonical_space_count": len(spaces), "status": completeness["status"]}}
