@@ -52,6 +52,11 @@ def test_annotation_package_is_source_only_and_pending(tmp_path):
     assert golden["spaces"]==[] and golden["portals"]==[]
     assert golden["review"]["runtime_output_visible_during_annotation"] is False
     assert "RAW DXF ONLY" in viewer and "current Planha" not in viewer
+    assert "بازبینی مستقل پلان" in viewer
+    assert 'data-mode="envelope"' in viewer
+    assert 'data-mode="space"' in viewer
+    assert 'data-mode="door"' in viewer
+    assert "localStorage" in viewer and "دانلود فایل Golden" in viewer
     assert manifest["excluded_runtime_material"] is True
     assert "UNKNOWN" in instructions
     report=validate(golden,source.read_bytes())

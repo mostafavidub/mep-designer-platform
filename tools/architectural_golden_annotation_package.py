@@ -48,15 +48,61 @@ def _source_svg(doc,bounds,case_id):
     return svg,counts
 
 
-def _viewer(svg,case_id,level,bounds):
+def _viewer(svg,case_id,level,bounds,golden):
     initial=" ".join(str(v) for v in (bounds[0],-bounds[3],bounds[2]-bounds[0],bounds[3]-bounds[1]))
-    return f'''<!doctype html><html><meta charset="utf-8"><title>{html.escape(case_id)}</title><style>
-html,body{{margin:0;height:100%;background:#111827;font:14px system-ui;color:#fff}}header{{padding:8px 14px;display:flex;gap:18px}}
-#canvas{{height:calc(100% - 42px);background:#fff;overflow:hidden}}svg{{width:100%;height:100%;touch-action:none;cursor:crosshair}}</style>
-<header><b>{html.escape(case_id)}</b><span>{html.escape(level)}</span><span>RAW DXF ONLY</span><span id="xy">x —, y —</span><span>Wheel: zoom · Drag: pan</span></header><div id="canvas">{svg}</div><script>
-const s=document.querySelector('svg'),o=document.querySelector('#xy');let b=[{initial}],d=null;const a=()=>s.setAttribute('viewBox',b.join(' '));a();
-s.onwheel=e=>{{e.preventDefault();let p=s.createSVGPoint();p.x=e.clientX;p.y=e.clientY;p=p.matrixTransform(s.getScreenCTM().inverse());let f=e.deltaY>0?1.12:.88;b=[p.x+(b[0]-p.x)*f,p.y+(b[1]-p.y)*f,b[2]*f,b[3]*f];a()}};
-s.onpointerdown=e=>{{d=[e.clientX,e.clientY,...b];s.setPointerCapture(e.pointerId)}};s.onpointermove=e=>{{let p=s.createSVGPoint();p.x=e.clientX;p.y=e.clientY;p=p.matrixTransform(s.getScreenCTM().inverse());o.textContent=`x ${{p.x.toFixed(4)}}, y ${{(-p.y).toFixed(4)}}`;if(d){{b[0]=d[2]-(e.clientX-d[0])*b[2]/s.clientWidth;b[1]=d[3]-(e.clientY-d[1])*b[3]/s.clientHeight;a()}}}};s.onpointerup=()=>d=null;
+    seed=json.dumps(golden,ensure_ascii=False).replace("</","<\\/")
+    return f'''<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بازبینی مستقل پلان — {html.escape(case_id)}</title><style>
+*{{box-sizing:border-box}}html,body{{margin:0;height:100%;font:14px system-ui,-apple-system,sans-serif;color:#172033;background:#eef2f7}}
+body{{display:grid;grid-template-rows:auto 1fr}}header{{background:#111827;color:#fff;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}}
+header b{{font-size:16px}}.badge{{background:#334155;border-radius:999px;padding:5px 10px}}.safe{{background:#065f46}}#app{{min-height:0;display:grid;grid-template-columns:340px 1fr;direction:ltr}}
+aside{{direction:rtl;background:#fff;border-left:1px solid #cbd5e1;padding:14px;overflow:auto}}main{{min-width:0;position:relative;background:#dbe3ed}}
+h2{{font-size:17px;margin:0 0 8px}}h3{{font-size:14px;margin:18px 0 7px}}p{{line-height:1.7;margin:5px 0;color:#475569}}.step{{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;margin:8px 0}}
+.tools{{display:grid;grid-template-columns:1fr 1fr;gap:7px}}button,.file-label,select,input{{font:inherit}}button,.file-label{{border:1px solid #94a3b8;background:#fff;border-radius:9px;padding:9px;cursor:pointer;text-align:center}}
+button:hover,.file-label:hover{{background:#f1f5f9}}button.active{{background:#1d4ed8;color:#fff;border-color:#1d4ed8}}button.primary{{background:#059669;color:#fff;border-color:#047857;width:100%;font-weight:700}}button.danger{{color:#b91c1c}}
+select,input{{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;background:#fff}}label{{display:block;margin:8px 0 4px;color:#334155;font-weight:600}}#status{{padding:9px;border-radius:8px;background:#f1f5f9;margin:9px 0;line-height:1.6}}#canvas{{position:absolute;inset:0;overflow:hidden}}
+svg{{width:100%;height:100%;touch-action:none;cursor:crosshair;background:#fff}}#source-plan polyline{{stroke:#334155!important;stroke-width:1.15px!important}}#source-plan text{{fill:#111827!important;font-weight:500}}.ann{{vector-effect:non-scaling-stroke;stroke-width:2px}}.vertex{{vector-effect:non-scaling-stroke;stroke-width:1.5px}}
+#help{{position:absolute;direction:rtl;left:14px;bottom:14px;background:#111827e8;color:#fff;border-radius:10px;padding:9px 12px;max-width:470px}}#empty{{color:#64748b}}.row{{display:flex;gap:7px}}.row>*{{flex:1}}
+@media(max-width:850px){{#app{{grid-template-columns:1fr;grid-template-rows:45vh 1fr}}aside{{grid-row:2;border-left:0;border-top:1px solid #cbd5e1}}}}
+</style><header data-source="RAW DXF ONLY"><b>بازبینی مستقل پلان</b><span class="badge">{html.escape(case_id)}</span><span class="badge">{html.escape(level)}</span><span class="badge safe">فقط نقشه خام؛ بدون خروجی موتور</span><span id="xy">مختصات: —</span></header>
+<div id="app"><aside>
+<h2>چه کاری باید انجام دهید؟</h2><div class="step">۱. ابتدا با ابزار <b>محدوده ساختمان</b> دور ساختمان را نقطه‌گذاری کنید.<br>۲. سپس هر <b>فضای واقعی</b> مثل اتاق، آشپزخانه یا راه‌پله را جدا رسم کنید.<br>۳. در پایان درها، پنجره‌ها و مسیرهای باز را علامت بزنید.<br><b>اگر مطمئن نیستید، نوع را «نامشخص» بگذارید.</b></div>
+<h3>ابزار ترسیم</h3><div class="tools">
+<button data-mode="pan" class="active">✋ جابه‌جایی پلان</button><button data-mode="envelope">⬡ محدوده ساختمان</button>
+<button data-mode="space">▣ فضای واقعی</button><button data-mode="void">◌ حیاط‌خلوت / Void</button>
+<button data-mode="door">🚪 در</button><button data-mode="window">▭ پنجره</button><button data-mode="passage">↔ مسیر باز</button><button id="fit">نمایش کامل پلان</button></div>
+<div id="draw-options"><label>نوع فضا</label><select id="category"><option value="UNKNOWN">نامشخص / نیازمند بررسی</option><option value="living">پذیرایی / نشیمن</option><option value="dining">ناهارخوری</option><option value="kitchen">آشپزخانه</option><option value="bedroom">اتاق خواب</option><option value="bathroom">حمام</option><option value="toilet">سرویس بهداشتی</option><option value="corridor">راهرو / هال</option><option value="stair">راه‌پله</option><option value="elevator">آسانسور</option><option value="parking">پارکینگ</option><option value="balcony">بالکن / تراس</option><option value="shaft">شفت</option><option value="utility">فضای خدماتی</option><option value="exterior">فضای نیمه‌باز / بیرونی</option></select>
+<label>نام نمایشی اختیاری</label><input id="label" placeholder="مثلاً اتاق خواب والدین"></div>
+<div id="status">حالت جابه‌جایی فعال است. پلان را بکشید و با چرخ ماوس زوم کنید.</div>
+<div class="row"><button id="finish" class="primary">بستن و ثبت محدوده</button><button id="undo">برگشت یک نقطه</button></div>
+<h3>ذخیره و تحویل</h3><p>تغییرات در همین مرورگر خودکار ذخیره می‌شوند. برای تحویل، فایل را دانلود کنید.</p><button id="download" class="primary">دانلود فایل Golden</button>
+<div class="row"><label class="file-label">بازکردن فایل قبلی<input id="import" type="file" accept="application/json" hidden></label><button id="clear" class="danger">پاک‌کردن پیش‌نویس</button></div>
+<h3>خلاصه</h3><div id="summary"><span id="empty">هنوز چیزی ثبت نشده است.</span></div>
+</aside><main><div id="canvas">{svg}</div><div id="help">در حالت جابه‌جایی، پلان را بکشید. در حالت ترسیم، روی گوشه‌ها کلیک کنید؛ نقاط نزدیک خطوط نقشه خودکار Snap می‌شوند.</div></main></div>
+<script id="golden-seed" type="application/json">{seed}</script><script>
+const s=document.querySelector('#source-plan'),xy=document.querySelector('#xy'),statusBox=document.querySelector('#status');
+const initial=[{initial}],key='planha-golden-review:{html.escape(case_id)}';let view=[...initial],drag=null,mode='pan',draft=[],seq=1;
+let golden=JSON.parse(localStorage.getItem(key)||document.querySelector('#golden-seed').textContent);
+const NS='http://www.w3.org/2000/svg';const overlay=document.createElementNS(NS,'g');overlay.id='human-annotations';s.appendChild(overlay);
+function applyView(){{s.setAttribute('viewBox',view.join(' '))}}applyView();
+function svgPoint(e){{let p=s.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(s.getScreenCTM().inverse())}}
+function sourcePoint(e){{const p=svgPoint(e);return [p.x,-p.y]}}
+function snap(e){{let best=sourcePoint(e),dist=14;const candidates=s.querySelectorAll('polyline');for(const line of candidates){{const pts=line.points;for(let i=0;i<pts.numberOfItems;i++){{const q=pts.getItem(i),spt=s.createSVGPoint();spt.x=q.x;spt.y=q.y;const c=spt.matrixTransform(s.getScreenCTM());const d=Math.hypot(c.x-e.clientX,c.y-e.clientY);if(d<dist){{dist=d;best=[q.x,-q.y]}}}}}}return best}}
+function path(points,closed,color,fill='none'){{if(!points.length)return;const p=document.createElementNS(NS,closed?'polygon':'polyline');p.setAttribute('points',points.map(q=>q[0]+','+(-q[1])).join(' '));p.setAttribute('class','ann');p.setAttribute('stroke',color);p.setAttribute('fill',fill);overlay.appendChild(p);return p}}
+function dot(point,color){{const c=document.createElementNS(NS,'circle');c.setAttribute('cx',point[0]);c.setAttribute('cy',-point[1]);c.setAttribute('r',Math.max(view[2],view[3])*.004);c.setAttribute('fill','#fff');c.setAttribute('stroke',color);c.setAttribute('class','vertex');overlay.appendChild(c)}}
+function render(){{overlay.innerHTML='';const env=golden.building_envelope||{{}};path(env.outer_ring||[],true,'#7c3aed','#7c3aed18');(env.interior_voids||[]).forEach(x=>path(x,true,'#dc2626','#dc262618'));(golden.spaces||[]).forEach((x,i)=>path(x.polygon,true,'#0284c7',i%2?'#38bdf822':'#0ea5e922'));(golden.portals||[]).forEach(x=>{{const colors={{door:'#ea580c',window:'#16a34a',open_passage:'#db2777'}};dot(x.point,colors[x.kind])}});path(draft,false,'#f59e0b');draft.forEach(x=>dot(x,'#f59e0b'));summary()}}
+function save(){{localStorage.setItem(key,JSON.stringify(golden));render()}}
+function summary(){{const n=(golden.spaces||[]).length,p=(golden.portals||[]).length,v=(golden.building_envelope?.interior_voids||[]).length;document.querySelector('#summary').innerHTML=`محدوده ساختمان: <b>${{golden.building_envelope?.outer_ring?.length?'ثبت شده':'ثبت نشده'}}</b><br>فضاها: <b>${{n}}</b><br>Voidها: <b>${{v}}</b><br>بازشوها: <b>${{p}}</b>`}}
+function setMode(next){{mode=next;draft=[];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const msg={{pan:'پلان را بکشید و با چرخ ماوس زوم کنید.',envelope:'گوشه‌های بیرونی ساختمان را به ترتیب کلیک کنید.',space:'دور یک فضای واقعی را نقطه‌گذاری کنید.',void:'دور حیاط‌خلوت، نورگیر یا فضای خالی داخلی را مشخص کنید.',door:'روی مرکز در کلیک کنید.',window:'روی مرکز پنجره کلیک کنید.',passage:'روی مرکز مسیر باز کلیک کنید.'}};statusBox.textContent=msg[mode];render()}}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+s.onwheel=e=>{{e.preventDefault();const p=svgPoint(e),f=e.deltaY>0?1.12:.88;view=[p.x+(view[0]-p.x)*f,p.y+(view[1]-p.y)*f,view[2]*f,view[3]*f];applyView();render()}};
+s.onpointerdown=e=>{{if(mode==='pan'){{drag=[e.clientX,e.clientY,...view];s.setPointerCapture(e.pointerId)}}else{{const point=snap(e);if(['door','window','passage'].includes(mode)){{const kind=mode==='passage'?'open_passage':mode;golden.portals.push({{golden_portal_id:`PORTAL-${{String(golden.portals.length+1).padStart(3,'0')}}`,kind,status:'VERIFIED',point,space_a:null,space_b:null}});save();statusBox.textContent='بازشو ثبت شد. برای مورد بعدی دوباره کلیک کنید.'}}else{{draft.push(point);render()}}}}}};
+s.onpointermove=e=>{{const p=sourcePoint(e);xy.textContent=`مختصات X: ${{p[0].toFixed(3)}} ، Y: ${{p[1].toFixed(3)}}`;if(drag){{view[0]=drag[2]-(e.clientX-drag[0])*view[2]/s.clientWidth;view[1]=drag[3]-(e.clientY-drag[1])*view[3]/s.clientHeight;applyView();render()}}}};s.onpointerup=()=>drag=null;
+document.querySelector('#finish').onclick=()=>{{if(!['envelope','space','void'].includes(mode)){{statusBox.textContent='ابتدا یکی از ابزارهای محدوده یا فضا را انتخاب کنید.';return}}if(draft.length<3){{statusBox.textContent='حداقل سه گوشه لازم است.';return}}const ring=[...draft,draft[0]];if(mode==='envelope')golden.building_envelope={{status:'VERIFIED',outer_ring:ring,interior_voids:golden.building_envelope?.interior_voids||[]}};if(mode==='void')golden.building_envelope.interior_voids.push(ring);if(mode==='space'){{const id=`SPACE-${{String(golden.spaces.length+1).padStart(3,'0')}}`;golden.spaces.push({{golden_space_id:id,status:document.querySelector('#category').value==='UNKNOWN'?'UNKNOWN':'VERIFIED',polygon:ring,interior_rings:[],category:document.querySelector('#category').value,display_name:document.querySelector('#label').value||null,open_plan_group:null}})}}draft=[];save();statusBox.textContent='محدوده ثبت شد. می‌توانید مورد بعدی را رسم کنید.'}};
+document.querySelector('#undo').onclick=()=>{{draft.pop();render()}};document.querySelector('#fit').onclick=()=>{{view=[...initial];applyView();render()}};
+document.querySelector('#download').onclick=()=>{{golden.review.annotation_date=new Date().toISOString().slice(0,10);const blob=new Blob([JSON.stringify(golden,null,2)+'\\n'],{{type:'application/json'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='{html.escape(case_id)}-golden-DRAFT.json';a.click();URL.revokeObjectURL(a.href)}};
+document.querySelector('#import').onchange=async e=>{{try{{golden=JSON.parse(await e.target.files[0].text());save();statusBox.textContent='فایل قبلی با موفقیت باز شد.'}}catch{{statusBox.textContent='فایل انتخاب‌شده معتبر نیست.'}}}};
+document.querySelector('#clear').onclick=()=>{{if(confirm('پیش‌نویس این پلان پاک شود؟')){{localStorage.removeItem(key);golden=JSON.parse(document.querySelector('#golden-seed').textContent);draft=[];render()}}}};render();
 </script></html>'''
 
 
@@ -72,8 +118,10 @@ Frame identity: `{frame_id}`
 Frame bounds: `{bounds}`
 
 Open `review.html`; it contains raw DXF primitives only. Do not open Planha
-reconstruction output during annotation. Wheel zooms, drag pans, and the header
-shows source DXF coordinates.
+reconstruction output during annotation. The Persian step-by-step interface
+provides explicit pan, envelope, space, void, door, window and open-passage
+tools. It snaps clicks to nearby source vertices, saves drafts in the browser,
+and downloads the Golden JSON; reviewers do not edit JSON manually.
 
 1. Trace building outer ring and real courtyard/lightwell voids.
 2. Trace every physical space. Furniture, cabinets, dimensions, annotations and
@@ -104,7 +152,7 @@ def build(source,case_id,level,bounds,runtime_frame_id):
     manifest={"case_id":case_id,"source_sha256":source_hash,"frame_identity":runtime_frame_id,"level":level,"bounds":bounds,
               "coordinate_system":"SOURCE_DXF_XY; SVG display uses -Y","render_source":"RAW_DXF_RECURSIVE_PRIMITIVES_ONLY",
               "rendered_primitive_counts":counts,"excluded_runtime_material":True}
-    return svg,golden,manifest,_viewer(svg,case_id,level,bounds),_instructions(case_id,level,source_hash,runtime_frame_id,bounds)
+    return svg,golden,manifest,_viewer(svg,case_id,level,bounds,golden),_instructions(case_id,level,source_hash,runtime_frame_id,bounds)
 
 
 def main():
