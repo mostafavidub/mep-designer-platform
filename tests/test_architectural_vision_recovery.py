@@ -6,8 +6,9 @@ import pytest
 
 from cad_engine.architectural_space_engine import reconstruct_architecture
 from cad_engine.architectural_vision_recovery import (
-    DeepSeekVisionAdapter, GLOBAL_JSON_SCHEMA, OpenAIVisionAdapter, RenderTransform, VisionRecoveryError, _validate_payload,
-    configured_vision_adapter, reconcile_and_repair, render_source_frame,
+    DeepSeekVisionAdapter, GLOBAL_JSON_SCHEMA, OpenAIVisionAdapter, RENDER_VERSION, RenderTransform,
+    VisionRecoveryError, _raw_source_context, _validate_payload, configured_vision_adapter,
+    reconcile_and_repair, render_source_frame, select_vision_viewport,
 )
 from cad_engine.engineering_runner import run_engineering_pipeline
 
@@ -78,6 +79,55 @@ def test_source_renderer_is_cached_and_transform_manifest_is_exact(tmp_path):
     assert first == second
     assert first["cache_key"] == second["cache_key"]
     assert first["transform"]["y_axis_inverted"] is True
+
+
+def _viewport_source():
+    primitives=[]
+    def line(a,b,layer="0"):
+        primitives.append({"entity_type":"LINE","start":a,"end":b,"layer":layer,"handle":str(len(primitives))})
+    # Whole-sheet border must not become the plan viewport.
+    for a,b in [((0,0),(100,0)),((100,0),(100,100)),((100,100),(0,100)),((0,100),(0,0))]: line(a,b)
+    # Dense Layer-0 plan plus an attached balcony/exterior edge.
+    for a,b in [((20,20),(60,20)),((60,20),(60,60)),((60,60),(20,60)),((20,60),(20,20)),
+                ((40,20),(40,60)),((20,40),(60,40)),((60,30),(70,30)),((70,30),(70,50)),((70,50),(60,50))]: line(a,b)
+    # A sparse title box must not win over the plan.
+    for a,b in [((76,2),(98,2)),((98,2),(98,14)),((98,14),(76,14)),((76,14),(76,2))]: line(a,b,"TITLE")
+    texts=[{"text":"اتاق خواب","point":[22,62],"layer":"0"},{"text":"PROJECT TITLE","point":[78,8],"layer":"TITLE"}]
+    return {"primitives":primitives,"texts":texts,"objects":[],"dimensions":[]}
+
+
+def test_raw_viewport_excludes_sheet_border_title_and_whitespace_but_retains_plan_edges():
+    viewport=select_vision_viewport(extracted=_viewport_source(),frame={"frame_id":"F","bounds":[0,0,100,100]})
+    x1,y1,x2,y2=viewport["vision_bounds"]
+    assert x1>0 and y1>0 and x2<90 and y2<80
+    assert x1<20 and y1<20 and x2>=70 and y2>60
+    assert viewport["metrics"]["vision_to_frame_ratio"]<.55
+    assert viewport["selection_evidence"]["excluded_long_frame_geometry"]==4
+
+
+def test_focused_and_full_frame_transforms_are_independent_and_cache_is_versioned(tmp_path):
+    source=_viewport_source(); frame={"frame_id":"F","bounds":[0,0,100,100]}
+    viewport=select_vision_viewport(extracted=source,frame=frame)
+    full=render_source_frame(extracted=source,frame=frame,source_hash="abc",cache_dir=tmp_path,
+                             width_px=600,render_role="CONTEXT_FULL_FRAME")
+    focused=render_source_frame(extracted=source,frame=frame,source_hash="abc",cache_dir=tmp_path,
+                                width_px=600,viewport=viewport,render_role="FOCUSED_PLAN")
+    assert full["cache_key"]!=focused["cache_key"]
+    assert full["transform"]["cad_bounds"]!=focused["transform"]["cad_bounds"]
+    assert full["render_version"]==focused["render_version"]==RENDER_VERSION
+    focus_transform=RenderTransform(*focused["transform"]["cad_bounds"],*focused["transform"]["pixel_size"],
+                                    focused["transform"]["padding_px"])
+    assert focus_transform.pixel_to_cad(focus_transform.cad_to_pixel((40,40)))==pytest.approx((40,40))
+
+
+def test_persian_source_label_is_preserved_as_structured_context(tmp_path):
+    source=_viewport_source(); frame={"frame_id":"F","bounds":[0,0,100,100]}
+    viewport=select_vision_viewport(extracted=source,frame=frame)
+    manifest=render_source_frame(extracted=source,frame=frame,source_hash="abc",cache_dir=tmp_path,
+                                 viewport=viewport,render_role="FOCUSED_PLAN")
+    context=_raw_source_context(source,manifest)
+    assert any(row["text"]=="اتاق خواب" for row in context["raw_texts"])
+    assert all(len(row["pixel_point"])==2 for row in context["raw_texts"])
 
 
 def test_openai_request_uses_configured_model_and_parses_strict_json(tmp_path, monkeypatch):
@@ -319,6 +369,21 @@ def test_vision_cannot_merge_across_strong_cad_wall():
     assert result["accepted_repairs"]==0
     assert len(spaces)==2
     assert result["repairs"][0]["reason"]=="STRONG_WALL_OR_GEOMETRY_CONFLICT"
+
+
+def test_portal_search_tolerates_pixel_error_but_continuous_strong_wall_still_blocks():
+    transform=RenderTransform(0,0,10,10,1000,1000,0)
+    analysis={"frame_id":"F1","physical_spaces":[],"functional_zones":[],"doors":[{
+        "geometry_px":[[498,400],[498,600]],"connects":["A","B"],"evidence":["door-like"],"confidence":.99}],
+        "windows":[],"open_passages":[],"stairs":[],"shafts":[],"suspected_false_boundaries":[],
+        "suspected_missing_boundaries":[],"unresolved_regions":[]}
+    segment={"segment_id":"SEG1","source_handle":"H1","geometry":[[5,0],[5,10]],"status":"ACCEPTED"}
+    result=reconcile_and_repair(analysis=analysis,spaces=[],transform=transform,segments=[segment],
+                                source_hash="abc",tolerance=.001)
+    repair=result["repairs"][0]
+    assert repair["cad_evidence"]["near_wall_segment_ids"]==["SEG1"]
+    assert repair["accepted"] is False
+    assert repair["reason"]=="NO_WALL_GAP"
 
 
 def test_bounded_global_recovery_fuses_semantics_and_recomputes_gate(tmp_path):

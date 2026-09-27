@@ -15,15 +15,17 @@ import json
 import os
 import time
 
-from PIL import Image, ImageDraw
-from shapely.geometry import LineString, Polygon
+from PIL import Image, ImageDraw, ImageFont
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
+from shapely.strtree import STRtree
 
 
-RENDER_VERSION = "architecture-source-render/1"
-PROMPT_VERSION = "architecture-recovery/1"
+RENDER_VERSION = "architecture-source-render/2"
+VIEWPORT_VERSION = "architecture-vision-viewport/1"
+PROMPT_VERSION = "architecture-recovery/3"
 FUSION_VERSION = "architecture-evidence-fusion/1"
-VISION_SCHEMA_VERSION = "architectural-vision-evidence/1.0"
+VISION_SCHEMA_VERSION = "architectural-vision-evidence/1.1"
 TRANSFORM_VERSION = "cad-pixel-transform/1"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 MAX_INLINE_IMAGE_BYTES = 32 * 1024 * 1024
@@ -35,7 +37,7 @@ ALLOWED_SEMANTICS = {
     "stair_landing", "elevator", "elevator_lobby", "shaft", "duct", "void",
     "balcony", "terrace", "patio", "yard", "backyard", "lightwell", "parking",
     "ramp", "driveway", "office", "shop", "commercial", "mechanical_room",
-    "electrical_room", "boiler_room", "janitor", "common_room", "open_plan", "unknown",
+    "electrical_room", "boiler_room", "janitor", "common_room", "open_plan", "roof", "unknown",
 }
 
 
@@ -45,6 +47,7 @@ class RecoveryStage(str, Enum):
     DETERMINISTIC_CAD_RECONSTRUCTION = "DETERMINISTIC_CAD_RECONSTRUCTION"
     DETERMINISTIC_SEMANTIC_FUSION = "DETERMINISTIC_SEMANTIC_FUSION"
     COMPLETENESS_GATE_1 = "COMPLETENESS_GATE_1"
+    ARCHITECTURAL_VISION_VIEWPORT_SELECTION = "ARCHITECTURAL_VISION_VIEWPORT_SELECTION"
     AUTHORITATIVE_FLOOR_RENDER = "AUTHORITATIVE_FLOOR_RENDER"
     GLOBAL_VISION_ANALYSIS = "GLOBAL_VISION_ANALYSIS"
     CAD_VISION_RECONCILIATION_1 = "CAD_VISION_RECONCILIATION_1"
@@ -107,16 +110,153 @@ def _primitive_points(record: dict) -> list:
     return list(record.get("points") or [])
 
 
+def _bounds_area(bounds: list[float] | tuple[float, ...]) -> float:
+    return max(0.0, float(bounds[2]) - float(bounds[0])) * max(0.0, float(bounds[3]) - float(bounds[1]))
+
+
+def _unicode_font(size: int):
+    """Use an available Unicode font without adding a font asset to the repository."""
+    candidates = (
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/local/share/fonts/DejaVuSans.ttf",
+    )
+    for candidate in candidates:
+        try:
+            return ImageFont.truetype(candidate, size=size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def _geometry_lines(extracted: dict, frame_bounds: list[float]) -> list[dict]:
+    frame_box = box(*frame_bounds); rows = []
+    for record in extracted.get("primitives") or []:
+        points = _primitive_points(record)
+        if len(points) < 2:
+            continue
+        try:
+            line = LineString(points)
+        except (TypeError, ValueError):
+            continue
+        if line.is_empty or not line.intersects(frame_box):
+            continue
+        clipped = line.intersection(frame_box)
+        parts = list(clipped.geoms) if clipped.geom_type == "MultiLineString" else [clipped]
+        for part in parts:
+            if part.geom_type == "LineString" and part.length > 0:
+                rows.append({"geometry": part, "record": record})
+    return rows
+
+
+def select_vision_viewport(*, extracted: dict, frame: dict) -> dict:
+    """Select plan content from raw DXF evidence, never reconstructed spaces."""
+    raw_bounds = [float(value) for value in frame.get("bounds") or []]
+    if len(raw_bounds) != 4 or _bounds_area(raw_bounds) <= 0:
+        raise VisionRecoveryError("INVALID_FRAME_BOUNDS", "A valid CAD frame is required for viewport selection")
+    started = time.perf_counter(); lines = _geometry_lines(extracted, raw_bounds)
+    width=raw_bounds[2]-raw_bounds[0]; height=raw_bounds[3]-raw_bounds[1]
+    span=max(width,height); diagonal=max((width*width+height*height)**.5,1e-9)
+    lengths=sorted(row["geometry"].length for row in lines)
+    median=lengths[len(lengths)//2] if lengths else 0.0
+    # Sheet borders and long isolated datum lines must not dominate the viewport.
+    preliminary_connection=max(diagonal*.001,min(max(median*.04,diagonal*.0003),diagonal*.01))
+    def frame_like(row):
+        length=row["geometry"].length
+        if length>=span*.72:
+            return True
+        if length<span*.55:
+            return False
+        support=sum(other is not row and other["geometry"].distance(row["geometry"])<=preliminary_connection
+                    for other in lines)
+        return support<4
+    usable=[row for row in lines if not frame_like(row)]
+    excluded_long=len(lines)-len(usable)
+    if not usable:
+        usable=lines[:]
+    connection=max(diagonal*.0015,min(max(median*.08,diagonal*.0004),diagonal*.02))
+    merged=unary_union([row["geometry"].buffer(connection,cap_style=2) for row in usable]) if usable else None
+    components=[] if merged is None or merged.is_empty else (list(merged.geoms) if merged.geom_type=="MultiPolygon" else [merged])
+    texts=extracted.get("texts") or []; objects=extracted.get("objects") or []; dimensions=extracted.get("dimensions") or []
+    scored=[]
+    for component in components:
+        component_bounds=list(component.bounds); region=box(*component_bounds)
+        members=[row for row in usable if row["geometry"].intersects(region)]
+        text_count=sum(region.covers(Point(float(t["point"][0]),float(t["point"][1])))
+                       for t in texts if t.get("point"))
+        object_count=sum(region.buffer(connection).covers(Point(float(o["point"][0]),float(o["point"][1])))
+                         for o in objects if o.get("point"))
+        dimension_count=sum(any(region.buffer(connection).covers(Point(float(p[0]),float(p[1])))
+                                for p in d.get("definition_points") or []) for d in dimensions)
+        total_length=sum(row["geometry"].length for row in members)
+        wall_like=sum(any(token in str(row["record"].get("layer","")).lower()
+                          for token in ("wall","a-wall","دیوار")) for row in members)
+        annotation_like=sum(any(token in str(row["record"].get("layer","")).lower()
+                                for token in ("title","border","frame","legend","sheet","کادر","جدول"))
+                            for row in members)
+        compactness=total_length/max((_bounds_area(component_bounds)**.5),connection)
+        raw_score=len(members)*2+total_length/max(median,connection)+text_count*3+object_count*4+dimension_count*2+wall_like*2+compactness
+        score=raw_score*(.12 if annotation_like and annotation_like>=len(members)*.5 else 1.0)
+        scored.append({"geometry":component,"bounds":component_bounds,"entity_count":len(members),
+                       "geometry_length":total_length,"text_count":text_count,"object_count":object_count,
+                       "dimension_count":dimension_count,"wall_like_count":wall_like,
+                       "annotation_like_count":annotation_like,"score":score})
+    scored.sort(key=lambda row:row["score"],reverse=True)
+    selected=[]
+    if scored:
+        primary=scored[0]; proximity=max(connection*8,span*.035)
+        selected=[row for row in scored if row["score"]>=primary["score"]*.12 and
+                  box(*row["bounds"]).distance(box(*primary["bounds"]))<=proximity]
+    if selected:
+        content=unary_union([row["geometry"] for row in selected]).bounds
+        content_bounds=[float(value) for value in content]
+    else:
+        content_bounds=raw_bounds[:]
+    content_span=max(content_bounds[2]-content_bounds[0],content_bounds[3]-content_bounds[1])
+    margin=max(connection*4,content_span*.065)
+    vision_bounds=[max(raw_bounds[0],content_bounds[0]-margin),max(raw_bounds[1],content_bounds[1]-margin),
+                   min(raw_bounds[2],content_bounds[2]+margin),min(raw_bounds[3],content_bounds[3]+margin)]
+    if _bounds_area(vision_bounds)<=0:
+        vision_bounds=raw_bounds[:]
+    frame_area=_bounds_area(raw_bounds); content_area=_bounds_area(content_bounds); vision_area=_bounds_area(vision_bounds)
+    in_view_lines=[row for row in lines if row["geometry"].intersects(box(*vision_bounds))]
+    in_view_texts=[row for row in texts if row.get("point") and box(*vision_bounds).covers(
+        Point(float(row["point"][0]),float(row["point"][1])))]
+    wall_like=sum(any(token in str(row["record"].get("layer","")).lower() for token in ("wall","a-wall","دیوار"))
+                  for row in in_view_lines)
+    return {"viewport_version":VIEWPORT_VERSION,"authoritative_frame_bounds":raw_bounds,
+            "architectural_content_bounds":content_bounds,"vision_bounds":vision_bounds,
+            "safe_margin_drawing_units":margin,"selection_evidence":{"component_count":len(scored),
+                "selected_component_count":len(selected),"raw_geometry_count":len(lines),
+                "retained_geometry_count":len(in_view_lines),"excluded_long_frame_geometry":excluded_long,
+                "raw_text_count":len(texts),"retained_text_count":len(in_view_texts),
+                "dimension_count":len(dimensions),"wall_like_geometry_count":wall_like},
+            "metrics":{"frame_bbox_area":frame_area,"architectural_content_bbox_area":content_area,
+                "vision_bbox_area":vision_area,"content_to_frame_ratio":content_area/max(frame_area,1e-12),
+                "vision_to_frame_ratio":vision_area/max(frame_area,1e-12),
+                "white_space_ratio_estimate":max(0.0,1-content_area/max(frame_area,1e-12)),
+                "rendered_content_pixel_ratio":content_area/max(vision_area,1e-12),
+                "focused_white_space_ratio_estimate":max(0.0,1-content_area/max(vision_area,1e-12)),
+                "primitive_density":len(in_view_lines)/max(vision_area,1e-12),
+                "text_density":len(in_view_texts)/max(vision_area,1e-12),
+                "wall_like_density":wall_like/max(vision_area,1e-12)},
+            "confidence":.9 if selected and len(in_view_lines)>=10 else .45,
+            "status":"SELECTED" if selected else "FALLBACK_FULL_FRAME",
+            "runtime_seconds":round(time.perf_counter()-started,6)}
+
+
 def render_source_frame(*, extracted: dict, frame: dict, source_hash: str,
-                        cache_dir: str | Path | None = None, width_px: int = 1800) -> dict:
+                        cache_dir: str | Path | None = None, width_px: int = 1800,
+                        viewport: dict | None = None, render_role: str = "FULL_FRAME") -> dict:
     """Render raw source primitives without using reconstructed model output."""
-    bounds = frame.get("bounds")
+    bounds = (viewport or {}).get("vision_bounds") or frame.get("bounds")
     if not bounds or bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
         raise VisionRecoveryError("INVALID_FRAME_BOUNDS", "A valid CAD frame is required for rendering")
     ratio = max(.35, min(2.8, (bounds[3] - bounds[1]) / max(bounds[2] - bounds[0], 1e-9)))
     height_px = max(900, min(2600, int(width_px * ratio)))
     transform = RenderTransform(*map(float, bounds), width_px, height_px)
-    key = sha256(json.dumps([source_hash, frame.get("frame_id"), bounds, RENDER_VERSION, width_px],
+    key = sha256(json.dumps([source_hash, frame.get("frame_id"), bounds, RENDER_VERSION, width_px, render_role],
                             sort_keys=True).encode()).hexdigest()
     root = Path(cache_dir or os.getenv("ARCH_VISION_CACHE_DIR") or "/tmp/planha-architecture-vision")
     root.mkdir(parents=True, exist_ok=True)
@@ -138,17 +278,25 @@ def render_source_frame(*, extracted: dict, frame: dict, source_hash: str,
             continue
         draw.line(pixel_points, fill=(55, 65, 81), width=2)
         count += 1
+    font=_unicode_font(max(16,min(28,width_px//75)))
+    rendered_texts=[]
     for text in extracted.get("texts") or []:
         point = text.get("point")
         if not point:
             continue
         px = transform.cad_to_pixel(point)
         if 0 <= px[0] <= width_px and 0 <= px[1] <= height_px:
-            draw.text(px, str(text.get("text") or "")[:80], fill=(25, 25, 25))
+            value=str(text.get("text") or "")[:80]
+            try:
+                draw.text(px,value,fill=(15,15,15),font=font,direction="rtl" if any("\u0600"<=c<="\u06ff" for c in value) else None)
+            except (KeyError,TypeError,ValueError):
+                draw.text(px,value,fill=(15,15,15),font=font)
+            rendered_texts.append({"text":value,"cad_point":list(point),"pixel_point":[round(px[0],3),round(px[1],3)]})
     image.save(image_path, format="PNG", optimize=True)
     manifest = {"image_path": str(image_path), "cache_key": key, "frame_id": frame.get("frame_id"),
                 "source_sha256": source_hash, "render_version": RENDER_VERSION,
-                "transform": transform.as_dict(), "primitive_count": count}
+                "transform": transform.as_dict(), "primitive_count": count,"render_role":render_role,
+                "raw_text_evidence":rendered_texts,"viewport":viewport or {"vision_bounds":bounds}}
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, sort_keys=True), encoding="utf-8")
     return manifest
 
@@ -324,6 +472,7 @@ class OpenAICompatibleVisionAdapter:
         encoded = base64.b64encode(image_bytes).decode("ascii")
         region_contract = [{"region_id": row["region_id"], "pixel_bounds": row.get("pixel_bounds"),
                             "cad_bounds": row.get("bounds")} for row in regions]
+        source_context=(context or {}).get("source_context") or {}
         prompt = ("Inspect this raw architectural floor render as supporting evidence for exact CAD. "
                   "Return frame_id exactly as supplied; FRAME_ID=" + json.dumps(frame_id) + ". "
                   "Return JSON with EXACTLY these top-level keys: frame_id, physical_spaces, functional_zones, "
@@ -335,8 +484,14 @@ class OpenAICompatibleVisionAdapter:
                   "confidence. Stair, shaft and suspected-boundary rows contain EXACTLY geometry_px, evidence, "
                   "confidence. Unresolved-region rows contain EXACTLY geometry_px, reason. Coordinates are image "
                   "pixels. Do not invent dimensions. Use empty arrays rather than "
-                  "guessing. Known CAD regions are context, not required output identities.\nREGIONS=" +
-                  json.dumps(region_contract, ensure_ascii=False, separators=(",", ":")))
+                  "guessing. Known CAD regions are context, not required output identities. "
+                  "Be concise: emit exactly one record per distinct architectural object, never duplicate a "
+                  "space or portal, keep every evidence/label/object/uncertainty array to at most five short "
+                  "items, and report at most ten unresolved regions ordered by architectural importance. "
+                  "Do not enumerate dimension ticks, stair tread numbers, furniture strokes, or annotation "
+                  "fragments as spaces or unresolved regions.\nREGIONS=" +
+                  json.dumps(region_contract, ensure_ascii=False, separators=(",", ":"))+
+                  "\nRAW_SOURCE_CONTEXT="+json.dumps(source_context,ensure_ascii=False,separators=(",",":")))
         if encoded_size + len(prompt.encode("utf-8")) > MAX_REQUEST_BODY_BYTES:
             raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE", "Rendered floor exceeds request body limits")
         identity = {"provider": self.provider, "model": self.model, "prompt_version": PROMPT_VERSION,
@@ -345,16 +500,18 @@ class OpenAICompatibleVisionAdapter:
                     "frame_id": frame_id, "render_sha256": sha256(image_bytes).hexdigest(),
                     "source_sha256": (context or {}).get("source_sha256"),
                     "render_cache_key": (context or {}).get("render_cache_key"),
-                    "scope": (context or {}).get("scope"), "regions": region_contract}
+                    "scope": (context or {}).get("scope"), "regions": region_contract,
+                    "source_context":source_context}
         cache_key = sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         cache_root = Path(os.getenv("ARCH_VISION_CACHE_DIR") or "/tmp/planha-architecture-vision")
         cache_root.mkdir(parents=True, exist_ok=True)
         cache_path = cache_root / f"vision-{cache_key}.json"
         if cache_path.exists():
             self.last_call_metadata = {**identity, "cache_key": cache_key, "cache_hit": True,
+                                       "attempt_count":0,"attempt_errors":[],
                                        "latency_seconds": round(time.perf_counter() - started, 6)}
             return validate_global_payload(json.loads(cache_path.read_text(encoding="utf-8")), frame_id=frame_id)
-        response = None
+        response = None; attempt_errors=[]
         for attempt in range(self.max_retries + 1):
             try:
                 response = self.client.responses.create(
@@ -370,7 +527,11 @@ class OpenAICompatibleVisionAdapter:
                 break
             except Exception as exc:
                 code, message, transient = _safe_provider_error(exc)
+                attempt_errors.append(code)
                 if not transient or attempt >= self.max_retries:
+                    self.last_call_metadata={**identity,"cache_key":cache_key,"cache_hit":False,
+                                             "attempt_count":attempt+1,"attempt_errors":attempt_errors,
+                                             "latency_seconds":round(time.perf_counter()-started,6)}
                     raise VisionRecoveryError(code, message) from exc
         try:
             if getattr(response, "status", None) == "incomplete":
@@ -388,6 +549,7 @@ class OpenAICompatibleVisionAdapter:
                     usage_fields[field] = value
             self.last_call_metadata = {**identity, "cache_key": cache_key, "cache_hit": False,
                                        "request_id": getattr(response, "id", None), "usage": usage_fields,
+                                       "attempt_count":len(attempt_errors)+1,"attempt_errors":attempt_errors,
                                        "latency_seconds": round(time.perf_counter() - started, 6)}
             return payload
         except VisionRecoveryError:
@@ -438,6 +600,28 @@ def _region_rows(spaces: list[dict], transform: RenderTransform) -> list[dict]:
     return rows
 
 
+def _raw_source_context(extracted: dict, manifest: dict) -> dict:
+    """Bounded source-only context; contains no inferred semantics or Golden data."""
+    transform=RenderTransform(*manifest["transform"]["cad_bounds"],*manifest["transform"]["pixel_size"],
+                              manifest["transform"]["padding_px"])
+    viewport=box(*manifest["transform"]["cad_bounds"])
+    texts=[]
+    for row in extracted.get("texts") or []:
+        point=row.get("point")
+        if point and viewport.covers(Point(float(point[0]),float(point[1]))):
+            pixel=transform.cad_to_pixel(point)
+            texts.append({"text":str(row.get("text") or "")[:160],"cad_point":[float(point[0]),float(point[1])],
+                          "pixel_point":[round(pixel[0],3),round(pixel[1],3)]})
+    dimensions=[]
+    for row in extracted.get("dimensions") or []:
+        points=[p for p in row.get("definition_points") or [] if viewport.covers(Point(float(p[0]),float(p[1])))]
+        if points:
+            dimensions.append({"measurement":row.get("measurement"),"definition_points":points[:4],
+                               "text_override":str(row.get("text_override") or "")[:80]})
+    return {"frame_id":manifest.get("frame_id"),"units":"SOURCE_DRAWING_UNITS",
+            "viewport":manifest.get("viewport"),"raw_texts":texts[:250],"raw_dimensions":dimensions[:250]}
+
+
 def _cad_polygon(pixel_polygon: list, transform: RenderTransform) -> Polygon | None:
     polygon = Polygon([transform.pixel_to_cad(point) for point in pixel_polygon])
     if not polygon.is_valid:
@@ -473,6 +657,10 @@ def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: Rende
     polygons = {space["physical_space_id"]: Polygon(space["polygon"], space.get("interior_rings") or [])
                 for space in frame_spaces}
     repairs = []; outcomes = []; proposed_portals = []
+    accepted_segments = [segment for segment in segments if segment.get("status") == "ACCEPTED"]
+    accepted_lines = [LineString(segment["geometry"]) for segment in accepted_segments]
+    segment_tree = STRtree(accepted_lines) if accepted_lines else None
+    segment_by_geometry = {id(geometry): segment for geometry, segment in zip(accepted_lines, accepted_segments)}
     for vision in analysis["physical_spaces"]:
         vpoly = _cad_polygon(vision["polygon_px"], transform)
         if vpoly is None:
@@ -552,18 +740,34 @@ def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: Rende
             near = []
             if len(mapped) >= 2:
                 line = LineString(mapped)
-                near = [segment for segment in segments if segment.get("status") == "ACCEPTED" and
-                        LineString(segment["geometry"]).distance(line) <= tolerance * 5]
-            accepted = float(portal["confidence"]) >= .90 and bool(near)
+                pixel_error_tolerance=6/max(transform.scale,1e-12)
+                search_tolerance=max(tolerance*5,pixel_error_tolerance)
+                candidates = segment_tree.query(line.buffer(search_tolerance)) if segment_tree is not None else []
+                # Shapely 2 returns indices, while Shapely 1 returns geometry objects.
+                candidate_rows = [accepted_segments[int(item)] if hasattr(item, "__index__") else
+                                  segment_by_geometry.get(id(item)) for item in candidates]
+                near = [segment for segment in candidate_rows if segment is not None and
+                        LineString(segment["geometry"]).distance(line) <= search_tolerance]
+            else:
+                search_tolerance=max(tolerance*5,6/max(transform.scale,1e-12))
+            continuous_wall=bool(near) and any(LineString(row["geometry"]).intersection(line.buffer(search_tolerance)).length>
+                                               max(tolerance*2,line.length*.35) for row in near)
+            accepted = float(portal["confidence"]) >= .90 and bool(near) and not continuous_wall
+            if not near: rejection="NO_NEARBY_WALL"
+            elif continuous_wall: rejection="NO_WALL_GAP"
+            elif float(portal["confidence"])<.90: rejection="OTHER"
+            else: rejection=None
             repair = {"repair_id": sha256(f"PORTAL:{frame_id}:{kind}:{index}:{mapped}".encode()).hexdigest()[:20],
                       "repair_type": {"doors":"CREATE_DOOR_CANDIDATE", "windows":"CREATE_WINDOW_CANDIDATE",
                                       "open_passages":"CREATE_OPEN_PASSAGE_CANDIDATE"}[kind],
                       "affected_spaces": portal["connects"], "vision_evidence": portal,
-                      "cad_evidence": {"near_wall_segment_ids": [row["segment_id"] for row in near]},
+                      "cad_evidence": {"near_wall_segment_ids": [row["segment_id"] for row in near],
+                                       "search_tolerance":search_tolerance,"continuous_wall":continuous_wall,
+                                       "rejection_category":rejection},
                       "source_handles": [row.get("source_handle") for row in near if row.get("source_handle")],
                       "before_state": None, "proposed_state": {"geometry": mapped},
                       "validation_result": "PASS" if accepted else "INSUFFICIENT_EVIDENCE",
-                      "accepted": accepted, "reason": "CAD_WALL_HOST_SUPPORT" if accepted else "NO_DEFENSIBLE_CAD_HOST"}
+                      "accepted": accepted, "reason": "CAD_WALL_HOST_SUPPORT" if accepted else rejection}
             repairs.append(repair)
             if accepted: proposed_portals.append({"kind": kind[:-1] if kind.endswith("s") else kind, "geometry": mapped,
                                                    "repair_id": repair["repair_id"], "status": "CANDIDATE"})
@@ -591,17 +795,31 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
         frame_spaces = [s for s in spaces if s.get("frame_id") == frame.get("frame_id") and s.get("status") != "VERIFIED"]
         if not frame_spaces or not frame.get("bounds"):
             continue
-        manifest = render_source_frame(extracted=extracted, frame=frame, source_hash=source_hash, cache_dir=cache_dir)
+        full_manifest=render_source_frame(extracted=extracted,frame=frame,source_hash=source_hash,
+                                          cache_dir=cache_dir,width_px=1100,render_role="CONTEXT_FULL_FRAME")
+        viewport=select_vision_viewport(extracted=extracted,frame=frame)
+        events.append({"stage":RecoveryStage.ARCHITECTURAL_VISION_VIEWPORT_SELECTION.value,
+                       "frame_id":frame["frame_id"],"status":viewport["status"]})
+        manifest = render_source_frame(extracted=extracted, frame=frame, source_hash=source_hash, cache_dir=cache_dir,
+                                       viewport=viewport,render_role="FOCUSED_PLAN")
         events.append({"stage": RecoveryStage.AUTHORITATIVE_FLOOR_RENDER.value, "frame_id": frame["frame_id"]})
         transform = RenderTransform(*manifest["transform"]["cad_bounds"], *manifest["transform"]["pixel_size"],
                                     manifest["transform"]["padding_px"])
         regions = _region_rows(frame_spaces, transform)
+        source_context=_raw_source_context(extracted,manifest)
         try:
             first = adapter.analyze(image_path=manifest["image_path"], frame_id=frame["frame_id"], regions=regions,
                                     context={"source_sha256":source_hash,"render_cache_key":manifest["cache_key"],
-                                             "scope":"GLOBAL"})
+                                             "scope":"GLOBAL","source_context":source_context})
             calls.append({"scope": "GLOBAL", "frame_id": frame["frame_id"], "region_count": len(regions),
                           "image_cache_key": manifest["cache_key"], "vision_space_count": len(first["physical_spaces"]),
+                          "context_image_path":full_manifest["image_path"],"focused_image_path":manifest["image_path"],
+                          "input_resolution":manifest["transform"]["pixel_size"],
+                          "plan_occupancy_ratio":viewport["metrics"]["rendered_content_pixel_ratio"],
+                          "content_bounds":viewport["architectural_content_bounds"],
+                          "full_frame_bounds":viewport["authoritative_frame_bounds"],
+                          "raw_text_count":len(source_context["raw_texts"]),
+                          "dimension_count":len(source_context["raw_dimensions"]),"viewport":viewport,
                           "provider_call":dict(getattr(adapter,"last_call_metadata",{}) or {})})
             analyses.append({"scope":"GLOBAL", "frame_id":frame["frame_id"], "analysis":first,
                              "render_hash":manifest["cache_key"]})
@@ -618,13 +836,9 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
             unresolved_after = [space for space in spaces if space.get("frame_id") == frame["frame_id"] and
                                 space.get("status") not in {"VERIFIED", "HIGH_CONFIDENCE"}]
             if unresolved_after:
-                bounds = [Polygon(space["polygon"]).bounds for space in unresolved_after]
-                minx=min(row[0] for row in bounds); miny=min(row[1] for row in bounds)
-                maxx=max(row[2] for row in bounds); maxy=max(row[3] for row in bounds)
-                margin=max(maxx-minx,maxy-miny)*.08 or 1.0
-                local_frame={**frame,"bounds":[minx-margin,miny-margin,maxx+margin,maxy+margin]}
-                local_manifest=render_source_frame(extracted=extracted,frame=local_frame,source_hash=source_hash,
-                                                   cache_dir=cache_dir,width_px=1400)
+                # The second pass uses the same raw-evidence viewport.  It must
+                # never crop around the engine's current room predictions.
+                local_manifest=manifest
                 local_transform=RenderTransform(*local_manifest["transform"]["cad_bounds"],
                                                 *local_manifest["transform"]["pixel_size"],
                                                 local_manifest["transform"]["padding_px"])
@@ -632,9 +846,16 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
                 events.append({"stage":RecoveryStage.LOCAL_AMBIGUITY_RENDERING.value,"frame_id":frame["frame_id"]})
                 second=adapter.analyze(image_path=local_manifest["image_path"],frame_id=frame["frame_id"],regions=local_regions,
                                        context={"source_sha256":source_hash,"render_cache_key":local_manifest["cache_key"],
-                                                "scope":"LOCAL"})
+                                                "scope":"LOCAL","source_context":source_context})
                 calls.append({"scope":"LOCAL","frame_id":frame["frame_id"],"region_count":len(local_regions),
                               "image_cache_key":local_manifest["cache_key"],"vision_space_count":len(second["physical_spaces"]),
+                              "context_image_path":full_manifest["image_path"],"focused_image_path":local_manifest["image_path"],
+                              "input_resolution":local_manifest["transform"]["pixel_size"],
+                              "plan_occupancy_ratio":viewport["metrics"]["rendered_content_pixel_ratio"],
+                              "content_bounds":viewport["architectural_content_bounds"],
+                              "full_frame_bounds":viewport["authoritative_frame_bounds"],
+                              "raw_text_count":len(source_context["raw_texts"]),
+                              "dimension_count":len(source_context["raw_dimensions"]),"viewport":viewport,
                               "provider_call":dict(getattr(adapter,"last_call_metadata",{}) or {})})
                 analyses.append({"scope":"LOCAL","frame_id":frame["frame_id"],"analysis":second,
                                  "render_hash":local_manifest["cache_key"]})
@@ -651,7 +872,8 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
             events.append({"stage": RecoveryStage.FAILED.value, "frame_id": frame["frame_id"], "error_code": exc.code})
             return {"provider": getattr(adapter,"provider",type(adapter).__name__), "model": getattr(adapter, "model", None), "calls": len(calls),
                     "call_log": calls, "analyses": analyses, "repairs": repairs, "status": "FAILED", "error_code": exc.code,
-                    "message": str(exc), "events": events, "policy": "DETERMINISTIC_FIRST_BOUNDED_GLOBAL_THEN_LOCAL",
+                    "message": str(exc), "events": events,"last_provider_call":dict(getattr(adapter,"last_call_metadata",{}) or {}),
+                    "policy": "DETERMINISTIC_FIRST_BOUNDED_GLOBAL_THEN_LOCAL",
                     "runtime_seconds": round(time.perf_counter()-started, 6)}
     events.append({"stage": RecoveryStage.FINAL_COMPLETENESS_GATE.value})
     return {"provider": getattr(adapter,"provider",type(adapter).__name__), "model": getattr(adapter, "model", None), "calls": len(calls),
