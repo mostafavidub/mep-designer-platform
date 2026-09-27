@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Protocol
 import json
 import math
+import os
 import re
 import time
 
@@ -960,14 +961,45 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     completeness = _completeness(frames, spaces, source["metres_per_unit"] is not None,
                                  coverage=coverage,openings=openings,dimension_reconciliation=dimension_reconciliation)
     timings["qa_and_completeness"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
-    # Vision remains an explicit, optional reconciliation dependency.  It is
-    # never invoked for facts already verified from CAD.
-    unresolved = [{"space_id": s["physical_space_id"], "bounds": list(_space_polygon(s).bounds)} for s in spaces if s["status"] != "VERIFIED"]
-    adapter=vision_adapter or NoVisionAdapter()
-    vision = {"provider": type(adapter).__name__, "calls": 0, "candidates": [],
-              "status": "NOT_REQUIRED" if not unresolved else ("CONFIG_REQUIRED" if isinstance(adapter,NoVisionAdapter) else "READY"),
-              "policy":"DETERMINISTIC_FIRST_LOCALIZED_REGIONS_ONLY","regions":unresolved}
-    timings["vision_preparation"]=time.perf_counter()-stage_started
+    unresolved = [{"space_id": s["physical_space_id"], "bounds": list(_space_polygon(s).bounds)}
+                  for s in spaces if s["status"] != "VERIFIED"]
+    if not unresolved:
+        vision = {"provider":"NONE","calls":0,"candidates":[],"status":"NOT_REQUIRED",
+                  "policy":"DETERMINISTIC_FIRST_BOUNDED_GLOBAL_THEN_LOCAL","regions":[]}
+    else:
+        # Imported lazily to keep deterministic CAD ingestion independent from
+        # the optional network provider and to avoid a second DXF parse.
+        from .architectural_vision_recovery import recover_semantics
+        vision = recover_semantics(extracted=extracted,frames=frames,spaces=spaces,
+                                   source_hash=source["source_sha256"],segments=segment_records,
+                                   tolerance=tolerance,adapter=vision_adapter)
+        vision["regions"] = unresolved
+        # Vision can add semantic evidence only.  Every engineering gate is
+        # recalculated from the fused canonical model; the provider cannot set
+        # completeness or release state directly.
+        spaces.sort(key=lambda s:s["physical_space_id"]); _adjacency(spaces,tolerance)
+        openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,
+                                      source["source_sha256"],tolerance)
+        coverage=_coverage(frames,spaces)
+        dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
+        completeness=_completeness(frames,spaces,source["metres_per_unit"] is not None,
+                                   coverage=coverage,openings=openings,
+                                   dimension_reconciliation=dimension_reconciliation)
+        if vision.get("status") == "COMPLETE" and completeness["status"] != "VERIFIED":
+            remaining=[s for s in spaces if s["status"] not in {"VERIFIED","HIGH_CONFIDENCE"}]
+            limit=int(os.getenv("ARCH_VISION_MAX_TARGETED_QUESTIONS") or 3)
+            material_ratio=len(remaining)/max(len(spaces),1)
+            if remaining and len(remaining)<=limit and material_ratio<=float(os.getenv("ARCH_VISION_MAX_QUESTION_RATIO") or .15):
+                vision["status"]="TARGETED_HUMAN_DECISION"
+                vision["human_questions"]=[{"space_id":s["physical_space_id"],"frame_id":s["frame_id"],
+                                             "question_type":"SEMANTIC_CHOICE","candidate_types":["unknown"],
+                                             "reason":"IRREDUCIBLE_SOURCE_AMBIGUITY"} for s in remaining]
+            else:
+                vision["status"]="AUTOMATED_RECONSTRUCTION_INSUFFICIENT"
+                vision["human_questions"]=[]
+            vision["remaining_unresolved_spaces"]=len(remaining)
+            vision["remaining_unresolved_ratio"]=material_ratio
+    timings["vision_recovery"]=time.perf_counter()-stage_started
     rooms = []
     for space in spaces:
         if space["functional_zones"]:
@@ -980,11 +1012,18 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                           "area": space["geometric_area_drawing_units"], "centroid": space["centroid"], "evidence": space["evidence"],
                           "status": "INPUT_REQUIRED", "plan_id": space["frame_id"]})
     review=_review_payload(spaces,frames,openings,coverage,dimension_reconciliation)
+    enclosure_edges=sorted({tuple(sorted((space["physical_space_id"],adjacent))) for space in spaces
+                            for adjacent in space.get("adjacent_space_ids") or []})
+    access_edges=sorted({tuple(sorted((opening["space_a"],opening["space_b"]))) for opening in openings
+                         if opening.get("status")=="VERIFIED" and opening.get("kind") in {"door","open_passage"}
+                         and opening.get("space_a") and opening.get("space_b")})
     model = {"schema": SCHEMA, "source": source, "frames": frames, "levels": [], "physical_spaces": spaces,
              "functional_zones": [z for s in spaces for z in s["functional_zones"]], "architectural_objects": extracted["objects"],
              "dimensions": extracted["dimensions"], "dimension_reconciliation":dimension_reconciliation,
              "openings":openings,"canonical_walls":walls,"architectural_segments":segment_records,
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
+             "enclosure_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in enclosure_edges]},
+             "access_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in access_edges]},
              "rejected_candidate_cells":rejected_cells,"coverage":coverage,"review":review,
              "completeness": completeness, "vision_reconciliation": vision,
              "diagnostics": {"entity_counts": extracted["entity_counts"], "adaptive_tolerance": tolerance,
