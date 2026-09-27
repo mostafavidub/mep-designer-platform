@@ -183,7 +183,25 @@ GLOBAL_KEYS = {"frame_id", "physical_spaces", "functional_zones", "doors", "wind
                "open_passages", "stairs", "shafts", "suspected_false_boundaries",
                "suspected_missing_boundaries", "unresolved_regions"}
 
-_FREE_ARRAY = {"type":"array","items":{}}
+_GEOMETRY_EVIDENCE_SCHEMA = {"type":"object","additionalProperties":False,
+    "required":["geometry_px","evidence","confidence"],"properties":{
+        "geometry_px":{"type":"array","items":{"type":"array","minItems":2,"maxItems":2,
+                                                     "items":{"type":"number"}}},
+        "evidence":{"type":"array","items":{"type":"string"}},
+        "confidence":{"type":"number","minimum":0,"maximum":1}}}
+_FUNCTIONAL_ZONE_SCHEMA = {"type":"object","additionalProperties":False,
+    "required":["zone_id","geometry_px","semantic_type","evidence","confidence"],"properties":{
+        "zone_id":{"type":"string"},
+        "geometry_px":{"type":"array","items":{"type":"array","minItems":2,"maxItems":2,
+                                                     "items":{"type":"number"}}},
+        "semantic_type":{"type":"string","enum":sorted(ALLOWED_SEMANTICS)},
+        "evidence":{"type":"array","items":{"type":"string"}},
+        "confidence":{"type":"number","minimum":0,"maximum":1}}}
+_UNRESOLVED_SCHEMA = {"type":"object","additionalProperties":False,
+    "required":["geometry_px","reason"],"properties":{
+        "geometry_px":{"type":"array","items":{"type":"array","minItems":2,"maxItems":2,
+                                                     "items":{"type":"number"}}},
+        "reason":{"type":"string"}}}
 _PORTAL_SCHEMA = {"type":"object","additionalProperties":False,
                   "required":["geometry_px","connects","evidence","confidence"],
                   "properties":{"geometry_px":{"type":"array","items":{"type":"array","minItems":2,"maxItems":2,
@@ -204,10 +222,13 @@ GLOBAL_JSON_SCHEMA={"type":"object","additionalProperties":False,"required":sort
                       "labels_seen":{"type":"array","items":{"type":"string"}},
                       "boundary_evidence":{"type":"array","items":{"type":"string"}},
                       "uncertainties":{"type":"array","items":{"type":"string"}}}}},
-    "functional_zones":_FREE_ARRAY,"doors":{"type":"array","items":_PORTAL_SCHEMA},
+    "functional_zones":{"type":"array","items":_FUNCTIONAL_ZONE_SCHEMA},"doors":{"type":"array","items":_PORTAL_SCHEMA},
     "windows":{"type":"array","items":_PORTAL_SCHEMA},"open_passages":{"type":"array","items":_PORTAL_SCHEMA},
-    "stairs":_FREE_ARRAY,"shafts":_FREE_ARRAY,"suspected_false_boundaries":_FREE_ARRAY,
-    "suspected_missing_boundaries":_FREE_ARRAY,"unresolved_regions":_FREE_ARRAY}}
+    "stairs":{"type":"array","items":_GEOMETRY_EVIDENCE_SCHEMA},
+    "shafts":{"type":"array","items":_GEOMETRY_EVIDENCE_SCHEMA},
+    "suspected_false_boundaries":{"type":"array","items":_GEOMETRY_EVIDENCE_SCHEMA},
+    "suspected_missing_boundaries":{"type":"array","items":_GEOMETRY_EVIDENCE_SCHEMA},
+    "unresolved_regions":{"type":"array","items":_UNRESOLVED_SCHEMA}}}
 
 
 def validate_global_payload(payload: Any, *, frame_id: str) -> dict:
@@ -310,7 +331,10 @@ class OpenAICompatibleVisionAdapter:
                   "suspected_missing_boundaries, unresolved_regions. Each physical_space must contain EXACTLY "
                   "vision_space_id, polygon_px, semantic_candidates[{type,confidence}], objects_seen, labels_seen, "
                   "boundary_evidence, uncertainties. Portal rows contain EXACTLY geometry_px, connects, evidence, "
-                  "confidence. Coordinates are image pixels. Do not invent dimensions. Use empty arrays rather than "
+                  "confidence. Functional-zone rows contain EXACTLY zone_id, geometry_px, semantic_type, evidence, "
+                  "confidence. Stair, shaft and suspected-boundary rows contain EXACTLY geometry_px, evidence, "
+                  "confidence. Unresolved-region rows contain EXACTLY geometry_px, reason. Coordinates are image "
+                  "pixels. Do not invent dimensions. Use empty arrays rather than "
                   "guessing. Known CAD regions are context, not required output identities.\nREGIONS=" +
                   json.dumps(region_contract, ensure_ascii=False, separators=(",", ":")))
         if encoded_size + len(prompt.encode("utf-8")) > MAX_REQUEST_BODY_BYTES:

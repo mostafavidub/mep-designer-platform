@@ -6,7 +6,7 @@ import pytest
 
 from cad_engine.architectural_space_engine import reconstruct_architecture
 from cad_engine.architectural_vision_recovery import (
-    DeepSeekVisionAdapter, OpenAIVisionAdapter, RenderTransform, VisionRecoveryError, _validate_payload,
+    DeepSeekVisionAdapter, GLOBAL_JSON_SCHEMA, OpenAIVisionAdapter, RenderTransform, VisionRecoveryError, _validate_payload,
     configured_vision_adapter, reconcile_and_repair, render_source_frame,
 )
 from cad_engine.engineering_runner import run_engineering_pipeline
@@ -55,6 +55,19 @@ def test_strict_schema_rejects_unknown_region_and_extra_fields():
         _validate_payload({"schema": "architectural-vision-evidence/1.0", "regions": [
             {"region_id": "EXPECTED", "semantic_type": "living", "confidence": .9,
              "evidence": [], "uncertainty": "", "release_allowed": True}]}, {"EXPECTED"})
+
+
+def test_every_array_item_has_explicit_deepseek_compatible_schema():
+    def visit(node):
+        if not isinstance(node,dict): return
+        if node.get("type") == "array":
+            items=node.get("items")
+            assert isinstance(items,dict) and any(key in items for key in ("type","anyOf","$ref"))
+        for value in node.values():
+            if isinstance(value,dict): visit(value)
+            elif isinstance(value,list):
+                for item in value: visit(item)
+    visit(GLOBAL_JSON_SCHEMA)
 
 
 def test_source_renderer_is_cached_and_transform_manifest_is_exact(tmp_path):
