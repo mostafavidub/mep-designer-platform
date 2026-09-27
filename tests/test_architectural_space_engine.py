@@ -5,7 +5,7 @@ from shapely.geometry import LineString
 
 from cad_engine.architectural_space_engine import (
     SCHEMA, _completeness, _exclude_inset_sheet_border_segments, _recover_supported_partitions,
-    _semantic_segment_classification, normalize_text,
+    _semantic_segment_classification, _pre_envelope_opening_evidence, normalize_text,
     reconstruct_architecture, require_complete_architecture,
 )
 
@@ -293,3 +293,38 @@ def test_isolated_furniture_sized_line_is_not_recovered_as_partition():
     assert len(accepted)==4
     assert records[-1]["status"]=="REJECTED"
     assert decisions==[]
+
+
+def _opening_wall():
+    return {"wall_id":"W1","frame_id":"F1","centerline":[[0,0],[10,0]],
+            "representation":"DOUBLE_FACE","thickness":.2,
+            "wall_solid":{"axis_origin":[0,0],"axis_direction":[1,0],"occupied_intervals":[[0,10]]},
+            "interruptions":[],"source_handles":["WA","WB"]}
+
+
+def test_cad_door_block_is_pre_envelope_evidence_but_not_material_gap_or_portal():
+    candidate={"opening_id":"D1","kind":"door","geometry":{"point":[5,.05]},
+               "source_handle":"D","evidence":[{"class":"CAD_BLOCK"}]}
+    rows=_pre_envelope_opening_evidence([candidate],[_opening_wall()],
+                                        {"frame_id":"F1","bounds":[-1,-1,11,7]},tolerance=.001)
+    assert rows[0]["status"]=="OPENING_EVIDENCE_PRESENT"
+    assert rows[0]["material_gap_status"]=="UNPROVEN"
+    assert rows[0]["portal_status"]=="NOT_CLASSIFIED"
+    assert rows[0]["access_edge_status"]=="NOT_EVALUATED"
+
+
+def test_opening_symbol_without_compatible_wall_is_rejected():
+    candidate={"opening_id":"D1","kind":"door","geometry":{"point":[5,5]},
+               "source_handle":"D","evidence":[{"class":"CAD_BLOCK"}]}
+    rows=_pre_envelope_opening_evidence([candidate],[_opening_wall()],
+                                        {"frame_id":"F1","bounds":[-1,-1,11,7]},tolerance=.001)
+    assert rows[0]["status"]=="REJECTED"
+    assert rows[0]["candidate_host_wall_ids"]==[]
+
+
+def test_random_block_is_not_opening_evidence_even_near_wall():
+    candidate={"opening_id":"X1","kind":"door","geometry":{"point":[5,.05]},
+               "source_handle":"X","evidence":[{"class":"UNKNOWN_BLOCK"}]}
+    rows=_pre_envelope_opening_evidence([candidate],[_opening_wall()],
+                                        {"frame_id":"F1","bounds":[-1,-1,11,7]},tolerance=.001)
+    assert rows[0]["status"]=="REJECTED"

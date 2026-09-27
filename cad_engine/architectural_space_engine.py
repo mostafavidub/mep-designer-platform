@@ -23,6 +23,7 @@ from shapely.ops import polygonize, unary_union
 from shapely.strtree import STRtree
 
 from .architectural_topology_quality import (
+    _axis,
     building_envelope_from_walls,
     canonical_enclosure_continuity,
     canonical_space_subdivision,
@@ -313,20 +314,24 @@ def _opening_candidates(extracted, source_hash):
     return [unique[key] for key in sorted(unique)]
 
 
-def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, metres_per_unit):
+def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, metres_per_unit, frame_bounds=None):
     """Recognize anonymous doors only from combined independent evidence."""
     tol=max(float(tolerance or .001)*5,1e-8); scale=metres_per_unit or 1.0
-    leaves=[]
+    frame_clip=box(*frame_bounds) if frame_bounds else None; leaves=[]
     for primitive in extracted["primitives"]:
         if primitive.get("entity_type")!="LINE" or primitive.get("source_block"): continue
         pts=_primitive_points(primitive)
-        if len(pts)==2: leaves.append((primitive,LineString(pts)))
+        if len(pts)==2:
+            leaf=LineString(pts)
+            if frame_clip is None or frame_clip.intersects(leaf): leaves.append((primitive,leaf))
     walls=STRtree(wall_lines) if wall_lines else None; rows=[]
     for arc in extracted["primitives"]:
         if arc.get("entity_type")!="ARC" or arc.get("source_block") or not arc.get("center") or not arc.get("radius"): continue
+        pivot=Point(arc["center"])
+        if frame_clip is not None and not frame_clip.covers(pivot): continue
         radius=float(arc["radius"]); radius_m=radius*scale
         if not .45<=radius_m<=2.5: continue
-        pivot=Point(arc["center"]); matching=[]
+        matching=[]
         for leaf_record,leaf in leaves:
             coords=list(leaf.coords)
             if min(pivot.distance(Point(coords[0])),pivot.distance(Point(coords[-1])))<=tol and .65*radius<=leaf.length<=1.35*radius:
@@ -343,6 +348,98 @@ def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, me
                      "evidence":[{"class":"SWING_ARC","handle":arc.get("handle")},
                                  {"class":"DOOR_LEAF","handle":leaf_record.get("handle")},
                                  {"class":"HOST_WALL_PROXIMITY"}],"status":"CANDIDATE"})
+    return rows
+
+
+def _opening_source_inventory(extracted, frame, metres_per_unit):
+    """Count native source motifs without assigning architectural meaning."""
+    clip=box(*frame["bounds"]) if frame.get("bounds") else None; scale=metres_per_unit or 1.0
+    def in_frame(point): return bool(point and (clip is None or clip.covers(Point(point))))
+    objects=[row for row in extracted["objects"] if in_frame(row.get("point"))]
+    primitives=[]
+    for row in extracted["primitives"]:
+        point=row.get("center") or (row.get("start") if row.get("start") else None)
+        if in_frame(point): primitives.append(row)
+    opening_blocks=[row for row in objects if set(row.get("object_types") or [])&{"door","window"}]
+    layer_geometry=[row for row in primitives if any(token in normalize_text(row.get("layer"))
+                                                      for token in ("door","window","درب","پنجره"))]
+    swing_arcs=[row for row in primitives if row.get("entity_type")=="ARC" and row.get("radius")
+                and .45<=float(row["radius"])*scale<=2.5]
+    return {"frame_id":frame["frame_id"],"raw_arc_count":sum(row.get("entity_type")=="ARC" for row in primitives),
+            "raw_line_count":sum(row.get("entity_type")=="LINE" for row in primitives),
+            "door_window_block_count":len(opening_blocks),
+            "door_window_layer_geometry_count":len(layer_geometry),
+            "plausible_swing_arc_count":len(swing_arcs),
+            "block_source_handles":sorted(row.get("handle") for row in opening_blocks if row.get("handle")),
+            "layer_source_handles":sorted(row.get("handle") for row in layer_geometry if row.get("handle")),
+            "swing_arc_source_handles":sorted(row.get("handle") for row in swing_arcs if row.get("handle")),
+            "jamb_window_frame_detector_status":"NO_INDEPENDENT_EXISTING_DETECTOR"}
+
+
+def _opening_anchor(candidate):
+    geometry=candidate.get("geometry") or {}
+    if geometry.get("point"):
+        return Point(geometry["point"]), None
+    points=geometry.get("points") or []
+    if len(points)>=2:
+        line=LineString(points)
+        return line.centroid, line
+    bounds=geometry.get("bounds")
+    if bounds and len(bounds)==4:
+        return box(*bounds).centroid, None
+    return None, None
+
+
+def _pre_envelope_opening_evidence(candidates, walls, frame, *, tolerance):
+    """Map deterministic opening evidence to walls without creating portals."""
+    clip=box(*frame["bounds"]) if frame.get("bounds") else None
+    tol=max(float(tolerance or .001),1e-8); rows=[]
+    for candidate in candidates:
+        anchor,line=_opening_anchor(candidate)
+        if anchor is None or (clip is not None and not clip.buffer(tol*5).covers(anchor)):
+            continue
+        mapped=[]
+        for wall in walls:
+            axis=LineString(wall["centerline"]); thickness=float(wall.get("thickness") or 0.0)
+            search=max(tol*5,thickness*1.5,(line.length*.35 if line is not None else 0.0))
+            distance=axis.distance(anchor)
+            if distance>search: continue
+            u,_,wall_angle,_=_axis(axis); origin=wall["wall_solid"]["axis_origin"]
+            projected=(anchor.x-origin[0])*u[0]+(anchor.y-origin[1])*u[1]
+            orientation=None
+            if line is not None and line.length>tol:
+                _,_,candidate_angle,_=_axis(line)
+                delta=min(abs(wall_angle-candidate_angle),180-abs(wall_angle-candidate_angle))
+                orientation="PARALLEL_OR_PERPENDICULAR" if delta<=20 or delta>=70 else "CONFLICT"
+            occupied=wall["wall_solid"].get("occupied_intervals") or []
+            before=any(a<=projected<=b or b<=projected and projected-b<=search for a,b in occupied)
+            after=any(a<=projected<=b or a>=projected and a-projected<=search for a,b in occupied)
+            nearby=[]
+            for index,interruption in enumerate(wall.get("interruptions") or []):
+                low,high=interruption["interval"]
+                if low-search<=projected<=high+search:
+                    nearby.append({"interruption_index":index,"interval":[low,high],
+                                   "kind":interruption.get("kind"),
+                                   "face_a_gap":interruption.get("face_a_gap"),
+                                   "face_b_gap":interruption.get("face_b_gap")})
+            mapped.append({"wall_id":wall["wall_id"],"distance":distance,
+                           "orientation_agreement":orientation,"projection":projected,
+                           "wall_representation":wall.get("representation"),
+                           "wall_material_before":before,"wall_material_after":after,
+                           "nearby_interruptions":nearby,"junction_support":False})
+        mapped.sort(key=lambda row:(row["distance"],row["wall_id"]))
+        classes=sorted({item.get("class") for item in candidate.get("evidence") or [] if item.get("class")})
+        strong_symbol=bool(set(classes)&{"CAD_BLOCK","CAD_LAYER_SYMBOL"}) or {"SWING_ARC","DOOR_LEAF"}.issubset(classes)
+        compatible=[row for row in mapped if row["orientation_agreement"]!="CONFLICT"]
+        rows.append({"opening_evidence_id":_stable_id("OPENEV",[frame["frame_id"],candidate["opening_id"]]),
+                     "frame_id":frame["frame_id"],"candidate_type":candidate.get("kind"),
+                     "geometry":candidate.get("geometry"),
+                     "source_handles":candidate.get("source_handles") or [candidate.get("source_handle")],
+                     "evidence_classes":classes,"candidate_host_wall_ids":[row["wall_id"] for row in compatible],
+                     "host_evaluations":mapped,"confidence":.85 if strong_symbol and compatible else .35,
+                     "status":"OPENING_EVIDENCE_PRESENT" if strong_symbol and compatible else "REJECTED",
+                     "material_gap_status":"UNPROVEN","portal_status":"NOT_CLASSIFIED",
+                     "access_edge_status":"NOT_EVALUATED"})
     return rows
 
 
@@ -1081,6 +1178,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
     envelope_candidate_diagnostics=[]; plan_regions=[]
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
+    pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
+    explicit_opening_candidates=_opening_candidates(extracted,source["source_sha256"])
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
@@ -1116,6 +1215,14 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         frame_walls=wall_result["walls"]
         canonical_walls.extend(frame_walls); wall_junctions.extend(wall_result["junctions"])
         thickness_clusters.extend(wall_result["thickness_clusters"])
+        opening_source_inventories.append(_opening_source_inventory(extracted,frame,source["metres_per_unit"]))
+        frame_geometric_candidates=_geometric_door_candidates(
+            extracted,accepted,source["source_sha256"],tolerance,source["metres_per_unit"],frame.get("bounds"))
+        pre_envelope_geometric_candidates.extend(frame_geometric_candidates)
+        frame_opening_candidates=list({row["opening_id"]:row for row in
+                                       explicit_opening_candidates+frame_geometric_candidates}.values())
+        pre_envelope_opening_evidence.extend(_pre_envelope_opening_evidence(
+            frame_opening_candidates,frame_walls,frame,tolerance=tolerance))
         def in_frame_geometry(row):
             geometry=row.get("geometry") or _primitive_points(row)
             return len(geometry)>=2 and (clip is None or LineString(geometry).intersects(clip))
@@ -1181,8 +1288,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
     label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
-    opening_candidates=_opening_candidates(extracted, source["source_sha256"])
-    opening_candidates.extend(_geometric_door_candidates(extracted,accepted_wall_lines,source["source_sha256"],tolerance,source["metres_per_unit"]))
+    opening_candidates=list(explicit_opening_candidates)
+    opening_candidates.extend(pre_envelope_geometric_candidates)
     opening_candidates=list({row["opening_id"]:row for row in opening_candidates}.values())
     openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,source["source_sha256"],tolerance,
                                   canonical_walls=canonical_walls)
@@ -1271,6 +1378,10 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "wall_admission_funnel":wall_admission_funnels,
              "boundary_extraction_rejections":extracted.get("boundary_rejections") or [],
              "enclosure_continuity":{"schema":"canonical-enclosure-continuity/1.0","closures":continuity_results},
+             "pre_envelope_opening_evidence":{"schema":"pre-envelope-opening-evidence/1.0",
+                                                "items":pre_envelope_opening_evidence,
+                                                "source_inventories":opening_source_inventories,
+                                                "authority":"SUPPORTING_EVIDENCE_ONLY"},
              "virtual_opening_closures":[row for result in subdivision_results for row in result.get("closures",[])],
              "enclosure_barrier_graph":{"schema":"canonical-enclosure-barrier-graph/1.0",
                                          "barriers":[row for result in subdivision_results for row in result.get("barriers",[])],

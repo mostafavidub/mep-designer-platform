@@ -854,6 +854,8 @@
         "pre_envelope_enclosure_continuity",
         "wall_material_enclosure_barrier_access_edge_separation",
         "source_supported_virtual_closure_only",
+        "pre_envelope_native_opening_evidence_is_supporting_only",
+        "opening_evidence_portal_access_edge_separation",
         "closed_space_boundaries",
         "physical_space_functional_zone_separation",
         "canonical_architecture_completeness_gate",

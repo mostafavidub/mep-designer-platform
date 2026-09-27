@@ -25,6 +25,12 @@ creates pedestrian access. Portal type is classified only after physical spaces
 exist. A supported but uncorroborated single-line break remains diagnostic and
 cannot be promoted merely because it would complete a desired room.
 
+Native CAD Opening Evidence is also a separate, pre-envelope supporting record.
+Existing block/layer and combined swing-arc/leaf/wall detectors may report an
+opening hypothesis and candidate Wall Objects before Physical Spaces exist, but
+that record is not a Portal, does not fabricate a material gap, cannot create an
+Access Edge and cannot authorize continuity without independent wall evidence.
+
 Wall authority is a first-class canonical object rather than a source LINE. The
 model distinguishes wall-axis continuity from occupied wall solid, records
 interruptions as candidate openings, constructs enclosure-only virtual closures,
