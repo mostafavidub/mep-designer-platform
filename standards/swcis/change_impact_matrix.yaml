@@ -110,6 +110,7 @@
         "cad_engine/authority_architecture.py",
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
+        "cad_engine/architectural_vision_recovery.py",
         "cad_engine/mechanical_authority*.py",
         "cad_engine/mechanical_cad*.py",
         "cad_engine/mechanical_design_core.py",
