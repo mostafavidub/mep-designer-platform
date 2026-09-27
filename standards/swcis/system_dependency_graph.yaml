@@ -83,6 +83,7 @@
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_vision_recovery.py",
+        "cad_engine/canonical_wall_topology.py",
         "app/dxf_output.py",
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**"
@@ -305,6 +306,7 @@
         "tools/swcis_*.py",
         "tools/*_diagnostics.py",
         "tools/architectural_*.py",
+        "tools/render_canonical_topology_qa.py",
         "tools/runtime_version_guard.py",
         "tools/complete_mechanical_unversioning.py",
         "cad_engine/version_sync_gate.py",

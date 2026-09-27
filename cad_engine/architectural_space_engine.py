@@ -22,7 +22,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import polygonize, unary_union
 from shapely.strtree import STRtree
 
-from .canonical_wall_topology import (
+from .architectural_topology_quality import (
     building_envelope_from_walls,
     reconstruct_canonical_walls,
     virtual_opening_closures,

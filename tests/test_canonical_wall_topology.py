@@ -1,6 +1,6 @@
 from shapely.geometry import LineString
 
-from cad_engine.canonical_wall_topology import (
+from cad_engine.architectural_topology_quality import (
     building_envelope_from_walls,
     host_portal_on_walls,
     reconstruct_canonical_walls,
@@ -55,4 +55,3 @@ def test_rejected_annotation_never_enters_wall_objects():
     rows = [_row("W", (0, 0), (10, 0)), _row("NOTE", (0, 1), (10, 1), status="REJECTED")]
     result = reconstruct_canonical_walls(rows, frame_id="F1", tolerance=.001)
     assert all("SEG-NOTE" not in wall["source_fragments"] for wall in result["walls"])
-

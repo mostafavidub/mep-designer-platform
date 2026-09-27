@@ -20,7 +20,7 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
-from .canonical_wall_topology import host_portal_on_walls
+from .architectural_topology_quality import host_portal_on_walls
 
 
 RENDER_VERSION = "architecture-source-render/2"
