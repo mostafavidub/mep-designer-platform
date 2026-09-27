@@ -16,6 +16,13 @@ primitive extraction, object and wall/opening reconstruction, cell generation,
 semantic zoning, dimension association, optional vision reconciliation, evidence
 fusion, completeness evaluation and targeted human review.
 
+Wall authority is a first-class canonical object rather than a source LINE. The
+model distinguishes wall-axis continuity from occupied wall solid, records
+interruptions as candidate openings, constructs enclosure-only virtual closures,
+and keeps the Enclosure Graph separate from the portal-driven Access Graph.
+Building Envelope and EXTERIOR are explicit topology records. Portal fusion may
+bind only to a compatible Wall Object gap and cannot override a continuous wall.
+
 Vision is accessed through an adapter and is invoked only for unresolved regions.
 Its evidence is advisory until reconciled with CAD. Critical ambiguity fails
 closed. Stable identities are content-derived from source, frame, level and

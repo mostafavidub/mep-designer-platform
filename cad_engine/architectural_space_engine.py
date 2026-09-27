@@ -22,6 +22,12 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import polygonize, unary_union
 from shapely.strtree import STRtree
 
+from .canonical_wall_topology import (
+    building_envelope_from_walls,
+    reconstruct_canonical_walls,
+    virtual_opening_closures,
+)
+
 
 SCHEMA = "canonical-architectural-model/1.0"
 STATUSES = {"VERIFIED", "HIGH_CONFIDENCE", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"}
@@ -699,6 +705,29 @@ def _evidence_for_cell(poly, extracted):
     return labels, objects
 
 
+def _label_bindings(spaces, texts, tolerance):
+    """Audit every semantic label without arbitrary nearest-room guessing."""
+    polygons={s["physical_space_id"]:_space_polygon(s) for s in spaces}
+    rows=[]; edge_tolerance=max(float(tolerance or .001)*3,1e-8)
+    for text in texts:
+        category,_=_classify_text(text.get("text")); point=text.get("point")
+        if not category or not point: continue
+        probe=Point(point)
+        exact=sorted(sid for sid,poly in polygons.items() if poly.covers(probe))
+        method="POINT_IN_POLYGON"; candidates=exact
+        if not candidates:
+            edge=sorted(sid for sid,poly in polygons.items() if poly.boundary.distance(probe)<=edge_tolerance)
+            candidates=edge; method="UNAMBIGUOUS_EDGE_CONTACT"
+        host=candidates[0] if len(candidates)==1 else None
+        rows.append({"label_id":_stable_id("LBL",[text.get("handle"),text.get("text"),point]),
+                     "source_handle":text.get("handle"),"text":text.get("text"),"point":list(point),
+                     "semantic_candidate":category,"candidate_space_ids":candidates,
+                     "host_space_id":host,"binding_method":method if host else None,
+                     "evidence":[{"class":method,"tolerance":edge_tolerance}] if host else [],
+                     "status":"VERIFIED" if host else ("CONFLICT" if len(candidates)>1 else "UNHOSTED")})
+    return rows
+
+
 def _infer_categories(labels, objects):
     evidence = defaultdict(list)
     for label in labels: evidence[label["category"]].append({"class": "TEXT", "handle": label["handle"], "value": label["value"]})
@@ -775,7 +804,7 @@ def _opening_point(row):
     return LineString(points).interpolate(.5, normalized=True) if len(points) >= 2 else None
 
 
-def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance):
+def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonical_walls=None):
     """Bind openings to a host wall and the spaces they connect.
 
     An opening with no defensible wall match is explicitly rejected.  A door
@@ -785,8 +814,12 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance):
     """
     tol = max(float(tolerance or 0.001) * 3.0, 1e-6)
     polygons = {s["physical_space_id"]: _space_polygon(s) for s in spaces}
-    walls = [{"wall_id": _stable_id("WALL", [source_hash, _round_points(list(line.coords))]), "line": line}
-             for line in wall_lines]
+    if canonical_walls is not None:
+        walls = [{"wall_id": row["wall_id"], "line": LineString(row["centerline"]), "record": row}
+                 for row in canonical_walls]
+    else:
+        walls = [{"wall_id": _stable_id("WALL", [source_hash, _round_points(list(line.coords))]), "line": line}
+                 for line in wall_lines]
     accepted = []
     for row in openings:
         point = _opening_point(row)
@@ -815,7 +848,8 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance):
         key = "openings" if row["kind"] == "door" else "windows"
         for space in spaces:
             if space["physical_space_id"] in touching: space[key].append(row["opening_id"])
-    return accepted, [{"wall_id": w["wall_id"], "geometry": list(w["line"].coords)} for w in walls]
+    return accepted, ([w["record"] for w in walls] if canonical_walls is not None else
+                      [{"wall_id": w["wall_id"], "geometry": list(w["line"].coords)} for w in walls])
 
 
 def _coverage(frames, spaces):
@@ -927,6 +961,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     tolerance = _adaptive_tolerance(extracted["boundary_lines"], source["metres_per_unit"])
     timings["frame_and_scale_resolution"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
+    canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
@@ -946,17 +981,35 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         for row in iterations: row["frame_id"]=frame["frame_id"]
         refinement_decisions.extend(decisions); refinement_iterations.extend(iterations)
         segment_records.extend(classified); accepted_wall_lines.extend(accepted)
-        polygons = _polygonize_spaces(accepted, frame, tolerance)
+        wall_result=reconstruct_canonical_walls(classified,frame_id=frame["frame_id"],tolerance=tolerance,
+                                                metres_per_unit=source["metres_per_unit"])
+        frame_walls=wall_result["walls"]
+        canonical_walls.extend(frame_walls); wall_junctions.extend(wall_result["junctions"])
+        thickness_clusters.extend(wall_result["thickness_clusters"])
+        building_envelopes.append(building_envelope_from_walls(frame_walls,frame_id=frame["frame_id"],tolerance=tolerance))
+        # Canonical axes close fragmented wall systems across openings.  They
+        # are virtual enclosure boundaries only; wall_solid still retains the
+        # opening intervals and no wall material is fabricated there.
+        topology_lines=[LineString(w["centerline"]) for w in frame_walls]
+        polygons = _polygonize_spaces(topology_lines or accepted, frame, tolerance)
+        if not polygons and topology_lines:
+            # Fail closed to the already classified CAD boundaries when a
+            # canonical graph is not yet a closed cycle (for example an
+            # isolated rotated outline).  This preserves existing valid
+            # geometry without claiming a canonical envelope was proven.
+            polygons = _polygonize_spaces(accepted, frame, tolerance)
         polygons,rejected=_filter_wall_solid_cells(polygons,classified,extracted,source["metres_per_unit"])
         for row in rejected: row["frame_id"]=frame["frame_id"]
         rejected_cells.extend(rejected)
         spaces.extend(_space_record(p, frame, source["source_sha256"], extracted, source["metres_per_unit"]) for p in polygons)
     timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
+    label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
     opening_candidates=_opening_candidates(extracted, source["source_sha256"])
     opening_candidates.extend(_geometric_door_candidates(extracted,accepted_wall_lines,source["source_sha256"],tolerance,source["metres_per_unit"]))
     opening_candidates=list({row["opening_id"]:row for row in opening_candidates}.values())
-    openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,source["source_sha256"],tolerance)
+    openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,source["source_sha256"],tolerance,
+                                  canonical_walls=canonical_walls)
     timings["topology"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     coverage=_coverage(frames,spaces)
     dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
@@ -974,14 +1027,15 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         from .architectural_vision_recovery import recover_semantics
         vision = recover_semantics(extracted=extracted,frames=frames,spaces=spaces,
                                    source_hash=source["source_sha256"],segments=segment_records,
-                                   tolerance=tolerance,adapter=vision_adapter)
+                                   tolerance=tolerance,adapter=vision_adapter,canonical_walls=canonical_walls)
         vision["regions"] = unresolved
         # Vision can add semantic evidence only.  Every engineering gate is
         # recalculated from the fused canonical model; the provider cannot set
         # completeness or release state directly.
         spaces.sort(key=lambda s:s["physical_space_id"]); _adjacency(spaces,tolerance)
+        label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
         openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,
-                                      source["source_sha256"],tolerance)
+                                      source["source_sha256"],tolerance,canonical_walls=canonical_walls)
         coverage=_coverage(frames,spaces)
         dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
         completeness=_completeness(frames,spaces,source["metres_per_unit"] is not None,
@@ -1022,15 +1076,21 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     model = {"schema": SCHEMA, "source": source, "frames": frames, "levels": [], "physical_spaces": spaces,
              "functional_zones": [z for s in spaces for z in s["functional_zones"]], "architectural_objects": extracted["objects"],
              "dimensions": extracted["dimensions"], "dimension_reconciliation":dimension_reconciliation,
-             "openings":openings,"canonical_walls":walls,"architectural_segments":segment_records,
+             "openings":openings,"canonical_walls":walls,"wall_junctions":wall_junctions,
+             "wall_thickness_clusters":thickness_clusters,"building_envelopes":building_envelopes,
+             "label_bindings":label_bindings,
+             "architectural_segments":segment_records,
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
-             "enclosure_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in enclosure_edges]},
+             "virtual_opening_closures":virtual_opening_closures(canonical_walls),
+             "exterior_face":{"face_id":"EXTERIOR","type":"UNBOUNDED_REGION","status":"CANONICAL"},
+             "enclosure_graph":{"nodes":[s["physical_space_id"] for s in spaces]+["EXTERIOR"],"edges":[list(row) for row in enclosure_edges]},
              "access_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in access_edges]},
              "rejected_candidate_cells":rejected_cells,"coverage":coverage,"review":review,
              "completeness": completeness, "vision_reconciliation": vision,
              "diagnostics": {"entity_counts": extracted["entity_counts"], "adaptive_tolerance": tolerance,
                              "raw_boundary_segment_count":len(extracted["boundary_lines"]),
                              "accepted_wall_segment_count":sum(r["status"]=="ACCEPTED" for r in segment_records),
+                             "canonical_wall_count":len(canonical_walls),"wall_junction_count":len(wall_junctions),
                              "space_candidate_count": len(spaces), "stage_runtime_seconds":{k:round(v,6) for k,v in timings.items()},
                              "dxf_parse_count":1,"runtime_seconds": round(time.perf_counter()-started,6)},
              # Backward-compatible projection; canonical consumers use fields above.

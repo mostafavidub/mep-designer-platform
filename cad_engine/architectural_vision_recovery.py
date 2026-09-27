@@ -20,6 +20,8 @@ from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 from shapely.strtree import STRtree
 
+from .canonical_wall_topology import host_portal_on_walls
+
 
 RENDER_VERSION = "architecture-source-render/2"
 VIEWPORT_VERSION = "architecture-vision-viewport/1"
@@ -650,7 +652,8 @@ def _strong_shared_wall(left: Polygon, right: Polygon, segments: list[dict], tol
 
 
 def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: RenderTransform,
-                         segments: list[dict], source_hash: str, tolerance: float) -> dict:
+                         segments: list[dict], source_hash: str, tolerance: float,
+                         canonical_walls: list[dict] | None = None) -> dict:
     """Reconcile Vision polygons with CAD and apply only CAD-approved repairs."""
     frame_id = analysis["frame_id"]
     frame_spaces = [space for space in spaces if space.get("frame_id") == frame_id]
@@ -752,8 +755,14 @@ def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: Rende
                 search_tolerance=max(tolerance*5,6/max(transform.scale,1e-12))
             continuous_wall=bool(near) and any(LineString(row["geometry"]).intersection(line.buffer(search_tolerance)).length>
                                                max(tolerance*2,line.length*.35) for row in near)
-            accepted = float(portal["confidence"]) >= .90 and bool(near) and not continuous_wall
-            if not near: rejection="NO_NEARBY_WALL"
+            host=None; host_reason=None; host_candidates=[]
+            if len(mapped)>=2 and canonical_walls:
+                host,host_reason,host_candidates=host_portal_on_walls(
+                    line,[wall for wall in canonical_walls if wall.get("frame_id")==frame_id],
+                    tolerance=tolerance,pixel_tolerance=pixel_error_tolerance)
+            accepted = float(portal["confidence"]) >= .90 and host is not None
+            if host is None and canonical_walls: rejection=host_reason
+            elif not near: rejection="NO_NEARBY_WALL"
             elif continuous_wall: rejection="NO_WALL_GAP"
             elif float(portal["confidence"])<.90: rejection="OTHER"
             else: rejection=None
@@ -762,12 +771,14 @@ def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: Rende
                                       "open_passages":"CREATE_OPEN_PASSAGE_CANDIDATE"}[kind],
                       "affected_spaces": portal["connects"], "vision_evidence": portal,
                       "cad_evidence": {"near_wall_segment_ids": [row["segment_id"] for row in near],
+                                       "host_wall_id":host.get("wall_id") if host else None,
+                                       "candidate_host_wall_ids":host_candidates,
                                        "search_tolerance":search_tolerance,"continuous_wall":continuous_wall,
                                        "rejection_category":rejection},
                       "source_handles": [row.get("source_handle") for row in near if row.get("source_handle")],
                       "before_state": None, "proposed_state": {"geometry": mapped},
                       "validation_result": "PASS" if accepted else "INSUFFICIENT_EVIDENCE",
-                      "accepted": accepted, "reason": "CAD_WALL_HOST_SUPPORT" if accepted else rejection}
+                      "accepted": accepted, "reason": "CANONICAL_WALL_GAP_SUPPORT" if accepted else rejection}
             repairs.append(repair)
             if accepted: proposed_portals.append({"kind": kind[:-1] if kind.endswith("s") else kind, "geometry": mapped,
                                                    "repair_id": repair["repair_id"], "status": "CANDIDATE"})
@@ -778,7 +789,7 @@ def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: Rende
 
 def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict], source_hash: str,
                       segments: list[dict] | None = None, tolerance: float | None = None,
-                      adapter=None, cache_dir=None) -> dict:
+                      adapter=None, cache_dir=None, canonical_walls: list[dict] | None = None) -> dict:
     """Run one global pass and at most one localized pass per unresolved frame."""
     events = []; calls = []; analyses = []; repairs = []; portal_candidates = []; started = time.perf_counter()
     for stage in (RecoveryStage.SOURCE_INGESTION, RecoveryStage.FRAME_AND_LEVEL_ISOLATION,
@@ -826,7 +837,8 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
             events.append({"stage": RecoveryStage.GLOBAL_VISION_ANALYSIS.value, "frame_id": frame["frame_id"]})
             fused = reconcile_and_repair(analysis=first, spaces=spaces, transform=transform,
                                          segments=segments or [], source_hash=source_hash,
-                                         tolerance=max(float(tolerance or .001), 1e-8))
+                                         tolerance=max(float(tolerance or .001), 1e-8),
+                                         canonical_walls=canonical_walls)
             repairs.extend(fused["repairs"]); portal_candidates.extend(fused["portal_candidates"])
             events.extend(({"stage":RecoveryStage.CAD_VISION_RECONCILIATION_1.value,"frame_id":frame["frame_id"]},
                            {"stage":RecoveryStage.TOPOLOGY_REPAIR_1.value,"frame_id":frame["frame_id"],
@@ -862,7 +874,8 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
                 events.append({"stage":RecoveryStage.LOCAL_VISION_ANALYSIS.value,"frame_id":frame["frame_id"]})
                 local_fused=reconcile_and_repair(analysis=second,spaces=spaces,transform=local_transform,
                                                  segments=segments or [],source_hash=source_hash,
-                                                 tolerance=max(float(tolerance or .001),1e-8))
+                                                 tolerance=max(float(tolerance or .001),1e-8),
+                                                 canonical_walls=canonical_walls)
                 repairs.extend(local_fused["repairs"]); portal_candidates.extend(local_fused["portal_candidates"])
                 events.extend(({"stage":RecoveryStage.CAD_VISION_RECONCILIATION_2.value,"frame_id":frame["frame_id"]},
                                {"stage":RecoveryStage.TARGETED_TOPOLOGY_REPAIR_2.value,"frame_id":frame["frame_id"],

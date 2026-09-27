@@ -15,16 +15,25 @@ new consumers use `physical_spaces`, `functional_zones`, `architectural_objects`
    DIMENSION records.
 3. Reuse the governed frame detector; unknown/non-floor drawings remain explicit.
 4. Derive an adaptive geometry tolerance from project units and line statistics.
-5. Node and polygonize independent LINE/polyline/ARC wall evidence into cells.
-6. Create deterministic physical-space IDs from source, frame and normalized ring.
-7. Fuse text, block/layer signature, object and spatial evidence.
-8. Represent multiple functions inside one cell as Functional Zones; never create
+5. Infer repeated frame-local wall thicknesses, pair faces and stitch collinear
+   fragments into stable canonical Wall Objects.
+6. Separate continuous wall-axis topology from occupied wall-solid intervals;
+   gaps remain traceable candidate openings and become enclosure-only virtual
+   closures.
+7. Derive a first-class Building Envelope from canonical wall cycles and retain
+   an explicit unbounded EXTERIOR face.
+8. Polygonize the canonical enclosure graph, falling back to already-classified
+   source boundaries only when the canonical graph cannot prove a closed cycle.
+9. Create deterministic physical-space IDs from source, frame and normalized ring.
+10. Fuse text, block/layer signature, object and spatial evidence.
+11. Represent multiple functions inside one cell as Functional Zones; never create
    fake partition walls.
-9. Associate dimensions conservatively with nearby boundaries and preserve source
+12. Associate dimensions conservatively with nearby boundaries and preserve source
    handles, measurement, definition points and overrides.
-10. Generate adjacency, evidence chains, a machine report and an SVG overlay.
-11. Report every unknown frame, unknown space or unit problem as INPUT_REQUIRED.
-12. Block Mechanical calculations, topology and routing before they execute when
+13. Generate separate Enclosure and Access graphs, label-host evidence chains, a
+    machine report and SVG QA overlays.
+14. Report every unknown frame, unknown space or unit problem as INPUT_REQUIRED.
+15. Block Mechanical calculations, topology and routing before they execute when
     completeness is not VERIFIED.
 
 ## Identity and evidence
@@ -70,11 +79,20 @@ analysis and projects it into existing topology fields. PMM stores the full mode
 additively. Old persisted projects remain readable, but only newly analyzed models
 that pass canonical completeness can authorize downstream engineering.
 
+## Canonical wall and portal authority
+
+Source LINE entities are provenance, not wall identity. A Wall Object owns its
+axis, occupied intervals, inferred interruptions, source fragments, junctions and
+confidence. Portal fusion searches for a compatible Wall Object span and a proven
+gap; no source line is required at the centre of an opening. A continuous strong
+wall still rejects the portal. Vision confidence thresholds and fail-closed
+mechanical release are unchanged.
+
 ## Current limitations
 
 - A configured Vision provider/render-coordinate adapter is not yet available;
   ambiguous exploded text therefore stays INPUT_REQUIRED.
-- Door/window portal hosting is not promoted without a verified geometry signature.
-- Complex door gaps and variable-thickness curved wall pairs require more golden
-  evidence before automatic closure is safe.
+- Door/window portal hosting is not promoted without a verified Wall Object gap.
+- Curved wall pairing, exterior/semi-exterior region classification and full
+  face-pair consolidation still require additional benchmark evidence.
 - Private benchmark drawings are not committed and are never generation inputs.
