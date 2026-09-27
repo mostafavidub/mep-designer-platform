@@ -20,6 +20,14 @@ Wall authority is a first-class canonical object rather than a source LINE. The
 model distinguishes wall-axis continuity from occupied wall solid, records
 interruptions as candidate openings, constructs enclosure-only virtual closures,
 and keeps the Enclosure Graph separate from the portal-driven Access Graph.
+
+Wall admission is a bounded evidence funnel rather than an early binary layer
+filter. Raw geometry retains extraction rejection reasons; confirmed walls seed
+the graph; local/partial parallel-face families, scale-aware junctions,
+collinear continuity and non-pathological enclosure gain may promote supported
+partition candidates in bounded passes. Labels and fixtures are supporting
+anchors only and never generate geometry. Every promotion records its prior
+state, evidence, topology before/after and source handles.
 Building Envelope and EXTERIOR are explicit topology records. Portal fusion may
 bind only to a compatible Wall Object gap and cannot override a continuous wall.
 

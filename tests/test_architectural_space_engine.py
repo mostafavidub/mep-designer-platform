@@ -4,7 +4,7 @@ import ezdxf
 from shapely.geometry import LineString
 
 from cad_engine.architectural_space_engine import (
-    SCHEMA, _completeness, _semantic_segment_classification, normalize_text,
+    SCHEMA, _completeness, _recover_supported_partitions, _semantic_segment_classification, normalize_text,
     reconstruct_architecture, require_complete_architecture,
 )
 
@@ -222,3 +222,48 @@ def test_repeat_reconstruction_is_deterministic_with_anonymous_portal(tmp_path):
     assert first["architectural_segments"] == second["architectural_segments"]
     assert first["topology_refinement"] == second["topology_refinement"]
     assert first["doors"] == second["doors"]
+
+
+def _recover(lines, metadata, labels=()):
+    records,seeds=_semantic_segment_classification(lines,metadata,1.0,.001)
+    extracted={"texts":[{"text":text,"point":point} for text,point in labels]}
+    accepted,decisions,iterations=_recover_supported_partitions(
+        seeds,records,{"bounds":[-1,-1,11,7]},.001,extracted,1.0)
+    return records,accepted,decisions,iterations
+
+
+def test_globally_unique_double_face_partition_is_recovered_from_local_topology():
+    lines=[LineString(((0,0),(10,0))),LineString(((10,0),(10,6))),LineString(((10,6),(0,6))),LineString(((0,6),(0,0))),
+           LineString(((5,0),(5,6))),LineString(((5.2,0),(5.2,6)))]
+    metadata=[{"handle":f"W{i}","layer":"WALL" if i<4 else "0","entity_type":"LINE","closed":False} for i in range(len(lines))]
+    records,accepted,decisions,_=_recover(lines,metadata)
+    assert len(accepted)==6
+    assert sum(bool(row.get("admission_trace")) for row in records)==2
+    assert decisions and decisions[0]["local_parallel_pair"] is True
+
+
+def test_partial_face_family_survives_door_sized_interruption():
+    lines=[LineString(((0,0),(10,0))),LineString(((10,0),(10,6))),LineString(((10,6),(0,6))),LineString(((0,6),(0,0))),
+           LineString(((5,0),(5,6))),LineString(((5.2,0),(5.2,2.5))),LineString(((5.2,3.5),(5.2,6)))]
+    metadata=[{"handle":f"P{i}","layer":"WALL" if i<4 else "0","entity_type":"LINE","closed":False} for i in range(len(lines))]
+    records,accepted,decisions,_=_recover(lines,metadata)
+    assert len(accepted)==7
+    assert sum(bool(row.get("admission_trace")) for row in records)==3
+    assert any(row["local_parallel_pair"] for row in decisions)
+
+
+def test_single_line_partition_with_two_wall_connections_is_recovered_without_labels():
+    lines=[LineString(((0,0),(10,0))),LineString(((10,0),(10,6))),LineString(((10,6),(0,6))),LineString(((0,6),(0,0))),LineString(((5,0),(5,6)))]
+    metadata=[{"handle":f"S{i}","layer":"WALL" if i<4 else "0","entity_type":"LINE","closed":False} for i in range(len(lines))]
+    records,accepted,decisions,_=_recover(lines,metadata)
+    assert len(accepted)==5
+    assert records[-1]["admission_trace"]["reason"]=="MULTI_EVIDENCE_PARTITION_ADMISSION"
+
+
+def test_isolated_furniture_sized_line_is_not_recovered_as_partition():
+    lines=[LineString(((0,0),(10,0))),LineString(((10,0),(10,6))),LineString(((10,6),(0,6))),LineString(((0,6),(0,0))),LineString(((2,2),(4,2)))]
+    metadata=[{"handle":f"F{i}","layer":"WALL" if i<4 else "0","entity_type":"LINE","closed":False} for i in range(len(lines))]
+    records,accepted,decisions,_=_recover(lines,metadata,labels=(("اتاق خواب",(2,3)),("اتاق خواب",(8,3))))
+    assert len(accepted)==4
+    assert records[-1]["status"]=="REJECTED"
+    assert decisions==[]

@@ -175,7 +175,7 @@ def _classify_object(name, layer):
     return sorted(set(found))
 
 
-def _is_boundary_geometry(layer, source_block, entity_type):
+def _boundary_geometry_decision(layer, source_block, entity_type):
     """Conservative wall-boundary admission policy.
 
     Exploded furniture, sanitary fixtures, SHX glyphs and door swings are a
@@ -184,11 +184,15 @@ def _is_boundary_geometry(layer, source_block, entity_type):
     curves need positive wall evidence.
     """
     context=normalize_text(f"{layer} {source_block or ''}")
-    if any(token in context for token in NON_BOUNDARY_TOKENS): return False
+    if any(token in context for token in NON_BOUNDARY_TOKENS): return False,"NON_BOUNDARY_LAYER"
     wall_evidence=any(token in context for token in WALL_TOKENS)
-    if source_block and not wall_evidence: return False
-    if entity_type in {"ARC","SPLINE"} and not wall_evidence: return False
-    return True
+    if source_block and not wall_evidence: return False,"NESTED_BLOCK_EXCLUDED"
+    if entity_type in {"ARC","SPLINE"} and not wall_evidence: return False,"CURVE_WITHOUT_WALL_EVIDENCE"
+    return True,"SOURCE_GEOMETRY_RETAINED"
+
+
+def _is_boundary_geometry(layer, source_block, entity_type):
+    return _boundary_geometry_decision(layer,source_block,entity_type)[0]
 
 
 def _unit_scale(insunits):
@@ -354,7 +358,7 @@ def _ingest(path):
 
 
 def _extract(doc):
-    primitives, texts, objects, dimensions, boundary_lines, boundary_meta = [], [], [], [], [], []
+    primitives, texts, objects, dimensions, boundary_lines, boundary_meta, boundary_rejections = [], [], [], [], [], [], []
     counts = Counter(); seen_nested = set()
 
     def visit(entity, transform_source=None, depth=0):
@@ -365,8 +369,10 @@ def _extract(doc):
             a, b = _point(entity, "start"), _point(entity, "end")
             if a and b and a != b:
                 record.update(start=a, end=b); primitives.append(record)
-                if _is_boundary_geometry(layer, transform_source, kind):
+                retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
+                if retained:
                     boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":False})
+                else: boundary_rejections.append({**record,"geometry":[a,b],"reason":reason})
         elif kind in {"LWPOLYLINE", "POLYLINE"}:
             try:
                 pts = ([(float(x), float(y)) for x, y, *_ in entity.get_points()] if kind == "LWPOLYLINE"
@@ -375,10 +381,12 @@ def _extract(doc):
             if len(pts) >= 2:
                 closed = bool(getattr(entity, "closed", False)) or pts[0] == pts[-1]
                 record.update(points=pts, closed=closed); primitives.append(record)
-                if _is_boundary_geometry(layer, transform_source, kind):
+                retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
+                if retained:
                     for a, b in zip(pts, pts[1:] + ([pts[0]] if closed else [])):
                         if a != b:
                             boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":closed})
+                else: boundary_rejections.append({**record,"geometry":pts,"reason":reason})
         elif kind == "ARC":
             try:
                 pts = [(float(p.x), float(p.y)) for p in entity.flattening(0.5)]
@@ -389,8 +397,10 @@ def _extract(doc):
                               start_angle=float(getattr(entity.dxf,"start_angle",0) or 0),
                               end_angle=float(getattr(entity.dxf,"end_angle",0) or 0))
                 primitives.append(record)
-                if _is_boundary_geometry(layer, transform_source, kind):
+                retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
+                if retained:
                     boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":False})
+                else: boundary_rejections.append({**record,"geometry":pts,"reason":reason})
         elif kind in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
             value = _entity_text(entity).strip(); p = _point(entity)
             if value and p: record.update(text=value, point=p); texts.append(record); primitives.append(record)
@@ -433,10 +443,14 @@ def _extract(doc):
         scale_independent_glyph_signature=ordered and arc_counts[layer] >= len(ordered) and ordered[-1]/max(median,1e-12) < 30
         if len(ordered)>=100 and (metric_signature or scale_independent_glyph_signature):
             glyph_layers.add(layer)
+    for line,meta in zip(boundary_lines,boundary_meta):
+        if meta["layer"] in glyph_layers:
+            boundary_rejections.append({**meta,"geometry":[list(point) for point in line.coords],"reason":"GLYPH_FILTER"})
     retained=[(line,meta) for line,meta in zip(boundary_lines,boundary_meta) if meta["layer"] not in glyph_layers]
     boundary_lines=[line for line,_ in retained]; boundary_meta=[meta for _,meta in retained]
     return {"primitives": primitives, "texts": texts, "objects": objects, "dimensions": dimensions,
             "boundary_lines": boundary_lines, "boundary_meta":boundary_meta,
+            "boundary_rejections":boundary_rejections,
             "excluded_graphic_glyph_layers":sorted(glyph_layers), "entity_counts": dict(counts)}
 
 
@@ -529,13 +543,14 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
             other=lines[other_index]; distance=line.distance(other)
             if not min_thickness<=distance<=max_thickness: continue
             overlap=_parallel_overlap(line,other)
-            if overlap>=.60: pair_rows.append((index,other_index,distance,overlap))
+            if overlap>=.35: pair_rows.append((index,other_index,distance,overlap))
     cluster_step=max(.005/scale,tol)
     clusters=Counter(round(distance/cluster_step) for _,_,distance,_ in pair_rows)
     recurring={bucket for bucket,count in clusters.items() if count>=3}
-    paired=defaultdict(list)
+    paired=defaultdict(list); local_paired=defaultdict(list)
     for left,right,distance,overlap in pair_rows:
         bucket=round(distance/cluster_step)
+        local_paired[left].append((right,distance,overlap,bucket)); local_paired[right].append((left,distance,overlap,bucket))
         if bucket in recurring:
             paired[left].append((right,distance,overlap)); paired[right].append((left,distance,overlap))
     endpoint_degree=Counter()
@@ -545,22 +560,29 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
     small_coherent=len(lines)<=20 and all(endpoint_degree[node(point)]>=2 for line in lines for point in (list(line.coords)[0],list(line.coords)[-1]))
     records=[]; accepted=[]
     for index,(line,meta) in enumerate(zip(lines,metas)):
-        context=normalize_text(meta.get("layer")); evidence=[]; semantic="UNKNOWN_GEOMETRY"; probability=0.0
+        context=normalize_text(meta.get("layer")); evidence=[]; negative=[]; semantic="UNKNOWN_GEOMETRY"; probability=0.0; state="WEAK_WALL_CANDIDATE"
         if any(token in context for token in WALL_TOKENS):
-            semantic="WALL_FACE"; probability=.95; evidence.append({"class":"SOURCE_CONTEXT","value":meta.get("layer")})
+            semantic="WALL_FACE"; probability=.95; state="CONFIRMED_WALL"; evidence.append({"class":"SOURCE_CONTEXT","value":meta.get("layer")})
         elif paired[index]:
-            semantic="WALL_FACE"; probability=.90
+            semantic="WALL_FACE"; probability=.90; state="CONFIRMED_WALL"
             evidence.append({"class":"RECURRING_PARALLEL_FACE_PAIR","pair_count":len(paired[index]),
                              "thicknesses":[round(row[1]*scale,4) for row in paired[index]]})
+        elif local_paired[index]:
+            semantic="WALL_CANDIDATE"; probability=.65; state="SUPPORTED_WALL_CANDIDATE"
+            evidence.append({"class":"LOCAL_PARALLEL_FACE_PAIR","pair_count":len(local_paired[index]),
+                             "thicknesses":[round(row[1]*scale,4) for row in local_paired[index]],
+                             "overlaps":[round(row[2],4) for row in local_paired[index]]})
         elif small_coherent:
-            semantic="EXTERIOR_BOUNDARY"; probability=.80; evidence.append({"class":"COHERENT_SMALL_SINGLE_LINE_NETWORK"})
+            semantic="EXTERIOR_BOUNDARY"; probability=.80; state="CONFIRMED_WALL"; evidence.append({"class":"COHERENT_SMALL_SINGLE_LINE_NETWORK"})
         coords=list(line.coords); degrees=[endpoint_degree[node(coords[0])],endpoint_degree[node(coords[-1])]]
         if max(degrees)>=3: evidence.append({"class":"JUNCTION_SUPPORT","endpoint_degrees":degrees})
+        if not evidence: negative.append("NO_RECURRING_OR_LOCAL_PARALLEL_PAIR")
         record={"segment_id":_stable_id("SEG",[meta.get("handle"),_round_points(coords)]),
                 "source_handle":meta.get("handle"),"geometry":coords,
                 "source_context":{"layer":meta.get("layer"),"entity_type":meta.get("entity_type"),"closed":meta.get("closed")},
-                "semantic_class":semantic,"wall_probability":probability,"evidence":evidence,
-                "status":"ACCEPTED" if semantic in {"WALL_FACE","PARTITION_FACE","EXTERIOR_BOUNDARY","SITE_BOUNDARY"} else "REJECTED"}
+                "semantic_class":semantic,"wall_probability":probability,"wall_evidence_state":state,
+                "evidence":evidence,"negative_evidence":negative,
+                "status":"ACCEPTED" if state=="CONFIRMED_WALL" else ("PROVISIONAL" if state=="SUPPORTED_WALL_CANDIDATE" else "REJECTED")}
         records.append(record)
         if record["status"]=="ACCEPTED": accepted.append(line)
     return records,accepted
@@ -596,22 +618,30 @@ def _connected_line_components(lines, tolerance):
     return list(groups.values())
 
 
-def _admit_label_supported_partitions(accepted, classified, frame, tolerance, extracted):
-    """Selectively admit medium evidence only when topology demonstrably improves."""
-    rejected=[record for record in classified if record["status"]=="REJECTED"]
-    lines=[LineString(record["geometry"]) for record in rejected]
+def _recover_supported_partitions(accepted, classified, frame, tolerance, extracted, metres_per_unit):
+    """Bounded, evidence-based recovery of wall candidates lost by seed admission."""
+    candidates=[record for record in classified if record["status"]!="ACCEPTED"]
+    lines=[LineString(record["geometry"]) for record in candidates]
     components=_connected_line_components(lines,max(float(tolerance or .001)*2,1e-8))
     current=list(accepted); decisions=[]; iterations=[]; wall_union=unary_union(current) if current else None
+    scale=metres_per_unit or 1.0
+    thicknesses=[float(value) for record in classified for evidence in record.get("evidence") or []
+                 if evidence.get("class") in {"RECURRING_PARALLEL_FACE_PAIR","LOCAL_PARALLEL_FACE_PAIR"}
+                 for value in evidence.get("thicknesses") or []]
+    local_thickness=(sorted(thicknesses)[len(thicknesses)//2]/scale if thicknesses else .20/scale)
+    snap=max(float(tolerance or .001)*5,.03/scale,min(local_thickness*.35,.10/scale))
     bounds=frame.get("bounds") or [-math.inf,-math.inf,math.inf,math.inf]
     label_points=[]
     for text in extracted["texts"]:
         category,_=_classify_text(text.get("text")); point=text.get("point")
         if category and point and bounds[0]<=point[0]<=bounds[2] and bounds[1]<=point[1]<=bounds[3]: label_points.append((Point(point),category))
-    for iteration,component in enumerate(sorted(components,key=lambda indexes:-sum(lines[i].length for i in indexes))[:200],start=1):
+    pending=list(sorted(components,key=lambda indexes:-sum(lines[i].length for i in indexes))[:400])
+    for pass_number in (2,3):
+      admitted_this_pass=0
+      for component in list(pending):
         component_lines=[lines[i] for i in component]
         endpoints=[Point(point) for line in component_lines for point in (list(line.coords)[0],list(line.coords)[-1])]
-        supports=sum(wall_union is not None and wall_union.distance(point)<=max(float(tolerance or .001)*2,1e-8) for point in endpoints)
-        if supports<2: continue
+        supports=sum(wall_union is not None and wall_union.distance(point)<=snap for point in endpoints)
         axis=max(component_lines,key=lambda line:line.length); a,b=list(axis.coords)[0],list(axis.coords)[-1]
         (ux,uy),axis_length=_segment_direction(axis); normal=(-uy,ux)
         component_points=[point for line in component_lines for point in line.coords]
@@ -624,20 +654,42 @@ def _admit_label_supported_partitions(accepted, classified, frame, tolerance, ex
             if low-max(float(tolerance or .001)*5,1e-8)<=along<=high+max(float(tolerance or .001)*5,1e-8) and abs(signed)<=local_depth:
                 if abs(signed)>max(float(tolerance or .001)*5,1e-8): sides.append((1 if signed>0 else -1,category))
         distinct_sides={side for side,_ in sides}; distinct_categories={category for _,category in sides}
-        # The component must be tied into the accepted wall graph and separate
-        # independent architectural label evidence.  No polygon is accepted
-        # merely because the component can close a cycle.
-        if len(distinct_sides)==2 and len(distinct_categories)>=2:
+        evidence_classes={e.get("class") for i in component for e in candidates[i].get("evidence") or []}
+        local_pair="LOCAL_PARALLEL_FACE_PAIR" in evidence_classes
+        junction="JUNCTION_SUPPORT" in evidence_classes
+        family=False
+        if wall_union is not None:
+            for admitted in current:
+                (vx,vy),_= _segment_direction(admitted)
+                if abs(ux*vx+uy*vy)>=math.cos(math.radians(3)) and axis.distance(admitted)<=snap:
+                    family=True; break
+        geometry_support=(local_pair and supports>=1) or supports>=2 or (family and supports>=1) or (junction and supports>=1 and pass_number==3)
+        before=list(polygonize(unary_union(current))) if current else []
+        after=list(polygonize(unary_union(current+component_lines)))
+        new_regions=max(0,len(after)-len(before)); slivers=0
+        for poly in after:
+            rectangle=poly.minimum_rotated_rectangle; rc=list(rectangle.exterior.coords)
+            sides_len=sorted(math.dist(x,y) for x,y in zip(rc,rc[1:]) if x!=y)
+            if sides_len and sides_len[0]<=local_thickness*1.5 and sides_len[-1]/max(sides_len[0],1e-12)>=3: slivers+=1
+        topology_ok=new_regions==0 or slivers<len(after)
+        if geometry_support and topology_ok:
             current.extend(component_lines); wall_union=unary_union(current)
             ids=[]
             for index in component:
-                record=rejected[index]; record["semantic_class"]="PARTITION_FACE"; record["wall_probability"]=.75; record["status"]="ACCEPTED"
-                record["evidence"].append({"class":"LABEL_SUPPORTED_TOPOLOGICAL_IMPROVEMENT","wall_support_endpoints":supports})
+                record=candidates[index]; previous=record["status"]; record["semantic_class"]="PARTITION_FACE"; record["wall_evidence_state"]="SUPPORTED_WALL_CANDIDATE"; record["wall_probability"]=max(float(record.get("wall_probability") or 0),.72); record["status"]="ACCEPTED"
+                record["evidence"].append({"class":"ITERATIVE_PARTITION_RECOVERY","pass":pass_number,"wall_support_endpoints":supports,"local_pair":local_pair,"face_family":family,"junction":junction,"new_regions":new_regions})
+                record["admission_trace"]={"admission_id":_stable_id("ADM",[record["segment_id"],pass_number]),"source_handles":[record.get("source_handle")],"previous_status":previous,"final_status":"ACCEPTED","evidence_classes":sorted(evidence_classes|{"ITERATIVE_PARTITION_RECOVERY"}),"negative_evidence":record.get("negative_evidence") or [],"supporting_wall_ids":[],"junction_ids":[],"local_thickness_cluster":local_thickness,"topology_before":{"region_count":len(before)},"topology_after":{"region_count":len(after),"sliver_count":slivers},"reason":"MULTI_EVIDENCE_PARTITION_ADMISSION","confidence":record["wall_probability"]}
                 ids.append(record["segment_id"])
-            decisions.append({"iteration":iteration,"segment_ids":ids,"action":"ADMIT","reason":"LABEL_SUPPORTED_TOPOLOGICAL_IMPROVEMENT",
-                              "wall_support_endpoints":supports,"separated_label_categories":sorted(distinct_categories)})
-            iterations.append({"iteration":iteration,"accepted_segment_count":len(component),"accepted_total":len(current)})
+            decisions.append({"pass":pass_number,"segment_ids":ids,"action":"ADMIT","reason":"MULTI_EVIDENCE_PARTITION_ADMISSION","wall_support_endpoints":supports,"local_parallel_pair":local_pair,"face_family":family,"junction_support":junction,"separated_label_categories":sorted(distinct_categories),"topology_before":len(before),"topology_after":len(after),"sliver_count":slivers})
+            pending.remove(component); admitted_this_pass+=len(component)
+      iterations.append({"pass":pass_number,"accepted_segment_count":admitted_this_pass,"accepted_total":len(current),"remaining_candidate_components":len(pending)})
+      if admitted_this_pass==0: break
     return current,decisions,iterations
+
+
+def _admit_label_supported_partitions(accepted, classified, frame, tolerance, extracted, metres_per_unit=1.0):
+    """Compatibility wrapper for the evidence-based bounded recovery stage."""
+    return _recover_supported_partitions(accepted,classified,frame,tolerance,extracted,metres_per_unit)
 
 
 def _polygonize_spaces(lines, frame, tolerance):
@@ -965,7 +1017,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
     canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
     envelope_candidate_diagnostics=[]; plan_regions=[]
-    subdivision_results=[]; subdivision_comparisons=[]
+    subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
@@ -983,8 +1035,10 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                 for geometry in clipped.geoms:
                     if not geometry.is_empty: local_lines.append(geometry); local_metas.append(meta)
         classified,accepted=_semantic_segment_classification(local_lines,local_metas,source["metres_per_unit"],tolerance)
+        seed_accepted_count=len(accepted); provisional_count=sum(r["status"]=="PROVISIONAL" for r in classified)
+        rejected_unknown_count=sum(r["status"]=="REJECTED" for r in classified)
         for record in classified: record["frame_id"]=frame["frame_id"]
-        accepted,decisions,iterations=_admit_label_supported_partitions(accepted,classified,frame,tolerance,extracted)
+        accepted,decisions,iterations=_recover_supported_partitions(accepted,classified,frame,tolerance,extracted,source["metres_per_unit"])
         for row in decisions: row["frame_id"]=frame["frame_id"]
         for row in iterations: row["frame_id"]=frame["frame_id"]
         refinement_decisions.extend(decisions); refinement_iterations.extend(iterations)
@@ -994,6 +1048,23 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         frame_walls=wall_result["walls"]
         canonical_walls.extend(frame_walls); wall_junctions.extend(wall_result["junctions"])
         thickness_clusters.extend(wall_result["thickness_clusters"])
+        def in_frame_geometry(row):
+            geometry=row.get("geometry") or _primitive_points(row)
+            return len(geometry)>=2 and (clip is None or LineString(geometry).intersects(clip))
+        raw_frame_count=sum(p.get("entity_type") in {"LINE","LWPOLYLINE","POLYLINE","ARC","SPLINE"} and in_frame_geometry(p) for p in extracted["primitives"])
+        extraction_rows=[row for row in extracted.get("boundary_rejections") or [] if in_frame_geometry(row)]
+        wall_admission_funnels.append({"frame_id":frame["frame_id"],"raw_dxf_linear_curve":raw_frame_count,
+                                       "frame_local_boundary_geometry":len(local_lines),
+                                       "boundary_admission_rejected":len(extraction_rows),
+                                       "boundary_rejection_reasons":dict(Counter(row["reason"] for row in extraction_rows)),
+                                       "glyph_noise_excluded":sum(row["reason"]=="GLYPH_FILTER" for row in extraction_rows),
+                                       "semantic_high_confidence_accepted":seed_accepted_count,
+                                       "semantic_supported_provisional":provisional_count,
+                                       "semantic_rejected_unknown":rejected_unknown_count,
+                                       "recovery_admitted":len(accepted)-seed_accepted_count,
+                                       "final_admitted_segment":len(accepted),
+                                       "canonical_wall_object":len(frame_walls),
+                                       "barrier_graph_segment_input":len(frame_walls)})
         frame_labels=[]
         for text in extracted["texts"]:
             point=text.get("point")
@@ -1123,6 +1194,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "label_bindings":label_bindings,
              "architectural_segments":segment_records,
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
+             "wall_admission_funnel":wall_admission_funnels,
+             "boundary_extraction_rejections":extracted.get("boundary_rejections") or [],
              "virtual_opening_closures":[row for result in subdivision_results for row in result.get("closures",[])],
              "enclosure_barrier_graph":{"schema":"canonical-enclosure-barrier-graph/1.0",
                                          "barriers":[row for result in subdivision_results for row in result.get("barriers",[])],
