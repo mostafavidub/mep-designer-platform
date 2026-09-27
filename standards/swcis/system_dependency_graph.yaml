@@ -84,6 +84,7 @@
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_vision_recovery.py",
         "cad_engine/canonical_wall_topology.py",
+        "cad_engine/architectural_topology_quality.py",
         "app/dxf_output.py",
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**"

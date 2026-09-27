@@ -24,6 +24,7 @@ from shapely.strtree import STRtree
 
 from .architectural_topology_quality import (
     building_envelope_from_walls,
+    canonical_space_subdivision,
     reconstruct_canonical_walls,
     virtual_opening_closures,
 )
@@ -962,8 +963,13 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     timings["frame_and_scale_resolution"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
     canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
+    subdivision_results=[]; subdivision_comparisons=[]
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
+            continue
+        if frame.get("frame_type") in {"SECTION","ELEVATION","DETAIL"}:
+            # A closed detail/section cycle is not a floor merely because it
+            # can be subdivided.  Keep non-plan views out of Physical Spaces.
             continue
         clip=box(*frame["bounds"]) if frame.get("bounds") else None
         local_lines=[]; local_metas=[]
@@ -986,18 +992,30 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         frame_walls=wall_result["walls"]
         canonical_walls.extend(frame_walls); wall_junctions.extend(wall_result["junctions"])
         thickness_clusters.extend(wall_result["thickness_clusters"])
-        building_envelopes.append(building_envelope_from_walls(frame_walls,frame_id=frame["frame_id"],tolerance=tolerance))
-        # Canonical axes close fragmented wall systems across openings.  They
-        # are virtual enclosure boundaries only; wall_solid still retains the
-        # opening intervals and no wall material is fabricated there.
+        envelope=building_envelope_from_walls(frame_walls,frame_id=frame["frame_id"],tolerance=tolerance)
+        building_envelopes.append(envelope)
+        # Preserve a measured legacy result for internal comparison.  It is
+        # never allowed to silently replace a valid canonical subdivision.
         topology_lines=[LineString(w["centerline"]) for w in frame_walls]
-        polygons = _polygonize_spaces(topology_lines or accepted, frame, tolerance)
-        if not polygons and topology_lines:
+        legacy_polygons = _polygonize_spaces(topology_lines or accepted, frame, tolerance)
+        if not legacy_polygons and topology_lines:
             # Fail closed to the already classified CAD boundaries when a
             # canonical graph is not yet a closed cycle (for example an
             # isolated rotated outline).  This preserves existing valid
             # geometry without claiming a canonical envelope was proven.
-            polygons = _polygonize_spaces(accepted, frame, tolerance)
+            legacy_polygons = _polygonize_spaces(accepted, frame, tolerance)
+        subdivision=canonical_space_subdivision(frame_walls,envelope,frame_id=frame["frame_id"],tolerance=tolerance)
+        subdivision_results.append(subdivision)
+        canonical_polygons=[Polygon(row["physical_polygon"],row.get("interior_rings") or []) for row in subdivision["cells"]]
+        overlap=sum(canonical_polygons[i].intersection(canonical_polygons[j]).area
+                    for i in range(len(canonical_polygons)) for j in range(i+1,len(canonical_polygons)))
+        canonical_valid=(subdivision["authority"]=="CANONICAL" and bool(canonical_polygons)
+                         and overlap<=max(tolerance*tolerance,1e-12))
+        polygons=canonical_polygons if canonical_valid else legacy_polygons
+        subdivision_comparisons.append({"frame_id":frame["frame_id"],"legacy_cell_count":len(legacy_polygons),
+                                        "canonical_cell_count":len(canonical_polygons),"canonical_overlap_area":overlap,
+                                        "selected_authority":"CANONICAL" if canonical_valid else "LEGACY_FALLBACK",
+                                        "canonical_status":subdivision["status"],"canonical_reason":subdivision.get("reason")})
         polygons,rejected=_filter_wall_solid_cells(polygons,classified,extracted,source["metres_per_unit"])
         for row in rejected: row["frame_id"]=frame["frame_id"]
         rejected_cells.extend(rejected)
@@ -1081,7 +1099,14 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "label_bindings":label_bindings,
              "architectural_segments":segment_records,
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
-             "virtual_opening_closures":virtual_opening_closures(canonical_walls),
+             "virtual_opening_closures":[row for result in subdivision_results for row in result.get("closures",[])],
+             "enclosure_barrier_graph":{"schema":"canonical-enclosure-barrier-graph/1.0",
+                                         "barriers":[row for result in subdivision_results for row in result.get("barriers",[])],
+                                         "edges":[row for result in subdivision_results for row in result.get("edges",[])],
+                                         "noded":all(result.get("noded") is True for result in subdivision_results)},
+             "space_subdivision":{"schema":"canonical-space-subdivision/1.0",
+                                  "comparisons":subdivision_comparisons,
+                                  "authority":"CANONICAL" if subdivision_comparisons and all(row["selected_authority"]=="CANONICAL" for row in subdivision_comparisons) else "MIXED_OR_LEGACY_FALLBACK"},
              "exterior_face":{"face_id":"EXTERIOR","type":"UNBOUNDED_REGION","status":"CANONICAL"},
              "enclosure_graph":{"nodes":[s["physical_space_id"] for s in spaces]+["EXTERIOR"],"edges":[list(row) for row in enclosure_edges]},
              "access_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in access_edges]},

@@ -23,6 +23,14 @@ and keeps the Enclosure Graph separate from the portal-driven Access Graph.
 Building Envelope and EXTERIOR are explicit topology records. Portal fusion may
 bind only to a compatible Wall Object gap and cannot override a continuous wall.
 
+Physical-space cells are produced from an explicitly noded Enclosure Barrier
+Graph containing the selected Building Envelope, occupied Wall Object intervals,
+supported void boundaries and non-material Virtual Closures. Legacy stitched-axis
+polygonization is retained only as an internal comparison/fail-closed fallback;
+it is not allowed to silently replace a valid canonical subdivision. Where both
+wall faces are unavailable, the physical boundary is explicitly recorded as a
+centerline approximation rather than face-resolved geometry.
+
 Vision is accessed through an adapter and is invoked only for unresolved regions.
 Its evidence is advisory until reconciled with CAD. Critical ambiguity fails
 closed. Stable identities are content-derived from source, frame, level and

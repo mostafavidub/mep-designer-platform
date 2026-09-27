@@ -106,7 +106,7 @@ def diagnose(path):
                            "inferred_building_footprint":None,"footprint_status":"NOT_IMPLEMENTED",
                            "raw_source_segments":len(raw),"accepted_high_confidence_wall_segments":len(accepted)-len(secondary),
                            "accepted_secondary_partition_segments":len(secondary),"rejected_geometry":len(segments)-len(accepted),
-                           "wall_objects":sum(1 for wall in model.get("canonical_walls",[]) if frame_box is None or frame_box.intersects(LineString(wall["geometry"]))),
+                           "wall_objects":sum(1 for wall in model.get("canonical_walls",[]) if frame_box is None or frame_box.intersects(LineString(wall["centerline"]))),
                            "initial_polygons":len(initial),"merged_polygons":None,"remaining_spaces":len(spaces),
                            "hosted_labels":sum(row["status"]=="HOSTED" for row in labels),"unhosted_labels":sum(row["status"]=="UNHOSTED" for row in labels),
                            "unresolved_interior_area":coverage.get("unresolved_area"),"unexplained_frame_area":coverage.get("unexplained_frame_area"),

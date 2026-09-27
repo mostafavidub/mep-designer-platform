@@ -2,6 +2,7 @@ from shapely.geometry import LineString
 
 from cad_engine.architectural_topology_quality import (
     building_envelope_from_walls,
+    canonical_space_subdivision,
     host_portal_on_walls,
     reconstruct_canonical_walls,
 )
@@ -55,3 +56,51 @@ def test_rejected_annotation_never_enters_wall_objects():
     rows = [_row("W", (0, 0), (10, 0)), _row("NOTE", (0, 1), (10, 1), status="REJECTED")]
     result = reconstruct_canonical_walls(rows, frame_id="F1", tolerance=.001)
     assert all("SEG-NOTE" not in wall["source_fragments"] for wall in result["walls"])
+
+
+def _wall(wall_id, a, b, occupied, interruptions=()):
+    line=LineString((a,b)); length=line.length
+    ux=(b[0]-a[0])/length; uy=(b[1]-a[1])/length
+    return {"wall_id":wall_id,"frame_id":"F1","centerline":[a,b],"face_a":None,"face_b":None,
+            "wall_solid":{"axis_origin":list(a),"axis_direction":[ux,uy],"occupied_intervals":occupied},
+            "interruptions":[{"interval":list(row),"kind":"SUPPORTED_OPENING"} for row in interruptions],
+            "source_fragments":[],"source_handles":[],"thickness":None}
+
+
+def _envelope():
+    return {"building_envelope_id":"ENV-1","frame_id":"F1","status":"HIGH_CONFIDENCE",
+            "outer_ring":[[0,0],[10,0],[10,6],[0,6],[0,0]],"interior_voids":[]}
+
+
+def test_canonical_subdivision_uses_envelope_wall_material_and_virtual_closure():
+    walls=[_wall("PART",(5,0),(5,6),[[0,2.5],[3.5,6]],[(2.5,3.5)])]
+    result=canonical_space_subdivision(walls,_envelope(),frame_id="F1",tolerance=.001)
+    assert result["authority"]=="CANONICAL"
+    assert len(result["cells"])==2
+    assert any(row["kind"]=="VIRTUAL_CLOSURE" for row in result["barriers"])
+    assert result["edges"][0]["closure_ids"]
+
+
+def test_open_plan_without_wall_remains_one_physical_space():
+    result=canonical_space_subdivision([],_envelope(),frame_id="F1",tolerance=.001)
+    assert len(result["cells"])==1
+
+
+def test_shaft_is_preserved_as_topological_hole():
+    envelope=_envelope(); envelope["interior_voids"]=[[[4,2],[6,2],[6,4],[4,4],[4,2]]]
+    result=canonical_space_subdivision([],envelope,frame_id="F1",tolerance=.001)
+    assert len(result["cells"])==1
+    assert result["cells"][0]["interior_rings"]
+
+
+def test_unproven_envelope_cannot_become_canonical_authority():
+    envelope=_envelope(); envelope["status"]="INPUT_REQUIRED"
+    result=canonical_space_subdivision([],envelope,frame_id="F1",tolerance=.001)
+    assert result["authority"]=="LEGACY_FALLBACK"
+    assert result["cells"]==[]
+
+
+def test_fragmentation_gap_cannot_host_a_portal():
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall["interruptions"][0]["kind"]="UNKNOWN_FRAGMENTATION"
+    assert host_portal_on_walls(LineString(((4,0),(5,0))),[wall],tolerance=.001,pixel_tolerance=.01)[1]=="NO_WALL_GAP"

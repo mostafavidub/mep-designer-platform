@@ -112,6 +112,8 @@
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_vision_recovery.py",
         "cad_engine/canonical_wall_topology.py",
+        "cad_engine/architectural_topology_quality.py",
+        "tools/architectural_canonical_topology_qa.py",
         "cad_engine/mechanical_authority*.py",
         "cad_engine/mechanical_cad*.py",
         "cad_engine/mechanical_design_core.py",

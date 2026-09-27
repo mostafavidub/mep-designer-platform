@@ -12,7 +12,7 @@ import math
 import time
 
 from shapely.geometry import LineString, Point, Polygon
-from shapely.ops import polygonize, unary_union
+from shapely.ops import polygonize, snap, unary_union
 from shapely.strtree import STRtree
 
 
@@ -27,6 +27,88 @@ def _axis(line):
     if ux < 0 or (abs(ux) < 1e-9 and uy < 0): ux, uy = -ux, -uy
     angle=(math.degrees(math.atan2(uy,ux))+180)%180
     return (ux,uy),(-uy,ux),angle,length
+
+
+def _project_interval(line, origin, direction):
+    values=[(p[0]-origin[0])*direction[0]+(p[1]-origin[1])*direction[1] for p in line.coords]
+    return min(values),max(values)
+
+
+def _pair_wall_faces(walls, clusters, tol):
+    """Greedily form local double-face walls without a global thickness default."""
+    if not walls or not clusters: return walls
+    medians=[float(c["median_thickness"]) for c in clusters]
+    axes=[LineString(w["centerline"]) for w in walls]; tree=STRtree(axes)
+    candidates=[]
+    for i,line in enumerate(axes):
+        u,n,angle,length=_axis(line)
+        for raw in tree.query(line.buffer(max(medians)*1.6+tol)):
+            j=int(raw)
+            if j<=i: continue
+            other=axes[j]; ou,on,oa,ol=_axis(other)
+            if min(abs(angle-oa),180-abs(angle-oa))>2: continue
+            distance=line.distance(other); cluster=min(medians,key=lambda value:abs(value-distance))
+            if abs(distance-cluster)>max(cluster*.3,tol*4): continue
+            origin=list(line.coords)[0]; left=_project_interval(line,origin,u); right=_project_interval(other,origin,u)
+            overlap=max(0,min(left[1],right[1])-max(left[0],right[0]))
+            if overlap/max(min(length,ol),1e-9)<.55: continue
+            candidates.append((abs(distance-cluster),-overlap,i,j,distance,cluster))
+    used=set(); paired=[]
+    for _,_,i,j,distance,cluster in sorted(candidates):
+        if i in used or j in used: continue
+        used.update((i,j)); a,b=walls[i],walls[j]; la,lb=axes[i],axes[j]
+        longer=la if la.length>=lb.length else lb; u,n,angle,_=_axis(longer); base=list(longer.coords)[0]
+        ia=_project_interval(la,base,u); ib=_project_interval(lb,base,u); lo=min(ia[0],ib[0]); hi=max(ia[1],ib[1])
+        # Center the axis between the two proven faces.
+        midpoint=la.interpolate(.5,normalized=True); signed=(lb.interpolate(.5,normalized=True).x-midpoint.x)*n[0]+(lb.interpolate(.5,normalized=True).y-midpoint.y)*n[1]
+        shift=signed/2
+        origin=[base[0]+shift*n[0],base[1]+shift*n[1]]
+        center=LineString([(origin[0]+lo*u[0],origin[1]+lo*u[1]),(origin[0]+hi*u[0],origin[1]+hi*u[1])])
+        def projected_gaps(wall):
+            old_origin=wall["wall_solid"]["axis_origin"]; old_u=wall["wall_solid"]["axis_direction"]
+            result=[]
+            for opening in wall.get("interruptions") or []:
+                x,y=opening["interval"]
+                points=[(old_origin[0]+x*old_u[0],old_origin[1]+x*old_u[1]),(old_origin[0]+y*old_u[0],old_origin[1]+y*old_u[1])]
+                values=[(p[0]-origin[0])*u[0]+(p[1]-origin[1])*u[1] for p in points]
+                result.append([min(values),max(values)])
+            return result
+        ga,gb=projected_gaps(a),projected_gaps(b); interruptions=[]
+        for left in ga:
+            matches=[right for right in gb if min(left[1],right[1])-max(left[0],right[0])>tol*2]
+            if matches:
+                right=max(matches,key=lambda row:min(left[1],row[1])-max(left[0],row[0]))
+                interval=[max(left[0],right[0]),min(left[1],right[1])]
+                interruptions.append({"interval":interval,"kind":"SUPPORTED_OPENING","face_a_gap":left,"face_b_gap":right,
+                                      "classification":"UNKNOWN_OPENING","confidence":.8,"status":"HIGH_CONFIDENCE"})
+            else:
+                interruptions.append({"interval":left,"kind":"UNKNOWN_FRAGMENTATION","face_a_gap":left,"face_b_gap":None,
+                                      "classification":"FRAGMENTATION_GAP","confidence":.35,"status":"AMBIGUOUS"})
+        for right in gb:
+            if not any(min(right[1],left[1])-max(right[0],left[0])>tol*2 for left in ga):
+                interruptions.append({"interval":right,"kind":"UNKNOWN_FRAGMENTATION","face_a_gap":None,"face_b_gap":right,
+                                      "classification":"FRAGMENTATION_GAP","confidence":.35,"status":"AMBIGUOUS"})
+        cuts=sorted(interruptions,key=lambda row:row["interval"]); occupied=[]; cursor=lo
+        for opening in cuts:
+            start,end=opening["interval"]
+            if start>cursor+tol: occupied.append([cursor,start])
+            cursor=max(cursor,end)
+        if cursor<hi-tol: occupied.append([cursor,hi])
+        handles=sorted(set(a.get("source_handles",[])+b.get("source_handles",[])))
+        wid=_sid("WALL",[a["frame_id"],"DOUBLE_FACE",a["wall_id"],b["wall_id"]])
+        paired.append({"wall_id":wid,"frame_id":a["frame_id"],"level_id":None,"wall_type":"UNKNOWN",
+                       "representation":"DOUBLE_FACE","centerline":[list(p) for p in center.coords],
+                       "face_a":a["centerline"],"face_b":b["centerline"],
+                       "wall_solid":{"occupied_intervals":occupied,"axis_origin":origin,"axis_direction":[u[0],u[1]]},
+                       "thickness":distance,"thickness_status":"INFERRED_LOCAL_CLUSTER","orientation":angle,
+                       "length":center.length,"source_fragments":sorted(set(a["source_fragments"]+b["source_fragments"])),
+                       "source_handles":handles,"junction_start":None,"junction_end":None,"junctions":[],
+                       "interruptions":interruptions,"candidate_openings":[],"confidence":.9,"status":"HIGH_CONFIDENCE",
+                       "evidence":[{"class":"PAIRED_WALL_FACES","face_wall_ids":[a["wall_id"],b["wall_id"]],
+                                    "measured_thickness":distance,"local_cluster":cluster}],
+                       "derived_geometry_provenance":{"method":"LOCAL_FACE_PAIRING","tolerance":tol}})
+    paired.extend(wall for index,wall in enumerate(walls) if index not in used)
+    return sorted(paired,key=lambda wall:wall["wall_id"])
 
 
 def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_per_unit=None):
@@ -100,18 +182,19 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
             center=LineString([(origin[0]+lo*u[0],origin[1]+lo*u[1]),(origin[0]+hi*u[0],origin[1]+hi*u[1])])
             handles=sorted({rows[i].get("source_handle") for i in group if rows[i].get("source_handle")})
             wid=_sid("WALL",[frame_id,round(angle,3),[(round(a,6),round(b,6)) for a,b,_ in merged],handles])
-            thickness=min((c["median_thickness"] for c in clusters),key=lambda v:abs(v-typical),default=None)
             walls.append({"wall_id":wid,"frame_id":frame_id,"level_id":None,"wall_type":"UNKNOWN",
                           "representation":"COMPOSITE" if len(group)>1 else "SINGLE_LINE",
                           "centerline":[list(p) for p in center.coords],"face_a":None,"face_b":None,
                           "wall_solid":{"occupied_intervals":[[a,b] for a,b,_ in merged],"axis_origin":list(origin),"axis_direction":[u[0],u[1]]},
-                          "thickness":thickness,"thickness_status":"INFERRED" if thickness else "UNKNOWN",
+                          "thickness":None,"thickness_status":"UNKNOWN",
                           "orientation":angle,"length":center.length,"source_fragments":[rows[i]["segment_id"] for i in group],
                           "source_handles":handles,"junction_start":None,"junction_end":None,"junctions":[],
-                          "interruptions":[{"interval":g,"kind":"UNKNOWN_OPENING"} for g in gaps],"candidate_openings":[],
+                          "interruptions":[{"interval":g,"kind":"UNKNOWN_FRAGMENTATION","classification":"FRAGMENTATION_GAP",
+                                            "confidence":.25,"status":"AMBIGUOUS"} for g in gaps],"candidate_openings":[],
                           "confidence":.8 if len(group)>1 else .65,"status":"HIGH_CONFIDENCE" if len(group)>1 else "AMBIGUOUS",
                           "evidence":[{"class":"COLLINEAR_FRAGMENT_STITCHING","source_interval_count":len(merged),"gap_count":len(gaps)}],
                           "derived_geometry_provenance":{"method":"ORIENTATION_OFFSET_BUCKET_AND_PROJECTED_INTERVALS","tolerance":tol}})
+    walls=_pair_wall_faces(walls,clusters,tol)
     # Junction graph from wall axes.
     axes=[LineString(w["centerline"]) for w in walls]; atree=STRtree(axes) if axes else None;junctions=[]
     for i,line in enumerate(axes):
@@ -166,7 +249,8 @@ def host_portal_on_walls(portal_line, walls, *, tolerance, pixel_tolerance):
         distance=axis.distance(portal_line.centroid)
         origin=wall["wall_solid"]["axis_origin"]
         values=[(p[0]-origin[0])*u[0]+(p[1]-origin[1])*u[1] for p in portal_line.coords]
-        interval=[min(values),max(values)]; gaps=[x["interval"] for x in wall.get("interruptions",[])]
+        interval=[min(values),max(values)]; gaps=[x["interval"] for x in wall.get("interruptions",[])
+                                                if x.get("kind") in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}]
         gap_match=next((g for g in gaps if min(interval[1],g[1])-max(interval[0],g[0])>=-search),None)
         candidates.append((0 if gap_match else 1,distance,wall,gap_match))
     if not candidates: return None,"NO_NEARBY_WALL",[]
@@ -190,3 +274,92 @@ def virtual_opening_closures(walls):
                          "source_evidence":wall.get("source_fragments") or [],"material":False,
                          "graph_role":"ENCLOSURE_ONLY"})
     return rows
+
+
+def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_boundaries=None):
+    """Build physical-space cells from the canonical enclosure topology.
+
+    Unlike the legacy path this function does not treat an arbitrary collection
+    of stitched axes as space truth.  Material wall intervals, explicit virtual
+    closures, the selected building envelope, and supported void boundaries are
+    assembled into one noded barrier graph first.  Openings therefore remain
+    non-material while still closing the *enclosure* graph.
+    """
+    started=time.perf_counter(); tol=max(float(tolerance or .001),1e-8)
+    outer=(envelope or {}).get("outer_ring") or []
+    if len(outer)<4 or (envelope or {}).get("status") not in {"VERIFIED","HIGH_CONFIDENCE"}:
+        return {"status":"INPUT_REQUIRED","authority":"LEGACY_FALLBACK",
+                "reason":"CANONICAL_BUILDING_ENVELOPE_UNPROVEN","cells":[],"barriers":[],
+                "closures":[],"edges":[],"runtime_seconds":round(time.perf_counter()-started,6)}
+    shell=Polygon(outer,(envelope or {}).get("interior_voids") or [])
+    if not shell.is_valid or shell.area<=0:
+        return {"status":"CONFLICT","authority":"LEGACY_FALLBACK","reason":"INVALID_BUILDING_ENVELOPE",
+                "cells":[],"barriers":[],"closures":[],"edges":[],
+                "runtime_seconds":round(time.perf_counter()-started,6)}
+
+    barriers=[]
+    # The envelope is an active barrier and an active spatial constraint.
+    for a,b in zip(list(shell.exterior.coords),list(shell.exterior.coords)[1:]):
+        barriers.append({"barrier_id":_sid("BAR",[frame_id,"ENVELOPE",a,b]),"kind":"ENVELOPE",
+                         "geometry":[list(a),list(b)],"wall_id":None,"closure_id":None})
+    for ring in shell.interiors:
+        coords=list(ring.coords)
+        for a,b in zip(coords,coords[1:]):
+            barriers.append({"barrier_id":_sid("BAR",[frame_id,"VOID",a,b]),"kind":"VOID",
+                             "geometry":[list(a),list(b)],"wall_id":None,"closure_id":None})
+    for boundary in void_boundaries or []:
+        coords=list(boundary.coords) if hasattr(boundary,"coords") else boundary
+        for a,b in zip(coords,coords[1:]):
+            barriers.append({"barrier_id":_sid("BAR",[frame_id,"VOID",a,b]),"kind":"VOID",
+                             "geometry":[list(a),list(b)],"wall_id":None,"closure_id":None})
+
+    for wall in walls:
+        origin=wall["wall_solid"]["axis_origin"]; u=wall["wall_solid"]["axis_direction"]
+        for index,(low,high) in enumerate(wall["wall_solid"].get("occupied_intervals") or []):
+            a=[origin[0]+low*u[0],origin[1]+low*u[1]]; b=[origin[0]+high*u[0],origin[1]+high*u[1]]
+            barriers.append({"barrier_id":_sid("BAR",[wall["wall_id"],"MATERIAL",index,a,b]),
+                             "kind":"WALL_MATERIAL","geometry":[a,b],"wall_id":wall["wall_id"],"closure_id":None})
+    closures=virtual_opening_closures(walls)
+    for closure in closures:
+        barriers.append({"barrier_id":_sid("BAR",[closure["closure_id"],"ENCLOSURE"]),
+                         "kind":"VIRTUAL_CLOSURE","geometry":closure["geometry"],
+                         "wall_id":closure["host_wall_id"],"closure_id":closure["closure_id"]})
+
+    source_lines=[LineString(row["geometry"]) for row in barriers]
+    # Snap before unary_union; unary_union then explicitly nodes every crossing.
+    network=unary_union(source_lines)
+    network=snap(network,network,max(tol*2,1e-9))
+    noded=unary_union(network)
+    raw=list(polygonize(noded))
+    cells=[]
+    for poly in raw:
+        representative=poly.representative_point()
+        if not shell.covers(representative):
+            continue
+        clipped=poly.intersection(shell)
+        candidates=list(clipped.geoms) if clipped.geom_type=="MultiPolygon" else [clipped]
+        for candidate in candidates:
+            if candidate.is_empty or candidate.area<=tol*tol*4: continue
+            quality="FACE_RESOLVED" if all(w.get("face_a") and w.get("face_b") for w in walls) else "CENTERLINE_APPROXIMATION"
+            cells.append({"cell_id":_sid("CELL",[frame_id,list(candidate.exterior.coords)]),
+                          "frame_id":frame_id,"topology_polygon":[list(p) for p in candidate.exterior.coords],
+                          "physical_polygon":[list(p) for p in candidate.exterior.coords],
+                          "interior_rings":[[list(p) for p in ring.coords] for ring in candidate.interiors],
+                          "boundary_quality":quality,"region_class":"INTERIOR","area":candidate.area})
+    cells.sort(key=lambda row:row["cell_id"])
+    edges=[]
+    polygons=[Polygon(c["topology_polygon"],c["interior_rings"]) for c in cells]
+    for i,left in enumerate(polygons):
+        for j in range(i+1,len(polygons)):
+            shared=left.boundary.intersection(polygons[j].boundary)
+            if shared.length<=tol: continue
+            supported=[row for row,line in zip(barriers,source_lines) if line.intersection(shared.buffer(tol)).length>tol]
+            wall_ids=sorted({row["wall_id"] for row in supported if row.get("wall_id")})
+            closure_ids=sorted({row["closure_id"] for row in supported if row.get("closure_id")})
+            edges.append({"space_a":cells[i]["cell_id"],"space_b":cells[j]["cell_id"],
+                          "relationship":"TOPOLOGICAL_NEIGHBOR","boundary_wall_ids":wall_ids,
+                          "closure_ids":closure_ids,"shared_length":shared.length})
+    return {"status":"PASS" if cells else "INPUT_REQUIRED","authority":"CANONICAL" if cells else "LEGACY_FALLBACK",
+            "reason":None if cells else "NO_CANONICAL_CELLS","cells":cells,"barriers":barriers,
+            "closures":closures,"edges":edges,"noded":True,"envelope_id":envelope.get("building_envelope_id"),
+            "runtime_seconds":round(time.perf_counter()-started,6)}
