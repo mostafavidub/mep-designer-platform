@@ -6,8 +6,8 @@ import pytest
 
 from cad_engine.architectural_space_engine import reconstruct_architecture
 from cad_engine.architectural_vision_recovery import (
-    OpenAIVisionAdapter, RenderTransform, VisionRecoveryError, _validate_payload,
-    reconcile_and_repair, render_source_frame,
+    DeepSeekVisionAdapter, OpenAIVisionAdapter, RenderTransform, VisionRecoveryError, _validate_payload,
+    configured_vision_adapter, reconcile_and_repair, render_source_frame,
 )
 from cad_engine.engineering_runner import run_engineering_pipeline
 
@@ -24,7 +24,7 @@ def _drawing(path):
 class FakeAdapter:
     model = "fake-multimodal"
     def __init__(self): self.calls = []
-    def analyze(self, *, image_path, frame_id, regions):
+    def analyze(self, *, image_path, frame_id, regions, context=None):
         self.calls.append((image_path, frame_id, regions))
         spaces=[]
         for index,row in enumerate(regions):
@@ -89,6 +89,188 @@ def test_openai_request_uses_configured_model_and_parses_strict_json(tmp_path, m
     assert captured["model"] == "configured-model"
     assert result["physical_spaces"][0]["semantic_candidates"][0]["type"] == "kitchen"
     assert "data:image/png;base64," in captured["input"][0]["content"][1]["image_url"]
+    assert captured["input"][0]["content"][1]["detail"] == "original"
+
+
+def test_deepseek_request_uses_same_contract_and_provider_separated_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR", str(tmp_path / "cache"))
+    image = tmp_path / "frame.png"
+    from PIL import Image
+    Image.new("RGB", (8, 8), "white").save(image)
+    calls = []
+    payload = {"frame_id":"F1","physical_spaces":[],"functional_zones":[],"doors":[],"windows":[],
+               "open_passages":[],"stairs":[],"shafts":[],"suspected_false_boundaries":[],
+               "suspected_missing_boundaries":[],"unresolved_regions":[]}
+    class Responses:
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(id="resp-1", output_text=json.dumps(payload),
+                                   usage=SimpleNamespace(input_tokens=12, output_tokens=3, total_tokens=15))
+    client = SimpleNamespace(responses=Responses())
+    deepseek = DeepSeekVisionAdapter(model="deepseek-flash", api_key="secret", client=client)
+    openai = OpenAIVisionAdapter(model="deepseek-flash", api_key="secret", client=client)
+    context={"source_sha256":"a"*64,"render_cache_key":"render-1","scope":"GLOBAL"}
+    deepseek.analyze(image_path=str(image), frame_id="F1", regions=[], context=context)
+    openai.analyze(image_path=str(image), frame_id="F1", regions=[], context=context)
+    assert len(calls) == 2
+    assert deepseek.last_call_metadata["provider"] == "deepseek"
+    assert deepseek.last_call_metadata["usage"]["total_tokens"] == 15
+    assert deepseek.last_call_metadata["cache_key"] != openai.last_call_metadata["cache_key"]
+
+
+def test_deepseek_cache_hit_avoids_duplicate_request(tmp_path, monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(8,8),"white").save(image)
+    payload={"frame_id":"F1","physical_spaces":[],"functional_zones":[],"doors":[],"windows":[],
+             "open_passages":[],"stairs":[],"shafts":[],"suspected_false_boundaries":[],
+             "suspected_missing_boundaries":[],"unresolved_regions":[]}
+    class Responses:
+        calls=0
+        def create(self,**kwargs):
+            self.calls+=1
+            return SimpleNamespace(output_text=json.dumps(payload))
+    responses=Responses()
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+                                  client=SimpleNamespace(responses=responses))
+    kwargs={"image_path":str(image),"frame_id":"F1","regions":[],
+            "context":{"source_sha256":"a"*64,"render_cache_key":"r","scope":"GLOBAL"}}
+    adapter.analyze(**kwargs); adapter.analyze(**kwargs)
+    assert responses.calls == 1
+    assert adapter.last_call_metadata["cache_hit"] is True
+
+
+def test_provider_routing_and_deepseek_base_url(monkeypatch):
+    captured={}
+    class FakeOpenAI:
+        def __init__(self, **kwargs): captured.update(kwargs)
+    monkeypatch.setattr("openai.OpenAI", FakeOpenAI)
+    monkeypatch.setenv("ARCH_VISION_PROVIDER", "deepseek")
+    monkeypatch.setenv("ARCH_VISION_MODEL", "deepseek-flash")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "not-logged")
+    adapter, error = configured_vision_adapter()
+    assert error is None and isinstance(adapter, DeepSeekVisionAdapter)
+    assert str(captured["base_url"]).rstrip("/") == "https://api.deepseek.com"
+    assert captured["api_key"] == "not-logged"
+
+
+def test_normal_engineering_entrypoint_routes_to_deepseek(monkeypatch,tmp_path):
+    monkeypatch.setenv("ARCH_VISION_PROVIDER","deepseek")
+    monkeypatch.setenv("ARCH_VISION_MODEL","deepseek-flash")
+    monkeypatch.setenv("DEEPSEEK_API_KEY","secret")
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    calls=[]
+    class Responses:
+        def create(self,**kwargs):
+            calls.append(kwargs)
+            prompt=kwargs["input"][0]["content"][0]["text"]
+            frame_id=json.loads(prompt.split("FRAME_ID=",1)[1].split(". Return JSON",1)[0])
+            return SimpleNamespace(output_text=json.dumps({"frame_id":frame_id,"physical_spaces":[],
+                "functional_zones":[],"doors":[],"windows":[],"open_passages":[],"stairs":[],"shafts":[],
+                "suspected_false_boundaries":[],"suspected_missing_boundaries":[],"unresolved_regions":[]}))
+    class FakeOpenAI:
+        def __init__(self,**kwargs): self.responses=Responses()
+    monkeypatch.setattr("openai.OpenAI",FakeOpenAI)
+    drawing=_drawing(tmp_path/"deepseek-entrypoint.dxf")
+    result=run_engineering_pipeline(drawing,design_basis={})
+    assert calls
+    assert result["architecture"]["vision_reconciliation"]["provider"] == "deepseek"
+    assert result["architecture"]["completeness"]["downstream_engineering_allowed"] is False
+
+
+@pytest.mark.parametrize("provider,credential", [("deepseek", "DEEPSEEK_API_KEY"), ("openai", "OPENAI_API_KEY")])
+def test_missing_provider_secret_fails_closed(monkeypatch, provider, credential):
+    monkeypatch.setenv("ARCH_VISION_PROVIDER", provider)
+    monkeypatch.setenv("ARCH_VISION_MODEL", "configured-model")
+    monkeypatch.delenv(credential, raising=False)
+    adapter, error = configured_vision_adapter()
+    assert adapter is None
+    assert error["error_code"] == "VISION_CREDENTIAL_NOT_CONFIGURED"
+
+
+def test_transient_provider_failure_has_one_bounded_retry(tmp_path):
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(8,8),"white").save(image)
+    class APITimeoutError(Exception): pass
+    class Responses:
+        def __init__(self): self.calls=0
+        def create(self, **kwargs): self.calls += 1; raise APITimeoutError("secret request payload")
+    responses=Responses()
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+                                  client=SimpleNamespace(responses=responses),max_retries=1)
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze(image_path=str(image),frame_id="F1",regions=[])
+    assert caught.value.code == "VISION_TIMEOUT"
+    assert "secret" not in str(caught.value)
+    assert responses.calls == 2
+
+
+@pytest.mark.parametrize("status,expected", [(401,"VISION_AUTH_ERROR"),(402,"VISION_BUDGET_LIMIT"),
+                                               (413,"VISION_IMAGE_TOO_LARGE"),(429,"VISION_RATE_LIMIT"),
+                                               (503,"VISION_PROVIDER_UNAVAILABLE")])
+def test_provider_http_failures_are_explicit_and_sanitized(tmp_path, status, expected):
+    image=tmp_path/f"frame-{status}.png"
+    from PIL import Image
+    Image.new("RGB",(8,8),"white").save(image)
+    class ProviderFailure(Exception):
+        status_code=status
+    class Responses:
+        def create(self, **kwargs): raise ProviderFailure("Authorization: Bearer forbidden-secret")
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="forbidden-secret",
+                                  client=SimpleNamespace(responses=Responses()),max_retries=0)
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze(image_path=str(image),frame_id="F1",regions=[])
+    assert caught.value.code == expected
+    assert "secret" not in str(caught.value)
+
+
+def test_incomplete_and_malformed_responses_fail_closed(tmp_path, monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(8,8),"white").save(image)
+    for response,code in [(SimpleNamespace(status="incomplete",output_text=None),"VISION_RESPONSE_INCOMPLETE"),
+                          (SimpleNamespace(status="completed",output_text="not-json"),"VISION_JSON_INVALID")]:
+        adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+                                      client=SimpleNamespace(responses=SimpleNamespace(create=lambda **_:response)),
+                                      max_retries=0)
+        with pytest.raises(VisionRecoveryError) as caught:
+            adapter.analyze(image_path=str(image),frame_id="F1",regions=[])
+        assert caught.value.code == code
+
+
+def test_oversized_inline_image_is_rejected_before_provider_call(tmp_path,monkeypatch):
+    image=tmp_path/"frame.png"; image.write_bytes(b"12345")
+    monkeypatch.setattr("cad_engine.architectural_vision_recovery.MAX_INLINE_IMAGE_BYTES",4)
+    responses=SimpleNamespace(create=lambda **_:pytest.fail("provider must not be called"))
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+                                  client=SimpleNamespace(responses=responses))
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze(image_path=str(image),frame_id="F1",regions=[])
+    assert caught.value.code == "VISION_IMAGE_TOO_LARGE"
+
+
+def test_unknown_provider_and_missing_model_are_explicit(monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_PROVIDER","unknown")
+    adapter,error=configured_vision_adapter()
+    assert adapter is None and error["error_code"]=="VISION_PROVIDER_UNSUPPORTED"
+    monkeypatch.setenv("ARCH_VISION_PROVIDER","deepseek")
+    monkeypatch.setenv("DEEPSEEK_API_KEY","secret")
+    monkeypatch.delenv("ARCH_VISION_MODEL",raising=False)
+    adapter,error=configured_vision_adapter()
+    assert adapter is None and error["error_code"]=="VISION_MODEL_NOT_CONFIGURED"
+
+
+def test_provider_failure_cannot_release_downstream_engineering(tmp_path):
+    class FailingAdapter:
+        provider="deepseek"; model="deepseek-flash"
+        def analyze(self,**kwargs):
+            raise VisionRecoveryError("VISION_PROVIDER_UNAVAILABLE","Vision provider is temporarily unavailable")
+    model=reconstruct_architecture(_drawing(tmp_path/"provider-failure.dxf"),vision_adapter=FailingAdapter())
+    assert model["vision_reconciliation"]["status"] == "FAILED"
+    assert model["completeness"]["downstream_engineering_allowed"] is False
 
 
 def _space(identity, polygon):

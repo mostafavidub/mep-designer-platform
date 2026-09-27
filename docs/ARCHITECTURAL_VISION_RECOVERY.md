@@ -7,10 +7,16 @@ never read by this runtime.
 
 ## Configuration
 
-- `ARCH_VISION_PROVIDER=openai` enables the real provider.
+- `ARCH_VISION_PROVIDER=openai` selects OpenAI.
+- `ARCH_VISION_PROVIDER=deepseek` selects DeepSeek through its OpenAI-compatible
+  Responses API at `https://api.deepseek.com`.
 - `ARCH_VISION_MODEL` is required and selects the deployed multimodal model.
 - `OPENAI_API_KEY` is required by the OpenAI provider.
+- `DEEPSEEK_API_KEY` is required by the DeepSeek provider. For the supported
+  DeepSeek Vision route, set `ARCH_VISION_MODEL=deepseek-flash`.
 - `ARCH_VISION_TIMEOUT_SECONDS` defaults to 90 seconds.
+- `ARCH_VISION_MAX_RETRIES` is capped at one retry and applies only to transient
+  timeout, rate-limit, connection and provider-unavailable failures.
 - `ARCH_VISION_CACHE_DIR` controls render and provider-response caching.
 - `ARCH_VISION_MAX_TARGETED_QUESTIONS` and
   `ARCH_VISION_MAX_QUESTION_RATIO` are operational safeguards against turning
@@ -18,6 +24,11 @@ never read by this runtime.
 
 Missing provider, model or credential produces an explicit configuration error.
 It never silently falls back to a successful NoVision result.
+
+Both providers use the same prompt, strict JSON Schema, pixel/CAD transform,
+validation and CAD reconciliation path. Provider selection changes only the
+transport configuration. Runtime code never loads Golden Truth and never sends
+Mechanical reference drawings.
 
 ## Authority and repair
 
@@ -49,7 +60,19 @@ non-material remainder may become `TARGETED_HUMAN_DECISION`.
 
 ## Privacy and cache invalidation
 
-Only the floor render and bounded CAD context are sent. No project owner data,
+Only the floor render and bounded CAD region context are sent. No project owner data,
 Golden Truth or Mechanical reference is included. Cache identity includes the
-source/render hash, configured model, prompt revision and region contract, so a
-source, model, prompt or render change invalidates the response.
+provider, source/render hash, configured model, prompt revision, schema revision,
+transform revision, frame, scope and region contract. DeepSeek and OpenAI can
+therefore never reuse each other's cached result.
+
+The call log records provider, model, request ID when returned, latency, cache
+status and token counts when returned. Credentials, authorization headers,
+base64 images and provider exception bodies are never persisted. Cost is not
+invented: it can be calculated only after the applicable provider price and
+request timestamp are available.
+
+Oversized inline images, authentication, budget/quota, rate limit, timeout,
+provider outage, incomplete response, invalid JSON and schema failure all have
+separate fail-closed error codes. A provider failure leaves architecture
+incomplete; it cannot authorize downstream Mechanical generation.

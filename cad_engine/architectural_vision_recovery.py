@@ -23,6 +23,11 @@ from shapely.ops import unary_union
 RENDER_VERSION = "architecture-source-render/1"
 PROMPT_VERSION = "architecture-recovery/1"
 FUSION_VERSION = "architecture-evidence-fusion/1"
+VISION_SCHEMA_VERSION = "architectural-vision-evidence/1.0"
+TRANSFORM_VERSION = "cad-pixel-transform/1"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+MAX_INLINE_IMAGE_BYTES = 32 * 1024 * 1024
+MAX_REQUEST_BODY_BYTES = 48 * 1024 * 1024
 ALLOWED_SEMANTICS = {
     "bedroom", "master_bedroom", "living", "reception", "dining", "kitchen",
     "kitchenette", "bathroom", "shower", "toilet", "entrance", "vestibule",
@@ -242,28 +247,64 @@ def validate_global_payload(payload: Any, *, frame_id: str) -> dict:
     return payload
 
 
-class OpenAIVisionAdapter:
-    """OpenAI multimodal adapter; model and credentials are configuration only."""
-    def __init__(self, *, api_key: str | None = None, model: str | None = None, client=None,
-                 timeout_seconds: float | None = None):
+def _safe_provider_error(exc: Exception) -> tuple[str, str, bool]:
+    """Normalize SDK/network failures without leaking request bodies or credentials."""
+    name = type(exc).__name__.lower()
+    status = getattr(exc, "status_code", None)
+    if status in {401, 403} or "authentication" in name or "permission" in name:
+        return "VISION_AUTH_ERROR", "Vision provider authentication failed", False
+    if status == 402 or "insufficient_balance" in str(exc).lower() or "quota" in name:
+        return "VISION_BUDGET_LIMIT", "Vision provider budget or quota is unavailable", False
+    if status == 413:
+        return "VISION_IMAGE_TOO_LARGE", "Vision request exceeds provider image limits", False
+    if status == 429 or "ratelimit" in name or "rate_limit" in name:
+        return "VISION_RATE_LIMIT", "Vision provider rate limit reached", True
+    if "timeout" in name:
+        return "VISION_TIMEOUT", "Vision provider request timed out", True
+    if (isinstance(status, int) and status >= 500) or "connection" in name or "unavailable" in name:
+        return "VISION_PROVIDER_UNAVAILABLE", "Vision provider is temporarily unavailable", True
+    return "VISION_PROVIDER_ERROR", "Vision provider request failed", False
+
+
+class OpenAICompatibleVisionAdapter:
+    """Shared Responses API transport for provider-neutral architectural evidence."""
+    def __init__(self, *, provider: str, api_key: str | None, model: str | None,
+                 base_url: str | None = None, client=None, timeout_seconds: float | None = None,
+                 max_retries: int | None = None):
+        self.provider = provider
         self.model = model or os.getenv("ARCH_VISION_MODEL")
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.base_url = base_url
+        self.api_key = api_key
         self.timeout_seconds = float(timeout_seconds or os.getenv("ARCH_VISION_TIMEOUT_SECONDS") or 90)
+        configured_retries = int(max_retries if max_retries is not None else
+                                 (os.getenv("ARCH_VISION_MAX_RETRIES") or 1))
+        self.max_retries = min(max(configured_retries, 0), 1)
+        self.last_call_metadata: dict[str, Any] = {}
         if not self.model:
             raise VisionRecoveryError("VISION_MODEL_NOT_CONFIGURED", "ARCH_VISION_MODEL is required")
         if client is None and not self.api_key:
-            raise VisionRecoveryError("VISION_CREDENTIAL_NOT_CONFIGURED", "OPENAI_API_KEY is required")
+            raise VisionRecoveryError("VISION_CREDENTIAL_NOT_CONFIGURED",
+                                      f"{provider.upper()} vision credential is required")
         if client is None:
             from openai import OpenAI
-            client = OpenAI(api_key=self.api_key, timeout=self.timeout_seconds, max_retries=1)
+            options = {"api_key": self.api_key, "timeout": self.timeout_seconds, "max_retries": 0}
+            if self.base_url:
+                options["base_url"] = self.base_url
+            client = OpenAI(**options)
         self.client = client
 
-    def analyze(self, *, image_path: str, frame_id: str, regions: list[dict]):
+    def analyze(self, *, image_path: str, frame_id: str, regions: list[dict],
+                context: dict[str, Any] | None = None):
+        started = time.perf_counter()
         image_bytes = Path(image_path).read_bytes()
+        encoded_size = ((len(image_bytes) + 2) // 3) * 4
+        if len(image_bytes) > MAX_INLINE_IMAGE_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE", "Rendered floor exceeds inline image limits")
         encoded = base64.b64encode(image_bytes).decode("ascii")
         region_contract = [{"region_id": row["region_id"], "pixel_bounds": row.get("pixel_bounds"),
                             "cad_bounds": row.get("bounds")} for row in regions]
         prompt = ("Inspect this raw architectural floor render as supporting evidence for exact CAD. "
+                  "Return frame_id exactly as supplied; FRAME_ID=" + json.dumps(frame_id) + ". "
                   "Return JSON with EXACTLY these top-level keys: frame_id, physical_spaces, functional_zones, "
                   "doors, windows, open_passages, stairs, shafts, suspected_false_boundaries, "
                   "suspected_missing_boundaries, unresolved_regions. Each physical_space must contain EXACTLY "
@@ -272,47 +313,91 @@ class OpenAIVisionAdapter:
                   "confidence. Coordinates are image pixels. Do not invent dimensions. Use empty arrays rather than "
                   "guessing. Known CAD regions are context, not required output identities.\nREGIONS=" +
                   json.dumps(region_contract, ensure_ascii=False, separators=(",", ":")))
-        cache_key = sha256(image_bytes + json.dumps([self.model, PROMPT_VERSION, region_contract],
-                                                    sort_keys=True).encode()).hexdigest()
+        if encoded_size + len(prompt.encode("utf-8")) > MAX_REQUEST_BODY_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE", "Rendered floor exceeds request body limits")
+        identity = {"provider": self.provider, "model": self.model, "prompt_version": PROMPT_VERSION,
+                    "schema_version": VISION_SCHEMA_VERSION, "transform_version": TRANSFORM_VERSION,
+                    "render_version": RENDER_VERSION,
+                    "frame_id": frame_id, "render_sha256": sha256(image_bytes).hexdigest(),
+                    "source_sha256": (context or {}).get("source_sha256"),
+                    "render_cache_key": (context or {}).get("render_cache_key"),
+                    "scope": (context or {}).get("scope"), "regions": region_contract}
+        cache_key = sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         cache_root = Path(os.getenv("ARCH_VISION_CACHE_DIR") or "/tmp/planha-architecture-vision")
         cache_root.mkdir(parents=True, exist_ok=True)
         cache_path = cache_root / f"vision-{cache_key}.json"
         if cache_path.exists():
+            self.last_call_metadata = {**identity, "cache_key": cache_key, "cache_hit": True,
+                                       "latency_seconds": round(time.perf_counter() - started, 6)}
             return validate_global_payload(json.loads(cache_path.read_text(encoding="utf-8")), frame_id=frame_id)
+        response = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = self.client.responses.create(
+                    model=self.model,
+                    input=[{"role": "user", "content": [
+                        {"type": "input_text", "text": prompt},
+                        {"type": "input_image", "image_url": f"data:image/png;base64,{encoded}",
+                         "detail": "original"},
+                    ]}],
+                    text={"format": {"type":"json_schema","name":"architectural_vision_evidence",
+                                      "schema":GLOBAL_JSON_SCHEMA,"strict":True}},
+                )
+                break
+            except Exception as exc:
+                code, message, transient = _safe_provider_error(exc)
+                if not transient or attempt >= self.max_retries:
+                    raise VisionRecoveryError(code, message) from exc
         try:
-            response = self.client.responses.create(
-                model=self.model,
-                input=[{"role": "user", "content": [
-                    {"type": "input_text", "text": prompt},
-                    {"type": "input_image", "image_url": f"data:image/png;base64,{encoded}"},
-                ]}],
-                text={"format": {"type":"json_schema","name":"architectural_vision_evidence",
-                                  "schema":GLOBAL_JSON_SCHEMA,"strict":True}},
-            )
+            if getattr(response, "status", None) == "incomplete":
+                raise VisionRecoveryError("VISION_RESPONSE_INCOMPLETE", "Vision provider response is incomplete")
             raw = getattr(response, "output_text", None)
             if not raw:
                 raise VisionRecoveryError("VISION_EMPTY_RESPONSE", "Vision provider returned no structured output")
             payload = validate_global_payload(json.loads(raw), frame_id=frame_id)
             cache_path.write_text(json.dumps(payload, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+            usage = getattr(response, "usage", None)
+            usage_fields = {}
+            for field in ("input_tokens", "output_tokens", "total_tokens"):
+                value = getattr(usage, field, None) if usage is not None else None
+                if value is not None:
+                    usage_fields[field] = value
+            self.last_call_metadata = {**identity, "cache_key": cache_key, "cache_hit": False,
+                                       "request_id": getattr(response, "id", None), "usage": usage_fields,
+                                       "latency_seconds": round(time.perf_counter() - started, 6)}
             return payload
         except VisionRecoveryError:
             raise
         except json.JSONDecodeError as exc:
             raise VisionRecoveryError("VISION_JSON_INVALID", str(exc)) from exc
         except Exception as exc:
-            name = type(exc).__name__.lower()
-            code = "VISION_TIMEOUT" if "timeout" in name else ("VISION_RATE_LIMIT" if "ratelimit" in name else "VISION_PROVIDER_ERROR")
-            raise VisionRecoveryError(code, str(exc)[:500]) from exc
+            raise VisionRecoveryError("VISION_RESPONSE_INVALID", "Vision provider response could not be validated") from exc
+
+
+class OpenAIVisionAdapter(OpenAICompatibleVisionAdapter):
+    def __init__(self, *, api_key: str | None = None, model: str | None = None, client=None,
+                 timeout_seconds: float | None = None, max_retries: int | None = None):
+        super().__init__(provider="openai", api_key=api_key or os.getenv("OPENAI_API_KEY"), model=model,
+                         client=client, timeout_seconds=timeout_seconds, max_retries=max_retries)
+
+
+class DeepSeekVisionAdapter(OpenAICompatibleVisionAdapter):
+    def __init__(self, *, api_key: str | None = None, model: str | None = None, client=None,
+                 timeout_seconds: float | None = None, max_retries: int | None = None,
+                 base_url: str = DEEPSEEK_BASE_URL):
+        super().__init__(provider="deepseek", api_key=api_key or os.getenv("DEEPSEEK_API_KEY"), model=model,
+                         base_url=base_url, client=client, timeout_seconds=timeout_seconds,
+                         max_retries=max_retries)
 
 
 def configured_vision_adapter():
     provider = (os.getenv("ARCH_VISION_PROVIDER") or "disabled").strip().lower()
     if provider in {"", "disabled", "none", "off"}:
         return None, {"status": "CONFIG_REQUIRED", "error_code": "VISION_PROVIDER_NOT_CONFIGURED"}
-    if provider != "openai":
+    if provider not in {"openai", "deepseek"}:
         return None, {"status": "CONFIG_REQUIRED", "error_code": "VISION_PROVIDER_UNSUPPORTED"}
     try:
-        return OpenAIVisionAdapter(), None
+        return (OpenAIVisionAdapter() if provider == "openai" else DeepSeekVisionAdapter()), None
     except VisionRecoveryError as exc:
         return None, {"status": "CONFIG_REQUIRED", "error_code": exc.code, "message": str(exc)}
 
@@ -488,9 +573,12 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
                                     manifest["transform"]["padding_px"])
         regions = _region_rows(frame_spaces, transform)
         try:
-            first = adapter.analyze(image_path=manifest["image_path"], frame_id=frame["frame_id"], regions=regions)
+            first = adapter.analyze(image_path=manifest["image_path"], frame_id=frame["frame_id"], regions=regions,
+                                    context={"source_sha256":source_hash,"render_cache_key":manifest["cache_key"],
+                                             "scope":"GLOBAL"})
             calls.append({"scope": "GLOBAL", "frame_id": frame["frame_id"], "region_count": len(regions),
-                          "image_cache_key": manifest["cache_key"], "vision_space_count": len(first["physical_spaces"])})
+                          "image_cache_key": manifest["cache_key"], "vision_space_count": len(first["physical_spaces"]),
+                          "provider_call":dict(getattr(adapter,"last_call_metadata",{}) or {})})
             analyses.append({"scope":"GLOBAL", "frame_id":frame["frame_id"], "analysis":first,
                              "render_hash":manifest["cache_key"]})
             events.append({"stage": RecoveryStage.GLOBAL_VISION_ANALYSIS.value, "frame_id": frame["frame_id"]})
@@ -518,9 +606,12 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
                                                 local_manifest["transform"]["padding_px"])
                 local_regions=_region_rows(unresolved_after,local_transform)
                 events.append({"stage":RecoveryStage.LOCAL_AMBIGUITY_RENDERING.value,"frame_id":frame["frame_id"]})
-                second=adapter.analyze(image_path=local_manifest["image_path"],frame_id=frame["frame_id"],regions=local_regions)
+                second=adapter.analyze(image_path=local_manifest["image_path"],frame_id=frame["frame_id"],regions=local_regions,
+                                       context={"source_sha256":source_hash,"render_cache_key":local_manifest["cache_key"],
+                                                "scope":"LOCAL"})
                 calls.append({"scope":"LOCAL","frame_id":frame["frame_id"],"region_count":len(local_regions),
-                              "image_cache_key":local_manifest["cache_key"],"vision_space_count":len(second["physical_spaces"])})
+                              "image_cache_key":local_manifest["cache_key"],"vision_space_count":len(second["physical_spaces"]),
+                              "provider_call":dict(getattr(adapter,"last_call_metadata",{}) or {})})
                 analyses.append({"scope":"LOCAL","frame_id":frame["frame_id"],"analysis":second,
                                  "render_hash":local_manifest["cache_key"]})
                 events.append({"stage":RecoveryStage.LOCAL_VISION_ANALYSIS.value,"frame_id":frame["frame_id"]})
@@ -534,12 +625,12 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
                                {"stage":RecoveryStage.FINAL_RECONSTRUCTION_RERUN.value,"frame_id":frame["frame_id"]}))
         except VisionRecoveryError as exc:
             events.append({"stage": RecoveryStage.FAILED.value, "frame_id": frame["frame_id"], "error_code": exc.code})
-            return {"provider": type(adapter).__name__, "model": getattr(adapter, "model", None), "calls": len(calls),
+            return {"provider": getattr(adapter,"provider",type(adapter).__name__), "model": getattr(adapter, "model", None), "calls": len(calls),
                     "call_log": calls, "analyses": analyses, "repairs": repairs, "status": "FAILED", "error_code": exc.code,
                     "message": str(exc), "events": events, "policy": "DETERMINISTIC_FIRST_BOUNDED_GLOBAL_THEN_LOCAL",
                     "runtime_seconds": round(time.perf_counter()-started, 6)}
     events.append({"stage": RecoveryStage.FINAL_COMPLETENESS_GATE.value})
-    return {"provider": type(adapter).__name__, "model": getattr(adapter, "model", None), "calls": len(calls),
+    return {"provider": getattr(adapter,"provider",type(adapter).__name__), "model": getattr(adapter, "model", None), "calls": len(calls),
             "call_log": calls, "analyses": analyses, "repairs": repairs, "portal_candidates":portal_candidates,
             "vision_repairs_proposed":len(repairs),"vision_repairs_accepted":sum(row["accepted"] for row in repairs),
             "vision_repairs_rejected":sum(not row["accepted"] for row in repairs),

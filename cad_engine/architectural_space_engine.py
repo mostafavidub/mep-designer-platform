@@ -253,11 +253,13 @@ class VisionCandidate:
 
 
 class VisionAdapter(Protocol):
-    def analyze(self, *, image_path: str, frame_id: str, regions: list[dict]) -> list[VisionCandidate]: ...
+    def analyze(self, *, image_path: str, frame_id: str, regions: list[dict],
+                context: dict | None = None) -> list[VisionCandidate]: ...
 
 
 class NoVisionAdapter:
-    def analyze(self, *, image_path: str, frame_id: str, regions: list[dict]) -> list[VisionCandidate]:
+    def analyze(self, *, image_path: str, frame_id: str, regions: list[dict],
+                context: dict | None = None) -> list[VisionCandidate]:
         return []
 
 
