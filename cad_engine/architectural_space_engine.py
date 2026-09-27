@@ -588,6 +588,68 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
     return records,accepted
 
 
+def _exclude_inset_sheet_border_segments(lines, metas, frame, tolerance):
+    """Reject a source-native inset print border before wall admission.
+
+    Some consultant files place the inner sheet border on a layer named
+    ``WALL``.  Layer semantics alone would then create a full-page wall cycle
+    and contaminate every downstream region.  A border is rejected only when
+    one closed source entity forms a near-concentric, near-page-sized rectangle
+    inside an independently detected print frame.  Ordinary room/building
+    rectangles and disconnected linework do not satisfy this signature.
+    """
+    bounds = frame.get("bounds")
+    if not bounds or len(lines) < 4:
+        return list(lines), list(metas), []
+    frame_width = float(bounds[2] - bounds[0]); frame_height = float(bounds[3] - bounds[1])
+    if frame_width <= 0 or frame_height <= 0:
+        return list(lines), list(metas), []
+    by_handle = defaultdict(list)
+    for index, meta in enumerate(metas):
+        if meta.get("handle") and meta.get("closed"):
+            by_handle[meta["handle"]].append(index)
+    excluded = set()
+    for indexes in by_handle.values():
+        if len(indexes) != 4:
+            continue
+        polygons = list(polygonize(unary_union([lines[index] for index in indexes])))
+        if len(polygons) != 1:
+            continue
+        min_x, min_y, max_x, max_y = polygons[0].bounds
+        width = max_x - min_x; height = max_y - min_y
+        width_ratio = width / frame_width; height_ratio = height / frame_height
+        if not (0.85 <= width_ratio < 0.985 and 0.85 <= height_ratio < 0.985):
+            continue
+        margins = (min_x-bounds[0], bounds[2]-max_x, min_y-bounds[1], bounds[3]-max_y)
+        if min(margins) <= max(float(tolerance or 0.0), 1e-9):
+            continue
+        if max(margins[0], margins[1]) > frame_width*.10 or max(margins[2], margins[3]) > frame_height*.10:
+            continue
+        symmetry_x = abs(margins[0]-margins[1]); symmetry_y = abs(margins[2]-margins[3])
+        if symmetry_x > max(float(tolerance or 0.0)*5, frame_width*.01):
+            continue
+        if symmetry_y > max(float(tolerance or 0.0)*5, frame_height*.01):
+            continue
+        excluded.update(indexes)
+    kept_lines = [line for index, line in enumerate(lines) if index not in excluded]
+    kept_metas = [meta for index, meta in enumerate(metas) if index not in excluded]
+    records = []
+    for index in sorted(excluded):
+        line, meta = lines[index], metas[index]
+        coords = list(line.coords)
+        records.append({
+            "segment_id": _stable_id("SEG", [meta.get("handle"), _round_points(coords)]),
+            "source_handle": meta.get("handle"), "geometry": coords,
+            "source_context": {"layer": meta.get("layer"), "entity_type": meta.get("entity_type"),
+                               "closed": meta.get("closed")},
+            "semantic_class": "PRINT_BORDER", "wall_probability": 0.0,
+            "wall_evidence_state": "SUPPORTED_NON_WALL",
+            "evidence": [{"class": "INSET_PRINT_BORDER_GEOMETRY", "frame_id": frame.get("frame_id")}],
+            "negative_evidence": ["PAGE_SCALE_NEAR_CONCENTRIC_RECTANGLE"], "status": "REJECTED",
+        })
+    return kept_lines, kept_metas, records
+
+
 def _recognized_label_hosts(polygons, texts):
     hosts=[]
     for poly in polygons:
@@ -1034,11 +1096,16 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             elif clipped.geom_type=="MultiLineString":
                 for geometry in clipped.geoms:
                     if not geometry.is_empty: local_lines.append(geometry); local_metas.append(meta)
+        frame_local_boundary_count=len(local_lines)
+        local_lines,local_metas,sheet_border_records=_exclude_inset_sheet_border_segments(
+            local_lines,local_metas,frame,tolerance)
         classified,accepted=_semantic_segment_classification(local_lines,local_metas,source["metres_per_unit"],tolerance)
         seed_accepted_count=len(accepted); provisional_count=sum(r["status"]=="PROVISIONAL" for r in classified)
-        rejected_unknown_count=sum(r["status"]=="REJECTED" for r in classified)
+        rejected_unknown_count=sum(r["status"]=="REJECTED" for r in classified)+len(sheet_border_records)
         for record in classified: record["frame_id"]=frame["frame_id"]
         accepted,decisions,iterations=_recover_supported_partitions(accepted,classified,frame,tolerance,extracted,source["metres_per_unit"])
+        for record in sheet_border_records: record["frame_id"]=frame["frame_id"]
+        classified.extend(sheet_border_records)
         for row in decisions: row["frame_id"]=frame["frame_id"]
         for row in iterations: row["frame_id"]=frame["frame_id"]
         refinement_decisions.extend(decisions); refinement_iterations.extend(iterations)
@@ -1054,7 +1121,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         raw_frame_count=sum(p.get("entity_type") in {"LINE","LWPOLYLINE","POLYLINE","ARC","SPLINE"} and in_frame_geometry(p) for p in extracted["primitives"])
         extraction_rows=[row for row in extracted.get("boundary_rejections") or [] if in_frame_geometry(row)]
         wall_admission_funnels.append({"frame_id":frame["frame_id"],"raw_dxf_linear_curve":raw_frame_count,
-                                       "frame_local_boundary_geometry":len(local_lines),
+                                       "frame_local_boundary_geometry":frame_local_boundary_count,
+                                       "inset_print_border_rejected":len(sheet_border_records),
                                        "boundary_admission_rejected":len(extraction_rows),
                                        "boundary_rejection_reasons":dict(Counter(row["reason"] for row in extraction_rows)),
                                        "glyph_noise_excluded":sum(row["reason"]=="GLYPH_FILTER" for row in extraction_rows),

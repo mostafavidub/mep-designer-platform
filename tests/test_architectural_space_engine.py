@@ -4,7 +4,8 @@ import ezdxf
 from shapely.geometry import LineString
 
 from cad_engine.architectural_space_engine import (
-    SCHEMA, _completeness, _recover_supported_partitions, _semantic_segment_classification, normalize_text,
+    SCHEMA, _completeness, _exclude_inset_sheet_border_segments, _recover_supported_partitions,
+    _semantic_segment_classification, normalize_text,
     reconstruct_architecture, require_complete_architecture,
 )
 
@@ -53,6 +54,31 @@ def _drawing_with_anonymous_door(path, *, leaf=True):
 
 def test_persian_normalization_and_ontology():
     assert normalize_text("  آشپزخانه‌ی ۰۱ ") == "آشپزخانه ی 01"
+
+
+def test_inset_print_border_on_wall_layer_is_not_admitted_as_architectural_wall():
+    frame = {"frame_id": "FRAME-1", "bounds": [0, 0, 21, 29.7]}
+    points = [(1, 1), (20, 1), (20, 28.7), (1, 28.7)]
+    lines = [LineString([left, right]) for left, right in zip(points, points[1:]+points[:1])]
+    metas = [{"handle": "SHEET-BORDER", "layer": "WALL", "entity_type": "LWPOLYLINE", "closed": True}
+             for _ in lines]
+    kept, _, records = _exclude_inset_sheet_border_segments(lines, metas, frame, .002)
+    assert kept == []
+    assert len(records) == 4
+    assert {row["semantic_class"] for row in records} == {"PRINT_BORDER"}
+    assert {row["status"] for row in records} == {"REJECTED"}
+    assert {row["evidence"][0]["class"] for row in records} == {"INSET_PRINT_BORDER_GEOMETRY"}
+
+
+def test_room_or_building_rectangle_is_not_mistaken_for_inset_print_border():
+    frame = {"frame_id": "FRAME-1", "bounds": [0, 0, 21, 29.7]}
+    points = [(4, 5), (17, 5), (17, 23), (4, 23)]
+    lines = [LineString([left, right]) for left, right in zip(points, points[1:]+points[:1])]
+    metas = [{"handle": "BUILDING", "layer": "WALL", "entity_type": "LWPOLYLINE", "closed": True}
+             for _ in lines]
+    kept, _, records = _exclude_inset_sheet_border_segments(lines, metas, frame, .002)
+    assert kept == lines
+    assert records == []
 
 
 def test_unlabelled_line_room_is_reconstructed_but_blocks_downstream(tmp_path):
