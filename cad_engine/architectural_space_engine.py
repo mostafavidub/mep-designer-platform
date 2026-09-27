@@ -24,6 +24,7 @@ from shapely.strtree import STRtree
 
 from .architectural_topology_quality import (
     building_envelope_from_walls,
+    canonical_enclosure_continuity,
     canonical_space_subdivision,
     evidence_based_building_envelope,
     reconstruct_canonical_walls,
@@ -1079,7 +1080,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
     canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
     envelope_candidate_diagnostics=[]; plan_regions=[]
-    subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]
+    subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
@@ -1141,9 +1142,13 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             if category: frame_labels.append({"source_handle":text.get("handle"),"text":text.get("text"),
                                                "point":point,"semantic_candidate":category})
         frame_objects=[row for row in extracted["objects"] if row.get("point") and (clip is None or clip.buffer(tolerance).covers(Point(row["point"])))]
+        continuity=canonical_enclosure_continuity(frame_walls,frame_id=frame["frame_id"])
+        promoted=[row for row in continuity if "ENVELOPE_SUPPORT" in row.get("roles",[])]
+        continuity_results.extend(continuity)
         envelope,envelope_diagnostic,frame_regions=evidence_based_building_envelope(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance,
-            semantic_labels=frame_labels,objects=frame_objects,junctions=wall_result["junctions"])
+            semantic_labels=frame_labels,objects=frame_objects,junctions=wall_result["junctions"],
+            enclosure_closures=promoted)
         envelope_candidate_diagnostics.append(envelope_diagnostic); plan_regions.extend(frame_regions)
         building_envelopes.append(envelope)
         # Preserve a measured legacy result for internal comparison.  It is
@@ -1156,7 +1161,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             # isolated rotated outline).  This preserves existing valid
             # geometry without claiming a canonical envelope was proven.
             legacy_polygons = _polygonize_spaces(accepted, frame, tolerance)
-        subdivision=canonical_space_subdivision(frame_walls,envelope,frame_id=frame["frame_id"],tolerance=tolerance)
+        subdivision=canonical_space_subdivision(frame_walls,envelope,frame_id=frame["frame_id"],tolerance=tolerance,
+                                                enclosure_closures=promoted)
         subdivision_results.append(subdivision)
         canonical_polygons=[Polygon(row["physical_polygon"],row.get("interior_rings") or []) for row in subdivision["cells"]]
         overlap=sum(canonical_polygons[i].intersection(canonical_polygons[j]).area
@@ -1264,6 +1270,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
              "wall_admission_funnel":wall_admission_funnels,
              "boundary_extraction_rejections":extracted.get("boundary_rejections") or [],
+             "enclosure_continuity":{"schema":"canonical-enclosure-continuity/1.0","closures":continuity_results},
              "virtual_opening_closures":[row for result in subdivision_results for row in result.get("closures",[])],
              "enclosure_barrier_graph":{"schema":"canonical-enclosure-barrier-graph/1.0",
                                          "barriers":[row for result in subdivision_results for row in result.get("barriers",[])],

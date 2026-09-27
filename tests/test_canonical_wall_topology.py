@@ -3,6 +3,7 @@ from shapely.geometry import LineString, Polygon
 from cad_engine.architectural_topology_quality import (
     building_envelope_from_walls,
     canonical_space_subdivision,
+    canonical_enclosure_continuity,
     evidence_based_building_envelope,
     enumerate_envelope_candidates,
     host_portal_on_walls,
@@ -76,11 +77,43 @@ def _envelope():
 
 def test_canonical_subdivision_uses_envelope_wall_material_and_virtual_closure():
     walls=[_wall("PART",(5,0),(5,6),[[0,2.5],[3.5,6]],[(2.5,3.5)])]
+    walls[0].update({"representation":"DOUBLE_FACE","face_a":[[4.9,0],[4.9,6]],
+                     "face_b":[[5.1,0],[5.1,6]]})
+    walls[0]["interruptions"][0].update({"face_a_gap":[2.5,3.5],"face_b_gap":[2.5,3.5]})
     result=canonical_space_subdivision(walls,_envelope(),frame_id="F1",tolerance=.001)
     assert result["authority"]=="CANONICAL"
     assert len(result["cells"])==2
     assert any(row["kind"]=="VIRTUAL_CLOSURE" for row in result["barriers"])
     assert result["edges"][0]["closure_ids"]
+
+
+def test_double_face_door_gap_closes_enclosure_without_becoming_material():
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
+                 "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"]})
+    wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
+    rows=canonical_enclosure_continuity([wall],frame_id="F1")
+    assert rows[0]["continuity_status"]=="PROVEN_WALL_CONTINUITY"
+    assert rows[0]["material"] is False
+    assert rows[0]["possible_opening_type"]=="UNKNOWN"
+    assert rows[0]["roles"]==["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+
+
+def test_single_line_gap_is_not_promoted_without_independent_support():
+    wall=_wall("W",(0,0),(10,0),[[0,4],[7,10]],[(4,7)])
+    wall.update({"representation":"SINGLE_LINE","source_handles":["A"]})
+    rows=canonical_enclosure_continuity([wall],frame_id="F1")
+    assert rows[0]["continuity_status"]=="SUPPORTED_WALL_CONTINUITY"
+    assert rows[0]["roles"]==[]
+
+
+def test_drafting_fragmentation_is_diagnostic_not_promoted():
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall.update({"representation":"DOUBLE_FACE","source_handles":["A","B"]})
+    wall["interruptions"][0].update({"kind":"UNKNOWN_FRAGMENTATION","face_a_gap":[4,5]})
+    rows=canonical_enclosure_continuity([wall],frame_id="F1")
+    assert rows[0]["continuity_status"]=="INSUFFICIENT_CONTINUITY"
+    assert "ENCLOSURE_BARRIER" not in rows[0]["roles"]
 
 
 def test_open_plan_without_wall_remains_one_physical_space():

@@ -32,11 +32,15 @@ def _wall_line(wall):
     return LineString(wall["centerline"])
 
 
-def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=()):
+def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=(), enclosure_closures=()):
     """Enumerate closed cycles before any envelope selection is attempted."""
     started=time.perf_counter(); tol=max(float(tolerance or .001),1e-8)
     axes=[_wall_line(wall) for wall in walls]
-    polygons=[poly for poly in polygonize(unary_union(axes)) if poly.is_valid and poly.area>tol*tol*4]
+    eligible_closures=[row for row in enclosure_closures
+                       if row.get("continuity_status") in {"PROVEN_WALL_CONTINUITY", "SUPPORTED_WALL_CONTINUITY"}
+                       and "ENVELOPE_SUPPORT" in (row.get("roles") or [])]
+    closure_lines=[LineString(row["geometry"]) for row in eligible_closures]
+    polygons=[poly for poly in polygonize(unary_union(axes+closure_lines)) if poly.is_valid and poly.area>tol*tol*4]
     old_selected=max(polygons,key=lambda poly:poly.area) if polygons else None
     rows=[]
     for poly in sorted(polygons,key=lambda item:(-item.area,item.bounds)):
@@ -52,7 +56,9 @@ def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels
         jcount=sum(bool(row.get("point")) and poly.buffer(tol).covers(Point(row["point"])) for row in junctions)
         terminating=sum(1 for line in axes for point in (Point(line.coords[0]),Point(line.coords[-1])) if poly.boundary.distance(point)<=tol*4 and poly.buffer(tol).covers(line.representative_point()))
         cid=_sid("ENVCAND",[frame_id,[list(p) for p in poly.exterior.coords]])
-        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
+        closure_ids=[row["closure_id"] for row,line in zip(eligible_closures,closure_lines)
+                     if line.distance(poly.boundary)<=tol*4]
+        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
     return {"frame_id":frame_id,"candidates":rows,"runtime_seconds":round(time.perf_counter()-started,6)}
 
 
@@ -76,8 +82,8 @@ def classify_plan_regions(candidate_diagnostic):
     return regions
 
 
-def evidence_based_building_envelope(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=()):
-    diagnostic=enumerate_envelope_candidates(walls,frame_id=frame_id,tolerance=tolerance,semantic_labels=semantic_labels,objects=objects,junctions=junctions)
+def evidence_based_building_envelope(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=(), enclosure_closures=()):
+    diagnostic=enumerate_envelope_candidates(walls,frame_id=frame_id,tolerance=tolerance,semantic_labels=semantic_labels,objects=objects,junctions=junctions,enclosure_closures=enclosure_closures)
     regions=classify_plan_regions(diagnostic); conflicts=[row for row in regions if row["status"]=="CONFLICT"]
     interior=[Polygon(row["geometry"]) for row in regions if row["role"]=="BUILDING_INTERIOR"]
     interior_semantics={semantic for row in regions if row["role"]=="BUILDING_INTERIOR" for semantic in row["semantic_evidence"]}
@@ -335,8 +341,13 @@ def host_portal_on_walls(portal_line, walls, *, tolerance, pixel_tolerance):
     return wall,"WALL_OBJECT_GAP_SUPPORT",[x[2]["wall_id"] for x in candidates]
 
 
-def virtual_opening_closures(walls):
-    """Return non-material closure edges used only by the enclosure graph."""
+def canonical_enclosure_continuity(walls, *, frame_id=None):
+    """Classify wall interruptions before envelope inference.
+
+    A closure expresses continuity of enclosure topology, never wall material
+    and never portal semantics.  Only independently proven double-face gaps are
+    promoted automatically; supported/insufficient rows remain diagnostic.
+    """
     rows=[]
     for wall in walls:
         origin=wall["wall_solid"]["axis_origin"]; direction=wall["wall_solid"]["axis_direction"]
@@ -344,15 +355,44 @@ def virtual_opening_closures(walls):
             low,high=opening["interval"]
             geometry=[[origin[0]+low*direction[0],origin[1]+low*direction[1]],
                       [origin[0]+high*direction[0],origin[1]+high*direction[1]]]
+            both_faces=bool(opening.get("face_a_gap") and opening.get("face_b_gap"))
+            double=wall.get("representation")=="DOUBLE_FACE"
+            kind=opening.get("kind")
+            if double and both_faces and kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}:
+                continuity,status,confidence,reason=("PROVEN_WALL_CONTINUITY","PROVEN",.95,
+                                                     "PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP")
+                roles=["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+            elif kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}:
+                continuity,status,confidence,reason=("SUPPORTED_WALL_CONTINUITY","SUPPORTED",.65,
+                                                     "COLLINEAR_WALL_INTERRUPTION_REQUIRES_CORROBORATION")
+                roles=[]
+            else:
+                continuity,status,confidence,reason=("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED",.25,
+                                                     "UNMATCHED_OR_DRAFTING_FRAGMENTATION")
+                roles=[]
             rows.append({"closure_id":_sid("CLOSURE",[wall["wall_id"],index,geometry]),
-                         "host_wall_id":wall["wall_id"],"geometry":geometry,
-                         "reason":"CANONICAL_WALL_INTERRUPTION","opening_candidate_id":None,
-                         "source_evidence":wall.get("source_fragments") or [],"material":False,
-                         "graph_role":"ENCLOSURE_ONLY"})
+                         "frame_id":frame_id or wall.get("frame_id"),"host_wall_id":wall["wall_id"],
+                         "axis_interval":[low,high],"geometry":geometry,
+                         "continuity_status":continuity,"status":status,
+                         "wall_representation":wall.get("representation"),
+                         "face_a_support":bool(opening.get("face_a_gap")),
+                         "face_b_support":bool(opening.get("face_b_gap")),
+                         "collinear_support":kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"},
+                         "junction_support":False,"source_handles":wall.get("source_handles") or [],
+                         "source_evidence":wall.get("source_fragments") or [],"gap_width":high-low,
+                         "material":False,"roles":roles,"possible_opening_type":"UNKNOWN",
+                         "confidence":confidence,"evidence":[{"class":"WALL_INTERRUPTION_CONTINUITY","kind":kind,
+                                                               "paired_face_gap":both_faces}],"reason":reason})
     return rows
 
 
-def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_boundaries=None):
+def virtual_opening_closures(walls):
+    """Backward-compatible view containing only promoted enclosure closures."""
+    return [row for row in canonical_enclosure_continuity(walls)
+            if "ENCLOSURE_BARRIER" in row.get("roles",[])]
+
+
+def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_boundaries=None, enclosure_closures=None):
     """Build physical-space cells from the canonical enclosure topology.
 
     Unlike the legacy path this function does not treat an arbitrary collection
@@ -395,8 +435,10 @@ def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_bo
             a=[origin[0]+low*u[0],origin[1]+low*u[1]]; b=[origin[0]+high*u[0],origin[1]+high*u[1]]
             barriers.append({"barrier_id":_sid("BAR",[wall["wall_id"],"MATERIAL",index,a,b]),
                              "kind":"WALL_MATERIAL","geometry":[a,b],"wall_id":wall["wall_id"],"closure_id":None})
-    closures=virtual_opening_closures(walls)
+    closures=(list(enclosure_closures) if enclosure_closures is not None else virtual_opening_closures(walls))
     for closure in closures:
+        if "ENCLOSURE_BARRIER" not in closure.get("roles",["ENCLOSURE_BARRIER"]):
+            continue
         barriers.append({"barrier_id":_sid("BAR",[closure["closure_id"],"ENCLOSURE"]),
                          "kind":"VIRTUAL_CLOSURE","geometry":closure["geometry"],
                          "wall_id":closure["host_wall_id"],"closure_id":closure["closure_id"]})

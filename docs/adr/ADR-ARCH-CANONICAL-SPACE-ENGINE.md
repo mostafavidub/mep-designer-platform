@@ -12,9 +12,18 @@ records describe uses inside it. Downstream disciplines consume this model and
 must not independently re-detect rooms.
 
 The pipeline order is source validation, frame classification, calibration,
-primitive extraction, object and wall/opening reconstruction, cell generation,
-semantic zoning, dimension association, optional vision reconciliation, evidence
-fusion, completeness evaluation and targeted human review.
+primitive extraction, canonical wall reconstruction, wall-interruption analysis,
+enclosure continuity, envelope inference, physical-space subdivision, portal
+classification, access-graph generation, semantic zoning, dimension association,
+optional vision reconciliation, evidence fusion, completeness evaluation and
+targeted human review.
+
+Wall Material, Enclosure Barrier and Access Edge are separate authorities. A
+non-material topological closure may bridge a source-supported interruption for
+envelope/subdivision purposes, but it is never a routing obstacle and never
+creates pedestrian access. Portal type is classified only after physical spaces
+exist. A supported but uncorroborated single-line break remains diagnostic and
+cannot be promoted merely because it would complete a desired room.
 
 Wall authority is a first-class canonical object rather than a source LINE. The
 model distinguishes wall-axis continuity from occupied wall solid, records
