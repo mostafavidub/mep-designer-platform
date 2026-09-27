@@ -1,8 +1,10 @@
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 
 from cad_engine.architectural_topology_quality import (
     building_envelope_from_walls,
     canonical_space_subdivision,
+    evidence_based_building_envelope,
+    enumerate_envelope_candidates,
     host_portal_on_walls,
     reconstruct_canonical_walls,
 )
@@ -49,7 +51,7 @@ def test_rectangle_envelope_is_first_class_and_sheet_border_is_not_implicitly_us
     envelope = building_envelope_from_walls(result["walls"], frame_id="F1", tolerance=.001)
     assert envelope["status"] == "HIGH_CONFIDENCE"
     assert envelope["area"] == 60
-    assert envelope["evidence"][0]["class"] == "CANONICAL_WALL_CYCLE"
+    assert envelope["evidence"][0]["class"] == "SINGLE_UNAMBIGUOUS_CANONICAL_WALL_CYCLE"
 
 
 def test_rejected_annotation_never_enters_wall_objects():
@@ -104,3 +106,59 @@ def test_fragmentation_gap_cannot_host_a_portal():
     wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
     wall["interruptions"][0]["kind"]="UNKNOWN_FRAGMENTATION"
     assert host_portal_on_walls(LineString(((4,0),(5,0))),[wall],tolerance=.001,pixel_tolerance=.01)[1]=="NO_WALL_GAP"
+
+
+def _topology_wall(wall_id,a,b,representation="DOUBLE_FACE"):
+    row=_wall(wall_id,a,b,[[0,LineString((a,b)).length]])
+    row.update({"representation":representation,"source_handles":[wall_id],"thickness":.2 if representation=="DOUBLE_FACE" else None})
+    return row
+
+
+def _site_and_building_walls():
+    return [_topology_wall("S",(0,0),(20,0)),_topology_wall("E",(20,0),(20,10)),
+            _topology_wall("N",(20,10),(0,10)),_topology_wall("W",(0,10),(0,0)),
+            _topology_wall("F",(10,0),(10,10)),_topology_wall("P",(5,0),(5,10))]
+
+
+def test_largest_site_cycle_is_not_selected_as_building_envelope():
+    labels=[{"point":[2,5],"semantic_candidate":"bedroom"},{"point":[7,5],"semantic_candidate":"kitchen"},
+            {"point":[15,5],"semantic_candidate":"yard"}]
+    envelope,diagnostic,regions=evidence_based_building_envelope(_site_and_building_walls(),frame_id="F1",tolerance=.001,semantic_labels=labels)
+    assert max(row["area"] for row in diagnostic["candidates"]) == 100
+    assert envelope["status"] == "HIGH_CONFIDENCE"
+    assert envelope["area"] == 100
+    assert Polygon(envelope["outer_ring"]).bounds == (0,0,10,10)
+    assert {row["role"] for row in regions} >= {"BUILDING_INTERIOR","SITE_EXTERIOR"}
+
+
+def test_conflicting_site_and_interior_labels_fail_closed():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    labels=[{"point":[2,2],"semantic_candidate":"bedroom"},{"point":[8,8],"semantic_candidate":"yard"}]
+    envelope,_,regions=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001,semantic_labels=labels)
+    assert envelope["status"] == "INPUT_REQUIRED"
+    assert envelope["reason"] == "CONFLICTING_INTERIOR_EXTERIOR_EVIDENCE"
+    assert regions[0]["status"] == "CONFLICT"
+
+
+def test_balcony_is_preserved_but_excluded_from_interior_area():
+    labels=[{"point":[2,5],"semantic_candidate":"bedroom"},{"point":[7,5],"semantic_candidate":"kitchen"},
+            {"point":[15,5],"semantic_candidate":"balcony"}]
+    envelope,_,regions=evidence_based_building_envelope(_site_and_building_walls(),frame_id="F1",tolerance=.001,semantic_labels=labels)
+    assert envelope["area"] == 100
+    assert any(row["role"]=="SEMI_EXTERIOR" for row in regions)
+
+
+def test_unlabelled_multiple_cycles_do_not_reintroduce_largest_wins():
+    envelope,diagnostic,regions=evidence_based_building_envelope(_site_and_building_walls(),frame_id="F1",tolerance=.001)
+    assert len(diagnostic["candidates"]) == 3
+    assert envelope["status"] == "INPUT_REQUIRED"
+    assert all(row["role"]=="UNKNOWN" for row in regions)
+
+
+def test_envelope_candidate_diagnostic_exposes_boundary_quality_and_previous_selection():
+    diagnostic=enumerate_envelope_candidates(_site_and_building_walls(),frame_id="F1",tolerance=.001,
+                                             semantic_labels=[{"point":[15,5],"semantic_candidate":"parking"}])
+    assert diagnostic["candidates"]
+    assert all("boundary_double_face_ratio" in row and "source_handles" in row for row in diagnostic["candidates"])
+    assert sum(row["previously_selected"] for row in diagnostic["candidates"]) == 1

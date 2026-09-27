@@ -25,6 +25,7 @@ from shapely.strtree import STRtree
 from .architectural_topology_quality import (
     building_envelope_from_walls,
     canonical_space_subdivision,
+    evidence_based_building_envelope,
     reconstruct_canonical_walls,
     virtual_opening_closures,
 )
@@ -963,6 +964,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     timings["frame_and_scale_resolution"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
     canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
+    envelope_candidate_diagnostics=[]; plan_regions=[]
     subdivision_results=[]; subdivision_comparisons=[]
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
@@ -992,7 +994,18 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         frame_walls=wall_result["walls"]
         canonical_walls.extend(frame_walls); wall_junctions.extend(wall_result["junctions"])
         thickness_clusters.extend(wall_result["thickness_clusters"])
-        envelope=building_envelope_from_walls(frame_walls,frame_id=frame["frame_id"],tolerance=tolerance)
+        frame_labels=[]
+        for text in extracted["texts"]:
+            point=text.get("point")
+            if not point or (clip is not None and not clip.buffer(tolerance).covers(Point(point))): continue
+            category,_=_classify_text(text.get("text"))
+            if category: frame_labels.append({"source_handle":text.get("handle"),"text":text.get("text"),
+                                               "point":point,"semantic_candidate":category})
+        frame_objects=[row for row in extracted["objects"] if row.get("point") and (clip is None or clip.buffer(tolerance).covers(Point(row["point"])))]
+        envelope,envelope_diagnostic,frame_regions=evidence_based_building_envelope(
+            frame_walls,frame_id=frame["frame_id"],tolerance=tolerance,
+            semantic_labels=frame_labels,objects=frame_objects,junctions=wall_result["junctions"])
+        envelope_candidate_diagnostics.append(envelope_diagnostic); plan_regions.extend(frame_regions)
         building_envelopes.append(envelope)
         # Preserve a measured legacy result for internal comparison.  It is
         # never allowed to silently replace a valid canonical subdivision.
@@ -1096,6 +1109,17 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "dimensions": extracted["dimensions"], "dimension_reconciliation":dimension_reconciliation,
              "openings":openings,"canonical_walls":walls,"wall_junctions":wall_junctions,
              "wall_thickness_clusters":thickness_clusters,"building_envelopes":building_envelopes,
+             "building_envelope_candidates":envelope_candidate_diagnostics,
+             "plan_regions":{"schema":"canonical-plan-region-graph/1.0","regions":plan_regions},
+             "region_coverage":{"schema":"architectural-region-coverage/1.0",
+                                "status":"PASS" if building_envelopes and all(e.get("status") in {"VERIFIED","HIGH_CONFIDENCE"} for e in building_envelopes) else "INPUT_REQUIRED",
+                                "building_interior_area":sum(r["area"] for r in plan_regions if r["role"]=="BUILDING_INTERIOR"),
+                                "accounted_building_interior_area":sum(r["area"] for r in plan_regions if r["role"]=="BUILDING_INTERIOR" and r["status"] in {"VERIFIED","HIGH_CONFIDENCE"}),
+                                "unexplained_building_interior_area":sum(r["area"] for r in plan_regions if r["role"]=="UNKNOWN"),
+                                "semi_exterior_area":sum(r["area"] for r in plan_regions if r["role"]=="SEMI_EXTERIOR"),
+                                "semi_exterior_accounted_area":sum(r["area"] for r in plan_regions if r["role"]=="SEMI_EXTERIOR" and r["status"] in {"VERIFIED","HIGH_CONFIDENCE"}),
+                                "site_exterior_area":sum(r["area"] for r in plan_regions if r["role"]=="SITE_EXTERIOR"),
+                                "overlap_area":0.0},
              "label_bindings":label_bindings,
              "architectural_segments":segment_records,
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},

@@ -23,6 +23,15 @@ and keeps the Enclosure Graph separate from the portal-driven Access Graph.
 Building Envelope and EXTERIOR are explicit topology records. Portal fusion may
 bind only to a compatible Wall Object gap and cannot override a continuous wall.
 
+Building Envelope selection is evidence-based. The engine first enumerates all
+closed canonical cycles and records their labels, topology, boundary-wall
+quality, fixtures and provenance. It then constructs a Plan Region Graph with
+explicit `BUILDING_INTERIOR`, `SEMI_EXTERIOR`, `SITE_EXTERIOR`, courtyard,
+lightwell, void and unknown roles. The envelope is derived only from defensible
+interior regions; a drawing frame, site enclosure, or largest closed cycle has
+no envelope authority. Mixed interior/site evidence and competing components
+fail closed instead of being resolved by a hidden weighted score.
+
 Physical-space cells are produced from an explicitly noded Enclosure Barrier
 Graph containing the selected Building Envelope, occupied Wall Object intervals,
 supported void boundaries and non-material Virtual Closures. Legacy stitched-axis

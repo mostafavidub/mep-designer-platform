@@ -20,6 +20,81 @@ def _sid(prefix, value):
     return f"{prefix}-" + sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:16].upper()
 
 
+REGION_ROLES = {"BUILDING_INTERIOR", "SEMI_EXTERIOR", "SITE_EXTERIOR", "COURTYARD", "LIGHTWELL", "VOID", "UNBOUNDED_EXTERIOR", "UNKNOWN"}
+_INTERIOR_SEMANTICS = {"bedroom", "master_bedroom", "living", "reception", "dining", "kitchen", "kitchenette", "bathroom", "shower", "toilet", "entrance", "vestibule", "shoe_area", "corridor", "lobby", "closet", "storage", "laundry", "utility", "stair", "stair_landing", "elevator", "elevator_lobby", "shaft", "duct", "pipe_shaft", "mechanical_shaft", "electrical_shaft", "office", "shop", "commercial", "mechanical_room", "electrical_room", "boiler_room", "janitor", "common_room"}
+_WET_SERVICE_SEMANTICS = {"bathroom", "shower", "toilet", "kitchen", "kitchenette", "laundry", "utility", "shaft", "duct", "pipe_shaft", "mechanical_shaft", "electrical_shaft"}
+_SEMI_EXTERIOR_SEMANTICS = {"balcony", "terrace", "roof_terrace", "patio"}
+_SITE_EXTERIOR_SEMANTICS = {"yard", "backyard", "parking", "parking_stall", "ramp", "driveway"}
+_VOID_SEMANTICS = {"void", "lightwell"}
+
+
+def _wall_line(wall):
+    return LineString(wall["centerline"])
+
+
+def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=()):
+    """Enumerate closed cycles before any envelope selection is attempted."""
+    started=time.perf_counter(); tol=max(float(tolerance or .001),1e-8)
+    axes=[_wall_line(wall) for wall in walls]
+    polygons=[poly for poly in polygonize(unary_union(axes)) if poly.is_valid and poly.area>tol*tol*4]
+    old_selected=max(polygons,key=lambda poly:poly.area) if polygons else None
+    rows=[]
+    for poly in sorted(polygons,key=lambda item:(-item.area,item.bounds)):
+        boundary_ids=[]; internal_ids=[]; source_handles=set(); double=known=0
+        for wall,line in zip(walls,axes):
+            if line.distance(poly.boundary)<=tol*4:
+                boundary_ids.append(wall["wall_id"]); source_handles.update(wall.get("source_handles") or [])
+                double+=wall.get("representation")=="DOUBLE_FACE"; known+=wall.get("thickness") is not None
+            elif poly.buffer(tol).covers(line.representative_point()): internal_ids.append(wall["wall_id"])
+        hosted=[row for row in semantic_labels if row.get("point") and poly.covers(Point(row["point"]))]
+        categories=[row.get("semantic_candidate") or row.get("category") for row in hosted]
+        obj_count=sum(bool(row.get("point")) and poly.covers(Point(row["point"])) for row in objects)
+        jcount=sum(bool(row.get("point")) and poly.buffer(tol).covers(Point(row["point"])) for row in junctions)
+        terminating=sum(1 for line in axes for point in (Point(line.coords[0]),Point(line.coords[-1])) if poly.boundary.distance(point)<=tol*4 and poly.buffer(tol).covers(line.representative_point()))
+        cid=_sid("ENVCAND",[frame_id,[list(p) for p in poly.exterior.coords]])
+        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
+    return {"frame_id":frame_id,"candidates":rows,"runtime_seconds":round(time.perf_counter()-started,6)}
+
+
+def classify_plan_regions(candidate_diagnostic):
+    regions=[]
+    for candidate in candidate_diagnostic.get("candidates") or []:
+        categories=set(candidate.get("semantic_categories") or []); interior=categories&_INTERIOR_SEMANTICS; semi=categories&_SEMI_EXTERIOR_SEMANTICS; site=categories&_SITE_EXTERIOR_SEMANTICS; voids=categories&_VOID_SEMANTICS
+        conflict=sum(bool(group) for group in (interior,semi,site,voids))>1
+        if conflict: role,status,reason="UNKNOWN","CONFLICT","CONFLICTING_REGION_SEMANTICS"
+        elif voids: role,status,reason=("LIGHTWELL" if "lightwell" in voids else "VOID"),"HIGH_CONFIDENCE","ONTOLOGY_VOID_LABEL"
+        elif site: role,status,reason="SITE_EXTERIOR","HIGH_CONFIDENCE","ONTOLOGY_SITE_LABEL"
+        elif semi: role,status,reason="SEMI_EXTERIOR","HIGH_CONFIDENCE","ONTOLOGY_SEMI_EXTERIOR_LABEL"
+        elif interior: role,status,reason="BUILDING_INTERIOR","HIGH_CONFIDENCE","ONTOLOGY_INTERIOR_LABEL"
+        else: role,status,reason="UNKNOWN","INPUT_REQUIRED","INSUFFICIENT_INDEPENDENT_EVIDENCE"
+        regions.append({"region_id":_sid("REGION",candidate["candidate_id"]),"candidate_id":candidate["candidate_id"],"frame_id":candidate["frame_id"],"geometry":candidate["polygon"],"area":candidate["area"],"role":role,"status":status,"reason":reason,"semantic_evidence":sorted(categories),"wall_ids":candidate["wall_ids"],"adjacent_region_ids":[],"exterior_exposure":"UNKNOWN"})
+    geoms=[Polygon(row["geometry"]) for row in regions]
+    for i,left in enumerate(geoms):
+        for j in range(i+1,len(geoms)):
+            if left.boundary.intersection(geoms[j].boundary).length>0:
+                regions[i]["adjacent_region_ids"].append(regions[j]["region_id"]); regions[j]["adjacent_region_ids"].append(regions[i]["region_id"])
+    return regions
+
+
+def evidence_based_building_envelope(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=()):
+    diagnostic=enumerate_envelope_candidates(walls,frame_id=frame_id,tolerance=tolerance,semantic_labels=semantic_labels,objects=objects,junctions=junctions)
+    regions=classify_plan_regions(diagnostic); conflicts=[row for row in regions if row["status"]=="CONFLICT"]
+    interior=[Polygon(row["geometry"]) for row in regions if row["role"]=="BUILDING_INTERIOR"]
+    interior_semantics={semantic for row in regions if row["role"]=="BUILDING_INTERIOR" for semantic in row["semantic_evidence"]}
+    insufficient=len(interior_semantics)<2
+    if conflicts or not interior or insufficient:
+        reason=("CONFLICTING_INTERIOR_EXTERIOR_EVIDENCE" if conflicts else
+                "INSUFFICIENT_INDEPENDENT_INTERIOR_EVIDENCE" if insufficient else
+                "NO_DEFENSIBLE_BUILDING_INTERIOR_REGION")
+        return ({"building_envelope_id":_sid("ENV",[frame_id,"UNKNOWN",reason]),"frame_id":frame_id,"outer_ring":[],"interior_voids":[],"components":[],"exterior_wall_ids":[],"source_handles":[],"area":0.0,"perimeter":0.0,"confidence":0.0,"status":"INPUT_REQUIRED","reason":reason,"evidence":[{"class":"EVIDENCE_BASED_REGION_CLASSIFICATION","conflict_count":len(conflicts),"interior_region_count":len(interior)}],"schema":"canonical-building-envelope/2.0"},diagnostic,regions)
+    merged=unary_union(interior); components=list(merged.geoms) if merged.geom_type=="MultiPolygon" else [merged]; primary=max(components,key=lambda poly:poly.area)
+    status="HIGH_CONFIDENCE" if len(components)==1 else "INPUT_REQUIRED"
+    boundary_ids=[wall["wall_id"] for wall in walls if _wall_line(wall).distance(merged.boundary)<=max(tolerance*4,1e-7)]
+    handles=sorted({handle for wall in walls if wall["wall_id"] in boundary_ids for handle in wall.get("source_handles") or []})
+    envelope={"building_envelope_id":_sid("ENV",[frame_id,[list(p) for p in primary.exterior.coords]]),"frame_id":frame_id,"outer_ring":[list(p) for p in primary.exterior.coords],"interior_voids":[[list(p) for p in ring.coords] for ring in primary.interiors],"components":[{"outer_ring":[list(p) for p in poly.exterior.coords],"interior_voids":[[list(p) for p in ring.coords] for ring in poly.interiors]} for poly in components],"exterior_wall_ids":boundary_ids,"source_handles":handles,"area":merged.area,"perimeter":merged.length,"confidence":.85 if status=="HIGH_CONFIDENCE" else .4,"status":status,"reason":"EVIDENCE_SUPPORTED_INTERIOR_UNION" if status=="HIGH_CONFIDENCE" else "DISCONNECTED_INTERIOR_COMPONENTS","evidence":[{"class":"EVIDENCE_BASED_REGION_CLASSIFICATION","interior_region_count":len(interior),"site_region_count":sum(r["role"]=="SITE_EXTERIOR" for r in regions),"semi_exterior_region_count":sum(r["role"]=="SEMI_EXTERIOR" for r in regions)}],"schema":"canonical-building-envelope/2.0"}
+    return envelope,diagnostic,regions
+
+
 def _axis(line):
     a, b = list(line.coords)[0], list(line.coords)[-1]
     dx, dy = b[0]-a[0], b[1]-a[1]; length=max(math.hypot(dx,dy), 1e-12)
@@ -219,14 +294,15 @@ def building_envelope_from_walls(walls, *, frame_id, tolerance):
         return {"building_envelope_id":_sid("ENV",[frame_id,"UNKNOWN"]),"frame_id":frame_id,
                 "outer_ring":[],"interior_voids":[],"exterior_wall_ids":[],"source_handles":[],
                 "area":0.0,"perimeter":0.0,"confidence":0.0,"status":"INPUT_REQUIRED","evidence":[]}
-    merged=unary_union(polys); candidates=list(merged.geoms) if merged.geom_type=="MultiPolygon" else [merged]
-    poly=max(candidates,key=lambda p:p.area)
+    if len(polys)!=1:
+        return {"building_envelope_id":_sid("ENV",[frame_id,"AMBIGUOUS_CYCLES"]),"frame_id":frame_id,"outer_ring":[],"interior_voids":[],"components":[],"exterior_wall_ids":[],"source_handles":[],"area":0.0,"perimeter":0.0,"confidence":0.0,"status":"INPUT_REQUIRED","reason":"MULTIPLE_UNCLASSIFIED_WALL_CYCLES","schema":"canonical-building-envelope/2.0","evidence":[{"class":"CANONICAL_WALL_CYCLE_ENUMERATION","polygon_count":len(polys)}]}
+    poly=polys[0]
     ring=[list(p) for p in list(poly.exterior.coords)]; handles=sorted({h for w in walls for h in w["source_handles"]})
     return {"building_envelope_id":_sid("ENV",[frame_id,ring]),"frame_id":frame_id,"outer_ring":ring,
             "interior_voids":[[list(p) for p in hole.coords] for hole in poly.interiors],
             "exterior_wall_ids":[w["wall_id"] for w in walls if LineString(w["centerline"]).distance(poly.boundary)<=max(tolerance*4,1e-7)],
             "source_handles":handles,"area":poly.area,"perimeter":poly.length,"confidence":.75,
-            "status":"HIGH_CONFIDENCE","evidence":[{"class":"CANONICAL_WALL_CYCLE","polygon_count":len(polys)}]}
+            "components":[{"outer_ring":ring,"interior_voids":[[list(p) for p in hole.coords] for hole in poly.interiors]}],"schema":"canonical-building-envelope/2.0","status":"HIGH_CONFIDENCE","evidence":[{"class":"SINGLE_UNAMBIGUOUS_CANONICAL_WALL_CYCLE","polygon_count":len(polys)}]}
 
 
 def host_portal_on_walls(portal_line, walls, *, tolerance, pixel_tolerance):
