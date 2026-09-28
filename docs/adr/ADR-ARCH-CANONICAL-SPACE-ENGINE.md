@@ -113,6 +113,16 @@ material region coverage, at least one major plan region and independently
 hosted CAD text/object evidence. An insufficient graph stops before network use,
 leaves Mechanical blocked and reports `FASIHI_CANDIDATE_GRAPH_INSUFFICIENT`.
 
+Candidate Graph v2 is constructed before canonical wall and envelope authority.
+It separates source geometry into hard architectural evidence, soft candidate
+evidence and hard exclusions; nodes eligible source segments directly, records
+polygonization cuts/dangles, exposes atomic faces and traceable weak-boundary
+face groups, and diagnoses every hosted or unhosted source label. This breaks
+the former circular dependency in which candidate regions could only be drawn
+from already accepted canonical `plan_regions`. Candidate faces and non-material
+virtual closures remain `CANDIDATE_ONLY` and cannot become wall material merely
+because they improve closure or are later selected by Vision.
+
 When a governed frame fails specifically because source architectural geometry
 is insufficient, the engine enters `HYBRID_ARCHITECTURAL_RECOVERY`. This path is
 boundary-first: raw CAD facts and mapped Vision hypotheses enter a first-class

@@ -15,6 +15,8 @@ import math
 from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import unary_union
 
+from .preauthority_candidate_graph import build_preauthority_graph
+
 
 REGION_ROLES = {
     "BUILDING_INTERIOR", "SITE_EXTERIOR", "YARD", "SEMI_EXTERIOR",
@@ -233,29 +235,73 @@ def build_candidate_graph(model: dict, *, frame_id: str, max_regions: int = 60,
     if not frame:
         raise CandidateClassificationError("FRAME_NOT_FOUND", "Requested frame is absent")
     tolerance = float((model.get("diagnostics") or {}).get("adaptive_tolerance") or 1e-6)
-    regions = _candidate_regions(model, frame_id)
-    _bind_independent_evidence(regions, texts=model.get("all_texts") or [], objects=model.get("architectural_objects") or [])
+    preauthority = None
+    if model.get("architectural_segments") or model.get("boundary_extraction_rejections"):
+        preauthority = build_preauthority_graph(model, frame, tolerance=tolerance,
+                                                max_regions=max_regions, max_bridges=max_bridges)
+        regions = preauthority["region_candidates"]
+    else:
+        # Compatibility for callers that only possess the v1 canonical graph.
+        regions = _candidate_regions(model, frame_id)
+        _bind_independent_evidence(regions, texts=model.get("all_texts") or [], objects=model.get("architectural_objects") or [])
     walls = [row for row in model.get("canonical_walls") or [] if row.get("frame_id") == frame_id]
     boundaries = _candidate_boundaries(regions, walls, tolerance)
-    bridges = _bridge_candidates(boundaries, tolerance=tolerance, max_candidates=max_bridges)
+    if len(boundaries) > max_boundaries:
+        boundaries = sorted(boundaries, key=lambda row: (
+            row["cad_authority"] != "CAD_CONFIRMED",
+            -LineString(row["geometry"]).length,
+            row["boundary_id"],
+        ))[:max_boundaries]
+    if preauthority:
+        bridges = [{"ambiguity_id": row["bridge_id"], "options":[
+            {"option_id": row["bridge_id"], "geometry":[row["endpoint_a"],row["endpoint_b"]],
+             "material_geometry":"NONE", "evidence":[row["candidate_reason"]]},
+            {"option_id":"NO_BOUNDARY","geometry":[],"material_geometry":"NONE","evidence":[]}],
+            "status":"AMBIGUOUS", "diagnostic":row} for row in preauthority["bridge_candidates"]]
+    else:
+        bridges = _bridge_candidates(boundaries, tolerance=tolerance, max_candidates=max_bridges)
     frame_polygon = box(*frame["bounds"])
     union = unary_union([Polygon(row["polygon"]) for row in regions]) if regions else Polygon()
     coverage = union.area / max(frame_polygon.area, 1e-12)
     largest = max((row["area"] for row in regions), default=0) / max(frame_polygon.area, 1e-12)
+    activity_data=(preauthority or {}).get("activity_region") or {}
+    activity_polygon=Polygon(activity_data.get("polygon") or []) if activity_data.get("polygon") else frame_polygon
+    activity_area = float(activity_data.get("area") or frame_polygon.area)
+    activity_coverage = union.intersection(activity_polygon).area / max(activity_area,1e-12)
+    largest_activity = max((Polygon(row["polygon"]).intersection(activity_polygon).area for row in regions),default=0)/max(activity_area,1e-12)
+    label_diagnostics=(preauthority or {}).get("label_host_diagnostics") or []
+    object_diagnostics=(preauthority or {}).get("object_host_diagnostics") or []
+    label_hosting=sum(row["status"]=="HOSTED" for row in label_diagnostics)/max(len(label_diagnostics),1)
+    object_hosting=sum(row["status"]=="HOSTED" for row in object_diagnostics)/max(len(object_diagnostics),1)
     reasons = []
     if len(regions) < 2: reasons.append("TOO_FEW_REGION_CANDIDATES")
     if len(regions) > max_regions: reasons.append("REGION_SET_NOT_BOUNDED")
     if len(boundaries) > max_boundaries: reasons.append("BOUNDARY_SET_NOT_BOUNDED")
-    if coverage < .20: reasons.append("INSUFFICIENT_FRAME_REGION_COVERAGE")
-    if largest < .01: reasons.append("NO_MAJOR_PLAN_REGION")
+    if not preauthority:
+        if coverage < .20: reasons.append("INSUFFICIENT_FRAME_REGION_COVERAGE")
+        if largest < .01: reasons.append("NO_MAJOR_PLAN_REGION")
+    else:
+        hosted_count=sum(row["status"]=="HOSTED" for row in label_diagnostics)
+        major_candidates=[row for row in regions if row["area"]>tolerance*tolerance*4
+                          and row.get("member_face_ids") and row.get("contained_labels")]
+        if not major_candidates: reasons.append("NO_EVIDENCE_HOSTING_PLAN_SCALE_REGION")
+        if union.intersection(activity_polygon).is_empty: reasons.append("NO_ACTIVITY_REGION_INTERSECTION")
+        if hosted_count==0: reasons.append("NO_ARCHITECTURAL_LABEL_HOSTED")
     if not any(row["exact_text_evidence"] or row["object_evidence"] for row in regions):
         reasons.append("NO_INDEPENDENT_SEMANTIC_EVIDENCE_HOSTED")
-    return {"schema": "candidate-architectural-topology/1.0", "frame_id": frame_id,
+    if preauthority and len(preauthority.get("connected_components") or []) > 250:
+        reasons.append("CATASTROPHIC_TOPOLOGY_FRAGMENTATION")
+    return {"schema": "candidate-architectural-topology/2.0" if preauthority else "candidate-architectural-topology/1.0", "frame_id": frame_id,
             "source_sha256": (model.get("source") or {}).get("source_sha256"),
             "frame_bounds": frame["bounds"], "regions": regions, "boundaries": boundaries,
-            "bridges": bridges, "metrics": {"frame_area": frame_polygon.area,
+            "bridges": bridges, "preauthority": preauthority, "metrics": {"frame_area": frame_polygon.area,
                 "candidate_union_area": union.area, "candidate_frame_coverage": coverage,
-                "largest_region_frame_ratio": largest, "region_count": len(regions),
+                "activity_region_area":activity_area,"candidate_activity_region_coverage":activity_coverage,
+                "largest_region_frame_ratio": largest,"largest_region_activity_ratio":largest_activity,
+                "label_hosting_ratio":label_hosting,"object_hosting_ratio":object_hosting,
+                "atomic_face_count":len((preauthority or {}).get("atomic_faces") or []),
+                "connected_component_count":len((preauthority or {}).get("connected_components") or []),
+                "region_count": len(regions),
                 "boundary_count": len(boundaries), "bridge_count": len(bridges)},
             "provider_eligible": not reasons, "status": "PASS" if not reasons else "FASIHI_CANDIDATE_GRAPH_INSUFFICIENT",
             "blocking_reasons": reasons}
