@@ -228,8 +228,8 @@ def search_space_metrics(architecture, search_plan):
             "cad_objects_total":len(architecture.get("all_inserts") or []),
             "labels_total":len(architecture.get("all_texts") or []),
             "shaft_candidates_total":len(architecture.get("shafts") or []),
-            "zones_with_evidence":len(hit),"zone_count":len(zones),
-            "semantic_priority_hit_rate":len(hit)/len(zones) if zones else 0.0,
+            "zones_with_any_source_evidence":len(hit),"zone_count":len(zones),
+            "source_evidence_zone_hit_rate":len(hit)/len(zones) if zones else 0.0,
             "priority_area":area,"activity_bbox_area":activity,
             "priority_area_ratio":area/activity if activity else None,
             "potential_work_reduction":len(fallback)/len(items) if items else 0.0}

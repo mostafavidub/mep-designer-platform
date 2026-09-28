@@ -3,12 +3,19 @@
 import argparse, hashlib, json, time
 from pathlib import Path
 
-from cad_engine.architectural_space_engine import reconstruct_architecture
+from cad_engine.architectural_space_engine import NoVisionAdapter, reconstruct_architecture
 from cad_engine.semantic_guided_mechanical_preanalysis import (
     build_search_plan, run_shadow_ab, scope_architecture_to_frame, search_space_metrics,
 )
 
 DEPENDENCY="f7c09e3305cbf0ef23595b273922d51143da28b9"
+
+class DeterministicOnlyAdapter(NoVisionAdapter):
+    provider="NONE"
+    model="NONE"
+    last_call_metadata={"network_call":False}
+    def analyze(self, *, image_path, frame_id, regions, context=None):
+        return {"frame_id":frame_id,"physical_spaces":[]}
 
 def digest(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -25,7 +32,9 @@ def main():
     p=argparse.ArgumentParser(); p.add_argument("source"); p.add_argument("artifact"); p.add_argument("render_manifest"); p.add_argument("output")
     args=p.parse_args(); output=Path(args.output); output.mkdir(parents=True,exist_ok=True)
     source_sha=digest(args.source); artifact=json.loads(Path(args.artifact).read_text()); manifest=json.loads(Path(args.render_manifest).read_text())
-    t0=time.perf_counter(); architecture=reconstruct_architecture(args.source); parse_seconds=time.perf_counter()-t0
+    # The Mechanical shadow qualification reuses the cached semantic artifact;
+    # parsing must therefore be deterministic-only and must never call a provider.
+    t0=time.perf_counter(); architecture=reconstruct_architecture(args.source,vision_adapter=DeterministicOnlyAdapter()); parse_seconds=time.perf_counter()-t0
     frame_id=artifact["frame_id"]
     frame=next(row for row in architecture["frames"] if row["frame_id"]==frame_id)
     scoped=scope_architecture_to_frame(architecture,frame["bounds"],frame_id)
@@ -37,6 +46,19 @@ def main():
     baseline_frozen_hash=hashlib.sha256(json.dumps(baseline,sort_keys=True,default=str).encode()).hexdigest()
     comparison=run_shadow_ab(scoped,plan)
     metrics=search_space_metrics(scoped,plan)
+    mechanically_hit=set()
+    for zone in plan["search_zones"]:
+        for row in comparison["priority_detections"]:
+            point=row.get("point") or []
+            b=zone["cad_bbox"]
+            if len(point)>=2 and b[0] <= point[0] <= b[2] and b[1] <= point[1] <= b[3]:
+                mechanically_hit.add(zone["search_zone_id"])
+    metrics["zones_with_deterministic_mechanical_evidence"]=len(mechanically_hit)
+    metrics["semantic_priority_hit_rate"]=len(mechanically_hit)/len(plan["search_zones"]) if plan["search_zones"] else 0.0
+    metrics["would_baseline_recall_remain_100_percent_under_hard_pruning"]=(
+      bool(comparison["baseline"]["result"]["detections"] or comparison["baseline"]["result"]["candidates"])
+      and not comparison["fallback_detections"])
+    metrics["hard_pruning_currently_safe"]=False
     report={"schema":"fasihi-ground-semantic-mep-shadow-qualification/1.0","dependency_commit":DEPENDENCY,
       "source_sha256":source_sha,"frame_id":frame_id,"semantic_artifact_sha256":digest(args.artifact),
       "render_manifest_sha256":digest(args.render_manifest),"semantic_artifact_reused":True,"additional_deepseek_calls":0,
