@@ -157,3 +157,20 @@ ambiguity and completeness. Exact CAD facts are processed first. Vision is an
 optional adapter for unresolved semantics only and cannot overwrite contradictory
 CAD evidence. Every unresolved critical region becomes `INPUT_REQUIRED`; affected
 downstream engineering is blocked.
+
+## Local visual context v3 qualification
+
+Candidate Graph v2 now has deterministic source-only, region-geometry,
+evidence, topology and local Context Pack projections. Each pack preserves the
+frozen source/graph hashes, CAD crop, target and direct-neighbor IDs, source
+label/object handles, boundary IDs and render hash. Provider schemas contain
+only target IDs; visible neighboring IDs are context and cannot be returned.
+
+The Fasihi Ground diagnosis found that 72 of 76 unresolved regions had no hosted
+semantic label, 21 had no CAD-confirmed boundary support, 19 were small cells
+and four sat in dense local topology. Local QA also exposed candidate regions
+over vehicle/detail geometry and mixed building/site areas. A controlled six-ID
+test reduced UNKNOWN from six to five: one stair candidate was recovered while
+five remained explicitly insufficient. Transport and atomic validation passed,
+but semantic classification remains unqualified. Boundary and Bridge calls stay
+paused; the next blocker is deterministic candidate-region quality.
