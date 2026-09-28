@@ -83,6 +83,7 @@
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_vision_recovery.py",
+        "cad_engine/candidate_architectural_classification.py",
         "cad_engine/hybrid_architectural_recovery.py",
         "cad_engine/canonical_wall_topology.py",
         "cad_engine/architectural_topology_quality.py",
