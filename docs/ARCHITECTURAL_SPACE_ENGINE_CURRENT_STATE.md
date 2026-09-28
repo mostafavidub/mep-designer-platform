@@ -21,8 +21,18 @@ localization calls on Fasihi Ground. All five returned valid forced-tool JSON;
 actual response sizes were 398, 217, 97, 274, and 207 bytes. Transport is
 qualified for this case, but the semantic result is `SEMANTIC_SCOUT_PARTIAL`:
 Storage was inventoried but omitted by the initial group planner, and one broad
-Stair hint conflicts with exact Duct label evidence. Partial hints remain QA
-diagnostics and are not a final semantic map.
+Stair hint conflicts with exact Duct label evidence. Partial hints remain QA diagnostics and are not a final semantic map.
+
+Semantic Anchor Fusion now treats exact DXF functional labels as independent
+point anchors with higher semantic authority than Vision. Compatible colocated
+functions such as Stair+Duct remain a functional composition rather than a false
+conflict, while incompatible labels still fail closed. MEP_PREANALYSIS may use
+both non-conflicting Vision hints and exact anchors for search/prioritization,
+but neither source gains engineering geometry authority. Compact DeepSeek calls
+may retry exactly once only when the first response is technically unusable
+(provider failure, missing/invalid tool call, malformed JSON, or invalid compact
+schema); a valid but semantically weak answer is never retried automatically and
+no fallback transport is introduced.
 
 ## Blind real-project validation — 2026-09-26
 

@@ -153,11 +153,23 @@ DXF evidence in the request while minimizing response output: first a compact
 whole-floor inventory (`t`, `n`, `c`), then bounded localization calls by
 coherent semantic group (`t`, `b`, `c`).
 
-Each call is independently strict, budgeted below 1800 estimated bytes,
-observable on success and failure, and never retried automatically. Missing a
-required group prevents a final semantic map. Provider records are expanded
-locally with labels, objects, stable IDs, MEP groups and conflicts while
-retaining every non-authoritative safety field.
+Each call is independently strict, budgeted below 1800 estimated bytes and
+observable on success and failure. A technically unusable first response may be
+retried exactly once with the same governed request; this applies only to
+provider failure, missing/invalid tool call, malformed JSON, or invalid compact
+schema. Valid but semantically weak answers are not retried, and no fallback
+transport is introduced. Missing a required group prevents a final semantic map.
+Provider records are expanded locally with labels, objects, stable IDs, MEP
+groups and conflicts while retaining every non-authoritative safety field.
+
+Exact DXF functional text is also materialized as an
+`EXACT_DXF_SEMANTIC_ANCHOR` point evidence record. Semantic Anchor Fusion gives
+such anchors precedence over Vision while allowing compatible colocated
+functions such as Stair+Duct or open-plan Kitchen+Living to coexist without
+inventing partitions. Incompatible exact labels remain conflicts. Both anchors
+and non-conflicting Vision hints may qualify bounded `MEP_PREANALYSIS` search
+and verification priorities, but they retain `material_geometry = NONE`,
+`routing_authority = NONE`, and no final engineering authority.
 
 The first controlled Candidate Graph v2 classification used one Fasihi Ground
 request, an immutable hash manifest, a source-derived overlay, forced strict-tool

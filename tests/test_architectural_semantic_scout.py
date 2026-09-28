@@ -246,3 +246,100 @@ def test_compact_transport_records_complete_observability(tmp_path):
     meta=scout.call_metadata[0]
     assert meta["finish_reason"]=="tool_calls" and meta["json_validation_status"]=="VALID"
     assert meta["actual_response_bytes"] and meta["total_tokens"]==15
+
+
+
+class SequenceCompletions:
+    def __init__(self, responses):
+        self.responses=list(responses); self.calls=[]
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        if not self.responses:
+            raise RuntimeError("unexpected extra provider call")
+        return self.responses.pop(0)
+
+
+def test_exact_anchor_fusion_treats_stair_and_duct_as_composition_not_conflict():
+    from cad_engine.architectural_semantic_scout import build_exact_semantic_anchors, fuse_semantic_anchors
+    hints=enrich_compact_hints([{"t":"STAIR","b":[.1,.1,.7,.7],"c":.85}],
+        source_sha256="s",frame_id="F1",source_call_id="C1",labels=[],objects=[])
+    labels=[{"text":"داکت","normalized_position":[.3,.3]}]
+    anchors=build_exact_semantic_anchors(labels,source_sha256="s",frame_id="F1")
+    fused=fuse_semantic_anchors(hints,anchors)
+    assert fused["conflicts"]==[]
+    assert fused["compositions"]
+    assert fused["hints"][0]["semantic_status"]=="COMPOSED_WITH_EXACT_ANCHOR"
+
+
+def test_exact_anchor_can_seed_mep_preanalysis_without_vision():
+    from cad_engine.architectural_semantic_scout import build_compact_mep_preanalysis
+    labels=[{"text":"توالت","normalized_position":[.2,.2]},
+            {"text":"داکت","normalized_position":[.3,.3]},
+            {"text":"انبار","normalized_position":[.5,.5]}]
+    result=build_compact_mep_preanalysis([],labels,[],source_sha256="s",frame_id="F1")
+    assert result["qualification_status"]=="QUALIFIED_FOR_PREANALYSIS"
+    types={row["semantic_type"] for row in result["search_targets"]}
+    assert {"TOILET","DUCT","STORAGE"} <= types
+    assert result["engineering_authority"] is False
+
+
+def test_incompatible_exact_anchor_still_blocks_vision_hint():
+    from cad_engine.architectural_semantic_scout import build_exact_semantic_anchors, fuse_semantic_anchors
+    hints=enrich_compact_hints([{"t":"KITCHEN","b":[.1,.1,.5,.5],"c":.9}],
+        source_sha256="s",frame_id="F1",source_call_id="C1",labels=[],objects=[])
+    anchors=build_exact_semantic_anchors([{"text":"اتاق خواب","normalized_position":[.3,.3]}],
+        source_sha256="s",frame_id="F1")
+    fused=fuse_semantic_anchors(hints,anchors)
+    assert fused["conflicts"]
+    assert fused["hints"][0]["semantic_status"]=="CONFLICT"
+
+
+def test_compact_semantic_scout_retries_exactly_once_after_malformed_json(tmp_path):
+    image=tmp_path/"floor.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    bad_function=SimpleNamespace(name="submit_compact_semantic_inventory_v2",arguments='{"f":"F1"')
+    bad=SimpleNamespace(id="bad",choices=[SimpleNamespace(finish_reason="tool_calls",
+        message=SimpleNamespace(tool_calls=[SimpleNamespace(function=bad_function)]))],usage=None)
+    good=_compact_response("submit_compact_semantic_inventory_v2",
+        {"f":"F1","types":[{"t":"KITCHEN","n":1,"c":.9}]})
+    completions=SequenceCompletions([bad,good])
+    scout=DeepSeekCompactSemanticScout(api_key="secret",
+        client=SimpleNamespace(chat=SimpleNamespace(completions=completions)))
+    result=scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],
+        task_type="INVENTORY",group="WHOLE_FLOOR",expected_items=10)
+    assert result["payload"]["types"]
+    assert len(completions.calls)==2
+    assert scout.call_metadata[0]["retry_scheduled"] is True
+    assert scout.call_metadata[1]["attempt_number"]==2
+
+
+def test_compact_semantic_scout_never_retries_more_than_once(tmp_path):
+    image=tmp_path/"floor.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    def malformed(identifier):
+        function=SimpleNamespace(name="submit_compact_semantic_inventory_v2",arguments='{"f":"F1"')
+        return SimpleNamespace(id=identifier,choices=[SimpleNamespace(finish_reason="tool_calls",
+            message=SimpleNamespace(tool_calls=[SimpleNamespace(function=function)]))],usage=None)
+    completions=SequenceCompletions([malformed("one"),malformed("two")])
+    scout=DeepSeekCompactSemanticScout(api_key="secret",
+        client=SimpleNamespace(chat=SimpleNamespace(completions=completions)))
+    with pytest.raises(SemanticScoutError) as error:
+        scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],
+            task_type="INVENTORY",group="WHOLE_FLOOR",expected_items=10)
+    assert error.value.code=="COMPACT_JSON_INVALID"
+    assert len(completions.calls)==2
+
+
+def test_compact_semantic_scout_does_not_retry_valid_response(tmp_path):
+    image=tmp_path/"floor.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    completions=SequenceCompletions([_compact_response("submit_compact_semantic_inventory_v2",
+        {"f":"F1","types":[{"t":"LIVING","n":1,"c":.8}]})])
+    scout=DeepSeekCompactSemanticScout(api_key="secret",
+        client=SimpleNamespace(chat=SimpleNamespace(completions=completions)))
+    scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],
+        task_type="INVENTORY",group="WHOLE_FLOOR",expected_items=10)
+    assert len(completions.calls)==1

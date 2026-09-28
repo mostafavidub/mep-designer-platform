@@ -21,7 +21,9 @@ SEMANTIC_PROMPT_VERSION = "whole-floor-semantic-scout/1"
 COMPACT_SEMANTIC_SCHEMA = "architectural-semantic-hint/2.0"
 COMPACT_PROMPT_VERSION = "compact-multi-pass-semantic-scout/2"
 COMPACT_RESPONSE_BUDGET = 1800
+COMPACT_MAX_ATTEMPTS = 2
 SEMANTIC_AUTHORITY = "VISION_SEMANTIC_HINT"
+SEMANTIC_ANCHOR_AUTHORITY = "EXACT_DXF_SEMANTIC_ANCHOR"
 SEMANTIC_TYPES = {
     "BEDROOM", "MASTER_BEDROOM", "LIVING", "RECEPTION", "DINING", "OPEN_PLAN",
     "KITCHEN", "KITCHENETTE", "BATHROOM", "SHOWER", "TOILET", "ENTRANCE",
@@ -618,9 +620,120 @@ def _label_semantic_candidates(text: str) -> set[str]:
     value = str(text).strip().lower()
     mapping = {"آشپز": "KITCHEN", "حمام": "BATHROOM", "توالت": "TOILET", "سرویس": "TOILET",
                "خواب": "BEDROOM", "پذیرایی": "LIVING", "نشیمن": "LIVING", "راه پله": "STAIR",
-               "پله": "STAIR", "آسانسور": "ELEVATOR", "داکت": "DUCT", "حیاط": "YARD",
-               "پارکینگ": "PARKING", "بالکن": "BALCONY", "تراس": "TERRACE"}
+               "پله": "STAIR", "آسانسور": "ELEVATOR", "داکت": "DUCT", "شفت": "SHAFT",
+               "حیاط": "YARD", "پارکینگ": "PARKING", "بالکن": "BALCONY", "تراس": "TERRACE",
+               "انبار": "STORAGE", "کمد": "CLOSET", "ورودی": "ENTRANCE", "راهرو": "CORRIDOR",
+               "لابی": "LOBBY", "ناهار": "DINING"}
     return {kind for token, kind in mapping.items() if token in value}
+
+
+COLOCATED_SEMANTIC_GROUPS = (
+    {"STAIR", "STAIR_LANDING", "SHAFT", "DUCT", "ELEVATOR", "ELEVATOR_LOBBY"},
+    {"KITCHEN", "KITCHENETTE", "DINING", "LIVING", "RECEPTION", "OPEN_PLAN"},
+    {"BATHROOM", "SHOWER", "TOILET", "SHAFT", "DUCT"},
+)
+
+
+def _semantics_can_coexist(left: str, right: str) -> bool:
+    left, right = str(left).upper(), str(right).upper()
+    if left == right:
+        return True
+    return any(left in group and right in group for group in COLOCATED_SEMANTIC_GROUPS)
+
+
+def build_exact_semantic_anchors(labels: list[dict[str, Any]], *, source_sha256: str,
+                                 frame_id: str) -> list[dict[str, Any]]:
+    """Promote only exact DXF text meaning into point anchors, never geometry."""
+    anchors = []
+    for label in labels:
+        point = label.get("normalized_position")
+        if not point:
+            continue
+        for semantic_type in sorted(_label_semantic_candidates(label.get("text", ""))):
+            anchor_id = _stable("ANCHOR", [source_sha256, frame_id, label.get("text"), point, semantic_type])
+            anchors.append({"semantic_anchor_id": anchor_id, "semantic_type": semantic_type,
+                            "normalized_position": [float(point[0]), float(point[1])],
+                            "exact_text": str(label.get("text") or ""),
+                            "mep_groups": MEP_GROUPS.get(semantic_type, []),
+                            "authority": SEMANTIC_ANCHOR_AUTHORITY,
+                            "material_geometry": None, "routing_authority": "NONE",
+                            "engineering_geometry": False})
+    return anchors
+
+
+def fuse_semantic_anchors(hints: list[dict[str, Any]], anchors: list[dict[str, Any]]) -> dict[str, Any]:
+    """Fuse Vision bboxes with exact point anchors without forcing one zone per anchor."""
+    fused, conflicts, compositions = [], [], []
+    covered_anchor_ids = set()
+    for hint in hints:
+        bbox = hint["approx_bbox_norm"]
+        inside = [anchor for anchor in anchors
+                  if bbox[0] <= anchor["normalized_position"][0] <= bbox[2]
+                  and bbox[1] <= anchor["normalized_position"][1] <= bbox[3]]
+        matching = [a for a in inside if a["semantic_type"] == hint["semantic_type"]]
+        compatible = [a for a in inside if a["semantic_type"] != hint["semantic_type"]
+                      and _semantics_can_coexist(hint["semantic_type"], a["semantic_type"])]
+        incompatible = [a for a in inside if a not in matching and a not in compatible]
+        covered_anchor_ids.update(a["semantic_anchor_id"] for a in inside)
+        row = dict(hint)
+        row["exact_anchor_ids"] = sorted(a["semantic_anchor_id"] for a in matching)
+        row["coexisting_anchor_ids"] = sorted(a["semantic_anchor_id"] for a in compatible)
+        row["conflicting_anchor_ids"] = sorted(a["semantic_anchor_id"] for a in incompatible)
+        if incompatible:
+            row["semantic_status"] = "CONFLICT"
+            conflicts.append({"semantic_hint_id": hint["semantic_hint_id"],
+                              "vision_type": hint["semantic_type"],
+                              "anchor_types": sorted({a["semantic_type"] for a in incompatible}),
+                              "reason": "INCOMPATIBLE_EXACT_DXF_ANCHOR"})
+        elif matching:
+            row["semantic_status"] = "EXACT_ANCHOR_SUPPORTED"
+        elif compatible:
+            row["semantic_status"] = "COMPOSED_WITH_EXACT_ANCHOR"
+            compositions.extend({"semantic_hint_id": hint["semantic_hint_id"],
+                                 "semantic_anchor_id": a["semantic_anchor_id"],
+                                 "relation": "COLOCATED_FUNCTIONAL_COMPOSITION"}
+                                for a in compatible)
+        fused.append(row)
+    uncovered = [a for a in anchors if a["semantic_anchor_id"] not in covered_anchor_ids]
+    return {"hints": fused, "exact_anchors": anchors, "uncovered_exact_anchors": uncovered,
+            "compositions": compositions, "conflicts": conflicts}
+
+
+def build_compact_mep_preanalysis(hints: list[dict[str, Any]], labels: list[dict[str, Any]],
+                                  objects: list[dict[str, Any]], *, source_sha256: str,
+                                  frame_id: str) -> dict[str, Any]:
+    """Qualify semantic evidence for search/prioritization only, never final design."""
+    anchors = build_exact_semantic_anchors(labels, source_sha256=source_sha256, frame_id=frame_id)
+    fusion = fuse_semantic_anchors(hints, anchors)
+    groups: dict[str, list[str]] = {}
+    search_targets = []
+    for hint in fusion["hints"]:
+        if hint.get("semantic_status") == "CONFLICT":
+            continue
+        for group in hint.get("mep_groups") or []:
+            groups.setdefault(group, []).append(hint["semantic_hint_id"])
+        search_targets.append({"evidence_id": hint["semantic_hint_id"], "semantic_type": hint["semantic_type"],
+                               "location_kind": "APPROXIMATE_BBOX", "location": hint["approx_bbox_norm"],
+                               "authority": hint["authority"]})
+    for anchor in anchors:
+        for group in anchor.get("mep_groups") or []:
+            groups.setdefault(group, []).append(anchor["semantic_anchor_id"])
+        search_targets.append({"evidence_id": anchor["semantic_anchor_id"], "semantic_type": anchor["semantic_type"],
+                               "location_kind": "EXACT_DXF_TEXT_POINT", "location": anchor["normalized_position"],
+                               "authority": anchor["authority"]})
+    for key in groups:
+        groups[key] = sorted(set(groups[key]))
+    status = ("INPUT_REQUIRED" if not search_targets else
+              "PARTIAL_PREANALYSIS" if fusion["conflicts"] else "QUALIFIED_FOR_PREANALYSIS")
+    return {"mode": "MEP_PREANALYSIS", "qualification_status": status,
+            "semantic_anchor_fusion": fusion, "semantic_hint_groups": groups,
+            "search_targets": search_targets,
+            "allowed_uses": ["FIXTURE_SEARCH", "WET_CORE_SEARCH", "SHAFT_SEARCH",
+                             "WORKFLOW_SELECTION", "INPUT_PLANNING", "VERIFICATION_PRIORITY"],
+            "forbidden_uses": ["FINAL_ROUTING", "FINAL_EQUIPMENT_PLACEMENT", "FINAL_LOADS",
+                               "ENGINEER_READY_OUTPUT", "VISION_BBOX_AS_ROOM_GEOMETRY"],
+            "engineering_authority": False}
+
 
 
 def plan_compact_calls(inventory: dict[str, Any], labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -669,7 +782,8 @@ def enrich_compact_hints(rows: list[dict[str, Any]], *, source_sha256: str, fram
         inside_objects = [x["type"] for x in objects if x0 <= x["normalized_position"][0] <= x1
                           and y0 <= x["normalized_position"][1] <= y1]
         label_candidates = set().union(*(_label_semantic_candidates(x) for x in inside_labels)) if inside_labels else set()
-        conflict = bool(label_candidates and row["t"] not in label_candidates)
+        conflicting_labels = {kind for kind in label_candidates if not _semantics_can_coexist(row["t"], kind)}
+        conflict = bool(conflicting_labels)
         status = ("CONFLICT" if conflict else "MULTI_EVIDENCE_SUPPORTED" if inside_labels and inside_objects
                   else "VISION_PLUS_LABEL" if inside_labels else "VISION_PLUS_OBJECT" if inside_objects else "VISION_ONLY")
         identity = [source_sha256, frame_id, source_call_id, row["t"], [round(x, 5) for x in row["b"]]]
@@ -697,7 +811,7 @@ def compact_semantic_completeness(inventory: dict, hints: list[dict], labels: li
 
 
 class DeepSeekCompactSemanticScout:
-    """Strict compact multi-pass transport with zero retry/fallback."""
+    """Strict compact multi-pass transport with one bounded technical retry and no fallback."""
     def __init__(self, *, api_key: str | None = None, model: str = "deepseek-flash", client=None):
         credential = api_key or os.getenv("DEEPSEEK_API_KEY")
         if client is None:
@@ -707,9 +821,9 @@ class DeepSeekCompactSemanticScout:
             client = OpenAI(api_key=credential, base_url="https://api.deepseek.com/beta", timeout=120, max_retries=0)
         self.client, self.model, self.call_metadata = client, model, []
 
-    def _call(self, *, image_path: str, frame_id: str, labels: list[dict], objects: list[dict],
-              task_type: str, group: str, allowed_types: list[str] | None = None,
-              expected_items: int = 0) -> dict[str, Any]:
+    def _call_once(self, *, image_path: str, frame_id: str, labels: list[dict], objects: list[dict],
+                   task_type: str, group: str, allowed_types: list[str] | None = None,
+                   expected_items: int = 0, attempt_number: int = 1) -> dict[str, Any]:
         inventory = task_type == "INVENTORY"
         schema = compact_inventory_schema() if inventory else compact_localization_schema(allowed_types or [])
         task = ("Identify only which architectural functions appear and their approximate counts. Do not return coordinates. "
@@ -733,7 +847,7 @@ class DeepSeekCompactSemanticScout:
                     "request_hash": request_hash, "render_hash": image_hash,
                     "prompt_version": COMPACT_PROMPT_VERSION, "schema_version": COMPACT_SEMANTIC_SCHEMA,
                     "estimated_response_bytes": estimate["estimated_response_bytes"],
-                    "json_validation_status": "NOT_RUN"}
+                    "attempt_number": attempt_number, "json_validation_status": "NOT_RUN"}
         try:
             response = self.client.chat.completions.create(model=self.model,
                 messages=[{"role":"user","content":[{"type":"text","text":prompt},
@@ -758,7 +872,7 @@ class DeepSeekCompactSemanticScout:
                 payload = json.loads(raw)
             except json.JSONDecodeError as exc:
                 metadata.update({"json_error_position": exc.pos, "json_validation_status":"MALFORMED"})
-                raise SemanticScoutError("SEMANTIC_RESPONSE_BUDGET_EXCEEDED", "Compact response JSON was malformed") from exc
+                raise SemanticScoutError("COMPACT_JSON_INVALID", "Compact response JSON was malformed") from exc
             validated = (validate_compact_inventory(payload, frame_id=frame_id) if inventory else
                          validate_compact_localization(payload, frame_id=frame_id, allowed_types=allowed_types or []))
             metadata["json_validation_status"] = "VALID"
@@ -771,3 +885,31 @@ class DeepSeekCompactSemanticScout:
             raise SemanticScoutError("SEMANTIC_PROVIDER_FAILED", "Compact semantic call failed") from exc
         finally:
             self.call_metadata.append(metadata)
+
+
+    def _call(self, *, image_path: str, frame_id: str, labels: list[dict], objects: list[dict],
+              task_type: str, group: str, allowed_types: list[str] | None = None,
+              expected_items: int = 0) -> dict[str, Any]:
+        """Retry exactly once only when the first provider result is technically unusable."""
+        retryable = {"SEMANTIC_PROVIDER_FAILED", "COMPACT_TOOL_CALL_INVALID", "COMPACT_JSON_INVALID",
+                     "COMPACT_INVENTORY_INVALID", "COMPACT_LOCALIZATION_INVALID"}
+        try:
+            return self._call_once(image_path=image_path, frame_id=frame_id, labels=labels, objects=objects,
+                                   task_type=task_type, group=group, allowed_types=allowed_types,
+                                   expected_items=expected_items, attempt_number=1)
+        except SemanticScoutError as first_error:
+            if first_error.code not in retryable:
+                raise
+            if self.call_metadata:
+                self.call_metadata[-1].update({"retry_scheduled": True, "retry_reason": first_error.code})
+            try:
+                result = self._call_once(image_path=image_path, frame_id=frame_id, labels=labels, objects=objects,
+                                         task_type=task_type, group=group, allowed_types=allowed_types,
+                                         expected_items=expected_items, attempt_number=2)
+                if self.call_metadata:
+                    self.call_metadata[-1]["retry_of_previous_attempt"] = True
+                return result
+            except SemanticScoutError:
+                if self.call_metadata:
+                    self.call_metadata[-1]["retry_of_previous_attempt"] = True
+                raise
