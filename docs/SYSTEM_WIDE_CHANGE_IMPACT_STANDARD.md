@@ -223,3 +223,16 @@ A final architectural issue cannot be Submission Ready until exact-file
 DimensionIntent identity and visual QA pass. The six-project architectural
 reference corpus is validation evidence only and cannot supply hidden numeric or
 regulatory defaults.
+
+## Semantic-guided Mechanical shadow search
+
+SWCIS 4.56.0 permits qualified Semantic Scout evidence to reorder Mechanical
+pre-analysis investigation only. Every search target is explicitly
+`SEARCH_PRIORITY_ONLY`, carries source/frame/evidence provenance, has no material
+or routing authority, and is followed by an exhaustive deterministic fallback.
+The same detector and acceptance rules must process every candidate exactly once.
+Semantic evidence is forbidden from PMM room truth, system requirements,
+engineering geometry, network nodes or edges, routes, calculations, equipment
+placement, penetrations, risers and final CAD materialization. A stale source,
+frame, render transform or architecture dependency fails closed. Shadow evidence
+cannot justify hard pruning or a production-design claim.
