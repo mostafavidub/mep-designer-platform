@@ -95,6 +95,7 @@
         "tools/architectural_wall_admission_qa.py",
       "tools/generate_hybrid_architecture_qa.py",
       "tools/run_semantic_mep_shadow_ab.py",
+      "tools/run_fixture_recognition_audit.py",
         "app/dxf_output.py",
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**"

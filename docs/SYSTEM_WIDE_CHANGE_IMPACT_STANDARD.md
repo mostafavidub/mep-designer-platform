@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.55.0
+**Canonical version:** 4.57.0
 
 **Status:** LOCKED
 
@@ -236,3 +236,15 @@ engineering geometry, network nodes or edges, routes, calculations, equipment
 placement, penetrations, risers and final CAD materialization. A stale source,
 frame, render transform or architecture dependency fails closed. Shadow evidence
 cannot justify hard pruning or a production-design claim.
+
+## Deterministic fixture and equipment recognition
+
+SWCIS 4.57.0 separates source-derived object identity from plan context, room
+hosting and engineering authority. A deterministically confirmed object remains
+visible when hosting is unresolved, but it is only `PREANALYSIS_EVIDENCE` until
+the independent plan-context and downstream topology prerequisites pass.
+Room-function labels and Semantic Scout zones may prioritize investigation but
+cannot instantiate objects. Ports are type requirements only; recognition may
+not fabricate connection coordinates, network nodes, routes, penetrations,
+risers or calculations. Canonical extraction exposes nested provenance and
+primitive evidence once, and recognition must not trigger a second DXF parse.

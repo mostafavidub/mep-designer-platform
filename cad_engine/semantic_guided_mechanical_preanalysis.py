@@ -172,11 +172,16 @@ def scope_architecture_to_frame(architecture, frame_bounds, frame_id):
     inside=lambda p: bool(p and xmin <= float(p[0]) <= xmax and ymin <= float(p[1]) <= ymax)
     rooms=[row for row in architecture.get("rooms") or []
            if row.get("plan_id") == frame_id or inside(row.get("centroid"))]
+    def primitive_inside(row):
+        points=([row["point"]] if row.get("point") else [row["start"],row["end"]]
+                if row.get("start") and row.get("end") else row.get("points") or row.get("geometry") or [])
+        return any(inside(point) for point in points)
     return {**architecture, "rooms": rooms,
             "physical_spaces":[row for row in architecture.get("physical_spaces") or []
                                if row.get("frame_id") == frame_id or inside(row.get("centroid"))],
             "all_inserts":[row for row in architecture.get("all_inserts") or [] if inside(row.get("point"))],
             "all_texts":[row for row in architecture.get("all_texts") or [] if inside(row.get("point"))],
+            "recognition_primitives":[row for row in architecture.get("recognition_primitives") or [] if primitive_inside(row)],
             "shafts":[row for row in architecture.get("shafts") or [] if row.get("frame_id") == frame_id or inside(row.get("centroid"))]}
 
 

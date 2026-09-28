@@ -459,10 +459,12 @@ def _extract(doc):
     primitives, texts, objects, dimensions, boundary_lines, boundary_meta, boundary_rejections = [], [], [], [], [], [], []
     counts = Counter(); seen_nested = set()
 
-    def visit(entity, transform_source=None, depth=0):
+    def visit(entity, transform_source=None, depth=0, root_insert_handle=None, nested_path=()):
         if depth > 12: return
         kind = entity.dxftype(); counts[kind] += 1; layer = _layer(entity); handle = _handle(entity)
-        record = {"entity_type": kind, "handle": handle, "layer": layer, "source_block": transform_source}
+        record = {"entity_type": kind, "handle": handle, "layer": layer, "source_block": transform_source,
+                  "root_insert_handle": root_insert_handle, "nested_path": list(nested_path),
+                  "nested_depth": depth}
         if kind == "LINE":
             a, b = _point(entity, "start"), _point(entity, "end")
             if a and b and a != b:
@@ -513,16 +515,30 @@ def _extract(doc):
         elif kind == "INSERT":
             p = _point(entity); name = str(getattr(entity.dxf, "name", "") or "")
             kinds = _classify_object(name, layer)
+            insert_handle = handle or root_insert_handle
+            path = nested_path + ((name or "<anonymous>"),)
             try:
                 children = list(entity.virtual_entities())
             except Exception:
                 children = []
             if p:
-                row = {**record, "name": name, "point": p, "object_types": kinds}; objects.append(row); primitives.append(row)
+                row = {**record, "name": name, "point": p, "object_types": kinds,
+                       "root_insert_handle": root_insert_handle or handle,
+                       "nested_path": list(path),
+                       "rotation": float(getattr(entity.dxf, "rotation", 0) or 0),
+                       "scale": [float(getattr(entity.dxf, axis, 1) or 1)
+                                 for axis in ("xscale", "yscale", "zscale")]}
+                try:
+                    row["attributes"] = [{"tag": str(a.dxf.tag), "text": str(a.dxf.text),
+                                          "handle": _handle(a)} for a in entity.attribs]
+                except Exception:
+                    row["attributes"] = []
+                objects.append(row); primitives.append(row)
             key = (handle, depth)
             if key not in seen_nested:
                 seen_nested.add(key)
-                for child in children: visit(child, name, depth + 1)
+                for child in children:
+                    visit(child, name, depth + 1, root_insert_handle or insert_handle, path)
         elif kind in {"CIRCLE", "SPLINE", "HATCH", "SOLID", "TRACE", "LEADER", "MLEADER"}:
             primitives.append(record)
 
@@ -1427,6 +1443,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "walls": [{"start": list(line.coords)[0], "end": list(line.coords)[-1]} for line in extracted["boundary_lines"]],
              "doors": [o for o in openings if o["kind"]=="door"], "windows":[o for o in openings if o["kind"]=="window"], "columns": [], "shafts": [],
              "all_inserts": extracted["objects"], "all_texts": extracted["texts"],
+             "recognition_primitives": extracted["primitives"],
              "quality": {"room_count": len(rooms), "rooms_with_polygon": len(rooms), "wall_segments": len(extracted["boundary_lines"]),
                          "canonical_space_count": len(spaces), "status": completeness["status"]}}
     model["recognition_preview_svg"] = recognition_svg(model)

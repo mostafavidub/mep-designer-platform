@@ -890,6 +890,7 @@
         "tests/test_canonical_wall_topology.py",
         "tests/test_architecture_space_equipment_100.py",
         "tests/test_fixture_recognition_v14.py",
+        "tests/test_fixture_object_recognition_v2.py",
         "tests/test_plan_frame_separation.py",
         "tests/test_mechanical_pre_submission_delivery.py"
       ],
