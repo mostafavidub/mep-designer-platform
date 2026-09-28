@@ -83,10 +83,12 @@
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_vision_recovery.py",
+        "cad_engine/hybrid_architectural_recovery.py",
         "cad_engine/canonical_wall_topology.py",
         "cad_engine/architectural_topology_quality.py",
         "docs/adr/ADR-ARCH-CANONICAL-SPACE-ENGINE.md",
         "tools/architectural_wall_admission_qa.py",
+        "tools/generate_hybrid_architecture_qa.py",
         "app/dxf_output.py",
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**"
