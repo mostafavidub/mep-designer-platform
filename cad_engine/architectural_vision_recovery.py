@@ -70,9 +70,10 @@ class RecoveryStage(str, Enum):
 
 
 class VisionRecoveryError(RuntimeError):
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, *, details: dict[str, Any] | None = None):
         super().__init__(message)
         self.code = code
+        self.details = details or {}
 
 
 @dataclass(frozen=True)
@@ -471,15 +472,49 @@ def validate_shell_boundaries_payload(payload: Any, *, frame_id: str) -> dict:
             raise VisionRecoveryError("VISION_VALUE_INVALID","Invalid V1 boundary value")
         if not isinstance(row["evidence"],list) or len(row["evidence"])>5:
             raise VisionRecoveryError("VISION_SCHEMA_INVALID","V1 boundary evidence is not bounded")
-    for row in payload["exterior_regions"]:
-        if not isinstance(row,dict) or set(row)!={"region_id","polygon_px","role","confidence"}:
-            raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 exterior region")
-        if len(row["polygon_px"])<3 or row["role"] not in EXTERIOR_REGION_ROLES or not 0<=float(row["confidence"])<=1:
-            raise VisionRecoveryError("VISION_VALUE_INVALID","Invalid V1 exterior-region value")
+    exterior_keys={"region_id","polygon_px","role","confidence"}
+    for index,row in enumerate(payload["exterior_regions"]):
+        actual_keys=set(row) if isinstance(row,dict) else set()
+        if not isinstance(row,dict) or actual_keys!=exterior_keys:
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 exterior region",
+                details={"collection":"exterior_regions","index":index,"validation_path":f"$.exterior_regions[{index}]",
+                         "expected_keys":sorted(exterior_keys),"actual_keys":sorted(actual_keys),
+                         "missing_keys":sorted(exterior_keys-actual_keys),"extra_keys":sorted(actual_keys-exterior_keys),
+                         "type_mismatch":None if isinstance(row,dict) else type(row).__name__})
+        polygon=row["polygon_px"]
+        invalid_geometry=(not isinstance(polygon,list) or len(polygon)<3 or any(
+            not isinstance(point,list) or len(point)!=2 or not all(isinstance(value,(int,float)) for value in point)
+            for point in polygon))
+        if invalid_geometry or row["role"] not in EXTERIOR_REGION_ROLES or not isinstance(row["confidence"],(int,float)) or not 0<=float(row["confidence"])<=1:
+            raise VisionRecoveryError("VISION_VALUE_INVALID","Invalid V1 exterior-region value",
+                details={"collection":"exterior_regions","index":index,"validation_path":f"$.exterior_regions[{index}]",
+                         "invalid_role":row["role"] if row["role"] not in EXTERIOR_REGION_ROLES else None,
+                         "invalid_geometry":invalid_geometry,
+                         "type_mismatch":None if isinstance(row["confidence"],(int,float)) else "confidence"})
     for row in payload["uncertainties"]:
         if not isinstance(row,dict) or set(row)!={"geometry_px","reason"} or len(row["geometry_px"])<2:
             raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 uncertainty")
     return payload
+
+
+def _store_invalid_v1_diagnostic(*, raw: str, metadata: dict[str, Any], error: VisionRecoveryError) -> str:
+    """Persist invalid provider output outside the successful cache, without secrets or image data."""
+    root=Path(os.getenv("ARCH_VISION_DIAGNOSTIC_DIR") or "/tmp/planha-architecture-vision/failures")
+    root.mkdir(parents=True,exist_ok=True)
+    identity={key:metadata.get(key) for key in (
+        "provider","model","request_id","task_type","task_prompt_version","task_schema_version",
+        "render_sha256","source_sha256","latency_seconds","usage","response_bytes")}
+    name=sha256(json.dumps([identity,raw,error.code,error.details],sort_keys=True,default=str).encode()).hexdigest()
+    path=root/f"v1-invalid-{name}.json"
+    try:
+        raw_json=json.loads(raw)
+    except json.JSONDecodeError:
+        raw_json={"malformed_json":True,"raw_utf8":raw[:200000]}
+    artifact={**identity,"raw_response_json":raw_json,"validation_error":error.code,
+              "validation_message":str(error),"validation_path":error.details.get("validation_path"),
+              "validation_details":error.details}
+    path.write_text(json.dumps(artifact,ensure_ascii=False,indent=2,sort_keys=True),encoding="utf-8")
+    return str(path)
 
 
 def validate_global_payload(payload: Any, *, frame_id: str) -> dict:
@@ -648,9 +683,18 @@ class OpenAICompatibleVisionAdapter:
                                  "response_bytes":len(raw.encode("utf-8")),
                                  "latency_seconds":round(time.perf_counter()-started,6)}
         try:
-            payload=validate_shell_boundaries_payload(json.loads(raw),frame_id=frame_id)
+            parsed=json.loads(raw)
+            payload=validate_shell_boundaries_payload(parsed,frame_id=frame_id)
         except json.JSONDecodeError as exc:
-            raise VisionRecoveryError("VISION_JSON_INVALID","Vision provider returned malformed JSON") from exc
+            error=VisionRecoveryError("VISION_JSON_INVALID","Vision provider returned malformed JSON",
+                                      details={"validation_path":"$"})
+            diagnostic_path=_store_invalid_v1_diagnostic(raw=raw,metadata=self.last_call_metadata,error=error)
+            self.last_call_metadata["diagnostic_path"]=diagnostic_path
+            raise error from exc
+        except VisionRecoveryError as error:
+            diagnostic_path=_store_invalid_v1_diagnostic(raw=raw,metadata=self.last_call_metadata,error=error)
+            self.last_call_metadata["diagnostic_path"]=diagnostic_path
+            raise
         cache_path.write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True),encoding="utf-8")
         return payload
 

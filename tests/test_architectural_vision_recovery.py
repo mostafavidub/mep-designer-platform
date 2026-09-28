@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import ezdxf
@@ -262,6 +263,29 @@ def test_v1_timeout_has_no_blind_retry(tmp_path):
     with pytest.raises(VisionRecoveryError) as caught:
         adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")
     assert caught.value.code=="VISION_TIMEOUT" and responses.calls==1
+
+
+def test_v1_invalid_provider_payload_is_diagnosed_outside_success_cache(tmp_path,monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    monkeypatch.setenv("ARCH_VISION_DIAGNOSTIC_DIR",str(tmp_path/"diagnostics"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    invalid=_v1_payload(); invalid["exterior_regions"]=[{
+        "region_id":"E1","polygon_px":[[0,0],[2,0],[2,2]],"role":"YARD","confidence":.8,
+        "unexpected":"must not be accepted"}]
+    response=SimpleNamespace(id="bad-v1",output_text=json.dumps(invalid),
+                             usage=SimpleNamespace(input_tokens=4,output_tokens=5,total_tokens=9))
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+        client=SimpleNamespace(responses=SimpleNamespace(create=lambda **_:response)),max_retries=0)
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1",
+                                         context={"source_sha256":"a"*64})
+    assert caught.value.details["validation_path"]=="$.exterior_regions[0]"
+    assert caught.value.details["extra_keys"]==["unexpected"]
+    diagnostic=json.loads(Path(adapter.last_call_metadata["diagnostic_path"]).read_text())
+    assert diagnostic["raw_response_json"]["exterior_regions"][0]["unexpected"]=="must not be accepted"
+    assert not list((tmp_path/"cache").glob("vision-*.json"))
 
 
 def test_provider_routing_and_deepseek_base_url(monkeypatch):
