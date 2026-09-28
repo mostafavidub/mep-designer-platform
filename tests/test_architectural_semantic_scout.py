@@ -54,7 +54,7 @@ def test_normalized_cad_transform_is_reversible():
 def test_hint_authority_can_never_be_engineering_geometry():
     hint=assign_hint_ids([item()],source_sha256="s",frame_id="f",call_hash="c")[0]
     assert hint["authority"]=="VISION_SEMANTIC_HINT"
-    assert hint["material_geometry"] is None
+    assert hint["material_geometry"]=="NONE"
     assert hint["routing_authority"]=="NONE"
     assert hint["engineering_geometry"] is False
 
@@ -207,7 +207,7 @@ def test_compact_enrichment_is_local_and_never_geometry_authority():
     hint=enrich_compact_hints(rows,source_sha256="s",frame_id="F1",source_call_id="C1",
                               labels=labels,objects=objects)[0]
     assert hint["semantic_status"]=="MULTI_EVIDENCE_SUPPORTED"
-    assert hint["material_geometry"] is None and hint["routing_authority"]=="NONE"
+    assert hint["material_geometry"]=="NONE" and hint["routing_authority"]=="NONE"
     assert hint["engineering_geometry"] is False
 
 
@@ -342,4 +342,111 @@ def test_compact_semantic_scout_does_not_retry_valid_response(tmp_path):
         client=SimpleNamespace(chat=SimpleNamespace(completions=completions)))
     scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],
         task_type="INVENTORY",group="WHOLE_FLOOR",expected_items=10)
+    assert len(completions.calls)==1
+    assert scout.call_metadata[0]["retry_scheduled"] is False
+    assert scout.call_metadata[0]["retry_reason"] is None
+    assert scout.call_metadata[0]["attempt_result"]=="SUCCESS"
+
+
+@pytest.mark.parametrize("left,right", [
+    ("STAIR", "SHAFT"), ("BATHROOM", "DUCT"), ("TOILET", "SHAFT"),
+    ("KITCHEN", "LIVING"),
+])
+def test_required_functional_compositions_are_not_conflicts(left, right):
+    from cad_engine.architectural_semantic_scout import build_exact_semantic_anchors, fuse_semantic_anchors
+    label = {"SHAFT":"شفت", "DUCT":"داکت", "LIVING":"پذیرایی"}[right]
+    hints=enrich_compact_hints([{"t":left,"b":[.1,.1,.6,.6],"c":.8}],source_sha256="s",
+        frame_id="F1",source_call_id="C1",labels=[],objects=[])
+    anchors=build_exact_semantic_anchors([{"text":label,"normalized_position":[.3,.3]}],
+        source_sha256="s",frame_id="F1")
+    result=fuse_semantic_anchors(hints,anchors)
+    assert result["conflicts"]==[]
+    assert result["compositions"][0]["relation"]=="COLOCATED_FUNCTIONAL_COMPOSITION"
+
+
+def test_exact_anchor_rejects_invalid_normalized_position():
+    from cad_engine.architectural_semantic_scout import build_exact_semantic_anchors
+    with pytest.raises(SemanticScoutError) as error:
+        build_exact_semantic_anchors([{"text":"توالت","normalized_position":[1.2,.2]}],
+                                     source_sha256="s",frame_id="F1")
+    assert error.value.code=="SEMANTIC_LOCATION_INVALID"
+
+
+def test_mep_preanalysis_hard_safety_gate_is_explicit():
+    from cad_engine.architectural_semantic_scout import build_compact_mep_preanalysis
+    hint=enrich_compact_hints([{"t":"KITCHEN","b":[.1,.1,.4,.4],"c":.9}],source_sha256="s",
+        frame_id="F1",source_call_id="C1",labels=[],objects=[])
+    result=build_compact_mep_preanalysis(hint,[],[],source_sha256="s",frame_id="F1")
+    forbidden={"FINAL_FIXTURE_PLACEMENT","FINAL_PIPE_ROUTE","FINAL_DRAIN_ROUTE","FINAL_VENT_ROUTE",
+        "FINAL_DUCT_ROUTE","FINAL_CABLE_ROUTE","FINAL_ELECTRICAL_EQUIPMENT_PLACEMENT",
+        "ROOM_AREA_LOAD_CALCULATION","WALL_PENETRATION","SLEEVE","ROUTING_OBSTACLE",
+        "ENGINEER_READY_OUTPUT"}
+    assert forbidden <= set(result["forbidden_uses"])
+    assert result["investigation_priorities"]
+    assert all(row["authority"]=="PREANALYSIS_ONLY" for row in result["investigation_priorities"])
+    assert all(target["location_kind"] in {"APPROXIMATE_BBOX","EXACT_DXF_TEXT_POINT"}
+               for target in result["search_targets"])
+    assert "route" not in result and "equipment" not in result and "loads" not in result
+
+
+def test_functional_label_audit_excludes_drafting_annotations():
+    inv={"types":[{"t":"TOILET","n":1}]}
+    labels=[{"text":"توالت","normalized_position":[.2,.2]},
+            {"text":"SC:1/100","normalized_position":[.5,.9]}]
+    hints=enrich_compact_hints([{"t":"TOILET","b":[.1,.1,.3,.3],"c":.9}],source_sha256="s",
+        frame_id="F1",source_call_id="C1",labels=labels,objects=[])
+    result=compact_semantic_completeness(inv,hints,labels)
+    assert result["functional_labels_explained"]==["توالت"]
+    assert result["functional_labels_unexplained"]==[]
+    assert result["non_semantic_annotation_count"]==1
+
+
+def test_invalid_compact_values_are_schema_failures_not_provider_failures():
+    with pytest.raises(SemanticScoutError) as inv:
+        validate_compact_inventory({"f":"F1","types":[{"t":"KITCHEN","n":"bad","c":.9}]},frame_id="F1")
+    assert inv.value.code=="COMPACT_INVENTORY_INVALID"
+    with pytest.raises(SemanticScoutError) as loc:
+        validate_compact_localization({"f":"F1","z":[{"t":"KITCHEN","b":[.1,.2,"bad",.5],"c":.8}]},
+                                      frame_id="F1",allowed_types={"KITCHEN"})
+    assert loc.value.code=="COMPACT_LOCALIZATION_INVALID"
+
+
+def test_storage_inventory_is_not_silently_dropped_by_planner():
+    planned=plan_compact_calls({"f":"F1","types":[{"t":"STORAGE","n":1,"c":.8}]},[])
+    assert any("STORAGE" in row["types"] for row in planned)
+
+
+def test_provider_transport_failure_retries_once_and_records_terminal_result(tmp_path):
+    image=tmp_path/"floor.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    good=_compact_response("submit_compact_semantic_inventory_v2",
+        {"f":"F1","types":[{"t":"UNKNOWN","n":1,"c":.1}]})
+    completions=SequenceCompletions([RuntimeError("network"),good])
+    original_create=completions.create
+    def create(**kwargs):
+        item=completions.responses[0]
+        if isinstance(item,Exception):
+            completions.calls.append(kwargs); completions.responses.pop(0); raise item
+        return original_create(**kwargs)
+    completions.create=create
+    scout=DeepSeekCompactSemanticScout(api_key="secret",
+        client=SimpleNamespace(chat=SimpleNamespace(completions=completions)))
+    scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],task_type="INVENTORY",
+                group="WHOLE_FLOOR",expected_items=10)
+    assert len(completions.calls)==2
+    assert scout.call_metadata[0]["retry_reason"]=="SEMANTIC_PROVIDER_FAILED"
+    assert scout.call_metadata[1]["retry_result"]=="SUCCESS"
+
+
+def test_valid_unknown_semantics_do_not_trigger_retry(tmp_path):
+    image=tmp_path/"floor.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    completions=SequenceCompletions([_compact_response("submit_compact_semantic_inventory_v2",
+        {"f":"F1","types":[{"t":"UNKNOWN","n":1,"c":.05}]})])
+    scout=DeepSeekCompactSemanticScout(api_key="secret",
+        client=SimpleNamespace(chat=SimpleNamespace(completions=completions)))
+    scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],task_type="INVENTORY",
+                group="WHOLE_FLOOR",expected_items=10)
     assert len(completions.calls)==1

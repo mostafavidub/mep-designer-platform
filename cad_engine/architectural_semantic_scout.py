@@ -122,7 +122,7 @@ def assign_hint_ids(items: list[dict[str, Any]], *, source_sha256: str, frame_id
                     [round(x, 5) for x in row["approx_center_norm"]]]
         result.append({"semantic_hint_id": _stable("SEM", identity), **row,
                        "mep_groups": MEP_GROUPS.get(row["semantic_type"], []),
-                       "authority": SEMANTIC_AUTHORITY, "material_geometry": None,
+                       "authority": SEMANTIC_AUTHORITY, "material_geometry": "NONE",
                        "routing_authority": "NONE", "engineering_geometry": False})
     return result
 
@@ -586,7 +586,10 @@ def validate_compact_inventory(payload: dict[str, Any], *, frame_id: str) -> dic
         kind = str(row["t"]).upper()
         if kind not in SEMANTIC_TYPES or kind in seen or isinstance(row["n"], bool):
             raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory type/count is invalid")
-        count, confidence = int(row["n"]), float(row["c"])
+        try:
+            count, confidence = int(row["n"]), float(row["c"])
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory values are invalid") from exc
         if count != row["n"] or not 0 <= count <= 99 or not math.isfinite(confidence) or not 0 <= confidence <= 1:
             raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory values are invalid")
         seen.add(kind); result.append({"t": kind, "n": count, "c": confidence})
@@ -604,10 +607,16 @@ def validate_compact_localization(payload: dict[str, Any], *, frame_id: str,
     for row in payload["z"]:
         if not isinstance(row, dict) or set(row) != {"t", "b", "c"}:
             raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Provider prose or extra fields are forbidden")
-        kind, bbox, confidence = str(row["t"]).upper(), row["b"], float(row["c"])
+        try:
+            kind, bbox, confidence = str(row["t"]).upper(), row["b"], float(row["c"])
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Localization values are invalid") from exc
         if kind not in allowed or not isinstance(bbox, list) or len(bbox) != 4:
             raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Type or bbox is invalid")
-        bbox = [float(x) for x in bbox]
+        try:
+            bbox = [float(x) for x in bbox]
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Localization values are invalid") from exc
         if (not all(math.isfinite(x) and 0 <= x <= 1 for x in bbox)
                 or not bbox[0] < bbox[2] or not bbox[1] < bbox[3]
                 or not math.isfinite(confidence) or not 0 <= confidence <= 1):
@@ -646,17 +655,18 @@ def build_exact_semantic_anchors(labels: list[dict[str, Any]], *, source_sha256:
     """Promote only exact DXF text meaning into point anchors, never geometry."""
     anchors = []
     for label in labels:
-        point = label.get("normalized_position")
-        if not point:
+        raw_point = label.get("normalized_position")
+        if not raw_point:
             continue
+        point = _point(raw_point, "exact semantic anchor")
         for semantic_type in sorted(_label_semantic_candidates(label.get("text", ""))):
             anchor_id = _stable("ANCHOR", [source_sha256, frame_id, label.get("text"), point, semantic_type])
             anchors.append({"semantic_anchor_id": anchor_id, "semantic_type": semantic_type,
-                            "normalized_position": [float(point[0]), float(point[1])],
+                            "normalized_position": point,
                             "exact_text": str(label.get("text") or ""),
                             "mep_groups": MEP_GROUPS.get(semantic_type, []),
                             "authority": SEMANTIC_ANCHOR_AUTHORITY,
-                            "material_geometry": None, "routing_authority": "NONE",
+                            "material_geometry": "NONE", "routing_authority": "NONE",
                             "engineering_geometry": False})
     return anchors
 
@@ -725,13 +735,38 @@ def build_compact_mep_preanalysis(hints: list[dict[str, Any]], labels: list[dict
         groups[key] = sorted(set(groups[key]))
     status = ("INPUT_REQUIRED" if not search_targets else
               "PARTIAL_PREANALYSIS" if fusion["conflicts"] else "QUALIFIED_FOR_PREANALYSIS")
+    priority_by_semantic = {
+        "TOILET": ["FIXTURE", "DRAIN", "WATER", "VENT"],
+        "BATHROOM": ["FIXTURE", "DRAIN", "WATER", "VENT"],
+        "SHOWER": ["FIXTURE", "DRAIN", "WATER", "VENT"],
+        "KITCHEN": ["SINK", "WATER", "DRAIN", "GAS", "EXHAUST"],
+        "KITCHENETTE": ["SINK", "WATER", "DRAIN", "GAS", "EXHAUST"],
+        "LIVING": ["HEATING", "COOLING"], "RECEPTION": ["HEATING", "COOLING"],
+        "BEDROOM": ["HEATING", "COOLING"], "MASTER_BEDROOM": ["HEATING", "COOLING"],
+        "STAIR": ["VERTICAL_ROUTING_VERIFICATION"], "STAIR_LANDING": ["VERTICAL_ROUTING_VERIFICATION"],
+        "DUCT": ["VERTICAL_ROUTING_VERIFICATION"], "SHAFT": ["VERTICAL_ROUTING_VERIFICATION"],
+        "YARD": ["EXTERIOR_DRAINAGE_VERIFICATION"],
+        "PARKING": ["VENTILATION", "DRAINAGE"], "STORAGE": ["SERVICE_VERIFICATION"],
+    }
+    investigation_priorities = []
+    for target in search_targets:
+        for investigation in priority_by_semantic.get(target["semantic_type"], []):
+            investigation_priorities.append({"evidence_id": target["evidence_id"],
+                                             "semantic_type": target["semantic_type"],
+                                             "investigation": investigation,
+                                             "authority": "PREANALYSIS_ONLY"})
     return {"mode": "MEP_PREANALYSIS", "qualification_status": status,
             "semantic_anchor_fusion": fusion, "semantic_hint_groups": groups,
             "search_targets": search_targets,
+            "investigation_priorities": investigation_priorities,
             "allowed_uses": ["FIXTURE_SEARCH", "WET_CORE_SEARCH", "SHAFT_SEARCH",
                              "WORKFLOW_SELECTION", "INPUT_PLANNING", "VERIFICATION_PRIORITY"],
-            "forbidden_uses": ["FINAL_ROUTING", "FINAL_EQUIPMENT_PLACEMENT", "FINAL_LOADS",
-                               "ENGINEER_READY_OUTPUT", "VISION_BBOX_AS_ROOM_GEOMETRY"],
+            "forbidden_uses": ["FINAL_FIXTURE_PLACEMENT", "FINAL_PIPE_ROUTE", "FINAL_DRAIN_ROUTE",
+                               "FINAL_VENT_ROUTE", "FINAL_DUCT_ROUTE", "FINAL_CABLE_ROUTE",
+                               "FINAL_ELECTRICAL_EQUIPMENT_PLACEMENT", "FINAL_EQUIPMENT_PLACEMENT",
+                               "ROOM_AREA_LOAD_CALCULATION", "FINAL_LOADS", "WALL_PENETRATION",
+                               "SLEEVE", "ROUTING_OBSTACLE", "ENGINEER_READY_OUTPUT",
+                               "VISION_BBOX_AS_ROOM_GEOMETRY"],
             "engineering_authority": False}
 
 
@@ -792,7 +827,7 @@ def enrich_compact_hints(rows: list[dict[str, Any]], *, source_sha256: str, fram
                          "approx_center_norm": [(x0+x1)/2, (y0+y1)/2], "dxf_labels": inside_labels,
                          "cad_objects": inside_objects, "mep_groups": MEP_GROUPS.get(row["t"], []),
                          "semantic_status": status, "source_call_id": source_call_id,
-                         "authority": SEMANTIC_AUTHORITY, "material_geometry": None,
+                         "authority": SEMANTIC_AUTHORITY, "material_geometry": "NONE",
                          "routing_authority": "NONE", "engineering_geometry": False})
     return enriched
 
@@ -803,10 +838,17 @@ def compact_semantic_completeness(inventory: dict, hints: list[dict], labels: li
         localized[hint["semantic_type"]] = localized.get(hint["semantic_type"], 0) + 1
     expected = {x["t"]: x["n"] for x in inventory["types"] if x["n"] > 0}
     explained = set(label for hint in hints for label in hint.get("dxf_labels", []))
+    functional = [x for x in labels if _label_semantic_candidates(x.get("text", ""))]
+    annotations = [x for x in labels if not _label_semantic_candidates(x.get("text", ""))]
+    functional_text = {x["text"] for x in functional}
     return {"inventory_counts": expected, "localized_counts": localized,
             "count_gaps": {k: expected[k]-localized.get(k, 0) for k in expected if localized.get(k, 0) < expected[k]},
-            "exact_labels_explained": sorted(explained),
-            "exact_labels_unexplained": sorted({x["text"] for x in labels} - explained),
+            "total_exact_text_records": len(labels), "functional_label_count": len(functional),
+            "functional_labels_explained": sorted(functional_text & explained),
+            "functional_labels_unexplained": sorted(functional_text - explained),
+            "non_semantic_annotation_count": len(annotations),
+            "exact_labels_explained": sorted(functional_text & explained),
+            "exact_labels_unexplained": sorted(functional_text - explained),
             "complete_required_set": all(localized.get(k, 0) >= min(v, 1) for k, v in expected.items())}
 
 
@@ -847,7 +889,8 @@ class DeepSeekCompactSemanticScout:
                     "request_hash": request_hash, "render_hash": image_hash,
                     "prompt_version": COMPACT_PROMPT_VERSION, "schema_version": COMPACT_SEMANTIC_SCHEMA,
                     "estimated_response_bytes": estimate["estimated_response_bytes"],
-                    "attempt_number": attempt_number, "json_validation_status": "NOT_RUN"}
+                    "attempt_number": attempt_number, "json_validation_status": "NOT_RUN",
+                    "retry_scheduled": False, "retry_reason": None, "attempt_result": "PENDING"}
         try:
             response = self.client.chat.completions.create(model=self.model,
                 messages=[{"role":"user","content":[{"type":"text","text":prompt},
@@ -875,13 +918,15 @@ class DeepSeekCompactSemanticScout:
                 raise SemanticScoutError("COMPACT_JSON_INVALID", "Compact response JSON was malformed") from exc
             validated = (validate_compact_inventory(payload, frame_id=frame_id) if inventory else
                          validate_compact_localization(payload, frame_id=frame_id, allowed_types=allowed_types or []))
-            metadata["json_validation_status"] = "VALID"
+            metadata.update({"json_validation_status": "VALID", "attempt_result": "SUCCESS"})
             return {"call_id":call_id,"payload":validated}
-        except SemanticScoutError:
+        except SemanticScoutError as exc:
+            metadata.update({"attempt_result": "FAILED", "error_code": exc.code})
             raise
         except Exception as exc:
             metadata.update({"latency_seconds":round(time.perf_counter()-started,6),
-                             "provider_error":type(exc).__name__,"json_validation_status":"PROVIDER_FAILED"})
+                             "provider_error":type(exc).__name__,"json_validation_status":"PROVIDER_FAILED",
+                             "attempt_result": "FAILED", "error_code": "SEMANTIC_PROVIDER_FAILED"})
             raise SemanticScoutError("SEMANTIC_PROVIDER_FAILED", "Compact semantic call failed") from exc
         finally:
             self.call_metadata.append(metadata)
@@ -893,23 +938,22 @@ class DeepSeekCompactSemanticScout:
         """Retry exactly once only when the first provider result is technically unusable."""
         retryable = {"SEMANTIC_PROVIDER_FAILED", "COMPACT_TOOL_CALL_INVALID", "COMPACT_JSON_INVALID",
                      "COMPACT_INVENTORY_INVALID", "COMPACT_LOCALIZATION_INVALID"}
-        try:
-            return self._call_once(image_path=image_path, frame_id=frame_id, labels=labels, objects=objects,
-                                   task_type=task_type, group=group, allowed_types=allowed_types,
-                                   expected_items=expected_items, attempt_number=1)
-        except SemanticScoutError as first_error:
-            if first_error.code not in retryable:
-                raise
-            if self.call_metadata:
-                self.call_metadata[-1].update({"retry_scheduled": True, "retry_reason": first_error.code})
+        for attempt_number in range(1, COMPACT_MAX_ATTEMPTS + 1):
             try:
                 result = self._call_once(image_path=image_path, frame_id=frame_id, labels=labels, objects=objects,
                                          task_type=task_type, group=group, allowed_types=allowed_types,
-                                         expected_items=expected_items, attempt_number=2)
-                if self.call_metadata:
-                    self.call_metadata[-1]["retry_of_previous_attempt"] = True
+                                         expected_items=expected_items, attempt_number=attempt_number)
+                if attempt_number > 1 and self.call_metadata:
+                    self.call_metadata[-1].update({"retry_of_previous_attempt": True,
+                                                   "retry_result": "SUCCESS"})
                 return result
-            except SemanticScoutError:
+            except SemanticScoutError as error:
+                if attempt_number >= COMPACT_MAX_ATTEMPTS or error.code not in retryable:
+                    if attempt_number > 1 and self.call_metadata:
+                        self.call_metadata[-1].update({"retry_of_previous_attempt": True,
+                                                       "retry_result": "FAILED"})
+                    raise
                 if self.call_metadata:
-                    self.call_metadata[-1]["retry_of_previous_attempt"] = True
-                raise
+                    self.call_metadata[-1].update({"retry_scheduled": True,
+                                                   "retry_reason": error.code})
+        raise AssertionError("bounded compact call loop exited unexpectedly")

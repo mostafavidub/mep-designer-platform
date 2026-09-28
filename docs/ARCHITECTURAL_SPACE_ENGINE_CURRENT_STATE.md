@@ -34,6 +34,27 @@ may retry exactly once only when the first response is technically unusable
 schema); a valid but semantically weak answer is never retried automatically and
 no fallback transport is introduced.
 
+The governed Fasihi Ground qualification then completed a fresh compact run:
+one Inventory and four deterministic Localization calls, all valid on their
+first attempt with `finish_reason = tool_calls`. It produced 13 approximate
+Vision hints and six exact semantic anchors. Kitchen, Toilet, Living, Stair,
+Duct, Yard, Parking, Entrance and Corridor are available for bounded search and
+verification priorities. Stair+Duct is retained as
+`COLOCATED_FUNCTIONAL_COMPOSITION`; one oversized Vestibule hypothesis is
+rejected as `CONFLICT` and cannot enter MEP pre-analysis. Storage is absent from
+both the fresh Inventory and exact labels, while a deterministic regression
+proves it is scheduled whenever either source requires it. All 54 exact text
+records were audited: six functional records (five unique texts) were explained
+and 48 drafting annotations were excluded from semantic completeness.
+
+`MEP_PREANALYSIS` remains intentionally non-engineering: every Vision hint and
+exact anchor has `material_geometry = NONE`, `routing_authority = NONE`, and
+`engineering_geometry = false`. Its only outputs are semantic search targets,
+workflow/input-planning signals, verification priority, and discipline-specific
+investigation prompts. Fixture/equipment placement, pipe/drain/vent/duct/cable
+routes, room-area loads, penetrations, sleeves, obstacles, and engineer-ready
+output are expressly forbidden.
+
 ## Blind real-project validation — 2026-09-26
 
 The private Fasihi architectural DXF was processed blind. Reference Mechanical
