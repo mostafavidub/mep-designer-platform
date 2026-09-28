@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.51.0",
+  "standard_version": "4.52.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-26",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "4.52.0",
+      "date": "2026-09-28",
+      "summary": "Add a whole-floor Semantic Scout that permits approximate normalized functional localization as VISION_SEMANTIC_HINT while prohibiting all Vision-derived engineering geometry, routing authority and final-design use; expose hints only through bounded MEP_PREANALYSIS."
+    },
     {
       "version": "4.51.0",
       "date": "2026-09-28",

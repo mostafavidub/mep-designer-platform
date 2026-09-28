@@ -821,6 +821,9 @@
         "fixtures",
         "equipment",
         "recognition_evidence",
+        "architectural_semantic_maps",
+        "semantic_coverage_report",
+        "mep_preanalysis",
         "visual_overlay_qa"
       ],
       "engines": [
@@ -828,6 +831,7 @@
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_topology_quality.py",
+        "cad_engine/architectural_semantic_scout.py",
         "app/architecture_reconstruction_v1.py",
         "app/project_mechanical_model.py",
         "cad_engine/fixture_recognition.py",
@@ -839,6 +843,9 @@
         "space inventory",
         "fixture and equipment inventory",
         "recognition visual overlays",
+        "approximate semantic hint overlay",
+        "semantic coverage report",
+        "MEP pre-analysis evidence",
         "recognition QA report"
       ],
       "qa_rules": [
@@ -870,12 +877,16 @@
         "host_and_port_binding",
         "view_aware_deduplication",
         "semantic_spatial_consistency",
+        "vision_semantic_hint_never_engineering_geometry",
+        "semantic_geometry_status_separation",
+        "mep_preanalysis_never_final_authority",
         "frame_visual_overlay_qa",
         "exact_source_reopen_and_completeness",
         "score_exactly_100"
       ],
       "regression_tests": [
         "tests/test_architectural_space_engine.py",
+        "tests/test_architectural_semantic_scout.py",
         "tests/test_canonical_wall_topology.py",
         "tests/test_architecture_space_equipment_100.py",
         "tests/test_fixture_recognition_v14.py",

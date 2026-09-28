@@ -123,6 +123,27 @@ from already accepted canonical `plan_regions`. Candidate faces and non-material
 virtual closures remain `CANDIDATE_ONLY` and cannot become wall material merely
 because they improve closure or are later selected by Vision.
 
+### Whole-floor Semantic Scout is not Geometry Authority
+
+DeepSeek may inspect a clean whole-floor render and return approximate normalized
+centers and bounding boxes for functional observations. Such observations use
+`VISION_SEMANTIC_HINT`, with `material_geometry = NONE`,
+`routing_authority = NONE`, and `engineering_geometry = false`. A semantic box
+is neither a wall nor a room polygon, does not become a routing obstacle, and
+cannot authorize equipment placement, room loads, final routing, or release.
+
+Physical Space and Functional Zone remain distinct. Kitchen, dining, and living
+hints may overlap inside one open physical space without creating partitions.
+Semantic and geometry status are tracked independently: a bathroom can be
+strongly supported while its boundary remains `INPUT_REQUIRED`.
+
+Evidence precedence is exact DXF label, deterministic CAD object, agreement
+between global and local Vision, local Vision, then global Vision. Contradictions
+are retained. Approximate hints map many-to-many onto CAD candidates for evidence
+reporting only. The sole downstream mode is `MEP_PREANALYSIS`; final routing,
+sizing, loads, placement and engineer-ready output remain blocked until
+authoritative geometry exists.
+
 The first controlled Candidate Graph v2 classification used one Fasihi Ground
 request, an immutable hash manifest, a source-derived overlay, forced strict-tool
 transport and an ID-only schema. DeepSeek returned one tool call but truncated

@@ -1,5 +1,21 @@
 # Architectural Space Engine — Current State and Root Cause
 
+## Whole-floor Semantic Scout (PR #295)
+
+An additive `architectural-semantic-map/1.0` contract now supports strict
+approximate functional observations from a clean whole-floor render plus exact
+DXF text/object sidecars. It audits semantic coverage, plans adaptive local
+review, reconciles global/local observations, maps hints to CAD candidates
+without mutation, and exposes only bounded `MEP_PREANALYSIS`.
+
+Every Vision localization remains `VISION_SEMANTIC_HINT`; it has no material,
+routing, physical-space, or engineering-geometry authority. The authorized
+Fasihi Ground whole-floor qualification made exactly one global call. DeepSeek
+returned malformed/truncated tool JSON at character 4473; the entire response
+was rejected before semantic-map construction, fusion, CAD mapping or MEP
+pre-analysis. No retry or local call was made. Current provider status is
+`DEEPSEEK_SEMANTIC_SCOUT_UNQUALIFIED`.
+
 ## Blind real-project validation — 2026-09-26
 
 The private Fasihi architectural DXF was processed blind. Reference Mechanical
