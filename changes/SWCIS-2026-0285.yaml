@@ -1,0 +1,37 @@
+{
+  "change_id": "SWCIS-2026-0285",
+  "summary": "Add a read-only Semantic Scout Mechanical pre-analysis shadow search that changes investigation order only, requires exhaustive fallback and cannot promote semantic evidence into engineering authority.",
+  "requester": "project-owner",
+  "change_types": ["drawing_output", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "pmm": "No canonical PMM mutation; semantic search evidence remains a separate non-authoritative diagnostic.",
+    "planner": "Adds an optional SHADOW search-order plan with mandatory global fallback.",
+    "cad_designer": "No geometry, materialization or final CAD behavior changes.",
+    "routing": "No routing authority; explicit NONE sentinel and leak tests.",
+    "sizing": "No calculation or sizing input changes.",
+    "equipment": "The existing fixture/equipment recognizer and acceptance rules are reused unchanged.",
+    "qa": "Adds deterministic A/B, stale-artifact, frame, bbox, conflict, fallback, recall and authority-leak tests.",
+    "manifest": "Search-plan provenance records source, frame, semantic artifact and architecture dependency hashes.",
+    "docs": "Documents the strict search-priority-only boundary.",
+    "versioning": "SWCIS 4.55.0 -> 4.56.0.",
+    "governance": "Hard pruning, merge and deployment remain prohibited."
+  },
+  "evidence": {
+    "traceability": ["semantic evidence ID -> shadow search zone -> priority examination -> mandatory global fallback; no engineering output edge"],
+    "tests": ["tests/test_semantic_guided_mechanical_preanalysis.py", "affected Semantic Scout, fixture recognition, system requirements, topology authority and PMM tests"],
+    "docs": ["docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md#semantic-guided-mechanical-shadow-search"],
+    "version_bump": ["standards/swcis/version_manifest.yaml: 4.55.0 -> 4.56.0"],
+    "migration": ["none; additive read-only module and local QA harness"],
+    "golden_regression": ["blind Fasihi Ground A/B uses the same one-time parsed source inventory; reference Mechanical drawings were not inspected"],
+    "semantic_diff": ["qualified semantics may prioritize investigation but cannot create or promote Mechanical evidence"],
+    "artifact_diff": ["private local search-plan, A/B report and visual overlay; none committed"],
+    "numeric_diff": ["no engineering numeric rule or result changes"],
+    "contract_diff": ["SEARCH_PRIORITY_ONLY; fallback_required true; engineering_authority false; material_geometry NONE; routing_authority NONE"],
+    "deployment_plan": ["stacked PR validation only; no staging or production deployment"],
+    "rollback_plan": ["revert the additive commit; no persisted production data or migration"]
+  },
+  "risk": {"likelihood": 2, "severity": 5, "detectability": 1, "score": 10, "rationale": "Authority leakage would be severe, but the module is detached from production authority and guarded by exhaustive fallback and explicit zero-leak tests."},
+  "waiver": null
+}
