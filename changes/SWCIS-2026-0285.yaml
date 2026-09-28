@@ -2,9 +2,9 @@
   "change_id": "SWCIS-2026-0285",
   "summary": "Add a read-only Semantic Scout Mechanical pre-analysis shadow search that changes investigation order only, requires exhaustive fallback and cannot promote semantic evidence into engineering authority.",
   "requester": "project-owner",
-  "change_types": ["architecture", "schema", "test", "documentation", "governance", "versioning"],
+  "change_types": ["drawing_output", "test", "documentation", "governance"],
   "changed_rule_ids": [],
-  "impacted_modules": ["pmm", "planner", "cad_designer", "routing", "sizing", "equipment", "qa", "manifest", "docs", "versioning", "governance"],
+  "impacted_modules": ["pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
   "impact_notes": {
     "pmm": "No canonical PMM mutation; semantic search evidence remains a separate non-authoritative diagnostic.",
     "planner": "Adds an optional SHADOW search-order plan with mandatory global fallback.",
