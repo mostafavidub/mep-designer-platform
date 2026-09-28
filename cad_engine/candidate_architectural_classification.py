@@ -318,13 +318,22 @@ def fuse_region_classifications(graph: dict, payload: dict) -> dict:
             fused.append({"region_id": region["region_id"], "role": "UNKNOWN", "authority": "UNRESOLVED"})
             continue
         text = " ".join((item.get("text") or "") for item in region["exact_text_evidence"])
-        label_yard = any(value in text for value in ("حیاط", "yard"))
-        contradiction = label_yard and vision["role"] == "BUILDING_INTERIOR"
+        semantics={item.get("semantic_candidate") for item in region["exact_text_evidence"]}
+        label_yard = "yard" in semantics or any(value in text.lower() for value in ("حیاط", "yard"))
+        label_shaft = "shaft" in semantics
+        label_stair = "stair" in semantics
+        contradiction = ((label_yard and vision["role"] == "BUILDING_INTERIOR") or
+                         (label_shaft and vision["role"] not in {"SHAFT","UNKNOWN"}) or
+                         (label_stair and vision["role"] not in {"STAIR","UNKNOWN"}))
         if contradiction:
             conflicts.append({"region_id": region["region_id"], "code": "EXACT_LABEL_ROLE_CONFLICT"})
         independent = bool(region["exact_text_evidence"] or region["object_evidence"])
-        authority = "MULTI_EVIDENCE_SUPPORTED" if independent and not contradiction else "UNRESOLVED"
-        fused.append({"region_id": region["region_id"], "role": vision["role"], "authority": authority,
+        authority = ("CONFLICT" if contradiction else "MULTI_EVIDENCE_SUPPORTED" if independent
+                     else "PROVIDER_ONLY_HYPOTHESIS")
+        fused.append({"region_id": region["region_id"], "role": "UNKNOWN" if contradiction else vision["role"],
+                      "authority": authority,"cad_evidence":region.get("merge_evidence") or [],
+                      "label_object_evidence":region["exact_text_evidence"]+region["object_evidence"],
+                      "provider_classification":vision["role"],
                       "vision_confidence": vision["confidence"], "independent_support": independent,
                       "conflict": contradiction})
     return {"frame_id": graph["frame_id"], "regions": fused, "conflicts": conflicts,

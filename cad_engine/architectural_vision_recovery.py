@@ -100,9 +100,11 @@ PROVIDER_CAPABILITY_MATRIX = {
         "supports_images": True,
         "supports_strict_schema": True,
         "geometry_policy": "SUPPLIED_CANDIDATE_IDS_ONLY",
-        "status": "STRUCTURED_TRANSPORT_QUALIFIED_CANDIDATE_GRAPH_REQUIRED",
-        "last_qualified_version": "candidate-architectural-topology/1.0",
-        "reliability_state": "AWAITING_USABLE_CANDIDATE_GRAPH",
+        "accepted_candidate_graph_versions": ["candidate-architectural-topology/1.0",
+                                               "candidate-architectural-topology/2.0"],
+        "status": "STRUCTURED_TRANSPORT_AND_V2_INPUT_QUALIFIED_OUTPUT_UNQUALIFIED",
+        "last_qualified_version": "candidate-architectural-topology/2.0",
+        "reliability_state": "CONTROLLED_CLASSIFICATION_REJECTED_TRUNCATED_OUTPUT",
     }
 }
 
@@ -113,6 +115,16 @@ def provider_capability(provider: str, model: str, task: VisionTask) -> dict[str
         raise VisionRecoveryError("VISION_CAPABILITY_NOT_QUALIFIED",
                                   f"No qualified transport policy for {provider}/{model}/{task.value}")
     return dict(capability)
+
+
+def qualify_candidate_graph_for_provider(graph: dict, *, provider="deepseek", model="deepseek-flash") -> dict:
+    capability=provider_capability(provider,model,VisionTask.SHELL_BOUNDARY_CLASSIFICATION_V1)
+    if graph.get("schema") not in capability.get("accepted_candidate_graph_versions",[]):
+        raise VisionRecoveryError("CANDIDATE_GRAPH_VERSION_NOT_QUALIFIED","Candidate graph schema is not qualified")
+    if not graph.get("provider_eligible"):
+        raise VisionRecoveryError("CANDIDATE_GRAPH_INELIGIBLE","Provider call blocked by deterministic sufficiency gate",
+                                  details={"blocking_reasons":graph.get("blocking_reasons") or []})
+    return capability
 
 
 class VisionRecoveryError(RuntimeError):
@@ -1101,6 +1113,95 @@ class DeepSeekVisionAdapter(OpenAICompatibleVisionAdapter):
             payload=self._json_object_v1(material,frame_id=frame_id)
         material["cache_path"].write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True),encoding="utf-8")
         return payload
+
+    def classify_candidate_graph(self, *, image_path: str, graph: dict,
+                                 prompt_version: str = "candidate-classification/1") -> dict:
+        """Make one non-retrying, strict, ID-only Candidate Graph call."""
+        from .candidate_architectural_classification import (
+            candidate_classification_schema, validate_candidate_classification,
+        )
+        qualify_candidate_graph_for_provider(graph,provider=self.provider,model=self.model)
+        image_bytes=Path(image_path).read_bytes()
+        if len(image_bytes)>MAX_INLINE_IMAGE_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE","Candidate overlay exceeds inline image limits")
+        region_ids=[row["region_id"] for row in graph.get("regions") or []]
+        boundary_ids=[row["boundary_id"] for row in graph.get("boundaries") or []]
+        ambiguity_options={row["ambiguity_id"]:[option["option_id"] for option in row["options"]]
+                           for row in graph.get("bridges") or []}
+        schema=candidate_classification_schema(region_ids=region_ids,boundary_ids=boundary_ids,
+                                               ambiguity_options=ambiguity_options)
+        evidence={"frame_id":graph["frame_id"],
+            "regions":[{"region_id":row["region_id"],"exact_labels":row.get("exact_text_evidence") or [],
+                        "candidate_role":"bounded source-derived region"} for row in graph.get("regions") or []],
+            "boundaries":[{"boundary_id":row["boundary_id"],
+                           "adjacent_region_ids":row.get("adjacent_region_ids") or [],
+                           "cad_authority":row.get("cad_authority")}
+                          for row in graph.get("boundaries") or []],
+            "bridge_ambiguities":[{"ambiguity_id":row["ambiguity_id"],
+                                   "option_ids":[option["option_id"] for option in row["options"]]}
+                                  for row in graph.get("bridges") or []]}
+        prompt=("You are an architectural plan classification reviewer, not a CAD geometry generator. "
+                "All geometry was generated deterministically from source DXF. Classify/select supplied IDs only; "
+                "never invent geometry, coordinates, polygons, walls, boundaries or identifiers. Use UNKNOWN when "
+                "evidence is insufficient. Exact source labels supplied by CAD outrank visual interpretation. "
+                "Classify every supplied candidate. Region roles: BUILDING_INTERIOR, SITE_EXTERIOR, YARD, "
+                "SEMI_EXTERIOR, TERRACE, BALCONY, COURTYARD, LIGHTWELL, VOID, STAIR, SHAFT, UNKNOWN. "
+                "Boundary roles: BUILDING_SHELL, INTERIOR_SEPARATOR, SITE_SEPARATOR, VOID_BOUNDARY, "
+                "OPEN_PLAN_TRANSITION, NOT_ARCHITECTURAL_BOUNDARY, UNKNOWN. For each bridge choose only its "
+                "supplied option ID, NO_BOUNDARY, or UNKNOWN. Visible wall continuity, enclosure, labels, stairs, "
+                "shafts, facade relation, openings and repeated architectural patterns are evidence; confidence "
+                "alone is not. Submit only through the required function. CANDIDATES="+
+                json.dumps(evidence,ensure_ascii=False,separators=(",",":")))
+        encoded=base64.b64encode(image_bytes).decode("ascii")
+        schema_json=json.dumps(schema,sort_keys=True,separators=(",",":"))
+        request_hash=sha256((prompt+schema_json+sha256(image_bytes).hexdigest()).encode()).hexdigest()
+        started=time.perf_counter()
+        try:
+            response=self.strict_client.chat.completions.create(model=self.model,
+                messages=[{"role":"user","content":[{"type":"text","text":prompt},
+                    {"type":"image_url","image_url":{"url":"data:image/png;base64,"+encoded,
+                                                          "detail":"original"}}]}],
+                tools=[{"type":"function","function":{"name":"submit_candidate_classification_v1",
+                    "strict":True,"description":"Submit ID-only architectural candidate classifications.",
+                    "parameters":schema}}],
+                tool_choice={"type":"function","function":{"name":"submit_candidate_classification_v1"}},
+                extra_body={"thinking":{"type":"disabled"}})
+        except Exception as exc:
+            code,message,_transient=_safe_provider_error(exc)
+            self.last_call_metadata={"provider":self.provider,"model":self.model,
+                "task_type":VisionTask.SHELL_BOUNDARY_CLASSIFICATION_V1.value,"attempt_count":1,
+                "attempt_errors":[code],"request_hash":request_hash,"prompt_version":prompt_version,
+                "schema_version":"candidate-classification-response/1.0",
+                "latency_seconds":round(time.perf_counter()-started,6)}
+            raise VisionRecoveryError(code,message) from exc
+        calls=getattr(getattr((getattr(response,"choices",None) or [None])[0],"message",None),"tool_calls",None) or []
+        raw=(getattr(getattr(calls[0],"function",None),"arguments",None) if len(calls)==1 else None)
+        self.last_call_metadata={"provider":self.provider,"model":self.model,
+            "task_type":VisionTask.SHELL_BOUNDARY_CLASSIFICATION_V1.value,"attempt_count":1,
+            "attempt_errors":[],"request_id":getattr(response,"id",None),"usage":self._usage(response),
+            "request_hash":request_hash,"prompt_version":prompt_version,
+            "schema_version":"candidate-classification-response/1.0",
+            "render_sha256":sha256(image_bytes).hexdigest(),"frame_id":graph["frame_id"],
+            "tool_call_count":len(calls),"latency_seconds":round(time.perf_counter()-started,6)}
+        if len(calls)!=1 or not isinstance(raw,str):
+            raise VisionRecoveryError("VISION_TOOL_CALL_MISSING","DeepSeek did not return exactly one forced tool call")
+        function=getattr(calls[0],"function",None)
+        if getattr(function,"name",None)!="submit_candidate_classification_v1":
+            raise VisionRecoveryError("VISION_TOOL_NAME_INVALID","DeepSeek invoked an unapproved tool")
+        self.last_call_metadata.update({"response_hash":sha256(raw.encode()).hexdigest(),
+                                        "response_bytes":len(raw.encode())})
+        try:
+            payload=json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise VisionRecoveryError("VISION_JSON_INVALID","DeepSeek returned malformed tool arguments",
+                                      details={"response_hash":self.last_call_metadata["response_hash"],
+                                               "response_bytes":self.last_call_metadata["response_bytes"],
+                                               "json_error_position":exc.pos}) from exc
+        try:
+            return validate_candidate_classification(payload,graph)
+        except Exception as exc:
+            raise VisionRecoveryError("VISION_RESPONSE_INVALID","Candidate classification failed strict validation",
+                                      details={"validation_error":getattr(exc,"code",type(exc).__name__)}) from exc
 
 
 def configured_vision_adapter():

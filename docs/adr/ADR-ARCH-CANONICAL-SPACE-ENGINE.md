@@ -123,6 +123,14 @@ from already accepted canonical `plan_regions`. Candidate faces and non-material
 virtual closures remain `CANDIDATE_ONLY` and cannot become wall material merely
 because they improve closure or are later selected by Vision.
 
+The first controlled Candidate Graph v2 classification used one Fasihi Ground
+request, an immutable hash manifest, a source-derived overlay, forced strict-tool
+transport and an ID-only schema. DeepSeek returned one tool call but truncated
+its argument JSON inside a string at approximately 24 KB. The complete response
+was rejected before fusion. No partial salvage, geometry authority, retry,
+fallback or second-project call was allowed. V2 input/transport compatibility is
+qualified; provider output reliability for the full bounded set is not.
+
 When a governed frame fails specifically because source architectural geometry
 is insufficient, the engine enters `HYBRID_ARCHITECTURAL_RECOVERY`. This path is
 boundary-first: raw CAD facts and mapped Vision hypotheses enter a first-class

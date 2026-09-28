@@ -19,6 +19,14 @@ SOFT = "SOFT_ARCHITECTURAL_CANDIDATE"
 EXCLUDED = "HARD_EXCLUDED_NON_ARCHITECTURAL"
 
 
+def _semantic_candidate(text):
+    """Return only deterministic label semantics; never infer missing text."""
+    value=" ".join(str(text or "").strip().lower().replace("ي","ی").replace("ك","ک").split())
+    rules=(("حیاط","yard"),("yard","yard"),("شفت","shaft"),("shaft","shaft"),
+           ("راه پله","stair"),("راه‌پله","stair"),("پله","stair"),("stair","stair"))
+    return next((semantic for token,semantic in rules if token in value),"UNKNOWN")
+
+
 def _sid(prefix, value):
     raw=json.dumps(value,sort_keys=True,separators=(",",":"),default=str)
     return f"{prefix}-"+sha256(raw.encode()).hexdigest()[:10].upper()
@@ -174,7 +182,10 @@ def host_evidence(faces,texts,objects,activity=None):
             hosts=[i for i,poly in enumerate(polygons) if poly.covers(Point(row["point"]))]
             identity=row.get("handle") or _sid(kind,row)
             if len(hosts)==1:
-                faces[hosts[0]][field].append(identity);diagnostics.append({f"{kind.lower()}_id":identity,"point":row["point"],"host_face_id":faces[hosts[0]]["face_id"],"status":"HOSTED"})
+                evidence=({"source_handle":identity,"text":str(row.get("text") or ""),
+                           "semantic_candidate":_semantic_candidate(row.get("text"))}
+                          if kind=="LABEL" else {"source_handle":identity,"kind":row.get("kind") or "SOURCE_OBJECT"})
+                faces[hosts[0]][field].append(evidence);diagnostics.append({f"{kind.lower()}_id":identity,"point":row["point"],"host_face_id":faces[hosts[0]]["face_id"],"status":"HOSTED"})
             else:
                 reason=("LABEL_OUTSIDE_PLAN" if activity is not None and not activity.covers(Point(row["point"])) else
                         "NO_CLOSED_FACE" if not hosts else "MULTIPLE_CANDIDATE_FACES")
@@ -205,8 +216,8 @@ def region_groups(faces,tolerance,max_regions=80):
             rows.append({"region_id":_sid("R2",members),"level":"FACE_GROUP" if len(members)>1 else "ATOMIC_FACE",
                 "member_face_ids":members,"polygon":coords,"area":part.area,"centroid":[part.centroid.x,part.centroid.y],
                 "boundary_ids":[],"merge_evidence":["SHARED_SOFT_BOUNDARY"] if len(members)>1 else ["ATOMIC_FACE"],
-                "contained_labels":sorted({x for i in indexes for x in faces[i]["contained_labels"]}),
-                "contained_objects":sorted({x for i in indexes for x in faces[i]["contained_objects"]}),
+                "contained_labels":sorted({x["source_handle"]:x for i in indexes for x in faces[i]["contained_labels"]}.values(),key=lambda x:x["source_handle"]),
+                "contained_objects":sorted({x["source_handle"]:x for i in indexes for x in faces[i]["contained_objects"]}.values(),key=lambda x:x["source_handle"]),
                 "exact_text_evidence":[],"object_evidence":[],"authority":"CANDIDATE_ONLY"})
     return sorted(rows,key=lambda row:(-row["area"],row["region_id"]))[:max_regions]
 
@@ -238,8 +249,8 @@ def build_preauthority_graph(model,frame,*,tolerance,max_regions=80,max_bridges=
     regions=region_groups(faces,tolerance,max_regions)
     face_by_id={row["face_id"]:row for row in faces}
     for region in regions:
-        region["exact_text_evidence"]=[{"source_handle":identity} for identity in region["contained_labels"]]
-        region["object_evidence"]=[{"source_handle":identity,"kind":"SOURCE_OBJECT"} for identity in region["contained_objects"]]
+        region["exact_text_evidence"]=[dict(item) for item in region["contained_labels"]]
+        region["object_evidence"]=[dict(item) for item in region["contained_objects"]]
     gap_diagnostics=[{"rank":rank,"bridge_id":row["bridge_id"],"dangling_endpoints":[row["endpoint_a"],row["endpoint_b"]],
         "nearby_aligned_endpoints":True,"candidate_missing_wall_pair":row["source_segments"],
         "possible_portal_gap":row["alignment"]>=.98,"possible_open_plan_boundary":True,

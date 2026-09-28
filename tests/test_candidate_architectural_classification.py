@@ -11,6 +11,9 @@ from cad_engine.candidate_architectural_classification import (
 from cad_engine.preauthority_candidate_graph import (
     EXCLUDED, HARD, SOFT, atomic_faces, build_preauthority_graph, source_segments,
 )
+from cad_engine.architectural_vision_recovery import (
+    VisionRecoveryError, VisionTask, provider_capability, qualify_candidate_graph_for_provider,
+)
 
 
 def _model(*, weak=False):
@@ -173,3 +176,28 @@ def test_v2_provider_gate_can_pass_only_with_real_faces_and_hosted_label():
     schema=candidate_classification_schema(region_ids=[r["region_id"] for r in graph["regions"]],
         boundary_ids=[b["boundary_id"] for b in graph["boundaries"]],ambiguity_options={})
     assert "geometry" not in str(schema) and "polygon" not in str(schema)
+
+
+def test_v2_preserves_exact_label_content_and_deterministic_semantic():
+    rows=[_segment("A",[1,1],[9,1],"ACCEPTED"),_segment("B",[9,1],[9,9],"ACCEPTED"),
+          _segment("C",[9,9],[1,9],"ACCEPTED"),_segment("D",[1,9],[1,1],"ACCEPTED")]
+    graph=build_candidate_graph(_v2_model(rows,[{"handle":"TY","text":"حیاط","point":[3,3]}]),frame_id="F2")
+    evidence=[item for region in graph["regions"] for item in region["exact_text_evidence"]]
+    assert evidence==[{"source_handle":"TY","text":"حیاط","semantic_candidate":"yard"}]
+    payload={"frame_id":"F2","regions":[{"region_id":graph["regions"][0]["region_id"],
+        "role":"BUILDING_INTERIOR","confidence":.99,"evidence":["visual"],"uncertainty":""}],
+        "boundaries":[],"bridge_decisions":[]}
+    fusion=fuse_region_classifications(graph,payload)
+    assert fusion["status"]=="CONFLICT"
+    assert fusion["regions"][0]["role"]=="UNKNOWN"
+    assert fusion["regions"][0]["authority"]=="CONFLICT"
+
+
+def test_provider_matrix_explicitly_qualifies_v2_and_blocks_failed_gate():
+    capability=provider_capability("deepseek","deepseek-flash",VisionTask.SHELL_BOUNDARY_CLASSIFICATION_V1)
+    assert "candidate-architectural-topology/2.0" in capability["accepted_candidate_graph_versions"]
+    graph=build_candidate_graph(_model(),frame_id="F1")
+    assert qualify_candidate_graph_for_provider(graph)["geometry_policy"]=="SUPPLIED_CANDIDATE_IDS_ONLY"
+    weak=build_candidate_graph(_model(weak=True),frame_id="F1")
+    with pytest.raises(VisionRecoveryError,match="sufficiency gate"):
+        qualify_candidate_graph_for_provider(weak)
