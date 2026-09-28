@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.46.0",
+  "standard_version": "4.47.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-26",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -21,7 +21,7 @@
   ],
   "history": [
     {
-      "version": "4.46.0",
+      "version": "4.47.0",
       "date": "2026-09-28",
       "summary": "Replace space-first Vision reconciliation with a boundary-first Evidence Graph, explicit authority lattice, traceable Hybrid topology, minimal replayable human decisions and strict separation of topological boundaries from physical wall material."
     },

@@ -28,6 +28,8 @@ VIEWPORT_VERSION = "architecture-vision-viewport/1"
 PROMPT_VERSION = "architecture-hybrid-boundary-recovery/1"
 FUSION_VERSION = "architecture-boundary-evidence-fusion/2"
 VISION_SCHEMA_VERSION = "architectural-vision-evidence/2.0"
+SHELL_BOUNDARIES_SCHEMA_VERSION = "architectural-shell-boundaries/1.0"
+SHELL_BOUNDARIES_PROMPT_VERSION = "shell-boundaries/1"
 TRANSFORM_VERSION = "cad-pixel-transform/1"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 MAX_INLINE_IMAGE_BYTES = 32 * 1024 * 1024
@@ -419,6 +421,66 @@ GLOBAL_JSON_SCHEMA={"type":"object","additionalProperties":False,"required":sort
     "suspected_missing_boundaries":{"type":"array","items":_GEOMETRY_EVIDENCE_SCHEMA},
     "unresolved_regions":{"type":"array","items":_UNRESOLVED_SCHEMA}}}
 
+SHELL_BOUNDARIES_KEYS={"frame_id","building_shells","boundary_segments","exterior_regions","uncertainties"}
+SHELL_BOUNDARY_ROLES={"BUILDING_SHELL","INTERIOR_SEPARATOR","SITE_SEPARATOR","VOID_BOUNDARY","UNKNOWN"}
+EXTERIOR_REGION_ROLES={"YARD","SITE_EXTERIOR","TERRACE","BALCONY","LIGHTWELL","UNKNOWN"}
+_V1_POINT={"type":"array","minItems":2,"maxItems":2,"items":{"type":"number"}}
+_V1_EVIDENCE={"type":"array","maxItems":5,"items":{"type":"string","maxLength":160}}
+SHELL_BOUNDARIES_JSON_SCHEMA={"type":"object","additionalProperties":False,
+  "required":sorted(SHELL_BOUNDARIES_KEYS),"properties":{
+    "frame_id":{"type":"string"},
+    "building_shells":{"type":"array","maxItems":3,"items":{"type":"object","additionalProperties":False,
+      "required":["shell_id","polygon_px","confidence","evidence","uncertainties"],"properties":{
+        "shell_id":{"type":"string"},"polygon_px":{"type":"array","minItems":3,"items":_V1_POINT},
+        "confidence":{"type":"number","minimum":0,"maximum":1},"evidence":_V1_EVIDENCE,
+        "uncertainties":_V1_EVIDENCE}}},
+    "boundary_segments":{"type":"array","maxItems":40,"items":{"type":"object","additionalProperties":False,
+      "required":["boundary_id","geometry_px","role","confidence","evidence"],"properties":{
+        "boundary_id":{"type":"string"},"geometry_px":{"type":"array","minItems":2,"items":_V1_POINT},
+        "role":{"type":"string","enum":sorted(SHELL_BOUNDARY_ROLES)},
+        "confidence":{"type":"number","minimum":0,"maximum":1},"evidence":_V1_EVIDENCE}}},
+    "exterior_regions":{"type":"array","maxItems":10,"items":{"type":"object","additionalProperties":False,
+      "required":["region_id","polygon_px","role","confidence"],"properties":{
+        "region_id":{"type":"string"},"polygon_px":{"type":"array","minItems":3,"items":_V1_POINT},
+        "role":{"type":"string","enum":sorted(EXTERIOR_REGION_ROLES)},
+        "confidence":{"type":"number","minimum":0,"maximum":1}}}},
+    "uncertainties":{"type":"array","maxItems":10,"items":{"type":"object","additionalProperties":False,
+      "required":["geometry_px","reason"],"properties":{
+        "geometry_px":{"type":"array","minItems":2,"items":_V1_POINT},
+        "reason":{"type":"string","maxLength":240}}}}}}
+
+
+def validate_shell_boundaries_payload(payload: Any, *, frame_id: str) -> dict:
+    """Validate the bounded V1 enclosure contract without accepting extra semantics."""
+    if not isinstance(payload,dict) or set(payload)!=SHELL_BOUNDARIES_KEYS or payload.get("frame_id")!=frame_id:
+        raise VisionRecoveryError("VISION_SCHEMA_INVALID","V1 response fields or frame identity are invalid")
+    limits={"building_shells":3,"boundary_segments":40,"exterior_regions":10,"uncertainties":10}
+    if any(not isinstance(payload.get(key),list) or len(payload[key])>limit for key,limit in limits.items()):
+        raise VisionRecoveryError("VISION_SCHEMA_INVALID","V1 collections exceed their bounded contract")
+    for row in payload["building_shells"]:
+        if not isinstance(row,dict) or set(row)!={"shell_id","polygon_px","confidence","evidence","uncertainties"}:
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 building shell")
+        if len(row["polygon_px"])<3 or not 0<=float(row["confidence"])<=1:
+            raise VisionRecoveryError("VISION_GEOMETRY_INVALID","Invalid V1 building shell geometry")
+        if any(not isinstance(row[key],list) or len(row[key])>5 for key in ("evidence","uncertainties")):
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","V1 shell evidence is not bounded")
+    for row in payload["boundary_segments"]:
+        if not isinstance(row,dict) or set(row)!={"boundary_id","geometry_px","role","confidence","evidence"}:
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 boundary segment")
+        if len(row["geometry_px"])<2 or row["role"] not in SHELL_BOUNDARY_ROLES or not 0<=float(row["confidence"])<=1:
+            raise VisionRecoveryError("VISION_VALUE_INVALID","Invalid V1 boundary value")
+        if not isinstance(row["evidence"],list) or len(row["evidence"])>5:
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","V1 boundary evidence is not bounded")
+    for row in payload["exterior_regions"]:
+        if not isinstance(row,dict) or set(row)!={"region_id","polygon_px","role","confidence"}:
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 exterior region")
+        if len(row["polygon_px"])<3 or row["role"] not in EXTERIOR_REGION_ROLES or not 0<=float(row["confidence"])<=1:
+            raise VisionRecoveryError("VISION_VALUE_INVALID","Invalid V1 exterior-region value")
+    for row in payload["uncertainties"]:
+        if not isinstance(row,dict) or set(row)!={"geometry_px","reason"} or len(row["geometry_px"])<2:
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 uncertainty")
+    return payload
+
 
 def validate_global_payload(payload: Any, *, frame_id: str) -> dict:
     """Strictly validate the geometry-bearing global Vision contract."""
@@ -521,6 +583,76 @@ class OpenAICompatibleVisionAdapter:
                 options["base_url"] = self.base_url
             client = OpenAI(**options)
         self.client = client
+
+    def analyze_shell_boundaries(self, *, image_path: str, frame_id: str,
+                                 context: dict[str, Any] | None = None) -> dict:
+        """Run the bounded V1 enclosure task against the authoritative full-floor render."""
+        started=time.perf_counter(); context=context or {}
+        image_bytes=Path(image_path).read_bytes()
+        if len(image_bytes)>MAX_INLINE_IMAGE_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE","Rendered floor exceeds inline image limits")
+        prompt=("Analyze only the architectural enclosure of this floor. Identify the apparent building shell, "
+                "major architectural boundary segments, and exterior or semi-exterior regions such as yard, "
+                "terrace, balcony or lightwell. Do not identify doors, windows, room names, furniture, fixtures "
+                "or equipment. Do not invent a boundary merely to close a polygon. Coordinates are image pixels. "
+                "Keep evidence short and return only the strict schema. FRAME_ID="+json.dumps(frame_id)+". ")
+        raw_texts=((context.get("source_context") or {}).get("raw_texts") or [])[:40]
+        if raw_texts:
+            prompt+="Visible source labels are optional orientation evidence only: "+json.dumps(
+                [{"text":str(row.get("text") or "")[:80],"pixel_point":row.get("pixel_point")} for row in raw_texts],
+                ensure_ascii=False,separators=(",",":"))
+        encoded=base64.b64encode(image_bytes).decode("ascii")
+        schema_json=json.dumps(SHELL_BOUNDARIES_JSON_SCHEMA,sort_keys=True,separators=(",",":"))
+        request_bytes=((len(image_bytes)+2)//3)*4+len(prompt.encode("utf-8"))+len(schema_json.encode("utf-8"))
+        if request_bytes>MAX_REQUEST_BODY_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE","Rendered floor exceeds request body limits")
+        identity={"provider":self.provider,"model":self.model,"task_type":"SHELL_BOUNDARIES_V1",
+                  "task_prompt_version":SHELL_BOUNDARIES_PROMPT_VERSION,
+                  "task_schema_version":SHELL_BOUNDARIES_SCHEMA_VERSION,
+                  "transform_version":TRANSFORM_VERSION,"render_version":RENDER_VERSION,
+                  "frame_id":frame_id,"render_sha256":sha256(image_bytes).hexdigest(),
+                  "source_sha256":context.get("source_sha256"),"render_cache_key":context.get("render_cache_key")}
+        cache_key=sha256(json.dumps(identity,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+        cache_root=Path(os.getenv("ARCH_VISION_CACHE_DIR") or "/tmp/planha-architecture-vision")
+        cache_root.mkdir(parents=True,exist_ok=True); cache_path=cache_root/f"vision-{cache_key}.json"
+        common={**identity,"cache_key":cache_key,"image_bytes":len(image_bytes),"prompt_characters":len(prompt),
+                "schema_bytes":len(schema_json.encode("utf-8")),"request_bytes":request_bytes}
+        if cache_path.exists():
+            payload=validate_shell_boundaries_payload(json.loads(cache_path.read_text(encoding="utf-8")),frame_id=frame_id)
+            self.last_call_metadata={**common,"cache_hit":True,"attempt_count":0,"attempt_errors":[],
+                                     "response_bytes":cache_path.stat().st_size,
+                                     "latency_seconds":round(time.perf_counter()-started,6)}
+            return payload
+        try:
+            response=self.client.responses.create(model=self.model,input=[{"role":"user","content":[
+                {"type":"input_text","text":prompt},{"type":"input_image",
+                 "image_url":f"data:image/png;base64,{encoded}","detail":"original"}]}],
+                text={"format":{"type":"json_schema","name":"architectural_shell_boundaries",
+                                "schema":SHELL_BOUNDARIES_JSON_SCHEMA,"strict":True}})
+        except Exception as exc:
+            code,message,_transient=_safe_provider_error(exc)
+            self.last_call_metadata={**common,"cache_hit":False,"attempt_count":1,"attempt_errors":[code],
+                                     "provider_http_status":getattr(exc,"status_code",None),
+                                     "latency_seconds":round(time.perf_counter()-started,6)}
+            raise VisionRecoveryError(code,message) from exc
+        if getattr(response,"status",None)=="incomplete":
+            raise VisionRecoveryError("VISION_RESPONSE_INCOMPLETE","Vision provider response is incomplete")
+        raw=getattr(response,"output_text",None)
+        if not raw:
+            raise VisionRecoveryError("VISION_EMPTY_RESPONSE","Vision provider returned no structured output")
+        usage=getattr(response,"usage",None)
+        usage_fields={field:getattr(usage,field) for field in ("input_tokens","output_tokens","total_tokens")
+                      if usage is not None and getattr(usage,field,None) is not None}
+        self.last_call_metadata={**common,"cache_hit":False,"request_id":getattr(response,"id",None),
+                                 "usage":usage_fields,"attempt_count":1,"attempt_errors":[],
+                                 "response_bytes":len(raw.encode("utf-8")),
+                                 "latency_seconds":round(time.perf_counter()-started,6)}
+        try:
+            payload=validate_shell_boundaries_payload(json.loads(raw),frame_id=frame_id)
+        except json.JSONDecodeError as exc:
+            raise VisionRecoveryError("VISION_JSON_INVALID","Vision provider returned malformed JSON") from exc
+        cache_path.write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True),encoding="utf-8")
+        return payload
 
     def analyze(self, *, image_path: str, frame_id: str, regions: list[dict],
                 context: dict[str, Any] | None = None):

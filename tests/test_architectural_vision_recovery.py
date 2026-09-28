@@ -7,8 +7,9 @@ import pytest
 from cad_engine.architectural_space_engine import reconstruct_architecture
 from cad_engine.architectural_vision_recovery import (
     DeepSeekVisionAdapter, GLOBAL_JSON_SCHEMA, OpenAIVisionAdapter, RENDER_VERSION, RenderTransform,
+    SHELL_BOUNDARIES_JSON_SCHEMA,
     VisionRecoveryError, _raw_source_context, _validate_payload, configured_vision_adapter,
-    reconcile_and_repair, render_source_frame, select_vision_viewport,
+    reconcile_and_repair, render_source_frame, select_vision_viewport, validate_shell_boundaries_payload,
 )
 from cad_engine.engineering_runner import run_engineering_pipeline
 
@@ -202,6 +203,65 @@ def test_deepseek_cache_hit_avoids_duplicate_request(tmp_path, monkeypatch):
     adapter.analyze(**kwargs); adapter.analyze(**kwargs)
     assert responses.calls == 1
     assert adapter.last_call_metadata["cache_hit"] is True
+
+
+def _v1_payload(frame_id="F1"):
+    return {"frame_id":frame_id,
+            "building_shells":[{"shell_id":"S1","polygon_px":[[0,0],[10,0],[10,10],[0,10]],
+                                "confidence":.9,"evidence":["continuous exterior"],"uncertainties":[]}],
+            "boundary_segments":[{"boundary_id":"B1","geometry_px":[[0,0],[10,0]],
+                                  "role":"BUILDING_SHELL","confidence":.95,"evidence":["strong line"]}],
+            "exterior_regions":[],"uncertainties":[]}
+
+
+def test_v1_shell_boundary_contract_is_small_strict_and_valid():
+    payload=_v1_payload()
+    assert validate_shell_boundaries_payload(payload,frame_id="F1") is payload
+    assert set(SHELL_BOUNDARIES_JSON_SCHEMA["properties"]) == {
+        "frame_id","building_shells","boundary_segments","exterior_regions","uncertainties"}
+    malformed={**payload,"doors":[]}
+    with pytest.raises(VisionRecoveryError) as caught:
+        validate_shell_boundaries_payload(malformed,frame_id="F1")
+    assert caught.value.code=="VISION_SCHEMA_INVALID"
+
+
+def test_v1_request_has_independent_cache_and_metrics(tmp_path,monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    calls=[]
+    class Responses:
+        def create(self,**kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(id="v1",output_text=json.dumps(_v1_payload()),
+                                   usage=SimpleNamespace(input_tokens=10,output_tokens=20,total_tokens=30))
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+                                  client=SimpleNamespace(responses=Responses()),max_retries=1)
+    first=adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1",
+                                           context={"source_sha256":"a"*64})
+    second=adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1",
+                                            context={"source_sha256":"a"*64})
+    assert first==second and len(calls)==1
+    assert adapter.last_call_metadata["cache_hit"] is True
+    assert adapter.last_call_metadata["task_type"]=="SHELL_BOUNDARIES_V1"
+    assert calls[0]["text"]["format"]["schema"]==SHELL_BOUNDARIES_JSON_SCHEMA
+
+
+def test_v1_timeout_has_no_blind_retry(tmp_path):
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    class APITimeoutError(Exception): pass
+    class Responses:
+        calls=0
+        def create(self,**kwargs): self.calls+=1; raise APITimeoutError("private body")
+    responses=Responses()
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
+                                  client=SimpleNamespace(responses=responses),max_retries=1)
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")
+    assert caught.value.code=="VISION_TIMEOUT" and responses.calls==1
 
 
 def test_provider_routing_and_deepseek_base_url(monkeypatch):

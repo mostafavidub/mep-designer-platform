@@ -4,6 +4,11 @@
 
 Proposed — implementation and evidence tracked by SWCIS-2026-0284.
 
+The external Vision integration is gated task-by-task. `SHELL_AND_BOUNDARIES_V1`
+uses the full authoritative render with a bounded provider-neutral schema and an
+independent cache identity. Region and opening contracts must not be enabled
+until the V1 provider proof returns a schema-valid, architecturally useful result.
+
 ## Decision
 
 Planha will use one canonical, deterministic-first architectural model. A
