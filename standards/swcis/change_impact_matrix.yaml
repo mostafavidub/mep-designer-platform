@@ -123,6 +123,7 @@
         "tools/architectural_wall_admission_qa.py",
       "tools/generate_hybrid_architecture_qa.py",
       "tools/run_semantic_mep_shadow_ab.py",
+      "tools/run_fixture_recognition_audit.py",
         "cad_engine/mechanical_authority*.py",
         "cad_engine/mechanical_cad*.py",
         "cad_engine/mechanical_design_core.py",
