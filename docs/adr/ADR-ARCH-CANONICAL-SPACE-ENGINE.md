@@ -68,6 +68,26 @@ Its evidence is advisory until reconciled with CAD. Critical ambiguity fails
 closed. Stable identities are content-derived from source, frame, level and
 normalized geometry.
 
+When a governed frame fails specifically because source architectural geometry
+is insufficient, the engine enters `HYBRID_ARCHITECTURAL_RECOVERY`. This path is
+boundary-first: raw CAD facts and mapped Vision hypotheses enter a first-class
+Evidence Graph before envelope or spaces are constructed. Legacy candidate
+spaces are diagnostic-only and cannot veto a new supported enclosure merely
+because no legacy polygon overlaps it.
+
+Every final topological boundary has one authority:
+`CAD_CONFIRMED`, `MULTI_EVIDENCE_INFERRED_TOPOLOGY`,
+`HUMAN_CONFIRMED_TOPOLOGY`, or `UNRESOLVED`. Promotion is rule-based and requires
+no hard CAD conflict plus Vision and an independent evidence family; a weighted
+score is diagnostic only. Absence of a CAD line is not a CAD contradiction.
+
+An inferred or human-confirmed topological boundary always has
+`material_geometry = NONE` and `PHYSICAL_BARRIER_UNKNOWN`. It can close an
+enclosure but cannot acquire wall thickness, structural authority, or routing
+obstacle authority. Human questions are localized YES/NO/UNKNOWN decisions and
+are replayable only while source SHA, frame, hypothesis geometry and question
+version remain unchanged.
+
 ## Consequences
 
 - Open plans are no longer represented by invented walls.

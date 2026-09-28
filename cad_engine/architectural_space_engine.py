@@ -1301,6 +1301,15 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     timings["qa_and_completeness"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     unresolved = [{"space_id": s["physical_space_id"], "bounds": list(_space_polygon(s).bounds)}
                   for s in spaces if s["status"] != "VERIFIED"]
+    envelope_by_frame={row.get("frame_id"):row for row in building_envelopes}
+    governed_frames={frame["frame_id"] for frame in frames
+                     if "governed_print_frame_detector" in (frame.get("evidence") or [])}
+    hybrid_frame_ids={row["frame_id"] for row in subdivision_comparisons
+                      if row.get("selected_authority")=="LEGACY_FALLBACK"
+                      and row.get("canonical_reason")=="CANONICAL_BUILDING_ENVELOPE_UNPROVEN"
+                      and row["frame_id"] in governed_frames
+                      and (envelope_by_frame.get(row["frame_id"]) or {}).get("reason")==
+                          "INSUFFICIENT_INDEPENDENT_INTERIOR_EVIDENCE"}
     if not unresolved:
         vision = {"provider":"NONE","calls":0,"candidates":[],"status":"NOT_REQUIRED",
                   "policy":"DETERMINISTIC_FIRST_BOUNDED_GLOBAL_THEN_LOCAL","regions":[]}
@@ -1310,7 +1319,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         from .architectural_vision_recovery import recover_semantics
         vision = recover_semantics(extracted=extracted,frames=frames,spaces=spaces,
                                    source_hash=source["source_sha256"],segments=segment_records,
-                                   tolerance=tolerance,adapter=vision_adapter,canonical_walls=canonical_walls)
+                                   tolerance=tolerance,adapter=vision_adapter,canonical_walls=canonical_walls,
+                                   hybrid_frame_ids=hybrid_frame_ids)
         vision["regions"] = unresolved
         # Vision can add semantic evidence only.  Every engineering gate is
         # recalculated from the fused canonical model; the provider cannot set
@@ -1324,7 +1334,17 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         completeness=_completeness(frames,spaces,source["metres_per_unit"] is not None,
                                    coverage=coverage,openings=openings,
                                    dimension_reconciliation=dimension_reconciliation)
-        if vision.get("status") == "COMPLETE" and completeness["status"] != "VERIFIED":
+        hybrid_frames=((vision.get("hybrid_recovery") or {}).get("frames") or [])
+        if hybrid_frames:
+            material_questions=[question for result in hybrid_frames for question in result.get("human_questions") or []]
+            if material_questions:
+                vision["status"]="READY_FOR_USER_TEST_TARGETED_ARCHITECTURE_CONFIRMATION"
+                vision["human_questions"]=material_questions
+            elif all(result.get("status")=="PASS" for result in hybrid_frames):
+                vision["status"]="FASIHI_GROUND_HYBRID_ARCHITECTURE_PASS"
+            else:
+                vision["status"]="FASIHI_HYBRID_ARCHITECTURE_STILL_BLOCKED"
+        elif vision.get("status") == "COMPLETE" and completeness["status"] != "VERIFIED":
             remaining=[s for s in spaces if s["status"] not in {"VERIFIED","HIGH_CONFIDENCE"}]
             limit=int(os.getenv("ARCH_VISION_MAX_TARGETED_QUESTIONS") or 3)
             material_ratio=len(remaining)/max(len(spaces),1)
@@ -1395,6 +1415,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "access_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in access_edges]},
              "rejected_candidate_cells":rejected_cells,"coverage":coverage,"review":review,
              "completeness": completeness, "vision_reconciliation": vision,
+             "hybrid_architecture":vision.get("hybrid_recovery"),
              "diagnostics": {"entity_counts": extracted["entity_counts"], "adaptive_tolerance": tolerance,
                              "raw_boundary_segment_count":len(extracted["boundary_lines"]),
                              "accepted_wall_segment_count":sum(r["status"]=="ACCEPTED" for r in segment_records),

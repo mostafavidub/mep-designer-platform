@@ -25,9 +25,9 @@ from .architectural_topology_quality import host_portal_on_walls
 
 RENDER_VERSION = "architecture-source-render/2"
 VIEWPORT_VERSION = "architecture-vision-viewport/1"
-PROMPT_VERSION = "architecture-recovery/3"
-FUSION_VERSION = "architecture-evidence-fusion/1"
-VISION_SCHEMA_VERSION = "architectural-vision-evidence/1.1"
+PROMPT_VERSION = "architecture-hybrid-boundary-recovery/1"
+FUSION_VERSION = "architecture-boundary-evidence-fusion/2"
+VISION_SCHEMA_VERSION = "architectural-vision-evidence/2.0"
 TRANSFORM_VERSION = "cad-pixel-transform/1"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 MAX_INLINE_IMAGE_BYTES = 32 * 1024 * 1024
@@ -329,9 +329,16 @@ def _validate_payload(payload: Any, expected_region_ids: set[str]) -> list[dict]
     return result
 
 
-GLOBAL_KEYS = {"frame_id", "physical_spaces", "functional_zones", "doors", "windows",
+GLOBAL_KEYS = {"frame_id", "building_shells", "boundary_hypotheses", "region_roles",
+               "physical_spaces", "functional_zones", "doors", "windows",
                "open_passages", "stairs", "shafts", "suspected_false_boundaries",
                "suspected_missing_boundaries", "unresolved_regions"}
+LEGACY_GLOBAL_KEYS = GLOBAL_KEYS - {"building_shells", "boundary_hypotheses", "region_roles"}
+
+BOUNDARY_ROLES = {"EXTERIOR_SHELL", "INTERIOR_SEPARATOR", "OPEN_PLAN_TRANSITION",
+                  "COURTYARD_EDGE", "SHAFT_EDGE", "STAIR_EDGE", "UNKNOWN"}
+REGION_ROLES = {"BUILDING_INTERIOR", "SITE_EXTERIOR", "SEMI_EXTERIOR", "COURTYARD",
+                "LIGHTWELL", "SHAFT", "STAIR", "UNKNOWN"}
 
 _GEOMETRY_EVIDENCE_SCHEMA = {"type":"object","additionalProperties":False,
     "required":["geometry_px","evidence","confidence"],"properties":{
@@ -359,8 +366,40 @@ _PORTAL_SCHEMA = {"type":"object","additionalProperties":False,
                                 "connects":{"type":"array","items":{"type":"string"}},
                                 "evidence":{"type":"array","items":{"type":"string"}},
                                 "confidence":{"type":"number","minimum":0,"maximum":1}}}
+_BOUNDARY_SCHEMA = {"type":"object","additionalProperties":False,
+    "required":["boundary_id","geometry_px","role","adjacent_regions","evidence","confidence","uncertainties"],
+    "properties":{"boundary_id":{"type":"string"},
+      "geometry_px":{"type":"array","minItems":2,"items":{"type":"array","minItems":2,"maxItems":2,
+                                                                   "items":{"type":"number"}}},
+      "role":{"type":"string","enum":sorted(BOUNDARY_ROLES)},
+      "adjacent_regions":{"type":"array","items":{"type":"string"}},
+      "evidence":{"type":"array","items":{"type":"string"}},
+      "confidence":{"type":"number","minimum":0,"maximum":1},
+      "uncertainties":{"type":"array","items":{"type":"string"}}}}
+_SHELL_SCHEMA = {"type":"object","additionalProperties":False,
+    "required":["shell_id","outer_ring_px","inner_rings_px","evidence","confidence","uncertainties"],
+    "properties":{"shell_id":{"type":"string"},
+      "outer_ring_px":{"type":"array","minItems":3,"items":{"type":"array","minItems":2,"maxItems":2,
+                                                                    "items":{"type":"number"}}},
+      "inner_rings_px":{"type":"array","items":{"type":"array","minItems":3,
+        "items":{"type":"array","minItems":2,"maxItems":2,"items":{"type":"number"}}}},
+      "evidence":{"type":"array","items":{"type":"string"}},
+      "confidence":{"type":"number","minimum":0,"maximum":1},
+      "uncertainties":{"type":"array","items":{"type":"string"}}}}
+_REGION_ROLE_SCHEMA = {"type":"object","additionalProperties":False,
+    "required":["region_id","polygon_px","role","evidence","confidence","uncertainties"],
+    "properties":{"region_id":{"type":"string"},
+      "polygon_px":{"type":"array","minItems":3,"items":{"type":"array","minItems":2,"maxItems":2,
+                                                                  "items":{"type":"number"}}},
+      "role":{"type":"string","enum":sorted(REGION_ROLES)},
+      "evidence":{"type":"array","items":{"type":"string"}},
+      "confidence":{"type":"number","minimum":0,"maximum":1},
+      "uncertainties":{"type":"array","items":{"type":"string"}}}}
 GLOBAL_JSON_SCHEMA={"type":"object","additionalProperties":False,"required":sorted(GLOBAL_KEYS),"properties":{
     "frame_id":{"type":"string"},
+    "building_shells":{"type":"array","items":_SHELL_SCHEMA},
+    "boundary_hypotheses":{"type":"array","items":_BOUNDARY_SCHEMA},
+    "region_roles":{"type":"array","items":_REGION_ROLE_SCHEMA},
     "physical_spaces":{"type":"array","items":{"type":"object","additionalProperties":False,
         "required":["vision_space_id","polygon_px","semantic_candidates","objects_seen","labels_seen","boundary_evidence","uncertainties"],
         "properties":{"vision_space_id":{"type":"string"},
@@ -383,6 +422,10 @@ GLOBAL_JSON_SCHEMA={"type":"object","additionalProperties":False,"required":sort
 
 def validate_global_payload(payload: Any, *, frame_id: str) -> dict:
     """Strictly validate the geometry-bearing global Vision contract."""
+    if isinstance(payload, dict) and set(payload) == LEGACY_GLOBAL_KEYS:
+        # Version 1 cache remains readable as raw hypotheses, but it carries no
+        # shell/boundary authority and therefore cannot by itself close Hybrid topology.
+        payload = {**payload, "building_shells": [], "boundary_hypotheses": [], "region_roles": []}
     if not isinstance(payload, dict) or set(payload) != GLOBAL_KEYS or payload.get("frame_id") != frame_id:
         raise VisionRecoveryError("VISION_SCHEMA_INVALID", "Global response fields or frame identity are invalid")
     list_fields = GLOBAL_KEYS - {"frame_id"}
@@ -415,6 +458,21 @@ def validate_global_payload(payload: Any, *, frame_id: str) -> dict:
                 raise VisionRecoveryError("VISION_SCHEMA_INVALID", f"Invalid {portal_key} record")
             if not 0 <= float(portal["confidence"]) <= 1 or not isinstance(portal["connects"], list) or not isinstance(portal["evidence"], list):
                 raise VisionRecoveryError("VISION_VALUE_INVALID", f"Invalid {portal_key} evidence")
+    for shell in payload["building_shells"]:
+        if not isinstance(shell, dict) or set(shell) != set(_SHELL_SCHEMA["required"]):
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID", "Invalid building-shell record")
+        if len(shell["outer_ring_px"]) < 3 or not 0 <= float(shell["confidence"]) <= 1:
+            raise VisionRecoveryError("VISION_GEOMETRY_INVALID", "Building-shell geometry is invalid")
+    for boundary in payload["boundary_hypotheses"]:
+        if not isinstance(boundary, dict) or set(boundary) != set(_BOUNDARY_SCHEMA["required"]):
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID", "Invalid boundary-hypothesis record")
+        if boundary["role"] not in BOUNDARY_ROLES or len(boundary["geometry_px"]) < 2:
+            raise VisionRecoveryError("VISION_VALUE_INVALID", "Boundary hypothesis is invalid")
+    for region in payload["region_roles"]:
+        if not isinstance(region, dict) or set(region) != set(_REGION_ROLE_SCHEMA["required"]):
+            raise VisionRecoveryError("VISION_SCHEMA_INVALID", "Invalid region-role record")
+        if region["role"] not in REGION_ROLES or len(region["polygon_px"]) < 3:
+            raise VisionRecoveryError("VISION_VALUE_INVALID", "Region-role hypothesis is invalid")
     return payload
 
 
@@ -473,24 +531,40 @@ class OpenAICompatibleVisionAdapter:
             raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE", "Rendered floor exceeds inline image limits")
         encoded = base64.b64encode(image_bytes).decode("ascii")
         region_contract = [{"region_id": row["region_id"], "pixel_bounds": row.get("pixel_bounds"),
-                            "cad_bounds": row.get("bounds")} for row in regions]
+                            "cad_bounds": row.get("bounds"),
+                            "geometry_authority": "LEGACY_DIAGNOSTIC_ONLY"
+                                if (context or {}).get("legacy_regions_diagnostic_only") else "CANONICAL_CAD"}
+                           for row in regions]
         source_context=(context or {}).get("source_context") or {}
-        prompt = ("Inspect this raw architectural floor render as supporting evidence for exact CAD. "
+        prompt = ("Inspect this raw architectural floor render and return architectural HYPOTHESES only. "
+                  "You are not authoritative for physical wall material. Distinguish a physical space from "
+                  "functional zones inside an open-plan space. Identify the building shell, site/yard, "
+                  "semi-exterior regions, courtyards, shafts and stairs. Decompose visible separators into "
+                  "boundary hypotheses; do not invent boundaries merely to close polygons. "
                   "Return frame_id exactly as supplied; FRAME_ID=" + json.dumps(frame_id) + ". "
-                  "Return JSON with EXACTLY these top-level keys: frame_id, physical_spaces, functional_zones, "
+                  "Return JSON with EXACTLY these top-level keys: frame_id, building_shells, "
+                  "boundary_hypotheses, region_roles, physical_spaces, functional_zones, "
                   "doors, windows, open_passages, stairs, shafts, suspected_false_boundaries, "
-                  "suspected_missing_boundaries, unresolved_regions. Each physical_space must contain EXACTLY "
+                  "suspected_missing_boundaries, unresolved_regions. A building_shell contains shell_id, "
+                  "outer_ring_px, inner_rings_px, evidence, confidence, uncertainties. A boundary_hypothesis "
+                  "contains boundary_id, geometry_px, role, adjacent_regions, evidence, confidence, uncertainties; "
+                  "role is EXTERIOR_SHELL, INTERIOR_SEPARATOR, OPEN_PLAN_TRANSITION, COURTYARD_EDGE, SHAFT_EDGE, "
+                  "STAIR_EDGE or UNKNOWN. A region_role contains region_id, polygon_px, role, evidence, confidence, "
+                  "uncertainties; role is BUILDING_INTERIOR, SITE_EXTERIOR, SEMI_EXTERIOR, COURTYARD, LIGHTWELL, "
+                  "SHAFT, STAIR or UNKNOWN. Each physical_space must contain EXACTLY "
                   "vision_space_id, polygon_px, semantic_candidates[{type,confidence}], objects_seen, labels_seen, "
                   "boundary_evidence, uncertainties. Portal rows contain EXACTLY geometry_px, connects, evidence, "
                   "confidence. Functional-zone rows contain EXACTLY zone_id, geometry_px, semantic_type, evidence, "
                   "confidence. Stair, shaft and suspected-boundary rows contain EXACTLY geometry_px, evidence, "
                   "confidence. Unresolved-region rows contain EXACTLY geometry_px, reason. Coordinates are image "
                   "pixels. Do not invent dimensions. Use empty arrays rather than "
-                  "guessing. Known CAD regions are context, not required output identities. "
+                  "guessing. Regions marked LEGACY_DIAGNOSTIC_ONLY are not truth and must not bias shell or "
+                  "room topology. Known CAD regions are context, not required output identities. "
                   "Be concise: emit exactly one record per distinct architectural object, never duplicate a "
                   "space or portal, keep every evidence/label/object/uncertainty array to at most five short "
                   "items, and report at most ten unresolved regions ordered by architectural importance. "
-                  "Do not enumerate dimension ticks, stair tread numbers, furniture strokes, or annotation "
+                  "Every record is VISION_HYPOTHESIS, never VERIFIED. Do not enumerate dimension ticks, stair "
+                  "tread numbers, furniture strokes, or annotation "
                   "fragments as spaces or unresolved regions.\nREGIONS=" +
                   json.dumps(region_contract, ensure_ascii=False, separators=(",", ":"))+
                   "\nRAW_SOURCE_CONTEXT="+json.dumps(source_context,ensure_ascii=False,separators=(",",":")))
@@ -789,7 +863,8 @@ def reconcile_and_repair(*, analysis: dict, spaces: list[dict], transform: Rende
 
 def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict], source_hash: str,
                       segments: list[dict] | None = None, tolerance: float | None = None,
-                      adapter=None, cache_dir=None, canonical_walls: list[dict] | None = None) -> dict:
+                      adapter=None, cache_dir=None, canonical_walls: list[dict] | None = None,
+                      hybrid_frame_ids: set[str] | None = None) -> dict:
     """Run one global pass and at most one localized pass per unresolved frame."""
     events = []; calls = []; analyses = []; repairs = []; portal_candidates = []; started = time.perf_counter()
     for stage in (RecoveryStage.SOURCE_INGESTION, RecoveryStage.FRAME_AND_LEVEL_ISOLATION,
@@ -802,9 +877,18 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
             return {"provider": "NONE", "calls": 0, "analyses": [], "repairs": [], "status": "CONFIG_REQUIRED",
                     "policy": "DETERMINISTIC_FIRST_BOUNDED_GLOBAL_THEN_LOCAL", "events": events,
                     "error": configuration_error, "runtime_seconds": round(time.perf_counter()-started, 6)}
-    for frame in frames:
+    hybrid_frame_ids=set(hybrid_frame_ids or [])
+    candidate_frames=list(frames)
+    if hybrid_frame_ids:
+        candidate_frames=[frame for frame in frames if frame.get("frame_id") in hybrid_frame_ids]
+        # Ground-first is semantic, not coordinate/project-specific.
+        candidate_frames.sort(key=lambda frame:(frame.get("level_candidate")!="GROUND",frame.get("frame_id")))
+        candidate_frames=candidate_frames[:1]
+    hybrid_results=[]
+    for frame in candidate_frames:
         frame_spaces = [s for s in spaces if s.get("frame_id") == frame.get("frame_id") and s.get("status") != "VERIFIED"]
-        if not frame_spaces or not frame.get("bounds"):
+        hybrid_mode=frame.get("frame_id") in hybrid_frame_ids
+        if (not frame_spaces and not hybrid_mode) or not frame.get("bounds"):
             continue
         full_manifest=render_source_frame(extracted=extracted,frame=frame,source_hash=source_hash,
                                           cache_dir=cache_dir,width_px=1100,render_role="CONTEXT_FULL_FRAME")
@@ -821,7 +905,8 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
         try:
             first = adapter.analyze(image_path=manifest["image_path"], frame_id=frame["frame_id"], regions=regions,
                                     context={"source_sha256":source_hash,"render_cache_key":manifest["cache_key"],
-                                             "scope":"GLOBAL","source_context":source_context})
+                                             "scope":"GLOBAL","source_context":source_context,
+                                             "legacy_regions_diagnostic_only":hybrid_mode})
             calls.append({"scope": "GLOBAL", "frame_id": frame["frame_id"], "region_count": len(regions),
                           "image_cache_key": manifest["cache_key"], "vision_space_count": len(first["physical_spaces"]),
                           "context_image_path":full_manifest["image_path"],"focused_image_path":manifest["image_path"],
@@ -835,6 +920,30 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
             analyses.append({"scope":"GLOBAL", "frame_id":frame["frame_id"], "analysis":first,
                              "render_hash":manifest["cache_key"]})
             events.append({"stage": RecoveryStage.GLOBAL_VISION_ANALYSIS.value, "frame_id": frame["frame_id"]})
+            if hybrid_mode:
+                from .hybrid_architectural_recovery import (
+                    build_boundary_evidence_graph, construct_hybrid_topology, map_hypotheses_to_cad)
+                mapped=map_hypotheses_to_cad(first,transform,source_sha256=source_hash,
+                    render_hash=manifest["cache_key"],provider=getattr(adapter,"provider",None),
+                    model=getattr(adapter,"model",None),prompt_version=PROMPT_VERSION,
+                    schema_version=VISION_SCHEMA_VERSION)
+                evidence=build_boundary_evidence_graph(mapped=mapped,segments=segments or [],
+                    texts=extracted.get("texts") or [],dimensions=extracted.get("dimensions") or [],
+                    source_sha256=source_hash,tolerance=max(float(tolerance or .001),1e-8))
+                topology=construct_hybrid_topology(mapped=mapped,boundary_analysis=evidence,
+                    source_sha256=source_hash,tolerance=max(float(tolerance or .001),1e-8))
+                topology["evidence_graph"]=evidence["evidence_graph"]
+                topology["mapped_hypotheses"]=mapped
+                hybrid_results.append(topology)
+                if topology["physical_spaces"] and topology["overlap_area"]<=max(float(tolerance or .001)**2,1e-12):
+                    spaces[:]=[space for space in spaces if space.get("frame_id")!=frame["frame_id"]]
+                    spaces.extend(topology["physical_spaces"])
+                events.extend(({"stage":"HYBRID_EVIDENCE_GRAPH","frame_id":frame["frame_id"]},
+                               {"stage":"HYBRID_TOPOLOGY_RECONSTRUCTION","frame_id":frame["frame_id"],
+                                "status":topology["status"]}))
+                # Hybrid mode permits one global call. A local provider call is
+                # never automatic; unresolved material decisions become minimal questions.
+                continue
             fused = reconcile_and_repair(analysis=first, spaces=spaces, transform=transform,
                                          segments=segments or [], source_hash=source_hash,
                                          tolerance=max(float(tolerance or .001), 1e-8),
@@ -891,6 +1000,9 @@ def recover_semantics(*, extracted: dict, frames: list[dict], spaces: list[dict]
     events.append({"stage": RecoveryStage.FINAL_COMPLETENESS_GATE.value})
     return {"provider": getattr(adapter,"provider",type(adapter).__name__), "model": getattr(adapter, "model", None), "calls": len(calls),
             "call_log": calls, "analyses": analyses, "repairs": repairs, "portal_candidates":portal_candidates,
+            "hybrid_recovery":{"trigger":"SOURCE_ARCHITECTURE_GEOMETRY_INSUFFICIENT",
+                               "mode":"HYBRID_ARCHITECTURAL_RECOVERY","frames":hybrid_results}
+                              if hybrid_frame_ids else None,
             "vision_repairs_proposed":len(repairs),"vision_repairs_accepted":sum(row["accepted"] for row in repairs),
             "vision_repairs_rejected":sum(not row["accepted"] for row in repairs),
             "status": "COMPLETE", "events": events,
