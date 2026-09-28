@@ -94,6 +94,25 @@ overlay omitted a major portion of the apparent building and classified
 apparent interior/stair areas as exterior. JSON-object fallback was correctly
 not invoked because the strict transport itself did not time out or fail.
 
+### Vision geometry generation versus candidate classification
+
+Engineering-critical topology uses candidate classification, not unconstrained
+Vision geometry generation. CAD and deterministic geometry code own candidate
+region polygons, boundary segments and the small finite set of possible
+topological bridges. The provider may reference and classify only supplied
+stable IDs. It cannot return coordinates, invent IDs, move boundaries, create
+wall material, or draw a building shell. The Building Shell is a deterministic
+result of the classified region-adjacency graph and the existing multi-evidence
+promotion rules.
+
+`SHELL_BOUNDARIES_V1` free-form geometry remains diagnostic-only and is
+`UNQUALIFIED_FOR_ENGINEERING_AUTHORITY`. The preferred task is
+`SHELL_BOUNDARY_CLASSIFICATION_V1`. It is eligible for a provider call only
+after a measurable candidate-graph gate proves bounded candidate counts,
+material region coverage, at least one major plan region and independently
+hosted CAD text/object evidence. An insufficient graph stops before network use,
+leaves Mechanical blocked and reports `FASIHI_CANDIDATE_GRAPH_INSUFFICIENT`.
+
 When a governed frame fails specifically because source architectural geometry
 is insufficient, the engine enters `HYBRID_ARCHITECTURAL_RECOVERY`. This path is
 boundary-first: raw CAD facts and mapped Vision hypotheses enter a first-class

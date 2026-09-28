@@ -72,6 +72,7 @@ class RecoveryStage(str, Enum):
 
 class VisionTask(str, Enum):
     SHELL_BOUNDARIES_V1 = "SHELL_BOUNDARIES_V1"
+    SHELL_BOUNDARY_CLASSIFICATION_V1 = "SHELL_BOUNDARY_CLASSIFICATION_V1"
 
 
 class VisionTransport(str, Enum):
@@ -87,10 +88,21 @@ PROVIDER_CAPABILITY_MATRIX = {
         "unsupported_transports": [VisionTransport.RESPONSES_JSON_SCHEMA.value],
         "supports_images": True,
         "supports_strict_schema": True,
-        "status": "STRUCTURED_TRANSPORT_QUALIFIED",
+        "status": "TRANSPORT_QUALIFIED_FREEFORM_GEOMETRY_UNQUALIFIED",
         "last_qualified_version": SHELL_BOUNDARIES_SCHEMA_VERSION,
         "observed_latency": 5.01301,
         "reliability_state": "ARCHITECTURAL_QA_FAILED",
+    },
+    ("deepseek", "deepseek-flash", VisionTask.SHELL_BOUNDARY_CLASSIFICATION_V1.value): {
+        "preferred_transport": VisionTransport.STRICT_TOOL_CALL.value,
+        "fallback_transport": VisionTransport.JSON_OBJECT.value,
+        "unsupported_transports": [VisionTransport.RESPONSES_JSON_SCHEMA.value],
+        "supports_images": True,
+        "supports_strict_schema": True,
+        "geometry_policy": "SUPPLIED_CANDIDATE_IDS_ONLY",
+        "status": "STRUCTURED_TRANSPORT_QUALIFIED_CANDIDATE_GRAPH_REQUIRED",
+        "last_qualified_version": "candidate-architectural-topology/1.0",
+        "reliability_state": "AWAITING_USABLE_CANDIDATE_GRAPH",
     }
 }
 

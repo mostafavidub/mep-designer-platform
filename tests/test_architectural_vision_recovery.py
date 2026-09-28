@@ -392,7 +392,7 @@ def test_transport_cache_identity_and_capability_routing(tmp_path):
     capability=PROVIDER_CAPABILITY_MATRIX[("deepseek","deepseek-flash",VisionTask.SHELL_BOUNDARIES_V1.value)]
     assert capability["preferred_transport"]==VisionTransport.STRICT_TOOL_CALL.value
     assert VisionTransport.RESPONSES_JSON_SCHEMA.value in capability["unsupported_transports"]
-    assert capability["status"]=="STRUCTURED_TRANSPORT_QUALIFIED"
+    assert capability["status"]=="TRANSPORT_QUALIFIED_FREEFORM_GEOMETRY_UNQUALIFIED"
     assert capability["reliability_state"]=="ARCHITECTURAL_QA_FAILED"
 
 
