@@ -18,6 +18,9 @@ import time
 
 SEMANTIC_MAP_SCHEMA = "architectural-semantic-map/1.0"
 SEMANTIC_PROMPT_VERSION = "whole-floor-semantic-scout/1"
+COMPACT_SEMANTIC_SCHEMA = "architectural-semantic-hint/2.0"
+COMPACT_PROMPT_VERSION = "compact-multi-pass-semantic-scout/2"
+COMPACT_RESPONSE_BUDGET = 1800
 SEMANTIC_AUTHORITY = "VISION_SEMANTIC_HINT"
 SEMANTIC_TYPES = {
     "BEDROOM", "MASTER_BEDROOM", "LIVING", "RECEPTION", "DINING", "OPEN_PLAN",
@@ -515,3 +518,256 @@ def render_semantic_overlay(source_path: str | Path, hints: list[dict], output_p
     result = Image.alpha_composite(image, overlay).convert("RGB")
     result.save(output_path)
     return {"path": str(output_path), "render_hash": sha256(Path(output_path).read_bytes()).hexdigest()}
+
+
+# Compact multi-pass provider transport.  These abbreviated fields are transport
+# only; canonical records are enriched locally after strict validation.
+SEMANTIC_GROUPS = {
+    "WET_SERVICE": {"KITCHEN", "KITCHENETTE", "BATHROOM", "SHOWER", "TOILET",
+                    "LAUNDRY", "UTILITY", "STORAGE", "MECHANICAL_ROOM", "ELECTRICAL_ROOM",
+                    "SHAFT", "DUCT"},
+    "HABITABLE": {"BEDROOM", "MASTER_BEDROOM", "LIVING", "RECEPTION", "DINING", "OPEN_PLAN"},
+    "CIRCULATION_CORE": {"ENTRANCE", "VESTIBULE", "CORRIDOR", "LOBBY", "STAIR",
+                         "STAIR_LANDING", "ELEVATOR", "ELEVATOR_LOBBY"},
+    "EXTERIOR_SITE": {"BALCONY", "TERRACE", "PATIO", "YARD", "BACKYARD", "COURTYARD",
+                      "LIGHTWELL", "PARKING", "DRIVEWAY", "RAMP"},
+}
+
+
+def compact_inventory_schema() -> dict[str, Any]:
+    item = {"type": "object", "additionalProperties": False, "required": ["t", "n", "c"],
+            "properties": {"t": {"type": "string", "enum": sorted(SEMANTIC_TYPES)},
+                           "n": {"type": "integer", "minimum": 0, "maximum": 99},
+                           "c": {"type": "number", "minimum": 0, "maximum": 1}}}
+    return {"type": "object", "additionalProperties": False, "required": ["f", "types"],
+            "properties": {"f": {"type": "string"},
+                           "types": {"type": "array", "maxItems": len(SEMANTIC_TYPES), "items": item}}}
+
+
+def compact_localization_schema(allowed_types: set[str] | list[str]) -> dict[str, Any]:
+    allowed = sorted(set(allowed_types))
+    item = {"type": "object", "additionalProperties": False, "required": ["t", "b", "c"],
+            "properties": {"t": {"type": "string", "enum": allowed},
+                           "b": {"type": "array", "items": {"type": "number", "minimum": 0,
+                                                                 "maximum": 1},
+                                 "minItems": 4, "maxItems": 4},
+                           "c": {"type": "number", "minimum": 0, "maximum": 1}}}
+    return {"type": "object", "additionalProperties": False, "required": ["f", "z"],
+            "properties": {"f": {"type": "string"},
+                           "z": {"type": "array", "items": item}}}
+
+
+def estimate_compact_response_bytes(*, task_type: str, expected_hints: int = 0,
+                                    expected_types: int = 0, safety_margin: float = 1.35) -> dict[str, Any]:
+    # Measured conservative ASCII JSON upper bounds. Values deliberately include
+    # long semantic enum names and maximum decimal representations.
+    root_bytes = 96
+    per_item = 82 if task_type == "LOCALIZATION" else 58
+    count = expected_hints if task_type == "LOCALIZATION" else expected_types
+    raw = root_bytes + count * per_item
+    estimated = int(math.ceil(raw * safety_margin))
+    return {"task_type": task_type, "root_bytes": root_bytes, "max_item_bytes": per_item,
+            "item_count": count, "safety_margin": safety_margin,
+            "estimated_response_bytes": estimated, "budget_bytes": COMPACT_RESPONSE_BUDGET,
+            "within_budget": estimated <= COMPACT_RESPONSE_BUDGET}
+
+
+def validate_compact_inventory(payload: dict[str, Any], *, frame_id: str) -> dict[str, Any]:
+    if not isinstance(payload, dict) or set(payload) != {"f", "types"} or payload["f"] != frame_id:
+        raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory root or frame is invalid")
+    if not isinstance(payload["types"], list):
+        raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory types must be an array")
+    result, seen = [], set()
+    for row in payload["types"]:
+        if not isinstance(row, dict) or set(row) != {"t", "n", "c"}:
+            raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory item fields are invalid")
+        kind = str(row["t"]).upper()
+        if kind not in SEMANTIC_TYPES or kind in seen or isinstance(row["n"], bool):
+            raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory type/count is invalid")
+        count, confidence = int(row["n"]), float(row["c"])
+        if count != row["n"] or not 0 <= count <= 99 or not math.isfinite(confidence) or not 0 <= confidence <= 1:
+            raise SemanticScoutError("COMPACT_INVENTORY_INVALID", "Inventory values are invalid")
+        seen.add(kind); result.append({"t": kind, "n": count, "c": confidence})
+    return {"f": frame_id, "types": result}
+
+
+def validate_compact_localization(payload: dict[str, Any], *, frame_id: str,
+                                  allowed_types: set[str] | list[str]) -> dict[str, Any]:
+    allowed = set(allowed_types)
+    if not isinstance(payload, dict) or set(payload) != {"f", "z"} or payload["f"] != frame_id:
+        raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Localization root or frame is invalid")
+    if not isinstance(payload["z"], list):
+        raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Localization zones must be an array")
+    rows = []
+    for row in payload["z"]:
+        if not isinstance(row, dict) or set(row) != {"t", "b", "c"}:
+            raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Provider prose or extra fields are forbidden")
+        kind, bbox, confidence = str(row["t"]).upper(), row["b"], float(row["c"])
+        if kind not in allowed or not isinstance(bbox, list) or len(bbox) != 4:
+            raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Type or bbox is invalid")
+        bbox = [float(x) for x in bbox]
+        if (not all(math.isfinite(x) and 0 <= x <= 1 for x in bbox)
+                or not bbox[0] < bbox[2] or not bbox[1] < bbox[3]
+                or not math.isfinite(confidence) or not 0 <= confidence <= 1):
+            raise SemanticScoutError("COMPACT_LOCALIZATION_INVALID", "Localization values are invalid")
+        rows.append({"t": kind, "b": bbox, "c": confidence})
+    return {"f": frame_id, "z": rows}
+
+
+def _label_semantic_candidates(text: str) -> set[str]:
+    value = str(text).strip().lower()
+    mapping = {"آشپز": "KITCHEN", "حمام": "BATHROOM", "توالت": "TOILET", "سرویس": "TOILET",
+               "خواب": "BEDROOM", "پذیرایی": "LIVING", "نشیمن": "LIVING", "راه پله": "STAIR",
+               "پله": "STAIR", "آسانسور": "ELEVATOR", "داکت": "DUCT", "حیاط": "YARD",
+               "پارکینگ": "PARKING", "بالکن": "BALCONY", "تراس": "TERRACE"}
+    return {kind for token, kind in mapping.items() if token in value}
+
+
+def plan_compact_calls(inventory: dict[str, Any], labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    suggested = {row["t"] for row in inventory["types"] if row["n"] > 0 and row["c"] >= .25}
+    for label in labels:
+        suggested.update(_label_semantic_candidates(label.get("text", "")))
+    plans = []
+    for group_name, group_types in SEMANTIC_GROUPS.items():
+        relevant = sorted(suggested & group_types)
+        if not relevant:
+            continue
+        expected = max(len(relevant), sum(row["n"] for row in inventory["types"] if row["t"] in relevant))
+        estimate = estimate_compact_response_bytes(task_type="LOCALIZATION", expected_hints=expected)
+        if estimate["within_budget"]:
+            plans.append({"group": group_name, "types": relevant, "expected_hints": expected,
+                          "estimate": estimate})
+            continue
+        # Deterministic semantic-subset split, never random batching.
+        current = []
+        for kind in relevant:
+            candidate = current + [kind]
+            candidate_count = max(len(candidate), sum(row["n"] for row in inventory["types"] if row["t"] in candidate))
+            if current and not estimate_compact_response_bytes(task_type="LOCALIZATION", expected_hints=candidate_count)["within_budget"]:
+                count = max(len(current), sum(row["n"] for row in inventory["types"] if row["t"] in current))
+                plans.append({"group": f"{group_name}_{len(plans)+1}", "types": current,
+                              "expected_hints": count,
+                              "estimate": estimate_compact_response_bytes(task_type="LOCALIZATION", expected_hints=count)})
+                current = [kind]
+            else:
+                current = candidate
+        if current:
+            count = max(len(current), sum(row["n"] for row in inventory["types"] if row["t"] in current))
+            plans.append({"group": f"{group_name}_{len(plans)+1}", "types": current,
+                          "expected_hints": count,
+                          "estimate": estimate_compact_response_bytes(task_type="LOCALIZATION", expected_hints=count)})
+    return plans
+
+
+def enrich_compact_hints(rows: list[dict[str, Any]], *, source_sha256: str, frame_id: str,
+                         source_call_id: str, labels: list[dict], objects: list[dict]) -> list[dict[str, Any]]:
+    enriched = []
+    for row in rows:
+        x0, y0, x1, y1 = row["b"]
+        inside_labels = [x["text"] for x in labels if x0 <= x["normalized_position"][0] <= x1
+                         and y0 <= x["normalized_position"][1] <= y1]
+        inside_objects = [x["type"] for x in objects if x0 <= x["normalized_position"][0] <= x1
+                          and y0 <= x["normalized_position"][1] <= y1]
+        label_candidates = set().union(*(_label_semantic_candidates(x) for x in inside_labels)) if inside_labels else set()
+        conflict = bool(label_candidates and row["t"] not in label_candidates)
+        status = ("CONFLICT" if conflict else "MULTI_EVIDENCE_SUPPORTED" if inside_labels and inside_objects
+                  else "VISION_PLUS_LABEL" if inside_labels else "VISION_PLUS_OBJECT" if inside_objects else "VISION_ONLY")
+        identity = [source_sha256, frame_id, source_call_id, row["t"], [round(x, 5) for x in row["b"]]]
+        enriched.append({"semantic_hint_id": _stable("SEM", identity), "semantic_type": row["t"],
+                         "confidence": row["c"], "approx_bbox_norm": row["b"],
+                         "approx_center_norm": [(x0+x1)/2, (y0+y1)/2], "dxf_labels": inside_labels,
+                         "cad_objects": inside_objects, "mep_groups": MEP_GROUPS.get(row["t"], []),
+                         "semantic_status": status, "source_call_id": source_call_id,
+                         "authority": SEMANTIC_AUTHORITY, "material_geometry": None,
+                         "routing_authority": "NONE", "engineering_geometry": False})
+    return enriched
+
+
+def compact_semantic_completeness(inventory: dict, hints: list[dict], labels: list[dict]) -> dict[str, Any]:
+    localized = {}
+    for hint in hints:
+        localized[hint["semantic_type"]] = localized.get(hint["semantic_type"], 0) + 1
+    expected = {x["t"]: x["n"] for x in inventory["types"] if x["n"] > 0}
+    explained = set(label for hint in hints for label in hint.get("dxf_labels", []))
+    return {"inventory_counts": expected, "localized_counts": localized,
+            "count_gaps": {k: expected[k]-localized.get(k, 0) for k in expected if localized.get(k, 0) < expected[k]},
+            "exact_labels_explained": sorted(explained),
+            "exact_labels_unexplained": sorted({x["text"] for x in labels} - explained),
+            "complete_required_set": all(localized.get(k, 0) >= min(v, 1) for k, v in expected.items())}
+
+
+class DeepSeekCompactSemanticScout:
+    """Strict compact multi-pass transport with zero retry/fallback."""
+    def __init__(self, *, api_key: str | None = None, model: str = "deepseek-flash", client=None):
+        credential = api_key or os.getenv("DEEPSEEK_API_KEY")
+        if client is None:
+            if not credential:
+                raise SemanticScoutError("PROVIDER_CONFIG_REQUIRED", "DEEPSEEK_API_KEY is missing")
+            from openai import OpenAI
+            client = OpenAI(api_key=credential, base_url="https://api.deepseek.com/beta", timeout=120, max_retries=0)
+        self.client, self.model, self.call_metadata = client, model, []
+
+    def _call(self, *, image_path: str, frame_id: str, labels: list[dict], objects: list[dict],
+              task_type: str, group: str, allowed_types: list[str] | None = None,
+              expected_items: int = 0) -> dict[str, Any]:
+        inventory = task_type == "INVENTORY"
+        schema = compact_inventory_schema() if inventory else compact_localization_schema(allowed_types or [])
+        task = ("Identify only which architectural functions appear and their approximate counts. Do not return coordinates. "
+                if inventory else f"Locate only these functional types: {','.join(allowed_types or [])}. ")
+        prompt = ("Read the complete architectural floor plan. " + task +
+                  "Do not explain reasoning. Do not repeat supplied labels. Return only the compact tool fields. "
+                  "Under-count rather than invent. Approximate bboxes are semantic hints, never engineering geometry. "
+                  f"FRAME={frame_id}; LABELS={json.dumps(labels, ensure_ascii=False, separators=(',',':'))}; "
+                  f"OBJECTS={json.dumps(objects, ensure_ascii=False, separators=(',',':'))}")
+        tool_name = "submit_compact_semantic_inventory_v2" if inventory else "submit_compact_semantic_localization_v2"
+        image_hash = sha256(Path(image_path).read_bytes()).hexdigest()
+        request_hash = sha256((prompt + json.dumps(schema, sort_keys=True) + image_hash).encode()).hexdigest()
+        call_id = _stable("CALL", [frame_id, task_type, group, request_hash])
+        estimate = estimate_compact_response_bytes(task_type=task_type,
+            expected_types=expected_items if inventory else 0,
+            expected_hints=expected_items if not inventory else 0)
+        if not estimate["within_budget"]:
+            raise SemanticScoutError("SEMANTIC_RESPONSE_BUDGET_EXCEEDED", group)
+        started = time.perf_counter(); response = None; raw = None
+        metadata = {"call_id": call_id, "task_type": task_type, "semantic_group": group,
+                    "request_hash": request_hash, "render_hash": image_hash,
+                    "prompt_version": COMPACT_PROMPT_VERSION, "schema_version": COMPACT_SEMANTIC_SCHEMA,
+                    "estimated_response_bytes": estimate["estimated_response_bytes"],
+                    "json_validation_status": "NOT_RUN"}
+        try:
+            response = self.client.chat.completions.create(model=self.model,
+                messages=[{"role":"user","content":[{"type":"text","text":prompt},
+                    {"type":"image_url","image_url":{"url":"data:image/png;base64,"+_encode_image(image_path),"detail":"original"}}]}],
+                tools=[{"type":"function","function":{"name":tool_name,"strict":True,
+                    "description":"Return compact architectural semantic evidence only.","parameters":schema}}],
+                tool_choice={"type":"function","function":{"name":tool_name}},
+                extra_body={"thinking":{"type":"disabled"}})
+            choice = (getattr(response, "choices", None) or [None])[0]
+            calls = getattr(getattr(choice, "message", None), "tool_calls", None) or []
+            raw = getattr(getattr(calls[0], "function", None), "arguments", None) if len(calls) == 1 else None
+            usage = getattr(response, "usage", None)
+            metadata.update({"finish_reason": getattr(choice, "finish_reason", None),
+                "actual_response_bytes": len(raw.encode()) if isinstance(raw, str) else 0,
+                "latency_seconds": round(time.perf_counter()-started, 6),
+                "prompt_tokens": getattr(usage, "prompt_tokens", None),
+                "completion_tokens": getattr(usage, "completion_tokens", None),
+                "total_tokens": getattr(usage, "total_tokens", None), "tool_call_count":len(calls)})
+            if len(calls) != 1 or getattr(getattr(calls[0], "function", None), "name", None) != tool_name or not isinstance(raw, str):
+                raise SemanticScoutError("COMPACT_TOOL_CALL_INVALID", "Expected exactly one compact tool call")
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                metadata.update({"json_error_position": exc.pos, "json_validation_status":"MALFORMED"})
+                raise SemanticScoutError("SEMANTIC_RESPONSE_BUDGET_EXCEEDED", "Compact response JSON was malformed") from exc
+            validated = (validate_compact_inventory(payload, frame_id=frame_id) if inventory else
+                         validate_compact_localization(payload, frame_id=frame_id, allowed_types=allowed_types or []))
+            metadata["json_validation_status"] = "VALID"
+            return {"call_id":call_id,"payload":validated}
+        except SemanticScoutError:
+            raise
+        except Exception as exc:
+            metadata.update({"latency_seconds":round(time.perf_counter()-started,6),
+                             "provider_error":type(exc).__name__,"json_validation_status":"PROVIDER_FAILED"})
+            raise SemanticScoutError("SEMANTIC_PROVIDER_FAILED", "Compact semantic call failed") from exc
+        finally:
+            self.call_metadata.append(metadata)

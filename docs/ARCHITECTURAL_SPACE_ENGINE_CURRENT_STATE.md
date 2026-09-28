@@ -16,6 +16,14 @@ was rejected before semantic-map construction, fusion, CAD mapping or MEP
 pre-analysis. No retry or local call was made. Current provider status is
 `DEEPSEEK_SEMANTIC_SCOUT_UNQUALIFIED`.
 
+Compact multi-pass v2 subsequently completed one inventory and four bounded
+localization calls on Fasihi Ground. All five returned valid forced-tool JSON;
+actual response sizes were 398, 217, 97, 274, and 207 bytes. Transport is
+qualified for this case, but the semantic result is `SEMANTIC_SCOUT_PARTIAL`:
+Storage was inventoried but omitted by the initial group planner, and one broad
+Stair hint conflicts with exact Duct label evidence. Partial hints remain QA
+diagnostics and are not a final semantic map.
+
 ## Blind real-project validation — 2026-09-26
 
 The private Fasihi architectural DXF was processed blind. Reference Mechanical

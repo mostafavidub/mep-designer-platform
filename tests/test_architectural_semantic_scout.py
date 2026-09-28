@@ -4,12 +4,16 @@ from types import SimpleNamespace
 import pytest
 
 from cad_engine.architectural_semantic_scout import (
+    COMPACT_RESPONSE_BUDGET, DeepSeekCompactSemanticScout,
     DeepSeekSemanticScout, SemanticScoutError, adaptive_local_triggers,
     assign_hint_ids, build_mep_preanalysis, build_semantic_map,
     cad_to_normalized, coverage_audit, fuse_semantic_evidence,
     map_hints_to_candidates, normalized_to_cad, reconcile_observations,
     render_clean_whole_floor, render_global_local_semantic_context,
-    semantic_output_schema, validate_provider_payload, validate_semantic_item,
+    compact_inventory_schema, compact_localization_schema, compact_semantic_completeness,
+    enrich_compact_hints, estimate_compact_response_bytes, plan_compact_calls,
+    semantic_output_schema, validate_compact_inventory, validate_compact_localization,
+    validate_provider_payload, validate_semantic_item,
 )
 
 
@@ -164,3 +168,81 @@ def test_clean_and_local_render_have_no_candidate_overlay(tmp_path):
     assert info["candidate_overlay"] is False and info["debug_overlay"] is False
     local=render_global_local_semantic_context(source,[.1,.1,.4,.4],tmp_path/"local.png")
     assert local["global_context"] and local["local_detail"]
+
+
+def test_compact_schemas_forbid_provider_prose_and_geometry():
+    inventory=compact_inventory_schema(); localization=compact_localization_schema({"KITCHEN","BATHROOM"})
+    assert set(inventory["properties"])=={"f","types"}
+    assert set(localization["properties"]["z"]["items"]["properties"])=={"t","b","c"}
+    text=json.dumps(localization)
+    assert "observed_text" not in text and "uncertainty" not in text and "polygon" not in text
+
+
+def test_compact_inventory_and_localization_validate_independently():
+    inv=validate_compact_inventory({"f":"F1","types":[{"t":"KITCHEN","n":1,"c":.9}]},frame_id="F1")
+    loc=validate_compact_localization({"f":"F1","z":[{"t":"KITCHEN","b":[.1,.2,.4,.5],"c":.8}]},
+                                      frame_id="F1",allowed_types={"KITCHEN"})
+    assert inv["types"][0]["n"]==1 and loc["z"][0]["b"]==[.1,.2,.4,.5]
+    with pytest.raises(SemanticScoutError):
+        validate_compact_localization({"f":"F1","z":[{"t":"KITCHEN","b":[.1,.2,.4,.5],"c":.8,"why":"text"}]},
+                                      frame_id="F1",allowed_types={"KITCHEN"})
+
+
+def test_response_budget_and_semantic_group_split_are_deterministic():
+    small=estimate_compact_response_bytes(task_type="LOCALIZATION",expected_hints=4)
+    large=estimate_compact_response_bytes(task_type="LOCALIZATION",expected_hints=100)
+    assert small["within_budget"] and small["estimated_response_bytes"] < COMPACT_RESPONSE_BUDGET
+    assert not large["within_budget"]
+    inv={"f":"F1","types":[{"t":"KITCHEN","n":1,"c":.9},{"t":"BATHROOM","n":1,"c":.8},
+                              {"t":"BEDROOM","n":2,"c":.8}]}
+    labels=[{"text":"حمام","normalized_position":[.2,.2]}]
+    assert plan_compact_calls(inv,labels)==plan_compact_calls(inv,labels)
+    assert [x["group"] for x in plan_compact_calls(inv,labels)]==["WET_SERVICE","HABITABLE"]
+
+
+def test_compact_enrichment_is_local_and_never_geometry_authority():
+    rows=[{"t":"BATHROOM","b":[.1,.1,.4,.4],"c":.9}]
+    labels=[{"text":"حمام","normalized_position":[.2,.2]}]
+    objects=[{"type":"SHOWER","normalized_position":[.3,.3]}]
+    hint=enrich_compact_hints(rows,source_sha256="s",frame_id="F1",source_call_id="C1",
+                              labels=labels,objects=objects)[0]
+    assert hint["semantic_status"]=="MULTI_EVIDENCE_SUPPORTED"
+    assert hint["material_geometry"] is None and hint["routing_authority"]=="NONE"
+    assert hint["engineering_geometry"] is False
+
+
+def test_compact_enrichment_detects_label_conflict():
+    hint=enrich_compact_hints([{"t":"KITCHEN","b":[.1,.1,.4,.4],"c":.9}],source_sha256="s",
+        frame_id="F1",source_call_id="C1",labels=[{"text":"اتاق خواب","normalized_position":[.2,.2]}],objects=[])[0]
+    assert hint["semantic_status"]=="CONFLICT"
+
+
+def test_partial_required_set_blocks_semantic_completeness():
+    inv={"types":[{"t":"KITCHEN","n":1},{"t":"BATHROOM","n":1}]}
+    hints=enrich_compact_hints([{"t":"KITCHEN","b":[.1,.1,.4,.4],"c":.9}],source_sha256="s",
+        frame_id="F1",source_call_id="C1",labels=[],objects=[])
+    result=compact_semantic_completeness(inv,hints,[])
+    assert result["complete_required_set"] is False and result["count_gaps"]=={"BATHROOM":1}
+
+
+def _compact_response(tool_name,payload,finish_reason="tool_calls"):
+    function=SimpleNamespace(name=tool_name,arguments=json.dumps(payload))
+    return SimpleNamespace(id="req",choices=[SimpleNamespace(finish_reason=finish_reason,
+        message=SimpleNamespace(tool_calls=[SimpleNamespace(function=function)]))],
+        usage=SimpleNamespace(prompt_tokens=10,completion_tokens=5,total_tokens=15))
+
+
+def test_compact_transport_records_complete_observability(tmp_path):
+    image=tmp_path/"floor.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    response=_compact_response("submit_compact_semantic_inventory_v2",
+        {"f":"F1","types":[{"t":"KITCHEN","n":1,"c":.9}]})
+    completions=FakeCompletions(response); client=SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    scout=DeepSeekCompactSemanticScout(api_key="secret",client=client)
+    result=scout._call(image_path=str(image),frame_id="F1",labels=[],objects=[],task_type="INVENTORY",
+                       group="WHOLE_FLOOR",expected_items=10)
+    assert result["payload"]["types"]
+    meta=scout.call_metadata[0]
+    assert meta["finish_reason"]=="tool_calls" and meta["json_validation_status"]=="VALID"
+    assert meta["actual_response_bytes"] and meta["total_tokens"]==15

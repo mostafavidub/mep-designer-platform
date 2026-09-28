@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.52.0",
+  "standard_version": "4.53.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-26",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "4.53.0",
+      "date": "2026-09-28",
+      "summary": "Replace unstable monolithic Semantic Scout transport with compact inventory and bounded semantic-group localization calls, strict response budgeting, complete failure observability and non-authoritative local enrichment."
+    },
     {
       "version": "4.52.0",
       "date": "2026-09-28",

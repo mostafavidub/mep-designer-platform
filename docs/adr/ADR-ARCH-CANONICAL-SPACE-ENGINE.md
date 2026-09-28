@@ -144,6 +144,21 @@ reporting only. The sole downstream mode is `MEP_PREANALYSIS`; final routing,
 sizing, loads, placement and engineer-ready output remain blocked until
 authoritative geometry exists.
 
+#### Compact multi-pass transport
+
+The monolithic whole-floor response is deprecated after two real Fasihi Ground
+calls returned malformed JSON near 4 KB. This is response-budget evidence, not
+a claimed provider limit. Semantic Scout v2 keeps the complete render and exact
+DXF evidence in the request while minimizing response output: first a compact
+whole-floor inventory (`t`, `n`, `c`), then bounded localization calls by
+coherent semantic group (`t`, `b`, `c`).
+
+Each call is independently strict, budgeted below 1800 estimated bytes,
+observable on success and failure, and never retried automatically. Missing a
+required group prevents a final semantic map. Provider records are expanded
+locally with labels, objects, stable IDs, MEP groups and conflicts while
+retaining every non-authoritative safety field.
+
 The first controlled Candidate Graph v2 classification used one Fasihi Ground
 request, an immutable hash manifest, a source-derived overlay, forced strict-tool
 transport and an ID-only schema. DeepSeek returned one tool call but truncated
