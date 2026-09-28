@@ -7,9 +7,11 @@ import pytest
 
 from cad_engine.architectural_space_engine import reconstruct_architecture
 from cad_engine.architectural_vision_recovery import (
+    DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA, DEEPSEEK_V1_TOOL_NAME, PROVIDER_CAPABILITY_MATRIX,
     DeepSeekVisionAdapter, GLOBAL_JSON_SCHEMA, OpenAIVisionAdapter, RENDER_VERSION, RenderTransform,
     SHELL_BOUNDARIES_JSON_SCHEMA,
-    VisionRecoveryError, _raw_source_context, _validate_payload, configured_vision_adapter,
+    VisionRecoveryError, VisionTask, VisionTransport, _raw_source_context, _validate_payload,
+    architectural_qa_shell_boundaries, configured_vision_adapter,
     reconcile_and_repair, render_source_frame, select_vision_viewport, validate_shell_boundaries_payload,
 )
 from cad_engine.engineering_runner import run_engineering_pipeline
@@ -215,6 +217,29 @@ def _v1_payload(frame_id="F1"):
             "exterior_regions":[],"uncertainties":[]}
 
 
+def _strict_response(payload=None, *, tool_name=DEEPSEEK_V1_TOOL_NAME, arguments=None):
+    raw=arguments if arguments is not None else json.dumps(payload or _v1_payload())
+    function=SimpleNamespace(name=tool_name,arguments=raw)
+    message=SimpleNamespace(tool_calls=[SimpleNamespace(function=function)])
+    return SimpleNamespace(id="strict-v1",choices=[SimpleNamespace(message=message)],
+                           usage=SimpleNamespace(prompt_tokens=10,completion_tokens=20,total_tokens=30))
+
+
+def _deepseek_client(*, strict_response=None, strict_error=None, json_response=None, json_error=None):
+    class Completions:
+        def __init__(self): self.calls=[]
+        def create(self,**kwargs):
+            self.calls.append(kwargs)
+            if kwargs.get("response_format"):
+                if json_error: raise json_error
+                if json_response is None: raise AssertionError("unexpected JSON_OBJECT fallback")
+                return json_response
+            if strict_error: raise strict_error
+            return strict_response or _strict_response()
+    completions=Completions()
+    return SimpleNamespace(chat=SimpleNamespace(completions=completions)),completions
+
+
 def test_v1_shell_boundary_contract_is_small_strict_and_valid():
     payload=_v1_payload()
     assert validate_shell_boundaries_payload(payload,frame_id="F1") is payload
@@ -226,27 +251,35 @@ def test_v1_shell_boundary_contract_is_small_strict_and_valid():
     assert caught.value.code=="VISION_SCHEMA_INVALID"
 
 
+def test_v1_architectural_qa_rejects_exterior_region_inside_shell():
+    payload=_v1_payload(); payload["exterior_regions"]=[{
+        "region_id":"E1","polygon_px":[[1,1],[4,1],[4,4],[1,4]],"role":"YARD","confidence":.9}]
+    with pytest.raises(VisionRecoveryError) as caught:
+        architectural_qa_shell_boundaries(payload,image_size=(20,20))
+    assert caught.value.code=="VISION_ARCHITECTURAL_QA_FAILED"
+    assert caught.value.details["conflicts"][0]["shell_overlap_ratio"]==1.0
+
+
 def test_v1_request_has_independent_cache_and_metrics(tmp_path,monkeypatch):
     monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
     image=tmp_path/"frame.png"
     from PIL import Image
     Image.new("RGB",(20,20),"white").save(image)
-    calls=[]
-    class Responses:
-        def create(self,**kwargs):
-            calls.append(kwargs)
-            return SimpleNamespace(id="v1",output_text=json.dumps(_v1_payload()),
-                                   usage=SimpleNamespace(input_tokens=10,output_tokens=20,total_tokens=30))
+    client,calls=_deepseek_client(strict_response=_strict_response(_v1_payload()))
     adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
-                                  client=SimpleNamespace(responses=Responses()),max_retries=1)
+                                  client=client,max_retries=1)
     first=adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1",
                                            context={"source_sha256":"a"*64})
     second=adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1",
                                             context={"source_sha256":"a"*64})
-    assert first==second and len(calls)==1
+    assert first==second and len(calls.calls)==1
     assert adapter.last_call_metadata["cache_hit"] is True
     assert adapter.last_call_metadata["task_type"]=="SHELL_BOUNDARIES_V1"
-    assert calls[0]["text"]["format"]["schema"]==SHELL_BOUNDARIES_JSON_SCHEMA
+    function=calls.calls[0]["tools"][0]["function"]
+    assert function["strict"] is True and function["name"]==DEEPSEEK_V1_TOOL_NAME
+    assert function["parameters"]==DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA
+    assert calls.calls[0]["tool_choice"]["function"]["name"]==DEEPSEEK_V1_TOOL_NAME
+    assert adapter.last_call_metadata["transport"]==VisionTransport.STRICT_TOOL_CALL.value
 
 
 def test_v1_timeout_has_no_blind_retry(tmp_path):
@@ -254,15 +287,15 @@ def test_v1_timeout_has_no_blind_retry(tmp_path):
     from PIL import Image
     Image.new("RGB",(20,20),"white").save(image)
     class APITimeoutError(Exception): pass
-    class Responses:
-        calls=0
-        def create(self,**kwargs): self.calls+=1; raise APITimeoutError("private body")
-    responses=Responses()
+    client,calls=_deepseek_client(strict_error=APITimeoutError("private body"),
+                                  json_error=APITimeoutError("private body"))
     adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
-                                  client=SimpleNamespace(responses=responses),max_retries=1)
+                                  client=client,max_retries=1)
     with pytest.raises(VisionRecoveryError) as caught:
         adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")
-    assert caught.value.code=="VISION_TIMEOUT" and responses.calls==1
+    assert caught.value.code=="VISION_TIMEOUT" and len(calls.calls)==2
+    assert calls.calls[0].get("response_format") is None
+    assert calls.calls[1]["response_format"]=={"type":"json_object"}
 
 
 def test_v1_invalid_provider_payload_is_diagnosed_outside_success_cache(tmp_path,monkeypatch):
@@ -274,10 +307,10 @@ def test_v1_invalid_provider_payload_is_diagnosed_outside_success_cache(tmp_path
     invalid=_v1_payload(); invalid["exterior_regions"]=[{
         "region_id":"E1","polygon_px":[[0,0],[2,0],[2,2]],"role":"YARD","confidence":.8,
         "unexpected":"must not be accepted"}]
-    response=SimpleNamespace(id="bad-v1",output_text=json.dumps(invalid),
-                             usage=SimpleNamespace(input_tokens=4,output_tokens=5,total_tokens=9))
+    response=_strict_response(invalid)
+    client,_calls=_deepseek_client(strict_response=response)
     adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",
-        client=SimpleNamespace(responses=SimpleNamespace(create=lambda **_:response)),max_retries=0)
+        client=client,max_retries=0)
     with pytest.raises(VisionRecoveryError) as caught:
         adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1",
                                          context={"source_sha256":"a"*64})
@@ -288,18 +321,125 @@ def test_v1_invalid_provider_payload_is_diagnosed_outside_success_cache(tmp_path
     assert not list((tmp_path/"cache").glob("vision-*.json"))
 
 
+def test_deepseek_provider_schema_is_strict_supported_projection():
+    def walk(node):
+        if isinstance(node,dict):
+            assert not ({"minimum","maximum","minItems","maxItems","maxLength"} & set(node))
+            if node.get("type")=="object":
+                assert node["additionalProperties"] is False
+                assert set(node["required"])==set(node["properties"])
+            for value in node.values(): walk(value)
+        elif isinstance(node,list):
+            for value in node: walk(value)
+    walk(DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA)
+    assert set(DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA["properties"])=={
+        "frame_id","building_shells","boundary_segments","exterior_regions","uncertainties"}
+    assert set(DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA["properties"]["building_shells"]["items"]["properties"])=={
+        "shell_id","polygon_px","confidence","evidence","uncertainties"}
+    assert len(json.dumps(DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA))>1500
+    assert SHELL_BOUNDARIES_JSON_SCHEMA["properties"]["building_shells"]["maxItems"]==3
+
+
+@pytest.mark.parametrize("response,code",[
+    (_strict_response(tool_name="wrong_tool"),"VISION_TOOL_NAME_INVALID"),
+    (SimpleNamespace(id="none",choices=[SimpleNamespace(message=SimpleNamespace(tool_calls=[]))],usage=None),
+     "VISION_TOOL_CALL_MISSING"),
+    (_strict_response(arguments="not-json"),"VISION_JSON_INVALID"),
+])
+def test_strict_tool_failures_are_explicit_and_never_fallback(tmp_path,monkeypatch,response,code):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    monkeypatch.setenv("ARCH_VISION_DIAGNOSTIC_DIR",str(tmp_path/"diagnostics"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    client,calls=_deepseek_client(strict_response=response)
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",client=client)
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")
+    assert caught.value.code==code and len(calls.calls)==1
+    assert not list((tmp_path/"cache").glob("vision-*.json"))
+
+
+@pytest.mark.parametrize("mutate",[
+    lambda payload: payload["building_shells"][0].update({"extra":True}),
+    lambda payload: payload["building_shells"][0].pop("shell_id"),
+    lambda payload: payload["building_shells"][0].update({"polygon_px":[[0,0],[1,1]]}),
+])
+def test_strict_tool_cannot_bypass_canonical_contract(tmp_path,monkeypatch,mutate):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    payload=_v1_payload(); mutate(payload)
+    client,_calls=_deepseek_client(strict_response=_strict_response(payload))
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",client=client)
+    with pytest.raises(VisionRecoveryError):
+        adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")
+    assert not list((tmp_path/"cache").glob("vision-*.json"))
+
+
+def test_transport_cache_identity_and_capability_routing(tmp_path):
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    client,_calls=_deepseek_client()
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",client=client)
+    strict=adapter._v1_material(image_path=str(image),frame_id="F1",context={},
+                                transport=VisionTransport.STRICT_TOOL_CALL)
+    fallback=adapter._v1_material(image_path=str(image),frame_id="F1",context={},
+                                  transport=VisionTransport.JSON_OBJECT)
+    assert strict["cache_key"]!=fallback["cache_key"]
+    capability=PROVIDER_CAPABILITY_MATRIX[("deepseek","deepseek-flash",VisionTask.SHELL_BOUNDARIES_V1.value)]
+    assert capability["preferred_transport"]==VisionTransport.STRICT_TOOL_CALL.value
+    assert VisionTransport.RESPONSES_JSON_SCHEMA.value in capability["unsupported_transports"]
+    assert capability["status"]=="STRUCTURED_TRANSPORT_QUALIFIED"
+    assert capability["reliability_state"]=="ARCHITECTURAL_QA_FAILED"
+
+
+def test_timeout_allows_one_json_object_fallback_and_canonical_validation(tmp_path,monkeypatch):
+    monkeypatch.setenv("ARCH_VISION_CACHE_DIR",str(tmp_path/"cache"))
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    class APITimeoutError(Exception): pass
+    json_response=SimpleNamespace(id="json-v1",choices=[SimpleNamespace(
+        message=SimpleNamespace(content=json.dumps(_v1_payload())))],
+        usage=SimpleNamespace(prompt_tokens=11,completion_tokens=12,total_tokens=23))
+    client,calls=_deepseek_client(strict_error=APITimeoutError("timeout"),json_response=json_response)
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",client=client)
+    assert adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")==_v1_payload()
+    assert len(calls.calls)==2
+    assert adapter.last_call_metadata["transport"]==VisionTransport.JSON_OBJECT.value
+
+
+@pytest.mark.parametrize("content,code",[("not-json","VISION_JSON_INVALID"),
+    (json.dumps({"frame_id":"F1"}),"VISION_SCHEMA_INVALID")])
+def test_json_object_fallback_still_fails_closed(tmp_path,content,code):
+    image=tmp_path/"frame.png"
+    from PIL import Image
+    Image.new("RGB",(20,20),"white").save(image)
+    class APITimeoutError(Exception): pass
+    response=SimpleNamespace(id="json-bad",choices=[SimpleNamespace(message=SimpleNamespace(content=content))],usage=None)
+    client,_calls=_deepseek_client(strict_error=APITimeoutError("timeout"),json_response=response)
+    adapter=DeepSeekVisionAdapter(model="deepseek-flash",api_key="secret",client=client)
+    with pytest.raises(VisionRecoveryError) as caught:
+        adapter.analyze_shell_boundaries(image_path=str(image),frame_id="F1")
+    assert caught.value.code==code
+
+
 def test_provider_routing_and_deepseek_base_url(monkeypatch):
-    captured={}
+    captured=[]
     class FakeOpenAI:
-        def __init__(self, **kwargs): captured.update(kwargs)
+        def __init__(self, **kwargs): captured.append(kwargs)
     monkeypatch.setattr("openai.OpenAI", FakeOpenAI)
     monkeypatch.setenv("ARCH_VISION_PROVIDER", "deepseek")
     monkeypatch.setenv("ARCH_VISION_MODEL", "deepseek-flash")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "not-logged")
     adapter, error = configured_vision_adapter()
     assert error is None and isinstance(adapter, DeepSeekVisionAdapter)
-    assert str(captured["base_url"]).rstrip("/") == "https://api.deepseek.com"
-    assert captured["api_key"] == "not-logged"
+    assert [str(row["base_url"]).rstrip("/") for row in captured] == [
+        "https://api.deepseek.com","https://api.deepseek.com/beta"]
+    assert all(row["api_key"]=="not-logged" for row in captured)
 
 
 def test_normal_engineering_entrypoint_routes_to_deepseek(monkeypatch,tmp_path):

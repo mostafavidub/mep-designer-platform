@@ -77,6 +77,23 @@ Its evidence is advisory until reconciled with CAD. Critical ambiguity fails
 closed. Stable identities are content-derived from source, frame, level and
 normalized geometry.
 
+Vision task, provider transport and canonical evidence contract are separate
+authorities. A provider-facing strict-tool schema may project the canonical
+contract onto the provider's documented structural keyword subset, but every
+result must still pass the unchanged local canonical validator. Provider,
+model, task, transport, prompt/schema versions and source/render hashes form
+the cache identity. Transport failures and invalid arguments are quarantined
+outside the successful cache. A fallback transport is permitted only by the
+explicit capability policy and never changes architectural meaning.
+
+The DeepSeek `deepseek-flash` strict-tool transport is structurally qualified
+for `SHELL_BOUNDARIES_V1`: a forced non-thinking tool call returned exact,
+canonical-valid arguments without normalization. It is not qualified as an
+architecturally reliable production provider for this task: the Fasihi Ground
+overlay omitted a major portion of the apparent building and classified
+apparent interior/stair areas as exterior. JSON-object fallback was correctly
+not invoked because the strict transport itself did not time out or fail.
+
 When a governed frame fails specifically because source architectural geometry
 is insufficient, the engine enters `HYBRID_ARCHITECTURAL_RECOVERY`. This path is
 boundary-first: raw CAD facts and mapped Vision hypotheses enter a first-class

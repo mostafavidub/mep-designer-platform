@@ -32,6 +32,7 @@ SHELL_BOUNDARIES_SCHEMA_VERSION = "architectural-shell-boundaries/1.0"
 SHELL_BOUNDARIES_PROMPT_VERSION = "shell-boundaries/1"
 TRANSFORM_VERSION = "cad-pixel-transform/1"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
+DEEPSEEK_BETA_BASE_URL = "https://api.deepseek.com/beta"
 MAX_INLINE_IMAGE_BYTES = 32 * 1024 * 1024
 MAX_REQUEST_BODY_BYTES = 48 * 1024 * 1024
 ALLOWED_SEMANTICS = {
@@ -67,6 +68,39 @@ class RecoveryStage(str, Enum):
     TARGETED_HUMAN_DECISION = "TARGETED_HUMAN_DECISION"
     PROVIDER_UNAVAILABLE = "PROVIDER_UNAVAILABLE"
     FAILED = "FAILED"
+
+
+class VisionTask(str, Enum):
+    SHELL_BOUNDARIES_V1 = "SHELL_BOUNDARIES_V1"
+
+
+class VisionTransport(str, Enum):
+    STRICT_TOOL_CALL = "STRICT_TOOL_CALL"
+    RESPONSES_JSON_SCHEMA = "RESPONSES_JSON_SCHEMA"
+    JSON_OBJECT = "JSON_OBJECT"
+
+
+PROVIDER_CAPABILITY_MATRIX = {
+    ("deepseek", "deepseek-flash", VisionTask.SHELL_BOUNDARIES_V1.value): {
+        "preferred_transport": VisionTransport.STRICT_TOOL_CALL.value,
+        "fallback_transport": VisionTransport.JSON_OBJECT.value,
+        "unsupported_transports": [VisionTransport.RESPONSES_JSON_SCHEMA.value],
+        "supports_images": True,
+        "supports_strict_schema": True,
+        "status": "STRUCTURED_TRANSPORT_QUALIFIED",
+        "last_qualified_version": SHELL_BOUNDARIES_SCHEMA_VERSION,
+        "observed_latency": 5.01301,
+        "reliability_state": "ARCHITECTURAL_QA_FAILED",
+    }
+}
+
+
+def provider_capability(provider: str, model: str, task: VisionTask) -> dict[str, Any]:
+    capability=PROVIDER_CAPABILITY_MATRIX.get((provider,model,task.value))
+    if capability is None:
+        raise VisionRecoveryError("VISION_CAPABILITY_NOT_QUALIFIED",
+                                  f"No qualified transport policy for {provider}/{model}/{task.value}")
+    return dict(capability)
 
 
 class VisionRecoveryError(RuntimeError):
@@ -450,6 +484,32 @@ SHELL_BOUNDARIES_JSON_SCHEMA={"type":"object","additionalProperties":False,
         "geometry_px":{"type":"array","minItems":2,"items":_V1_POINT},
         "reason":{"type":"string","maxLength":240}}}}}}
 
+_DEEPSEEK_STRICT_SCHEMA_KEYWORDS={
+    "type","properties","required","additionalProperties","items","enum","anyOf","description"
+}
+
+
+def deepseek_strict_tool_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """Project the canonical schema onto DeepSeek strict-mode's documented subset."""
+    def project(node: Any) -> Any:
+        if isinstance(node,list):
+            return [project(value) for value in node]
+        if not isinstance(node,dict):
+            return node
+        result={key:project(value) for key,value in node.items()
+                if key in _DEEPSEEK_STRICT_SCHEMA_KEYWORDS and key!="properties"}
+        if node.get("type")=="object":
+            properties=node.get("properties") or {}
+            result["properties"]={key:project(value) for key,value in properties.items()}
+            result["required"]=list(properties)
+            result["additionalProperties"]=False
+        return result
+    return project(schema)
+
+
+DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA=deepseek_strict_tool_schema(SHELL_BOUNDARIES_JSON_SCHEMA)
+DEEPSEEK_V1_TOOL_NAME="submit_architectural_shell_boundaries"
+
 
 def validate_shell_boundaries_payload(payload: Any, *, frame_id: str) -> dict:
     """Validate the bounded V1 enclosure contract without accepting extra semantics."""
@@ -495,6 +555,36 @@ def validate_shell_boundaries_payload(payload: Any, *, frame_id: str) -> dict:
         if not isinstance(row,dict) or set(row)!={"geometry_px","reason"} or len(row["geometry_px"])<2:
             raise VisionRecoveryError("VISION_SCHEMA_INVALID","Invalid V1 uncertainty")
     return payload
+
+
+def architectural_qa_shell_boundaries(payload: dict, *, image_size: tuple[int,int]) -> dict:
+    """Reject canonical-valid but spatially contradictory V1 evidence before caching."""
+    width,height=image_size; image_area=max(float(width*height),1.0)
+    shell_polygons=[]
+    for row in payload["building_shells"]:
+        polygon=Polygon(row["polygon_px"])
+        if not polygon.is_valid or polygon.is_empty or polygon.area/image_area<.03:
+            raise VisionRecoveryError("VISION_ARCHITECTURAL_QA_FAILED","V1 shell is not spatially plausible",
+                details={"validation_path":"$.building_shells","reason":"INVALID_OR_IMPLAUSIBLY_SMALL_SHELL"})
+        shell_polygons.append(polygon)
+    shell_union=unary_union(shell_polygons) if shell_polygons else None
+    exterior_conflicts=[]
+    if shell_union is not None:
+        for index,row in enumerate(payload["exterior_regions"]):
+            if row["role"] not in {"YARD","SITE_EXTERIOR"}:
+                continue
+            region=Polygon(row["polygon_px"])
+            overlap=region.intersection(shell_union).area/max(region.area,1e-12) if region.is_valid else 1.0
+            if overlap>.2:
+                exterior_conflicts.append({"index":index,"region_id":row["region_id"],
+                                           "shell_overlap_ratio":round(overlap,6)})
+    if exterior_conflicts:
+        raise VisionRecoveryError("VISION_ARCHITECTURAL_QA_FAILED",
+            "Exterior V1 regions materially overlap the proposed building shell",
+            details={"validation_path":"$.exterior_regions","reason":"EXTERIOR_INSIDE_BUILDING_SHELL",
+                     "conflicts":exterior_conflicts})
+    return {"status":"PASS","shell_count":len(shell_polygons),
+            "exterior_region_count":len(payload["exterior_regions"])}
 
 
 def _store_invalid_v1_diagnostic(*, raw: str, metadata: dict[str, Any], error: VisionRecoveryError) -> str:
@@ -823,9 +913,182 @@ class DeepSeekVisionAdapter(OpenAICompatibleVisionAdapter):
     def __init__(self, *, api_key: str | None = None, model: str | None = None, client=None,
                  timeout_seconds: float | None = None, max_retries: int | None = None,
                  base_url: str = DEEPSEEK_BASE_URL):
-        super().__init__(provider="deepseek", api_key=api_key or os.getenv("DEEPSEEK_API_KEY"), model=model,
+        credential=api_key or os.getenv("DEEPSEEK_API_KEY")
+        super().__init__(provider="deepseek", api_key=credential, model=model,
                          base_url=base_url, client=client, timeout_seconds=timeout_seconds,
                          max_retries=max_retries)
+        if client is not None:
+            self.strict_client=client
+        else:
+            from openai import OpenAI
+            self.strict_client=OpenAI(api_key=credential,base_url=DEEPSEEK_BETA_BASE_URL,
+                                      timeout=self.timeout_seconds,max_retries=0)
+
+    def _v1_material(self, *, image_path: str, frame_id: str,
+                     context: dict[str, Any] | None, transport: VisionTransport) -> dict[str, Any]:
+        context=context or {}; image_bytes=Path(image_path).read_bytes()
+        if len(image_bytes)>MAX_INLINE_IMAGE_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE","Rendered floor exceeds inline image limits")
+        prompt=("Analyze only the architectural enclosure of this floor. Identify the apparent building shell, "
+                "major architectural boundaries, and exterior or semi-exterior regions such as yard, terrace, "
+                "balcony and lightwell. Do not identify doors, windows, room semantics, furniture or equipment. "
+                "Do not invent boundaries merely to close polygons. Coordinates are image pixels. Submit the "
+                "result only through the required function. FRAME_ID="+json.dumps(frame_id)+".")
+        schema_json=json.dumps(DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA,sort_keys=True,separators=(",",":"))
+        encoded=base64.b64encode(image_bytes).decode("ascii")
+        request_bytes=((len(image_bytes)+2)//3)*4+len(prompt.encode())+len(schema_json.encode())
+        if request_bytes>MAX_REQUEST_BODY_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE","Rendered floor exceeds request body limits")
+        identity={"provider":self.provider,"model":self.model,"task_type":VisionTask.SHELL_BOUNDARIES_V1.value,
+                  "transport":transport.value,"task_prompt_version":SHELL_BOUNDARIES_PROMPT_VERSION,
+                  "task_schema_version":SHELL_BOUNDARIES_SCHEMA_VERSION,"transform_version":TRANSFORM_VERSION,
+                  "render_version":RENDER_VERSION,"frame_id":frame_id,
+                  "render_sha256":sha256(image_bytes).hexdigest(),"source_sha256":context.get("source_sha256"),
+                  "render_cache_key":context.get("render_cache_key")}
+        cache_key=sha256(json.dumps(identity,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+        cache_root=Path(os.getenv("ARCH_VISION_CACHE_DIR") or "/tmp/planha-architecture-vision")
+        cache_root.mkdir(parents=True,exist_ok=True)
+        with Image.open(image_path) as source_image:
+            image_size=source_image.size
+        return {"image_bytes":image_bytes,"encoded":encoded,"prompt":prompt,"schema_json":schema_json,
+                "image_size":image_size,
+                "identity":identity,"cache_key":cache_key,"cache_path":cache_root/f"vision-{cache_key}.json",
+                "common":{**identity,"cache_key":cache_key,"image_bytes":len(image_bytes),
+                          "prompt_characters":len(prompt),"tool_schema_bytes":len(schema_json.encode()),
+                          "request_bytes":request_bytes}}
+
+    @staticmethod
+    def _usage(response: Any) -> dict[str, Any]:
+        usage=getattr(response,"usage",None)
+        return {field:getattr(usage,field) for field in ("prompt_tokens","completion_tokens","total_tokens")
+                if usage is not None and getattr(usage,field,None) is not None}
+
+    def _strict_tool_v1(self, material: dict[str, Any], *, frame_id: str) -> dict:
+        started=time.perf_counter()
+        try:
+            response=self.strict_client.chat.completions.create(
+                model=self.model,
+                messages=[{"role":"user","content":[{"type":"text","text":material["prompt"]},
+                    {"type":"image_url","image_url":{"url":"data:image/png;base64,"+material["encoded"],
+                                                        "detail":"original"}}]}],
+                tools=[{"type":"function","function":{"name":DEEPSEEK_V1_TOOL_NAME,"strict":True,
+                    "description":"Submit canonical V1 architectural shell and boundary evidence.",
+                    "parameters":DEEPSEEK_SHELL_BOUNDARIES_TOOL_SCHEMA}}],
+                tool_choice={"type":"function","function":{"name":DEEPSEEK_V1_TOOL_NAME}},
+                extra_body={"thinking":{"type":"disabled"}},
+            )
+        except Exception as exc:
+            code,message,_transient=_safe_provider_error(exc)
+            self.last_call_metadata={**material["common"],"cache_hit":False,"attempt_count":1,
+                "attempt_errors":[code],"provider_http_status":getattr(exc,"status_code",None),
+                "latency_seconds":round(time.perf_counter()-started,6)}
+            raise VisionRecoveryError(code,message) from exc
+        choice=(getattr(response,"choices",None) or [None])[0]
+        message=getattr(choice,"message",None); calls=getattr(message,"tool_calls",None) or []
+        self.last_call_metadata={**material["common"],"cache_hit":False,"attempt_count":1,"attempt_errors":[],
+            "request_id":getattr(response,"id",None),"usage":self._usage(response),
+            "latency_seconds":round(time.perf_counter()-started,6),"tool_call_count":len(calls)}
+        if len(calls)!=1:
+            raise VisionRecoveryError("VISION_TOOL_CALL_MISSING","DeepSeek did not return exactly one forced tool call")
+        function=getattr(calls[0],"function",None); name=getattr(function,"name",None)
+        raw=getattr(function,"arguments",None)
+        self.last_call_metadata.update({"tool_name":name,
+            "argument_bytes":len(raw.encode("utf-8")) if isinstance(raw,str) else 0})
+        if name!=DEEPSEEK_V1_TOOL_NAME:
+            raise VisionRecoveryError("VISION_TOOL_NAME_INVALID","DeepSeek invoked the wrong V1 tool")
+        if not isinstance(raw,str):
+            raise VisionRecoveryError("VISION_TOOL_ARGUMENTS_INVALID","DeepSeek returned no tool arguments")
+        self.last_call_metadata["response_bytes"]=len(raw.encode("utf-8"))
+        try:
+            payload=validate_shell_boundaries_payload(json.loads(raw),frame_id=frame_id)
+            self.last_call_metadata["architectural_qa"]=architectural_qa_shell_boundaries(
+                payload,image_size=material["image_size"])
+        except json.JSONDecodeError as exc:
+            error=VisionRecoveryError("VISION_JSON_INVALID","DeepSeek tool arguments are malformed JSON",
+                                      details={"validation_path":"$"})
+            self.last_call_metadata["diagnostic_path"]=_store_invalid_v1_diagnostic(
+                raw=raw,metadata=self.last_call_metadata,error=error)
+            raise error from exc
+        except VisionRecoveryError as error:
+            self.last_call_metadata["diagnostic_path"]=_store_invalid_v1_diagnostic(
+                raw=raw,metadata=self.last_call_metadata,error=error)
+            raise
+        return payload
+
+    def _json_object_v1(self, material: dict[str, Any], *, frame_id: str) -> dict:
+        started=time.perf_counter(); example={key:(frame_id if key=="frame_id" else []) for key in SHELL_BOUNDARIES_KEYS}
+        prompt=(material["prompt"].replace("Submit the result only through the required function.",
+                "Return JSON only, using exactly the canonical field names and no extra fields.")+
+                " Minimal JSON example: "+json.dumps(example,separators=(",",":")))
+        try:
+            response=self.strict_client.chat.completions.create(model=self.model,
+                messages=[{"role":"user","content":[{"type":"text","text":prompt},
+                    {"type":"image_url","image_url":{"url":"data:image/png;base64,"+material["encoded"],
+                                                        "detail":"original"}}]}],
+                response_format={"type":"json_object"},extra_body={"thinking":{"type":"disabled"}})
+        except Exception as exc:
+            code,message,_transient=_safe_provider_error(exc)
+            self.last_call_metadata={**material["common"],"cache_hit":False,"attempt_count":1,
+                "attempt_errors":[code],"provider_http_status":getattr(exc,"status_code",None),
+                "latency_seconds":round(time.perf_counter()-started,6)}
+            raise VisionRecoveryError(code,message) from exc
+        choice=(getattr(response,"choices",None) or [None])[0]
+        raw=getattr(getattr(choice,"message",None),"content",None)
+        self.last_call_metadata={**material["common"],"cache_hit":False,"request_id":getattr(response,"id",None),
+            "usage":self._usage(response),"attempt_count":1,"attempt_errors":[],
+            "response_bytes":len(raw.encode()) if isinstance(raw,str) else 0,
+            "latency_seconds":round(time.perf_counter()-started,6)}
+        if not isinstance(raw,str):
+            raise VisionRecoveryError("VISION_EMPTY_RESPONSE","DeepSeek returned no JSON object")
+        try:
+            payload=validate_shell_boundaries_payload(json.loads(raw),frame_id=frame_id)
+            self.last_call_metadata["architectural_qa"]=architectural_qa_shell_boundaries(
+                payload,image_size=material["image_size"])
+        except json.JSONDecodeError as exc:
+            error=VisionRecoveryError("VISION_JSON_INVALID","DeepSeek returned malformed JSON",
+                                      details={"validation_path":"$"})
+            self.last_call_metadata["diagnostic_path"]=_store_invalid_v1_diagnostic(
+                raw=raw,metadata=self.last_call_metadata,error=error)
+            raise error from exc
+        except VisionRecoveryError as error:
+            self.last_call_metadata["diagnostic_path"]=_store_invalid_v1_diagnostic(
+                raw=raw,metadata=self.last_call_metadata,error=error)
+            raise
+        return payload
+
+    def analyze_shell_boundaries(self, *, image_path: str, frame_id: str,
+                                 context: dict[str, Any] | None = None) -> dict:
+        capability=provider_capability(self.provider,self.model,VisionTask.SHELL_BOUNDARIES_V1)
+        transport=VisionTransport(capability["preferred_transport"])
+        material=self._v1_material(image_path=image_path,frame_id=frame_id,context=context,transport=transport)
+        if material["cache_path"].exists():
+            raw=material["cache_path"].read_text(encoding="utf-8")
+            payload=validate_shell_boundaries_payload(json.loads(raw),frame_id=frame_id)
+            try:
+                qa=architectural_qa_shell_boundaries(payload,image_size=material["image_size"])
+            except VisionRecoveryError as error:
+                material["cache_path"].unlink()
+                self.last_call_metadata={**material["common"],"cache_hit":True,"attempt_count":0,
+                                         "attempt_errors":[error.code]}
+                self.last_call_metadata["diagnostic_path"]=_store_invalid_v1_diagnostic(
+                    raw=raw,metadata=self.last_call_metadata,error=error)
+                raise
+            self.last_call_metadata={**material["common"],"cache_hit":True,"attempt_count":0,"attempt_errors":[]}
+            self.last_call_metadata["architectural_qa"]=qa
+            return payload
+        try:
+            payload=self._strict_tool_v1(material,frame_id=frame_id)
+        except VisionRecoveryError as error:
+            if error.code not in {"VISION_TIMEOUT","VISION_PROVIDER_UNAVAILABLE"}:
+                raise
+            fallback=capability.get("fallback_transport")
+            if fallback!=VisionTransport.JSON_OBJECT.value:
+                raise
+            material=self._v1_material(image_path=image_path,frame_id=frame_id,context=context,
+                                       transport=VisionTransport(fallback))
+            payload=self._json_object_v1(material,frame_id=frame_id)
+        material["cache_path"].write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True),encoding="utf-8")
+        return payload
 
 
 def configured_vision_adapter():
