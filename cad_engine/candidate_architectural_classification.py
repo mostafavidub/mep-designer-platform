@@ -33,6 +33,9 @@ EXTERIOR_REGION_ROLES = {
     "COURTYARD", "LIGHTWELL", "VOID",
 }
 CANDIDATE_KEYS = {"frame_id", "regions", "boundaries", "bridge_decisions"}
+STAGED_TASKS = {"REGION", "BOUNDARY", "BRIDGE"}
+STAGED_REASON_CODES = {"EXACT_LABEL", "VISIBLE_ENCLOSURE", "FACADE_RELATION",
+                       "STAIR_SHAFT_EVIDENCE", "CAD_ADJACENCY", "INSUFFICIENT"}
 
 
 class CandidateClassificationError(ValueError):
@@ -40,6 +43,136 @@ class CandidateClassificationError(ValueError):
         super().__init__(message)
         self.code = code
         self.details = details or {}
+
+
+def deterministic_region_classifications(graph: dict) -> dict:
+    """Resolve only exact, unambiguous label facts before provider work."""
+    resolved=[]; unresolved=[]
+    interior={"kitchen","reception","living","bedroom","bathroom","toilet",
+              "lobby","parking","storage","corridor"}
+    for region in graph.get("regions") or []:
+        semantics={row.get("semantic_candidate") for row in region.get("exact_text_evidence") or []}
+        texts=" ".join(str(row.get("text") or "").lower() for row in region.get("exact_text_evidence") or [])
+        if any(token in texts for token in ("حیاط","yard")): semantics.add("yard")
+        if any(token in texts for token in ("شفت","shaft")): semantics.add("shaft")
+        if any(token in texts for token in ("پله","stair")): semantics.add("stair")
+        if any(token in texts for token in ("آشپزخانه","پذیرایی","نشیمن","خواب","حمام","سرویس","توالت","لابی","پارکینگ","انبار","راهرو",
+                                             "kitchen","living","bedroom","bathroom","toilet","lobby","parking","storage","corridor")):
+            semantics.add("living")
+        semantics.discard(None); semantics.discard("UNKNOWN")
+        roles=set()
+        if "yard" in semantics: roles.add("YARD")
+        if "shaft" in semantics: roles.add("SHAFT")
+        if "stair" in semantics: roles.add("STAIR")
+        if semantics & interior: roles.add("BUILDING_INTERIOR")
+        if len(roles)==1:
+            resolved.append({"region_id":region["region_id"],"role":roles.pop(),
+                "confidence":1.0,"reason_code":"EXACT_LABEL","authority":"EXACT_CAD_LABEL"})
+        else:
+            unresolved.append(region["region_id"])
+    return {"frame_id":graph["frame_id"],"resolved":resolved,
+            "unresolved_region_ids":sorted(unresolved)}
+
+
+def staged_batch_schema(task: str, candidate_ids: list[str], *, option_ids: list[str] | None=None) -> dict:
+    if task not in STAGED_TASKS or not candidate_ids:
+        raise CandidateClassificationError("STAGED_BATCH_INVALID","Task and candidate IDs are required")
+    id_key={"REGION":"region_id","BOUNDARY":"boundary_id","BRIDGE":"ambiguity_id"}[task]
+    role_enum=sorted(REGION_ROLES if task=="REGION" else BOUNDARY_ROLES)
+    properties={id_key:{"type":"string","enum":sorted(candidate_ids)},
+        "confidence":{"type":"number"},"reason_code":{"type":"string","enum":sorted(STAGED_REASON_CODES)}}
+    if task=="REGION":
+        properties.update({"role":{"type":"string","enum":role_enum},"uncertainty":{"type":"string"}})
+    elif task=="BOUNDARY": properties["role"]={"type":"string","enum":role_enum}
+    else: properties["selected_option"]={"type":"string","enum":sorted(set(option_ids or [])|{"NO_BOUNDARY","UNKNOWN"})}
+    required=sorted(properties)
+    item={"type":"object","additionalProperties":False,"required":required,"properties":properties}
+    return {"type":"object","additionalProperties":False,
+        "required":["frame_id","batch_id","results"],"properties":{
+            "frame_id":{"type":"string"},"batch_id":{"type":"string"},
+            "results":{"type":"array","items":item}}}
+
+
+def plan_staged_batches(task: str, candidate_ids: list[str], *, graph_hash: str,
+                        safe_response_bytes: int=8000, option_ids: list[str] | None=None) -> list[dict]:
+    """Deterministic response-budget planner; count is derived, never fixed."""
+    if task not in STAGED_TASKS: raise CandidateClassificationError("STAGED_TASK_INVALID",task)
+    ids=sorted(set(candidate_ids)); per_item={"REGION":210,"BOUNDARY":180,"BRIDGE":175}[task]
+    overhead=700; capacity=(safe_response_bytes-overhead)//per_item
+    if ids and capacity<1: raise CandidateClassificationError("STAGED_BUDGET_TOO_SMALL","No candidate fits safe budget")
+    batches=[]
+    for offset in range(0,len(ids),max(capacity,1)):
+        members=ids[offset:offset+capacity]
+        batch_id=_stable_id("BATCH",[graph_hash,task,members])
+        schema=staged_batch_schema(task,members,option_ids=option_ids)
+        batches.append({"task":task,"batch_id":batch_id,"candidate_ids":members,
+            "estimated_max_response_bytes":overhead+per_item*len(members),
+            "request_schema_bytes":len(json.dumps(schema,separators=(",",":")).encode()),"schema":schema})
+    return batches
+
+
+def validate_staged_batch(payload: dict, *, graph: dict, batch: dict) -> dict:
+    if not isinstance(payload,dict) or set(payload)!={"frame_id","batch_id","results"}:
+        raise CandidateClassificationError("STAGED_SCHEMA_INVALID","Invalid staged response root")
+    if payload["frame_id"]!=graph["frame_id"] or payload["batch_id"]!=batch["batch_id"]:
+        raise CandidateClassificationError("STAGED_ID_MISMATCH","Wrong frame or batch ID")
+    task=batch["task"]; id_key={"REGION":"region_id","BOUNDARY":"boundary_id","BRIDGE":"ambiguity_id"}[task]
+    expected=set(batch["candidate_ids"]); seen=set()
+    allowed={id_key,"confidence","reason_code"}|({"role","uncertainty"} if task=="REGION" else {"role"} if task=="BOUNDARY" else {"selected_option"})
+    for row in payload["results"]:
+        if set(row)!=allowed or row.get(id_key) not in expected or row[id_key] in seen:
+            raise CandidateClassificationError("STAGED_SCHEMA_INVALID","Unknown, duplicate, missing or geometric fields")
+        if not 0<=float(row["confidence"])<=1 or row["reason_code"] not in STAGED_REASON_CODES:
+            raise CandidateClassificationError("STAGED_VALUE_INVALID","Invalid confidence or reason")
+        if task=="REGION" and row["role"] not in REGION_ROLES: raise CandidateClassificationError("STAGED_VALUE_INVALID","Invalid region role")
+        if task=="BOUNDARY" and row["role"] not in BOUNDARY_ROLES: raise CandidateClassificationError("STAGED_VALUE_INVALID","Invalid boundary role")
+        seen.add(row[id_key])
+    if seen!=expected:
+        raise CandidateClassificationError("STAGED_BATCH_INCOMPLETE","A partial batch cannot be fused")
+    return payload
+
+
+def fuse_staged_regions(graph: dict, deterministic: dict, batches: list[dict], payloads: list[dict]) -> dict:
+    if len(batches)!=len(payloads):
+        raise CandidateClassificationError("STAGED_SET_INCOMPLETE","All planned batches must succeed")
+    results=[]
+    for batch,payload in zip(batches,payloads):
+        validate_staged_batch(payload,graph=graph,batch=batch); results.extend(payload["results"])
+    provider={row["region_id"]:row for row in results}
+    exact={row["region_id"]:row for row in deterministic["resolved"]}; fused=[]; conflicts=[]
+    for region in graph.get("regions") or []:
+        identity=region["region_id"]
+        if identity in exact:
+            item={**exact[identity],"provider_classification":None,"conflict":False}
+        elif identity in provider:
+            row=provider[identity]; item={"region_id":identity,"role":row["role"],
+                "authority":"PROVIDER_ONLY_HYPOTHESIS","provider_classification":row["role"],
+                "vision_confidence":row["confidence"],"reason_code":row["reason_code"],"conflict":False}
+        else: raise CandidateClassificationError("STAGED_SET_INCOMPLETE","Missing region classification")
+        fused.append(item)
+    return {"frame_id":graph["frame_id"],"regions":fused,"conflicts":conflicts,"status":"PASS"}
+
+
+def deterministic_boundary_classifications(graph: dict, region_fusion: dict) -> dict:
+    """Resolve boundaries only where adjacent fused roles and CAD agree."""
+    roles={row["region_id"]:row["role"] for row in region_fusion.get("regions") or []}
+    resolved=[]; unresolved=[]
+    for boundary in graph.get("boundaries") or []:
+        adjacent=[roles.get(identity,"UNKNOWN") for identity in boundary.get("adjacent_region_ids") or []]
+        known={role for role in adjacent if role!="UNKNOWN"}
+        identity=boundary["boundary_id"]; role=None
+        if len(adjacent)>=2 and known=={"BUILDING_INTERIOR"}:
+            role="INTERIOR_SEPARATOR"
+        elif "BUILDING_INTERIOR" in known and known & EXTERIOR_REGION_ROLES:
+            role="BUILDING_SHELL"
+        elif known and known <= EXTERIOR_REGION_ROLES and len(adjacent)>=2:
+            role="SITE_SEPARATOR"
+        if role and boundary.get("cad_authority")=="CAD_CONFIRMED":
+            resolved.append({"boundary_id":identity,"role":role,"confidence":1.0,
+                "reason_code":"CAD_ADJACENCY","authority":"CAD_AND_FUSED_ADJACENCY"})
+        else: unresolved.append(identity)
+    return {"frame_id":graph["frame_id"],"resolved":resolved,
+            "unresolved_boundary_ids":sorted(unresolved)}
 
 
 def _stable_id(prefix: str, value: Any) -> str:

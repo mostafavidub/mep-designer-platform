@@ -5,7 +5,13 @@ from cad_engine.candidate_architectural_classification import (
     build_candidate_graph,
     candidate_classification_schema,
     derive_shell_candidates,
+    deterministic_region_classifications,
+    deterministic_boundary_classifications,
     fuse_region_classifications,
+    fuse_staged_regions,
+    plan_staged_batches,
+    staged_batch_schema,
+    validate_staged_batch,
     validate_candidate_classification,
 )
 from cad_engine.preauthority_candidate_graph import (
@@ -201,3 +207,52 @@ def test_provider_matrix_explicitly_qualifies_v2_and_blocks_failed_gate():
     weak=build_candidate_graph(_model(weak=True),frame_id="F1")
     with pytest.raises(VisionRecoveryError,match="sufficiency gate"):
         qualify_candidate_graph_for_provider(weak)
+
+
+def test_deterministic_exact_labels_reduce_region_provider_work():
+    graph=build_candidate_graph(_model(),frame_id="F1")
+    plan=deterministic_region_classifications(graph)
+    assert plan["unresolved_region_ids"]==[]
+    assert {row["role"] for row in plan["resolved"]}=={"BUILDING_INTERIOR","YARD"}
+
+
+def test_staged_planner_is_stable_and_budget_derived():
+    ids=[f"R-{i:03}" for i in range(83)]
+    first=plan_staged_batches("REGION",ids,graph_hash="abc",safe_response_bytes=3000)
+    second=plan_staged_batches("REGION",list(reversed(ids)),graph_hash="abc",safe_response_bytes=3000)
+    assert [row["batch_id"] for row in first]==[row["batch_id"] for row in second]
+    assert len(first)>1 and all(row["estimated_max_response_bytes"]<=3000 for row in first)
+
+
+def test_staged_schema_has_no_geometry_and_atomic_validation_rejects_partial_duplicate_and_unknown():
+    graph=build_candidate_graph(_model(),frame_id="F1")
+    ids=[row["region_id"] for row in graph["regions"]]
+    batch=plan_staged_batches("REGION",ids,graph_hash="abc")[0]
+    assert all(word not in str(staged_batch_schema("REGION",ids)) for word in ("geometry","polygon","point"))
+    def row(identity): return {"region_id":identity,"role":"UNKNOWN","confidence":.5,
+                              "reason_code":"INSUFFICIENT","uncertainty":"unclear"}
+    valid={"frame_id":"F1","batch_id":batch["batch_id"],"results":[row(i) for i in ids]}
+    assert validate_staged_batch(valid,graph=graph,batch=batch)==valid
+    for bad in (
+        {**valid,"results":valid["results"][:-1]},
+        {**valid,"results":[valid["results"][0],valid["results"][0]]},
+        {**valid,"results":[row("R-INVENTED")]+valid["results"][1:]},
+    ):
+        with pytest.raises(CandidateClassificationError): validate_staged_batch(bad,graph=graph,batch=batch)
+
+
+def test_incomplete_staged_batch_set_never_fuses():
+    graph=build_candidate_graph(_model(),frame_id="F1")
+    deterministic={"frame_id":"F1","resolved":[],
+                   "unresolved_region_ids":[row["region_id"] for row in graph["regions"]]}
+    batches=plan_staged_batches("REGION",deterministic["unresolved_region_ids"],graph_hash="abc",safe_response_bytes=1000)
+    with pytest.raises(CandidateClassificationError,match="All planned batches"):
+        fuse_staged_regions(graph,deterministic,batches,[])
+
+
+def test_boundary_is_deterministic_only_with_cad_and_fused_adjacency():
+    graph=build_candidate_graph(_model(),frame_id="F1")
+    fusion=fuse_region_classifications(graph,_payload(graph))
+    result=deterministic_boundary_classifications(graph,fusion)
+    assert any(row["role"]=="BUILDING_SHELL" for row in result["resolved"])
+    assert len(result["resolved"])+len(result["unresolved_boundary_ids"])==len(graph["boundaries"])

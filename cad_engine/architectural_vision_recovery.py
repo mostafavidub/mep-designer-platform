@@ -1203,6 +1203,76 @@ class DeepSeekVisionAdapter(OpenAICompatibleVisionAdapter):
             raise VisionRecoveryError("VISION_RESPONSE_INVALID","Candidate classification failed strict validation",
                                       details={"validation_error":getattr(exc,"code",type(exc).__name__)}) from exc
 
+    def classify_candidate_batch(self, *, image_path: str, graph: dict, batch: dict,
+                                 prompt_version: str="candidate-classification-staged/1") -> dict:
+        """Execute one bounded, non-retrying, atomic ID-only classification batch."""
+        from .candidate_architectural_classification import validate_staged_batch
+        qualify_candidate_graph_for_provider(graph,provider=self.provider,model=self.model)
+        image_bytes=Path(image_path).read_bytes()
+        if len(image_bytes)>MAX_INLINE_IMAGE_BYTES:
+            raise VisionRecoveryError("VISION_IMAGE_TOO_LARGE","Candidate overlay exceeds inline image limits")
+        task=batch["task"]; ids=batch["candidate_ids"]
+        if task=="REGION":
+            lookup={row["region_id"]:row for row in graph.get("regions") or []}
+            evidence=[{"region_id":i,"exact_labels":lookup[i].get("exact_text_evidence") or []} for i in ids]
+        elif task=="BOUNDARY":
+            lookup={row["boundary_id"]:row for row in graph.get("boundaries") or []}
+            evidence=[{"boundary_id":i,"adjacent_region_ids":lookup[i].get("adjacent_region_ids") or [],
+                       "cad_authority":lookup[i].get("cad_authority")} for i in ids]
+        else:
+            lookup={row["ambiguity_id"]:row for row in graph.get("bridges") or []}
+            evidence=[{"ambiguity_id":i,"option_ids":[o["option_id"] for o in lookup[i]["options"]]} for i in ids]
+        prompt=("You are an architectural classification reviewer, never a geometry generator. "
+                "Classify every supplied ID exactly once. Do not output coordinates, polygons or new IDs. "
+                "Use UNKNOWN and reason_code INSUFFICIENT when evidence is weak. Exact CAD labels outrank vision. "
+                f"Task={task}; frame_id={graph['frame_id']}; batch_id={batch['batch_id']}; "
+                "reason_code must be one of EXACT_LABEL,VISIBLE_ENCLOSURE,FACADE_RELATION,"
+                "STAIR_SHAFT_EVIDENCE,CAD_ADJACENCY,INSUFFICIENT. Submit only through the forced function. "
+                "CANDIDATES="+json.dumps(evidence,ensure_ascii=False,separators=(",",":")))
+        schema=batch["schema"]; schema_json=json.dumps(schema,sort_keys=True,separators=(",",":"))
+        encoded=base64.b64encode(image_bytes).decode("ascii")
+        request_hash=sha256((prompt+schema_json+sha256(image_bytes).hexdigest()).encode()).hexdigest()
+        tool_name="submit_staged_"+task.lower()+"_classification_v1"; started=time.perf_counter()
+        common={"provider":self.provider,"model":self.model,"task":task,"frame_id":graph["frame_id"],
+            "batch_id":batch["batch_id"],"candidate_count":len(ids),"request_hash":request_hash,
+            "prompt_version":prompt_version,"request_schema_bytes":len(schema_json.encode()),
+            "render_sha256":sha256(image_bytes).hexdigest(),"attempt_count":1}
+        try:
+            response=self.strict_client.chat.completions.create(model=self.model,
+                messages=[{"role":"user","content":[{"type":"text","text":prompt},
+                    {"type":"image_url","image_url":{"url":"data:image/png;base64,"+encoded,"detail":"original"}}]}],
+                tools=[{"type":"function","function":{"name":tool_name,"strict":True,
+                    "description":"Submit one bounded ID-only classification batch.","parameters":schema}}],
+                tool_choice={"type":"function","function":{"name":tool_name}},
+                extra_body={"thinking":{"type":"disabled"}})
+        except Exception as exc:
+            code,message,_transient=_safe_provider_error(exc)
+            self.last_call_metadata={**common,"attempt_errors":[code],
+                "latency_seconds":round(time.perf_counter()-started,6)}
+            raise VisionRecoveryError(code,message) from exc
+        choice=(getattr(response,"choices",None) or [None])[0]
+        finish_reason=getattr(choice,"finish_reason",None)
+        calls=getattr(getattr(choice,"message",None),"tool_calls",None) or []
+        raw=getattr(getattr(calls[0],"function",None),"arguments",None) if len(calls)==1 else None
+        self.last_call_metadata={**common,"attempt_errors":[],"request_id":getattr(response,"id",None),
+            "finish_reason":finish_reason,"usage":self._usage(response),"tool_call_count":len(calls),
+            "latency_seconds":round(time.perf_counter()-started,6),
+            "response_bytes":len(raw.encode()) if isinstance(raw,str) else 0,
+            "tool_argument_bytes":len(raw.encode()) if isinstance(raw,str) else 0}
+        if len(calls)!=1 or not isinstance(raw,str):
+            raise VisionRecoveryError("VISION_TOOL_CALL_MISSING","DeepSeek did not return one staged tool call")
+        if getattr(getattr(calls[0],"function",None),"name",None)!=tool_name:
+            raise VisionRecoveryError("VISION_TOOL_NAME_INVALID","DeepSeek invoked an unapproved staged tool")
+        self.last_call_metadata["response_hash"]=sha256(raw.encode()).hexdigest()
+        try: payload=json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise VisionRecoveryError("VISION_JSON_INVALID","DeepSeek returned malformed staged JSON",
+                details={"json_error_position":exc.pos,**self.last_call_metadata}) from exc
+        try: return validate_staged_batch(payload,graph=graph,batch=batch)
+        except Exception as exc:
+            raise VisionRecoveryError("VISION_RESPONSE_INVALID","Staged classification failed atomic validation",
+                details={"validation_error":getattr(exc,"code",type(exc).__name__),**self.last_call_metadata}) from exc
+
 
 def configured_vision_adapter():
     provider = (os.getenv("ARCH_VISION_PROVIDER") or "disabled").strip().lower()

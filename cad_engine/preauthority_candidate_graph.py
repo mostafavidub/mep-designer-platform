@@ -23,7 +23,13 @@ def _semantic_candidate(text):
     """Return only deterministic label semantics; never infer missing text."""
     value=" ".join(str(text or "").strip().lower().replace("ي","ی").replace("ك","ک").split())
     rules=(("حیاط","yard"),("yard","yard"),("شفت","shaft"),("shaft","shaft"),
-           ("راه پله","stair"),("راه‌پله","stair"),("پله","stair"),("stair","stair"))
+           ("راه پله","stair"),("راه‌پله","stair"),("پله","stair"),("stair","stair"),
+           ("آشپزخانه","kitchen"),("kitchen","kitchen"),("پذیرایی","reception"),
+           ("نشیمن","living"),("هال","living"),("living","living"),("خواب","bedroom"),
+           ("bedroom","bedroom"),("حمام","bathroom"),("bathroom","bathroom"),
+           ("سرویس","toilet"),("توالت","toilet"),("toilet","toilet"),("لابی","lobby"),
+           ("lobby","lobby"),("پارکینگ","parking"),("parking","parking"),
+           ("انبار","storage"),("storage","storage"),("راهرو","corridor"),("corridor","corridor"))
     return next((semantic for token,semantic in rules if token in value),"UNKNOWN")
 
 
