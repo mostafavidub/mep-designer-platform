@@ -15,6 +15,7 @@ from ezdxf import bbox
 
 from . import auto_inference as base_inference
 from .dxf_input import read_input_dxf
+from cad_engine.architectural_space_engine import reconstruct_architecture as reconstruct_canonical_architecture
 
 RECONSTRUCTION_VERSION = "architecture-reconstruction-v1"
 
@@ -139,6 +140,18 @@ def _text_value(entity):
 def reconstruct_dxf(path, base_result=None):
     result = dict(base_result or {})
     try:
+        canonical = reconstruct_canonical_architecture(path)
+        result["canonical_architecture_model"] = canonical
+        result["architecture_recognition_preview_svg"] = canonical.get("recognition_preview_svg")
+        result["architecture_completeness"] = canonical.get("completeness")
+    except Exception as exc:
+        result["canonical_architecture_model"] = {
+            "schema": "canonical-architectural-model/1.0", "physical_spaces": [],
+            "completeness": {"status": "INPUT_REQUIRED", "release_allowed": False,
+                             "downstream_engineering_allowed": False,
+                             "issues": [{"code": "CANONICAL_RECONSTRUCTION_FAILED", "detail": type(exc).__name__}]},
+        }
+    try:
         doc, _recovery = read_input_dxf(path)
     except Exception as exc:
         result["architecture_reconstruction_version"] = RECONSTRUCTION_VERSION
@@ -218,9 +231,12 @@ def enrich_auto(auto, analysis):
     profiles = auto.get("level_profiles") or []
     all_rooms = []
     all_primitives = []
+    canonical_models = []
     for f in (analysis or {}).get("files") or []:
         all_rooms.extend(f.get("architecture_rooms") or [])
         all_primitives.extend(f.get("architecture_primitives") or [])
+        if f.get("canonical_architecture_model"):
+            canonical_models.append(f["canonical_architecture_model"])
 
     # Assign semantic room labels to their closest canonical level title, then
     # derive a spatial envelope from those labels. The envelope prevents an
@@ -281,6 +297,30 @@ def enrich_auto(auto, analysis):
         "room_count": sum(len(x["rooms"]) for x in level_rows),
         "primitive_count": sum(sum(x["counts"].values()) for x in level_rows),
     }
+    if canonical_models:
+        physical_spaces = [space for model in canonical_models for space in model.get("physical_spaces") or []]
+        functional_zones = [zone for model in canonical_models for zone in model.get("functional_zones") or []]
+        issues = [issue for model in canonical_models for issue in (model.get("completeness") or {}).get("issues") or []]
+        status = "CONFLICT" if any(i.get("status") == "CONFLICT" for i in issues) else ("INPUT_REQUIRED" if issues else "VERIFIED")
+        canonical_levels = []
+        for profile in level_rows:
+            canonical_levels.append({**profile, "physical_space_ids": [s["physical_space_id"] for s in physical_spaces
+                                                                        if s.get("level_id") in {None, profile.get("name")} ]})
+        auto["architecture_model"] = {
+            "schema": "canonical-architectural-model/1.0", "version": "canonical-architectural-model/1.0",
+            "levels": canonical_levels, "level_count": len(canonical_levels), "physical_spaces": physical_spaces,
+            "functional_zones": functional_zones,
+            "architectural_objects": [obj for model in canonical_models for obj in model.get("architectural_objects") or []],
+            "dimensions": [dim for model in canonical_models for dim in model.get("dimensions") or []],
+            "frames": [frame for model in canonical_models for frame in model.get("frames") or []],
+            "completeness": {"status": status, "release_allowed": status == "VERIFIED",
+                             "downstream_engineering_allowed": status == "VERIFIED", "issues": issues},
+            "source_models": [{"source": model.get("source"), "diagnostics": model.get("diagnostics")} for model in canonical_models],
+            "recognition_previews": [model.get("recognition_preview_svg") for model in canonical_models if model.get("recognition_preview_svg")],
+            # Migration projection for existing topology consumers.
+            "room_count": len(physical_spaces), "primitive_count": sum(len(model.get("walls") or []) for model in canonical_models),
+        }
+        auto["architecture_completeness"] = auto["architecture_model"]["completeness"]
     return auto
 
 
