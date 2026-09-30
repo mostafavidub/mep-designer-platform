@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0289",
-  "summary": "Add local gap/opening evidence fusion and a stale-safe replayable human gap review gate without granting material geometry authority.",
+  "summary": "Add local gap/opening evidence fusion, stale-safe human gap replay, and reference-bound Dimension Association without granting invented geometry authority.",
   "requester": "project-owner",
   "change_types": ["architecture", "rule", "schema", "drawing_output", "test", "documentation", "governance", "versioning", "deployment"],
   "changed_rule_ids": ["MEP-ARCH-RECOG-001", "MEP-ARCH-PRESERVE-001"],
@@ -12,7 +12,7 @@
     "planner": "Human gap answers do not directly authorize planning or access.",
     "cad_designer": "Keeps one canonical producer and validates review decisions before replay.",
     "routing": "No decision creates access without a qualified Portal and valid sides.",
-    "qa": "Adds locality, stale, idempotency and authority-ceiling regressions.",
+    "qa": "Adds locality, stale, atomic replay, authority-ceiling and dimension-reference regressions.",
     "manifest": "Private Fasihi decisions remain outside Git.",
     "ui_api": "Defines deterministic question and decision payloads.",
     "docs": "Extends the canonical architecture ADR.",
@@ -28,9 +28,9 @@
     "version_bump": ["SWCIS 4.58.0 -> 4.59.0"],
     "migration": ["additive review fields; no destructive migration"],
     "golden_regression": ["private Fasihi evidence package outside Git", "synthetic fixtures in Git"],
-    "semantic_diff": ["same wall ID is insufficient for gap/opening fusion", "human interpretation never becomes material geometry"],
+    "semantic_diff": ["same wall ID is insufficient for gap/opening fusion", "human interpretation never becomes material geometry", "unbound dimensions are not geometric conflicts"],
     "artifact_diff": ["32-gap ledger, motif ledger, localized review package"],
-    "numeric_diff": ["local tolerance derives from source tolerance, wall thickness, opening width and gap width"],
+    "numeric_diff": ["local tolerance derives from source tolerance, wall thickness, opening width and gap width", "dimension checks use the distance between two bound witness references instead of a whole-space bounding box"],
     "contract_diff": ["stale decisions never replay", "window never creates access", "unknown remains input-required"],
     "deployment_plan": ["stacked branch -> deterministic audit -> human stop gate -> no deploy"],
     "rollback_plan": ["redeploy previous approved SHA; private review artifacts are non-authoritative"]

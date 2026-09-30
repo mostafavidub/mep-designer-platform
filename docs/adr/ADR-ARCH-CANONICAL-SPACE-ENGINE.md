@@ -271,3 +271,11 @@ gap geometry, host walls, evidence snapshot, and question version.  Any material
 identity change makes only the affected decision stale; stale, malformed, or
 conflicting decisions fail closed.  A first run with material unresolved gaps
 stops before Dimension Association and downstream Mechanical processing.
+
+After valid review replay stabilizes topology, a dimension may participate in
+geometry reconciliation only when both non-default witness points bind to the
+current space boundary and their span crosses the space interior.  The checked
+geometric value is the distance between those bound references, never the
+nearest width or height of the whole space bounding box.  Chain, thickness,
+set-out, overall, single-reference, and otherwise unbound dimensions remain
+explicitly not evaluated; they are not silently promoted to conflicts.
