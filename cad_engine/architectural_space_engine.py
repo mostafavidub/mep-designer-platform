@@ -29,6 +29,7 @@ from .architectural_topology_quality import (
     canonical_space_subdivision,
     evidence_based_building_envelope,
     reconstruct_canonical_walls,
+    source_supported_endpoint_closures,
     virtual_opening_closures,
 )
 from .pre_topology_object_classifier import (
@@ -1032,7 +1033,15 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit):
                       "status": "VERIFIED" if any(e["class"] == "TEXT" for e in semantic[category]) else "HIGH_CONFIDENCE"})
     category = categories[0] if len(categories) == 1 else ("open_plan" if len(categories) > 1 else "unknown")
     status = "VERIFIED" if len(categories) == 1 and zones[0]["status"] == "VERIFIED" else ("HIGH_CONFIDENCE" if len(categories) == 1 else "INPUT_REQUIRED")
-    if len(categories) > 1: status = "VERIFIED" if all(z["status"] == "VERIFIED" for z in zones) else "INPUT_REQUIRED"
+    # Multiple exact labels may describe one legitimate open plan, but labels
+    # for enclosed service/sleeping/vertical spaces are evidence that a real
+    # separating boundary is still unresolved.  Semantic agreement must never
+    # promote unresolved geometry to VERIFIED.
+    open_plan_compatible={"living","reception","dining","kitchen","kitchenette","entrance","lobby"}
+    incompatible=set(categories)-open_plan_compatible
+    if len(categories) > 1:
+        status=("VERIFIED" if not incompatible and all(z["status"] == "VERIFIED" for z in zones)
+                else "INPUT_REQUIRED")
     minx, miny, maxx, maxy = poly.bounds; scale = metres_per_unit
     dims = _associate_dimensions(poly, extracted["dimensions"], metres_per_unit)
     evidence = [{"class": "CAD_TOPOLOGY", "source_handles": sorted({p.get("handle") for p in extracted["primitives"] if p.get("handle")})}]
@@ -1173,7 +1182,8 @@ def _review_payload(spaces, frames, openings, coverage, dimension_reconciliation
             "coverage":coverage,"dimension_reconciliation":dimension_reconciliation}
 
 
-def _completeness(frames, spaces, units_known, *, coverage=None, openings=None, dimension_reconciliation=None):
+def _completeness(frames, spaces, units_known, *, coverage=None, openings=None,
+                  dimension_reconciliation=None, subdivision_comparisons=None):
     issues = []
     for frame in frames:
         if frame.get("scope_relevance") == "MECHANICAL_AUTHORITY" and frame["frame_type"] == "UNKNOWN":
@@ -1190,6 +1200,15 @@ def _completeness(frames, spaces, units_known, *, coverage=None, openings=None, 
             issues.append({"code":"UNRESOLVED_CRITICAL_DOOR","opening_id":opening.get("opening_id"),"status":"INPUT_REQUIRED"})
     if dimension_reconciliation and dimension_reconciliation.get("status") == "CONFLICT":
         issues.append({"code":"ENGINEERING_DIMENSION_CONFLICT","status":"CONFLICT"})
+    governed={frame["frame_id"] for frame in frames
+              if frame.get("scope_relevance")=="MECHANICAL_AUTHORITY"}
+    for comparison in subdivision_comparisons or []:
+        if (comparison.get("frame_id") in governed and
+                comparison.get("selected_authority")!="CANONICAL"):
+            issues.append({"code":"CANONICAL_TOPOLOGY_REQUIRED",
+                           "frame_id":comparison.get("frame_id"),
+                           "selected_authority":comparison.get("selected_authority"),
+                           "status":"INPUT_REQUIRED"})
     conflicts = [x for x in issues if x["status"] == "CONFLICT"]
     status = "CONFLICT" if conflicts else ("INPUT_REQUIRED" if issues or not units_known else "VERIFIED")
     return {"status": status, "release_allowed": status == "VERIFIED", "downstream_engineering_allowed": status == "VERIFIED",
@@ -1298,8 +1317,10 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                                "point":point,"semantic_candidate":category})
         frame_objects=[row for row in extracted["objects"] if row.get("point") and (clip is None or clip.buffer(tolerance).covers(Point(row["point"])))]
         continuity=canonical_enclosure_continuity(frame_walls,frame_id=frame["frame_id"])
-        promoted=[row for row in continuity if "ENVELOPE_SUPPORT" in row.get("roles",[])]
-        continuity_results.extend(continuity)
+        endpoint_closures=source_supported_endpoint_closures(
+            frame_walls,frame_id=frame["frame_id"],tolerance=tolerance)
+        promoted=[row for row in continuity+endpoint_closures if "ENVELOPE_SUPPORT" in row.get("roles",[])]
+        continuity_results.extend(continuity+endpoint_closures)
         envelope,envelope_diagnostic,frame_regions=evidence_based_building_envelope(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance,
             semantic_labels=frame_labels,objects=frame_objects,junctions=wall_result["junctions"],
@@ -1346,7 +1367,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     coverage=_coverage(frames,spaces)
     dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
     completeness = _completeness(frames, spaces, source["metres_per_unit"] is not None,
-                                 coverage=coverage,openings=openings,dimension_reconciliation=dimension_reconciliation)
+                                 coverage=coverage,openings=openings,
+                                 dimension_reconciliation=dimension_reconciliation,
+                                 subdivision_comparisons=subdivision_comparisons)
     timings["qa_and_completeness"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     unresolved = [{"space_id": s["physical_space_id"], "bounds": list(_space_polygon(s).bounds)}
                   for s in spaces if s["status"] != "VERIFIED"]
@@ -1382,7 +1405,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
         completeness=_completeness(frames,spaces,source["metres_per_unit"] is not None,
                                    coverage=coverage,openings=openings,
-                                   dimension_reconciliation=dimension_reconciliation)
+                                   dimension_reconciliation=dimension_reconciliation,
+                                   subdivision_comparisons=subdivision_comparisons)
         hybrid_frames=((vision.get("hybrid_recovery") or {}).get("frames") or [])
         if hybrid_frames:
             material_questions=[question for result in hybrid_frames for question in result.get("human_questions") or []]

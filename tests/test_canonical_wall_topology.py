@@ -8,6 +8,7 @@ from cad_engine.architectural_topology_quality import (
     enumerate_envelope_candidates,
     host_portal_on_walls,
     reconstruct_canonical_walls,
+    source_supported_endpoint_closures,
 )
 
 
@@ -145,6 +146,42 @@ def _topology_wall(wall_id,a,b,representation="DOUBLE_FACE"):
     row=_wall(wall_id,a,b,[[0,LineString((a,b)).length]])
     row.update({"representation":representation,"source_handles":[wall_id],"thickness":.2 if representation=="DOUBLE_FACE" else None})
     return row
+
+
+def _proven_wall(wall_id, a, b, *, thickness=.2, representation="DOUBLE_FACE"):
+    row=_topology_wall(wall_id,a,b,representation=representation)
+    row.update({"status":"HIGH_CONFIDENCE","thickness":thickness})
+    return row
+
+
+def test_source_supported_endpoint_closure_is_nonmaterial_and_deterministic():
+    walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
+    first=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    repeat=source_supported_endpoint_closures(list(reversed(walls)),frame_id="F1",tolerance=.001)
+    assert first == repeat
+    assert len(first) == 1
+    assert first[0]["reason"] == "COLLINEAR_WALL_GAP"
+    assert first[0]["roles"] == ["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    assert first[0]["material"] is False
+    assert {first[0][key] for key in ("wall_authority","routing_authority","portal_authority","access_authority")} == {"NONE"}
+
+
+def test_source_supported_endpoint_closure_joins_small_orthogonal_corner():
+    walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    assert len(rows) == 1
+    assert rows[0]["reason"] == "EXTERIOR_CORNER_JOIN"
+
+
+def test_source_supported_endpoint_closure_rejects_unproven_or_oversized_gap():
+    oversized=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(7,0),(10,0))]
+    single=[_proven_wall("A",(0,0),(4,0),representation="SINGLE_LINE"),
+            _proven_wall("B",(5,0),(10,0))]
+    low=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
+    low[1]["status"]="LOW_CONFIDENCE"
+    assert source_supported_endpoint_closures(oversized,frame_id="F1",tolerance=.001) == []
+    assert source_supported_endpoint_closures(single,frame_id="F1",tolerance=.001) == []
+    assert source_supported_endpoint_closures(low,frame_id="F1",tolerance=.001) == []
 
 
 def _site_and_building_walls():

@@ -110,6 +110,24 @@ def test_open_plan_is_one_physical_space_with_functional_zones(tmp_path):
     assert model["completeness"]["status"] == "VERIFIED"
 
 
+def test_enclosed_service_label_inside_open_plan_fails_closed(tmp_path):
+    model = reconstruct_architecture(_drawing(tmp_path/"missed-partition.dxf", labels=(
+        ("پذیرایی",(2,3)),("آشپزخانه",(6,3)),("توالت",(8,3)))))
+    assert model["physical_spaces"][0]["category"] == "open_plan"
+    assert model["physical_spaces"][0]["status"] == "INPUT_REQUIRED"
+    assert any(row["code"] == "UNRESOLVED_SPACE" for row in model["completeness"]["issues"])
+
+
+def test_mechanical_authority_frame_cannot_release_legacy_subdivision():
+    completeness=_completeness(
+        [{"frame_id":"F1","scope_relevance":"MECHANICAL_AUTHORITY","frame_type":"PLAN"}],
+        [{"physical_space_id":"S1","frame_id":"F1","status":"VERIFIED","area_m2":10}],True,
+        subdivision_comparisons=[{"frame_id":"F1","selected_authority":"LEGACY_FALLBACK"}])
+    assert completeness["status"] == "INPUT_REQUIRED"
+    assert completeness["release_allowed"] is False
+    assert completeness["issues"][0]["code"] == "CANONICAL_TOPOLOGY_REQUIRED"
+
+
 def test_stable_ids_survive_layer_rename_and_reprocessing(tmp_path):
     first = reconstruct_architecture(_drawing(tmp_path/"a.dxf", labels=(("خواب",(3,3)),), layer="A-WALL"))
     second = reconstruct_architecture(_drawing(tmp_path/"b.dxf", labels=(("خواب",(3,3)),), layer="0"))
