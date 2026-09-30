@@ -119,6 +119,7 @@
         "cad_engine/hybrid_architectural_recovery.py",
         "cad_engine/canonical_wall_topology.py",
         "cad_engine/architectural_topology_quality.py",
+        "cad_engine/architectural_gap_review.py",
         "tools/architectural_canonical_topology_qa.py",
       "tools/architectural_wall_admission_qa.py",
       "tools/pre_topology_candidate_audit.py",

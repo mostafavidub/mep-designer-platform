@@ -19,7 +19,7 @@ import time
 
 import ezdxf
 from shapely.geometry import LineString, Point, Polygon, box
-from shapely.ops import polygonize, unary_union
+from shapely.ops import nearest_points, polygonize, unary_union
 from shapely.strtree import STRtree
 
 from .architectural_topology_quality import (
@@ -32,6 +32,11 @@ from .architectural_topology_quality import (
     reconstruct_canonical_walls,
     source_supported_endpoint_closures,
     virtual_opening_closures,
+)
+from .architectural_gap_review import (
+    apply_review_decisions,
+    build_review_manifest,
+    validate_review_decisions,
 )
 from .pre_topology_object_classifier import (
     classify_source_record,
@@ -524,8 +529,12 @@ def _extract(doc):
         elif kind == "DIMENSION":
             try:
                 measurement = float(entity.get_measurement())
-                defpoints = [p for p in (_point(entity, name) for name in ("defpoint", "defpoint2", "defpoint3", "defpoint4")) if p]
-                row = {**record, "measurement": measurement, "definition_points": defpoints,
+                role_points={name:_point(entity,name) for name in ("defpoint","defpoint2","defpoint3","defpoint4")}
+                role_points={name:p for name,p in role_points.items() if p and Point(p).distance(Point(0,0))>1e-9}
+                witnesses=[role_points[name] for name in ("defpoint2","defpoint3") if name in role_points]
+                row = {**record, "measurement": measurement, "definition_points": list(role_points.values()),
+                       "dimension_points":role_points,"witness_points":witnesses,
+                       "dimension_type":int(getattr(entity.dxf,"dimtype",0) or 0)&15,
                        "text_override": str(getattr(entity.dxf, "text", "") or "")}
                 dimensions.append(row); primitives.append(row)
             except Exception: primitives.append(record)
@@ -1023,13 +1032,22 @@ def _associate_dimensions(poly, dimensions, metres_per_unit):
     rows = []
     boundary = poly.boundary
     for dim in dimensions:
-        pts = dim.get("definition_points") or []
-        if not pts: continue
-        if min(boundary.distance(Point(p)) for p in pts) <= max(math.sqrt(poly.area) * .15, 1e-6):
+        pts = dim.get("witness_points") or []
+        if len(pts)!=2 or pts[0]==pts[1]: continue
+        reference_tolerance=max(min(math.sqrt(poly.area)*.01,.10),1e-6)
+        distances=[boundary.distance(Point(p)) for p in pts]
+        midpoint=LineString(pts).interpolate(.5,normalized=True)
+        crosses_interior=(poly.buffer(reference_tolerance).covers(midpoint)
+                          and boundary.distance(midpoint)>reference_tolerance)
+        if max(distances)<=reference_tolerance and crosses_interior:
+            references=[list(nearest_points(boundary,Point(p))[0].coords)[0] for p in pts]
             rows.append({"dimension_id": _stable_id("DIM", [dim.get("handle"), dim.get("measurement")]),
                          "measurement": dim["measurement"], "measurement_m": dim["measurement"] * metres_per_unit if metres_per_unit else None,
-                         "source_handle": dim.get("handle"), "definition_points": pts, "text_override": dim.get("text_override"),
-                         "status": "VERIFIED" if metres_per_unit else "INPUT_REQUIRED"})
+                         "source_handle": dim.get("handle"), "definition_points": dim.get("definition_points") or [],
+                         "witness_points":pts,"bound_reference_points":references,
+                         "dimension_type":dim.get("dimension_type"),"text_override": dim.get("text_override"),
+                         "association_basis":"TWO_BOUNDARY_WITNESS_POINTS",
+                         "status": "VERIFIED_ASSOCIATION" if metres_per_unit else "INPUT_REQUIRED"})
     return rows
 
 
@@ -1180,22 +1198,27 @@ def _coverage(frames, spaces):
             "coverage_ratio":sum(r["accounted_physical_space_area"] for r in per_frame)/sum((r["authoritative_usable_area"] for r in per_frame), start=0.0) if sum((r["authoritative_usable_area"] for r in per_frame), start=0.0) else 0.0}
 
 
-def _dimension_reconciliation(spaces, metres_per_unit, tolerance):
+def _dimension_reconciliation(spaces, metres_per_unit, tolerance, dimensions=None):
     rows=[]
     geometric_tol=max((tolerance or .001)*(metres_per_unit or 1.0), .001)
     for space in spaces:
-        poly=_space_polygon(space); minx,miny,maxx,maxy=poly.bounds
-        candidates=[(maxx-minx)*(metres_per_unit or 1.0),(maxy-miny)*(metres_per_unit or 1.0)]
         for dim in space.get("dimensions") or []:
             annotated=dim.get("measurement_m")
-            if annotated is None: continue
-            nearest=min(candidates,key=lambda value:abs(value-annotated)); delta=abs(nearest-annotated)
+            references=dim.get("bound_reference_points") or []
+            if annotated is None or len(references)!=2 or dim.get("status")!="VERIFIED_ASSOCIATION": continue
+            measured=LineString(references).length*(metres_per_unit or 1.0);delta=abs(measured-annotated)
             allowed=max(geometric_tol, abs(annotated)*.005)
             rows.append({"dimension_id":dim["dimension_id"],"space_id":space["physical_space_id"],
-                         "annotated_measurement_m":annotated,"geometric_measurement_m":nearest,
+                         "annotated_measurement_m":annotated,"geometric_measurement_m":measured,
                          "difference_m":delta,"tolerance_m":allowed,
+                         "association_basis":dim["association_basis"],
                          "status":"PASS" if delta<=allowed else "CONFLICT"})
-    return {"status":"CONFLICT" if any(r["status"]=="CONFLICT" for r in rows) else "PASS", "rows":rows}
+    associated_ids={row["dimension_id"] for row in rows}
+    raw_count=len(dimensions or [])
+    status="CONFLICT" if any(r["status"]=="CONFLICT" for r in rows) else ("PASS" if rows else "INPUT_REQUIRED")
+    return {"status":status,"rows":rows,"raw_dimension_count":raw_count,
+            "verified_association_count":len(associated_ids),
+            "unassociated_or_not_evaluated_count":max(0,raw_count-len(associated_ids))}
 
 
 def _review_payload(spaces, frames, openings, coverage, dimension_reconciliation):
@@ -1265,7 +1288,8 @@ def recognition_svg(model):
     rows.append('</svg>'); return "".join(rows)
 
 
-def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = None):
+def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = None,
+                             gap_review_manifest: dict | None = None):
     started = time.perf_counter(); stage_started=started; timings={}
     doc, source = _ingest(path); extracted = _extract(doc); timings["parsing"]=time.perf_counter()-stage_started
     stage_started=time.perf_counter()
@@ -1276,6 +1300,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     timings["frame_and_scale_resolution"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces = []; segment_records=[]; accepted_wall_lines=[]; rejected_cells=[]; refinement_decisions=[]; refinement_iterations=[]
     canonical_walls=[]; wall_junctions=[]; thickness_clusters=[]; building_envelopes=[]
+    gap_review_validation={"accepted_review_decisions":[],"stale_review_decisions":[],
+                           "rejected_review_decisions":[],"review_application_status":"NOT_PROVIDED"}; applied_gap_reviews=[]
     envelope_candidate_diagnostics=[]; plan_regions=[]
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
@@ -1356,14 +1382,28 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         endpoint_closures=source_supported_endpoint_closures(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance)
         all_closures=continuity+endpoint_closures
-        internal_wall_gaps.extend(classify_internal_wall_gaps(
+        frame_gaps=classify_internal_wall_gaps(
             frame_walls,all_closures,frame_opening_evidence,
-            frame_id=frame["frame_id"],tolerance=tolerance))
+            frame_id=frame["frame_id"],tolerance=tolerance)
+        internal_wall_gaps.extend(frame_gaps)
+        if gap_review_manifest and gap_review_manifest.get("frame_id")==frame["frame_id"]:
+            reviewed_gap_ids={row.get("gap_id") for row in gap_review_manifest.get("questions") or []}
+            current_review=build_review_manifest(
+                source_sha256=source["source_sha256"],frame_id=frame["frame_id"],
+                dependency_engine_sha=gap_review_manifest.get("dependency_engine_sha") or "",
+                gaps=[row for row in frame_gaps if row["gap_id"] in reviewed_gap_ids],walls=frame_walls)
+            validation=validate_review_decisions(gap_review_manifest,current_review)
+            for key in ("accepted_review_decisions","stale_review_decisions","rejected_review_decisions"):
+                gap_review_validation[key].extend(validation[key])
+            gap_review_validation["review_application_status"]=validation["review_application_status"]
+            applied_gap_reviews.extend(apply_review_decisions(frame_gaps,all_closures,validation))
         promoted=[row for row in all_closures if "ENVELOPE_SUPPORT" in row.get("roles",[])]
-        subdivision_promoted=[row for row in promoted
+        subdivision_promoted=[row for row in all_closures
+                              if "ENCLOSURE_BARRIER" in row.get("roles",[])
                               if row.get("gap_classification") in
-                                 {"DOOR_GAP","WINDOW_GAP","OPEN_PASSAGE","MISSING_WALL_GEOMETRY","DRAFTING_BREAK"}
-                              and row.get("gap_status") in {"PROVEN","SUPPORTED"}]
+                                 {"DOOR_GAP","WINDOW_GAP","OPEN_PASSAGE","MISSING_WALL_GEOMETRY",
+                                  "DRAFTING_BREAK","HUMAN_CONFIRMED_CONTINUITY"}
+                              and row.get("gap_status") in {"PROVEN","SUPPORTED","HUMAN_CONFIRMED"}]
         continuity_results.extend(all_closures)
         envelope,envelope_diagnostic,frame_regions=evidence_based_building_envelope(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance,
@@ -1409,7 +1449,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                   canonical_walls=canonical_walls,internal_wall_gaps=internal_wall_gaps)
     timings["topology"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     coverage=_coverage(frames,spaces)
-    dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
+    dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance,
+                                                        extracted["dimensions"])
     completeness = _completeness(frames, spaces, source["metres_per_unit"] is not None,
                                  coverage=coverage,openings=openings,
                                  dimension_reconciliation=dimension_reconciliation,
@@ -1447,7 +1488,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                       source["source_sha256"],tolerance,canonical_walls=canonical_walls,
                                       internal_wall_gaps=internal_wall_gaps)
         coverage=_coverage(frames,spaces)
-        dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
+        dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance,
+                                                            extracted["dimensions"])
         completeness=_completeness(frames,spaces,source["metres_per_unit"] is not None,
                                    coverage=coverage,openings=openings,
                                    dimension_reconciliation=dimension_reconciliation,
@@ -1527,6 +1569,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "internal_wall_gaps":{"schema":"canonical-internal-wall-gap/1.0",
                                     "items":internal_wall_gaps,
                                     "classification_precedes_closure":True},
+             "gap_human_review":{"schema":"architectural-human-gap-review-result/1.0",
+                                 **gap_review_validation,"applied_decisions":applied_gap_reviews,
+                                 "authority":"TOPOLOGY_CLASSIFICATION_ONLY"},
              "virtual_opening_closures":[row for result in subdivision_results for row in result.get("closures",[])],
              "enclosure_barrier_graph":{"schema":"canonical-enclosure-barrier-graph/1.0",
                                          "barriers":[row for result in subdivision_results for row in result.get("barriers",[])],

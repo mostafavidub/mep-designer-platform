@@ -254,3 +254,28 @@ derived closure geometry remains non-material with no routing authority.
 Fasihi Ground still has unresolved internal-wall topology and no qualified
 physical portals after this bounded change.  Its completeness therefore stays
 `CONFLICT`; deployment and Mechanical authority remain prohibited.
+
+### Replayable gap interpretation gate (SWCIS 4.59.0)
+
+Opening evidence is compatible with a wall interruption only when it shares a
+canonical host and is local to that exact gap under a tolerance derived from
+source precision, local wall thickness, opening width, and gap width.  Sharing
+a wall ID alone is insufficient and cannot classify a distant gap.
+
+After deterministic evidence is exhausted, a human may classify an existing
+source-derived gap as Door, Window, Open Passage, Continuous Wall, or Unknown.
+The decision is topology interpretation only: it cannot cut a new wall,
+manufacture material, or directly grant Portal, routing, or access authority.
+Questions and decisions are identified by source SHA, frame, dependency build,
+gap geometry, host walls, evidence snapshot, and question version.  Any material
+identity change makes only the affected decision stale; stale, malformed, or
+conflicting decisions fail closed.  A first run with material unresolved gaps
+stops before Dimension Association and downstream Mechanical processing.
+
+After valid review replay stabilizes topology, a dimension may participate in
+geometry reconciliation only when both non-default witness points bind to the
+current space boundary and their span crosses the space interior.  The checked
+geometric value is the distance between those bound references, never the
+nearest width or height of the whole space bounding box.  Chain, thickness,
+set-out, overall, single-reference, and otherwise unbound dimensions remain
+explicitly not evaluated; they are not silently promoted to conflicts.

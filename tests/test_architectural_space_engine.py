@@ -1,11 +1,12 @@
 from pathlib import Path
 
 import ezdxf
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 
 from cad_engine.architectural_space_engine import (
     SCHEMA, _completeness, _exclude_inset_sheet_border_segments, _recover_supported_partitions,
-    _semantic_segment_classification, _pre_envelope_opening_evidence, normalize_text,
+    _associate_dimensions, _dimension_reconciliation, _semantic_segment_classification,
+    _pre_envelope_opening_evidence, normalize_text,
     reconstruct_architecture, require_complete_architecture,
 )
 
@@ -218,9 +219,31 @@ def test_dimension_conflict_is_never_silently_resolved(tmp_path):
     # The native associative measurement remains geometry-backed, therefore a
     # text override is evidence that needs an explicit reconciliation rule.
     model=reconstruct_architecture(path)
-    assert model["dimension_reconciliation"]["status"] in {"PASS","CONFLICT"}
+    assert model["dimension_reconciliation"]["status"] in {"PASS","CONFLICT","INPUT_REQUIRED"}
     assert all("annotated_measurement_m" in row and "geometric_measurement_m" in row
                for row in model["dimension_reconciliation"]["rows"])
+
+
+def test_dimension_requires_two_boundary_witnesses_crossing_space_interior():
+    poly=Polygon(((0,0),(10,0),(10,6),(0,6)))
+    one=[{"handle":"D1","measurement":10.0,"witness_points":[(0,0)],"definition_points":[(0,0)]}]
+    same_edge=[{"handle":"D2","measurement":4.0,"witness_points":[(1,0),(5,0)],
+                "definition_points":[(1,0),(5,0)]}]
+    assert _associate_dimensions(poly,one,1.0)==[]
+    assert _associate_dimensions(poly,same_edge,1.0)==[]
+
+
+def test_dimension_reconciliation_uses_bound_references_not_space_bbox():
+    poly=Polygon(((0,0),(10,0),(10,6),(0,6)))
+    dim={"handle":"D1","measurement":10.0,"witness_points":[(0,3),(10,3)],
+         "definition_points":[(0,3),(10,3)],"dimension_type":0,"text_override":""}
+    associated=_associate_dimensions(poly,[dim],1.0)
+    assert associated[0]["status"]=="VERIFIED_ASSOCIATION"
+    space={"physical_space_id":"S1","polygon":list(poly.exterior.coords),"interior_rings":[],
+           "dimensions":associated}
+    result=_dimension_reconciliation([space],1.0,.001,[dim])
+    assert result["status"]=="PASS"
+    assert result["rows"][0]["geometric_measurement_m"]==10.0
 
 
 def test_anonymous_leaf_arc_on_continuous_wall_remains_unqualified(tmp_path):
