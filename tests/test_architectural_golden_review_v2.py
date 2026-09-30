@@ -125,5 +125,5 @@ def test_prediction_ui_auto_focus_minimap_and_separate_review_questions(tmp_path
     assert golden["proposals"]["spaces"][0]["display_name_fa"] == "فضای 1"
     for marker in ("function focusRing", "renderMinimap", 'id="minimap"', "selected-number",
                    "آیا این محدوده واقعاً یک فضای فیزیکی صحیح است؟", "کاربری این فضا چیست؟",
-                   "بعدی بررسی‌نشده", "بازگشت به نمای کل پلان", "جزئیات فنی"):
+                   "بعدی بررسی‌نشده", "بازگشت به نمای کل پلان", "جزئیات فنی", "const seedG=JSON.parse"):
         assert marker in viewer
