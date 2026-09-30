@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path: sys.path.insert(0,str(ROOT))
 from shapely.geometry import Point, Polygon, box
-from tools.architectural_golden_review import METHOD, approval_errors, regenerate_topology
+from tools.architectural_golden_review import METHOD, REJECTION_CLASSES, approval_errors, regenerate_topology
 
 
 STATES=("DRAFT","ASSISTED_REVIEW_COMPLETE","COMPLETENESS_REVIEW_COMPLETE","REVIEWED","APPROVED")
@@ -36,6 +36,14 @@ def validate(golden,source_bytes=None):
     if state=="APPROVED" and (not review.get("reviewer") or not review.get("reviewed_at") or not review.get("approved_at")): errors.append("approval_identity_missing")
     if state=="APPROVED" and method==METHOD:
         errors.extend(approval_errors(golden))
+    for proposal in (golden.get("proposals") or {}).get("spaces", []):
+        rejection=proposal.get("rejection_class")
+        if rejection is not None and rejection not in REJECTION_CLASSES:
+            errors.append(f"invalid_rejection_class:{proposal.get('proposal_id')}")
+        if rejection and proposal.get("disposition")!="WRONG":
+            errors.append(f"rejection_class_on_accepted_space:{proposal.get('proposal_id')}")
+        if proposal.get("disposition")=="WRONG" and not rejection:
+            (errors if state=="APPROVED" else warnings).append(f"missing_rejection_class:{proposal.get('proposal_id')}")
     ids=[]; polygons={}
     for row in golden["spaces"]:
         identifier=row.get("golden_space_id")

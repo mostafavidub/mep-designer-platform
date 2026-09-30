@@ -15,6 +15,22 @@ from shapely.geometry import LineString, Point, Polygon
 
 METHOD = "HUMAN_CURATED_PREDICTION_ASSISTED_GOLDEN"
 DISPOSITIONS = {"UNREVIEWED", "CORRECT", "WRONG", "EDITED", "UNSURE"}
+REJECTION_CLASSES = {
+    "COLUMN", "WALL_OR_WALL_MASS", "STRUCTURAL_ELEMENT", "FURNITURE", "VEHICLE",
+    "GRID_OR_AXIS", "ANNOTATION_OR_DIMENSION", "STAIR_GRAPHICS",
+    "FIXTURE_OR_EQUIPMENT_GRAPHICS", "OTHER_NON_SPACE", "UNKNOWN_NON_SPACE",
+}
+LABEL_DISPLAY_CONTRACT = {"selected_renderer": "HTML_SCREEN_SPACE_BADGE", "max_css_px": 28,
+                          "svg_font_unit": "CURRENT_VIEWBOX_SPAN", "uses_em": False}
+
+
+def rejection_summary_counts(proposals: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in proposals:
+        if row.get("disposition") == "WRONG" and row.get("rejection_class") in REJECTION_CLASSES:
+            key = row["rejection_class"]
+            counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
 SECTORS = tuple(f"R{row}C{col}" for row in range(1, 4) for col in range(1, 4))
 
 
@@ -82,6 +98,7 @@ def export_proposals(model: dict, frame_id: str) -> dict:
             "touching_portal_candidate_ids": [], "unresolved_issues": deepcopy(source.get("issues") or []),
             "evidence": deepcopy(source.get("evidence") or []),
             "disposition": "UNREVIEWED",
+            "rejection_class": None,
             "review_note": "",
         })
     exported_portals = []
@@ -209,6 +226,11 @@ def approval_errors(golden: dict) -> list[str]:
     proposal_rows += golden.get("proposals", {}).get("spaces", []) + golden.get("proposals", {}).get("portals", [])
     if any(row and row.get("disposition") not in DISPOSITIONS - {"UNREVIEWED"} for row in proposal_rows):
         errors.append("proposal_review_incomplete")
+    for row in golden.get("proposals", {}).get("spaces", []):
+        if row.get("disposition") == "WRONG" and row.get("rejection_class") not in REJECTION_CLASSES:
+            errors.append("space_rejection_class_required")
+        if row.get("disposition") != "WRONG" and row.get("rejection_class"):
+            errors.append("rejection_class_only_for_wrong_space")
     complete = golden.get("completeness") or {}
     if not complete.get("mode_completed") or not all((complete.get("sectors") or {}).values()):
         errors.append("source_only_completeness_incomplete")

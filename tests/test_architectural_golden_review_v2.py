@@ -1,8 +1,8 @@
 from copy import deepcopy
 
 from tools.architectural_golden_review import (
-    METHOD, SECTORS, approval_errors, export_proposals, new_golden,
-    refresh_approval_gate, regenerate_topology,
+    LABEL_DISPLAY_CONTRACT, METHOD, SECTORS, approval_errors, export_proposals, new_golden,
+    refresh_approval_gate, regenerate_topology, rejection_summary_counts,
 )
 from tools.architectural_golden_validate import validate
 from tools.architectural_golden_annotation_package import build
@@ -123,7 +123,37 @@ def test_prediction_ui_auto_focus_minimap_and_separate_review_questions(tmp_path
     doc.modelspace().add_lwpolyline([(0, 0), (4, 0), (4, 2), (0, 2)], close=True); doc.saveas(source)
     _, golden, _, viewer, _ = build(source, "case", "GROUND", [0, 0, 4, 2], FRAME, _model())
     assert golden["proposals"]["spaces"][0]["display_name_fa"] == "فضای 1"
-    for marker in ("function focusRing", "renderMinimap", 'id="minimap"', "selected-number",
+    for marker in ("function focusRing", "renderMinimap", 'id="minimap"', 'id="focus-badge"',
                    "آیا این محدوده واقعاً یک فضای فیزیکی صحیح است؟", "کاربری این فضا چیست؟",
                    "بعدی بررسی‌نشده", "بازگشت به نمای کل پلان", "جزئیات فنی", "const seedG=JSON.parse"):
         assert marker in viewer
+    assert "font-size:1.7em" not in viewer
+    assert 'id="focus-badge"' in viewer and "renderFocusBadge" in viewer
+
+
+def test_small_candidate_uses_bounded_screen_space_badge_contract():
+    assert LABEL_DISPLAY_CONTRACT == {"selected_renderer": "HTML_SCREEN_SPACE_BADGE", "max_css_px": 28,
+                                      "svg_font_unit": "CURRENT_VIEWBOX_SPAN", "uses_em": False}
+
+
+def test_wrong_column_is_rejection_provenance_not_space_category():
+    golden = _golden(); row = golden["proposals"]["spaces"][0]
+    row.update({"disposition": "WRONG", "rejection_class": "COLUMN"})
+    golden["rejected_proposals"].append({"proposal_id": row["proposal_id"], "source_candidate_id": row["source_candidate_id"],
+                                          "original_geometry": deepcopy(row["original_geometry"]),
+                                          "disposition": "WRONG", "rejection_class": "COLUMN"})
+    assert row["category"] == "bedroom" and row["rejection_class"] == "COLUMN"
+    assert not any(x.get("proposal_id") == row["proposal_id"] for x in golden["spaces"])
+    assert golden["rejected_proposals"][0]["original_geometry"] == row["original_geometry"]
+    assert rejection_summary_counts(golden["proposals"]["spaces"]) == {"COLUMN": 1}
+
+
+def test_old_draft_without_rejection_class_is_backward_compatible_but_approved_is_blocked():
+    golden = _golden(); row = golden["proposals"]["spaces"][0]
+    row.pop("rejection_class"); row["disposition"] = "WRONG"
+    draft = validate(golden)
+    assert draft["status"] == "PASS" and any("missing_rejection_class" in x for x in draft["warnings"])
+    golden["review_status"] = "APPROVED"
+    approved = validate(golden)
+    assert approved["status"] == "FAIL"
+    assert any("missing_rejection_class" in x or x == "space_rejection_class_required" for x in approved["errors"])

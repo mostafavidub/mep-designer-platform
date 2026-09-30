@@ -14,7 +14,9 @@ engineering authority.
    Spaces are presented as human-readable `فضای 1`, `فضای 2`, and so on;
    selecting one focuses its complete polygon, dims unrelated proposals and
    retains whole-floor position in a minimap. Runtime IDs remain technical
-   details rather than reviewer-facing names.
+   details rather than reviewer-facing names. The selected label is a bounded
+   CSS-pixel HTML badge in screen space, so focusing a tiny polygon cannot make
+   the number obscure the plan.
 3. Physical geometry and functional semantics are separate decisions. Exact
    source labels and cached semantic evidence are supporting context only;
    unknown function never prevents review of a physical boundary.
@@ -29,6 +31,12 @@ engineering authority.
 8. Approval fails closed while any proposal, critical issue, sector, required
    question, identity or geometry check is incomplete. Official benchmark
    scoring remains disabled for every status except `APPROVED`.
+
+Rejected Physical Space proposals retain their original geometry and audit
+identity with a separate `rejection_class` such as `COLUMN`,
+`WALL_OR_WALL_MASS`, or `GRID_OR_AXIS`. A rejection class is never written into
+the functional category of an accepted Physical Space. Legacy DRAFT files may
+temporarily omit it; approval requires it for every rejected space.
 
 The existing `architectural-topology-golden/1.0` identity is preserved. New
 fields are additive: `annotation_method`, `proposals`, `proposal_review_log`,
