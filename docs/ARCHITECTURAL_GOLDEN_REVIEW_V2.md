@@ -11,15 +11,22 @@ engineering authority.
    label and Portal proposals with their original IDs, status and evidence.
 2. The annotator assigns every proposal one disposition: `CORRECT`, `WRONG`,
    `EDITED`, or `UNSURE`. Unreviewed proposals never enter Golden truth.
-3. Geometry can be edited with explicit undo/redo. Missing spaces, voids and
+   Spaces are presented as human-readable `فضای 1`, `فضای 2`, and so on;
+   selecting one focuses its complete polygon, dims unrelated proposals and
+   retains whole-floor position in a minimap. Runtime IDs remain technical
+   details rather than reviewer-facing names.
+3. Physical geometry and functional semantics are separate decisions. Exact
+   source labels and cached semantic evidence are supporting context only;
+   unknown function never prevents review of a physical boundary.
+4. Geometry can be edited with explicit undo/redo. Missing spaces, voids and
    portals can be drawn from the raw source.
-4. Source-only completeness hides proposal and accepted overlays. The annotator
+5. Source-only completeness hides proposal and accepted overlays. The annotator
    must inspect all nine floor sectors and answer every omission question.
-5. A different reviewer repeats a source-only pass before viewing the final
+6. A different reviewer repeats a source-only pass before viewing the final
    overlay. Annotator and reviewer identities must differ.
-6. Geometric adjacency and access connectivity are regenerated from accepted
+7. Geometric adjacency and access connectivity are regenerated from accepted
    geometry. Windows cannot create access edges.
-7. Approval fails closed while any proposal, critical issue, sector, required
+8. Approval fails closed while any proposal, critical issue, sector, required
    question, identity or geometry check is incomplete. Official benchmark
    scoring remains disabled for every status except `APPROVED`.
 

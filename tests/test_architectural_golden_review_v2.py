@@ -5,6 +5,8 @@ from tools.architectural_golden_review import (
     refresh_approval_gate, regenerate_topology,
 )
 from tools.architectural_golden_validate import validate
+from tools.architectural_golden_annotation_package import build
+import ezdxf
 
 
 FRAME = "FRAME-C7C5B4F856993D8A"
@@ -105,3 +107,23 @@ def test_method_identity_is_explicit_and_legacy_schema_identity_is_preserved():
     assert golden["annotation_method"] == golden["review"]["method"] == METHOD
     assert golden["golden_id"].startswith("GOLDEN-") and golden["human_added_items"] == []
     assert set(golden["completeness"]["sectors"]) == set(SECTORS)
+
+
+def test_human_space_numbers_evidence_and_focus_metadata_are_distinct():
+    proposals = export_proposals(_model(), FRAME)
+    first, second = proposals["spaces"]
+    assert first["display_name_fa"] == "فضای 1" and second["display_name_fa"] == "فضای 2"
+    assert first["centroid"] != second["centroid"]
+    assert first["exact_labels_inside"][0]["text"] == "BEDROOM"
+    assert first["area_drawing_units"] == second["area_drawing_units"] == 4
+
+
+def test_prediction_ui_auto_focus_minimap_and_separate_review_questions(tmp_path):
+    source = tmp_path / "source.dxf"; doc = ezdxf.new("R2013")
+    doc.modelspace().add_lwpolyline([(0, 0), (4, 0), (4, 2), (0, 2)], close=True); doc.saveas(source)
+    _, golden, _, viewer, _ = build(source, "case", "GROUND", [0, 0, 4, 2], FRAME, _model())
+    assert golden["proposals"]["spaces"][0]["display_name_fa"] == "فضای 1"
+    for marker in ("function focusRing", "renderMinimap", 'id="minimap"', "selected-number",
+                   "آیا این محدوده واقعاً یک فضای فیزیکی صحیح است؟", "کاربری این فضا چیست؟",
+                   "بعدی بررسی‌نشده", "بازگشت به نمای کل پلان", "جزئیات فنی"):
+        assert marker in viewer

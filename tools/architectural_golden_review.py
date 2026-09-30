@@ -47,8 +47,20 @@ def export_proposals(model: dict, frame_id: str) -> dict:
               if x.get("host_space_id") in space_ids or set(x.get("candidate_space_ids") or []).intersection(space_ids)
               or in_frame(x)]
     exported_spaces = []
-    for source in spaces:
+    zones = model.get("functional_zones") or []
+    for display_index, source in enumerate(spaces, 1):
         proposal_id = _stable("SPACE-PROP", [frame_id, source.get("physical_space_id")])
+        ring = _closed(source.get("polygon") or [])
+        try:
+            polygon = Polygon(ring, source.get("interior_rings") or [])
+            area = float(polygon.area)
+            centroid = [float(polygon.centroid.x), float(polygon.centroid.y)]
+            inside_labels = [deepcopy(x) for x in labels if x.get("point") and polygon.covers(Point(x["point"]))]
+            nearby_labels = [deepcopy(x) for x in labels if x.get("point") and not polygon.covers(Point(x["point"]))
+                             and polygon.boundary.distance(Point(x["point"])) <= max(polygon.length * .015, 0.05)]
+        except (TypeError, ValueError):
+            area, centroid, inside_labels, nearby_labels = None, None, [], []
+        semantic_hints = [deepcopy(x) for x in zones if x.get("physical_space_id") == source.get("physical_space_id")]
         exported_spaces.append({
             "proposal_id": proposal_id, "review_item_id": proposal_id,
             "source_id": source.get("physical_space_id"),
@@ -57,11 +69,17 @@ def export_proposals(model: dict, frame_id: str) -> dict:
             "proposal_status": source.get("status"), "frame_id": frame_id,
             "source_handles": deepcopy(source.get("source_handles") or []),
             "engine_version": model.get("version"), "source_sha256": (model.get("source") or {}).get("source_sha256"),
-            "polygon": _closed(source.get("polygon") or []), "original_geometry": _closed(source.get("polygon") or []),
+            "display_index": display_index, "display_name_fa": f"فضای {display_index}",
+            "polygon": ring, "original_geometry": deepcopy(ring),
             "final_geometry": None,
             "interior_rings": [_closed(x) for x in source.get("interior_rings") or []],
             "category": source.get("category") or "UNKNOWN",
             "display_name": source.get("display_name"),
+            "area_drawing_units": area, "centroid": centroid,
+            "exact_labels_inside": inside_labels, "exact_labels_near_boundary": nearby_labels,
+            "semantic_hints": semantic_hints,
+            "boundary_evidence_summary": f"{len(source.get('source_handles') or [])} منبع مرزی",
+            "touching_portal_candidate_ids": [], "unresolved_issues": deepcopy(source.get("issues") or []),
             "evidence": deepcopy(source.get("evidence") or []),
             "disposition": "UNREVIEWED",
             "review_note": "",
@@ -85,6 +103,9 @@ def export_proposals(model: dict, frame_id: str) -> dict:
             "original_geometry": deepcopy(source.get("opening_segment") or source.get("geometry") or []),
             "final_geometry": None, "disposition": "UNREVIEWED", "review_note": "",
         })
+    for row in exported_spaces:
+        row["touching_portal_candidate_ids"] = [p["proposal_id"] for p in exported_portals
+                                                  if row["source_id"] in {p.get("space_a"), p.get("space_b")}]
     envelope = envelopes[0] if envelopes else {}
     envelope_proposal = {
         "proposal_id": _stable("ENVELOPE-PROP", [frame_id, envelope.get("envelope_id")]),
