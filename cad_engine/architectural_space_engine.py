@@ -31,6 +31,12 @@ from .architectural_topology_quality import (
     reconstruct_canonical_walls,
     virtual_opening_closures,
 )
+from .pre_topology_object_classifier import (
+    classify_source_record,
+    excludes_from_wall_admission,
+    repeated_compact_column_handles,
+    standardize_source_records,
+)
 
 
 SCHEMA = "canonical-architectural-model/1.0"
@@ -469,7 +475,7 @@ def _extract(doc):
                 record.update(start=a, end=b); primitives.append(record)
                 retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
                 if retained:
-                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":False})
+                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"closed":False})
                 else: boundary_rejections.append({**record,"geometry":[a,b],"reason":reason})
         elif kind in {"LWPOLYLINE", "POLYLINE"}:
             try:
@@ -483,7 +489,7 @@ def _extract(doc):
                 if retained:
                     for a, b in zip(pts, pts[1:] + ([pts[0]] if closed else [])):
                         if a != b:
-                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":closed})
+                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"closed":closed})
                 else: boundary_rejections.append({**record,"geometry":pts,"reason":reason})
         elif kind == "ARC":
             try:
@@ -497,7 +503,7 @@ def _extract(doc):
                 primitives.append(record)
                 retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
                 if retained:
-                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"closed":False})
+                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"closed":False})
                 else: boundary_rejections.append({**record,"geometry":pts,"reason":reason})
         elif kind in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
             value = _entity_text(entity).strip(); p = _point(entity)
@@ -630,6 +636,10 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
     """
     if not lines: return [],[]
     scale=metres_per_unit or 1.0; tol=max(float(tolerance or .001),1e-9)
+    repeated_columns=repeated_compact_column_handles(lines,metas,metres_per_unit)
+    for meta in metas:
+        if meta.get("handle") in repeated_columns:
+            meta["pre_topology_object_class"]="COLUMN"
     min_thickness=.04/scale; max_thickness=.65/scale
     tree=STRtree(lines); pair_rows=[]
     for index,line in enumerate(lines):
@@ -658,6 +668,19 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
     small_coherent=len(lines)<=20 and all(endpoint_degree[node(point)]>=2 for line in lines for point in (list(line.coords)[0],list(line.coords)[-1]))
     records=[]; accepted=[]
     for index,(line,meta) in enumerate(zip(lines,metas)):
+        pre_topology=classify_source_record(meta)
+        if excludes_from_wall_admission(pre_topology):
+            coords=list(line.coords)
+            records.append({"segment_id":_stable_id("SEG",[meta.get("handle"),_round_points(coords)]),
+                "source_handle":meta.get("handle"),"geometry":coords,
+                "source_context":{"layer":meta.get("layer"),"entity_type":meta.get("entity_type"),"closed":meta.get("closed")},
+                "semantic_class":pre_topology["object_class"],"wall_probability":0.0,
+                "wall_evidence_state":"HARD_EXCLUDED_NON_ENCLOSURE_OBJECT",
+                "evidence":[{"class":"PRE_TOPOLOGY_OBJECT","value":value}
+                            for value in pre_topology["positive_evidence"]],
+                "negative_evidence":pre_topology["negative_evidence"],
+                "pre_topology_classification":pre_topology,"status":"REJECTED"})
+            continue
         context=normalize_text(meta.get("layer")); evidence=[]; negative=[]; semantic="UNKNOWN_GEOMETRY"; probability=0.0; state="WEAK_WALL_CANDIDATE"
         if any(token in context for token in WALL_TOKENS):
             semantic="WALL_FACE"; probability=.95; state="CONFIRMED_WALL"; evidence.append({"class":"SOURCE_CONTEXT","value":meta.get("layer")})
@@ -1179,6 +1202,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     envelope_candidate_diagnostics=[]; plan_regions=[]
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
+    pre_topology_objects=standardize_source_records(extracted["primitives"])
     explicit_opening_candidates=_opening_candidates(extracted,source["source_sha256"])
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
@@ -1393,6 +1417,10 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                 "site_exterior_area":sum(r["area"] for r in plan_regions if r["role"]=="SITE_EXTERIOR"),
                                 "overlap_area":0.0},
              "label_bindings":label_bindings,
+             "pre_topology_object_standardization":{"schema":"pre-topology-architectural-object-standardization/1.0",
+                                                      "items":pre_topology_objects,
+                                                      "enclosure_authority":"NONE",
+                                                      "stage":"BEFORE_WALL_ADMISSION_AND_POLYGONIZATION"},
              "architectural_segments":segment_records,
              "topology_refinement":{"decisions":refinement_decisions,"iterations":refinement_iterations},
              "wall_admission_funnel":wall_admission_funnels,
