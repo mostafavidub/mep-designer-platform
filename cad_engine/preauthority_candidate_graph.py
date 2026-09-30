@@ -41,8 +41,11 @@ def _sid(prefix, value):
 def _tier(row):
     semantic=str(row.get("semantic_class") or ""); reason=str(row.get("reason") or "")
     state=str(row.get("wall_evidence_state") or ""); status=str(row.get("status") or "")
-    exclusions={"PRINT_BORDER","DIMENSION","LEADER","HATCH","GLYPH","ANNOTATION",
-                "FURNITURE","FIXTURE_DETAIL","CABINET_DETAIL","STAIR_TREAD"}
+    exclusions={"PRINT_BORDER","DIMENSION","DIMENSION_CHAIN","LEADER","HATCH","GLYPH","ANNOTATION",
+                "FURNITURE","FIXTURE_DETAIL","CABINET_DETAIL","STAIR_TREAD","SHEET_FRAME","GRID_AXIS",
+                "COLUMN","STAIR_ASSEMBLY","WINDOW_ASSEMBLY","DOOR_ASSEMBLY","DOUBLE_DOOR_ASSEMBLY",
+                "OPEN_PASSAGE","DINING_TABLE_ASSEMBLY","VEHICLE","PARKING_BAY","SECTION_CUT",
+                "GENERIC_NON_ENCLOSURE_OBJECT","HARD_EXCLUDED_NON_ENCLOSURE_OBJECT"}
     if reason in {"GLYPH_FILTER","NON_BOUNDARY_LAYER","NESTED_SYMBOL_GEOMETRY"}:
         return EXCLUDED,[reason]
     if any(token in semantic or token in reason for token in exclusions):

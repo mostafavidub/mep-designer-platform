@@ -829,14 +829,16 @@
       "engines": [
         "cad_engine/plan_segmentation.py",
         "cad_engine/architecture_reconstruction.py",
-        "cad_engine/architectural_space_engine.py",
-        "cad_engine/architectural_topology_quality.py",
+      "cad_engine/architectural_space_engine.py",
+      "cad_engine/pre_topology_object_classifier.py",
+      "cad_engine/architectural_topology_quality.py",
         "cad_engine/architectural_semantic_scout.py",
         "app/architecture_reconstruction_v1.py",
         "app/project_mechanical_model.py",
         "cad_engine/fixture_recognition.py",
         "cad_engine/architecture_space_equipment_gate.py",
-        "cad_engine/mechanical_authority.py"
+        "cad_engine/mechanical_authority.py",
+        "tools/pre_topology_candidate_audit.py"
       ],
       "drawing_outputs": [
         "typed architecture model",
@@ -871,7 +873,10 @@
         "multilingual_label_binding",
         "space_use_classification",
         "shaft_wet_core_recognition",
-        "multi_signal_object_recognition",
+      "multi_signal_object_recognition",
+      "pre_topology_object_standardization_before_wall_admission",
+      "non_enclosure_objects_never_create_physical_spaces",
+      "object_class_domain_topology_role_separation",
         "object_status_confidence",
         "object_type_orientation",
         "host_and_port_binding",
@@ -885,7 +890,8 @@
         "score_exactly_100"
       ],
       "regression_tests": [
-        "tests/test_architectural_space_engine.py",
+      "tests/test_architectural_space_engine.py",
+      "tests/test_pre_topology_object_classifier.py",
         "tests/test_architectural_semantic_scout.py",
         "tests/test_canonical_wall_topology.py",
         "tests/test_architecture_space_equipment_100.py",
@@ -896,7 +902,8 @@
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
         "docs/ARCHITECTURAL_SPACE_ENGINE_CURRENT_STATE.md",
-        "docs/adr/ADR-ARCH-CANONICAL-SPACE-ENGINE.md",
+      "docs/adr/ADR-ARCH-CANONICAL-SPACE-ENGINE.md",
+      "docs/adr/ADR-PRE-TOPOLOGY-ARCHITECTURAL-OBJECT-STANDARDIZATION.md",
         "docs/ARCHITECTURE_SPACE_EQUIPMENT_100_STANDARD.md",
         "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
       ]
