@@ -42,6 +42,8 @@ def test_export_is_read_only_stable_and_preserves_source_identity():
     assert first["authority"] == "REVIEW_INPUT_ONLY"
     assert first["generated_without_new_inference"] is True
     assert first["spaces"][0]["source_id"] == "S1"
+    assert first["spaces"][0]["review_item_id"].startswith("SPACE-PROP-")
+    assert first["spaces"][0]["original_geometry"] == first["spaces"][0]["polygon"]
     assert first["spaces"][0]["disposition"] == "UNREVIEWED"
     assert first["label_bindings"][0]["text"] == "BEDROOM"
 
@@ -101,4 +103,5 @@ def test_method_identity_is_explicit_and_legacy_schema_identity_is_preserved():
     golden = _golden()
     assert golden["schema"] == "architectural-topology-golden/1.0"
     assert golden["annotation_method"] == golden["review"]["method"] == METHOD
+    assert golden["golden_id"].startswith("GOLDEN-") and golden["human_added_items"] == []
     assert set(golden["completeness"]["sectors"]) == set(SECTORS)
