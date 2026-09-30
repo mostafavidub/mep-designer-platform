@@ -207,3 +207,28 @@ version remain unchanged.
 - Existing PMM consumers receive a compatibility projection during migration.
 - More drawings will truthfully stop at `INPUT_REQUIRED` until evidence or a
   focused human decision resolves the ambiguity.
+
+### Envelope and portal completion decision (SWCIS 4.57.0)
+
+Canonical wall axes may be topologically joined across a bounded drafting gap
+only when both hosts are independently reconstructed high-confidence,
+double-face walls.  The permitted distance is derived from the frame-local wall
+thickness distribution.  Collinear opening spans and orthogonal corner joins
+are recorded as source-supported closure objects with stable provenance.
+
+Such a join is enclosure evidence only.  It has `material = false` and
+`wall_authority`, `routing_authority`, `portal_authority`, and
+`access_authority` all equal to `NONE`.  It cannot manufacture a wall, door,
+window, opening, route obstacle, or access edge.  Oversized gaps, single-line
+fragments, and low-confidence walls remain open and fail closed.
+
+`LEGACY_FALLBACK` remains diagnostic and is never release authority for a
+Mechanical-authority frame.  Exact labels for compatible living, reception,
+dining, kitchen, entrance, and lobby functions may coexist in an open physical
+space.  An exact enclosed-service, sleeping, shaft, duct, or utility label in
+that same unresolved cell is evidence of a missing partition; semantic labels
+cannot promote that geometry to `VERIFIED`.
+
+Fasihi Ground proves a high-confidence outer envelope after this change, but
+does not yet prove its internal partitions or any physical portals.  Therefore
+the implementation remains fail-closed and is not staging-qualified.

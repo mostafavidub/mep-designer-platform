@@ -386,6 +386,62 @@ def canonical_enclosure_continuity(walls, *, frame_id=None):
     return rows
 
 
+def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001):
+    """Close bounded drafting gaps between independently proven wall axes.
+
+    The maximum join distance is derived from local double-face thicknesses.
+    These records are enclosure topology only: they never claim material,
+    routing, portal or access authority.
+    """
+    tol=max(float(tolerance or .001),1e-9)
+    proven=[wall for wall in walls if wall.get("status")=="HIGH_CONFIDENCE"
+            and wall.get("representation")=="DOUBLE_FACE" and wall.get("thickness")]
+    if len(proven)<2:return []
+    thicknesses=sorted(float(wall["thickness"]) for wall in proven)
+    typical=thicknesses[len(thicknesses)//2]
+    corner_limit=max(tol*8,typical*3.0)
+    opening_limit=max(corner_limit,typical*12.0)
+    axes=[_wall_line(wall) for wall in proven]; endpoints=[]
+    for index,line in enumerate(axes):
+        endpoints.extend([(index,Point(line.coords[0])),(index,Point(line.coords[-1]))])
+    tree=STRtree([point for _,point in endpoints]); proposals={}
+    for endpoint_index,(wall_index,point) in enumerate(endpoints):
+        left=proven[wall_index]; (left_u,left_n,left_angle,_)=_axis(axes[wall_index])
+        for raw in tree.query(point.buffer(opening_limit)):
+            other_endpoint_index=int(raw)
+            if other_endpoint_index<=endpoint_index:continue
+            other_wall_index,other_point=endpoints[other_endpoint_index]
+            if other_wall_index==wall_index:continue
+            right=proven[other_wall_index]; (_,_,right_angle,_)=_axis(axes[other_wall_index])
+            delta=min(abs(left_angle-right_angle),180-abs(left_angle-right_angle))
+            distance=point.distance(other_point)
+            if distance<=tol:continue
+            relation=None; limit=corner_limit
+            if delta<=3.0:
+                # Collinear separated wall spans support a bounded opening gap.
+                perpendicular_offset=abs((other_point.x-point.x)*left_n[0]+(other_point.y-point.y)*left_n[1])
+                if perpendicular_offset>max(tol*4,typical*.35):continue
+                relation="COLLINEAR_WALL_GAP";limit=opening_limit
+            elif abs(delta-90)<=3.0:
+                relation="EXTERIOR_CORNER_JOIN"
+            else:continue
+            if distance>limit:continue
+            geometry=sorted([[point.x,point.y],[other_point.x,other_point.y]])
+            host_wall_ids=sorted([left["wall_id"],right["wall_id"]])
+            closure_id=_sid("ENDCLOSE",[host_wall_ids,geometry])
+            proposals[closure_id]={"closure_id":closure_id,"frame_id":frame_id or left.get("frame_id"),
+                "host_wall_ids":host_wall_ids,"geometry":geometry,
+                "continuity_status":"PROVEN_WALL_CONTINUITY","status":"PROVEN",
+                "material":False,"material_geometry":"NONE","wall_authority":"NONE",
+                "routing_authority":"NONE","portal_authority":"NONE","access_authority":"NONE",
+                "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"],"reason":relation,
+                "gap_width":distance,"derived_join_limit":limit,
+                "source_handles":sorted(set((left.get("source_handles") or [])+(right.get("source_handles") or []))),
+                "source_evidence":sorted(set((left.get("source_fragments") or [])+(right.get("source_fragments") or []))),
+                "evidence":[{"class":relation,"wall_angle_delta":delta,"local_wall_thickness":typical}]}
+    return sorted(proposals.values(),key=lambda row:row["closure_id"])
+
+
 def virtual_opening_closures(walls):
     """Backward-compatible view containing only promoted enclosure closures."""
     return [row for row in canonical_enclosure_continuity(walls)
@@ -441,7 +497,10 @@ def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_bo
             continue
         barriers.append({"barrier_id":_sid("BAR",[closure["closure_id"],"ENCLOSURE"]),
                          "kind":"VIRTUAL_CLOSURE","geometry":closure["geometry"],
-                         "wall_id":closure["host_wall_id"],"closure_id":closure["closure_id"]})
+                         "wall_id":closure.get("host_wall_id"),
+                         "host_wall_ids":closure.get("host_wall_ids") or
+                                           ([closure["host_wall_id"]] if closure.get("host_wall_id") else []),
+                         "closure_id":closure["closure_id"]})
 
     source_lines=[LineString(row["geometry"]) for row in barriers]
     # Snap before unary_union; unary_union then explicitly nodes every crossing.
@@ -455,7 +514,12 @@ def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_bo
         if not shell.covers(representative):
             continue
         clipped=poly.intersection(shell)
-        candidates=list(clipped.geoms) if clipped.geom_type=="MultiPolygon" else [clipped]
+        if clipped.geom_type == "Polygon":
+            candidates=[clipped]
+        elif clipped.geom_type in {"MultiPolygon","GeometryCollection"}:
+            candidates=[part for part in clipped.geoms if part.geom_type=="Polygon"]
+        else:
+            candidates=[]
         for candidate in candidates:
             if candidate.is_empty or candidate.area<=tol*tol*4: continue
             quality="FACE_RESOLVED" if all(w.get("face_a") and w.get("face_b") for w in walls) else "CENTERLINE_APPROXIMATION"
