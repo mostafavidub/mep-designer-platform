@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """Build source-only review material; never import reconstruction output."""
 from __future__ import annotations
-import argparse, html, json
+import argparse, html, json, sys
 from hashlib import sha256
 from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path: sys.path.insert(0,str(ROOT))
 import ezdxf
 from ezdxf.disassemble import recursive_decompose
 from shapely.geometry import LineString, box
 from shapely.ops import unary_union
+from cad_engine.build_identity import build_identity
+from tools.architectural_golden_review import export_proposals, new_golden
 
 
 def _points(entity):
@@ -159,27 +164,122 @@ Run the structural validator before review and approval. It never edits data.
 """
 
 
-def build(source,case_id,level,bounds,runtime_frame_id):
+def _instructions_v2(case_id,level,source_hash,frame_id,bounds):
+    return f"""# Golden Review v2 — {case_id}
+
+Level: `{level}`
+Source SHA-256: `{source_hash}`
+Frame: `{frame_id}`
+Bounds: `{bounds}`
+
+Open `review.html` in a browser. It is self-contained and works offline.
+
+1. In **بازبینی پیشنهادها**, select every orange proposal and mark it Correct,
+   Wrong, Edited or Unsure. Orange is only a proposal; green is accepted Golden.
+2. Drag blue vertices to edit geometry. Double-click an edge to add a vertex.
+   Undo, redo and cancel remain available.
+3. In **کنترل منبع**, enter source-only mode. All proposals and accepted overlays
+   disappear. Inspect all nine sectors and answer all four omission questions.
+   Add any missing space, void, door, window or open passage from the raw plan.
+4. A different person uses **بازبین مستقل**. They first repeat the nine-sector
+   source-only pass, then reveal the final overlay.
+5. Approval stays disabled until every proposal, sector, question, identity,
+   critical issue and geometry requirement is complete. Windows never create
+   access connectivity. Official scoring is disabled until `APPROVED`.
+6. Use **دانلود golden.json** to save progress. Browser autosave is local to this
+   case and the JSON can be re-imported later.
+
+Do not edit the JSON by hand. `UNSURE` is preferred to guessing. The package
+contains the current baseline proposals only; it makes no DeepSeek call and no
+new inference while you review it.
+"""
+
+
+def _reviewer_v2(svg,case_id,level,bounds,golden):
+    initial=",".join(str(v) for v in (bounds[0],-bounds[3],bounds[2]-bounds[0],bounds[3]-bounds[1]))
+    seed=json.dumps(golden,ensure_ascii=False).replace("</","<\\/")
+    return f'''<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Golden Review v2 — {html.escape(case_id)}</title><style>
+*{{box-sizing:border-box}}html,body{{margin:0;height:100%;font:13px system-ui;color:#152033;background:#e9eef5}}body{{display:grid;grid-template-rows:auto 1fr}}
+header{{background:#0f172a;color:#fff;padding:9px 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}}header b{{font-size:16px}}.badge{{padding:4px 9px;border-radius:999px;background:#334155}}.truth{{background:#065f46}}
+#app{{display:grid;grid-template-columns:370px 1fr;min-height:0;direction:ltr}}aside{{direction:rtl;background:#fff;border-left:1px solid #cbd5e1;overflow:auto;padding:12px}}main{{position:relative;min-width:0;background:#cad3df}}
+.tabs,.row,.actions{{display:flex;gap:6px;flex-wrap:wrap}}button,input,select,textarea{{font:inherit}}button{{border:1px solid #94a3b8;border-radius:8px;background:#fff;padding:7px 9px;cursor:pointer}}button:hover{{background:#f1f5f9}}button.active,.primary{{background:#2563eb;color:#fff;border-color:#1d4ed8}}button.good{{background:#059669;color:#fff}}button.bad{{background:#dc2626;color:#fff}}button.warn{{background:#d97706;color:#fff}}button:disabled{{opacity:.45;cursor:not-allowed}}
+input,select,textarea{{width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:7px}}textarea{{min-height:56px}}h2{{font-size:16px;margin:8px 0}}h3{{font-size:14px;margin:14px 0 6px}}p{{line-height:1.65;margin:5px 0;color:#475569}}.panel{{display:none}}.panel.active{{display:block}}.notice{{padding:9px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;margin:7px 0;line-height:1.55}}.critical{{background:#fff1f2;border-color:#fecdd3}}
+#canvas{{position:absolute;inset:0;overflow:hidden}}svg{{width:100%;height:100%;background:#fff;touch-action:none}}#source-plan polyline{{stroke:#334155!important;stroke-width:1.05px!important}}#source-plan text{{fill:#111!important}}.overlay{{vector-effect:non-scaling-stroke;stroke-width:2px}}.proposal-space{{fill:#f59e0b22;stroke:#d97706}}.gold-space{{fill:#22c55e22;stroke:#15803d}}.wrong{{fill:#ef444422;stroke:#dc2626;stroke-dasharray:7 5}}.unsure{{fill:#a855f722;stroke:#7e22ce;stroke-dasharray:4 4}}.selected{{stroke:#2563eb!important;stroke-width:4px!important}}.vertex{{fill:#fff;stroke:#2563eb;stroke-width:2px;vector-effect:non-scaling-stroke;cursor:move}}.sector{{fill:none;stroke:#0ea5e9;stroke-width:1px;stroke-dasharray:5 5;vector-effect:non-scaling-stroke}}
+.item{{padding:8px;border:1px solid #e2e8f0;border-radius:8px;margin:6px 0;cursor:pointer}}.item.sel{{border-color:#2563eb;background:#eff6ff}}.dot{{display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:5px;background:#94a3b8}}.CORRECT{{background:#16a34a}}.WRONG{{background:#dc2626}}.EDITED{{background:#2563eb}}.UNSURE{{background:#9333ea}}
+.progress{{height:9px;background:#e2e8f0;border-radius:99px;overflow:hidden}}.progress i{{display:block;height:100%;background:#16a34a}}.sectors{{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}}.sectors label{{border:1px solid #cbd5e1;border-radius:6px;padding:6px;text-align:center}}.sectors input{{width:auto}}#status{{position:absolute;left:12px;bottom:12px;background:#0f172ae8;color:#fff;border-radius:8px;padding:8px;max-width:520px}}
+@media(max-width:900px){{#app{{grid-template-columns:1fr;grid-template-rows:50vh 1fr}}aside{{grid-row:2}}}}
+</style><header data-source="RAW DXF ONLY"><b>Golden Review v2</b><span class="badge">{html.escape(case_id)}</span><span class="badge">{html.escape(level)}</span><span class="badge truth">پیشنهاد ≠ حقیقت</span><span id="head-progress"></span></header>
+<div id="app"><aside><div class="tabs"><button data-tab="annotate" class="active">۱. بازبینی پیشنهادها</button><button data-tab="complete">۲. کنترل منبع</button><button data-tab="review">۳. بازبین مستقل</button></div>
+<section id="annotate" class="panel active"><div class="notice"><b>قاعده:</b> هر شکل نارنجی فقط پیشنهاد موتور است. آن را «درست»، «غلط»، «ویرایش‌شده» یا «نامطمئن» کنید. هیچ پیشنهاد تأییدنشده‌ای Golden نیست.</div>
+<div class="row"><select id="kind-filter"><option value="all">همهٔ موارد</option><option value="envelope">محدوده ساختمان</option><option value="space">فضاها</option><option value="portal">بازشوها</option></select><select id="state-filter"><option value="all">همهٔ وضعیت‌ها</option><option value="UNREVIEWED">بررسی‌نشده</option><option value="CORRECT">درست</option><option value="WRONG">غلط</option><option value="EDITED">ویرایش‌شده</option><option value="UNSURE">نامطمئن</option></select></div>
+<h3>پیشرفت</h3><div class="progress"><i id="progress-bar"></i></div><p id="progress-text"></p><div id="items"></div>
+<div id="editor"><h3>مورد انتخاب‌شده</h3><p id="selection">یک مورد را از فهرست یا روی پلان انتخاب کنید.</p><label>یادداشت بازبینی</label><textarea id="note"></textarea><div class="actions"><button data-decision="CORRECT" class="good">✓ درست</button><button data-decision="WRONG" class="bad">✕ غلط</button><button data-decision="EDITED" class="primary">✎ ویرایش‌شده</button><button data-decision="UNSURE" class="warn">؟ نامطمئن</button></div>
+<h3>ویرایش هندسه</h3><p>رأس آبی را بکشید؛ روی ضلع دوبارکلیک کنید تا رأس افزوده شود. سپس «ویرایش‌شده» را بزنید.</p><div class="row"><button id="undo">↶ بازگشت</button><button id="redo">↷ جلو</button><button id="delete-vertex">حذف رأس</button><button id="cancel-edit">لغو ویرایش</button></div></div></section>
+<section id="complete" class="panel"><div class="notice"><b>حالت کنترل منبع خام:</b> همهٔ پیشنهادها و تأییدهای قبلی پنهان‌اند. هر ۹ بخش پلان را فقط از روی خطوط و نوشته‌های منبع بررسی کنید.</div><button id="source-only" class="primary">ورود به حالت منبع خام</button>
+<h3>۹ بخش پلان</h3><div class="sectors" id="sectors"></div><h3>پرسش‌های اجباری</h3><label><input class="q" data-q="missing_spaces" type="checkbox"> هیچ فضای فیزیکی جا نیفتاده است</label><label><input class="q" data-q="missing_portals" type="checkbox"> هیچ در/پنجره/مسیر بازی جا نیفتاده است</label><label><input class="q" data-q="missing_voids" type="checkbox"> Void/نورگیر/حیاط‌خلوت کنترل شده است</label><label><input class="q" data-q="source_labels_checked" type="checkbox"> تمام برچسب‌های منبع کنترل شده‌اند</label>
+<h3>افزودن مورد جاافتاده</h3><div class="row"><button data-draw="space">+ فضای جاافتاده</button><button data-draw="void">+ Void</button><button data-draw="door">+ در</button><button data-draw="window">+ پنجره</button><button data-draw="open_passage">+ مسیر باز</button></div><label>نوع/نام فضا</label><input id="new-category" value="UNKNOWN"><button id="finish-draw" class="good">بستن و ثبت ترسیم</button><p id="draw-help"></p><button id="complete-pass" class="good">ثبت پایان کنترل منبع خام</button></section>
+<section id="review" class="panel"><div class="notice"><b>بازبینی مستقل:</b> نام بازبین باید با annotator متفاوت باشد. ابتدا منبع خام را بخش‌به‌بخش کنترل کنید؛ سپس overlay نهایی را ببینید.</div><label>نام annotator</label><input id="annotator"><label>نام بازبین مستقل</label><input id="reviewer"><button id="review-source" class="primary">کنترل مستقل منبع خام</button><div class="sectors" id="review-sectors"></div><button id="review-overlay">نمایش overlay نهایی</button><button id="review-complete" class="good">پایان بازبینی مستقل</button><h3>گیت تصویب</h3><div id="gate" class="notice critical"></div><button id="approve" class="good" disabled>APPROVE GOLDEN</button></section>
+<hr><div class="row"><button id="fit">نمایش کامل</button><button id="export" class="primary">دانلود golden.json</button><label style="border:1px solid #94a3b8;border-radius:8px;padding:7px">بازکردن JSON<input id="import" type="file" accept="application/json" hidden></label></div></aside>
+<main><div id="canvas">{svg}</div><div id="status">پلان را با ماوس جابه‌جا و با چرخ ماوس زوم کنید.</div></main></div>
+<script id="golden-seed" type="application/json">{seed}</script><script>
+const NS='http://www.w3.org/2000/svg',s=document.querySelector('#source-plan'),initial=[{initial}],storeKey='planha-golden-v2:{html.escape(case_id)}';let view=[...initial],drag=null,selected=null,selectedVertex=null,drawMode=null,draft=[],sourceOnly=false,history=[],future=[];
+let g=JSON.parse(localStorage.getItem(storeKey)||document.querySelector('#golden-seed').textContent);const layer=document.createElementNS(NS,'g');layer.id='review-overlays';s.appendChild(layer);
+const allProposals=()=>[{{kind:'envelope',row:g.proposals.building_envelope}},...g.proposals.spaces.map(row=>({{kind:'space',row}})),...g.proposals.portals.map(row=>({{kind:'portal',row}}))].filter(x=>x.row&&x.row.proposal_id);
+function applyView(){{s.setAttribute('viewBox',view.join(' '))}}applyView();function pt(e){{let p=s.createSVGPoint();p.x=e.clientX;p.y=e.clientY;p=p.matrixTransform(s.getScreenCTM().inverse());return [p.x,-p.y]}}
+function ringEl(points,klass,id){{if(!points?.length)return null;const el=document.createElementNS(NS,'polygon');el.setAttribute('points',points.map(p=>p[0]+','+(-p[1])).join(' '));el.setAttribute('class','overlay '+klass+(selected===id?' selected':''));el.dataset.id=id;layer.appendChild(el);return el}}
+function lineEl(points,klass,id){{if(!points?.length)return null;const el=document.createElementNS(NS,'polyline');el.setAttribute('points',points.map(p=>p[0]+','+(-p[1])).join(' '));el.setAttribute('class','overlay '+klass+(selected===id?' selected':''));el.setAttribute('fill','none');el.dataset.id=id;layer.appendChild(el);return el}}
+function dispositionClass(d){{return d==='WRONG'?'wrong':d==='UNSURE'?'unsure':'proposal-space'}}
+function render(){{layer.innerHTML='';if(!sourceOnly){{allProposals().forEach(x=>{{if(x.kind==='space')ringEl(x.row.polygon,dispositionClass(x.row.disposition),x.row.proposal_id);if(x.kind==='envelope')lineEl(x.row.outer_ring,dispositionClass(x.row.disposition),x.row.proposal_id);if(x.kind==='portal')lineEl(x.row.opening_segment,dispositionClass(x.row.disposition),x.row.proposal_id)}});g.spaces.forEach(x=>ringEl(x.polygon,'gold-space',x.golden_space_id));g.portals.forEach(x=>lineEl(x.opening_segment,'gold-space',x.golden_portal_id))}}drawSectors();if(draft.length)lineEl(draft,'selected','draft');renderVertices();renderList();updateGate();save()}}
+function renderVertices(){{const item=allProposals().find(x=>x.row.proposal_id===selected);const points=item?.kind==='space'?item.row.polygon:item?.kind==='envelope'?item.row.outer_ring:null;if(!points||sourceOnly)return;points.slice(0,-1).forEach((p,i)=>{{const c=document.createElementNS(NS,'circle');c.setAttribute('cx',p[0]);c.setAttribute('cy',-p[1]);c.setAttribute('r',Math.max(view[2],view[3])*.006);c.setAttribute('class','vertex');c.dataset.vertex=i;layer.appendChild(c)}})}}
+function drawSectors(){{if(!sourceOnly)return;const [x,y,w,h]=initial;for(let r=0;r<3;r++)for(let c=0;c<3;c++){{const q=document.createElementNS(NS,'rect');q.setAttribute('x',x+c*w/3);q.setAttribute('y',y+r*h/3);q.setAttribute('width',w/3);q.setAttribute('height',h/3);q.setAttribute('class','sector');layer.appendChild(q)}}}}
+function renderList(){{const k=document.querySelector('#kind-filter').value,st=document.querySelector('#state-filter').value,rows=allProposals(),done=rows.filter(x=>x.row.disposition!=='UNREVIEWED').length;document.querySelector('#progress-bar').style.width=(rows.length?100*done/rows.length:100)+'%';document.querySelector('#progress-text').textContent=`${{done}} از ${{rows.length}} مورد بررسی شده`;document.querySelector('#head-progress').textContent=`پیشرفت: ${{done}}/${{rows.length}}`;document.querySelector('#items').innerHTML=rows.filter(x=>(k==='all'||x.kind===k)&&(st==='all'||x.row.disposition===st)).map(x=>`<div class="item ${{selected===x.row.proposal_id?'sel':''}}" data-pick="${{x.row.proposal_id}}"><i class="dot ${{x.row.disposition}}"></i><b>${{x.kind==='space'?'فضا':x.kind==='portal'?'بازشو':'محدوده'}}</b> — ${{x.row.source_id||'بدون شناسه'}}<br><small>${{x.row.category||x.row.kind||''}} · ${{x.row.disposition}}</small></div>`).join('');document.querySelectorAll('[data-pick]').forEach(el=>el.onclick=()=>select(el.dataset.pick))}}
+function select(id){{selected=id;const x=allProposals().find(x=>x.row.proposal_id===id);document.querySelector('#selection').textContent=x?`${{x.kind}} / ${{x.row.source_id||id}} / ${{x.row.source_status||'—'}}`:'—';document.querySelector('#note').value=x?.row.review_note||'';render()}}
+function snapshot(){{history.push(JSON.stringify(g));if(history.length>50)history.shift();future=[]}}function restore(raw){{g=JSON.parse(raw);render()}}function save(){{localStorage.setItem(storeKey,JSON.stringify(g))}}
+function accepted(row,kind){{if(kind==='space'){{let hit=g.spaces.find(x=>x.proposal_id===row.proposal_id),value={{golden_space_id:hit?.golden_space_id||'SPACE-'+String(g.spaces.length+1).padStart(3,'0'),proposal_id:row.proposal_id,status:row.disposition==='UNSURE'?'UNKNOWN':'VERIFIED',polygon:structuredClone(row.polygon),interior_rings:structuredClone(row.interior_rings||[]),category:row.category||'UNKNOWN',display_name:row.display_name||null,open_plan_group:null}};if(hit)Object.assign(hit,value);else g.spaces.push(value)}}if(kind==='envelope')g.building_envelope={{status:row.disposition==='UNSURE'?'UNKNOWN':'VERIFIED',outer_ring:structuredClone(row.outer_ring),interior_voids:structuredClone(row.interior_voids||[])}};if(kind==='portal'){{let hit=g.portals.find(x=>x.proposal_id===row.proposal_id),value={{golden_portal_id:hit?.golden_portal_id||'PORTAL-'+String(g.portals.length+1).padStart(3,'0'),proposal_id:row.proposal_id,kind:row.kind,status:row.disposition==='UNSURE'?'UNKNOWN':'VERIFIED',point:row.point,opening_segment:structuredClone(row.opening_segment||[]),space_a:row.space_a,space_b:row.space_b}};if(hit)Object.assign(hit,value);else g.portals.push(value)}}}}
+document.querySelectorAll('[data-decision]').forEach(b=>b.onclick=()=>{{const x=allProposals().find(x=>x.row.proposal_id===selected);if(!x)return;snapshot();x.row.disposition=b.dataset.decision;x.row.review_note=document.querySelector('#note').value;if(x.row.disposition==='WRONG'){{g.spaces=g.spaces.filter(y=>y.proposal_id!==selected);g.portals=g.portals.filter(y=>y.proposal_id!==selected)}}else accepted(x.row,x.kind);g.proposal_review_log.push({{proposal_id:selected,disposition:x.row.disposition,note:x.row.review_note,at:new Date().toISOString()}});render()}});
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{{document.querySelectorAll('[data-tab],.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelector('#'+b.dataset.tab).classList.add('active')}});document.querySelectorAll('#kind-filter,#state-filter').forEach(x=>x.onchange=renderList);
+s.onwheel=e=>{{e.preventDefault();const p=pt(e),q=[p[0],-p[1]],f=e.deltaY>0?1.12:.88;view=[q[0]+(view[0]-q[0])*f,q[1]+(view[1]-q[1])*f,view[2]*f,view[3]*f];applyView();render()}};
+s.onpointerdown=e=>{{const vertex=e.target.dataset.vertex;if(vertex!==undefined){{snapshot();selectedVertex=Number(vertex);drag='vertex';return}}if(drawMode){{draft.push(pt(e));render();return}}const id=e.target.dataset.id;if(id&&id!=='draft'){{select(id);return}}drag=[e.clientX,e.clientY,...view];s.setPointerCapture(e.pointerId)}};
+s.onpointermove=e=>{{if(drag==='vertex'){{const x=allProposals().find(x=>x.row.proposal_id===selected),points=x?.kind==='space'?x.row.polygon:x?.kind==='envelope'?x.row.outer_ring:null;if(points){{points[selectedVertex]=pt(e);points[points.length-1]=points[0];render()}}}}else if(Array.isArray(drag)){{view[0]=drag[2]-(e.clientX-drag[0])*view[2]/s.clientWidth;view[1]=drag[3]-(e.clientY-drag[1])*view[3]/s.clientHeight;applyView();render()}}}};s.onpointerup=()=>{{drag=null;selectedVertex=null}};
+s.ondblclick=e=>{{const x=allProposals().find(x=>x.row.proposal_id===selected),points=x?.kind==='space'?x.row.polygon:x?.kind==='envelope'?x.row.outer_ring:null;if(!points)return;snapshot();points.splice(points.length-1,0,pt(e));points[points.length-1]=points[0];render()}};
+document.querySelector('#undo').onclick=()=>{{if(history.length){{future.push(JSON.stringify(g));restore(history.pop())}}}};document.querySelector('#redo').onclick=()=>{{if(future.length){{history.push(JSON.stringify(g));restore(future.pop())}}}};document.querySelector('#cancel-edit').onclick=()=>document.querySelector('#undo').click();document.querySelector('#delete-vertex').onclick=()=>{{const x=allProposals().find(x=>x.row.proposal_id===selected),p=x?.kind==='space'?x.row.polygon:x?.kind==='envelope'?x.row.outer_ring:null;if(p&&p.length>4){{snapshot();p.splice(p.length-2,1);p[p.length-1]=p[0];render()}}}};
+for(const target of ['sectors','review-sectors']){{const obj=target==='sectors'?g.completeness:g.reviewer_completeness;document.querySelector('#'+target).innerHTML=Object.keys(obj.sectors).map(k=>`<label>${{k}} <input type="checkbox" data-sector="${{k}}" ${{obj.sectors[k]?'checked':''}}></label>`).join('');document.querySelectorAll('#'+target+' [data-sector]').forEach(x=>x.onchange=()=>{{obj.sectors[x.dataset.sector]=x.checked;render()}})}}
+document.querySelectorAll('.q').forEach(x=>x.onchange=()=>{{g.completeness.questions[x.dataset.q]=x.checked?false:null;render()}});document.querySelector('#source-only').onclick=()=>{{sourceOnly=true;selected=null;render()}};document.querySelector('#review-source').onclick=()=>{{sourceOnly=true;render()}};document.querySelector('#review-overlay').onclick=()=>{{sourceOnly=false;render()}};
+document.querySelectorAll('[data-draw]').forEach(x=>x.onclick=()=>{{drawMode=x.dataset.draw;draft=[];document.querySelector('#draw-help').textContent='روی نقاط پلان کلیک کنید؛ برای ثبت فضای بسته حداقل سه نقطه لازم است.'}});document.querySelector('#finish-draw').onclick=()=>{{if(!drawMode||draft.length<(drawMode==='space'||drawMode==='void'?3:2))return;snapshot();if(drawMode==='space'){{const ring=[...draft,draft[0]];g.spaces.push({{golden_space_id:'SPACE-'+String(g.spaces.length+1).padStart(3,'0'),status:'VERIFIED',polygon:ring,interior_rings:[],category:document.querySelector('#new-category').value||'UNKNOWN',display_name:null,open_plan_group:null,origin:'HUMAN_MISSING_ITEM'}})}}else if(drawMode==='void'){{const ring=[...draft,draft[0]];g.building_envelope.interior_voids.push(ring)}}else{{const a=draft[0],b=draft[1];g.portals.push({{golden_portal_id:'PORTAL-'+String(g.portals.length+1).padStart(3,'0'),kind:drawMode,status:'VERIFIED',point:[(a[0]+b[0])/2,(a[1]+b[1])/2],opening_segment:[a,b],space_a:null,space_b:null,origin:'HUMAN_MISSING_ITEM'}})}}drawMode=null;draft=[];render()}};
+document.querySelector('#complete-pass').onclick=()=>{{g.completeness.mode_completed=Object.values(g.completeness.sectors).every(Boolean)&&Object.values(g.completeness.questions).every(x=>x===false);sourceOnly=false;render()}};document.querySelector('#review-complete').onclick=()=>{{g.reviewer_completeness.completed=Object.values(g.reviewer_completeness.sectors).every(Boolean);sourceOnly=false;render()}};
+function gateErrors(){{let e=[];g.review.annotator=document.querySelector('#annotator').value.trim()||null;g.review.reviewer=document.querySelector('#reviewer').value.trim()||null;if(!g.review.annotator)e.push('نام annotator وارد نشده');if(!g.review.reviewer)e.push('نام بازبین وارد نشده');if(g.review.annotator&&g.review.annotator===g.review.reviewer)e.push('بازبین باید شخص دیگری باشد');if(allProposals().some(x=>x.row.disposition==='UNREVIEWED'))e.push('همه پیشنهادها بررسی نشده‌اند');if(!g.completeness.mode_completed)e.push('کنترل منبع خام کامل نیست');if(!g.reviewer_completeness.completed)e.push('بازبینی مستقل کامل نیست');if(!g.spaces.length)e.push('هیچ فضای Golden وجود ندارد');return e}}
+function recalcTopology(){{const key=p=>p.map(v=>Number(v).toFixed(6)).join(','),segments=x=>x.polygon.slice(1).map((p,i)=>[key(x.polygon[i]),key(p)].sort().join('|'));g.geometric_adjacency=[];for(let i=0;i<g.spaces.length;i++)for(let j=i+1;j<g.spaces.length;j++)if(segments(g.spaces[i]).some(e=>segments(g.spaces[j]).includes(e)))g.geometric_adjacency.push([g.spaces[i].golden_space_id,g.spaces[j].golden_space_id]);g.access_connectivity=g.portals.filter(p=>p.status==='VERIFIED'&&['door','open_passage'].includes(p.kind)&&p.space_a&&p.space_b&&p.space_a!==p.space_b).map(p=>({{space_a:p.space_a,space_b:p.space_b,portal_id:p.golden_portal_id}}))}}
+function updateGate(){{const e=gateErrors(),box=document.querySelector('#gate');g.approval_gate={{eligible:!e.length,errors:e}};box.innerHTML=e.length?'قابل تصویب نیست:<br>• '+e.join('<br>• '):'تمام گیت‌ها پاس شده‌اند.';document.querySelector('#approve').disabled=!!e.length}}
+document.querySelectorAll('#annotator,#reviewer').forEach(x=>x.oninput=updateGate);document.querySelector('#approve').onclick=()=>{{const e=gateErrors();if(e.length)return;const now=new Date().toISOString();recalcTopology();g.review_status='APPROVED';g.review.annotation_date=now.slice(0,10);g.review.reviewed_at=now;g.review.approved_at=now;g.review.independent_source_only_pass_completed=true;render()}};
+document.querySelector('#fit').onclick=()=>{{view=[...initial];applyView();render()}};document.querySelector('#export').onclick=()=>{{recalcTopology();const blob=new Blob([JSON.stringify(g,null,2)+'\\n'],{{type:'application/json'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='{html.escape(case_id)}-golden-'+g.review_status+'.json';a.click();URL.revokeObjectURL(a.href)}};document.querySelector('#import').onchange=async e=>{{try{{g=JSON.parse(await e.target.files[0].text());render()}}catch{{alert('JSON معتبر نیست')}}}};render();
+</script></html>'''
+
+
+def build(source,case_id,level,bounds,runtime_frame_id,proposal_model=None):
     source=Path(source); data=source.read_bytes(); source_hash=sha256(data).hexdigest(); doc=ezdxf.readfile(source)
     svg,counts=_source_svg(doc,bounds,case_id)
-    golden={"schema":"architectural-topology-golden/1.0","case_id":case_id,"source_sha256":source_hash,"review_status":"DRAFT",
-            "review":{"method":"INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW","annotator":None,"annotation_date":None,"reviewer":None,
-                      "reviewed_at":None,"approved_at":None,"runtime_output_visible_during_annotation":False},
-            "frame":{"runtime_frame_id":runtime_frame_id,"level":level,"bounds":bounds},"space_match_iou":.5,
-            "building_envelope":{"status":"UNKNOWN","outer_ring":[],"interior_voids":[]},"spaces":[],"functional_zones":[],
-            "portals":[],"geometric_adjacency":[],"access_connectivity":[],
-            "annotation_notes":["Review source-only material without runtime output.","UNKNOWN is preferred to guessing."]}
+    proposals=export_proposals(proposal_model,runtime_frame_id) if proposal_model else None
+    identity=build_identity()
+    golden=new_golden(case_id=case_id,source_sha256=source_hash,frame_id=runtime_frame_id,
+                      level=level,bounds=bounds,proposals=proposals,build=identity)
     manifest={"case_id":case_id,"source_sha256":source_hash,"frame_identity":runtime_frame_id,"level":level,"bounds":bounds,
               "coordinate_system":"SOURCE_DXF_XY; SVG display uses -Y","render_source":"RAW_DXF_RECURSIVE_PRIMITIVES_ONLY",
-              "rendered_primitive_counts":counts,"excluded_runtime_material":True}
-    return svg,golden,manifest,_viewer(svg,case_id,level,bounds,golden),_instructions(case_id,level,source_hash,runtime_frame_id,bounds)
+              "rendered_primitive_counts":counts,"excluded_runtime_material":proposal_model is None,
+              "proposal_authority":"REVIEW_INPUT_ONLY" if proposal_model else "NONE",
+              "proposal_counts":(proposals or {}).get("proposal_counts",{}),"build":identity}
+    viewer=_reviewer_v2(svg,case_id,level,bounds,golden) if proposal_model else _viewer(svg,case_id,level,bounds,golden)
+    instructions=(_instructions_v2 if proposal_model else _instructions)(case_id,level,source_hash,runtime_frame_id,bounds)
+    return svg,golden,manifest,viewer,instructions
 
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--source",required=True); p.add_argument("--case-id",required=True); p.add_argument("--level",required=True)
     p.add_argument("--bounds",required=True,nargs=4,type=float); p.add_argument("--runtime-frame-id",required=True); p.add_argument("--output-dir",required=True)
+    p.add_argument("--proposal-model",help="Existing canonical model JSON; exported read-only without inference")
     a=p.parse_args(); target=Path(a.output_dir); target.mkdir(parents=True,exist_ok=True)
-    svg,golden,manifest,viewer,instructions=build(a.source,a.case_id,a.level,a.bounds,a.runtime_frame_id)
+    proposal_model=json.loads(Path(a.proposal_model).read_text(encoding="utf-8")) if a.proposal_model else None
+    svg,golden,manifest,viewer,instructions=build(a.source,a.case_id,a.level,a.bounds,a.runtime_frame_id,proposal_model)
     for name,value in (("raw-source.svg",svg),("review.html",viewer),("REVIEWER-INSTRUCTIONS.md",instructions)): (target/name).write_text(value,encoding="utf-8")
     for name,value in (("golden.json",golden),("manifest.json",manifest)): (target/name).write_text(json.dumps(value,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({"status":"DRAFT_WAITING_FOR_INDEPENDENT_REVIEW","case_id":a.case_id,"package":str(target),"source_sha256":manifest["source_sha256"]},indent=2))

@@ -8,17 +8,24 @@
     "schema": {"const": "architectural-topology-golden/1.0"},
     "case_id": {"type": "string"},
     "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "review_status": {"enum": ["DRAFT", "REVIEWED", "APPROVED"]},
+    "review_status": {"enum": ["DRAFT", "ASSISTED_REVIEW_COMPLETE", "COMPLETENESS_REVIEW_COMPLETE", "REVIEWED", "APPROVED"]},
+    "annotation_method": {"enum": ["INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW", "HUMAN_CURATED_PREDICTION_ASSISTED_GOLDEN"]},
+    "proposals": {"type": "object"},
+    "proposal_review_log": {"type": "array"},
+    "completeness": {"type": "object"},
+    "reviewer_completeness": {"type": "object"},
+    "approval_gate": {"type": "object"},
     "review": {
       "type": "object",
       "properties": {
-        "method": {"const": "INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW"},
+        "method": {"enum": ["INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW", "HUMAN_CURATED_PREDICTION_ASSISTED_GOLDEN"]},
         "annotator": {"type": ["string", "null"]},
         "annotation_date": {"type": ["string", "null"]},
         "reviewer": {"type": ["string", "null"]},
         "reviewed_at": {"type": ["string", "null"]},
         "approved_at": {"type": ["string", "null"]},
-        "runtime_output_visible_during_annotation": {"const": false}
+        "runtime_output_visible_during_annotation": {"type": "boolean"},
+        "independent_source_only_pass_completed": {"type": "boolean"}
       },
       "required": ["method", "annotator", "annotation_date", "reviewer", "reviewed_at", "approved_at", "runtime_output_visible_during_annotation"]
     },
