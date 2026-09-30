@@ -1,0 +1,42 @@
+{
+  "change_id": "SWCIS-2026-0290",
+  "summary": "Qualify gap-first Portal/Access assemblies and source-backed architectural Void/Shaft topology while preserving fail-closed authority.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "rule", "schema", "drawing_output", "test", "documentation", "governance", "versioning", "deployment"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001", "MEP-ARCH-PRESERVE-001"],
+  "impacted_modules": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "governance", "deployment", "migration"],
+  "impact_notes": {
+    "rule_book": "Portal authority requires an existing localized aperture; void authority requires independent closed source geometry.",
+    "pmm": "Adds traceable Portal, Access and architectural Void records.",
+    "questionnaire": "Only bounded irreducible source interpretations may be asked.",
+    "planner": "Consumes verified topology only; open-plan zones remain semantic.",
+    "cad_designer": "Extends the canonical architecture producer stacked on PR 302.",
+    "routing": "Access edges require verified Door/Open Passage provenance; voids remain unavailable to Mechanical routing.",
+    "sizing": "No sizing behavior changes.", "equipment": "No equipment behavior changes.",
+    "manufacturer_selector": "No manufacturer behavior changes.", "detail_riser": "No riser authority is granted.",
+    "qa": "Adds Portal, Void/Shaft, Open Plan and authority-negative tests.",
+    "manifest": "Private Fasihi diagnostics remain outside Git.",
+    "ui_api": "Exposes provenance-complete Portal/Access/Void diagnostics.",
+    "docs": "Extends the canonical architecture ADR.",
+    "versioning": "Bumps SWCIS 4.59.0 to 4.60.0.",
+    "governance": "Preserves gap-before-portal, label-no-geometry and Mechanical fail-closed rules.",
+    "deployment": "No merge or deployment is authorized.",
+    "migration": "Additive architecture model fields only."
+  },
+  "evidence": {
+    "traceability": ["source wall -> gap -> opening assembly -> portal -> sides -> access", "source cycle -> semantic label -> architectural void"],
+    "tests": ["focused Portal/Void/Open Plan suites", "governed CI"],
+    "docs": ["docs/adr/ADR-ARCH-CANONICAL-SPACE-ENGINE.md"],
+    "version_bump": ["SWCIS 4.59.0 -> 4.60.0"],
+    "migration": ["additive contracts; no destructive migration"],
+    "golden_regression": ["private Fasihi Ground evidence outside Git", "synthetic fixtures in Git"],
+    "semantic_diff": ["arc is supporting evidence only", "void label selects but never creates geometry", "Open Plan differs from Functional Zones"],
+    "artifact_diff": ["Portal motif ledger, duct neighborhood audit, final topology QA views"],
+    "numeric_diff": ["thresholds derive from local wall/gap/source tolerance"],
+    "contract_diff": ["no Portal without gap", "Window creates no Access", "Void never becomes occupied space"],
+    "deployment_plan": ["stacked branch -> focused tests -> one Fasihi run -> protected CI -> report only"],
+    "rollback_plan": ["redeploy previous approved Git SHA; no private source is committed"]
+  },
+  "risk": {"likelihood": 5, "severity": 5, "detectability": 2, "score": 50, "rationale": "Portal and Void topology directly affect enclosure and downstream access authority."},
+  "waiver": null
+}

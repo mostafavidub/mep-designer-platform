@@ -6,7 +6,7 @@ from shapely.geometry import LineString, Polygon
 from cad_engine.architectural_space_engine import (
     SCHEMA, _completeness, _exclude_inset_sheet_border_segments, _recover_supported_partitions,
     _associate_dimensions, _dimension_reconciliation, _semantic_segment_classification,
-    _pre_envelope_opening_evidence, normalize_text,
+    _pre_envelope_opening_evidence, _bind_openings, _architectural_void_candidates, normalize_text,
     reconstruct_architecture, require_complete_architecture,
 )
 
@@ -257,6 +257,54 @@ def test_anonymous_leaf_arc_on_continuous_wall_remains_unqualified(tmp_path):
 def test_random_arc_without_leaf_is_not_a_door(tmp_path):
     model=reconstruct_architecture(_drawing_with_anonymous_door(tmp_path/"random-arc.dxf",leaf=False))
     assert not any(any(e["class"]=="SWING_ARC" for e in door["evidence"]) for door in model["doors"])
+
+
+def test_current_human_confirmed_gap_is_binding_compatible_but_does_not_supply_geometry():
+    spaces=[{"physical_space_id":"A","polygon":[(0,0),(5,0),(5,5),(0,5),(0,0)],"interior_rings":[],
+             "level_id":"L1","openings":[],"windows":[]},
+            {"physical_space_id":"B","polygon":[(5,0),(10,0),(10,5),(5,5),(5,0)],"interior_rings":[],
+             "level_id":"L1","openings":[],"windows":[]}]
+    wall={"wall_id":"W1","centerline":[(5,0),(5,5)]}
+    opening={"opening_id":"O1","kind":"door","geometry":{"point":[5,2.5],"points":[[5,2],[5,3]]},
+             "source_handle":"ARC1","evidence":[{"class":"SWING_ARC","handle":"ARC1"}]}
+    gap={"gap_id":"G1","host_wall_ids":["W1"],"geometry":[[5,2],[5,3]],"gap_width":1.0,
+         "classification":"DOOR_GAP","status":"HUMAN_CONFIRMED","source_handles":["WALL-END-1"]}
+    bound,_=_bind_openings([opening],spaces,[LineString(wall["centerline"])],"s"*64,.01,
+                           canonical_walls=[wall],internal_wall_gaps=[gap])
+    assert bound[0]["status"]=="VERIFIED"
+    assert bound[0]["portal_geometry"]["points"]==gap["geometry"]
+    assert bound[0]["material_geometry_authority"]=="SOURCE_GAP_ONLY"
+
+    rejected,_=_bind_openings([opening],spaces,[LineString(wall["centerline"])],"s"*64,.01,
+                              canonical_walls=[wall],internal_wall_gaps=[])
+    assert rejected[0]["reason"]=="OPENING_WITHOUT_CLASSIFIED_HOST_GAP"
+
+
+def test_duct_label_selects_repeated_source_closed_footprint_but_supplies_no_geometry():
+    extracted={"texts":[{"handle":"T1","text":"داکت","point":[1.7,1.2]},
+                        {"handle":"T2","text":"داکت","point":[11.7,1.2]}],
+               "primitives":[{"handle":"P1","entity_type":"LWPOLYLINE","closed":True,
+                              "points":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]},
+                             {"handle":"P1-DUP","entity_type":"LWPOLYLINE","closed":True,
+                              "points":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]},
+                             {"handle":"P2","entity_type":"LWPOLYLINE","closed":True,
+                              "points":[[11,1],[11.4,1],[11.4,1.4],[11,1.4]]}]}
+    frames=[{"frame_id":"F1","bounds":[0,0,5,5],"scope_relevance":"MECHANICAL_AUTHORITY"},
+            {"frame_id":"F2","bounds":[10,0,15,5],"scope_relevance":"MECHANICAL_AUTHORITY"}]
+    rows=_architectural_void_candidates(extracted,frames,"s"*64,.001)
+    assert len(rows)==2
+    first=next(row for row in rows if row["frame_id"]=="F1")
+    assert first["void_type"]=="DUCT_VOID"
+    assert first["source_handles"]==["P1","P1-DUP"]
+    assert first["boundary"]==[[1.0,1.0],[1.4,1.0],[1.4,1.4],[1.0,1.4],[1.0,1.0]]
+    assert first["material_geometry_authority"]=="NONE"
+    assert first["routing_authority"]=="NONE"
+
+
+def test_duct_label_alone_never_creates_void_geometry():
+    extracted={"texts":[{"handle":"T1","text":"داکت","point":[1,1]}],"primitives":[]}
+    frames=[{"frame_id":"F1","bounds":[0,0,5,5],"scope_relevance":"MECHANICAL_AUTHORITY"}]
+    assert _architectural_void_candidates(extracted,frames,"s"*64,.001)==[]
 
 
 def test_unknown_furniture_and_annotation_lines_never_silently_become_walls():

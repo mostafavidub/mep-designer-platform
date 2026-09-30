@@ -564,7 +564,7 @@ def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_bo
                 "cells":[],"barriers":[],"closures":[],"edges":[],
                 "runtime_seconds":round(time.perf_counter()-started,6)}
 
-    barriers=[]
+    barriers=[]; void_polygons=[]
     # The envelope is an active barrier and an active spatial constraint.
     for a,b in zip(list(shell.exterior.coords),list(shell.exterior.coords)[1:]):
         barriers.append({"barrier_id":_sid("BAR",[frame_id,"ENVELOPE",a,b]),"kind":"ENVELOPE",
@@ -576,6 +576,8 @@ def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_bo
                              "geometry":[list(a),list(b)],"wall_id":None,"closure_id":None})
     for boundary in void_boundaries or []:
         coords=list(boundary.coords) if hasattr(boundary,"coords") else boundary
+        candidate=Polygon(coords)
+        if candidate.is_valid and candidate.area>tol*tol*4: void_polygons.append(candidate)
         for a,b in zip(coords,coords[1:]):
             barriers.append({"barrier_id":_sid("BAR",[frame_id,"VOID",a,b]),"kind":"VOID",
                              "geometry":[list(a),list(b)],"wall_id":None,"closure_id":None})
@@ -617,6 +619,10 @@ def canonical_space_subdivision(walls, envelope, *, frame_id, tolerance, void_bo
             candidates=[]
         for candidate in candidates:
             if candidate.is_empty or candidate.area<=tol*tol*4: continue
+            # The bounded face inside a verified void is topology, not an
+            # occupied Physical Space.  The surrounding polygon retains the
+            # ring as a hole through polygonization.
+            if any(void.covers(candidate.representative_point()) for void in void_polygons): continue
             quality="FACE_RESOLVED" if all(w.get("face_a") and w.get("face_b") for w in walls) else "CENTERLINE_APPROXIMATION"
             cells.append({"cell_id":_sid("CELL",[frame_id,list(candidate.exterior.coords)]),
                           "frame_id":frame_id,"topology_polygon":[list(p) for p in candidate.exterior.coords],

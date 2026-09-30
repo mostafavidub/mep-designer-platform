@@ -279,3 +279,22 @@ geometric value is the distance between those bound references, never the
 nearest width or height of the whole space bounding box.  Chain, thickness,
 set-out, overall, single-reference, and otherwise unbound dimensions remain
 explicitly not evaluated; they are not silently promoted to conflicts.
+
+### Gap-first Portal and Void authority (SWCIS 4.60.0)
+
+A Portal may bind only to an existing local canonical gap with compatible
+semantics. A current, fingerprint-valid `HUMAN_CONFIRMED` decision is accepted
+by the binding contract, but remains semantic authority only: Portal geometry
+is copied from the source-derived gap, never from a swing-arc bounding box.
+Every verified Door or Open Passage exposes a stable Portal identifier and a
+provenance-rich Access edge retaining the gap, host wall, source handles and
+evidence identifiers. Windows, continuous walls and unknown interpretations
+create no Access edge.
+
+Swing arcs and leaves are supporting assembly evidence. Neither can cut a wall
+or create an aperture. Likewise, a Duct/Shaft label may select or classify
+independently closed source geometry but may not create, close, resize or move
+a boundary. Where an independent boundary is not proven, the Void remains
+input-required and Mechanical routing stays fail-closed. Compatible Reception,
+Living and Kitchen semantics may coexist as approximate Functional Zones in one
+Open Plan Physical Space; they gain no wall authority.

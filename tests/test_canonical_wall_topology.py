@@ -130,6 +130,15 @@ def test_shaft_is_preserved_as_topological_hole():
     assert result["cells"][0]["interior_rings"]
 
 
+def test_verified_void_boundary_is_a_hole_not_an_occupied_space():
+    boundary=[[4,2],[6,2],[6,4],[4,4],[4,2]]
+    result=canonical_space_subdivision([],_envelope(),frame_id="F1",tolerance=.001,
+                                       void_boundaries=[boundary])
+    assert len(result["cells"])==1
+    assert len(result["cells"][0]["interior_rings"])==1
+    assert Polygon(result["cells"][0]["interior_rings"][0]).equals(Polygon(boundary))
+
+
 def test_unproven_envelope_cannot_become_canonical_authority():
     envelope=_envelope(); envelope["status"]="INPUT_REQUIRED"
     result=canonical_space_subdivision([],envelope,frame_id="F1",tolerance=.001)

@@ -1051,10 +1051,13 @@ def _associate_dimensions(poly, dimensions, metres_per_unit):
     return rows
 
 
-def _space_record(poly, frame, source_hash, extracted, metres_per_unit):
+def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded_label_handles=None):
     ring = _round_points(list(poly.exterior.coords)); holes=sorted(_round_points(list(interior.coords)) for interior in poly.interiors)
     physical_id = _stable_id("PS", [source_hash, frame["frame_id"], ring, holes])
-    labels, objects = _evidence_for_cell(poly, extracted); semantic = _infer_categories(labels, objects)
+    labels, objects = _evidence_for_cell(poly, extracted)
+    excluded_label_handles={str(value) for value in (excluded_label_handles or [])}
+    labels=[row for row in labels if str(row.get("handle")) not in excluded_label_handles]
+    semantic = _infer_categories(labels, objects)
     categories = sorted(semantic)
     zones = []
     for category in categories:
@@ -1106,6 +1109,85 @@ def _opening_point(row):
     return LineString(points).interpolate(.5, normalized=True) if len(points) >= 2 else None
 
 
+def _architectural_void_candidates(extracted, frames, source_hash, tolerance):
+    """Qualify source-closed void footprints without granting wall/routing authority.
+
+    A service label selects among existing closed polygons; it never supplies a
+    polygon.  Labels drawn beside small footprints are accepted only when the
+    same label-to-footprint offset recurs independently in the source, or the
+    label is actually contained by the footprint.
+    """
+    closed=[]
+    for primitive in extracted.get("primitives") or []:
+        if primitive.get("entity_type") not in {"LWPOLYLINE","POLYLINE"} or not primitive.get("closed"): continue
+        points=_primitive_points(primitive)
+        if len(points)<3: continue
+        poly=Polygon(points)
+        if not poly.is_valid or poly.area<=max(float(tolerance or .001)**2*4,1e-10): continue
+        ring=[(round(x,6),round(y,6)) for x,y in list(poly.exterior.coords)[:-1]]
+        rotations=[ring[i:]+ring[:i] for i in range(len(ring))]
+        reversed_ring=list(reversed(ring)); rotations += [reversed_ring[i:]+reversed_ring[:i] for i in range(len(ring))]
+        key=tuple(min(rotations))
+        closed.append((key,poly,primitive))
+    dedup={}
+    for key,poly,primitive in closed:
+        row=dedup.setdefault(key,{"polygon":poly,"source_handles":[],"source_segments":[]})
+        handle=primitive.get("handle")
+        if handle and str(handle) not in row["source_handles"]: row["source_handles"].append(str(handle))
+        row["source_segments"].append({"source_handle":handle,"layer":primitive.get("layer"),
+                                       "block_path":primitive.get("source_block_path") or []})
+    candidates=list(dedup.values())
+    labels=[]
+    for text_row in extracted.get("texts") or []:
+        category,_=_classify_text(text_row.get("text"))
+        if category=="duct" and text_row.get("point"):
+            labels.append(text_row)
+    nearest=[]
+    for label in labels:
+        point=Point(label["point"])
+        frame=next((f for f in frames if f.get("bounds") and box(*f["bounds"]).covers(point)),None)
+        if frame is None: continue
+        minx,miny,maxx,maxy=frame["bounds"]; local_limit=min(maxx-minx,maxy-miny)*.10
+        local=[]
+        for polyrow in candidates:
+            poly=polyrow["polygon"]; bx1,by1,bx2,by2=poly.bounds; width=bx2-bx1; height=by2-by1
+            if min(width,height)<=float(tolerance or .001): continue
+            if max(width,height)>local_limit or max(width,height)/min(width,height)>4.0: continue
+            if not box(*frame["bounds"]).covers(poly.representative_point()): continue
+            local.append(polyrow)
+        ranked=sorted(
+            ((polyrow["polygon"].distance(point),polyrow) for polyrow in local),
+            key=lambda item:(item[0],item[1]["polygon"].wkb_hex))
+        if not ranked: continue
+        distance,row=ranked[0]; second=ranked[1][0] if len(ranked)>1 else float("inf")
+        scale=max(math.sqrt(row["polygon"].area),float(tolerance or .001))
+        if distance>2.0*scale or second<=distance*2.0: continue
+        centroid=row["polygon"].centroid
+        nearest.append({"label":label,"candidate":row,"distance":distance,"second_distance":second,
+                        "offset":(round(centroid.x-point.x,3),round(centroid.y-point.y,3)),
+                        "contained":row["polygon"].covers(point)})
+    offset_counts=Counter(row["offset"] for row in nearest)
+    output=[]
+    for match in nearest:
+        if not match["contained"] and offset_counts[match["offset"]]<2: continue
+        label=match["label"]; row=match["candidate"]; poly=row["polygon"]
+        frame=next((f for f in frames if f.get("bounds") and box(*f["bounds"]).covers(Point(label["point"]))),None)
+        if frame is None or frame.get("scope_relevance")=="REFERENCE_ONLY": continue
+        void_id=_stable_id("VOID",[source_hash,frame["frame_id"],list(poly.exterior.coords)])
+        output.append({"void_id":void_id,"frame_id":frame["frame_id"],"void_type":"DUCT_VOID",
+                       "boundary":[list(p) for p in poly.exterior.coords],"area":poly.area,
+                       "source_handles":sorted(row["source_handles"]),"source_segments":row["source_segments"],
+                       "label_evidence":{"source_handle":label.get("handle"),"text":label.get("text"),
+                                         "point":label.get("point"),"distance":match["distance"],
+                                         "nearest_margin":match["second_distance"]-match["distance"],
+                                         "repeated_offset_support":offset_counts[match["offset"]]},
+                       "boundary_status":"SOURCE_CLOSED","closure_status":"NOT_REQUIRED",
+                       "status":"VERIFIED","material_geometry_authority":"NONE",
+                       "topology_authority":"SOURCE_CLOSED_BOUNDARY",
+                       "routing_authority":"NONE","vertical_shaft_authority":"NONE"})
+    return sorted(output,key=lambda row:row["void_id"])
+
+
 def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonical_walls=None,
                    internal_wall_gaps=None):
     """Bind openings to a host wall and the spaces they connect.
@@ -1142,7 +1224,10 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonic
             geometry=gap.get("geometry") or []
             if len(geometry)<2 or host["wall_id"] not in (gap.get("host_wall_ids") or []): continue
             if compatible and gap.get("classification") not in compatible: continue
-            if gap.get("status") not in {"PROVEN","SUPPORTED"}: continue
+            # A current review row has already been identity/fingerprint
+            # validated by architectural_gap_review.  It may resolve the
+            # *meaning* of an existing gap, but it never creates one.
+            if gap.get("status") not in {"PROVEN","SUPPORTED","HUMAN_CONFIRMED"}: continue
             gap_line=LineString(geometry)
             limit=max(tol,float(gap.get("gap_width") or 0.0)*.75)
             if gap_line.distance(point)<=limit: gap_matches.append(gap)
@@ -1161,11 +1246,22 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonic
         orientation = round((math.degrees(math.atan2(dy, dx)) + 360.0) % 180.0, 3)
         geometry = row.get("geometry") or {}; pts = geometry.get("points") or []
         width = LineString(pts).length if len(pts) >= 2 else None
-        bound = {**row, "host_wall_id": host["wall_id"], "host_gap_id":host_gap["gap_id"],
+        portal_id = _stable_id("PORTAL", [source_hash, row["opening_id"], host_gap["gap_id"], host["wall_id"]])
+        source_handles=sorted({str(value) for value in
+                               ((row.get("source_handles") or [])+
+                                ([row.get("source_handle")] if row.get("source_handle") else [])+
+                                (host_gap.get("source_handles") or [])) if value})
+        evidence_ids=sorted({str(item.get("evidence_id") or item.get("handle") or item.get("class"))
+                             for item in row.get("evidence") or [] if item})
+        bound = {**row, "portal_id":portal_id,
+                 "host_wall_id": host["wall_id"], "host_gap_id":host_gap["gap_id"],
                  "level_id": next((s.get("level_id") for s in spaces if s["physical_space_id"] in touching), None),
                  "space_a": touching[0], "space_b": touching[1] if len(touching) == 2 else "EXTERIOR",
                  "orientation": orientation, "width_drawing_units": width,
-                 "opening_geometry": geometry, "status": "VERIFIED"}
+                 "opening_geometry": geometry, "portal_geometry":{"points":host_gap.get("geometry")},
+                 "source_handles":source_handles,"evidence_ids":evidence_ids,
+                 "material_geometry_authority":"SOURCE_GAP_ONLY",
+                 "status": "VERIFIED"}
         accepted.append(bound)
         key = "openings" if row["kind"] == "door" else "windows"
         for space in spaces:
@@ -1307,6 +1403,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
     internal_wall_gaps=[]
     pre_topology_objects=standardize_source_records(extracted["primitives"])
+    architectural_voids=_architectural_void_candidates(extracted,frames,source["source_sha256"],tolerance)
+    void_label_handles={str(row["label_evidence"]["source_handle"]) for row in architectural_voids
+                        if row.get("label_evidence",{}).get("source_handle")}
     explicit_opening_candidates=_opening_candidates(extracted,source["source_sha256"])
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
@@ -1421,7 +1520,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             # isolated rotated outline).  This preserves existing valid
             # geometry without claiming a canonical envelope was proven.
             legacy_polygons = _polygonize_spaces(accepted, frame, tolerance)
+        frame_voids=[row for row in architectural_voids if row["frame_id"]==frame["frame_id"] and row["status"]=="VERIFIED"]
         subdivision=canonical_space_subdivision(frame_walls,envelope,frame_id=frame["frame_id"],tolerance=tolerance,
+                                                void_boundaries=[row["boundary"] for row in frame_voids],
                                                 enclosure_closures=subdivision_promoted)
         subdivision_results.append(subdivision)
         canonical_polygons=[Polygon(row["physical_polygon"],row.get("interior_rings") or []) for row in subdivision["cells"]]
@@ -1438,7 +1539,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                                    canonical_walls=frame_walls,tolerance=tolerance)
         for row in rejected: row["frame_id"]=frame["frame_id"]
         rejected_cells.extend(rejected)
-        spaces.extend(_space_record(p, frame, source["source_sha256"], extracted, source["metres_per_unit"]) for p in polygons)
+        spaces.extend(_space_record(p,frame,source["source_sha256"],extracted,source["metres_per_unit"],
+                                    excluded_label_handles=void_label_handles) for p in polygons)
     timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
     label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
@@ -1533,11 +1635,21 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     review=_review_payload(spaces,frames,openings,coverage,dimension_reconciliation)
     enclosure_edges=sorted({tuple(sorted((space["physical_space_id"],adjacent))) for space in spaces
                             for adjacent in space.get("adjacent_space_ids") or []})
-    access_edges=sorted({tuple(sorted((opening["space_a"],opening["space_b"]))) for opening in openings
-                         if opening.get("status")=="VERIFIED" and opening.get("kind") in {"door","open_passage"}
-                         and opening.get("space_a") and opening.get("space_b")})
+    access_edge_records=[]
+    for opening in openings:
+        if opening.get("status")!="VERIFIED" or opening.get("kind") not in {"door","open_passage"}: continue
+        if not opening.get("space_a") or not opening.get("space_b"): continue
+        access_edge_records.append({"portal_id":opening.get("portal_id"),"gap_id":opening.get("host_gap_id"),
+                                    "host_wall_id":opening.get("host_wall_id"),
+                                    "space_a":opening["space_a"],"space_b":opening["space_b"],
+                                    "source_handles":opening.get("source_handles") or [],
+                                    "evidence_ids":opening.get("evidence_ids") or []})
+    access_edge_records.sort(key=lambda row:(row.get("portal_id") or "",row["space_a"],row["space_b"]))
+    access_nodes=sorted({s["physical_space_id"] for s in spaces}|
+                        {side for row in access_edge_records for side in (row["space_a"],row["space_b"])})
     model = {"schema": SCHEMA, "source": source, "frames": frames, "levels": [], "physical_spaces": spaces,
              "functional_zones": [z for s in spaces for z in s["functional_zones"]], "architectural_objects": extracted["objects"],
+             "architectural_voids":{"schema":"canonical-architectural-void/1.0","items":architectural_voids},
              "dimensions": extracted["dimensions"], "dimension_reconciliation":dimension_reconciliation,
              "openings":openings,"canonical_walls":walls,"wall_junctions":wall_junctions,
              "wall_thickness_clusters":thickness_clusters,"building_envelopes":building_envelopes,
@@ -1582,7 +1694,10 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                   "authority":"CANONICAL" if subdivision_comparisons and all(row["selected_authority"]=="CANONICAL" for row in subdivision_comparisons) else "MIXED_OR_LEGACY_FALLBACK"},
              "exterior_face":{"face_id":"EXTERIOR","type":"UNBOUNDED_REGION","status":"CANONICAL"},
              "enclosure_graph":{"nodes":[s["physical_space_id"] for s in spaces]+["EXTERIOR"],"edges":[list(row) for row in enclosure_edges]},
-             "access_graph":{"nodes":[s["physical_space_id"] for s in spaces],"edges":[list(row) for row in access_edges]},
+             "access_graph":{"schema":"canonical-access-graph/1.0","nodes":access_nodes,
+                              "edges":access_edge_records,
+                              "legacy_space_pairs":sorted({tuple(sorted((row["space_a"],row["space_b"])))
+                                                           for row in access_edge_records})},
              "rejected_candidate_cells":rejected_cells,"coverage":coverage,"review":review,
              "completeness": completeness, "vision_reconciliation": vision,
              "hybrid_architecture":vision.get("hybrid_recovery"),
@@ -1595,7 +1710,11 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              # Backward-compatible projection; canonical consumers use fields above.
              "version": SCHEMA, "units": source["insunits"], "bounds": fallback["bounds"], "rooms": rooms,
              "walls": [{"start": list(line.coords)[0], "end": list(line.coords)[-1]} for line in extracted["boundary_lines"]],
-             "doors": [o for o in openings if o["kind"]=="door"], "windows":[o for o in openings if o["kind"]=="window"], "columns": [], "shafts": [],
+             "doors": [o for o in openings if o["kind"]=="door"], "windows":[o for o in openings if o["kind"]=="window"], "columns": [],
+             "shafts": [{"void_id":row["void_id"],"void_type":row["void_type"],"polygon":row["boundary"],
+                         "centroid":list(Polygon(row["boundary"]).centroid.coords)[0],"area":row["area"],
+                         "source_handles":row["source_handles"],"routing_authority":"NONE"}
+                        for row in architectural_voids if row["status"]=="VERIFIED"],
              "all_inserts": extracted["objects"], "all_texts": extracted["texts"],
              "quality": {"room_count": len(rooms), "rooms_with_polygon": len(rooms), "wall_segments": len(extracted["boundary_lines"]),
                          "canonical_space_count": len(spaces), "status": completeness["status"]}}
