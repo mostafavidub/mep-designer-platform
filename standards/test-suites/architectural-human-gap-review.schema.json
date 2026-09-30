@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architectural-human-gap-review/1.0",
+  "type": "object",
+  "required": ["schema", "source_sha256", "frame_id", "dependency_engine_sha", "question_version", "review_fingerprint", "questions", "decisions"],
+  "properties": {
+    "schema": {"const": "architectural-human-gap-review/1.0"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "frame_id": {"type": "string", "minLength": 1},
+    "dependency_engine_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "question_version": {"const": "1.0"},
+    "review_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "questions": {"type": "array", "items": {"$ref": "#/$defs/question"}},
+    "decisions": {"type": "array", "items": {"$ref": "#/$defs/decision"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "identity": {
+      "type": "object",
+      "required": ["question_id", "source_sha256", "frame_id", "dependency_engine_sha", "gap_id", "closure_id", "host_wall_ids", "gap_geometry_hash", "evidence_hash", "question_version"],
+      "properties": {
+        "question_id": {"type": "string", "pattern": "^GAPQ-[0-9A-F]{16}$"},
+        "source_sha256": {"type": "string"}, "frame_id": {"type": "string"},
+        "dependency_engine_sha": {"type": "string"}, "gap_id": {"type": "string"},
+        "closure_id": {"type": ["string", "null"]},
+        "host_wall_ids": {"type": "array", "items": {"type": "string"}},
+        "gap_geometry_hash": {"type": "string"}, "evidence_hash": {"type": "string"},
+        "question_version": {"const": "1.0"}
+      }
+    },
+    "question": {
+      "allOf": [{"$ref": "#/$defs/identity"}],
+      "type": "object"
+    },
+    "decision": {
+      "allOf": [{"$ref": "#/$defs/identity"}],
+      "type": "object",
+      "required": ["decision"],
+      "properties": {"decision": {"enum": ["DOOR", "WINDOW", "OPEN_PASSAGE", "CONTINUOUS_WALL", "UNKNOWN"]}}
+    }
+  }
+}

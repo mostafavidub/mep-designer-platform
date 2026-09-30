@@ -194,12 +194,38 @@ def test_gap_classification_precedes_closure_and_fails_closed_without_portal_evi
     assert closures[0]["portal_authority"]=="NONE"
 
 
+def test_opening_evidence_on_same_wall_cannot_classify_a_distant_gap():
+    walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    host_ids=closures[0]["host_wall_ids"]
+    evidence=[{"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
+               "candidate_type":"door","candidate_host_wall_ids":host_ids,
+               "geometry":{"point":[9.0,0.0]}}]
+    gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
+    assert gaps[0]["classification"]=="AMBIGUOUS_GAP"
+    assert gaps[0]["portal_evidence_ids"]==[]
+
+
+def test_opening_evidence_locally_overlapping_gap_may_classify_that_gap_only():
+    walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    host_ids=closures[0]["host_wall_ids"]
+    evidence=[{"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
+               "candidate_type":"door","candidate_host_wall_ids":host_ids,
+               "geometry":{"points":[[4.0,0.0],[5.0,0.0]]}}]
+    gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
+    assert gaps[0]["classification"]=="DOOR_GAP"
+    assert gaps[0]["portal_evidence_ids"]==["OPENEV-A"]
+
+
 def test_endpoint_closure_never_reuses_one_endpoint_for_multiple_synthetic_joins():
     walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(4.2,0),(8,0)),
            _proven_wall("C",(4.3,0),(9,0))]
     rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
     endpoints=[tuple(point) for row in rows for point in row["geometry"]]
     assert len(endpoints)==len(set(endpoints))
+
+
 
 
 def _site_and_building_walls():

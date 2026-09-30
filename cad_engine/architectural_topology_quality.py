@@ -11,7 +11,7 @@ import json
 import math
 import time
 
-from shapely.geometry import LineString, Point, Polygon
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import polygonize, snap, unary_union
 from shapely.strtree import STRtree
 
@@ -474,13 +474,36 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
     for closure in closures:
         host_ids=set(closure.get("host_wall_ids") or [])
         if closure.get("host_wall_id"): host_ids.add(closure["host_wall_id"])
-        matching=[row for row in opening_rows
-                  if host_ids.intersection(row.get("candidate_host_wall_ids") or [])]
-        portal_types=sorted({str(row.get("candidate_type") or "").upper() for row in matching})
         gap_width=float(closure.get("gap_width") or LineString(closure["geometry"]).length)
         thicknesses=[float(wall_by_id[wid]["thickness"]) for wid in host_ids
                      if wid in wall_by_id and wall_by_id[wid].get("thickness")]
         local_thickness=sorted(thicknesses)[len(thicknesses)//2] if thicknesses else None
+        gap_line=LineString(closure["geometry"])
+        matching=[]; opening_matches=[]
+        for opening in opening_rows:
+            if not host_ids.intersection(opening.get("candidate_host_wall_ids") or []): continue
+            geometry=opening.get("geometry") or {}
+            points=geometry.get("points") or []
+            if len(points)>=2:
+                opening_geometry=LineString(points)
+                opening_width=opening_geometry.length
+            elif geometry.get("point"):
+                opening_geometry=Point(geometry["point"]); opening_width=0.0
+            elif geometry.get("bounds") and len(geometry["bounds"])==4:
+                opening_geometry=box(*geometry["bounds"]); opening_width=min(
+                    geometry["bounds"][2]-geometry["bounds"][0],
+                    geometry["bounds"][3]-geometry["bounds"][1])
+            else: continue
+            distance=gap_line.distance(opening_geometry)
+            locality_limit=max(float(tolerance or .001)*5,
+                               (local_thickness or 0.0)*1.5,
+                               min(gap_width,opening_width)*.5)
+            if distance>locality_limit: continue
+            matching.append(opening)
+            opening_matches.append({"opening_evidence_id":opening["opening_evidence_id"],
+                                    "distance_to_gap":distance,
+                                    "derived_locality_limit":locality_limit})
+        portal_types=sorted({str(row.get("candidate_type") or "").upper() for row in matching})
         reason=closure.get("reason")
         if "DOOR" in portal_types:
             classification,status="DOOR_GAP","SUPPORTED"
@@ -500,12 +523,14 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
         closure.update({"gap_id":gap_id,"gap_classification":classification,
                         "gap_status":status,"portal_evidence_ids":sorted(
                             row["opening_evidence_id"] for row in matching),
+                        "opening_locality_matches":sorted(opening_matches,key=lambda row:row["opening_evidence_id"]),
                         "portal_ref":None,"local_wall_thickness":local_thickness})
         rows.append({"gap_id":gap_id,"frame_id":frame_id,"host_wall_ids":sorted(host_ids),
                      "geometry":closure.get("geometry"),"gap_width":gap_width,
                      "local_wall_thickness":local_thickness,"classification":classification,
                      "status":status,"source_handles":closure.get("source_handles") or [],
                      "portal_evidence_ids":closure["portal_evidence_ids"],
+                     "opening_locality_matches":closure["opening_locality_matches"],
                      "closure_id":closure.get("closure_id"),
                      "material_geometry":"NONE","wall_authority":"NONE",
                      "routing_authority":"NONE","portal_authority":"NONE"})
