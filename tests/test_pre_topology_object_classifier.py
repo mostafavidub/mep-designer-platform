@@ -4,7 +4,12 @@ import ezdxf
 import pytest
 from shapely.geometry import LineString
 
-from cad_engine.architectural_space_engine import _semantic_segment_classification, reconstruct_architecture
+from cad_engine.architectural_space_engine import (
+    _filter_wall_solid_cells,
+    _recover_supported_partitions,
+    _semantic_segment_classification,
+    reconstruct_architecture,
+)
 from cad_engine.pre_topology_object_classifier import (
     OBJECT_CLASSES,
     classify_source_record,
@@ -64,6 +69,35 @@ def test_non_enclosure_semantics_override_wall_like_geometry():
     assert accepted == []
     assert {row["semantic_class"] for row in records} == {"COLUMN"}
     assert all(row["status"] == "REJECTED" for row in records)
+
+
+def test_partition_recovery_cannot_readmit_hard_excluded_columns():
+    shell=[LineString([(0,0),(6,0)]),LineString([(6,0),(6,6)]),
+           LineString([(6,6),(0,6)]),LineString([(0,6),(0,0)])]
+    columns=[]
+    for x in (1,2,3):
+        points=[(x,2),(x+.4,2),(x+.4,2.4),(x,2.4),(x,2)]
+        columns.extend(LineString([a,b]) for a,b in zip(points,points[1:]))
+    lines=shell+columns
+    metas=[{"handle":f"W{i}","layer":"A-WALL","entity_type":"LINE","closed":False} for i in range(4)]
+    metas.extend({"handle":f"C{i//4}","layer":"0","entity_type":"LINE","closed":True} for i in range(12))
+    records,seeds=_semantic_segment_classification(lines,metas,1.0,.001)
+    accepted,_,_=_recover_supported_partitions(seeds,records,{"bounds":[0,0,6,6]},.001,{"texts":[]},1.0)
+    assert len(accepted)==4
+    rejected=[row for row in records if row["semantic_class"]=="COLUMN"]
+    assert len(rejected)==12
+    assert all(row["status"]=="REJECTED" and not row.get("admission_trace") for row in rejected)
+
+
+def test_wall_material_overlap_rejects_solid_cell_but_keeps_adjacent_room():
+    wall_cell=LineString([(0,0),(4,0)]).buffer(.1,cap_style=2)
+    room=LineString([(0,2),(4,2)]).buffer(1,cap_style=2)
+    wall={"thickness":.2,"wall_solid":{"axis_origin":[0,0],"axis_direction":[1,0],
+          "occupied_intervals":[[0,4]]}}
+    accepted,rejected=_filter_wall_solid_cells([wall_cell,room],[],{"texts":[],"objects":[]},1.0,
+                                               canonical_walls=[wall],tolerance=.001)
+    assert accepted==[room]
+    assert rejected[0]["reason"]=="WALL_MATERIAL_FOOTPRINT"
 
 
 def test_opening_and_reference_roles_are_never_wall_admitted():

@@ -803,7 +803,10 @@ def _connected_line_components(lines, tolerance):
 
 def _recover_supported_partitions(accepted, classified, frame, tolerance, extracted, metres_per_unit):
     """Bounded, evidence-based recovery of wall candidates lost by seed admission."""
-    candidates=[record for record in classified if record["status"]!="ACCEPTED"]
+    candidates=[record for record in classified
+                if record["status"]!="ACCEPTED"
+                and record.get("wall_evidence_state")!="HARD_EXCLUDED_NON_ENCLOSURE_OBJECT"
+                and not excludes_from_wall_admission(record.get("pre_topology_classification") or {})]
     lines=[LineString(record["geometry"]) for record in candidates]
     components=_connected_line_components(lines,max(float(tolerance or .001)*2,1e-8))
     current=list(accepted); decisions=[]; iterations=[]; wall_union=unary_union(current) if current else None
@@ -913,15 +916,36 @@ def _derived_wall_thicknesses(segment_records):
     return sorted(set(round(float(value),3) for value in values if value>0))
 
 
-def _filter_wall_solid_cells(polygons, segment_records, extracted, metres_per_unit):
+def _wall_material_mask(canonical_walls, tolerance):
+    solids=[]; tol=max(float(tolerance or .001),1e-9)
+    for wall in canonical_walls or []:
+        thickness=wall.get("thickness")
+        solid=wall.get("wall_solid") or {}; origin=solid.get("axis_origin"); direction=solid.get("axis_direction")
+        if not thickness or not origin or not direction: continue
+        for start,end in solid.get("occupied_intervals") or []:
+            if end<=start: continue
+            line=LineString([(origin[0]+start*direction[0],origin[1]+start*direction[1]),
+                             (origin[0]+end*direction[0],origin[1]+end*direction[1])])
+            solids.append(line.buffer(float(thickness)/2+tol,cap_style=2,join_style=2))
+    return unary_union(solids) if solids else None
+
+
+def _filter_wall_solid_cells(polygons, segment_records, extracted, metres_per_unit, canonical_walls=None, tolerance=None):
     thicknesses=_derived_wall_thicknesses(segment_records); accepted=[]; rejected=[]; scale=metres_per_unit or 1.0
+    material_mask=_wall_material_mask(canonical_walls,tolerance)
     for poly in polygons:
         labels,objects=_evidence_for_cell(poly,extracted)
         rectangle=poly.minimum_rotated_rectangle; coords=list(rectangle.exterior.coords)
         sides=sorted(math.dist(a,b)*scale for a,b in zip(coords,coords[1:]) if a!=b)
         short=sides[0] if sides else 0; long=sides[-1] if sides else 0
         matched=next((value for value in thicknesses if abs(short-value)<=max(value*.25,.01)),None)
-        if matched and long/max(short,1e-12)>=2.5 and not labels and not objects:
+        material_overlap=(poly.intersection(material_mask).area/poly.area
+                          if material_mask is not None and poly.area>0 else 0.0)
+        if material_overlap>=.65 and not labels and not objects:
+            rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
+                             "reason":"WALL_MATERIAL_FOOTPRINT","wall_material_overlap_ratio":material_overlap,
+                             "status":"REJECTED"})
+        elif matched and long/max(short,1e-12)>=2.5 and not labels and not objects:
             rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
                              "reason":"WALL_SOLID_STRIP","derived_wall_thickness_m":matched,
                              "short_dimension_m":short,"long_dimension_m":long,
@@ -1305,7 +1329,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                         "canonical_cell_count":len(canonical_polygons),"canonical_overlap_area":overlap,
                                         "selected_authority":"CANONICAL" if canonical_valid else "LEGACY_FALLBACK",
                                         "canonical_status":subdivision["status"],"canonical_reason":subdivision.get("reason")})
-        polygons,rejected=_filter_wall_solid_cells(polygons,classified,extracted,source["metres_per_unit"])
+        polygons,rejected=_filter_wall_solid_cells(polygons,classified,extracted,source["metres_per_unit"],
+                                                   canonical_walls=frame_walls,tolerance=tolerance)
         for row in rejected: row["frame_id"]=frame["frame_id"]
         rejected_cells.extend(rejected)
         spaces.extend(_space_record(p, frame, source["source_sha256"], extracted, source["metres_per_unit"]) for p in polygons)

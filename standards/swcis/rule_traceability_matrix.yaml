@@ -837,7 +837,8 @@
         "app/project_mechanical_model.py",
         "cad_engine/fixture_recognition.py",
         "cad_engine/architecture_space_equipment_gate.py",
-        "cad_engine/mechanical_authority.py"
+        "cad_engine/mechanical_authority.py",
+        "tools/pre_topology_candidate_audit.py"
       ],
       "drawing_outputs": [
         "typed architecture model",
