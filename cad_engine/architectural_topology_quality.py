@@ -262,6 +262,9 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
                 if width>max(tol*4,typical*.2): gaps.append([left[1],right[0]])
             center=LineString([(origin[0]+lo*u[0],origin[1]+lo*u[1]),(origin[0]+hi*u[0],origin[1]+hi*u[1])])
             handles=sorted({rows[i].get("source_handle") for i in group if rows[i].get("source_handle")})
+            evidence_states=sorted({rows[i].get("wall_evidence_state") for i in group
+                                    if rows[i].get("wall_evidence_state")})
+            recovered=any(rows[i].get("admission_trace") for i in group)
             wid=_sid("WALL",[frame_id,round(angle,3),[(round(a,6),round(b,6)) for a,b,_ in merged],handles])
             walls.append({"wall_id":wid,"frame_id":frame_id,"level_id":None,"wall_type":"UNKNOWN",
                           "representation":"COMPOSITE" if len(group)>1 else "SINGLE_LINE",
@@ -272,8 +275,11 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
                           "source_handles":handles,"junction_start":None,"junction_end":None,"junctions":[],
                           "interruptions":[{"interval":g,"kind":"UNKNOWN_FRAGMENTATION","classification":"FRAGMENTATION_GAP",
                                             "confidence":.25,"status":"AMBIGUOUS"} for g in gaps],"candidate_openings":[],
-                          "confidence":.8 if len(group)>1 else .65,"status":"HIGH_CONFIDENCE" if len(group)>1 else "AMBIGUOUS",
-                          "evidence":[{"class":"COLLINEAR_FRAGMENT_STITCHING","source_interval_count":len(merged),"gap_count":len(gaps)}],
+                          "confidence":.8 if len(group)>1 else (.72 if recovered else .65),
+                          "status":"HIGH_CONFIDENCE" if len(group)>1 else ("SUPPORTED_PARTITION" if recovered else "AMBIGUOUS"),
+                          "evidence":[{"class":"COLLINEAR_FRAGMENT_STITCHING","source_interval_count":len(merged),"gap_count":len(gaps)},
+                                      {"class":"SOURCE_WALL_ADMISSION","states":evidence_states,
+                                       "iteratively_recovered":recovered}],
                           "derived_geometry_provenance":{"method":"ORIENTATION_OFFSET_BUCKET_AND_PROJECTED_INTERVALS","tolerance":tol}})
     walls=_pair_wall_faces(walls,clusters,tol)
     # Junction graph from wall axes.
@@ -401,18 +407,22 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
     typical=thicknesses[len(thicknesses)//2]
     corner_limit=max(tol*8,typical*3.0)
     opening_limit=max(corner_limit,typical*12.0)
-    axes=[_wall_line(wall) for wall in proven]; endpoints=[]
+    supported=[wall for wall in walls if wall.get("status")=="SUPPORTED_PARTITION"
+               and any(e.get("class")=="SOURCE_WALL_ADMISSION" and e.get("iteratively_recovered")
+                       for e in wall.get("evidence") or [])]
+    candidates=proven+supported
+    axes=[_wall_line(wall) for wall in candidates]; endpoints=[]
     for index,line in enumerate(axes):
         endpoints.extend([(index,Point(line.coords[0])),(index,Point(line.coords[-1]))])
     tree=STRtree([point for _,point in endpoints]); proposals={}
     for endpoint_index,(wall_index,point) in enumerate(endpoints):
-        left=proven[wall_index]; (left_u,left_n,left_angle,_)=_axis(axes[wall_index])
+        left=candidates[wall_index]; (left_u,left_n,left_angle,_)=_axis(axes[wall_index])
         for raw in tree.query(point.buffer(opening_limit)):
             other_endpoint_index=int(raw)
             if other_endpoint_index<=endpoint_index:continue
             other_wall_index,other_point=endpoints[other_endpoint_index]
             if other_wall_index==wall_index:continue
-            right=proven[other_wall_index]; (_,_,right_angle,_)=_axis(axes[other_wall_index])
+            right=candidates[other_wall_index]; (_,_,right_angle,_)=_axis(axes[other_wall_index])
             delta=min(abs(left_angle-right_angle),180-abs(left_angle-right_angle))
             distance=point.distance(other_point)
             if distance<=tol:continue
@@ -421,9 +431,12 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
                 # Collinear separated wall spans support a bounded opening gap.
                 perpendicular_offset=abs((other_point.x-point.x)*left_n[0]+(other_point.y-point.y)*left_n[1])
                 if perpendicular_offset>max(tol*4,typical*.35):continue
-                relation="COLLINEAR_WALL_GAP";limit=opening_limit
+                both_material=left in proven and right in proven
+                relation="COLLINEAR_WALL_GAP" if both_material else "SUPPORTED_PARTITION_ENDPOINT_JOIN"
+                limit=opening_limit if both_material else corner_limit
             elif abs(delta-90)<=3.0:
-                relation="EXTERIOR_CORNER_JOIN"
+                relation=("EXTERIOR_CORNER_JOIN" if left in proven and right in proven
+                          else "SUPPORTED_PARTITION_ENDPOINT_JOIN")
             else:continue
             if distance>limit:continue
             geometry=sorted([[point.x,point.y],[other_point.x,other_point.y]])
@@ -436,10 +449,67 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
                 "routing_authority":"NONE","portal_authority":"NONE","access_authority":"NONE",
                 "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"],"reason":relation,
                 "gap_width":distance,"derived_join_limit":limit,
+                "_endpoint_indexes":[endpoint_index,other_endpoint_index],
                 "source_handles":sorted(set((left.get("source_handles") or [])+(right.get("source_handles") or []))),
                 "source_evidence":sorted(set((left.get("source_fragments") or [])+(right.get("source_fragments") or []))),
                 "evidence":[{"class":relation,"wall_angle_delta":delta,"local_wall_thickness":typical}]}
-    return sorted(proposals.values(),key=lambda row:row["closure_id"])
+    selected=[]; used_endpoints=set()
+    for row in sorted(proposals.values(),key=lambda item:(item["gap_width"],item["closure_id"])):
+        indexes=set(row.pop("_endpoint_indexes"))
+        if indexes & used_endpoints: continue
+        used_endpoints.update(indexes); selected.append(row)
+    return sorted(selected,key=lambda row:row["closure_id"])
+
+
+def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=None, tolerance=.001):
+    """Classify discontinuities before they may enter subdivision topology.
+
+    Opening evidence remains supporting-only.  It may identify the likely gap
+    type, but does not itself verify a Portal or create material geometry.
+    """
+    wall_by_id={wall["wall_id"]:wall for wall in walls}
+    opening_rows=[row for row in opening_evidence or []
+                  if row.get("status")=="OPENING_EVIDENCE_PRESENT"]
+    rows=[]
+    for closure in closures:
+        host_ids=set(closure.get("host_wall_ids") or [])
+        if closure.get("host_wall_id"): host_ids.add(closure["host_wall_id"])
+        matching=[row for row in opening_rows
+                  if host_ids.intersection(row.get("candidate_host_wall_ids") or [])]
+        portal_types=sorted({str(row.get("candidate_type") or "").upper() for row in matching})
+        gap_width=float(closure.get("gap_width") or LineString(closure["geometry"]).length)
+        thicknesses=[float(wall_by_id[wid]["thickness"]) for wid in host_ids
+                     if wid in wall_by_id and wall_by_id[wid].get("thickness")]
+        local_thickness=sorted(thicknesses)[len(thicknesses)//2] if thicknesses else None
+        reason=closure.get("reason")
+        if "DOOR" in portal_types:
+            classification,status="DOOR_GAP","SUPPORTED"
+        elif "WINDOW" in portal_types:
+            classification,status="WINDOW_GAP","SUPPORTED"
+        elif reason=="EXTERIOR_CORNER_JOIN":
+            classification,status="DRAFTING_BREAK","PROVEN"
+        elif (reason=="COLLINEAR_WALL_GAP" and local_thickness
+              and gap_width<=local_thickness*1.5):
+            classification,status="MISSING_WALL_GEOMETRY","SUPPORTED"
+        elif (reason=="SUPPORTED_PARTITION_ENDPOINT_JOIN" and local_thickness
+              and gap_width<=local_thickness):
+            classification,status="DRAFTING_BREAK","SUPPORTED"
+        else:
+            classification,status="AMBIGUOUS_GAP","INPUT_REQUIRED"
+        gap_id=_sid("GAP",[frame_id,sorted(host_ids),closure.get("geometry")])
+        closure.update({"gap_id":gap_id,"gap_classification":classification,
+                        "gap_status":status,"portal_evidence_ids":sorted(
+                            row["opening_evidence_id"] for row in matching),
+                        "portal_ref":None,"local_wall_thickness":local_thickness})
+        rows.append({"gap_id":gap_id,"frame_id":frame_id,"host_wall_ids":sorted(host_ids),
+                     "geometry":closure.get("geometry"),"gap_width":gap_width,
+                     "local_wall_thickness":local_thickness,"classification":classification,
+                     "status":status,"source_handles":closure.get("source_handles") or [],
+                     "portal_evidence_ids":closure["portal_evidence_ids"],
+                     "closure_id":closure.get("closure_id"),
+                     "material_geometry":"NONE","wall_authority":"NONE",
+                     "routing_authority":"NONE","portal_authority":"NONE"})
+    return sorted(rows,key=lambda row:row["gap_id"])
 
 
 def virtual_opening_closures(walls):

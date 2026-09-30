@@ -27,6 +27,7 @@ from .architectural_topology_quality import (
     building_envelope_from_walls,
     canonical_enclosure_continuity,
     canonical_space_subdivision,
+    classify_internal_wall_gaps,
     evidence_based_building_envelope,
     reconstruct_canonical_walls,
     source_supported_endpoint_closures,
@@ -326,20 +327,22 @@ def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, me
     tol=max(float(tolerance or .001)*5,1e-8); scale=metres_per_unit or 1.0
     frame_clip=box(*frame_bounds) if frame_bounds else None; leaves=[]
     for primitive in extracted["primitives"]:
-        if primitive.get("entity_type")!="LINE" or primitive.get("source_block"): continue
+        if primitive.get("entity_type")!="LINE": continue
         pts=_primitive_points(primitive)
         if len(pts)==2:
             leaf=LineString(pts)
             if frame_clip is None or frame_clip.intersects(leaf): leaves.append((primitive,leaf))
     walls=STRtree(wall_lines) if wall_lines else None; rows=[]
     for arc in extracted["primitives"]:
-        if arc.get("entity_type")!="ARC" or arc.get("source_block") or not arc.get("center") or not arc.get("radius"): continue
+        if arc.get("entity_type")!="ARC" or not arc.get("center") or not arc.get("radius"): continue
         pivot=Point(arc["center"])
         if frame_clip is not None and not frame_clip.covers(pivot): continue
         radius=float(arc["radius"]); radius_m=radius*scale
         if not .45<=radius_m<=2.5: continue
         matching=[]
         for leaf_record,leaf in leaves:
+            arc_insert=arc.get("source_insert_handle"); leaf_insert=leaf_record.get("source_insert_handle")
+            if arc_insert and leaf_insert and arc_insert!=leaf_insert: continue
             coords=list(leaf.coords)
             if min(pivot.distance(Point(coords[0])),pivot.distance(Point(coords[-1])))<=tol and .65*radius<=leaf.length<=1.35*radius:
                 matching.append((leaf_record,leaf))
@@ -348,13 +351,20 @@ def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, me
         near=[wall_lines[int(index)] for index in wall_indexes if wall_lines[int(index)].distance(pivot)<=max(tol,.20/scale)]
         if not near: continue
         leaf_record,leaf=min(matching,key=lambda row:abs(row[1].length-radius))
-        rows.append({"opening_id":_stable_id("DOOR",[source_hash,arc.get("handle"),leaf_record.get("handle")]),
+        arc_ref=arc.get("handle") or arc.get("source_insert_handle")
+        leaf_ref=leaf_record.get("handle") or leaf_record.get("source_insert_handle")
+        source_handles=sorted({str(value) for value in (arc_ref,leaf_ref) if value})
+        evidence=[{"class":"SWING_ARC","handle":arc_ref},
+                  {"class":"DOOR_LEAF","handle":leaf_ref},
+                  {"class":"HOST_WALL_PROXIMITY"}]
+        if arc.get("source_insert_handle"):
+            evidence.append({"class":"NESTED_BLOCK_ASSEMBLY","insert_handle":arc.get("source_insert_handle"),
+                             "block_path":arc.get("source_block_path") or [arc.get("source_block")]})
+        rows.append({"opening_id":_stable_id("DOOR",[source_hash,source_handles,_round_points(list(leaf.coords))]),
                      "kind":"door","geometry":{"point":[pivot.x,pivot.y],"points":list(leaf.coords),"arc_points":arc.get("points")},
-                     "source_handle":arc.get("handle"),"source_handles":sorted([arc.get("handle"),leaf_record.get("handle")]),
+                     "source_handle":arc_ref,"source_handles":source_handles,
                      "width_drawing_units":leaf.length,
-                     "evidence":[{"class":"SWING_ARC","handle":arc.get("handle")},
-                                 {"class":"DOOR_LEAF","handle":leaf_record.get("handle")},
-                                 {"class":"HOST_WALL_PROXIMITY"}],"status":"CANDIDATE"})
+                     "evidence":evidence,"status":"CANDIDATE"})
     return rows
 
 
@@ -385,12 +395,12 @@ def _opening_source_inventory(extracted, frame, metres_per_unit):
 
 def _opening_anchor(candidate):
     geometry=candidate.get("geometry") or {}
-    if geometry.get("point"):
-        return Point(geometry["point"]), None
     points=geometry.get("points") or []
     if len(points)>=2:
         line=LineString(points)
-        return line.centroid, line
+        return (Point(geometry["point"]) if geometry.get("point") else line.centroid), line
+    if geometry.get("point"):
+        return Point(geometry["point"]), None
     bounds=geometry.get("bounds")
     if bounds and len(bounds)==4:
         return box(*bounds).centroid, None
@@ -466,17 +476,19 @@ def _extract(doc):
     primitives, texts, objects, dimensions, boundary_lines, boundary_meta, boundary_rejections = [], [], [], [], [], [], []
     counts = Counter(); seen_nested = set()
 
-    def visit(entity, transform_source=None, depth=0):
+    def visit(entity, transform_source=None, depth=0, source_insert_handle=None, source_block_path=()):
         if depth > 12: return
         kind = entity.dxftype(); counts[kind] += 1; layer = _layer(entity); handle = _handle(entity)
-        record = {"entity_type": kind, "handle": handle, "layer": layer, "source_block": transform_source}
+        record = {"entity_type": kind, "handle": handle, "layer": layer, "source_block": transform_source,
+                  "source_insert_handle": source_insert_handle,
+                  "source_block_path": list(source_block_path)}
         if kind == "LINE":
             a, b = _point(entity, "start"), _point(entity, "end")
             if a and b and a != b:
                 record.update(start=a, end=b); primitives.append(record)
                 retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
                 if retained:
-                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"closed":False})
+                    boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"source_insert_handle":source_insert_handle,"source_block_path":list(source_block_path),"closed":False})
                 else: boundary_rejections.append({**record,"geometry":[a,b],"reason":reason})
         elif kind in {"LWPOLYLINE", "POLYLINE"}:
             try:
@@ -490,7 +502,7 @@ def _extract(doc):
                 if retained:
                     for a, b in zip(pts, pts[1:] + ([pts[0]] if closed else [])):
                         if a != b:
-                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"closed":closed})
+                            boundary_lines.append(LineString([a, b])); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"source_insert_handle":source_insert_handle,"source_block_path":list(source_block_path),"closed":closed})
                 else: boundary_rejections.append({**record,"geometry":pts,"reason":reason})
         elif kind == "ARC":
             try:
@@ -504,7 +516,7 @@ def _extract(doc):
                 primitives.append(record)
                 retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
                 if retained:
-                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"closed":False})
+                    boundary_lines.append(LineString(pts)); boundary_meta.append({"layer":layer,"entity_type":kind,"handle":handle,"source_block":transform_source,"source_insert_handle":source_insert_handle,"source_block_path":list(source_block_path),"closed":False})
                 else: boundary_rejections.append({**record,"geometry":pts,"reason":reason})
         elif kind in {"TEXT", "MTEXT", "ATTRIB", "ATTDEF"}:
             value = _entity_text(entity).strip(); p = _point(entity)
@@ -529,7 +541,9 @@ def _extract(doc):
             key = (handle, depth)
             if key not in seen_nested:
                 seen_nested.add(key)
-                for child in children: visit(child, name, depth + 1)
+                parent_handle=source_insert_handle or handle
+                path=tuple(source_block_path)+(name,)
+                for child in children: visit(child, name, depth + 1, parent_handle, path)
         elif kind in {"CIRCLE", "SPLINE", "HATCH", "SOLID", "TRACE", "LEADER", "MLEADER"}:
             primitives.append(record)
 
@@ -1074,7 +1088,8 @@ def _opening_point(row):
     return LineString(points).interpolate(.5, normalized=True) if len(points) >= 2 else None
 
 
-def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonical_walls=None):
+def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonical_walls=None,
+                   internal_wall_gaps=None):
     """Bind openings to a host wall and the spaces they connect.
 
     An opening with no defensible wall match is explicitly rejected.  A door
@@ -1099,6 +1114,24 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonic
         if not near_walls or near_walls[0][0] > tol:
             accepted.append({**row, "status": "REJECTED", "reason": "ORPHAN_OPENING_NO_HOST_WALL"}); continue
         host = near_walls[0][1]
+        # A nearby symbol is not a Portal.  It must coincide with a classified
+        # interruption in the same host wall topology; this keeps furniture
+        # arcs and symbols drawn over continuous walls diagnostic-only.
+        compatible={"door":{"DOOR_GAP"},"window":{"WINDOW_GAP"},
+                    "open_passage":{"OPEN_PASSAGE"}}.get(row.get("kind"),set())
+        gap_matches=[]
+        for gap in internal_wall_gaps or []:
+            geometry=gap.get("geometry") or []
+            if len(geometry)<2 or host["wall_id"] not in (gap.get("host_wall_ids") or []): continue
+            if compatible and gap.get("classification") not in compatible: continue
+            if gap.get("status") not in {"PROVEN","SUPPORTED"}: continue
+            gap_line=LineString(geometry)
+            limit=max(tol,float(gap.get("gap_width") or 0.0)*.75)
+            if gap_line.distance(point)<=limit: gap_matches.append(gap)
+        if not gap_matches:
+            accepted.append({**row,"host_wall_id":host["wall_id"],"status":"REJECTED",
+                             "reason":"OPENING_WITHOUT_CLASSIFIED_HOST_GAP"}); continue
+        host_gap=min(gap_matches,key=lambda gap:LineString(gap["geometry"]).distance(point))
         touching = sorted(space_id for space_id, poly in polygons.items() if poly.boundary.distance(point) <= tol)
         if len(touching) > 2:
             accepted.append({**row, "host_wall_id": host["wall_id"], "status": "CONFLICT",
@@ -1110,7 +1143,8 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonic
         orientation = round((math.degrees(math.atan2(dy, dx)) + 360.0) % 180.0, 3)
         geometry = row.get("geometry") or {}; pts = geometry.get("points") or []
         width = LineString(pts).length if len(pts) >= 2 else None
-        bound = {**row, "host_wall_id": host["wall_id"], "level_id": next((s.get("level_id") for s in spaces if s["physical_space_id"] in touching), None),
+        bound = {**row, "host_wall_id": host["wall_id"], "host_gap_id":host_gap["gap_id"],
+                 "level_id": next((s.get("level_id") for s in spaces if s["physical_space_id"] in touching), None),
                  "space_a": touching[0], "space_b": touching[1] if len(touching) == 2 else "EXTERIOR",
                  "orientation": orientation, "width_drawing_units": width,
                  "opening_geometry": geometry, "status": "VERIFIED"}
@@ -1245,6 +1279,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     envelope_candidate_diagnostics=[]; plan_regions=[]
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
+    internal_wall_gaps=[]
     pre_topology_objects=standardize_source_records(extracted["primitives"])
     explicit_opening_candidates=_opening_candidates(extracted,source["source_sha256"])
     for frame in frames:
@@ -1288,8 +1323,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         pre_envelope_geometric_candidates.extend(frame_geometric_candidates)
         frame_opening_candidates=list({row["opening_id"]:row for row in
                                        explicit_opening_candidates+frame_geometric_candidates}.values())
-        pre_envelope_opening_evidence.extend(_pre_envelope_opening_evidence(
-            frame_opening_candidates,frame_walls,frame,tolerance=tolerance))
+        frame_opening_evidence=_pre_envelope_opening_evidence(
+            frame_opening_candidates,frame_walls,frame,tolerance=tolerance)
+        pre_envelope_opening_evidence.extend(frame_opening_evidence)
         def in_frame_geometry(row):
             geometry=row.get("geometry") or _primitive_points(row)
             return len(geometry)>=2 and (clip is None or LineString(geometry).intersects(clip))
@@ -1319,8 +1355,16 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         continuity=canonical_enclosure_continuity(frame_walls,frame_id=frame["frame_id"])
         endpoint_closures=source_supported_endpoint_closures(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance)
-        promoted=[row for row in continuity+endpoint_closures if "ENVELOPE_SUPPORT" in row.get("roles",[])]
-        continuity_results.extend(continuity+endpoint_closures)
+        all_closures=continuity+endpoint_closures
+        internal_wall_gaps.extend(classify_internal_wall_gaps(
+            frame_walls,all_closures,frame_opening_evidence,
+            frame_id=frame["frame_id"],tolerance=tolerance))
+        promoted=[row for row in all_closures if "ENVELOPE_SUPPORT" in row.get("roles",[])]
+        subdivision_promoted=[row for row in promoted
+                              if row.get("gap_classification") in
+                                 {"DOOR_GAP","WINDOW_GAP","OPEN_PASSAGE","MISSING_WALL_GEOMETRY","DRAFTING_BREAK"}
+                              and row.get("gap_status") in {"PROVEN","SUPPORTED"}]
+        continuity_results.extend(all_closures)
         envelope,envelope_diagnostic,frame_regions=evidence_based_building_envelope(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance,
             semantic_labels=frame_labels,objects=frame_objects,junctions=wall_result["junctions"],
@@ -1338,7 +1382,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             # geometry without claiming a canonical envelope was proven.
             legacy_polygons = _polygonize_spaces(accepted, frame, tolerance)
         subdivision=canonical_space_subdivision(frame_walls,envelope,frame_id=frame["frame_id"],tolerance=tolerance,
-                                                enclosure_closures=promoted)
+                                                enclosure_closures=subdivision_promoted)
         subdivision_results.append(subdivision)
         canonical_polygons=[Polygon(row["physical_polygon"],row.get("interior_rings") or []) for row in subdivision["cells"]]
         overlap=sum(canonical_polygons[i].intersection(canonical_polygons[j]).area
@@ -1362,7 +1406,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     opening_candidates.extend(pre_envelope_geometric_candidates)
     opening_candidates=list({row["opening_id"]:row for row in opening_candidates}.values())
     openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,source["source_sha256"],tolerance,
-                                  canonical_walls=canonical_walls)
+                                  canonical_walls=canonical_walls,internal_wall_gaps=internal_wall_gaps)
     timings["topology"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     coverage=_coverage(frames,spaces)
     dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
@@ -1400,7 +1444,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         spaces.sort(key=lambda s:s["physical_space_id"]); _adjacency(spaces,tolerance)
         label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
         openings,walls=_bind_openings(opening_candidates,spaces,accepted_wall_lines,
-                                      source["source_sha256"],tolerance,canonical_walls=canonical_walls)
+                                      source["source_sha256"],tolerance,canonical_walls=canonical_walls,
+                                      internal_wall_gaps=internal_wall_gaps)
         coverage=_coverage(frames,spaces)
         dimension_reconciliation=_dimension_reconciliation(spaces,source["metres_per_unit"],tolerance)
         completeness=_completeness(frames,spaces,source["metres_per_unit"] is not None,
@@ -1479,6 +1524,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                                 "items":pre_envelope_opening_evidence,
                                                 "source_inventories":opening_source_inventories,
                                                 "authority":"SUPPORTING_EVIDENCE_ONLY"},
+             "internal_wall_gaps":{"schema":"canonical-internal-wall-gap/1.0",
+                                    "items":internal_wall_gaps,
+                                    "classification_precedes_closure":True},
              "virtual_opening_closures":[row for result in subdivision_results for row in result.get("closures",[])],
              "enclosure_barrier_graph":{"schema":"canonical-enclosure-barrier-graph/1.0",
                                          "barriers":[row for result in subdivision_results for row in result.get("barriers",[])],

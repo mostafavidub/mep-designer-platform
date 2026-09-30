@@ -4,6 +4,7 @@ from cad_engine.architectural_topology_quality import (
     building_envelope_from_walls,
     canonical_space_subdivision,
     canonical_enclosure_continuity,
+    classify_internal_wall_gaps,
     evidence_based_building_envelope,
     enumerate_envelope_candidates,
     host_portal_on_walls,
@@ -182,6 +183,23 @@ def test_source_supported_endpoint_closure_rejects_unproven_or_oversized_gap():
     assert source_supported_endpoint_closures(oversized,frame_id="F1",tolerance=.001) == []
     assert source_supported_endpoint_closures(single,frame_id="F1",tolerance=.001) == []
     assert source_supported_endpoint_closures(low,frame_id="F1",tolerance=.001) == []
+
+
+def test_gap_classification_precedes_closure_and_fails_closed_without_portal_evidence():
+    walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    gaps=classify_internal_wall_gaps(walls,closures,[],frame_id="F1",tolerance=.001)
+    assert gaps[0]["classification"]=="AMBIGUOUS_GAP"
+    assert gaps[0]["status"]=="INPUT_REQUIRED"
+    assert closures[0]["portal_authority"]=="NONE"
+
+
+def test_endpoint_closure_never_reuses_one_endpoint_for_multiple_synthetic_joins():
+    walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(4.2,0),(8,0)),
+           _proven_wall("C",(4.3,0),(9,0))]
+    rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    endpoints=[tuple(point) for row in rows for point in row["geometry"]]
+    assert len(endpoints)==len(set(endpoints))
 
 
 def _site_and_building_walls():
