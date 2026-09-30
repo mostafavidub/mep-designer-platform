@@ -184,13 +184,12 @@ def test_reference_only_frames_do_not_duplicate_spaces_or_block_authoritative_fl
     assert result["relevant_space_count"] == 1
 
 
-def test_door_binds_host_wall_and_two_spaces(tmp_path):
+def test_door_symbol_on_continuous_wall_is_rejected(tmp_path):
     model=reconstruct_architecture(_drawing_with_opening(tmp_path/"door.dxf"))
     door=model["doors"][0]
-    assert door["status"]=="VERIFIED"
+    assert door["status"]=="REJECTED"
     assert door["host_wall_id"].startswith("WALL-")
-    assert door["space_a"] != door["space_b"] and door["space_b"] != "EXTERIOR"
-    assert door["orientation"] == 90.0
+    assert door["reason"]=="OPENING_WITHOUT_CLASSIFIED_HOST_GAP"
 
 
 def test_orphan_door_is_rejected_and_blocks_mechanical(tmp_path):
@@ -224,11 +223,11 @@ def test_dimension_conflict_is_never_silently_resolved(tmp_path):
                for row in model["dimension_reconciliation"]["rows"])
 
 
-def test_anonymous_leaf_arc_and_host_wall_reconstruct_door_without_merging_rooms(tmp_path):
+def test_anonymous_leaf_arc_on_continuous_wall_remains_unqualified(tmp_path):
     model=reconstruct_architecture(_drawing_with_anonymous_door(tmp_path/"anonymous-door.dxf"))
     geometric=[door for door in model["doors"] if any(e["class"]=="SWING_ARC" for e in door["evidence"])]
-    assert len(geometric)==1 and geometric[0]["status"]=="VERIFIED"
-    assert geometric[0]["space_a"] != geometric[0]["space_b"]
+    assert len(geometric)==1 and geometric[0]["status"]=="REJECTED"
+    assert geometric[0]["reason"]=="OPENING_WITHOUT_CLASSIFIED_HOST_GAP"
     assert len(model["physical_spaces"])==2
 
 

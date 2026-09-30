@@ -232,3 +232,25 @@ cannot promote that geometry to `VERIFIED`.
 Fasihi Ground proves a high-confidence outer envelope after this change, but
 does not yet prove its internal partitions or any physical portals.  Therefore
 the implementation remains fail-closed and is not staging-qualified.
+
+### Internal wall and portal qualification (SWCIS 4.58.0)
+
+Internal wall reconstruction now retains source-admission evidence and marks a
+single-line partition recovered by repeated local enclosure support as
+`SUPPORTED_PARTITION`; this is evidence, not material promotion.  Endpoint
+joins are selected greedily so one physical endpoint cannot participate in
+multiple synthetic closures.  Every proposed join receives a stable gap record
+before it may enter subdivision, classified as door, window, open passage,
+missing wall geometry, drafting break, or unresolved ambiguity.
+
+Nested block geometry retains its top-level insert handle and block path so an
+exploded leaf-and-swing assembly is auditable after transformation.  A symbol
+near a wall is still insufficient: final Door, Window, Open Passage and access
+authority require a compatible, supported interruption on the selected host
+wall.  A symbol over continuous wall material is rejected.  Windows never
+create access, ambiguous gaps create neither closure nor portal, and all
+derived closure geometry remains non-material with no routing authority.
+
+Fasihi Ground still has unresolved internal-wall topology and no qualified
+physical portals after this bounded change.  Its completeness therefore stays
+`CONFLICT`; deployment and Mechanical authority remain prohibited.
