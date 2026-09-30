@@ -8,17 +8,24 @@
     "schema": {"const": "architectural-topology-golden/1.0"},
     "case_id": {"type": "string"},
     "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "review_status": {"enum": ["DRAFT", "REVIEWED", "APPROVED"]},
+    "review_status": {"enum": ["DRAFT", "ASSISTED_REVIEW_COMPLETE", "COMPLETENESS_REVIEW_COMPLETE", "REVIEWED", "APPROVED"]},
+    "annotation_method": {"enum": ["INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW", "HUMAN_CURATED_PREDICTION_ASSISTED_GOLDEN"]},
+    "proposals": {"type": "object", "properties": {"spaces": {"type": "array", "items": {"$ref": "#/$defs/review_space_proposal"}}}},
+    "proposal_review_log": {"type": "array"},
+    "completeness": {"type": "object"},
+    "reviewer_completeness": {"type": "object"},
+    "approval_gate": {"type": "object"},
     "review": {
       "type": "object",
       "properties": {
-        "method": {"const": "INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW"},
+        "method": {"enum": ["INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW", "HUMAN_CURATED_PREDICTION_ASSISTED_GOLDEN"]},
         "annotator": {"type": ["string", "null"]},
         "annotation_date": {"type": ["string", "null"]},
         "reviewer": {"type": ["string", "null"]},
         "reviewed_at": {"type": ["string", "null"]},
         "approved_at": {"type": ["string", "null"]},
-        "runtime_output_visible_during_annotation": {"const": false}
+        "runtime_output_visible_during_annotation": {"type": "boolean"},
+        "independent_source_only_pass_completed": {"type": "boolean"}
       },
       "required": ["method", "annotator", "annotation_date", "reviewer", "reviewed_at", "approved_at", "runtime_output_visible_during_annotation"]
     },
@@ -47,6 +54,14 @@
     "access_connectivity": {"type": "array", "items": {"type": "object", "required": ["space_a", "space_b", "portal_id"], "properties": {"space_a": {"type": "string"}, "space_b": {"type": "string"}, "portal_id": {"type": "string"}}}}
   },
   "$defs": {
+    "review_space_proposal": {
+      "type": "object",
+      "properties": {
+        "proposal_id": {"type": "string"},
+        "disposition": {"enum": ["UNREVIEWED", "CORRECT", "WRONG", "EDITED", "UNSURE"]},
+        "rejection_class": {"type": ["string", "null"], "enum": [null, "COLUMN", "WALL_OR_WALL_MASS", "STRUCTURAL_ELEMENT", "FURNITURE", "VEHICLE", "GRID_OR_AXIS", "ANNOTATION_OR_DIMENSION", "STAIR_GRAPHICS", "FIXTURE_OR_EQUIPMENT_GRAPHICS", "OTHER_NON_SPACE", "UNKNOWN_NON_SPACE"]}
+      }
+    },
     "point": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}},
     "ring": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/point"}},
     "draft_ring": {"type": "array", "items": {"$ref": "#/$defs/point"}},

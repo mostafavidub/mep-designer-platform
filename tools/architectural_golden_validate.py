@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Read-only structural validation for human architectural Golden files."""
 from __future__ import annotations
-import argparse, json
+import argparse, json, sys
 from hashlib import sha256
 from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path: sys.path.insert(0,str(ROOT))
 from shapely.geometry import Point, Polygon, box
+from tools.architectural_golden_review import METHOD, REJECTION_CLASSES, approval_errors, regenerate_topology
 
 
-STATES=("DRAFT","REVIEWED","APPROVED")
+STATES=("DRAFT","ASSISTED_REVIEW_COMPLETE","COMPLETENESS_REVIEW_COMPLETE","REVIEWED","APPROVED")
 
 
 def validate(golden,source_bytes=None):
@@ -26,10 +29,21 @@ def validate(golden,source_bytes=None):
     if len(bounds)!=4 or bounds[2]<=bounds[0] or bounds[3]<=bounds[1]: errors.append("invalid_frame_bounds"); frame=None
     else: frame=box(*bounds)
     review=golden["review"]
-    if review.get("method")!="INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW": errors.append("invalid_review_method")
-    if review.get("runtime_output_visible_during_annotation") is not False: errors.append("independence_violation")
+    method=golden.get("annotation_method") or review.get("method")
+    if method not in {"INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW",METHOD}: errors.append("invalid_review_method")
+    if method=="INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW" and review.get("runtime_output_visible_during_annotation") is not False: errors.append("independence_violation")
     if state in {"REVIEWED","APPROVED"} and (not review.get("annotator") or not review.get("annotation_date")): errors.append("annotation_identity_missing")
     if state=="APPROVED" and (not review.get("reviewer") or not review.get("reviewed_at") or not review.get("approved_at")): errors.append("approval_identity_missing")
+    if state=="APPROVED" and method==METHOD:
+        errors.extend(approval_errors(golden))
+    for proposal in (golden.get("proposals") or {}).get("spaces", []):
+        rejection=proposal.get("rejection_class")
+        if rejection is not None and rejection not in REJECTION_CLASSES:
+            errors.append(f"invalid_rejection_class:{proposal.get('proposal_id')}")
+        if rejection and proposal.get("disposition")!="WRONG":
+            errors.append(f"rejection_class_on_accepted_space:{proposal.get('proposal_id')}")
+        if proposal.get("disposition")=="WRONG" and not rejection:
+            (errors if state=="APPROVED" else warnings).append(f"missing_rejection_class:{proposal.get('proposal_id')}")
     ids=[]; polygons={}
     for row in golden["spaces"]:
         identifier=row.get("golden_space_id")
@@ -67,8 +81,14 @@ def validate(golden,source_bytes=None):
         if edge.get("portal_id") not in portal_ids: errors.append(f"invalid_access_portal:{edge.get('portal_id')}")
     for zone in golden["functional_zones"]:
         if zone.get("physical_space_id") not in ids: errors.append(f"zone_unknown_space:{zone.get('golden_zone_id')}")
-    if state in {"DRAFT","REVIEWED"}: warnings.append("official_scoring_disabled_until_approved")
+    if state!="APPROVED": warnings.append("official_scoring_disabled_until_approved")
     if state=="APPROVED" and not golden["spaces"]: errors.append("approved_golden_requires_spaces")
+    if method==METHOD:
+        original_adj=golden.get("geometric_adjacency") or []
+        original_access=golden.get("access_connectivity") or []
+        clone=json.loads(json.dumps(golden)); regenerate_topology(clone)
+        if state=="APPROVED" and clone["geometric_adjacency"]!=original_adj: errors.append("stale_geometric_adjacency")
+        if state=="APPROVED" and clone["access_connectivity"]!=original_access: errors.append("stale_access_connectivity")
     return {"status":"PASS" if not errors else "FAIL","review_status":state,"official_scoring_enabled":state=="APPROVED" and not errors,
             "errors":errors,"warnings":warnings,"counts":{"spaces":len(golden["spaces"]),"zones":len(golden["functional_zones"]),"portals":len(golden["portals"])}}
 

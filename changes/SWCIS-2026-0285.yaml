@@ -1,0 +1,36 @@
+{
+  "change_id": "SWCIS-2026-0285",
+  "summary": "Replace source-only architectural Golden authoring with a prediction-assisted, source-complete, independently reviewed and approval-gated workflow without changing reconstruction authority.",
+  "requester": "project-owner",
+  "change_types": ["governance", "test", "documentation", "versioning", "drawing_output"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001", "MEP-ARCH-PRESERVE-001"],
+  "impacted_modules": ["cad_designer", "routing", "equipment", "qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "cad_designer": "Read-only export of existing canonical envelope, space, label and portal proposals; reconstruction code and authority are unchanged.",
+    "routing": "Verified not affected; access edges in Golden files are review evidence only.",
+    "equipment": "Verified not affected; object recognition and engineering selection are unchanged.",
+    "qa": "Adds positive, destructive, geometry, completeness, independence and approval-gate tests.",
+    "manifest": "Adds review provenance and automatic build identity to generated Golden-review artifacts.",
+    "ui_api": "Adds a self-contained local reviewer UI with proposal review, geometry editing, source-only completeness and independent approval stages.",
+    "docs": "Documents the Golden Review v2 contract, workflow and authority boundary.",
+    "versioning": "SWCIS 4.55.0 -> 4.56.0 for the governed prediction-assisted Golden review workflow.",
+    "governance": "Extends the existing architectural-topology Golden contract compatibly; official scoring remains APPROVED-only.",
+    "deployment": "No merge, staging or production deployment is authorized."
+  },
+  "evidence": {
+    "traceability": ["canonical baseline proposal -> human disposition/edit -> source-only completeness -> independent review -> APPROVED Golden -> official benchmark"],
+    "tests": ["tests/test_architectural_golden_review_v2.py", "tests/test_architectural_golden_benchmark.py"],
+    "docs": ["docs/ARCHITECTURAL_GOLDEN_REVIEW_V2.md"],
+    "version_bump": ["standards/swcis/version_manifest.yaml: 4.55.0 -> 4.56.0"],
+    "migration": ["Additive fields in architectural-topology-golden/1.0; existing DRAFT files remain readable."],
+    "golden_regression": ["Synthetic complete approval case", "synthetic unresolved-critical and self-review rejection cases", "private Fasihi Ground package remains outside Git"],
+    "semantic_diff": ["Prediction assistance is review input, never Golden truth", "source-only completeness and independent approval become mandatory for v2 approval"],
+    "artifact_diff": ["Self-contained review.html plus golden.json, manifest.json and reviewer instructions"],
+    "numeric_diff": ["Adjacency and access edges are deterministically regenerated from accepted geometry"],
+    "contract_diff": ["HUMAN_CURATED_PREDICTION_ASSISTED_GOLDEN adds proposal dispositions, sector completeness, reviewer identity and approval gates while preserving schema identity"],
+    "deployment_plan": ["branch -> focused tests -> full regression -> stacked protected PR; no deployment"],
+    "rollback_plan": ["Revert the protected commit; legacy source-only package and existing Golden files remain readable."]
+  },
+  "risk": {"likelihood": 3, "severity": 4, "detectability": 2, "score": 24, "rationale": "Incorrect approval could contaminate benchmark truth; source-only completeness, independent review, fail-closed validation and APPROVED-only scoring reduce the risk."},
+  "waiver": null
+}
