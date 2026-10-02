@@ -621,6 +621,29 @@
       ]
     },
     {
+      "id": "architecture_input_foundation_v2",
+      "status": "LOCKED",
+      "requirements": [
+        "multi_input_one_canonical_model",
+        "independent_read_only_validation",
+        "no_authority_promotion",
+        "critical_errors_never_score_masked",
+        "immutable_stale_safe_snapshot",
+        "bounded_review_no_geometry_authority",
+        "deterministic_non_production_planha_package",
+        "blind_hard_gated_benchmark",
+        "production_consumers_unchanged"
+      ],
+      "tests": [
+        "test_adapter_preserves_meaning_is_deterministic_and_does_not_mutate",
+        "test_validator_valid_model_is_read_only_and_no_score_masking",
+        "test_validator_destructive_mutations",
+        "test_snapshot_identity_and_staleness",
+        "test_planha_package_round_trip_is_deterministic_and_corruption_fails",
+        "test_benchmark_is_deterministic_and_hard_gates_cannot_be_masked"
+      ]
+    },
+    {
       "id": "semantic_dimensioning",
       "status": "LOCKED",
       "requirements": [

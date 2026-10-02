@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-architecture-review/1.0",
+  "type": "object",
+  "required": ["schema", "review_item_id", "source_sha256", "frame_or_level_id", "object_or_region_id", "geometry_fingerprint", "evidence_fingerprint", "candidate_interpretations", "allowed_answers", "impact", "review_scope", "review_authority", "review_fingerprint", "manual_geometry_authority"],
+  "properties": {"schema": {"const": "planha-architecture-review/1.0"}, "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "candidate_interpretations": {"type": "array", "items": {"type": "string"}}, "allowed_answers": {"type": "array", "items": {"type": "string"}}, "ai_recommendation_authority": {"const": "ADVISORY_ONLY"}, "review_authority": {"const": "HUMAN_SOURCE_INTERPRETATION"}, "manual_geometry_authority": {"const": false}}
+}

@@ -825,6 +825,9 @@
         "semantic_coverage_report",
         "mep_preanalysis",
         "visual_overlay_qa"
+        ,"canonical_architecture_v2"
+        ,"validated_architecture_snapshot"
+        ,"architecture_validation_report"
       ],
       "engines": [
         "cad_engine/plan_segmentation.py",
@@ -833,6 +836,12 @@
       "cad_engine/pre_topology_object_classifier.py",
       "cad_engine/architectural_topology_quality.py",
       "cad_engine/architectural_gap_review.py",
+      "cad_engine/architecture_contract.py",
+      "cad_engine/architecture_validator.py",
+      "cad_engine/architecture_snapshot.py",
+      "cad_engine/architecture_review_contract.py",
+      "cad_engine/planha_package.py",
+      "cad_engine/architecture_benchmark.py",
         "cad_engine/architectural_semantic_scout.py",
         "app/architecture_reconstruction_v1.py",
         "app/project_mechanical_model.py",
@@ -892,6 +901,12 @@
         "frame_visual_overlay_qa",
         "exact_source_reopen_and_completeness",
         "score_exactly_100"
+        ,"multi_input_one_canonical_architecture"
+        ,"independent_read_only_architecture_validation"
+        ,"critical_architecture_errors_never_score_masked"
+        ,"validated_snapshot_immutable_and_stale_safe"
+        ,"bounded_review_never_material_geometry_authority"
+        ,"vision_support_only_never_engineering_authority"
       ],
       "regression_tests": [
       "tests/test_architectural_space_engine.py",
@@ -903,6 +918,7 @@
         "tests/test_fixture_recognition_v14.py",
         "tests/test_plan_frame_separation.py",
         "tests/test_mechanical_pre_submission_delivery.py"
+        ,"tests/test_architecture_input_foundation_v2.py"
       ],
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
@@ -911,6 +927,10 @@
       "docs/adr/ADR-PRE-TOPOLOGY-ARCHITECTURAL-OBJECT-STANDARDIZATION.md",
         "docs/ARCHITECTURE_SPACE_EQUIPMENT_100_STANDARD.md",
         "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+        ,"docs/ARCHITECTURE_INPUT_FOUNDATION_V2.md"
+        ,"docs/ARCHITECTURE_BENCHMARK_STANDARD.md"
+        ,"docs/PLANHA_PACKAGE_PROTOTYPE.md"
+        ,"docs/adr/ADR-ARCHITECTURE-INPUT-FOUNDATION-V2.md"
       ]
     },
     {
