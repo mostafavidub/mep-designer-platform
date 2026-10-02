@@ -2,9 +2,9 @@
   "change_id": "SWCIS-2026-0291",
   "summary": "Add the experimental input-independent Canonical Architecture v2 contract, independent validator, immutable snapshot, deterministic Planha package prototype, and architecture benchmark foundation without changing production consumers.",
   "requester": "project-owner",
-  "change_types": ["architecture", "rule", "schema", "test", "documentation", "governance", "versioning", "migration"],
+  "change_types": ["architecture", "rule", "schema", "test", "documentation", "drawing_output", "governance", "versioning", "migration"],
   "changed_rule_ids": ["MEP-ARCH-RECOG-001"],
-  "impacted_modules": ["pmm", "cad_designer", "routing", "qa", "manifest", "ui_api", "docs", "versioning", "governance", "migration", "deployment"],
+  "impacted_modules": ["pmm", "cad_designer", "routing", "qa", "manifest", "ui_api", "docs", "versioning", "governance", "migration", "deployment", "detail_riser", "equipment", "manufacturer_selector", "planner", "questionnaire", "rule_book", "sizing"],
   "impact_notes": {
     "pmm": "Defines an experimental validated architecture input contract; production PMM consumption remains unchanged.",
     "cad_designer": "Adds a read-only adapter over current canonical reconstruction output; producer behavior is unchanged.",
@@ -17,6 +17,13 @@
     "governance": "Extends MEP-ARCH-RECOG-001 traceability without weakening its locked release gate.",
     "migration": "Documents reader-before-writer migration from canonical-architectural-model/1.0; migration is not activated.",
     "deployment": "No merge or deployment is authorized."
+    ,"detail_riser": "No runtime change; future downstream dependency is declared by the architecture recognition rule closure."
+    ,"equipment": "No runtime change; future downstream dependency is declared by the architecture recognition rule closure."
+    ,"manufacturer_selector": "No runtime change; canonical snapshot consumption is deferred."
+    ,"planner": "No runtime change; canonical snapshot consumption is deferred."
+    ,"questionnaire": "No runtime change; bounded architecture review is a contract only."
+    ,"rule_book": "No rulebook content changes; the existing locked architecture recognition rule remains authoritative."
+    ,"sizing": "No runtime change; sizing consumers remain on current production contracts."
   },
   "evidence": {
     "traceability": ["raw source identity -> adapter candidate -> canonical v2 -> independent validator -> immutable snapshot -> future downstream consumer"],
