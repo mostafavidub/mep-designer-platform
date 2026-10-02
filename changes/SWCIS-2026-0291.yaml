@@ -1,0 +1,37 @@
+{
+  "change_id": "SWCIS-2026-0291",
+  "summary": "Add the experimental input-independent Canonical Architecture v2 contract, independent validator, immutable snapshot, deterministic Planha package prototype, and architecture benchmark foundation without changing production consumers.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "rule", "schema", "test", "documentation", "governance", "versioning", "migration"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001"],
+  "impacted_modules": ["pmm", "cad_designer", "routing", "qa", "manifest", "ui_api", "docs", "versioning", "governance", "migration", "deployment"],
+  "impact_notes": {
+    "pmm": "Defines an experimental validated architecture input contract; production PMM consumption remains unchanged.",
+    "cad_designer": "Adds a read-only adapter over current canonical reconstruction output; producer behavior is unchanged.",
+    "routing": "Documents future validated-snapshot dependency; no routing code or authority changes.",
+    "qa": "Adds independent validation, destructive mutation tests, benchmark hard gates and deterministic package tests.",
+    "manifest": "Adds immutable snapshot and package manifests with content hashes.",
+    "ui_api": "No public route or UI changes; internal library only.",
+    "docs": "Adds input strategy, contract, validator, snapshot, package and benchmark documentation.",
+    "versioning": "Adds backward-compatible governance contracts and bumps SWCIS 4.60.0 to 4.61.0.",
+    "governance": "Extends MEP-ARCH-RECOG-001 traceability without weakening its locked release gate.",
+    "migration": "Documents reader-before-writer migration from canonical-architectural-model/1.0; migration is not activated.",
+    "deployment": "No merge or deployment is authorized."
+  },
+  "evidence": {
+    "traceability": ["raw source identity -> adapter candidate -> canonical v2 -> independent validator -> immutable snapshot -> future downstream consumer"],
+    "tests": ["schema, adapter invariants, validator mutation matrix, snapshot invalidation, package corruption, benchmark hard gates, backward compatibility"],
+    "docs": ["architecture input strategy ADR and foundation standard"],
+    "version_bump": ["SWCIS 4.60.0 -> 4.61.0"],
+    "migration": ["experimental additive contract; production readers and writers remain on current behavior"],
+    "golden_regression": ["synthetic fixtures only; private customer data excluded; held-out truth remains sealed"],
+    "semantic_diff": ["input format is not architecture authority", "validation cannot be bypassed", "authority dimensions are independent"],
+    "artifact_diff": ["new internal schemas, deterministic snapshot/package artifacts and benchmark reports"],
+    "numeric_diff": ["no production numeric threshold changes"],
+    "contract_diff": ["new experimental planha-canonical-architecture/2.0 and planha-validated-architecture-snapshot/1.0"],
+    "deployment_plan": ["stacked PR and CI only; no production activation"],
+    "rollback_plan": ["remove the experimental modules/contracts or redeploy the dependency SHA; production path is unchanged"]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 2, "score": 30, "rationale": "The foundation is high-impact but isolated from production consumers and covered by destructive validation tests."},
+  "waiver": null
+}

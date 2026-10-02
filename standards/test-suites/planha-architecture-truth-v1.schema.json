@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-architecture-truth/1.0",
+  "type": "object",
+  "required": ["schema", "source_sha256", "review_source", "review_version", "cohort", "blind_output_sealed", "levels", "physical_spaces", "portals", "voids", "access_graph", "ambiguities"],
+  "properties": {"schema": {"const": "planha-architecture-truth/1.0"}, "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "cohort": {"enum": ["DEVELOPMENT", "VALIDATION", "EVALUATION_HELD_OUT"]}, "blind_output_sealed": {"type": "boolean"}, "levels": {"type": "array"}, "physical_spaces": {"type": "array"}, "functional_zones": {"type": "array"}, "walls": {"type": "array"}, "portals": {"type": "array"}, "voids": {"type": "array"}, "adjacency_graph": {"type": "array"}, "access_graph": {"type": "array"}, "dimensions": {"type": "array"}, "ambiguities": {"type": "array"}}
+}
