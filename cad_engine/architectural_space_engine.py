@@ -619,6 +619,10 @@ def _detected_frames(path, source_hash, fallback):
         frames.append({"frame_id": _stable_id("FRAME", [source_hash, plan.get("plan_id"), bounds]),
                        "frame_type": frame_type, "bounds": bounds, "level_candidate": plan.get("level"),
                        "represented_levels": plan.get("represented_levels") or [],
+                       "title_text": plan.get("title_text") or [],
+                       "title_evidence": plan.get("title_evidence") or [],
+                       "title_source_handles": sorted({row.get("source_handle") for row in
+                                                        (plan.get("title_evidence") or []) if row.get("source_handle")}),
                        "source_plan_id": plan.get("plan_id"), "mechanical_role": role,
                        "scope_relevance": "MECHANICAL_AUTHORITY" if relevant else "REFERENCE_ONLY",
                        "confidence": min(1.0, float(plan.get("frame_confidence") or 0)/100.0),
@@ -1081,7 +1085,8 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded
     dims = _associate_dimensions(poly, extracted["dimensions"], metres_per_unit)
     evidence = [{"class": "CAD_TOPOLOGY", "source_handles": sorted({p.get("handle") for p in extracted["primitives"] if p.get("handle")})}]
     evidence.extend(e for values in semantic.values() for e in values)
-    return {"space_id": physical_id, "physical_space_id": physical_id, "level_id": frame.get("level_candidate"), "frame_id": frame["frame_id"],
+    return {"space_id": physical_id, "physical_space_id": physical_id, "level_id": frame.get("level_candidate"),
+            "represented_level_ids": sorted(set(frame.get("represented_levels") or [])), "frame_id": frame["frame_id"],
             "category": category, "use": category, "subtype": None, "polygon": ring, "interior_rings":holes,
             "centroid": [poly.centroid.x, poly.centroid.y], "area_m2": poly.area * scale * scale if scale else None,
             "geometric_area_drawing_units": poly.area, "perimeter_m": poly.length * scale if scale else None,

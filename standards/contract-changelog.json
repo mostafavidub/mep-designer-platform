@@ -1587,6 +1587,34 @@
         "forward": "Regenerate applicable architectural drawing artifacts from approved semantic geometry; no persisted project data rewrite.",
         "rollback": "Revert the protected merge commit; no destructive data migration."
       }
+    },
+    {
+      "id": "GOV-2026-048",
+      "status": "APPROVED",
+      "summary": "Recover deterministic Canonical Architecture semantic identity, collision-free world-space Wall identity, represented-level and Persian title propagation, and fail-closed authority/status consistency without changing recognition geometry or production consumers.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2",
+        "architecture_preflight_review_engine"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to perform Architecture Canonical Identity, Determinism and Level/Title Propagation Recovery on the exact stacked dependency"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "development_pilot_replay": "must_pass",
+        "geometry_unchanged": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Adopt planha-canonical-identity/2.1, regenerate corrected entity identity, mark identity-bound reviews stale and snapshots superseded only when governed meaning changes; production activation remains a separate decision.",
+        "rollback": "Revert the stacked branch before activation; never preserve a collision-prone legacy ID as canonical authority."
+      }
     }
   ]
 }

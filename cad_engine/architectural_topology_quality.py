@@ -20,6 +20,12 @@ def _sid(prefix, value):
     return f"{prefix}-" + sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:16].upper()
 
 
+def _canonical_points(points, precision=9):
+    clean=[(round(float(x),precision),round(float(y),precision)) for x,y,*_ in points]
+    reverse=list(reversed(clean))
+    return clean if clean<=reverse else reverse
+
+
 REGION_ROLES = {"BUILDING_INTERIOR", "SEMI_EXTERIOR", "SITE_EXTERIOR", "COURTYARD", "LIGHTWELL", "VOID", "UNBOUNDED_EXTERIOR", "UNKNOWN"}
 _INTERIOR_SEMANTICS = {"bedroom", "master_bedroom", "living", "reception", "dining", "kitchen", "kitchenette", "bathroom", "shower", "toilet", "entrance", "vestibule", "shoe_area", "corridor", "lobby", "closet", "storage", "laundry", "utility", "stair", "stair_landing", "elevator", "elevator_lobby", "shaft", "duct", "pipe_shaft", "mechanical_shaft", "electrical_shaft", "office", "shop", "commercial", "mechanical_room", "electrical_room", "boiler_room", "janitor", "common_room"}
 _WET_SERVICE_SEMANTICS = {"bathroom", "shower", "toilet", "kitchen", "kitchenette", "laundry", "utility", "shaft", "duct", "pipe_shaft", "mechanical_shaft", "electrical_shaft"}
@@ -117,7 +123,9 @@ def _project_interval(line, origin, direction):
 
 def _pair_wall_faces(walls, clusters, tol):
     """Greedily form local double-face walls without a global thickness default."""
-    if not walls or not clusters: return walls
+    if not walls or not clusters:
+        for wall in walls: wall.pop("_identity_sort_key",None)
+        return walls
     medians=[float(c["median_thickness"]) for c in clusters]
     axes=[LineString(w["centerline"]) for w in walls]; tree=STRtree(axes)
     candidates=[]
@@ -176,7 +184,10 @@ def _pair_wall_faces(walls, clusters, tol):
             cursor=max(cursor,end)
         if cursor<hi-tol: occupied.append([cursor,hi])
         handles=sorted(set(a.get("source_handles",[])+b.get("source_handles",[])))
-        wid=_sid("WALL",[a["frame_id"],"DOUBLE_FACE",a["wall_id"],b["wall_id"]])
+        center_points=_canonical_points(center.coords)
+        legacy_sort_id=_sid("WALL",[a["frame_id"],"DOUBLE_FACE",a.get("_identity_sort_key",a["wall_id"]),
+                                     b.get("_identity_sort_key",b["wall_id"])])
+        wid=_sid("WALL",[a["frame_id"],"DOUBLE_FACE",sorted([a["wall_id"],b["wall_id"]]),center_points])
         paired.append({"wall_id":wid,"frame_id":a["frame_id"],"level_id":None,"wall_type":"UNKNOWN",
                        "representation":"DOUBLE_FACE","centerline":[list(p) for p in center.coords],
                        "face_a":a["centerline"],"face_b":b["centerline"],
@@ -187,9 +198,12 @@ def _pair_wall_faces(walls, clusters, tol):
                        "interruptions":interruptions,"candidate_openings":[],"confidence":.9,"status":"HIGH_CONFIDENCE",
                        "evidence":[{"class":"PAIRED_WALL_FACES","face_wall_ids":[a["wall_id"],b["wall_id"]],
                                     "measured_thickness":distance,"local_cluster":cluster}],
-                       "derived_geometry_provenance":{"method":"LOCAL_FACE_PAIRING","tolerance":tol}})
+                       "derived_geometry_provenance":{"method":"LOCAL_FACE_PAIRING","tolerance":tol},
+                       "_identity_sort_key":legacy_sort_id})
     paired.extend(wall for index,wall in enumerate(walls) if index not in used)
-    return sorted(paired,key=lambda wall:wall["wall_id"])
+    paired.sort(key=lambda wall:wall.get("_identity_sort_key",wall["wall_id"]))
+    for wall in paired: wall.pop("_identity_sort_key",None)
+    return paired
 
 
 def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_per_unit=None):
@@ -265,7 +279,10 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
             evidence_states=sorted({rows[i].get("wall_evidence_state") for i in group
                                     if rows[i].get("wall_evidence_state")})
             recovered=any(rows[i].get("admission_trace") for i in group)
-            wid=_sid("WALL",[frame_id,round(angle,3),[(round(a,6),round(b,6)) for a,b,_ in merged],handles])
+            center_points=_canonical_points(center.coords)
+            legacy_wid=_sid("WALL",[frame_id,round(angle,3),
+                                     [(round(a,6),round(b,6)) for a,b,_ in merged],handles])
+            wid=_sid("WALL",[frame_id,"WORLD_AXIS",center_points,handles])
             walls.append({"wall_id":wid,"frame_id":frame_id,"level_id":None,"wall_type":"UNKNOWN",
                           "representation":"COMPOSITE" if len(group)>1 else "SINGLE_LINE",
                           "centerline":[list(p) for p in center.coords],"face_a":None,"face_b":None,
@@ -280,7 +297,8 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
                           "evidence":[{"class":"COLLINEAR_FRAGMENT_STITCHING","source_interval_count":len(merged),"gap_count":len(gaps)},
                                       {"class":"SOURCE_WALL_ADMISSION","states":evidence_states,
                                        "iteratively_recovered":recovered}],
-                          "derived_geometry_provenance":{"method":"ORIENTATION_OFFSET_BUCKET_AND_PROJECTED_INTERVALS","tolerance":tol}})
+                          "derived_geometry_provenance":{"method":"ORIENTATION_OFFSET_BUCKET_AND_PROJECTED_INTERVALS","tolerance":tol},
+                          "_identity_sort_key":legacy_wid})
     walls=_pair_wall_faces(walls,clusters,tol)
     # Junction graph from wall axes.
     axes=[LineString(w["centerline"]) for w in walls]; atree=STRtree(axes) if axes else None;junctions=[]

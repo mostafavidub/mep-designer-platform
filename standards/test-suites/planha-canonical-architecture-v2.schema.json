@@ -8,11 +8,35 @@
     "schema": {"const": "planha-canonical-architecture/2.0"},
     "contract_status": {"const": "EXPERIMENTAL_INTERNAL"},
     "canonical_model_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "source": {"type": "object", "required": ["source_type", "source_sha256", "source_revision_identity", "adapter"], "properties": {"source_type": {"enum": ["RAW_DXF", "CERTIFIED_DXF", "PLANHA_PACKAGE", "IFC"]}, "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "source_revision_identity": {"type": "string"}, "effective_scale": {"type": ["number", "null"]}, "units": {}, "coordinate_system": {"type": "object"}, "adapter": {"type": "object", "required": ["adapter_id", "adapter_version"]}}, "additionalProperties": true},
+    "source": {
+      "type": "object",
+      "required": ["source_type", "source_sha256", "source_revision_identity", "adapter"],
+      "properties": {
+        "source_type": {"enum": ["RAW_DXF", "CERTIFIED_DXF", "PLANHA_PACKAGE", "IFC"]},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_revision_identity": {"type": "string"},
+        "effective_scale": {"type": ["number", "null"]},
+        "units": {},
+        "coordinate_system": {"type": "object"},
+        "adapter": {"type": "object", "required": ["adapter_id", "adapter_version"]}
+      },
+      "additionalProperties": true
+    },
     "levels": {"type": "array", "items": {"$ref": "#/$defs/identified"}},
-    "frames": {"type": "array", "items": {"type": "object", "required": ["frame_id", "level_id", "source_identity", "status"]}},
+    "frames": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["frame_id", "level_id", "primary_level_id", "represented_level_ids", "level_relationship", "source_identity", "status", "title_evidence"],
+        "properties": {
+          "represented_level_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "level_relationship": {"enum": ["SINGLE", "TYPICAL", "ROOF", "ROOF_HEADROOM", "UNRESOLVED"]},
+          "title_evidence": {"type": "object", "required": ["raw_text", "normalized_interpretation", "represented_level_ids", "source_handles", "provenance"]}
+        }
+      }
+    },
     "walls": {"type": "array", "items": {"type": "object", "required": ["wall_id", "frame_id", "centerline", "source_handles", "authority"], "properties": {"centerline": {"$ref": "#/$defs/line"}}}},
-    "physical_spaces": {"type": "array", "items": {"type": "object", "required": ["physical_space_id", "frame_id", "polygon", "interior_rings", "topology_status", "authority"], "properties": {"polygon": {"$ref": "#/$defs/ring"}}}},
+    "physical_spaces": {"type": "array", "items": {"type": "object", "required": ["physical_space_id", "frame_id", "polygon", "interior_rings", "topology_status", "authority"], "properties": {"polygon": {"$ref": "#/$defs/ring"}, "represented_level_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}}},
     "functional_zones": {"type": "array", "items": {"type": "object", "required": ["zone_id", "physical_space_id", "boundary_status", "semantic_status", "authority"]}},
     "apertures": {"type": "array", "items": {"type": "object", "required": ["aperture_id", "frame_id", "status", "host_wall_ids"]}},
     "portals": {"type": "array", "items": {"type": "object", "required": ["opening_id", "type", "status", "authority"], "properties": {"type": {"enum": ["DOOR", "WINDOW", "OPEN_PASSAGE", "UNKNOWN"]}}}},
@@ -20,7 +44,15 @@
     "dimensions": {"type": "array"},
     "graphs": {"type": "object", "required": ["adjacency", "enclosure", "access"]},
     "unresolved_items": {"type": "array"},
-    "traceability": {"type": "object", "required": ["source_sha256", "adapter_id", "adapter_version", "legacy_model_hash"]},
+    "traceability": {
+      "type": "object",
+      "required": ["source_sha256", "adapter_id", "adapter_version", "legacy_model_hash", "canonical_identity_version"],
+      "properties": {
+        "canonical_identity_version": {"const": "planha-canonical-identity/2.1"},
+        "legacy_model_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "legacy_content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
     "release": {"type": "object", "required": ["status", "downstream_engineering_allowed", "release_allowed"]}
   },
   "$defs": {

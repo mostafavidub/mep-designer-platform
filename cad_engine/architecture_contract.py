@@ -11,11 +11,14 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from hashlib import sha256
 import json
+import math
+import unicodedata
 
 
 SCHEMA = "planha-canonical-architecture/2.0"
 ADAPTER_ID = "planha.raw-dxf-current-model-adapter"
 ADAPTER_VERSION = "1.0.0"
+IDENTITY_VERSION = "planha-canonical-identity/2.1"
 INPUT_KINDS = {"RAW_DXF", "CERTIFIED_DXF", "PLANHA_PACKAGE", "IFC"}
 STATUSES = {"VERIFIED", "SUPPORTED", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"}
 ORIGINS = {"SOURCE_EXPLICIT", "SOURCE_GEOMETRIC", "SOURCE_SEMANTIC", "STRUCTURED_INPUT",
@@ -30,9 +33,93 @@ def content_hash(value):
     return sha256(canonical_json(value).encode("utf-8")).hexdigest()
 
 
+_ENTITY_COLLECTION_IDS = {
+    "levels": "level_id", "frames": "frame_id", "walls": "wall_id",
+    "physical_spaces": "physical_space_id", "functional_zones": "zone_id",
+    "apertures": "aperture_id", "portals": "opening_id", "voids": "void_id",
+    "dimensions": "dimension_id", "unresolved_items": "unresolved_item_id",
+    "evidence_registry": "evidence_id",
+}
+_SET_LIKE_LISTS = {"source_handles", "source_frame_ids", "represented_level_ids",
+                   "evidence_ids", "host_wall_ids", "review_decision_ids", "origins",
+                   "validator_issue_ids_covered", "allowed_origins", "vision_independent_grants"}
+_SEMANTIC_TOP_LEVEL = ("schema", "contract_status", "source", "levels", "frames", "walls",
+                       "physical_spaces", "functional_zones", "apertures", "portals", "voids",
+                       "dimensions", "graphs", "unresolved_items", "evidence_registry",
+                       "authority_model", "review_registry", "traceability", "release")
+
+
+def _normalized_scalar(value):
+    if isinstance(value, str):
+        return unicodedata.normalize("NFC", value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("NON_FINITE_SEMANTIC_NUMBER")
+        if value == 0:
+            return 0
+        if value.is_integer():
+            return int(value)
+    return value
+
+
+def _semantic_normalize(value, key=None):
+    if isinstance(value, dict):
+        return {str(k): _semantic_normalize(v, str(k)) for k, v in sorted(value.items())}
+    if isinstance(value, list):
+        rows = [_semantic_normalize(v) for v in value]
+        if key in _SET_LIKE_LISTS:
+            unique = {canonical_json(v): v for v in rows}
+            return [unique[token] for token in sorted(unique)]
+        if key in _ENTITY_COLLECTION_IDS:
+            identity = _ENTITY_COLLECTION_IDS[key]
+            return sorted(rows, key=lambda row: (str(row.get(identity) if isinstance(row, dict) else ""),
+                                                  canonical_json(row)))
+        if key in {"adjacency", "enclosure", "access", "accepted_decisions", "stale_review_decisions",
+                   "rejected_review_decisions", "decision_history"}:
+            return sorted(rows, key=canonical_json)
+        return rows
+    return _normalized_scalar(value)
+
+
+def _semantic_engine_identity(identity):
+    identity = identity or {}
+    return {key: deepcopy(identity.get(key)) for key in
+            ("git_commit", "commit_sha", "sha", "build_identity_hash") if identity.get(key) is not None}
+
+
+def legacy_semantic_projection(model):
+    """Explicit v1 engineering projection; runtime diagnostics never define architecture identity."""
+    fields = ("schema", "source", "frames", "canonical_walls", "wall_junctions",
+              "continuity_closures", "endpoint_closures", "internal_wall_gaps",
+              "building_envelopes", "architectural_voids", "physical_spaces", "functional_zones",
+              "openings", "enclosure_graph", "access_graph", "dimensions", "completeness",
+              "gap_human_review")
+    return _semantic_normalize({key: deepcopy(model.get(key)) for key in fields if key in model})
+
+
+def canonical_semantic_projection(model):
+    """Schema-aware model identity, distinct from exact representation/integrity hashing."""
+    projected = {key: deepcopy(model.get(key)) for key in _SEMANTIC_TOP_LEVEL if key in model}
+    trace = projected.get("traceability") or {}
+    trace["engine_identity"] = _semantic_engine_identity(trace.get("engine_identity"))
+    trace.pop("legacy_content_hash", None)
+    projected["traceability"] = trace
+    return _semantic_normalize(projected)
+
+
+def canonical_model_hash(model):
+    return content_hash(canonical_semantic_projection(model))
+
+
+def assign_canonical_model_hash(model):
+    model.pop("canonical_model_hash", None)
+    model["canonical_model_hash"] = canonical_model_hash(model)
+    return model
+
+
 def _status(value, default="INPUT_REQUIRED"):
     value = str(value or default).upper()
-    if value == "HIGH_CONFIDENCE":
+    if value in {"HIGH_CONFIDENCE", "SUPPORTED_PARTITION", "SUPPORTED_CLOSURE", "HUMAN_CONFIRMED"}:
         return "SUPPORTED"
     if value == "PASS":
         return "VERIFIED"
@@ -40,19 +127,22 @@ def _status(value, default="INPUT_REQUIRED"):
 
 
 def _authority(status, origins, **grants):
-    return {"status": _status(status), "origins": sorted(set(origins)),
-            "material_geometry": bool(grants.get("material_geometry", False)),
-            "wall": bool(grants.get("wall", False)),
-            "portal": bool(grants.get("portal", False)),
-            "access": bool(grants.get("access", False)),
-            "routing": bool(grants.get("routing", False)),
-            "release": bool(grants.get("release", False))}
+    normalized = _status(status)
+    effective = normalized in {"SUPPORTED", "VERIFIED"}
+    return {"status": normalized, "origins": sorted(set(origins)),
+            "material_geometry": effective and bool(grants.get("material_geometry", False)),
+            "wall": effective and bool(grants.get("wall", False)),
+            "portal": effective and bool(grants.get("portal", False)),
+            "access": effective and bool(grants.get("access", False)),
+            "routing": effective and bool(grants.get("routing", False)),
+            "release": normalized == "VERIFIED" and bool(grants.get("release", False))}
 
 
-def _evidence_ids(items, prefix):
+def _evidence_ids(items, prefix, owner_id):
     rows = []
-    for index, item in enumerate(items or []):
-        rows.append({"evidence_id": "%s-%s" % (prefix, content_hash([index, item])[:16].upper()),
+    for item in sorted((deepcopy(item) for item in items or []), key=canonical_json):
+        rows.append({"evidence_id": "%s-%s" % (prefix, content_hash([owner_id, item])[:16].upper()),
+                     "owner_id": owner_id,
                      "origin": "VISION_SUPPORT_ONLY" if "VISION" in str(item).upper() else "DERIVED_DETERMINISTIC",
                      "payload": deepcopy(item)})
     return rows
@@ -107,24 +197,47 @@ def adapt_current_architecture(current_model, engine_identity=None):
                                  "implementation_status": "EXPERIMENTAL_INTERNAL"}}
     frames = []
     levels = []
-    seen_levels = set()
+    level_rows = {}
     for row in model.get("frames") or []:
-        level_id = row.get("level_candidate") or "LEVEL-UNRESOLVED-%s" % row.get("frame_id")
-        frames.append({"frame_id": row.get("frame_id"), "level_id": level_id,
+        represented = sorted(set(row.get("represented_levels") or
+                                 ([row.get("level_candidate")] if row.get("level_candidate") else [])))
+        level_id = row.get("level_candidate") or (represented[0] if len(represented) == 1 else None)
+        relationship = ("ROOF_HEADROOM" if "ROOF_HEADROOM" in represented else
+                        "ROOF" if represented == ["ROOF"] else
+                        "TYPICAL" if len(represented) > 1 else
+                        "SINGLE" if len(represented) == 1 else "UNRESOLVED")
+        compatibility_level_id = level_id or "LEVEL-UNRESOLVED-%s" % row.get("frame_id")
+        title_text = deepcopy(row.get("title_text") or (row.get("title_evidence") or {}).get("raw_text") or [])
+        frames.append({"frame_id": row.get("frame_id"), "level_id": compatibility_level_id,
+                       "primary_level_id": level_id, "represented_level_ids": represented,
+                       "level_relationship": relationship,
                        "frame_type": row.get("frame_type"), "bounds": deepcopy(row.get("bounds")),
                        "scope_relevance": row.get("scope_relevance"),
-                       "source_identity": source_sha, "status": _status(row.get("status"), "SUPPORTED")})
-        if level_id not in seen_levels:
-            levels.append({"level_id": level_id, "name": row.get("level_candidate"),
-                           "status": "SUPPORTED" if row.get("level_candidate") else "INPUT_REQUIRED",
-                           "source_frame_ids": [row.get("frame_id")]})
-            seen_levels.add(level_id)
+                       "source_identity": source_sha, "status": _status(row.get("status"), "SUPPORTED"),
+                       "title_evidence": {"raw_text": title_text,
+                                          "normalized_interpretation": relationship,
+                                          "represented_level_ids": represented,
+                                          "source_handles": sorted(set(row.get("title_source_handles") or [])),
+                                          "provenance": "DXF_TEXT_WITHIN_FRAME" if title_text else "NONE"}})
+        emitted = represented or [compatibility_level_id]
+        for represented_id in emitted:
+            target = level_rows.setdefault(represented_id, {"level_id": represented_id,
+                "name": represented_id if represented else None,
+                "level_kind": "ROOF_HEADROOM" if represented_id == "ROOF_HEADROOM" else
+                              "ROOF" if represented_id == "ROOF" else
+                              "BUILDING_LEVEL" if represented else "UNRESOLVED",
+                "status": "SUPPORTED" if represented else "INPUT_REQUIRED", "source_frame_ids": []})
+            target["source_frame_ids"].append(row.get("frame_id"))
+    for row in level_rows.values():
+        row["source_frame_ids"] = sorted(set(row["source_frame_ids"]))
+        levels.append(row)
 
     evidence_registry = []
     walls = []
     for row in model.get("canonical_walls") or []:
-        ev = _evidence_ids(row.get("evidence") or [], "WALL-EV")
+        ev = _evidence_ids(row.get("evidence") or [], "WALL-EV", row.get("wall_id"))
         evidence_registry.extend(ev)
+        wall_status = _status(row.get("status"), "SUPPORTED")
         walls.append({"wall_id": row.get("wall_id"), "frame_id": row.get("frame_id"),
                       "centerline": deepcopy(row.get("centerline")), "face_a": deepcopy(row.get("face_a")),
                       "face_b": deepcopy(row.get("face_b")), "thickness": row.get("thickness"),
@@ -132,15 +245,16 @@ def adapt_current_architecture(current_model, engine_identity=None):
                       "occupied_intervals": deepcopy((row.get("wall_solid") or {}).get("occupied_intervals") or []),
                       "interruptions": deepcopy(row.get("interruptions") or []),
                       "source_handles": deepcopy(row.get("source_handles") or []),
-                      "evidence_ids": [x["evidence_id"] for x in ev], "status": _status(row.get("status"), "SUPPORTED"),
-                      "authority": _authority(row.get("status"), ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
+                      "evidence_ids": [x["evidence_id"] for x in ev], "status": wall_status,
+                      "authority": _authority(wall_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
                                               material_geometry=True, wall=True)})
 
     spaces = []
     for row in model.get("physical_spaces") or []:
-        ev = _evidence_ids(row.get("evidence") or [], "SPACE-EV")
+        ev = _evidence_ids(row.get("evidence") or [], "SPACE-EV", row.get("physical_space_id"))
         evidence_registry.extend(ev)
         spaces.append({"physical_space_id": row.get("physical_space_id"), "level_id": row.get("level_id"),
+                       "represented_level_ids": sorted(set(row.get("represented_level_ids") or [])),
                        "frame_id": row.get("frame_id"), "polygon": deepcopy(row.get("polygon")),
                        "interior_rings": deepcopy(row.get("interior_rings") or []), "area_m2": row.get("area_m2"),
                        "perimeter_m": row.get("perimeter_m"), "category": row.get("category"), "use": row.get("use"),
@@ -152,7 +266,7 @@ def adapt_current_architecture(current_model, engine_identity=None):
 
     zones = []
     for row in model.get("functional_zones") or []:
-        ev = _evidence_ids(row.get("evidence") or [], "ZONE-EV")
+        ev = _evidence_ids(row.get("evidence") or [], "ZONE-EV", row.get("zone_id"))
         evidence_registry.extend(ev)
         explicit = row.get("boundary_status") == "explicit" and bool(row.get("polygon"))
         zones.append({"zone_id": row.get("zone_id"), "physical_space_id": row.get("physical_space_id"),
@@ -190,7 +304,7 @@ def adapt_current_architecture(current_model, engine_identity=None):
 
     portals = []
     for row in model.get("openings") or []:
-        ev = _evidence_ids(row.get("evidence") or [], "PORTAL-EV")
+        ev = _evidence_ids(row.get("evidence") or [], "PORTAL-EV", row.get("opening_id"))
         evidence_registry.extend(ev)
         verified = _status(row.get("status")) == "VERIFIED"
         portals.append({"opening_id": row.get("opening_id"), "portal_id": row.get("portal_id"),
@@ -218,7 +332,16 @@ def adapt_current_architecture(current_model, engine_identity=None):
     dimensions = []
     for row in model.get("dimensions") or []:
         association = row.get("association_status") or row.get("status") or "INPUT_REQUIRED"
-        dimensions.append({"dimension_id": row.get("dimension_id") or row.get("handle"),
+        dimension_id = row.get("dimension_id") or row.get("handle")
+        if not dimension_id:
+            identity = {"source_sha256": source_sha, "entity_type": row.get("entity_type") or "DIMENSION",
+                        "source_insert_handle": row.get("source_insert_handle"),
+                        "source_block_path": deepcopy(row.get("source_block_path") or []),
+                        "definition_points": deepcopy(row.get("definition_points") or []),
+                        "witness_points": deepcopy(row.get("witness_points") or []),
+                        "dimension_type": row.get("dimension_type"), "layer": row.get("layer")}
+            dimension_id = "DIMENSION-" + content_hash(_semantic_normalize(identity))[:20].upper()
+        dimensions.append({"dimension_id": dimension_id,
                            "source_id": row.get("handle"), "annotated_value": row.get("measurement"),
                            "units": source.get("insunits"), "witness_points": deepcopy(row.get("witness_points") or []),
                            "definition_points": deepcopy(row.get("definition_points") or []),
@@ -262,11 +385,13 @@ def adapt_current_architecture(current_model, engine_identity=None):
                 "review_registry": deepcopy(model.get("gap_human_review") or {}),
                 "traceability": {"source_sha256": source_sha, "adapter_id": ADAPTER_ID,
                                  "adapter_version": ADAPTER_VERSION,
-                                 "engine_identity": deepcopy(engine_identity or {}),
+                                 "engine_identity": _semantic_engine_identity(engine_identity),
                                  "legacy_schema": model.get("schema"),
-                                 "legacy_model_hash": content_hash(model)},
+                                 "legacy_model_hash": content_hash(legacy_semantic_projection(model)),
+                                 "legacy_content_hash": content_hash(model),
+                                 "canonical_identity_version": IDENTITY_VERSION},
+                "execution_diagnostics": {"engine_identity": deepcopy(engine_identity or {})},
                 "release": {"status": "VERIFIED" if current_release else "INPUT_REQUIRED",
                             "downstream_engineering_allowed": bool((model.get("completeness") or {}).get("downstream_engineering_allowed")),
                             "release_allowed": current_release}}
-    contract["canonical_model_hash"] = content_hash(contract)
-    return contract
+    return assign_canonical_model_hash(contract)

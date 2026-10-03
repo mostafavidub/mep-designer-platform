@@ -8,7 +8,7 @@ from __future__ import annotations
 from copy import deepcopy
 import time
 
-from .architecture_contract import content_hash
+from .architecture_contract import assign_canonical_model_hash, canonical_model_hash, content_hash
 from .architecture_review_contract import create_review_item, validate_review_decision
 from .architecture_snapshot import create_snapshot
 from .architecture_validator import validate_architecture, validate_validator_report_integrity
@@ -202,7 +202,7 @@ def plan_preflight(canonical_model, validator_report=None, review_registry=None,
     registry = deepcopy(review_registry or empty_review_registry())
     recomputed = validate_architecture(canonical_model)
     supplied = validator_report or recomputed
-    integrity = validate_validator_report_integrity(supplied, content_hash(canonical_model))
+    integrity = validate_validator_report_integrity(supplied, canonical_model_hash(canonical_model))
     report_mismatch = supplied.get("report_hash") != recomputed.get("report_hash") or integrity["status"] != "PASS"
     issues = _normalize_issues(canonical_model, recomputed, registry)
     if report_mismatch:
@@ -441,7 +441,7 @@ def replay_review_decisions(canonical_model, decisions, preflight_plan=None, rev
     if not remaining_critical and accepted_now and all(x.get("decision") != "UNKNOWN" and x.get("applied") for x in accepted_now):
         model["release"] = {"status": "VERIFIED", "downstream_engineering_allowed": True, "release_allowed": True}
     model["review_registry"] = deepcopy(registry)
-    model.pop("canonical_model_hash", None); model["canonical_model_hash"] = content_hash(model)
+    assign_canonical_model_hash(model)
     post_report = validate_architecture(model)
     post_codes = sorted({x["code"] for key in ("hard_errors", "input_requirements") for x in post_report.get(key) or []})
     registry["validation_history"].append({"validator_report_hash": post_report["report_hash"],
@@ -457,7 +457,7 @@ def replay_review_decisions(canonical_model, decisions, preflight_plan=None, rev
                                                "review_attempt_count": 1,
                                                "post_decision_validator_codes": post_codes}
     model["review_registry"] = deepcopy(registry)
-    model.pop("canonical_model_hash", None); model["canonical_model_hash"] = content_hash(model)
+    assign_canonical_model_hash(model)
     post_report = validate_architecture(model)
     next_plan = plan_preflight(model, post_report, registry)
     return {"reviewed_canonical_model": model, "validator_report": post_report,
