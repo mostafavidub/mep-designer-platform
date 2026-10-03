@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from app.main_health import app
 from app import main as legacy
 from app.architecture_preflight_ui import PERSISTENCE_KEY, preflight_view_model
-from cad_engine.architecture_contract import content_hash
+from cad_engine.architecture_contract import assign_canonical_model_hash, content_hash
 from cad_engine.architecture_review_engine import empty_review_registry, plan_preflight
 
 
@@ -21,7 +21,7 @@ def authority(status="SUPPORTED", **grants):
 
 
 def rehash(row):
-    row.pop("canonical_model_hash", None); row["canonical_model_hash"] = content_hash(row); return row
+    return assign_canonical_model_hash(row)
 
 
 def model(release=True):

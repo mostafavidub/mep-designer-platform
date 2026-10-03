@@ -921,6 +921,11 @@
         ,"preflight_ui_zero_engineering_authority"
         ,"preflight_transport_owner_csrf_stale_and_idempotent"
         ,"preflight_viewer_safe_numeric_primitives_only"
+        ,"schema_aware_runtime_independent_canonical_identity"
+        ,"collision_free_world_space_wall_identity"
+        ,"represented_level_and_persian_title_propagation"
+        ,"authority_status_consistency_fail_closed"
+        ,"review_and_snapshot_semantic_identity"
       ],
       "regression_tests": [
       "tests/test_architectural_space_engine.py",
@@ -935,6 +940,7 @@
         ,"tests/test_architecture_input_foundation_v2.py"
         ,"tests/test_architecture_preflight_review_engine.py"
         ,"tests/test_architecture_preflight_ui.py"
+        ,"tests/test_architecture_identity_determinism.py"
       ],
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
@@ -950,6 +956,7 @@
         ,"docs/ARCHITECTURE_PREFLIGHT_REVIEW_ENGINE.md"
         ,"docs/adr/ADR-ARCHITECTURE-PREFLIGHT-BOUNDED-REVIEW.md"
         ,"docs/ARCHITECTURE_PREFLIGHT_UI.md"
+        ,"docs/ARCHITECTURE_CANONICAL_IDENTITY_AND_LEVEL_PROPAGATION.md"
       ]
     },
     {

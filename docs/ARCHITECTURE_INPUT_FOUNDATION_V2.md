@@ -51,6 +51,12 @@ source revision, adapter/engine/validator identities, validator report hash,
 review hash, time, and lifecycle. Source/model/review/validator changes make the
 snapshot stale. `SUPERSEDED` snapshots have no current authority.
 
+Canonical identity uses the governed semantic projection defined in
+`ARCHITECTURE_CANONICAL_IDENTITY_AND_LEVEL_PROPAGATION.md`. Diagnostic runtime
+metadata and presentation ordering are excluded, while represented levels,
+world-space placement, authority and topology meaning remain identity-bearing.
+Snapshot creation time is immutable audit metadata, not part of snapshot ID.
+
 `planha-architecture-review/1.0` allows bounded classification of existing
 source-supported evidence. AI recommendations are advisory only. Human authority
 is source interpretation only; it cannot fabricate arbitrary geometry. Changed
@@ -67,3 +73,7 @@ Production routes and consumers are unchanged. Future independent tasks should
 cover the review engine/UI, Certified DXF profile, production package I/O,
 AutoCAD plugin, IFC adapter, production V2 migration, and held-out qualification.
 Constraint reasoning and targeted vision tie-breakers remain separate research.
+
+Multi-level frame metadata is additive. A typical-floor frame carries every
+`represented_level_id` without duplicating its geometry; roof and roof-headroom
+titles remain distinct and unknown titles remain unresolved.

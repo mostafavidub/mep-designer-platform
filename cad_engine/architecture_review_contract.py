@@ -28,12 +28,17 @@ def _governed_item(row):
             ("schema", "review_item_id", "source_sha256", "frame_or_level_id",
              "object_or_region_id", "geometry_fingerprint", "evidence_fingerprint",
              "review_scope", "question_type", "candidate_interpretations",
-             "allowed_answers", "evidence_summary", "impact", "impact_classification",
-             "validator_issue_ids_covered", "expected_effects",
-             "can_resolve_without_geometry_creation", "blocking_status", "preview_spec",
-             "ai_recommendation", "ai_recommendation_confidence",
+             "allowed_answers", "expected_effects", "can_resolve_without_geometry_creation",
+             "blocking_status",
              "ai_recommendation_authority", "review_authority",
              "manual_geometry_authority", "identity_fingerprint")}
+
+
+def _presentation_item(row):
+    return {key: deepcopy(row.get(key)) for key in
+            ("review_item_id", "evidence_summary", "impact", "impact_classification",
+             "validator_issue_ids_covered", "preview_spec", "ai_recommendation",
+             "ai_recommendation_confidence")}
 
 
 def create_review_item(*, source_sha256, frame_or_level_id, object_or_region_id,
@@ -75,6 +80,7 @@ def create_review_item(*, source_sha256, frame_or_level_id, object_or_region_id,
             "manual_geometry_authority": False,
             "identity_fingerprint": content_hash(identity)}
     item["review_fingerprint"] = content_hash(_governed_item(item))
+    item["presentation_hash"] = content_hash(_presentation_item(item))
     return item
 
 

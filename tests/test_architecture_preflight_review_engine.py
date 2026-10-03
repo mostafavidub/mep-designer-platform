@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pytest
 
-from cad_engine.architecture_contract import content_hash
+from cad_engine.architecture_contract import assign_canonical_model_hash, content_hash
 from cad_engine.architecture_review_engine import (
     empty_review_registry, execute_preflight, plan_preflight, replay_review_decisions)
 from cad_engine.architecture_snapshot import create_snapshot, validate_snapshot
@@ -53,7 +53,7 @@ def model(release=True):
 
 
 def rehash(row):
-    row.pop("canonical_model_hash", None); row["canonical_model_hash"] = content_hash(row); return row
+    return assign_canonical_model_hash(row)
 
 
 def candidate(question="SPACE_CLASSIFICATION", object_id="S1", root="ROOT-1", answers=None):

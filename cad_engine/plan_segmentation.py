@@ -68,6 +68,7 @@ def _classify(text_blob):
 
 def _level(text_blob):
     s=_norm(text_blob)
+    if "خرپشته" in s or "roof headroom" in s: return "ROOF_HEADROOM"
     if "زیرزمین" in s or "basement" in s: return "BASEMENT"
     if "طبقه سوم" in s: return "LEVEL-03"
     if "طبقه دوم" in s: return "LEVEL-02"
@@ -81,6 +82,7 @@ def _level(text_blob):
 def _levels(text_blob):
     """Return every level explicitly represented by a drawing title."""
     s=_norm(text_blob); result=[]
+    if "خرپشته" in s or "roof headroom" in s: result.append("ROOF_HEADROOM")
     if "همکف" in s or re.search(r"\bground\b",s): result.append("GROUND")
     names=(("اول","LEVEL-01"),("دوم","LEVEL-02"),("سوم","LEVEL-03"),
            ("چهارم","LEVEL-04"),("پنجم","LEVEL-05"))
@@ -149,7 +151,7 @@ def analyze_plan_frames(src):
         family_count=families[(round(row["short"],1),round(row["long"],1))]
         nested=sum(1 for other in raw if other is not row and _contains(row["bounds"],other["bounds"]) and
                    .70<=((other["width"]*other["height"])/(row["width"]*row["height"]))<.98)
-        texts=[];count=0;graphic=0
+        texts=[];title_records=[];count=0;graphic=0
         for e in entities:
             p=_point(e)
             if not p or not _inside(p,row["bounds"]):continue
@@ -157,7 +159,10 @@ def analyze_plan_frames(src):
             if e.dxftype() in {"LINE","LWPOLYLINE","POLYLINE","ARC","CIRCLE","INSERT","HATCH"}:graphic+=1
             if e.dxftype() in {"TEXT","MTEXT"}:
                 value=_text(e)
-                if value:texts.append(value)
+                if value:
+                    texts.append(value)
+                    title_records.append({"text":value,"normalized_text":_norm(value),
+                                          "source_handle":str(getattr(e.dxf,"handle","") or "")})
         blob="\n".join(texts);drawing_type=_classify(blob);levels=_levels(blob)
         title_hit=drawing_type!="UNKNOWN"
         content_hit=graphic>=25 and len(texts)>=2
@@ -169,6 +174,7 @@ def analyze_plan_frames(src):
                   "nested_border":nested>0,"drawing_title":title_hit,"substantial_content":content_hit}
         score=(30 if layer_hit else 0)+(20 if family_count>=2 else 0)+(10 if nested else 0)+(25 if title_hit else 0)+(15 if content_hit else 0)
         candidates.append({**row,"title_text":texts,"entity_count":count,"graphic_entity_count":graphic,
+                           "title_evidence":title_records,
                            "drawing_type":drawing_type,"level":levels[0] if len(levels)==1 else None,
                            "represented_levels":levels,"evidence":evidence,"confidence":score})
     # Suppress inset wall borders when a stronger print-layer rectangle contains
@@ -206,7 +212,8 @@ def detect_print_plans(src):
         arc=next((x for x in frame_text if re.search(r"arc\s*-\s*\d+",_norm(x))),None)
         plans.append({"plan_id":f"PLAN-{i+1:02d}","bounds":b,"drawing_type":frame["drawing_type"],
                       "level":frame["level"] or _level(blob),"represented_levels":frame["represented_levels"],
-                      "title_text":frame_text,"arc_sheet":arc,"entity_count":frame["entity_count"],
+                      "title_text":frame_text,"title_evidence":frame.get("title_evidence") or [],
+                      "arc_sheet":arc,"entity_count":frame["entity_count"],
                       "frame_confidence":frame["confidence"],"frame_evidence":frame["evidence"],
                       "frame_detection_status":"CONFIRMED","mechanical_role":"EXCLUDE"})
 

@@ -7,7 +7,7 @@ from io import BytesIO
 import pytest
 
 from cad_engine.architecture_benchmark import compare_architecture
-from cad_engine.architecture_contract import adapt_current_architecture, content_hash
+from cad_engine.architecture_contract import adapt_current_architecture, assign_canonical_model_hash, content_hash
 from cad_engine.architecture_review_contract import create_review_item, validate_review_decision
 from cad_engine.architecture_snapshot import create_snapshot, supersede_snapshot, validate_snapshot
 from cad_engine.architecture_validator import validate_architecture
@@ -64,9 +64,7 @@ def qualified_contract():
 
 
 def rehash(model):
-    model.pop("canonical_model_hash", None)
-    model["canonical_model_hash"] = content_hash(model)
-    return model
+    return assign_canonical_model_hash(model)
 
 
 def codes(report):

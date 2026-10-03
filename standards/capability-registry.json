@@ -630,6 +630,11 @@
         "critical_errors_never_score_masked",
         "immutable_stale_safe_snapshot",
         "bounded_review_no_geometry_authority",
+        "schema_aware_runtime_independent_canonical_identity",
+        "collision_free_world_space_wall_identity",
+        "represented_level_and_persian_title_propagation",
+        "authority_status_consistency_fail_closed",
+        "review_and_snapshot_semantic_identity",
         "deterministic_non_production_planha_package",
         "blind_hard_gated_benchmark",
         "production_consumers_unchanged"
@@ -639,6 +644,10 @@
         "test_validator_valid_model_is_read_only_and_no_score_masking",
         "test_validator_destructive_mutations",
         "test_snapshot_identity_and_staleness",
+        "test_semantic_identity_excludes_runtime_and_collection_order_but_not_architecture",
+        "test_wall_ids_include_world_position_and_ignore_endpoint_and_source_order",
+        "test_represented_levels_and_title_evidence_survive_without_geometry_duplication",
+        "test_critical_duplicate_and_evidence_references_fail_closed",
         "test_planha_package_round_trip_is_deterministic_and_corruption_fails",
         "test_benchmark_is_deterministic_and_hard_gates_cannot_be_masked"
       ]

@@ -7,7 +7,7 @@ import re
 
 from shapely.geometry import Polygon
 
-from .architecture_contract import ORIGINS, SCHEMA, STATUSES, content_hash
+from .architecture_contract import ORIGINS, SCHEMA, STATUSES, canonical_model_hash, content_hash
 
 
 VALIDATOR_ID = "planha.architecture-validator"
@@ -64,6 +64,15 @@ def _authority_valid(row, errors, entity_id):
     if set(origins) == {"VISION_SUPPORT_ONLY"} and any(authority.get(key) for key in
             ("material_geometry", "wall", "portal", "access", "routing", "release")):
         _add(errors, "VISION_ONLY_AUTHORITY_FORBIDDEN", entity_id=entity_id)
+    grants = ("material_geometry", "wall", "portal", "access", "routing", "release")
+    if authority.get("status") in {"AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"} and any(
+            authority.get(key) for key in grants):
+        _add(errors, "UNRESOLVED_ENGINEERING_AUTHORITY_FORBIDDEN", entity_id=entity_id,
+             status=authority.get("status"))
+    entity_status = row.get("status") or row.get("topology_status") or row.get("geometry_status") or row.get("semantic_status")
+    if entity_status in STATUSES and authority.get("status") != entity_status:
+        _add(errors, "ENTITY_AUTHORITY_STATUS_MISMATCH", entity_id=entity_id,
+             entity_status=entity_status, authority_status=authority.get("status"))
 
 
 def _review_overlay_valid(row, errors, entity_id, source_sha):
@@ -81,7 +90,8 @@ def _review_overlay_valid(row, errors, entity_id, source_sha):
 
 def validate_architecture(model):
     """Validate without mutation; critical failures always dominate status."""
-    before = content_hash(model)
+    before = canonical_model_hash(model)
+    representation_before = content_hash(model)
     data = deepcopy(model)
     hard = []; required = []; warnings = []; controls = []
 
@@ -117,11 +127,24 @@ def validate_architecture(model):
     aperture_ids = _unique(apertures, "aperture_id", hard, "DUPLICATE_APERTURE_ID")
     void_ids = _unique(voids, "void_id", hard, "DUPLICATE_VOID_ID")
     opening_ids = _unique(portals, "opening_id", hard, "DUPLICATE_OPENING_ID")
+    portal_ids = _unique([row for row in portals if row.get("portal_id")], "portal_id", hard, "DUPLICATE_PORTAL_ID")
+    dimension_ids = _unique(dimensions, "dimension_id", hard, "DUPLICATE_DIMENSION_ID")
+    evidence_ids = _unique(data.get("evidence_registry") or [], "evidence_id", hard, "DUPLICATE_EVIDENCE_ID")
+    _unique(data.get("unresolved_items") or [], "unresolved_item_id", hard, "DUPLICATE_UNRESOLVED_ITEM_ID")
     verified_portal_ids = {p.get("portal_id") for p in portals if p.get("status") == "VERIFIED" and p.get("portal_id")}
     control("IDENTITY_UNIQUENESS", not any(x["code"].startswith("DUPLICATE_") for x in hard))
 
     for frame in frames:
-        if frame.get("level_id") not in level_ids:
+        represented = frame.get("represented_level_ids") or []
+        if len(represented) != len(set(represented)):
+            _add(hard, "FRAME_REPRESENTED_LEVEL_DUPLICATE", frame_id=frame.get("frame_id"))
+        if not set(represented).issubset(level_ids):
+            _add(hard, "FRAME_REPRESENTED_LEVEL_REFERENCE_INVALID", frame_id=frame.get("frame_id"))
+        if frame.get("primary_level_id") and frame.get("primary_level_id") not in represented:
+            _add(hard, "FRAME_PRIMARY_LEVEL_CONTRADICTION", frame_id=frame.get("frame_id"))
+        if frame.get("level_relationship") == "TYPICAL" and len(represented) < 2:
+            _add(hard, "TYPICAL_FRAME_LEVELS_INSUFFICIENT", frame_id=frame.get("frame_id"))
+        if frame.get("level_id") not in level_ids and not represented:
             _add(required, "FRAME_LEVEL_UNRESOLVED", frame_id=frame.get("frame_id"))
     for wall in walls:
         wid = wall.get("wall_id"); _authority_valid(wall, hard, wid)
@@ -133,6 +156,8 @@ def validate_architecture(model):
             _add(hard, "WALL_GEOMETRY_INVALID", wall_id=wid)
         if not wall.get("source_handles"):
             _add(required, "WALL_SOURCE_PROVENANCE_REQUIRED", wall_id=wid)
+        if not set(wall.get("evidence_ids") or []).issubset(evidence_ids):
+            _add(hard, "ENTITY_EVIDENCE_REFERENCE_INVALID", entity_id=wid)
         if (wall.get("authority") or {}).get("material_geometry") and "VISION_SUPPORT_ONLY" in (wall.get("authority") or {}).get("origins", []):
             _add(hard, "UNSUPPORTED_MATERIAL_GEOMETRY_AUTHORITY", wall_id=wid)
 
@@ -146,6 +171,8 @@ def validate_architecture(model):
         space_polygons[sid] = polygon
         if space.get("frame_id") not in frame_ids:
             _add(hard, "SPACE_FRAME_REFERENCE_INVALID", physical_space_id=sid)
+        if not set(space.get("evidence_ids") or []).issubset(evidence_ids):
+            _add(hard, "ENTITY_EVIDENCE_REFERENCE_INVALID", entity_id=sid)
         for hole in space.get("interior_rings") or []:
             hole_poly = _polygon(hole)
             if hole_poly is None or not polygon.envelope.covers(hole_poly):
@@ -257,12 +284,11 @@ def validate_architecture(model):
         _add(required, "ARCHITECTURE_RELEASE_INPUT_REQUIRED")
     if data.get("canonical_model_hash"):
         supplied = data["canonical_model_hash"]
-        candidate = deepcopy(data); candidate.pop("canonical_model_hash", None)
-        if supplied != content_hash(candidate):
+        if supplied != canonical_model_hash(data):
             _add(hard, "CANONICAL_MODEL_HASH_MISMATCH")
 
-    after = content_hash(model)
-    if before != after:
+    representation_after = content_hash(model)
+    if representation_before != representation_after:
         _add(hard, "VALIDATOR_MUTATED_INPUT")
     if hard:
         status = "FAIL"
@@ -281,6 +307,6 @@ def validate_architecture(model):
             "metrics": {"physical_spaces": len(spaces), "walls": len(walls), "portals": len(portals),
                         "voids": len(voids), "illegal_overlap_area": overlap,
                         "hard_error_count": len(hard), "input_requirement_count": len(required)},
-            "critical_score_masking": False, "input_hash_before": before, "input_hash_after": after}
+            "critical_score_masking": False, "input_hash_before": before, "input_hash_after": canonical_model_hash(model)}
     report["report_hash"] = content_hash(report)
     return report
