@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.66.0",
+  "standard_version": "4.66.2",
   "schema_version": "1.0.0",
-  "effective_date": "2026-10-03",
+  "effective_date": "2026-10-04",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,8 @@
     "golden inventory changes"
   ],
   "history": [
+    {"version": "4.66.2", "date": "2026-10-04", "summary": "Carry existing repeated-source-array veto across candidate origins; record owner interpretation and remaining false-authority blockers."},
+    {"version": "4.66.1", "date": "2026-10-03", "summary": "Preserve independently supported enclosure recall through bounded numerical transverse endpoint equivalence; retain source proof and ambiguous-space qualification blockers."},
     {"version": "4.66.0", "date": "2026-10-03", "summary": "Govern deterministic source-supported enclosure candidates and parent/container separation without relaxing hard source exclusions or physical boundary proof."},
     {"version": "4.65.0", "date": "2026-10-03", "summary": "Eliminate source-role, boundary and semantic false authority with local recomputable physical evidence, negative-evidence vetoes, and independent validation; preserve existing release gates and canonical runtime."},
     {

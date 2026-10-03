@@ -73,3 +73,63 @@ negative controls, not area thresholds or semantic label inference.
 Source-face candidates also fail closed when occupied wall material contradicts
 their interior, or the evidence distance bands leave no resolvable interior.
 Boundary coverage cannot excuse residual unsupported lengths.
+
+## Source-truth preservation qualification
+
+Old VERIFIED output is a comparison baseline, never a positive truth inventory.
+Every baseline region must retain all source/frame/provenance-linked comparison
+relations, including splits, merges, disappearance and parent/child replacement.
+Overlap and shared handles identify comparison candidates; neither proves truth.
+An unchanged output remains SOURCE_AMBIGUOUS unless independent source evidence
+establishes its enclosing material role. Human interpretation may classify existing
+source evidence but cannot create missing material geometry or release authority.
+
+A demonstrated numerical failure occurs when complementary source wall faces
+form a real inner enclosure but nonidentical floating endpoint coordinates prevent
+source polygonization. Canonical centerline cells may then have unsupported corner
+residuals. Restoring their old aggregate coverage allowance is forbidden. Instead,
+source topology reconciles transverse endpoints within one millionth of the existing
+drawing tolerance. Each cluster must be a complete mutual neighborhood; parallel
+faces, weak endpoints and transitive chains are rejected. The deterministic shared
+endpoint is an existing source point. Movement, original coordinates and provenance
+are diagnostic; no material Wall, Portal, Access or closure entity is generated.
+Physical boundary validation still uses original unmodified source geometry.
+
+This is numerical representation reconciliation, not an architectural drafting-gap
+policy. Larger endpoint gaps remain unresolved. Positive tests cover translation,
+rotation, reversed segments, input ordering and the full extraction/adapter/validator
+path. Negative controls cover real gaps, parallel lines, weak/hard-excluded sources
+and transitive drift. Existing material occupancy, residual coverage, hierarchy and
+invalid serialization guards remain mandatory.
+
+Below-precision ring quarantine is unchanged. A geometrically related invalid parent
+is not proof that its repeated child is a real room. Precision repair requires an
+independently adjudicated positive loss; ambiguous repeated arrays require bounded
+human source interpretation first. No blanket polygon repair is authorized.
+
+
+## Owner source review continuation (2026-10-04)
+
+Six source-hash-bound local cards were reviewed by the owner: five adjoining
+source groups (30 baseline regions) are stair/landing drawing subdivisions, not
+independent enclosed Physical Spaces; the additional non-baseline compartment is
+a real enclosed duct. Private source geometry and review images remain outside Git.
+Human interpretation is comparison evidence only; no source-specific allow/deny
+list is loaded into reconstruction. This supersedes the earlier ambiguity counts.
+
+The existing array detector already identifies recurring source cells with an
+unproven or competing material-face family. A legacy/canonical subdivision origin
+must not bypass that negative evidence. Candidates wholly covered by those source
+cells, within the existing numerical area residue, remain diagnostic regardless
+of origin or merging/tiling. Store the witnessing source candidate IDs and outside
+area. Do not buffer the array into neighboring rooms, infer a stair category,
+remove an adjacent landing, or reject a surrounding container just by proximity.
+Independent, unambiguous paired-wall families retain their existing protection.
+
+This bounded correction is not a complete stair/landing classifier. Remaining
+owner-confirmed landing positives block qualification even if the original 19-case
+negative gate stays green. Track that historical gate separately from newly
+adjudicated false positives. Subprecision ring quarantine stays unchanged.
+A rotated un-noded crossing grid also exposes an upstream source-topology noding
+limitation; the cross-origin metamorphic test uses explicitly noded source rails
+to isolate this rule. No general topology repair is introduced by this change.

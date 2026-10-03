@@ -2,6 +2,29 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-051",
+      "status": "IMPLEMENTED_PENDING_FINAL_VERIFICATION",
+      "summary": "Restore source-supported enclosure recall lost at numerical transverse endpoint mismatch. Carry repeated-source-array negative evidence across candidate origins after bounded owner source review. Remaining landing false positives prevent qualification; no source-role hardcoding or validator relaxation.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Verified-space preservation task; no merge/deployment."
+      },
+      "verification": {
+        "focused_tests": "PASS_56",
+        "full_regression": "PASS_1360_PLUS_14_SUBTESTS",
+        "required_ci": "PENDING",
+        "architecture": "PASS_479",
+        "qualification": "PARTIAL: three owner-confirmed landing false positives remain; three additional downgraded outputs require independent interpretation."
+      },
+      "migration": {
+        "forward": "Regenerate canonical models and stale-safe review/snapshot identities using existing enclosure migration; schema unchanged.",
+        "rollback": "Revert commit and regenerate; preserve fail-closed gates."
+      }
+    },
+    {
       "id": "GOV-2026-050",
       "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
       "summary": "Recover source-supported enclosure candidates with correct wall-face axis placement and deterministic parent/container separation; preserve existing false-authority exclusions and physical boundary proof.",
