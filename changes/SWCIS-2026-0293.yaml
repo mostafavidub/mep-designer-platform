@@ -2,9 +2,9 @@
   "change_id": "SWCIS-2026-0293",
   "summary": "Add an experimental Persian RTL Architecture Preflight UI and safe project-bound transport for backend-generated bounded review, independent revalidation feedback, source-correction guidance, and server-qualified snapshot presentation without frontend engineering authority.",
   "requester": "project-owner",
-  "change_types": ["ui_api", "rule", "test", "documentation", "governance", "versioning"],
+  "change_types": ["ui_api", "rule", "test", "documentation", "drawing_output", "governance", "versioning"],
   "changed_rule_ids": ["MEP-ARCH-RECOG-001"],
-  "impacted_modules": ["ui_api", "qa", "cad_designer", "manifest", "docs", "governance", "versioning", "deployment", "pmm", "routing"],
+  "impacted_modules": ["ui_api", "qa", "cad_designer", "manifest", "docs", "governance", "versioning", "deployment", "pmm", "routing", "detail_riser", "equipment", "manufacturer_selector", "migration", "planner", "questionnaire", "rule_book", "sizing"],
   "impact_notes": {
     "ui_api": "Adds a thin Persian RTL view model, project-bound GET/POST transport, safe vector viewer and preflight presentation.",
     "qa": "Adds rendering, authorization, tampering, stale replay, idempotency, accessibility, visual and project-flow tests.",
@@ -15,7 +15,15 @@
     "versioning": "Applies the repository policy after the implementation closure is known.",
     "deployment": "No merge or deployment is authorized.",
     "pmm": "No production PMM consumer change; architecture preflight remains experimental.",
-    "routing": "No routing behavior changes; unresolved architecture remains fail closed."
+    "routing": "No routing behavior changes; unresolved architecture remains fail closed.",
+    "detail_riser": "No riser behavior changes; preflight remains before downstream release.",
+    "equipment": "No equipment selection behavior changes; unresolved architecture remains blocked.",
+    "manufacturer_selector": "No manufacturer selection behavior changes.",
+    "migration": "Adds only an experimental JSON persistence manifest; no database migration.",
+    "planner": "No planner behavior changes; design entry is guarded by server preflight state.",
+    "questionnaire": "Keeps architecture source review separate from ordinary project questions.",
+    "rule_book": "No engineering rule is inferred in the UI; backend contracts remain authoritative.",
+    "sizing": "No sizing behavior changes; unresolved architecture cannot enter design."
   },
   "evidence": {
     "traceability": ["project owner -> current canonical model -> backend preflight item -> allowed answer -> safe replay -> independent validator -> server snapshot -> UI state"],
