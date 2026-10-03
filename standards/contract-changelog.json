@@ -2,6 +2,33 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-049",
+      "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
+      "summary": "Separate physical boundary evidence from semantic recognition and veto contradictory source roles before architectural material or void authority.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "User-requested false-authority root-cause elimination; merge and deployment remain gated."
+      },
+      "verification": {
+        "focused_validator_tests": "23 passed",
+        "foundation_identity_review_tests": "53 passed",
+        "preflight_ui_tests": "11 passed",
+        "full_regression": "PENDING",
+        "required_ci": "must_pass before merge",
+        "private_pilot_replay": "PRELIMINARY_EXECUTED_NOT_FINAL; seven development pilots twice, final positive-recall replay pending"
+      },
+      "migration": {
+        "forward": "Regenerate corrected recognition and canonical evidence; invalidate identity-dependent reviews and snapshots. See standards/swcis/migrations/architecture-false-authority-evidence.json.",
+        "rollback": "Revert to the prior approved Git commit and regenerate; never bypass failed engineering gates."
+      }
+    },
+    {
       "id": "GOV-2026-040",
       "status": "APPROVED",
       "summary": "Require all eighteen topology and routing controls to pass at exactly 100 before Mechanical CAD delivery.",

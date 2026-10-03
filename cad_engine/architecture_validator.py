@@ -5,7 +5,8 @@ from copy import deepcopy
 import math
 import re
 
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Polygon
+from shapely.ops import unary_union
 
 from .architecture_contract import ORIGINS, SCHEMA, STATUSES, canonical_model_hash, content_hash
 
@@ -73,6 +74,71 @@ def _authority_valid(row, errors, entity_id):
     if entity_status in STATUSES and authority.get("status") != entity_status:
         _add(errors, "ENTITY_AUTHORITY_STATUS_MISMATCH", entity_id=entity_id,
              entity_status=entity_status, authority_status=authority.get("status"))
+
+
+def _source_roles(row):
+    """Read explicit classifications and contradictory evidence, not labels."""
+    roles = set()
+    def collect(value):
+        if isinstance(value, str):
+            roles.update(re.findall(r"[A-Z][A-Z0-9_]*", value.upper()))
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                collect(item)
+        elif isinstance(value, dict):
+            for key in ("role", "source_role", "classification", "code", "reason", "evidence"):
+                collect(value.get(key))
+    for key in ("source_roles", "classifications", "source_role", "negative_evidence", "frame_type", "role"):
+        collect(row.get(key))
+    return roles
+
+
+def _physical_boundary_valid(space, polygon, errors, tolerance, scale):
+    sid = space.get("physical_space_id")
+    authority = space.get("authority") or {}
+    verified = space.get("geometry_status", space.get("status", authority.get("status"))) == "VERIFIED"
+    if not (verified or authority.get("material_geometry")):
+        return
+    origins = set(authority.get("origins") or [])
+    if not origins.intersection({"SOURCE_GEOMETRIC", "SOURCE_EXPLICIT"}):
+        _add(errors, "SEMANTIC_ONLY_PHYSICAL_GEOMETRY_FORBIDDEN", physical_space_id=sid)
+    geometry = space.get("geometry_evidence")
+    if not space.get("source_handles"):
+        _add(errors, "PHYSICAL_BOUNDARY_SOURCE_REQUIRED", physical_space_id=sid)
+    if geometry is None:
+        return  # Legacy source-backed canonical geometry predates the evidence extension.
+    if not isinstance(geometry, dict) or geometry.get("status") != "VERIFIED" or not geometry.get("source_handles"):
+        _add(errors, "PHYSICAL_BOUNDARY_EVIDENCE_UNSUPPORTED", physical_space_id=sid)
+        return
+    if geometry.get("negative_evidence") or geometry.get("unresolved_internal_segment_ids"):
+        _add(errors, "PHYSICAL_BOUNDARY_EVIDENCE_CONTRADICTORY", physical_space_id=sid)
+    if "segments" not in geometry:
+        _add(errors, "PHYSICAL_BOUNDARY_EVIDENCE_UNSUPPORTED", physical_space_id=sid)
+        return
+    # Independently recompute boundary coverage; upstream status cannot prove closure.
+    try:
+        # Reconstruction already permits four times its maximum .05 m uncertainty.
+        # Bound that existing uncertainty independently; a claimed tolerance cannot
+        # expand authority beyond the reconstruction contract's .2 m ceiling.
+        claimed_tolerance = float(geometry.get("tolerance", tolerance))
+        if not math.isfinite(claimed_tolerance) or claimed_tolerance <= 0:
+            raise ValueError("invalid tolerance")
+        boundary_tolerance = max(tolerance, min(claimed_tolerance, .2 / scale))
+        segments = []
+        for segment in geometry["segments"]:
+            points = segment.get("geometry") if isinstance(segment, dict) else segment
+            if len(points) < 2 or any(not math.isfinite(float(v)) for p in points for v in p):
+                raise ValueError("invalid segment")
+            line = LineString(points)
+            if line.length <= 0:
+                raise ValueError("degenerate segment")
+            segments.append(line)
+        supported = bool(segments) and polygon.boundary.difference(
+            unary_union(segments).buffer(boundary_tolerance)).length <= tolerance
+    except (TypeError, ValueError, AttributeError):
+        supported = False
+    if not supported:
+        _add(errors, "PHYSICAL_BOUNDARY_GEOMETRY_UNSUPPORTED", physical_space_id=sid)
 
 
 def _review_overlay_valid(row, errors, entity_id, source_sha):
@@ -148,6 +214,10 @@ def validate_architecture(model):
             _add(required, "FRAME_LEVEL_UNRESOLVED", frame_id=frame.get("frame_id"))
     for wall in walls:
         wid = wall.get("wall_id"); _authority_valid(wall, hard, wid)
+        frame = next((f for f in frames if f.get("frame_id") == wall.get("frame_id")), {})
+        if (wall.get("authority") or {}).get("material_geometry") and (_source_roles(wall) | _source_roles(frame)).intersection(
+                {"DETAIL", "REFERENCE_ONLY", "DETAIL_REFERENCE", "DETAIL_REFERENCE_ONLY"}):
+            _add(hard, "REFERENCE_DETAIL_MATERIAL_WALL_FORBIDDEN", wall_id=wid)
         _review_overlay_valid(wall, hard, wid, source_sha)
         if wall.get("frame_id") not in frame_ids:
             _add(hard, "WALL_FRAME_REFERENCE_INVALID", wall_id=wid)
@@ -169,6 +239,8 @@ def validate_architecture(model):
         if polygon is None or not polygon.is_valid or polygon.area <= 0:
             _add(hard, "PHYSICAL_SPACE_POLYGON_INVALID", physical_space_id=sid); continue
         space_polygons[sid] = polygon
+        _physical_boundary_valid(space, polygon, hard, linear_tolerance,
+                                 max(abs(float(source.get("effective_scale") or 1.0)), 1e-9))
         if space.get("frame_id") not in frame_ids:
             _add(hard, "SPACE_FRAME_REFERENCE_INVALID", physical_space_id=sid)
         if not set(space.get("evidence_ids") or []).issubset(evidence_ids):
@@ -229,6 +301,9 @@ def validate_architecture(model):
     void_polygons = {}
     for void in voids:
         vid = void.get("void_id"); _authority_valid(void, hard, vid)
+        if "COLUMN" in _source_roles(void) and (void.get("geometry_status") == "VERIFIED" or
+                void.get("status") == "VERIFIED" or (void.get("authority") or {}).get("status") == "VERIFIED"):
+            _add(hard, "COLUMN_AS_VERIFIED_VOID_FORBIDDEN", void_id=vid)
         _review_overlay_valid(void, hard, vid, source_sha)
         polygon = _polygon(void.get("boundary"))
         if polygon is None or not polygon.is_valid or polygon.area <= 0:

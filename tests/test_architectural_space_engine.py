@@ -283,11 +283,11 @@ def test_current_human_confirmed_gap_is_binding_compatible_but_does_not_supply_g
 def test_duct_label_selects_repeated_source_closed_footprint_but_supplies_no_geometry():
     extracted={"texts":[{"handle":"T1","text":"داکت","point":[1.7,1.2]},
                         {"handle":"T2","text":"داکت","point":[11.7,1.2]}],
-               "primitives":[{"handle":"P1","entity_type":"LWPOLYLINE","closed":True,
+               "primitives":[{"handle":"P1","entity_type":"LWPOLYLINE","closed":True,"layer":"DUCT",
                               "points":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]},
-                             {"handle":"P1-DUP","entity_type":"LWPOLYLINE","closed":True,
+                             {"handle":"P1-DUP","entity_type":"LWPOLYLINE","closed":True,"layer":"DUCT",
                               "points":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]},
-                             {"handle":"P2","entity_type":"LWPOLYLINE","closed":True,
+                             {"handle":"P2","entity_type":"LWPOLYLINE","closed":True,"layer":"DUCT",
                               "points":[[11,1],[11.4,1],[11.4,1.4],[11,1.4]]}]}
     frames=[{"frame_id":"F1","bounds":[0,0,5,5],"scope_relevance":"MECHANICAL_AUTHORITY"},
             {"frame_id":"F2","bounds":[10,0,15,5],"scope_relevance":"MECHANICAL_AUTHORITY"}]
