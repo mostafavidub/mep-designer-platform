@@ -206,3 +206,59 @@ def test_dxf_repeated_rooms_with_real_paired_wall_faces(tmp_path, monkeypatch):
         from shapely.geometry import Point
         assert any(Polygon(s['polygon'],s['interior_rings']).contains(Point(x,1.2)) for s in spaces)
     assert any(w.get('face_a') and w.get('face_b') for w in model['canonical_walls'])
+
+
+# Human source review exposed a provenance bypass: a derived candidate may
+# tile the very source cells already rejected by the repeated-array guard.
+def test_existing_subdivision_cannot_bypass_same_source_array():
+    selected, diag = run([box(0, 0, 1, 1)], grid())
+    assert not selected
+    row = next(r for r in diag['candidates'] if 'EXISTING_SUBDIVISION' in r['origins'])
+    assert row['candidate_role'] == 'REPEATED_CELL_ARRAY'
+    assert row['candidate_integrity']['array_candidate_ids']
+
+
+def test_merged_axis_cells_cannot_launder_array_after_source_filter():
+    selected, diag = run([box(.25, .2, 2.75, .8)], grid(), candidate_filter=lambda cells: [])
+    assert not selected
+    assert diag['candidates'][0]['selection_reason'] == 'CANDIDATE_WITHIN_UNPROVEN_SOURCE_ARRAY'
+
+
+def test_array_veto_does_not_spread_to_adjacent_room_or_container():
+    for candidate in [box(4, 0, 5, 1), box(-1, -1, 5, 2), box(3.5, 0, 4.5, 1)]:
+        _, diag = run([candidate], grid(), candidate_filter=lambda cells: [])
+        assert diag['candidates'][0]['candidate_role'] != 'REPEATED_CELL_ARRAY'
+
+
+def test_independent_face_family_preserves_existing_subdivision():
+    selected, diag = run([box(.25, .2, 2.75, .8)], grid(explicit=True), candidate_filter=lambda cells: [])
+    assert selected
+    assert diag['candidates'][0]['candidate_role'] == 'SPACE_CANDIDATE'
+
+
+def test_array_origin_veto_is_translation_rotation_direction_order_invariant():
+    from shapely import affinity
+    from shapely.geometry import LineString
+    import copy
+    for angle, x, y, reverse in [(0, 0, 0, False), (37, 1020, -2300, True), (90, -50, 70, True)]:
+        def move(geometry):
+            return affinity.translate(affinity.rotate(geometry, angle, origin=(0, 0)), x, y)
+        # Node source rail intersections explicitly so this isolates the new
+        # cross-origin guard, not the separate near-collinear GEOS noding issue.
+        segments = copy.deepcopy(grid())
+        template = segments[0]
+        rail_parts = []
+        for y0 in (0, 1):
+            for x0 in range(-1, 5):
+                row = copy.deepcopy(template)
+                row.update(segment_id=f'rail-{y0}-{x0}', geometry=[(x0, y0), (x0+1, y0)])
+                rail_parts.append(row)
+        segments = segments[:5] + rail_parts
+        for row in segments:
+            coords = list(move(LineString(row['geometry'])).coords)
+            row['geometry'] = coords[::-1] if reverse else coords
+        if reverse:
+            segments.reverse()
+        selected, diag = run([move(box(.25, .2, 2.75, .8))], segments, candidate_filter=lambda cells: [])
+        assert not selected
+        assert diag['candidates'][0]['candidate_role'] == 'REPEATED_CELL_ARRAY'

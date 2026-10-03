@@ -235,6 +235,13 @@ def reconcile_enclosure_candidates(polygons, classified, walls, closures, tolera
                         "candidate_role": "SPACE_CANDIDATE"}) for p in source]
     _ambiguous_cell_arrays(raw_entries, classified, tol)
     array_context = {_key(p): row for p, row in raw_entries if row["candidate_role"] == "REPEATED_CELL_ARRAY"}
+    # Negative source context survives candidate filtering and provenance changes.
+    # A derived subdivision can tile/merge the same ambiguous cells; changing its
+    # origin is not new physical boundary evidence. Never extend this veto to an
+    # adjacent landing or to a parent extending beyond the source array.
+    array_entries = [(p, row) for p, row in raw_entries if _key(p) in array_context]
+    array_union = unary_union([p for p, _ in array_entries]) if array_entries else None
+    array_tree = STRtree([p for p, _ in array_entries]) if array_entries else None
     if candidate_filter:
         source = candidate_filter(source)
     entries = {}
@@ -270,6 +277,19 @@ def reconcile_enclosure_candidates(polygons, classified, walls, closures, tolera
                     row["selection_reason"] = "SOURCE_FACE_INTERIOR_INTERSECTS_OCCUPIED_MATERIAL"
                     row["candidate_integrity"] = {"status": "INPUT_REQUIRED", "interior_material_overlap": overlap,
                                                   "erosion_tolerance": clearance, "numerical_area_residue": tol * tol}
+            if (array_union is not None and poly.intersection(array_union).area > tol * tol
+                    and poly.difference(array_union).area <= max(tol * tol, 1e-12)):
+                witnesses = sorted(array_entries[int(i)][1]["candidate_id"]
+                                   for i in array_tree.query(poly)
+                                   if poly.intersection(array_entries[int(i)][0]).area > tol * tol)
+                row["candidate_role"] = "REPEATED_CELL_ARRAY"
+                row["selection_reason"] = "CANDIDATE_WITHIN_UNPROVEN_SOURCE_ARRAY"
+                row["candidate_integrity"] = {
+                    "status": "INPUT_REQUIRED", "array_candidate_ids": witnesses,
+                    "candidate_origin_is_not_independent_material_evidence": True,
+                    "outside_array_area": poly.difference(array_union).area,
+                    "numerical_area_residue": max(tol * tol, 1e-12),
+                }
             entries[key] = (poly, row)
     ordered = sorted(entries.values(), key=lambda item: item[1]["candidate_id"])
     epsilon = max(tol * tol, 1e-12)

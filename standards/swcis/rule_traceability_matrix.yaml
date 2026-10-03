@@ -948,7 +948,8 @@
         "parent_container_not_physical_space_authority",
         "local_endpoint_projection_bounded_by_existing_tolerance",
         "hard_exclusions_unchanged_during_recovery",
-        "numerical_endpoint_equivalence_never_drafting_gap_or_transitive_closure"
+        "numerical_endpoint_equivalence_never_drafting_gap_or_transitive_closure",
+        "candidate_origin_never_bypasses_source_array_negative_evidence"
       ],
       "regression_tests": [
         "tests/test_architecture_source_roles.py",

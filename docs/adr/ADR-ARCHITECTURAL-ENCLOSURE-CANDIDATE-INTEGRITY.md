@@ -106,3 +106,30 @@ Below-precision ring quarantine is unchanged. A geometrically related invalid pa
 is not proof that its repeated child is a real room. Precision repair requires an
 independently adjudicated positive loss; ambiguous repeated arrays require bounded
 human source interpretation first. No blanket polygon repair is authorized.
+
+
+## Owner source review continuation (2026-10-04)
+
+Six source-hash-bound local cards were reviewed by the owner: five adjoining
+source groups (30 baseline regions) are stair/landing drawing subdivisions, not
+independent enclosed Physical Spaces; the additional non-baseline compartment is
+a real enclosed duct. Private source geometry and review images remain outside Git.
+Human interpretation is comparison evidence only; no source-specific allow/deny
+list is loaded into reconstruction. This supersedes the earlier ambiguity counts.
+
+The existing array detector already identifies recurring source cells with an
+unproven or competing material-face family. A legacy/canonical subdivision origin
+must not bypass that negative evidence. Candidates wholly covered by those source
+cells, within the existing numerical area residue, remain diagnostic regardless
+of origin or merging/tiling. Store the witnessing source candidate IDs and outside
+area. Do not buffer the array into neighboring rooms, infer a stair category,
+remove an adjacent landing, or reject a surrounding container just by proximity.
+Independent, unambiguous paired-wall families retain their existing protection.
+
+This bounded correction is not a complete stair/landing classifier. Remaining
+owner-confirmed landing positives block qualification even if the original 19-case
+negative gate stays green. Track that historical gate separately from newly
+adjudicated false positives. Subprecision ring quarantine stays unchanged.
+A rotated un-noded crossing grid also exposes an upstream source-topology noding
+limitation; the cross-origin metamorphic test uses explicitly noded source rails
+to isolate this rule. No general topology repair is introduced by this change.

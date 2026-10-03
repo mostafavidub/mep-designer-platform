@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0297",
-  "summary": "Restore independently source-supported inner enclosure lost through numerical endpoint mismatch; record unresolved positive-source truth without restoring old engine authority.",
+  "summary": "Preserve source-supported enclosure recall and prevent prior subdivision candidates from bypassing existing repeated-cell negative evidence; record completed owner source interpretation and remaining landing false positives.",
   "requester": "project-owner",
   "change_types": [
     "rule",
@@ -34,7 +34,7 @@
     "versioning"
   ],
   "impact_notes": {
-    "cad_designer": "Repair only independently demonstrated source-endpoint numerical coincidence; no source admission, material occupancy, residual-boundary or validator relaxation.",
+    "cad_designer": "Carry existing repeated-cell negative evidence across candidate origins only when the candidate lies wholly within the evidenced array; no stair semantic inference or surrounding-region expansion.",
     "deployment": "Verified not affected in production semantics; inherited full regression and fail-closed downstream gates remain mandatory.",
     "detail_riser": "Verified not affected in production semantics; inherited full regression and fail-closed downstream gates remain mandatory.",
     "docs": "Extend existing enclosure ADR; no redundant ADR.",
@@ -58,20 +58,20 @@
       "Locked MEP-ARCH-RECOG-001 endpoint source-coincidence controls."
     ],
     "tests": [
-      "27 focused controls PASS, including positive/destructive/metamorphic/end-to-end cases; corresponding end-to-end control fails on exact #309. Architecture suite 474 PASS. Final SHA determinism/full governed/official CI reported in stacked PR and task evidence."
+      "Original 27 numerical controls retained; 5 new cross-origin controls. Focused negative/candidate suites56 PASS; architecture479 PASS; full1360 tests +14 subtests PASS. Two new destructive controls fail on exact pre-review HEAD. Final committed-SHA replay and official CI are separately reported in PR310."
     ],
     "docs": [
       "Extended existing enclosure candidate integrity ADR; no new architectural decision or production migration."
     ],
     "version_bump": [
-      "SWCIS patch 4.66.0 -> 4.66.1; numerical correctness and traceability refinement, canonical schema unchanged."
+      "SWCIS4.66.2: candidate provenance cannot bypass an existing source-array veto; no schema change."
     ],
     "migration": [],
     "golden_regression": [
-      "Pre-edit 34-space source/provenance ledger: 3 independently justified geometry corrections, 1 demonstrable recall regression, 30 SOURCE_AMBIGUOUS (including17 unchanged). Development candidate replay preserves0/19 known false claims and Q16/Q19/Q20, keepsQ02 unresolved. No private data committed."
+      "Six owner source interpretations:30 baseline regions are not independent spaces; additional duct is real. 4 independently source-supported baseline positives and the duct preserved. Original known-negative gate0/19; newly reviewed false authority22 ->3. Three additional non-baseline downgraded outputs remain SOURCE_AMBIGUOUS. Private evidence is not a runtime input."
     ],
     "semantic_diff": [
-      "Numerical equivalence restores an independently bounded inner source enclosure. Production source roles, wall occupancy, residual proof, canonical adapter, validator and snapshot gates are unchanged. Unknown positive truth prevents recall qualification."
+      "Preserve numerical recall fix; source roles, segments, walls and closures remain unchanged7/7. Cross-origin source-array guard removes19 reviewed false positives. Three landing false positives remain; qualification/release blocked."
     ],
     "artifact_diff": [
       "Ledger includes raw source geometry, all correspondence edges and candidate disposition. Private data stays outside Git."
@@ -92,12 +92,15 @@
   },
   "waiver": null,
   "verification_status": {
-    "focused": "PASS_27",
-    "architecture": "PASS_474",
+    "focused": "PASS_56",
+    "architecture": "PASS_479",
     "negative_development_gate": "PASS_0_OF_19",
-    "full_regression": "PENDING_EXACT_COMMITTED_SHA",
+    "full_regression": "PASS_1360_PLUS_14_SUBTESTS",
     "official_ci": "PENDING_PUBLICATION",
     "qualification": "ARCHITECTURE_VERIFIED_SPACE_RECALL_PARTIAL",
-    "release": "BLOCKED"
+    "release": "BLOCKED",
+    "human_source_review": "COMPLETE_6_OF_6",
+    "continuation": "PARTIAL_PENDING_FINAL_SHA_REPLAY_AND_CI",
+    "expanded_human_negative_gate": "FAIL_3_REMAINING_OF_22"
   }
 }
