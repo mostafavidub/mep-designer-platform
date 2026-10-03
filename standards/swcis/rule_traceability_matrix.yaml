@@ -830,6 +830,7 @@
         ,"architecture_validation_report"
         ,"architecture_preflight_plan"
         ,"architecture_review_registry"
+        ,"architecture_preflight_ui_state"
       ],
       "engines": [
         "cad_engine/plan_segmentation.py",
@@ -843,6 +844,7 @@
       "cad_engine/architecture_snapshot.py",
       "cad_engine/architecture_review_contract.py",
       "cad_engine/architecture_review_engine.py",
+      "app/architecture_preflight_ui.py",
       "cad_engine/planha_package.py",
       "cad_engine/architecture_benchmark.py",
         "cad_engine/architectural_semantic_scout.py",
@@ -915,6 +917,10 @@
         ,"human_review_never_geometry_authority"
         ,"independent_revalidation_required_after_review"
         ,"review_loop_convergence_and_source_input_escalation"
+        ,"preflight_ui_backend_answers_only"
+        ,"preflight_ui_zero_engineering_authority"
+        ,"preflight_transport_owner_csrf_stale_and_idempotent"
+        ,"preflight_viewer_safe_numeric_primitives_only"
       ],
       "regression_tests": [
       "tests/test_architectural_space_engine.py",
@@ -928,6 +934,7 @@
         "tests/test_mechanical_pre_submission_delivery.py"
         ,"tests/test_architecture_input_foundation_v2.py"
         ,"tests/test_architecture_preflight_review_engine.py"
+        ,"tests/test_architecture_preflight_ui.py"
       ],
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
@@ -942,6 +949,7 @@
         ,"docs/adr/ADR-ARCHITECTURE-INPUT-FOUNDATION-V2.md"
         ,"docs/ARCHITECTURE_PREFLIGHT_REVIEW_ENGINE.md"
         ,"docs/adr/ADR-ARCHITECTURE-PREFLIGHT-BOUNDED-REVIEW.md"
+        ,"docs/ARCHITECTURE_PREFLIGHT_UI.md"
       ]
     },
     {

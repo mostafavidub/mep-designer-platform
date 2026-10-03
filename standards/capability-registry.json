@@ -668,6 +668,33 @@
       ]
     },
     {
+      "id": "architecture_preflight_ui",
+      "status": "LOCKED",
+      "requirements": [
+        "persian_rtl_backend_state_presentation",
+        "backend_allowed_answers_only",
+        "zero_frontend_engineering_inference",
+        "zero_manual_geometry_authoring",
+        "owner_project_and_review_item_binding",
+        "csrf_and_strict_payload_validation",
+        "stale_safe_idempotent_transport",
+        "independent_revalidation_feedback",
+        "server_snapshot_identity_only",
+        "safe_numeric_svg_primitives",
+        "accessible_responsive_review_experience",
+        "production_consumers_unchanged"
+      ],
+      "tests": [
+        "test_view_model_uses_backend_answers_and_persian_labels_without_changing_values",
+        "test_auto_quick_input_and_conflict_states_render_with_safe_persian_copy",
+        "test_owner_binding_blocks_cross_project_get_and_post",
+        "test_tampering_csrf_answer_item_fingerprint_and_extra_geometry_are_rejected",
+        "test_valid_review_revalidates_persists_snapshot_and_retry_is_idempotent",
+        "test_unknown_is_safe_and_never_creates_geometry_or_snapshot",
+        "test_static_assets_have_accessibility_retry_and_no_unsafe_svg_or_geometry_editing"
+      ]
+    },
+    {
       "id": "semantic_dimensioning",
       "status": "LOCKED",
       "requirements": [

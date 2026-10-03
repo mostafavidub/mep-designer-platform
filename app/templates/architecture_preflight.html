@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}بررسی معماری | Planha{% endblock %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="/static/architecture-preflight.css?v=2">{% endblock %}
+{% block body %}
+<main class="preflight-shell" data-preflight-root data-project-id="{{p.id}}" data-state="{{preflight.state}}" data-csrf="{{csrf_token}}">
+  <nav class="preflight-back" aria-label="مسیر صفحه"><a href="/projects/{{p.id}}">پروژه</a><span aria-hidden="true">←</span><span>بررسی معماری</span></nav>
+  <header class="preflight-header state-{{preflight.state|lower}}">
+    <div><p class="preflight-kicker">ARCHITECTURE PREFLIGHT</p><h1>{{preflight.title}}</h1><p>{{preflight.description}}</p></div>
+    <div class="preflight-status" role="status"><span aria-hidden="true"></span><strong>{{preflight.state}}</strong></div>
+  </header>
+
+  {% if preflight.state == 'QUICK_REVIEW_REQUIRED' and preflight.question %}
+  <section class="preflight-layout" aria-label="بررسی مورد معماری">
+    <div class="preflight-viewer-card">
+      <div class="viewer-head"><div><h2>موقعیت در پلان</h2><p>نمای محلی دقیقاً براساس محدوده ارسالی موتور بررسی است.</p></div><div class="viewer-toolbar" role="toolbar" aria-label="کنترل نمای پلان"><button type="button" data-view-action="zoom-in" aria-label="بزرگ‌نمایی">＋</button><button type="button" data-view-action="zoom-out" aria-label="کوچک‌نمایی">−</button><button type="button" data-view-action="fit" aria-label="نمایش محدوده بررسی">جاگذاری</button><button type="button" data-view-action="reset" aria-label="بازنشانی نما">بازنشانی</button></div></div>
+      <div class="preflight-viewer" data-preflight-viewer tabindex="0" aria-label="نمای هندسی مورد بررسی؛ برای جابه‌جایی از کلیدهای جهت‌دار استفاده کنید"><svg role="img" aria-label="هندسه منبع و لایه‌های درخواستی بررسی"></svg><p class="viewer-empty" hidden>برای این مورد، هندسه قابل نمایش ارائه نشده است.</p></div>
+      <div class="overlay-legend" aria-label="راهنمای لایه‌ها"><span class="legend-wall">دیوار</span><span class="legend-space">فضا</span><span class="legend-aperture">بازشو</span><span class="legend-focus">محل بررسی</span></div>
+    </div>
+    <aside class="preflight-review-panel">
+      <div class="review-progress"><span>مورد {{preflight.reviewed_count + 1}} از {{preflight.total_count}}</span><strong>{{preflight.remaining_count}} مورد باقی‌مانده</strong></div>
+      <div class="impact-badge"><span aria-hidden="true">●</span>{{preflight.question.impact_label}}</div>
+      <h2>{{preflight.question.text}}</h2>
+      {% if preflight.question.evidence %}<section class="evidence-block"><h3>شواهد موجود</h3><dl>{% for row in preflight.question.evidence %}<div><dt>{{row.key}}</dt><dd>{{row.value}}</dd></div>{% endfor %}</dl></section>{% endif %}
+      {% if preflight.question.recommendation %}<section class="recommendation"><span>پیشنهاد سیستم · صرفاً راهنما</span><strong>{{preflight.question.recommendation}}</strong>{% if preflight.question.recommendation_confidence %}<small>اطمینان: {{preflight.question.recommendation_confidence}}</small>{% endif %}</section>{% endif %}
+      <form data-review-form data-review-item-id="{{preflight.question.review_item_id}}" data-review-fingerprint="{{preflight.question.review_fingerprint}}">
+        <fieldset><legend>پاسخ شما</legend>{% for answer in preflight.question.answers %}<label class="review-answer"><input type="radio" name="decision" value="{{answer.value}}" required><span>{{answer.label}}</span></label>{% endfor %}</fieldset>
+        <button type="submit" class="review-submit">ثبت و بررسی مجدد</button>
+      </form>
+      <p class="review-live" data-review-live aria-live="polite"></p>
+      <details class="technical-details"><summary>جزئیات فنی</summary><dl><div><dt>Frame / Level</dt><dd dir="ltr">{{preflight.question.technical.frame or '—'}}</dd></div><div><dt>Object</dt><dd dir="ltr">{{preflight.question.technical.object or '—'}}</dd></div><div><dt>Review ID</dt><dd dir="ltr">{{preflight.question.review_item_id}}</dd></div><div><dt>Fingerprint</dt><dd dir="ltr">{{preflight.question.technical.fingerprint}}</dd></div><div><dt>Validator codes</dt><dd dir="ltr">{{preflight.raw_validator_codes|join(', ') or '—'}}</dd></div><div><dt>Source handles</dt><dd dir="ltr">{{preflight.question.technical.source_handles|join(', ') or '—'}}</dd></div></dl></details>
+    </aside>
+  </section>
+  {% elif preflight.state == 'AUTO_VALIDATED' %}
+  <section class="preflight-outcome success"><span class="outcome-icon" aria-hidden="true">✓</span><div><h2>ورودی معماری تأیید شد</h2><p>توپولوژی بحرانی موردنیاز موتور از کنترل مستقل عبور کرده و در حال حاضر پاسخ انسانی لازم نیست.</p>{% if preflight.snapshot %}<dl class="snapshot-meta"><div><dt>وضعیت Snapshot</dt><dd dir="ltr">{{preflight.snapshot.validation_state}}</dd></div><div><dt>Snapshot ID</dt><dd dir="ltr">{{preflight.snapshot.snapshot_id}}</dd></div><div><dt>موارد بررسی‌شده</dt><dd>{{preflight.reviewed_count}}</dd></div><div><dt>Source revision</dt><dd dir="ltr">{{preflight.snapshot.source_revision or preflight.source_sha256}}</dd></div></dl>{% endif %}<a class="btn primary" href="/projects/{{p.id}}">بازگشت به پروژه</a></div></section>
+  {% elif preflight.state == 'ARCHITECTURE_INPUT_REQUIRED' %}
+  <section class="preflight-outcome input-required"><span class="outcome-icon" aria-hidden="true">!</span><div><h2>اصلاح فایل معماری لازم است</h2><p>این موارد با انتخاب یک پاسخ قابل حل نیستند، چون شواهد مهندسی لازم در منبع وجود ندارد.</p>{% for row in preflight.source_actions %}<article class="source-action"><div><span>کجا</span><strong dir="ltr">{{row.frame_or_level_id or 'محدوده مشخص‌شده'}}</strong></div><div><span>چه چیزی کم است</span><strong>{{row.missing_label}}</strong></div><div><span>چرا مهم است</span><strong>{{row.impact_label}}</strong></div><div><span>چه چیزی اصلاح شود</span><strong>{{row.correction_label}}</strong></div></article>{% else %}<p class="safe-message">اطلاعات منبع برای تشکیل توپولوژی بحرانی کافی نیست. فایل معماری باید با شواهد هندسی معتبر تکمیل شود.</p>{% endfor %}<a class="btn secondary" href="/projects/{{p.id}}">بازگشت به پروژه</a></div></section>
+  {% elif preflight.state == 'CONFLICT' %}
+  <section class="preflight-outcome conflict"><span class="outcome-icon" aria-hidden="true">×</span><div><h2>ادامه طراحی مسدود است</h2>{% if preflight.engine_defects %}<p>در پردازش داخلی این بخش ناسازگاری تشخیص داده شد. این مورد نیاز به بررسی سیستم دارد.</p>{% else %}<p>شواهد معتبر با یکدیگر تعارض دارند و این صفحه اجازهٔ حل ظاهری تعارض را نمی‌دهد.</p>{% endif %}<p class="support-id">شناسه تشخیصی: <span dir="ltr">{{(preflight.engine_defects[0].issue_id if preflight.engine_defects else preflight.raw_validator_codes|join(','))}}</span></p><a class="btn secondary" href="/projects/{{p.id}}">بازگشت به پروژه</a></div></section>
+  {% endif %}
+
+  {% if preflight.diagnostics %}<details class="analysis-details"><summary>جزئیات غیرمسدودکننده تحلیل</summary><ul>{% for item in preflight.diagnostics %}<li><span dir="ltr">{{item.normalized_code}}</span></li>{% endfor %}</ul></details>{% endif %}
+  <script id="preflight-viewer-data" type="application/json">{{viewer_data|tojson}}</script>
+</main>
+<script defer src="/static/architecture-preflight.js?v=3"></script>
+{% endblock %}
