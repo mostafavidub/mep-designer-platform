@@ -641,7 +641,12 @@
         "review_and_snapshot_semantic_identity",
         "deterministic_non_production_planha_package",
         "blind_hard_gated_benchmark",
-        "production_consumers_unchanged"
+        "production_consumers_unchanged",
+        "source_supported_enclosure_candidate_selection",
+        "deterministic_parent_child_candidate_integrity",
+        "parent_container_never_physical_space_by_label_or_overlap",
+        "wall_face_pairing_axis_between_source_faces",
+        "hard_exclusions_preserved_during_enclosure_recovery"
       ],
       "tests": [
         "test_column_cannot_be_verified_void",
@@ -659,7 +664,12 @@
         "test_represented_levels_and_title_evidence_survive_without_geometry_duplication",
         "test_critical_duplicate_and_evidence_references_fail_closed",
         "test_planha_package_round_trip_is_deterministic_and_corruption_fails",
-        "test_benchmark_is_deterministic_and_hard_gates_cannot_be_masked"
+        "test_benchmark_is_deterministic_and_hard_gates_cannot_be_masked",
+        "test_unequal_faces_center_axis_between_sources",
+        "test_pair_axis_correction_does_not_admit_unrelated_faces",
+        "test_nonphysical_candidate_cannot_receive_material_authority",
+        "test_supported_physical_cell_role_retains_existing_authority",
+        "test_precision_collapsed_inner_ring_fails_closed"
       ]
     },
     {

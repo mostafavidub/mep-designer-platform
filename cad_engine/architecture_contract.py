@@ -275,6 +275,7 @@ def adapt_current_architecture(current_model, engine_identity=None):
                        "source_handles": deepcopy(row.get("source_handles") or []),
                        "evidence_ids": [x["evidence_id"] for x in ev],
                        "geometry_fingerprint": (row.get("traceability") or {}).get("geometry_fingerprint"),
+                       **({"candidate_id": row["candidate_id"], "candidate_role": row.get("candidate_role")} if "candidate_id" in row else {}),
                        "authority": _authority(geometry_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
                                                material_geometry=True)})
 
@@ -407,7 +408,8 @@ def adapt_current_architecture(current_model, engine_identity=None):
                                  "legacy_model_hash": content_hash(legacy_semantic_projection(model)),
                                  "legacy_content_hash": content_hash(model),
                                  "canonical_identity_version": IDENTITY_VERSION},
-                "execution_diagnostics": {"engine_identity": deepcopy(engine_identity or {})},
+                "execution_diagnostics": {"engine_identity": deepcopy(engine_identity or {}),
+                                          "enclosure_candidates": deepcopy(model.get("enclosure_candidates") or [])},
                 "release": {"status": "VERIFIED" if current_release else "INPUT_REQUIRED",
                             "downstream_engineering_allowed": bool((model.get("completeness") or {}).get("downstream_engineering_allowed")),
                             "release_allowed": current_release}}

@@ -1,0 +1,110 @@
+{
+  "change_id": "SWCIS-2026-0296",
+  "summary": "Recover independently source-supported enclosures and separate parent/container candidates without restoring excluded false geometry.",
+  "requester": "project-owner",
+  "change_types": [
+    "rule",
+    "schema",
+    "test",
+    "documentation",
+    "drawing_output",
+    "governance",
+    "versioning"
+  ],
+  "changed_rule_ids": [
+    "MEP-ARCH-RECOG-001"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "cad_designer": "Correct wall-face offset and select source-supported enclosure cells with deterministic candidate diagnostics; preserve hard exclusions.",
+    "deployment": "No deployment or merge permitted by this task; official CI pending.",
+    "detail_riser": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "docs": "Document durable parent/container distinction, existing boundary proof, source-face correction and independent invalid-ring follow-up.",
+    "equipment": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "governance": "One versioned CR0296; no waiver, merge or deployment.",
+    "manifest": "Changed geometry/evidence naturally changes canonical and review/snapshot identities; no copying previous qualifications.",
+    "manufacturer_selector": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "migration": "Optional diagnostics only; no schema identifier change, database migration or production activation.",
+    "planner": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "pmm": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "qa": "Independent validator guards parent/nonphysical candidate authority; full governed tests PASS (1328 tests and 14 subtests).",
+    "questionnaire": "No question or answer can create enclosure geometry; review remains bounded.",
+    "routing": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "rule_book": "Extend locked MEP-ARCH-RECOG-001 traceability for independent enclosure candidate integrity.",
+    "sizing": "No implementation or schema change; existing architecture completeness and independent validation gates remain mandatory before downstream engineering. Full governed Python 3.12 regression: 1328 tests and 14 subtests PASS.",
+    "ui_api": "No UI or route change; candidate diagnostics cannot authorize geometry through review.",
+    "versioning": "SWCIS 4.66.0 additive contract refinement; canonical schema remains planha-canonical-architecture/2.0."
+  },
+  "evidence": {
+    "traceability": [
+      "standards/swcis/rule_traceability_matrix.yaml: locked MEP-ARCH-RECOG-001 producer/validator/candidate integrity chain."
+    ],
+    "tests": [
+      "PASS: Python 3.12 full governed suite: 1328 tests and 14 subtests, 69.15 seconds; includes positive/negative enclosure controls and Foundation/Preflight/Snapshot protections."
+    ],
+    "docs": [
+      "docs/ARCHITECTURE_INPUT_FOUNDATION_V2.md and docs/adr/ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.md."
+    ],
+    "version_bump": [
+      "standards/swcis/version_manifest.yaml and matching canonical standard: 4.65.0 -> 4.66.0."
+    ],
+    "migration": [
+      "standards/swcis/migrations/architecture-enclosure-candidate-integrity.json; same schema identifier, optional diagnostics, stale-safe regeneration."
+    ],
+    "golden_regression": [
+      "Exact frozen dependency baseline reproduced 7/7 before implementation. Development replay of seven sources preserves zero known false authority across 19 reviewed cases. Final committed-SHA repeat and official CI results are recorded externally in the task report and stacked PR."
+    ],
+    "semantic_diff": [
+      "Development evidence recovers three target enclosures; one remains source-evidence unresolved. Of 34 baseline VERIFIED spaces, 17 preserve exact geometry/authority and 17 change; coverage, material and array guards explain decisions but exhaustive recognition preservation is not established. Task remains ARCHITECTURE_ENCLOSURE_RECOVERY_PARTIAL."
+    ],
+    "artifact_diff": [
+      "Candidate hierarchy and recovery diagnostics are additive. Invalid serialized rings are retained only as diagnostics, never repaired or promoted. Source drawings and private reports are not committed."
+    ],
+    "numeric_diff": [
+      "Paired axis normal offset averages both source faces relative to the selected base origin. Occupied material uses only common projected face intervals. Existing distance tolerance remains unchanged; residual unsupported boundary length fails closed."
+    ],
+    "contract_diff": [
+      "Add candidate role/hierarchy/provenance and uncovered-boundary diagnostics; parent/nonphysical candidates cannot obtain geometry authority. No new Portal, Door or access semantics."
+    ],
+    "deployment_plan": [
+      "No merge, Staging or Production deployment. Publication and official CI only after final validation."
+    ],
+    "rollback_plan": [
+      "Revert to preceding approved Git commit and regenerate artifacts; keep source immutable and engineering gates mandatory."
+    ]
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 5,
+    "detectability": 3,
+    "score": 45,
+    "rationale": "Recognition and authority changes require positive/negative controls, frozen development truth and independent validation."
+  },
+  "waiver": null,
+  "verification_status": {
+    "baseline": "PASS_EXACT_7_OF_7",
+    "focused_tests": "PASS",
+    "full_regression": "PASS_1328_TESTS_14_SUBTESTS",
+    "required_ci": "PENDING_PUBLICATION",
+    "release": "BLOCKED"
+  }
+}
