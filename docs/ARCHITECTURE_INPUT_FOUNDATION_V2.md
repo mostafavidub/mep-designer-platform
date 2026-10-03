@@ -77,3 +77,62 @@ Constraint reasoning and targeted vision tie-breakers remain separate research.
 Multi-level frame metadata is additive. A typical-floor frame carries every
 `represented_level_id` without duplicating its geometry; roof and roof-headroom
 titles remain distinct and unknown titles remain unresolved.
+
+## Source-role and physical-evidence correction (SWCIS 4.65.0)
+
+The RAW DXF producer now classifies source roles before granting topology or
+material authority. Reusable column, furniture, detail and reference evidence
+vetoes incompatible wall/void interpretation. A nearby duct label cannot turn a
+column into a void, and detail/reference geometry cannot become a material wall.
+Classifications and negative evidence remain traceable in the corrected model.
+
+Physical spaces carry separate geometry and semantic status. Local source
+segments, supported occupied wall intervals and proven enclosure closures form
+`geometry_evidence`; labels do not prove enclosure. Missing boundary support or
+unresolved interior wall evidence prevents verified physical geometry. Exact
+semantic hosts must be unique. Ambiguous boundary labels and unproven local
+service labels remain unresolved, and their functional zones and legacy room
+projections retain the unresolved status. Valid closed boundary geometry can
+remain valid while a room's semantic interpretation still needs input.
+
+The independent validator recomputes coverage of the entire polygon boundary,
+including holes, from evidence segments. It does not accept a claimed VERIFIED
+status in place of geometry or accept contradictory negative evidence. Claimed
+reconstruction tolerance is capped at the existing four-times-0.05-metre bound
+(converted through source scale); it does not confer new closure authority.
+Source roles also independently prohibit COLUMN-as-VERIFIED-VOID and
+DETAIL/REFERENCE_ONLY material walls. Explicit semantic-only legacy evidence
+cannot acquire a source-geometric origin through adaptation.
+
+The v2 schema retains its identifier and adds optional role/proof fields, so
+source-backed legacy structured inputs remain readable. New evidence changes
+semantic hashes when geometry, authority or provenance changes. Existing review
+fingerprints and snapshot identity checks therefore invalidate affected old
+qualifications naturally. Regeneration and rollback are defined in
+`standards/swcis/migrations/architecture-false-authority-evidence.json`.
+
+### Verification and remaining boundary
+
+The focused validator suite passed 23 tests; foundation, identity and preflight
+review suites passed 53 tests; preflight UI passed 11 tests. These executed
+results do not substitute for full regression, private corpus comparison or CI.
+An initial full run reported 1235 passed plus 14 subtests; the final rerun after
+latest additions remains pending. Seven private development pilots were replayed
+twice with equal canonical/validator/preflight identities and no duplicate IDs.
+The preliminary comparison records intentional geometry/count changes and three
+false column void removals; unclassified removals are not presumed correct. Its
+first candidate run preceded later positive-recall safeguards, so this is not a
+held-out or final recall claim. Final replay and CI remain pending in change
+request SWCIS-2026-0295. No private drawing geometry, handles or labels are
+stored in these contracts.
+
+The reconstructed furniture-plus-room-label negative test demonstrates that
+legacy room projection does not restore VERIFIED status and the mechanical
+completeness gate remains closed. `run_engineering_pipeline` checks completeness
+before calculations and routing. Existing migration debt remains: some legacy
+room/profile consumers trust aggregate completeness and do not independently
+validate each room, while the app's model aggregator derives completeness from
+collected issue lists. Malformed or old aggregate inputs with missing issues
+require separate consumer migration; this change does not claim to eliminate
+that existing trust boundary or activate v2 production consumers. Snapshot
+creation continues to require an independently validated PASS.

@@ -805,6 +805,11 @@
       "title": "Architecture space and equipment recognition requires eighteen controls and an exact score of 100",
       "status": "LOCKED",
       "pmm_fields": [
+        "source_roles",
+        "geometry_evidence",
+        "geometry_status",
+        "semantic_status",
+        "negative_evidence",
         "architecture_sha256",
         "approved_architecture_revision",
         "calibration",
@@ -833,6 +838,8 @@
         ,"architecture_preflight_ui_state"
       ],
       "engines": [
+        "cad_engine/architectural_source_roles.py",
+        "cad_engine/architecture_boundary_evidence.py",
         "cad_engine/plan_segmentation.py",
         "cad_engine/architecture_reconstruction.py",
       "cad_engine/architectural_space_engine.py",
@@ -866,6 +873,10 @@
         "recognition QA report"
       ],
       "qa_rules": [
+        "source_role_negative_evidence_veto_before_wall_and_void_authority",
+        "geometry_proof_independent_of_semantic_status",
+        "independent_recomputed_boundary_coverage",
+        "semantic_host_uniqueness_and_local_service_host",
         "immutable_source_identity",
         "units_scale_orientation_bounds",
         "deterministic_frame_separation",
@@ -928,6 +939,10 @@
         ,"review_and_snapshot_semantic_identity"
       ],
       "regression_tests": [
+        "tests/test_architecture_source_roles.py",
+        "tests/test_architecture_semantic_authority.py",
+        "tests/test_architecture_false_authority_validator.py",
+        "tests/test_architecture_false_authority_integration.py",
       "tests/test_architectural_space_engine.py",
       "tests/test_pre_topology_object_classifier.py",
         "tests/test_architectural_semantic_scout.py",

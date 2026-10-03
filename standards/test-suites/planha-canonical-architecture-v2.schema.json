@@ -35,12 +35,12 @@
         }
       }
     },
-    "walls": {"type": "array", "items": {"type": "object", "required": ["wall_id", "frame_id", "centerline", "source_handles", "authority"], "properties": {"centerline": {"$ref": "#/$defs/line"}}}},
-    "physical_spaces": {"type": "array", "items": {"type": "object", "required": ["physical_space_id", "frame_id", "polygon", "interior_rings", "topology_status", "authority"], "properties": {"polygon": {"$ref": "#/$defs/ring"}, "represented_level_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}}}},
+    "walls": {"type": "array", "items": {"type": "object", "required": ["wall_id", "frame_id", "centerline", "source_handles", "authority"], "properties": {"centerline": {"$ref": "#/$defs/line"}, "source_roles": {"$ref": "#/$defs/source_roles"}, "negative_evidence": {"type": "array"}}}},
+    "physical_spaces": {"type": "array", "items": {"type": "object", "required": ["physical_space_id", "frame_id", "polygon", "interior_rings", "topology_status", "authority"], "properties": {"polygon": {"$ref": "#/$defs/ring"}, "represented_level_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}, "source_roles": {"$ref": "#/$defs/source_roles"}, "negative_evidence": {"type": "array"}, "geometry_evidence": {"$ref": "#/$defs/geometry_evidence"}, "geometry_status": {"type": "string"}, "semantic_status": {"type": "string"}}}},
     "functional_zones": {"type": "array", "items": {"type": "object", "required": ["zone_id", "physical_space_id", "boundary_status", "semantic_status", "authority"]}},
     "apertures": {"type": "array", "items": {"type": "object", "required": ["aperture_id", "frame_id", "status", "host_wall_ids"]}},
     "portals": {"type": "array", "items": {"type": "object", "required": ["opening_id", "type", "status", "authority"], "properties": {"type": {"enum": ["DOOR", "WINDOW", "OPEN_PASSAGE", "UNKNOWN"]}}}},
-    "voids": {"type": "array", "items": {"type": "object", "required": ["void_id", "frame_id", "type", "boundary", "source_handles", "authority"]}},
+    "voids": {"type": "array", "items": {"type": "object", "required": ["void_id", "frame_id", "type", "boundary", "source_handles", "authority"], "properties": {"source_roles": {"$ref": "#/$defs/source_roles"}, "negative_evidence": {"type": "array"}}}},
     "dimensions": {"type": "array"},
     "graphs": {"type": "object", "required": ["adjacency", "enclosure", "access"]},
     "unresolved_items": {"type": "array"},
@@ -56,6 +56,8 @@
     "release": {"type": "object", "required": ["status", "downstream_engineering_allowed", "release_allowed"]}
   },
   "$defs": {
+    "source_roles": {"type": "array", "items": {"type": ["string", "object"]}},
+    "geometry_evidence": {"type": "object", "properties": {"status": {"enum": ["VERIFIED", "SUPPORTED", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"]}, "source_handles": {"type": "array", "items": {"type": "string"}}, "segments": {"type": "array", "items": {"oneOf": [{"$ref": "#/$defs/line"}, {"type": "object", "properties": {"geometry": {"$ref": "#/$defs/line"}}}]}}, "tolerance": {"type": "number", "exclusiveMinimum": 0}, "negative_evidence": {"type": "array"}, "unresolved_internal_segment_ids": {"type": "array"}}, "additionalProperties": true},
     "point": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "minItems": 2, "maxItems": 3},
     "line": {"type": "array", "items": {"$ref": "#/$defs/point"}, "minItems": 2},
     "ring": {"type": "array", "items": {"$ref": "#/$defs/point"}, "minItems": 3},

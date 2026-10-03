@@ -39,12 +39,14 @@ from .architectural_gap_review import (
     validate_review_decisions,
 )
 from .pre_topology_object_classifier import (
+    annotate_source_roles,
     classify_source_record,
     excludes_from_wall_admission,
     repeated_compact_column_handles,
     standardize_source_records,
 )
 
+from .architecture_boundary_evidence import physical_boundary_evidence
 
 SCHEMA = "canonical-architectural-model/1.0"
 STATUSES = {"VERIFIED", "HIGH_CONFIDENCE", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"}
@@ -81,9 +83,9 @@ SPACE_ONTOLOGY = {
     "void": ("void", "بازشو", "فضای خالی"),
     "balcony": ("balcony", "بالکن"),
     "terrace": ("terrace", "تراس"),
-    "patio": ("patio", "حیاط خلوت"),
+    "patio": ("patio",),
     "yard": ("yard", "حیاط"),
-    "backyard": ("backyard", "حیاط پشتی"),
+    "backyard": ("backyard", "حیاط پشتی", "حیاط خلوت"),
     "lightwell": ("lightwell", "نورگیر"),
     "roof_terrace": ("roof terrace", "تراس بام"),
     "parking": ("parking", "پارکینگ"),
@@ -304,6 +306,7 @@ def _opening_candidates(extracted, source_hash):
     """
     rows = []
     for obj in extracted["objects"]:
+        if obj.get("pre_topology_object_class") in {"DETAIL_GRAPHIC","SECTION_CUT","SHEET_FRAME"}: continue
         kinds = set(obj.get("object_types") or [])
         if not kinds.intersection({"door", "window"}):
             continue
@@ -313,6 +316,7 @@ def _opening_candidates(extracted, source_hash):
                          "source_handle": obj.get("handle"), "evidence": [{"class": "CAD_BLOCK", "name": obj.get("name"), "layer": obj.get("layer")}],
                          "status": "CANDIDATE"})
     for primitive in extracted["primitives"]:
+        if primitive.get("pre_topology_object_class") in {"DETAIL_GRAPHIC","SECTION_CUT","SHEET_FRAME"}: continue
         if primitive.get("source_block"):
             continue
         layer = normalize_text(primitive.get("layer"))
@@ -332,6 +336,7 @@ def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, me
     tol=max(float(tolerance or .001)*5,1e-8); scale=metres_per_unit or 1.0
     frame_clip=box(*frame_bounds) if frame_bounds else None; leaves=[]
     for primitive in extracted["primitives"]:
+        if primitive.get("pre_topology_object_class") in {"DETAIL_GRAPHIC","SECTION_CUT","SHEET_FRAME"}: continue
         if primitive.get("entity_type")!="LINE": continue
         pts=_primitive_points(primitive)
         if len(pts)==2:
@@ -339,6 +344,7 @@ def _geometric_door_candidates(extracted, wall_lines, source_hash, tolerance, me
             if frame_clip is None or frame_clip.intersects(leaf): leaves.append((primitive,leaf))
     walls=STRtree(wall_lines) if wall_lines else None; rows=[]
     for arc in extracted["primitives"]:
+        if arc.get("pre_topology_object_class") in {"DETAIL_GRAPHIC","SECTION_CUT","SHEET_FRAME"}: continue
         if arc.get("entity_type")!="ARC" or not arc.get("center") or not arc.get("radius"): continue
         pivot=Point(arc["center"])
         if frame_clip is not None and not frame_clip.covers(pivot): continue
@@ -502,7 +508,12 @@ def _extract(doc):
             except Exception: pts = []
             if len(pts) >= 2:
                 closed = bool(getattr(entity, "closed", False)) or pts[0] == pts[-1]
-                record.update(points=pts, closed=closed); primitives.append(record)
+                record.update(points=pts, closed=closed)
+                if kind == "LWPOLYLINE":
+                    record["bulges"]=[float(p[4]) for p in entity.get_points()]
+                else:
+                    record["bulges"]=[float(getattr(v.dxf,"bulge",0) or 0) for v in entity.vertices]
+                primitives.append(record)
                 retained,reason=_boundary_geometry_decision(layer,transform_source,kind)
                 if retained:
                     for a, b in zip(pts, pts[1:] + ([pts[0]] if closed else [])):
@@ -666,16 +677,21 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
     scale=metres_per_unit or 1.0; tol=max(float(tolerance or .001),1e-9)
     repeated_columns=repeated_compact_column_handles(lines,metas,metres_per_unit)
     for meta in metas:
-        if meta.get("handle") in repeated_columns:
+        source_kind,_=_classify_text(" ".join(str(meta.get(k) or "") for k in ("layer","source_block")))
+        if (meta.get("handle") in repeated_columns and not meta.get("pre_topology_object_class")
+                and source_kind not in {"duct","shaft","void","lightwell","pipe_shaft","mechanical_shaft","electrical_shaft"}):
             meta["pre_topology_object_class"]="COLUMN"
+    source_classes=[classify_source_record(meta) for meta in metas]
+    eligible={i for i,c in enumerate(source_classes) if not excludes_from_wall_admission(c)}
     min_thickness=.04/scale; max_thickness=.65/scale
     tree=STRtree(lines); pair_rows=[]
     for index,line in enumerate(lines):
+        if index not in eligible: continue
         _,length=_segment_direction(line)
         if length < min_thickness: continue
         for raw in tree.query(line.buffer(max_thickness)):
             other_index=int(raw)
-            if other_index<=index: continue
+            if other_index<=index or other_index not in eligible: continue
             other=lines[other_index]; distance=line.distance(other)
             if not min_thickness<=distance<=max_thickness: continue
             overlap=_parallel_overlap(line,other)
@@ -691,12 +707,13 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
             paired[left].append((right,distance,overlap)); paired[right].append((left,distance,overlap))
     endpoint_degree=Counter()
     def node(point): return (round(point[0]/(tol*2)),round(point[1]/(tol*2)))
-    for line in lines:
+    for index,line in enumerate(lines):
+        if index not in eligible: continue
         coords=list(line.coords); endpoint_degree[node(coords[0])]+=1; endpoint_degree[node(coords[-1])]+=1
     small_coherent=len(lines)<=20 and all(endpoint_degree[node(point)]>=2 for line in lines for point in (list(line.coords)[0],list(line.coords)[-1]))
     records=[]; accepted=[]
     for index,(line,meta) in enumerate(zip(lines,metas)):
-        pre_topology=classify_source_record(meta)
+        pre_topology=source_classes[index]
         if excludes_from_wall_admission(pre_topology):
             coords=list(line.coords)
             records.append({"segment_id":_stable_id("SEG",[meta.get("handle"),_round_points(coords)]),
@@ -731,6 +748,7 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
                 "source_context":{"layer":meta.get("layer"),"entity_type":meta.get("entity_type"),"closed":meta.get("closed")},
                 "semantic_class":semantic,"wall_probability":probability,"wall_evidence_state":state,
                 "evidence":evidence,"negative_evidence":negative,
+                "pre_topology_classification":pre_topology,
                 "status":"ACCEPTED" if state=="CONFIRMED_WALL" else ("PROVISIONAL" if state=="SUPPORTED_WALL_CANDIDATE" else "REJECTED")}
         records.append(record)
         if record["status"]=="ACCEPTED": accepted.append(line)
@@ -898,6 +916,11 @@ def _recover_supported_partitions(accepted, classified, frame, tolerance, extrac
             pending.remove(component); admitted_this_pass+=len(component)
       iterations.append({"pass":pass_number,"accepted_segment_count":admitted_this_pass,"accepted_total":len(current),"remaining_candidate_components":len(pending)})
       if admitted_this_pass==0: break
+    for record in classified:
+        if record.get("status") != "ACCEPTED":
+            record["recovery_diagnostic"]={"action":"DO_NOT_RECOVER", "reason":"WHY_NOT_RECOVERED",
+                              "negative_evidence":record.get("negative_evidence") or ["INSUFFICIENT_INDEPENDENT_WALL_SUPPORT"],
+                              "source_role":(record.get("pre_topology_classification") or {}).get("topology_role")}
     return current,decisions,iterations
 
 
@@ -985,12 +1008,18 @@ def _filter_wall_solid_cells(polygons, segment_records, extracted, metres_per_un
 def _evidence_for_cell(poly, extracted):
     labels, objects = [], []
     for text in extracted["texts"]:
+        if text.get("pre_topology_role") == "REFERENCE_ONLY": continue
         if poly.covers(Point(text["point"])):
             category, alias = _classify_text(text["text"])
-            if category: labels.append({"category": category, "value": text["text"], "handle": text["handle"], "alias": alias})
+            if category: labels.append({"category": category, "value": text["text"], "handle": text["handle"], "alias": alias, "point":list(text["point"]),
+                                        "source_insert_handle":text.get("source_insert_handle"),
+                                        "source_block_path":text.get("source_block_path") or []})
     for obj in extracted["objects"]:
+        if obj.get("pre_topology_role") == "REFERENCE_ONLY": continue
         if obj.get("point") and poly.covers(Point(obj["point"])) and obj.get("object_types"):
-            objects.append({"types": obj["object_types"], "handle": obj["handle"], "name": obj["name"], "point": obj["point"]})
+            objects.append({"types": obj["object_types"], "handle": obj["handle"], "name": obj["name"], "point": obj["point"],
+                            "source_insert_handle":obj.get("source_insert_handle"), "source_block_path":obj.get("source_block_path") or [],
+                            "hosting_status":"SUPPORTED" if obj.get("footprint") and poly.covers(Polygon(obj["footprint"])) else "POINT_ONLY"})
     return labels, objects
 
 
@@ -999,6 +1028,7 @@ def _label_bindings(spaces, texts, tolerance):
     polygons={s["physical_space_id"]:_space_polygon(s) for s in spaces}
     rows=[]; edge_tolerance=max(float(tolerance or .001)*3,1e-8)
     for text in texts:
+        if text.get("pre_topology_role") == "REFERENCE_ONLY": continue
         category,_=_classify_text(text.get("text")); point=text.get("point")
         if not category or not point: continue
         probe=Point(point)
@@ -1008,19 +1038,21 @@ def _label_bindings(spaces, texts, tolerance):
             edge=sorted(sid for sid,poly in polygons.items() if poly.boundary.distance(probe)<=edge_tolerance)
             candidates=edge; method="UNAMBIGUOUS_EDGE_CONTACT"
         host=candidates[0] if len(candidates)==1 else None
-        rows.append({"label_id":_stable_id("LBL",[text.get("handle"),text.get("text"),point]),
-                     "source_handle":text.get("handle"),"text":text.get("text"),"point":list(point),
+        rows.append({"label_id":_stable_id("LBL",[text.get("handle"),text.get("text"),point,text.get("source_insert_handle"),text.get("source_block_path") or []]),
+                     "source_handle":text.get("handle"),"text":text.get("text"),
+                     "raw_text":text.get("text"),"normalized_text":normalize_text(text.get("text")),"point":list(point),
+                     "source_insert_handle":text.get("source_insert_handle"), "source_block_path":text.get("source_block_path") or [],
                      "semantic_candidate":category,"candidate_space_ids":candidates,
                      "host_space_id":host,"binding_method":method if host else None,
                      "evidence":[{"class":method,"tolerance":edge_tolerance}] if host else [],
-                     "status":"VERIFIED" if host else ("CONFLICT" if len(candidates)>1 else "UNHOSTED")})
+                     "status":"VERIFIED" if host and polygons[host].contains(probe) else ("CONFLICT" if candidates else "UNHOSTED")})
     return rows
 
 
 def _infer_categories(labels, objects):
     evidence = defaultdict(list)
     for label in labels: evidence[label["category"]].append({"class": "TEXT", "handle": label["handle"], "value": label["value"]})
-    object_types = {kind for obj in objects for kind in obj["types"]}
+    object_types = {kind for obj in objects if obj.get("hosting_status")=="SUPPORTED" for kind in obj["types"]}
     rules = {
         "bedroom": ({"bed"},), "kitchen": ({"cabinet", "sink"}, {"cabinet", "stove"}),
         "toilet": ({"wc"},), "bathroom": ({"shower"},), "dining": ({"dining_table"},),
@@ -1055,13 +1087,67 @@ def _associate_dimensions(poly, dimensions, metres_per_unit):
     return rows
 
 
-def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded_label_handles=None):
+def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded_label_handles=None,
+                  geometry_evidence=None, label_bindings=None):
     ring = _round_points(list(poly.exterior.coords)); holes=sorted(_round_points(list(interior.coords)) for interior in poly.interiors)
     physical_id = _stable_id("PS", [source_hash, frame["frame_id"], ring, holes])
     labels, objects = _evidence_for_cell(poly, extracted)
     excluded_label_handles={str(value) for value in (excluded_label_handles or [])}
     labels=[row for row in labels if str(row.get("handle")) not in excluded_label_handles]
+    unresolved_labels=[]
+    if label_bindings is not None:
+        bindings=list(label_bindings.values()) if isinstance(label_bindings,dict) else label_bindings
+        def occurrence(row, handle_key):
+            return (str(row.get(handle_key)), tuple(row.get("point") or []),
+                    str(row.get("source_insert_handle") or ""), tuple(row.get("source_block_path") or []))
+        allowed={occurrence(row,"source_handle") for row in bindings
+                 if row.get("host_space_id")==physical_id and row.get("status")=="VERIFIED"}
+        unresolved_labels=[row for row in labels if occurrence(row,"handle") not in allowed]
+        labels=[row for row in labels if occurrence(row,"handle") in allowed]
+    else:
+        # A boundary point has no unique semantic host even for direct callers.
+        unresolved_labels=[row for row in labels if not poly.contains(Point(row["point"]))]
+        labels=[row for row in labels if row not in unresolved_labels]
+    proof=dict(geometry_evidence or {})
+    if not proof:
+        # Direct callers get local source geometry evidence, never drawing-wide handles.
+        segments=[]; tol=max(math.sqrt(poly.area)*1e-8,1e-8)
+        for primitive in extracted.get("primitives",[]):
+            if classify_source_record(primitive).get("object_class")!="ENCLOSURE_CANDIDATE": continue
+            points=_primitive_points(primitive)
+            if len(points)<2: continue
+            pairs=list(zip(points,points[1:]))
+            if primitive.get("closed"): pairs.append((points[-1],points[0]))
+            for a,b in pairs:
+                if a==b: continue
+                line=LineString([a,b])
+                if poly.boundary.buffer(tol).covers(line):
+                    segments.append({"geometry":[a,b],"source_handle":primitive.get("handle"),"source_role":"SOURCE_BOUNDARY"})
+        support=unary_union([LineString(row["geometry"]) for row in segments]) if segments else None
+        covered=poly.boundary.intersection(support.buffer(tol)).length if support is not None else 0
+        ratio=min(1.0,covered/max(poly.length,1e-12))
+        proof={"status":"VERIFIED" if ratio>=1-1e-6 else "INPUT_REQUIRED",
+               "source_handles":sorted({str(row["source_handle"]) for row in segments if row["source_handle"]}),
+               "boundary_segments":segments,"evidence":[{"class":"PHYSICAL_BOUNDARY_SUPPORT","coverage_ratio":ratio,"segments":segments}]}
+    geometry_status=proof.get("status") or "INPUT_REQUIRED"
     semantic = _infer_categories(labels, objects)
+    # Service labels identify a local feature, not an arbitrarily containing roof.
+    # An independently source-closed host or explicit local host proof is required.
+    local_service={"duct","shaft","pipe_shaft","mechanical_shaft","electrical_shaft","lightwell","void"}
+    closed_host=False
+    tol=float(proof.get("tolerance") or 1e-7)
+    if frame.get("frame_type")=="ROOF" and set(semantic)&local_service:
+        for primitive in extracted.get("primitives",[]):
+            if not primitive.get("closed") or excludes_from_wall_admission(classify_source_record(primitive)): continue
+            points=_primitive_points(primitive)
+            if len(points)<3: continue
+            candidate=Polygon(points)
+            source_kind,_=_classify_text(" ".join(str(primitive.get(key) or "") for key in ("layer","source_block","name")))
+            if source_kind in local_service and candidate.is_valid and candidate.boundary.hausdorff_distance(poly.boundary)<=tol:
+                closed_host=True; break
+    unsupported_semantic={}
+    if frame.get("frame_type")=="ROOF" and not (closed_host or proof.get("local_semantic_host_verified")):
+        for kind in set(semantic)&local_service: unsupported_semantic[kind]=semantic.pop(kind)
     categories = sorted(semantic)
     zones = []
     for category in categories:
@@ -1081,9 +1167,15 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded
     if len(categories) > 1:
         status=("VERIFIED" if not incompatible and all(z["status"] == "VERIFIED" for z in zones)
                 else "INPUT_REQUIRED")
+    semantic_status=status
+    if unresolved_labels or unsupported_semantic: semantic_status="INPUT_REQUIRED"
+    if geometry_status not in {"VERIFIED","SUPPORTED","HIGH_CONFIDENCE"} or semantic_status=="INPUT_REQUIRED":
+        status="INPUT_REQUIRED"
+        for zone in zones:
+            zone.update(status="INPUT_REQUIRED",polygon=None,boundary_status="approximate")
     minx, miny, maxx, maxy = poly.bounds; scale = metres_per_unit
     dims = _associate_dimensions(poly, extracted["dimensions"], metres_per_unit)
-    evidence = [{"class": "CAD_TOPOLOGY", "source_handles": sorted({p.get("handle") for p in extracted["primitives"] if p.get("handle")})}]
+    evidence = [{"class": "CAD_TOPOLOGY", "source_handles": list(proof.get("source_handles") or [])}] + list(proof.get("evidence") or [])
     evidence.extend(e for values in semantic.values() for e in values)
     return {"space_id": physical_id, "physical_space_id": physical_id, "level_id": frame.get("level_candidate"),
             "represented_level_ids": sorted(set(frame.get("represented_levels") or [])), "frame_id": frame["frame_id"],
@@ -1094,7 +1186,10 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded
                                      "source": [d["dimension_id"] for d in dims]},
             "openings": [], "windows": [], "adjacent_space_ids": [], "entrances": [], "functional_zones": zones,
             "objects": objects, "dimensions": dims, "confidence": 1.0 if status == "VERIFIED" else (.85 if status == "HIGH_CONFIDENCE" else .0),
-            "status": status, "evidence": evidence, "source_handles": sorted({x.get("handle") for x in labels + objects if x.get("handle")}),
+            "status": status, "geometry_status":geometry_status, "topology_status":geometry_status,
+            "semantic_status":semantic_status, "geometry_evidence":proof,
+            "semantic_candidates":unsupported_semantic, "unresolved_label_evidence":unresolved_labels,
+            "evidence": evidence, "source_handles": list(proof.get("source_handles") or []),
             "traceability": {"source_sha256": source_hash, "frame_id": frame["frame_id"], "geometry_fingerprint": sha256(json.dumps(ring).encode()).hexdigest()}}
 
 
@@ -1114,16 +1209,18 @@ def _opening_point(row):
     return LineString(points).interpolate(.5, normalized=True) if len(points) >= 2 else None
 
 
-def _architectural_void_candidates(extracted, frames, source_hash, tolerance):
+def _architectural_void_candidates(extracted, frames, source_hash, tolerance, metres_per_unit=None):
     """Qualify source-closed void footprints without granting wall/routing authority.
 
     A service label selects among existing closed polygons; it never supplies a
-    polygon.  Labels drawn beside small footprints are accepted only when the
-    same label-to-footprint offset recurs independently in the source, or the
-    label is actually contained by the footprint.
+    polygon. Noncontained labels require independent source void semantics;
+    repeated offsets alone cannot turn structural or drafting geometry into a void.
     """
     closed=[]
     for primitive in extracted.get("primitives") or []:
+        source_record=dict(primitive)
+        source_class=classify_source_record(source_record)
+        if excludes_from_wall_admission(source_class): continue
         if primitive.get("entity_type") not in {"LWPOLYLINE","POLYLINE"} or not primitive.get("closed"): continue
         points=_primitive_points(primitive)
         if len(points)<3: continue
@@ -1133,10 +1230,15 @@ def _architectural_void_candidates(extracted, frames, source_hash, tolerance):
         rotations=[ring[i:]+ring[:i] for i in range(len(ring))]
         reversed_ring=list(reversed(ring)); rotations += [reversed_ring[i:]+reversed_ring[:i] for i in range(len(ring))]
         key=tuple(min(rotations))
-        closed.append((key,poly,primitive))
+        closed.append((key,poly,primitive,source_class))
     dedup={}
-    for key,poly,primitive in closed:
-        row=dedup.setdefault(key,{"polygon":poly,"source_handles":[],"source_segments":[]})
+    for key,poly,primitive,source_class in closed:
+        row=dedup.setdefault(key,{"polygon":poly,"source_handles":[],"source_segments":[],"source_roles":[],"independent_void_semantics":False})
+        row["source_roles"].append(source_class["object_class"])
+        context=" ".join(str(primitive.get(field) or "") for field in ("layer","source_block","name"))
+        kind,_=_classify_text(context)
+        if kind in {"duct","shaft","pipe_shaft","mechanical_shaft","electrical_shaft","void"}:
+            row["independent_void_semantics"]=True
         handle=primitive.get("handle")
         if handle and str(handle) not in row["source_handles"]: row["source_handles"].append(str(handle))
         row["source_segments"].append({"source_handle":handle,"layer":primitive.get("layer"),
@@ -1144,6 +1246,7 @@ def _architectural_void_candidates(extracted, frames, source_hash, tolerance):
     candidates=list(dedup.values())
     labels=[]
     for text_row in extracted.get("texts") or []:
+        if text_row.get("pre_topology_role") == "REFERENCE_ONLY": continue
         category,_=_classify_text(text_row.get("text"))
         if category=="duct" and text_row.get("point"):
             labels.append(text_row)
@@ -1170,11 +1273,13 @@ def _architectural_void_candidates(extracted, frames, source_hash, tolerance):
         centroid=row["polygon"].centroid
         nearest.append({"label":label,"candidate":row,"distance":distance,"second_distance":second,
                         "offset":(round(centroid.x-point.x,3),round(centroid.y-point.y,3)),
-                        "contained":row["polygon"].covers(point)})
+                        "contained":row["polygon"].contains(point),
+                        "boundary_contact":row["polygon"].boundary.distance(point)<=float(tolerance or .001)})
     offset_counts=Counter(row["offset"] for row in nearest)
     output=[]
     for match in nearest:
-        if not match["contained"] and offset_counts[match["offset"]]<2: continue
+        if match["boundary_contact"]: continue
+        if not match["contained"] and not match["candidate"]["independent_void_semantics"]: continue
         label=match["label"]; row=match["candidate"]; poly=row["polygon"]
         frame=next((f for f in frames if f.get("bounds") and box(*f["bounds"]).covers(Point(label["point"]))),None)
         if frame is None or frame.get("scope_relevance")=="REFERENCE_ONLY": continue
@@ -1182,6 +1287,8 @@ def _architectural_void_candidates(extracted, frames, source_hash, tolerance):
         output.append({"void_id":void_id,"frame_id":frame["frame_id"],"void_type":"DUCT_VOID",
                        "boundary":[list(p) for p in poly.exterior.coords],"area":poly.area,
                        "source_handles":sorted(row["source_handles"]),"source_segments":row["source_segments"],
+                       "source_roles":sorted(set(row["source_roles"])),"negative_evidence":[],
+                       "association_basis":"CONTAINED_LABEL_AND_SOURCE_CLOSED_HOST" if match["contained"] else "INDEPENDENT_VOID_SOURCE_SEMANTICS",
                        "label_evidence":{"source_handle":label.get("handle"),"text":label.get("text"),
                                          "point":label.get("point"),"distance":match["distance"],
                                          "nearest_margin":match["second_distance"]-match["distance"],
@@ -1407,8 +1514,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
     internal_wall_gaps=[]
+    source_role_diagnostics=annotate_source_roles(extracted,frames,source["metres_per_unit"],tolerance)
     pre_topology_objects=standardize_source_records(extracted["primitives"])
-    architectural_voids=_architectural_void_candidates(extracted,frames,source["source_sha256"],tolerance)
+    architectural_voids=_architectural_void_candidates(extracted,frames,source["source_sha256"],tolerance,metres_per_unit=source["metres_per_unit"])
     void_label_handles={str(row["label_evidence"]["source_handle"]) for row in architectural_voids
                         if row.get("label_evidence",{}).get("source_handle")}
     explicit_opening_candidates=_opening_candidates(extracted,source["source_sha256"])
@@ -1445,6 +1553,12 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         wall_result=reconstruct_canonical_walls(classified,frame_id=frame["frame_id"],tolerance=tolerance,
                                                 metres_per_unit=source["metres_per_unit"])
         frame_walls=wall_result["walls"]
+        segments_by_id={row["segment_id"]:row for row in classified}
+        for wall in frame_walls:
+            origins=[segments_by_id[sid] for sid in wall.get("source_fragments") or [] if sid in segments_by_id]
+            wall["source_roles"]=sorted({(row.get("pre_topology_classification") or {}).get("topology_role","UNRESOLVED") for row in origins})
+            wall["source_classifications"]=[row["pre_topology_classification"] for row in origins if row.get("pre_topology_classification")]
+            wall["negative_evidence"]=sorted({value for row in origins for value in row.get("negative_evidence") or []})
         canonical_walls.extend(frame_walls); wall_junctions.extend(wall_result["junctions"])
         thickness_clusters.extend(wall_result["thickness_clusters"])
         opening_source_inventories.append(_opening_source_inventory(extracted,frame,source["metres_per_unit"]))
@@ -1476,6 +1590,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                        "barrier_graph_segment_input":len(frame_walls)})
         frame_labels=[]
         for text in extracted["texts"]:
+            if text.get("pre_topology_role") == "REFERENCE_ONLY": continue
             point=text.get("point")
             if not point or (clip is not None and not clip.buffer(tolerance).covers(Point(point))): continue
             category,_=_classify_text(text.get("text"))
@@ -1544,8 +1659,15 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                                    canonical_walls=frame_walls,tolerance=tolerance)
         for row in rejected: row["frame_id"]=frame["frame_id"]
         rejected_cells.extend(rejected)
+        provisional_spaces=[{"physical_space_id":_stable_id("PS",[source["source_sha256"],frame["frame_id"],
+            _round_points(list(p.exterior.coords)),sorted(_round_points(list(h.coords)) for h in p.interiors)]),
+            "polygon":_round_points(list(p.exterior.coords)),
+            "interior_rings":sorted(_round_points(list(h.coords)) for h in p.interiors)} for p in polygons]
+        frame_bindings=_label_bindings(provisional_spaces,extracted["texts"],tolerance)
         spaces.extend(_space_record(p,frame,source["source_sha256"],extracted,source["metres_per_unit"],
-                                    excluded_label_handles=void_label_handles) for p in polygons)
+                                    excluded_label_handles=void_label_handles,
+                                    geometry_evidence=physical_boundary_evidence(p,classified,frame_walls,subdivision_promoted,tolerance),
+                                    label_bindings=frame_bindings) for p in polygons)
     timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
     label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
@@ -1670,6 +1792,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                 "site_exterior_area":sum(r["area"] for r in plan_regions if r["role"]=="SITE_EXTERIOR"),
                                 "overlap_area":0.0},
              "label_bindings":label_bindings,
+             "source_role_diagnostics":source_role_diagnostics,
              "pre_topology_object_standardization":{"schema":"pre-topology-architectural-object-standardization/1.0",
                                                       "items":pre_topology_objects,
                                                       "enclosure_authority":"NONE",

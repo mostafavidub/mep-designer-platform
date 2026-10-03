@@ -1,0 +1,120 @@
+{
+  "change_id": "SWCIS-2026-0295",
+  "summary": "Eliminate source-role, topology and semantic false authority using independently supported geometry and traceable negative evidence.",
+  "requester": "project-owner",
+  "change_types": [
+    "rule",
+    "schema",
+    "test",
+    "documentation",
+    "drawing_output",
+    "governance",
+    "versioning"
+  ],
+  "changed_rule_ids": [
+    "MEP-ARCH-RECOG-001"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "cad_designer": "Correct source-role classification and local physical boundary/semantic hosting; accepted entity counts and authority may change.",
+    "deployment": "No deployment performed. Required full regression and CI remain mandatory before merge; exact deployed verification only after authorized deployment.",
+    "detail_riser": "No implementation change; primary mechanical pipeline remains blocked by incomplete architecture before calculations and routing. Existing room/profile migration debt is documented.",
+    "docs": "Extend existing architecture foundation design document with physical evidence, migration, executed tests and existing legacy trust boundary.",
+    "equipment": "No selection logic change; upstream incomplete architecture keeps canonical mechanical processing blocked.",
+    "governance": "Extend locked recognition traceability and capability evidence without reducing any gate.",
+    "manifest": "Corrected semantic geometry and evidence change canonical hashes, naturally staling prior review/snapshot qualifications.",
+    "manufacturer_selector": "No catalogue or selection changes; consumes gated upstream mechanical processing.",
+    "migration": "Add optional role/proof fields; retain source-backed legacy compatibility, regenerate corrected recognition and invalidate stale fingerprints.",
+    "planner": "No planning implementation change; existing completeness boundary audited, aggregate old-input trust remains documented.",
+    "pmm": "No PMM schema change or v2 production activation. Existing PMM marks current canonical architecture incomplete from downstream_engineering_allowed.",
+    "qa": "23 focused validator tests, 53 foundation/identity/review tests and 11 UI tests passed; full Python 3.12 suite 1240 passed plus 14 subtests; official CI pending.",
+    "questionnaire": "Bounded semantic questions cannot manufacture geometry. Preflight review regression passed with independent revalidation.",
+    "routing": "No new routing or Portal grants; verified void identity remains separate from routing authority and incomplete architecture blocks routing.",
+    "rule_book": "MEP-ARCH-RECOG-001 source-role, independent physical geometry and negative-evidence chain extended; locked 100-point release unchanged.",
+    "sizing": "No calculation or sizing rule changes; primary pipeline stops before calculations on architecture incompleteness.",
+    "ui_api": "11 preflight UI tests passed; no public route or manual geometry authoring changes.",
+    "versioning": "SWCIS 4.65.0 minor additive evidence/schema refinement; canonical schema remains planha-canonical-architecture/2.0 and single runtime retained."
+  },
+  "evidence": {
+    "traceability": [
+      "standards/swcis/rule_traceability_matrix.yaml: MEP-ARCH-RECOG-001 links source roles, geometry evidence and semantic status to producer, adapter, independent validator and regression tests."
+    ],
+    "tests": [
+      "Executed tests/test_architecture_false_authority_validator.py: 23 passed.",
+      "Executed tests/test_architecture_input_foundation_v2.py + tests/test_architecture_identity_determinism.py + tests/test_architecture_preflight_review_engine.py: 53 passed.",
+      "Executed tests/test_architecture_preflight_ui.py: 11 passed with isolated DATA_DIR.",
+      "Full affected regression and required CI remain PENDING; these focused passes do not imply complete release qualification.",
+      "Executed tests/test_architecture_false_authority_integration.py: four full DXF integration tests passed, including one symbol footprint, diagonal geometry authority with explicit floor title, and open plan without invented partitions.",
+      "Full governed Python 3.12 suite: 1240 passed plus 14 subtests using a fresh test database. A previous repeat reused a database and failed the unrelated durable-project import test; clean run passed. Final label traceability addition: focused semantic/integration checks passed. Official CI pending."
+    ],
+    "docs": [
+      "docs/ARCHITECTURE_INPUT_FOUNDATION_V2.md: source-role/physical-evidence correction and remaining legacy trust boundary."
+    ],
+    "version_bump": [
+      "standards/swcis/version_manifest.yaml: 4.64.0 -> 4.65.0; matching canonical standard prose."
+    ],
+    "migration": [
+      "standards/swcis/migrations/architecture-false-authority-evidence.json: additive reader compatibility, corrected hash/review/snapshot invalidation, rollback and consumer inventory."
+    ],
+    "golden_regression": [
+      "Executed established foundation/identity/review/UI regression: 64 passed; existing source-backed canonical fixtures preserved.",
+      "Executed synthetic positive/negative validator cases: 23 passed, including furniture-label full reconstruction blocking mechanical processing. Private corpus comparison and full regression are not claimed complete."
+    ],
+    "semantic_diff": [
+      "Executed legacy source-backed positive validation remains accepted; injected COLUMN/DETAIL/REFERENCE_ONLY and semantic-only evidence is rejected or loses material authority.",
+      "Explicit contradictory boundary evidence cannot regain VERIFIED authority; existing bounded geometry tolerance and independently closed source evidence remain supported."
+    ],
+    "artifact_diff": [
+      "Executed preliminary seven-pilot development replay, fourteen candidate reconstructions: private comparison artifact SHA256 ee056c117bc23494d1f1d2dae9abb78cd803b1b459a70087d21dfde20d49de5e. Private artifact retained outside repository.",
+      "Observed physical-space counts before -> after: 4 -> 3; 53 -> 53; 24 -> 21; 3 -> 2; 5 -> 5; 19 -> 19; 15 -> 11. Wall counts: 149 -> 149; 320 -> 320; 433 -> 301; 193 -> 60; 204 -> 160; 185 -> 184; 310 -> 301. Geometry changes are intentional and not represented as identity-only changes.",
+      "Three verified false column voids reduced to zero. Known symbol diagonals, furniture and detail source instances are absent from material-wall output. Seven repeated runs have zero duplicate identities and equal canonical hashes, validator reports and preflight results.",
+      "PRELIMINARY_DEVELOPMENT_REPLAY_NOT_HELD_OUT: run1 preceded later positive-recall safeguards. Disappearing baseline objects are not automatically false; unclassified removals still require review. Final replay and complete release qualification remain pending."
+    ],
+    "numeric_diff": [
+      "No engineering sizing or design-value changes. Independent validator caps existing reconstruction uncertainty at .2 metre converted to drawing units."
+    ],
+    "contract_diff": [
+      "Optional source_roles, negative_evidence, geometry_status, semantic_status and recomputable geometry_evidence; no newly required legacy fields and no canonical schema identifier change."
+    ],
+    "deployment_plan": [
+      "No merge/deploy performed. Full regression, exact evidence and required CI must all PASS before release action."
+    ],
+    "rollback_plan": [
+      "Revert to preceding approved Git commit and regenerate artifacts; immutable sources retained, no alternate runtime or gate bypass."
+    ]
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 5,
+    "detectability": 3,
+    "score": 45,
+    "rationale": "Recognition and authority changes require positive/negative controls, frozen development truth and independent validation."
+  },
+  "waiver": null,
+  "verification_status": {
+    "focused_tests": "PASS",
+    "full_regression": "PENDING",
+    "private_artifact_comparison": "PRELIMINARY_EXECUTED_NOT_FINAL",
+    "required_ci": "PENDING",
+    "release": "BLOCKED"
+  }
+}

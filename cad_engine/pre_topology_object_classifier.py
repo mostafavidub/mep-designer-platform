@@ -54,7 +54,8 @@ def _normal(value):
 
 def _stable_id(record):
     identity = [record.get("handle") or record.get("source_handle"), record.get("entity_type"),
-                record.get("layer"), record.get("source_block"), record.get("geometry")]
+                record.get("layer"), record.get("source_block"), record.get("geometry"),
+                record.get("source_occurrence_id")]
     raw = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
     return "PTO-" + sha256(raw.encode("utf-8")).hexdigest()[:16].upper()
 
@@ -74,8 +75,8 @@ def classify_source_record(record):
     if geometric_override in OBJECT_CLASSES:
         object_class = geometric_override
         domain = "ARCHITECTURAL_DOMAIN"
-        role = "OBSTACLE_EVIDENCE_ONLY" if object_class == "COLUMN" else "NON_TOPOLOGICAL"
-        positive.append("REPEATED_COMPACT_CLOSED_FOOTPRINT")
+        role = record.get("pre_topology_role") or ("OBSTACLE_EVIDENCE_ONLY" if object_class == "COLUMN" else "NON_TOPOLOGICAL")
+        positive.extend(record.get("pre_topology_evidence") or ["REPEATED_COMPACT_CLOSED_FOOTPRINT"])
         negative.append("NO_WALL_CONTINUITY_EVIDENCE")
     elif entity_type == "DIMENSION":
         object_class, domain, role = "DIMENSION_CHAIN", "SHEET_DOMAIN", "NON_TOPOLOGICAL"
@@ -105,6 +106,7 @@ def classify_source_record(record):
         "schema": SCHEMA,
         "classification_id": _stable_id(record),
         "source_handle": record.get("handle") or record.get("source_handle"),
+        "source_occurrence_id": record.get("source_occurrence_id"),
         "object_class": object_class,
         "domain": domain,
         "topology_role": role,
@@ -137,6 +139,10 @@ def repeated_compact_column_handles(lines, metas, metres_per_unit):
     grouped = {}
     for line, meta in zip(lines, metas):
         handle = meta.get("handle")
+        context = _normal(" ".join(str(meta.get(key) or "") for key in ("layer", "source_block", "name")))
+        if meta.get("pre_topology_object_class") or any(
+                _token_match(context, token) for token in ("duct", "shaft", "void", "داکت", "شفت", "نورگیر")):
+            continue
         if handle is None or not meta.get("closed"):
             continue
         grouped.setdefault(handle, []).append(line)
@@ -161,3 +167,9 @@ def repeated_compact_column_handles(lines, metas, metres_per_unit):
     for _, signature in candidates:
         counts[signature] = counts.get(signature, 0) + 1
     return {handle for handle, signature in candidates if counts[signature] >= 3}
+
+
+def annotate_source_roles(extracted, frames, metres_per_unit, tolerance):
+    """Run reusable world-occurrence roles before any topology consumer."""
+    from .architectural_source_roles import annotate_source_roles as annotate
+    return annotate(extracted, frames, metres_per_unit, tolerance)

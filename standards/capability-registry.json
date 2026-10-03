@@ -624,6 +624,10 @@
       "id": "architecture_input_foundation_v2",
       "status": "LOCKED",
       "requirements": [
+        "source_role_negative_evidence_veto",
+        "physical_boundary_geometry_independent_of_semantics",
+        "independent_recomputed_boundary_proof",
+        "unique_semantic_host_and_local_void_source_evidence",
         "multi_input_one_canonical_model",
         "independent_read_only_validation",
         "no_authority_promotion",
@@ -640,6 +644,12 @@
         "production_consumers_unchanged"
       ],
       "tests": [
+        "test_column_cannot_be_verified_void",
+        "test_reference_detail_cannot_be_material_wall",
+        "test_claimed_verification_does_not_replace_boundary_geometry",
+        "test_positive_status_cannot_erase_boundary_contradiction",
+        "test_adapter_cannot_promote_explicit_semantic_only_legacy_space",
+        "test_reconstructed_reference_geometry_cannot_release_mechanical",
         "test_adapter_preserves_meaning_is_deterministic_and_does_not_mutate",
         "test_validator_valid_model_is_read_only_and_no_score_masking",
         "test_validator_destructive_mutations",

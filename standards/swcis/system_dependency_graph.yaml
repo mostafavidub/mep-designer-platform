@@ -82,6 +82,8 @@
         "cad_engine/project_hvac.py",
         "cad_engine/architecture_reconstruction.py",
       "cad_engine/architectural_space_engine.py",
+      "cad_engine/architectural_source_roles.py",
+      "cad_engine/architecture_boundary_evidence.py",
       "cad_engine/pre_topology_object_classifier.py",
       "cad_engine/architectural_vision_recovery.py",
         "cad_engine/candidate_architectural_classification.py",

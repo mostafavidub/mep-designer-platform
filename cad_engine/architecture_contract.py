@@ -245,6 +245,9 @@ def adapt_current_architecture(current_model, engine_identity=None):
                       "occupied_intervals": deepcopy((row.get("wall_solid") or {}).get("occupied_intervals") or []),
                       "interruptions": deepcopy(row.get("interruptions") or []),
                       "source_handles": deepcopy(row.get("source_handles") or []),
+                      "source_roles": deepcopy(row.get("source_roles") or []),
+                      "source_classifications": deepcopy(row.get("source_classifications") or []),
+                      "negative_evidence": deepcopy(row.get("negative_evidence") or []),
                       "evidence_ids": [x["evidence_id"] for x in ev], "status": wall_status,
                       "authority": _authority(wall_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
                                               material_geometry=True, wall=True)})
@@ -253,15 +256,26 @@ def adapt_current_architecture(current_model, engine_identity=None):
     for row in model.get("physical_spaces") or []:
         ev = _evidence_ids(row.get("evidence") or [], "SPACE-EV", row.get("physical_space_id"))
         evidence_registry.extend(ev)
+        geometry_status = _status(row.get("geometry_status") or row.get("status"))
+        # Legacy semantic-only records cannot acquire material authority merely
+        # because this adapter supplies a SOURCE_GEOMETRIC origin flag.
+        legacy_evidence=row.get("evidence") or []
+        if "geometry_status" not in row and legacy_evidence and all(
+                e.get("class") in {"TEXT","OBJECT_SIGNATURE","SEMANTIC_LABEL","VISION_SUPPORT_ONLY"}
+                for e in legacy_evidence):
+            geometry_status="INPUT_REQUIRED"
         spaces.append({"physical_space_id": row.get("physical_space_id"), "level_id": row.get("level_id"),
                        "represented_level_ids": sorted(set(row.get("represented_level_ids") or [])),
                        "frame_id": row.get("frame_id"), "polygon": deepcopy(row.get("polygon")),
                        "interior_rings": deepcopy(row.get("interior_rings") or []), "area_m2": row.get("area_m2"),
                        "perimeter_m": row.get("perimeter_m"), "category": row.get("category"), "use": row.get("use"),
-                       "topology_status": _status(row.get("status")), "source_handles": deepcopy(row.get("source_handles") or []),
+                       "topology_status": geometry_status, "geometry_status": geometry_status,
+                       "semantic_status": _status(row.get("semantic_status") or row.get("status")),
+                       **({"geometry_evidence": deepcopy(row["geometry_evidence"])} if "geometry_evidence" in row else {}),
+                       "source_handles": deepcopy(row.get("source_handles") or []),
                        "evidence_ids": [x["evidence_id"] for x in ev],
                        "geometry_fingerprint": (row.get("traceability") or {}).get("geometry_fingerprint"),
-                       "authority": _authority(row.get("status"), ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
+                       "authority": _authority(geometry_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
                                                material_geometry=True)})
 
     zones = []
@@ -321,7 +335,10 @@ def adapt_current_architecture(current_model, engine_identity=None):
     voids = []
     for row in (model.get("architectural_voids") or {}).get("items") or []:
         voids.append({"void_id": row.get("void_id"), "frame_id": row.get("frame_id"), "type": row.get("void_type"),
-                      "boundary": deepcopy(row.get("boundary")), "area_m2": row.get("area"),
+                      "boundary": deepcopy(row.get("boundary")),
+                      "area_m2": row.get("area") * float(source.get("metres_per_unit") or 1.0) ** 2 if row.get("area") is not None else None,
+                      "source_roles": deepcopy(row.get("source_roles") or []),
+                      "negative_evidence": deepcopy(row.get("negative_evidence") or []),
                       "source_handles": deepcopy(row.get("source_handles") or []),
                       "geometry_status": _status(row.get("status")), "topology_role": "VOID",
                       "routing_authority": row.get("routing_authority") or "NONE",

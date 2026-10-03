@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.64.0",
+  "standard_version": "4.65.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-09-26",
+  "effective_date": "2026-10-03",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,7 @@
     "golden inventory changes"
   ],
   "history": [
+    {"version": "4.65.0", "date": "2026-10-03", "summary": "Eliminate source-role, boundary and semantic false authority with local recomputable physical evidence, negative-evidence vetoes, and independent validation; preserve existing release gates and canonical runtime."},
     {
       "version": "4.64.0",
       "date": "2026-10-03",
