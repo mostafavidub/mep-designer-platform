@@ -1,0 +1,20 @@
+{
+  "migration_id": "architecture-preflight-ui-v1",
+  "change_id": "SWCIS-2026-0293",
+  "from_contract": "planha-architecture-preflight/1.0",
+  "to_contract": "planha-architecture-preflight-ui/1.0",
+  "status": "EXPERIMENTAL_NOT_ACTIVATED",
+  "strategy": "additive-namespaced-json-reader-before-writer",
+  "production_consumer_enabled": false,
+  "database_migration_required": false,
+  "rules": [
+    "store experimental state under Project.analysis architecture_preflight_ui",
+    "keep Project.status and ordinary questions unchanged",
+    "render only backend states and allowed answers",
+    "accept no geometry or authority from the browser",
+    "revalidate independently before displaying qualification",
+    "display only server-created snapshot identity",
+    "keep legacy production readers unchanged"
+  ],
+  "rollback": "Unregister the experimental routes and remove the dedicated template/assets; existing project flow remains unchanged."
+}

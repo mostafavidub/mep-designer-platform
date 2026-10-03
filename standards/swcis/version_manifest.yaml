@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.62.0",
+  "standard_version": "4.63.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-26",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "4.63.0",
+      "date": "2026-10-03",
+      "summary": "Add an experimental Persian RTL Architecture Preflight presentation and safe owner-bound decision transport with finite primitive visualization, CSRF, strict allowed-answer replay, independent revalidation feedback and server-qualified snapshot display."
+    },
     {
       "version": "4.62.0",
       "date": "2026-10-03",
