@@ -136,3 +136,42 @@ collected issue lists. Malformed or old aggregate inputs with missing issues
 require separate consumer migration; this change does not claim to eliminate
 that existing trust boundary or activate v2 production consumers. Snapshot
 creation continues to require an independently validated PASS.
+
+## Enclosure recall and candidate integrity (SWCIS 4.66.0)
+
+Wall-face pairing measures the signed normal offset from a common source-face
+origin, so unequal endpoint placement cannot move the derived axis outside the
+source faces. Enclosure selection retains independently admitted source-face
+candidates and deterministic containment/overlap evidence. A containing parent or
+building envelope is distinct from a Physical Space and cannot gain material
+geometry authority from a label or overlap alone.
+
+Local endpoint projection is bounded by the existing tolerance and records source
+evidence; it creates no synthetic material Wall, Door, Portal or access edge. Hard
+source exclusions and the existing boundary distance envelope remain unchanged.
+Residual unsupported lengths now fail closed; endpoint contact alone cannot exempt
+an interior partition from proof. Uncovered boundary locations and actual failed recovery predicates
+make unresolved cases diagnosable without increasing their authority. The
+independent validator retains read-only invalid-polygon checks and separately
+rejects nonphysical candidate authority.
+
+The durable candidate distinction is recorded in
+`docs/adr/ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.md`; additive reader and
+review/snapshot regeneration rules are in
+`standards/swcis/migrations/architecture-enclosure-candidate-integrity.json`.
+No schema major bump or production consumer activation is introduced. Final
+focused/full regression and official CI evidence remains pending in CR0296 until
+executed. Existing invalid-ring quantization is an independent fail-closed
+follow-up; this change does not claim to repair it.
+
+New candidate integrity also retains pre-filter motif context. Congruent adjacent
+cell arrays with competing wall-face spacings cannot gain independent room authority
+when material-face families are missing or conflicting; generic wall-layer
+context alone cannot override the ambiguity. Material strips use
+both recurring and local measured thickness families. These are bounded geometric
+negative controls, not area thresholds or semantic label inference.
+
+Paired occupied material now uses the intersection of the occupied source-face
+spans, not their union. A subprecision common span preserves the unpaired source
+walls. Source candidate interiors must be resolvable at the existing evidence
+tolerance and cannot overlap supported occupied wall material.

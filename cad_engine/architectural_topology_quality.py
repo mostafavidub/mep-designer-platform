@@ -145,12 +145,16 @@ def _pair_wall_faces(walls, clusters, tol):
     used=set(); paired=[]
     for _,_,i,j,distance,cluster in sorted(candidates):
         if i in used or j in used: continue
-        used.update((i,j)); a,b=walls[i],walls[j]; la,lb=axes[i],axes[j]
+        a,b=walls[i],walls[j]; la,lb=axes[i],axes[j]
         longer=la if la.length>=lb.length else lb; u,n,angle,_=_axis(longer); base=list(longer.coords)[0]
         ia=_project_interval(la,base,u); ib=_project_interval(lb,base,u); lo=min(ia[0],ib[0]); hi=max(ia[1],ib[1])
         # Center the axis between the two proven faces.
-        midpoint=la.interpolate(.5,normalized=True); signed=(lb.interpolate(.5,normalized=True).x-midpoint.x)*n[0]+(lb.interpolate(.5,normalized=True).y-midpoint.y)*n[1]
-        shift=signed/2
+        # Both offsets must use the chosen base.  A displacement from face A
+        # to face B has the opposite sign when B supplies the longer base;
+        # applying it there would place the axis outside the material faces.
+        midpoints=[face.interpolate(.5,normalized=True) for face in (la,lb)]
+        shift=sum((point.x-base[0])*n[0]+(point.y-base[1])*n[1]
+                  for point in midpoints)/2
         origin=[base[0]+shift*n[0],base[1]+shift*n[1]]
         center=LineString([(origin[0]+lo*u[0],origin[1]+lo*u[1]),(origin[0]+hi*u[0],origin[1]+hi*u[1])])
         def projected_gaps(wall):
@@ -177,12 +181,30 @@ def _pair_wall_faces(walls, clusters, tol):
             if not any(min(right[1],left[1])-max(right[0],left[0])>tol*2 for left in ga):
                 interruptions.append({"interval":right,"kind":"UNKNOWN_FRAGMENTATION","face_a_gap":None,"face_b_gap":right,
                                       "classification":"FRAGMENTATION_GAP","confidence":.35,"status":"AMBIGUOUS"})
-        cuts=sorted(interruptions,key=lambda row:row["interval"]); occupied=[]; cursor=lo
-        for opening in cuts:
-            start,end=opening["interval"]
-            if start>cursor+tol: occupied.append([cursor,start])
-            cursor=max(cursor,end)
-        if cursor<hi-tol: occupied.append([cursor,hi])
+        def projected_material(wall):
+            solid=wall["wall_solid"]; old_origin=solid["axis_origin"]; old_u=solid["axis_direction"]
+            projected=[]
+            for start,end in solid.get("occupied_intervals") or []:
+                points=[(old_origin[0]+value*old_u[0],old_origin[1]+value*old_u[1])
+                        for value in (start,end)]
+                values=[(point[0]-origin[0])*u[0]+(point[1]-origin[1])*u[1] for point in points]
+                projected.append([min(values),max(values)])
+            return projected
+        # A paired material strip is justified only where BOTH source faces
+        # contain material.  The union-length centerline remains a topology
+        # candidate, but a short return cannot manufacture a full-length solid.
+        occupied=[]
+        for left in projected_material(a):
+            for right in projected_material(b):
+                start,end=max(left[0],right[0]),min(left[1],right[1])
+                if end-start>tol:
+                    occupied.append([start,end])
+        occupied.sort()
+        if not occupied:
+            # No resolvable common material: preserve both original walls and
+            # their source traces rather than granting an empty paired solid.
+            continue
+        used.update((i,j))
         handles=sorted(set(a.get("source_handles",[])+b.get("source_handles",[])))
         center_points=_canonical_points(center.coords)
         legacy_sort_id=_sid("WALL",[a["frame_id"],"DOUBLE_FACE",a.get("_identity_sort_key",a["wall_id"]),

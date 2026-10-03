@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.65.0
+**Canonical version:** 4.66.0
 
 **Status:** LOCKED
 
@@ -223,3 +223,13 @@ A final architectural issue cannot be Submission Ready until exact-file
 DimensionIntent identity and visual QA pass. The six-project architectural
 reference corpus is validation evidence only and cannot supply hidden numeric or
 regulatory defaults.
+
+## Source-supported enclosure candidate integrity
+
+SWCIS 4.66.0 preserves hard non-enclosure exclusions while correcting wall-face
+reconstruction and selecting source-supported bounded enclosure candidates.
+Building envelopes and containing parent polygons do not obtain Physical Space
+authority through label containment or overlap. Candidate identities, relationships
+and selection evidence are deterministic; local endpoint projection uses the
+existing bounded tolerance. Independent boundary evidence and invalid-polygon
+validation remain fail-closed. See ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.

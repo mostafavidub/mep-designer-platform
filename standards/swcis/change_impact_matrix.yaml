@@ -122,6 +122,7 @@
         "cad_engine/architectural_gap_review.py",
         "cad_engine/architectural_source_roles.py",
         "cad_engine/architecture_boundary_evidence.py",
+        "cad_engine/architecture_enclosure_candidates.py",
         "cad_engine/architecture_contract.py",
         "cad_engine/architecture_validator.py",
         "cad_engine/architecture_snapshot.py",

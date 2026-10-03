@@ -47,6 +47,7 @@ from .pre_topology_object_classifier import (
 )
 
 from .architecture_boundary_evidence import physical_boundary_evidence
+from .architecture_enclosure_candidates import reconcile_enclosure_candidates
 
 SCHEMA = "canonical-architectural-model/1.0"
 STATUSES = {"VERIFIED", "HIGH_CONFIDENCE", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"}
@@ -867,6 +868,9 @@ def _recover_supported_partitions(accepted, classified, frame, tolerance, extrac
     for text in extracted["texts"]:
         category,_=_classify_text(text.get("text")); point=text.get("point")
         if category and point and bounds[0]<=point[0]<=bounds[2] and bounds[1]<=point[1]<=bounds[3]: label_points.append((Point(point),category))
+    diagnostic_lines = [LineString(row["geometry"]) for row in classified]
+    diagnostic_tree = STRtree(diagnostic_lines) if diagnostic_lines else None
+    component_diagnostics = {}
     pending=list(sorted(components,key=lambda indexes:-sum(lines[i].length for i in indexes))[:400])
     for pass_number in (2,3):
       admitted_this_pass=0
@@ -904,13 +908,28 @@ def _recover_supported_partitions(accepted, classified, frame, tolerance, extrac
             sides_len=sorted(math.dist(x,y) for x,y in zip(rc,rc[1:]) if x!=y)
             if sides_len and sides_len[0]<=local_thickness*1.5 and sides_len[-1]/max(sides_len[0],1e-12)>=3: slivers+=1
         topology_ok=new_regions==0 or slivers<len(after)
+        support_ids = sorted({classified[int(raw)]["segment_id"] for point in endpoints
+                              for raw in (diagnostic_tree.query(point.buffer(snap)) if diagnostic_tree is not None else [])
+                              if classified[int(raw)].get("status") == "ACCEPTED"
+                              and diagnostic_lines[int(raw)].distance(point) <= snap})
+        diagnostic = {"component_segment_ids": sorted(candidates[i]["segment_id"] for i in component),
+                      "pass": pass_number, "wall_support_endpoints": supports,
+                      "local_parallel_pair": local_pair, "face_family": family, "junction_support": junction,
+                      "supporting_source_segment_ids": support_ids, "local_tolerance": snap,
+                      "local_wall_thickness": local_thickness, "geometry_support": bool(geometry_support),
+                      "topology_ok": bool(topology_ok), "topology_before": len(before),
+                      "topology_after": len(after), "new_regions": new_regions, "sliver_count": slivers,
+                      "reason": ("MULTI_EVIDENCE_PARTITION_ADMISSION" if geometry_support and topology_ok else
+                                 "INSUFFICIENT_INDEPENDENT_WALL_SUPPORT" if not geometry_support else
+                                 "TOPOLOGY_ONLY_SLIVERS"), "action": "ADMIT" if geometry_support and topology_ok else "DO_NOT_RECOVER"}
+        for index in component: component_diagnostics[candidates[index]["segment_id"]] = diagnostic
         if geometry_support and topology_ok:
             current.extend(component_lines); wall_union=unary_union(current)
             ids=[]
             for index in component:
                 record=candidates[index]; previous=record["status"]; record["semantic_class"]="PARTITION_FACE"; record["wall_evidence_state"]="SUPPORTED_WALL_CANDIDATE"; record["wall_probability"]=max(float(record.get("wall_probability") or 0),.72); record["status"]="ACCEPTED"
                 record["evidence"].append({"class":"ITERATIVE_PARTITION_RECOVERY","pass":pass_number,"wall_support_endpoints":supports,"local_pair":local_pair,"face_family":family,"junction":junction,"new_regions":new_regions})
-                record["admission_trace"]={"admission_id":_stable_id("ADM",[record["segment_id"],pass_number]),"source_handles":[record.get("source_handle")],"previous_status":previous,"final_status":"ACCEPTED","evidence_classes":sorted(evidence_classes|{"ITERATIVE_PARTITION_RECOVERY"}),"negative_evidence":record.get("negative_evidence") or [],"supporting_wall_ids":[],"junction_ids":[],"local_thickness_cluster":local_thickness,"topology_before":{"region_count":len(before)},"topology_after":{"region_count":len(after),"sliver_count":slivers},"reason":"MULTI_EVIDENCE_PARTITION_ADMISSION","confidence":record["wall_probability"]}
+                record["admission_trace"]={"admission_id":_stable_id("ADM",[record["segment_id"],pass_number]),"source_handles":[record.get("source_handle")],"previous_status":previous,"final_status":"ACCEPTED","evidence_classes":sorted(evidence_classes|{"ITERATIVE_PARTITION_RECOVERY"}),"negative_evidence":record.get("negative_evidence") or [],"supporting_wall_ids":[],"junction_ids":[],"supporting_source_segment_ids":support_ids,"local_tolerance":snap,"local_thickness_cluster":local_thickness,"topology_before":{"region_count":len(before)},"topology_after":{"region_count":len(after),"sliver_count":slivers},"reason":"MULTI_EVIDENCE_PARTITION_ADMISSION","confidence":record["wall_probability"]}
                 ids.append(record["segment_id"])
             decisions.append({"pass":pass_number,"segment_ids":ids,"action":"ADMIT","reason":"MULTI_EVIDENCE_PARTITION_ADMISSION","wall_support_endpoints":supports,"local_parallel_pair":local_pair,"face_family":family,"junction_support":junction,"separated_label_categories":sorted(distinct_categories),"topology_before":len(before),"topology_after":len(after),"sliver_count":slivers})
             pending.remove(component); admitted_this_pass+=len(component)
@@ -918,9 +937,15 @@ def _recover_supported_partitions(accepted, classified, frame, tolerance, extrac
       if admitted_this_pass==0: break
     for record in classified:
         if record.get("status") != "ACCEPTED":
-            record["recovery_diagnostic"]={"action":"DO_NOT_RECOVER", "reason":"WHY_NOT_RECOVERED",
-                              "negative_evidence":record.get("negative_evidence") or ["INSUFFICIENT_INDEPENDENT_WALL_SUPPORT"],
-                              "source_role":(record.get("pre_topology_classification") or {}).get("topology_role")}
+            hard_excluded = (record.get("wall_evidence_state") == "HARD_EXCLUDED_NON_ENCLOSURE_OBJECT" or
+                             excludes_from_wall_admission(record.get("pre_topology_classification") or {}))
+            record["recovery_diagnostic"] = {**component_diagnostics.get(record["segment_id"], {}),
+                              "action": "DO_NOT_RECOVER",
+                              "reason": "HARD_NON_ENCLOSURE_SOURCE_ROLE" if hard_excluded else
+                                        component_diagnostics.get(record["segment_id"], {}).get("reason", "BOUNDED_COMPONENT_LIMIT"),
+                              "diagnostic_code": "WHY_NOT_RECOVERED",
+                              "negative_evidence": record.get("negative_evidence") or ["INSUFFICIENT_INDEPENDENT_WALL_SUPPORT"],
+                              "source_role": (record.get("pre_topology_classification") or {}).get("topology_role")}
     return current,decisions,iterations
 
 
@@ -960,7 +985,7 @@ def _derived_wall_thicknesses(segment_records):
     values=[]
     for record in segment_records:
         for evidence in record.get("evidence") or []:
-            if evidence.get("class")=="RECURRING_PARALLEL_FACE_PAIR": values.extend(evidence.get("thicknesses") or [])
+            if evidence.get("class") in {"RECURRING_PARALLEL_FACE_PAIR", "LOCAL_PARALLEL_FACE_PAIR"}: values.extend(evidence.get("thicknesses") or [])
     if not values: return []
     # The classifier has already established recurring geometric clusters;
     # rounding only deduplicates evidence emitted by both faces.
@@ -1129,6 +1154,12 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded
         proof={"status":"VERIFIED" if ratio>=1-1e-6 else "INPUT_REQUIRED",
                "source_handles":sorted({str(row["source_handle"]) for row in segments if row["source_handle"]}),
                "boundary_segments":segments,"evidence":[{"class":"PHYSICAL_BOUNDARY_SUPPORT","coverage_ratio":ratio,"segments":segments}]}
+    # Serialized geometry is the downstream contract. Preserve invalid evidence
+    # diagnostically; do not repair topology or promote the valid pre-rounding shape.
+    serialized = Polygon(ring, holes)
+    if not serialized.is_valid or serialized.is_empty or serialized.area <= 0:
+        proof.update(status="INPUT_REQUIRED", candidate_role="INVALID_DIAGNOSTIC")
+        proof["negative_evidence"] = sorted(set(proof.get("negative_evidence") or []) | {"SERIALIZED_POLYGON_INVALID"})
     geometry_status=proof.get("status") or "INPUT_REQUIRED"
     semantic = _infer_categories(labels, objects)
     # Service labels identify a local feature, not an arbitrarily containing roof.
@@ -1520,6 +1551,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     void_label_handles={str(row["label_evidence"]["source_handle"]) for row in architectural_voids
                         if row.get("label_evidence",{}).get("source_handle")}
     explicit_opening_candidates=_opening_candidates(extracted,source["source_sha256"])
+    enclosure_candidate_diagnostics = []
     for frame in frames:
         if frame.get("scope_relevance") == "REFERENCE_ONLY":
             continue
@@ -1659,15 +1691,51 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                                    canonical_walls=frame_walls,tolerance=tolerance)
         for row in rejected: row["frame_id"]=frame["frame_id"]
         rejected_cells.extend(rejected)
+        def filter_source_candidates(cells):
+            kept, discarded = _filter_wall_solid_cells(cells, classified, extracted, source["metres_per_unit"],
+                                                       canonical_walls=frame_walls, tolerance=tolerance)
+            for row in discarded: row["frame_id"] = frame["frame_id"]
+            rejected_cells.extend(discarded)
+            return kept
+        polygons, candidate_diagnostic = reconcile_enclosure_candidates(
+            polygons, classified, frame_walls, subdivision_promoted, tolerance, frame["frame_id"],
+            candidate_filter=filter_source_candidates)
+        enclosure_candidate_diagnostics.append(candidate_diagnostic)
+        candidate_by_geometry = {Polygon(row["polygon"], row["interior_rings"]).normalize().wkb_hex: row
+                                 for row in candidate_diagnostic["candidates"] if row["selected"]}
+        serializable_polygons = []
+        for polygon in polygons:
+            ring = _round_points(list(polygon.exterior.coords))
+            holes = sorted(_round_points(list(h.coords)) for h in polygon.interiors)
+            try:
+                serialized = Polygon(ring, holes)
+                valid_serialization = serialized.is_valid and not serialized.is_empty and serialized.area > 0
+            except (TypeError, ValueError):
+                valid_serialization = False
+            if valid_serialization:
+                serializable_polygons.append(polygon)
+            else:
+                candidate = candidate_by_geometry[polygon.normalize().wkb_hex]
+                candidate.update(selected=False, candidate_role="INVALID_DIAGNOSTIC",
+                                 selection_reason="SERIALIZED_POLYGON_INVALID",
+                                 serialized_polygon=ring, serialized_interior_rings=holes,
+                                 candidate_integrity={"status": "CONFLICT", "reason": "SERIALIZED_POLYGON_INVALID"})
+        polygons = serializable_polygons
+        candidate_diagnostic["selected_count"] = len(polygons)
         provisional_spaces=[{"physical_space_id":_stable_id("PS",[source["source_sha256"],frame["frame_id"],
             _round_points(list(p.exterior.coords)),sorted(_round_points(list(h.coords)) for h in p.interiors)]),
             "polygon":_round_points(list(p.exterior.coords)),
             "interior_rings":sorted(_round_points(list(h.coords)) for h in p.interiors)} for p in polygons]
         frame_bindings=_label_bindings(provisional_spaces,extracted["texts"],tolerance)
-        spaces.extend(_space_record(p,frame,source["source_sha256"],extracted,source["metres_per_unit"],
-                                    excluded_label_handles=void_label_handles,
-                                    geometry_evidence=physical_boundary_evidence(p,classified,frame_walls,subdivision_promoted,tolerance),
-                                    label_bindings=frame_bindings) for p in polygons)
+        for polygon in polygons:
+            candidate = candidate_by_geometry[polygon.normalize().wkb_hex]
+            proof = {**candidate["boundary_evidence"], "candidate_id": candidate["candidate_id"],
+                     "candidate_role": candidate["candidate_role"]}
+            space = _space_record(polygon, frame, source["source_sha256"], extracted, source["metres_per_unit"],
+                                  excluded_label_handles=void_label_handles, geometry_evidence=proof,
+                                  label_bindings=frame_bindings)
+            space.update(candidate_id=candidate["candidate_id"], candidate_role=space["geometry_evidence"].get("candidate_role", proof["candidate_role"]))
+            spaces.append(space)
     timings["polygonization_and_semantics"]=time.perf_counter()-stage_started; stage_started=time.perf_counter()
     spaces.sort(key=lambda s: s["physical_space_id"]); _adjacency(spaces, tolerance)
     label_bindings=_label_bindings(spaces,extracted["texts"],tolerance)
@@ -1826,6 +1894,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                               "edges":access_edge_records,
                               "legacy_space_pairs":sorted({tuple(sorted((row["space_a"],row["space_b"])))
                                                            for row in access_edge_records})},
+             "enclosure_candidates":enclosure_candidate_diagnostics,
              "rejected_candidate_cells":rejected_cells,"coverage":coverage,"review":review,
              "completeness": completeness, "vision_reconciliation": vision,
              "hybrid_architecture":vision.get("hybrid_recovery"),

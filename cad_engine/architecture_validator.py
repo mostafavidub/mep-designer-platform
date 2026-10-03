@@ -36,7 +36,8 @@ def _add(collection, code, **context):
 def _polygon(points, holes=None):
     try:
         polygon = Polygon(points or [], holes or [])
-        finite = all(math.isfinite(float(v)) for point in (points or []) for v in point)
+        finite = all(math.isfinite(float(v)) for ring in [points or []] + list(holes or [])
+                     for point in ring for v in point)
         return polygon if finite else None
     except Exception:
         return None
@@ -99,6 +100,9 @@ def _physical_boundary_valid(space, polygon, errors, tolerance, scale):
     verified = space.get("geometry_status", space.get("status", authority.get("status"))) == "VERIFIED"
     if not (verified or authority.get("material_geometry")):
         return
+    role = space.get("candidate_role") or (space.get("geometry_evidence") or {}).get("candidate_role")
+    if role in {"PARENT_CONTAINER", "BUILDING_ENVELOPE", "INVALID_DIAGNOSTIC", "OVERLAPPING_UNRESOLVED", "REPEATED_CELL_ARRAY", "MATERIAL_INTERIOR_CONFLICT", "WALL_MATERIAL_CONFLICT"}:
+        _add(errors, "NON_PHYSICAL_CANDIDATE_AUTHORITY_FORBIDDEN", physical_space_id=sid, candidate_role=role)
     origins = set(authority.get("origins") or [])
     if not origins.intersection({"SOURCE_GEOMETRIC", "SOURCE_EXPLICIT"}):
         _add(errors, "SEMANTIC_ONLY_PHYSICAL_GEOMETRY_FORBIDDEN", physical_space_id=sid)
@@ -124,6 +128,8 @@ def _physical_boundary_valid(space, polygon, errors, tolerance, scale):
         if not math.isfinite(claimed_tolerance) or claimed_tolerance <= 0:
             raise ValueError("invalid tolerance")
         boundary_tolerance = max(tolerance, min(claimed_tolerance, .2 / scale))
+        if polygon.buffer(-boundary_tolerance*2).is_empty:
+            _add(errors, "PHYSICAL_SPACE_INTERIOR_UNRESOLVABLE", physical_space_id=sid)
         segments = []
         for segment in geometry["segments"]:
             points = segment.get("geometry") if isinstance(segment, dict) else segment

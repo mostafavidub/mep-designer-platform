@@ -15,6 +15,7 @@ _POSITIVE = {"SOURCE_CONTEXT", "RECURRING_PARALLEL_FACE_PAIR", "LOCAL_PARALLEL_F
 def physical_boundary_evidence(poly, classified, walls, closures, tolerance):
     tol = max(float(tolerance or .001) * 4, 1e-6)
     boundary = poly.boundary
+    interior = poly.buffer(-tol*2)
     positive = []
     for row in classified:
         if row.get("status") != "ACCEPTED" or excludes_from_wall_admission(row.get("pre_topology_classification") or {}):
@@ -40,14 +41,20 @@ def physical_boundary_evidence(poly, classified, walls, closures, tolerance):
         solid = wall.get("wall_solid") or {}
         origin, direction = solid.get("axis_origin"), solid.get("axis_direction")
         if not origin or not direction: continue
+        occupied_lines = [LineString([[origin[0]+v*direction[0], origin[1]+v*direction[1]] for v in (start, end)])
+                          for start, end in solid.get("occupied_intervals") or []]
+        boundary_following = (interior.is_empty or sum(line.intersection(interior).length
+                                                     for line in occupied_lines) <= tol*2)
         for start, end in solid.get("occupied_intervals") or []:
             points = [[origin[0]+v*direction[0], origin[1]+v*direction[1]] for v in (start,end)]
             line = LineString(points)
             if line.intersection(boundary.buffer(tol)).length > tol:
-                segments.append(points); handles.update(wall.get("source_handles") or []); wall_ids.add(wall["wall_id"]); boundary_fragments.update(fragments)
+                segments.append(points); handles.update(wall.get("source_handles") or []); wall_ids.add(wall["wall_id"])
+                if boundary_following: boundary_fragments.update(fragments)
         for key in ("face_a", "face_b"):
             if wall.get(key) and LineString(wall[key]).intersection(boundary.buffer(tol)).length > tol:
-                segments.append(wall[key]); handles.update(wall.get("source_handles") or []); wall_ids.add(wall["wall_id"]); boundary_fragments.update(fragments)
+                segments.append(wall[key]); handles.update(wall.get("source_handles") or []); wall_ids.add(wall["wall_id"])
+                if boundary_following: boundary_fragments.update(fragments)
     closure_ids = []
     for row in closures:
         if row.get("gap_status") not in {"PROVEN", "SUPPORTED", "HUMAN_CONFIRMED"}: continue
@@ -58,18 +65,24 @@ def physical_boundary_evidence(poly, classified, walls, closures, tolerance):
     unique = {tuple(tuple(p) for p in points): points for points in segments}
     segments = [unique[key] for key in sorted(unique)]
     support = unary_union([LineString(points) for points in segments]) if segments else None
-    missing = boundary.length if support is None else boundary.difference(support.buffer(tol)).length
-    interior = poly.buffer(-tol*2)
+    uncovered = boundary if support is None else boundary.difference(support.buffer(tol))
+    missing = uncovered.length
+    uncovered_parts = list(uncovered.geoms) if hasattr(uncovered, "geoms") else [uncovered]
+    uncovered_segments = sorted([list(map(list, part.coords)) for part in uncovered_parts
+                                 if not part.is_empty and part.geom_type in {"LineString", "LinearRing"}])
     interior_ids = sorted(row["segment_id"] for row in positive
                           if row["segment_id"] not in boundary_fragments and not interior.is_empty and LineString(row["geometry"]).intersection(interior).length > tol*2)
     reasons = []
-    if missing > tol: reasons.append("PHYSICAL_BOUNDARY_UNSUPPORTED")
+    if interior.is_empty: reasons.append("NO_RESOLVABLE_INTERIOR_AT_EVIDENCE_TOLERANCE")
+    if missing > 1e-9: reasons.append("PHYSICAL_BOUNDARY_UNSUPPORTED")
     if interior_ids: reasons.append("UNRESOLVED_INTERIOR_WALL_EVIDENCE")
     status = "INPUT_REQUIRED" if reasons else "VERIFIED"
     return {"status": status, "source_handles": sorted(handles), "segments": segments,
             "wall_ids": sorted(wall_ids), "closure_ids": sorted(x for x in closure_ids if x),
             "tolerance": tol, "uncovered_length": missing,
             "coverage_ratio": max(0.0, 1-missing/max(boundary.length,1e-12)),
+            "uncovered_boundary_segments": uncovered_segments,
+            "gap_classification": "UNSUPPORTED_SOURCE_BOUNDARY" if missing > 1e-9 else "NONE",
             "unresolved_internal_segment_ids": interior_ids, "negative_evidence": reasons,
             "evidence": [{"class": "LOCAL_PHYSICAL_BOUNDARY_COVERAGE", "source_handles": sorted(handles),
                           "wall_ids": sorted(wall_ids), "uncovered_length": missing}]}

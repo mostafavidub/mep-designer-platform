@@ -835,7 +835,12 @@
         ,"architecture_validation_report"
         ,"architecture_preflight_plan"
         ,"architecture_review_registry"
-        ,"architecture_preflight_ui_state"
+        ,"architecture_preflight_ui_state",
+        "enclosure_candidates",
+        "candidate_role",
+        "contains",
+        "contained_by",
+        "uncovered_boundary_segments"
       ],
       "engines": [
         "cad_engine/architectural_source_roles.py",
@@ -860,7 +865,8 @@
         "cad_engine/fixture_recognition.py",
         "cad_engine/architecture_space_equipment_gate.py",
         "cad_engine/mechanical_authority.py",
-        "tools/pre_topology_candidate_audit.py"
+        "tools/pre_topology_candidate_audit.py",
+        "cad_engine/architecture_enclosure_candidates.py"
       ],
       "drawing_outputs": [
         "typed architecture model",
@@ -936,7 +942,12 @@
         ,"collision_free_world_space_wall_identity"
         ,"represented_level_and_persian_title_propagation"
         ,"authority_status_consistency_fail_closed"
-        ,"review_and_snapshot_semantic_identity"
+        ,"review_and_snapshot_semantic_identity",
+        "source_face_pair_offset_independent_of_endpoint_origin",
+        "deterministic_source_supported_candidate_hierarchy",
+        "parent_container_not_physical_space_authority",
+        "local_endpoint_projection_bounded_by_existing_tolerance",
+        "hard_exclusions_unchanged_during_recovery"
       ],
       "regression_tests": [
         "tests/test_architecture_source_roles.py",
@@ -955,7 +966,10 @@
         ,"tests/test_architecture_input_foundation_v2.py"
         ,"tests/test_architecture_preflight_review_engine.py"
         ,"tests/test_architecture_preflight_ui.py"
-        ,"tests/test_architecture_identity_determinism.py"
+        ,"tests/test_architecture_identity_determinism.py",
+        "tests/test_architecture_wall_face_pairing_integrity.py",
+        "tests/test_architecture_enclosure_candidates.py",
+        "tests/test_architecture_candidate_authority.py"
       ],
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
@@ -971,7 +985,8 @@
         ,"docs/ARCHITECTURE_PREFLIGHT_REVIEW_ENGINE.md"
         ,"docs/adr/ADR-ARCHITECTURE-PREFLIGHT-BOUNDED-REVIEW.md"
         ,"docs/ARCHITECTURE_PREFLIGHT_UI.md"
-        ,"docs/ARCHITECTURE_CANONICAL_IDENTITY_AND_LEVEL_PROPAGATION.md"
+        ,"docs/ARCHITECTURE_CANONICAL_IDENTITY_AND_LEVEL_PROPAGATION.md",
+        "docs/adr/ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.md"
       ]
     },
     {

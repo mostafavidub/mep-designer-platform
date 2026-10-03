@@ -2,6 +2,31 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-050",
+      "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
+      "summary": "Recover source-supported enclosure candidates with correct wall-face axis placement and deterministic parent/container separation; preserve existing false-authority exclusions and physical boundary proof.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Task C enclosure recall recovery; no merge or deployment authorization."
+      },
+      "verification": {
+        "focused_tests": "PENDING",
+        "full_regression": "PENDING",
+        "required_ci": "PENDING",
+        "private_pilot_replay": "Exact seven-project #308 baseline reproduced before edits; final candidate replay pending."
+      },
+      "migration": {
+        "forward": "Regenerate canonical candidates and qualifications; see standards/swcis/migrations/architecture-enclosure-candidate-integrity.json.",
+        "rollback": "Use prior approved Git commit and regenerate; never bypass failed engineering gates."
+      }
+    },
+    {
       "id": "GOV-2026-049",
       "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
       "summary": "Separate physical boundary evidence from semantic recognition and veto contradictory source roles before architectural material or void authority.",
