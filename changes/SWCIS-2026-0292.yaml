@@ -1,0 +1,37 @@
+{
+  "change_id": "SWCIS-2026-0292",
+  "summary": "Add an experimental Architecture Preflight Review Engine with deterministic minimal review planning, stale-safe replay, mandatory independent revalidation, convergence protection, and validated snapshot qualification without production integration.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "rule", "schema", "test", "documentation", "governance", "versioning", "migration"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001"],
+  "impacted_modules": ["cad_designer", "qa", "manifest", "docs", "versioning", "governance", "migration", "deployment", "pmm", "routing", "ui_api"],
+  "impact_notes": {
+    "cad_designer": "Adds an experimental backend preflight planner and replay overlay over Canonical Architecture v2; current producer behavior is unchanged.",
+    "qa": "Adds reviewability, grouping, replay, convergence, destructive authority, revalidation, snapshot and determinism tests.",
+    "manifest": "Extends review registry and snapshot binding with accepted decision identities and validator evidence.",
+    "docs": "Documents preflight states, issue taxonomy, minimal review, safe replay, source correction and snapshot qualification.",
+    "versioning": "Adds backward-compatible review behavior and bumps SWCIS according to policy.",
+    "governance": "Extends MEP-ARCH-RECOG-001 traceability without weakening validation or release gates.",
+    "migration": "Adds an additive preflight contract; production readers and writers remain unchanged.",
+    "deployment": "No merge or deployment is authorized.",
+    "pmm": "No production consumer change; future validated snapshot consumption remains deferred.",
+    "routing": "No routing change; unresolved critical topology remains fail-closed.",
+    "ui_api": "No route or UI is added; crop and action contracts are data only."
+  },
+  "evidence": {
+    "traceability": ["validator issue -> normalized preflight issue -> grouped review item -> accepted overlay -> independent validator -> immutable snapshot"],
+    "tests": ["review contract, issue classifier, planner, replay, convergence, revalidation, snapshot, destructive authority and backward compatibility"],
+    "docs": ["Architecture Preflight Review Engine standard and ADR"],
+    "version_bump": ["SWCIS minor bump after implementation"],
+    "migration": ["experimental additive schema; no production activation"],
+    "golden_regression": ["synthetic fixtures only; private source optional development diagnostic; held-out remains sealed"],
+    "semantic_diff": ["human review interprets existing evidence only", "only independent validation can qualify architecture"],
+    "artifact_diff": ["new preflight plans, deterministic review registries and review-bound snapshots"],
+    "numeric_diff": ["no production engineering threshold change"],
+    "contract_diff": ["extend planha-architecture-review/1.0 and add planha-architecture-preflight/1.0"],
+    "deployment_plan": ["stacked PR and CI only"],
+    "rollback_plan": ["remove experimental modules/contracts or redeploy dependency SHA; production path is unchanged"]
+  },
+  "risk": {"likelihood": 3, "severity": 5, "detectability": 2, "score": 30, "rationale": "Review authority and topology qualification are high impact, but the implementation is experimental, independently revalidated, and isolated from production consumers."},
+  "waiver": null
+}

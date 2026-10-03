@@ -164,8 +164,21 @@ def adapt_current_architecture(current_model, engine_identity=None):
 
     apertures = []
     for row in (model.get("internal_wall_gaps") or {}).get("items") or []:
+        legacy_review_trace = []
+        if row.get("status") == "HUMAN_CONFIRMED":
+            legacy_identity = [source_sha, row.get("frame_id"), row.get("gap_id"), row.get("geometry"),
+                               row.get("source_handles"), row.get("review_question_id")]
+            legacy_review_trace = [{"review_item_id": row.get("review_question_id") or
+                                                      "LEGACY-REVIEW-" + content_hash(legacy_identity)[:16].upper(),
+                                    "decision": row.get("classification"), "source_sha256": source_sha,
+                                    "geometry_fingerprint": content_hash(row.get("geometry")),
+                                    "evidence_fingerprint": content_hash(row.get("source_handles") or []),
+                                    "review_fingerprint": content_hash(legacy_identity)}]
         apertures.append({"aperture_id": row.get("gap_id"), "frame_id": row.get("frame_id"),
                           "classification": row.get("classification"), "status": _status(row.get("status")),
+                          "review_status": "CONFIRMED" if row.get("status") == "HUMAN_CONFIRMED" else "NOT_REVIEWED",
+                          "review_authority": "HUMAN_SOURCE_INTERPRETATION" if row.get("status") == "HUMAN_CONFIRMED" else "NONE",
+                          "review_trace": legacy_review_trace,
                           "geometry": deepcopy(row.get("geometry")),
                           "host_wall_ids": deepcopy(row.get("host_wall_ids") or []),
                           "source_handles": deepcopy(row.get("source_handles") or []),

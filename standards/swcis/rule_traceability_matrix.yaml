@@ -828,6 +828,8 @@
         ,"canonical_architecture_v2"
         ,"validated_architecture_snapshot"
         ,"architecture_validation_report"
+        ,"architecture_preflight_plan"
+        ,"architecture_review_registry"
       ],
       "engines": [
         "cad_engine/plan_segmentation.py",
@@ -840,6 +842,7 @@
       "cad_engine/architecture_validator.py",
       "cad_engine/architecture_snapshot.py",
       "cad_engine/architecture_review_contract.py",
+      "cad_engine/architecture_review_engine.py",
       "cad_engine/planha_package.py",
       "cad_engine/architecture_benchmark.py",
         "cad_engine/architectural_semantic_scout.py",
@@ -907,6 +910,11 @@
         ,"validated_snapshot_immutable_and_stale_safe"
         ,"bounded_review_never_material_geometry_authority"
         ,"vision_support_only_never_engineering_authority"
+        ,"minimal_bounded_review_questions_only"
+        ,"review_decision_replay_stale_safe_and_idempotent"
+        ,"human_review_never_geometry_authority"
+        ,"independent_revalidation_required_after_review"
+        ,"review_loop_convergence_and_source_input_escalation"
       ],
       "regression_tests": [
       "tests/test_architectural_space_engine.py",
@@ -919,6 +927,7 @@
         "tests/test_plan_frame_separation.py",
         "tests/test_mechanical_pre_submission_delivery.py"
         ,"tests/test_architecture_input_foundation_v2.py"
+        ,"tests/test_architecture_preflight_review_engine.py"
       ],
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
@@ -931,6 +940,8 @@
         ,"docs/ARCHITECTURE_BENCHMARK_STANDARD.md"
         ,"docs/PLANHA_PACKAGE_PROTOTYPE.md"
         ,"docs/adr/ADR-ARCHITECTURE-INPUT-FOUNDATION-V2.md"
+        ,"docs/ARCHITECTURE_PREFLIGHT_REVIEW_ENGINE.md"
+        ,"docs/adr/ADR-ARCHITECTURE-PREFLIGHT-BOUNDED-REVIEW.md"
       ]
     },
     {
