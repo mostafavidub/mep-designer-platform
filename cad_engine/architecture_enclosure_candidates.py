@@ -31,6 +31,61 @@ def _supported(row):
     return bool(_POSITIVE & {e.get("class") for e in row.get("evidence") or []})
 
 
+def _numerically_coincident_endpoints(records, lines, tolerance):
+    """Node indistinguishable transverse endpoints, not drafting gaps.
+
+    The budget is one millionth of the existing drawing tolerance. Complete
+    local cliques prevent transitive drift; parallel faces and ambiguous clusters
+    are never joined. Original records still supply all material boundary proof.
+    """
+    epsilon = tolerance * 1e-6
+    endpoints = [(i, end, Point(line.coords[end])) for i, line in enumerate(lines)
+                 if _supported(records[i]) for end in (0, -1)]
+    if not endpoints or epsilon <= 0:
+        return lines, []
+    tree = STRtree([row[2] for row in endpoints])
+    neighbors = []
+    for _, _, point in endpoints:
+        neighbors.append({int(j) for j in tree.query(point.buffer(epsilon))
+                          if point.distance(endpoints[int(j)][2]) <= epsilon})
+    coords = [list(line.coords) for line in lines]
+    seen, joins = set(), []
+    for start in range(len(endpoints)):
+        if start in seen:
+            continue
+        group, todo = set(), [start]
+        while todo:
+            j = todo.pop()
+            if j in group:
+                continue
+            group.add(j); todo.extend(neighbors[j] - group)
+        seen.update(group)
+        if len(group) < 2 or any(neighbors[j] != group for j in group):
+            continue
+        members = [endpoints[j] for j in sorted(group)]
+        if len({i for i, _, _ in members}) != len(members):
+            continue
+        transverse = True
+        for index, (i, _, _) in enumerate(members):
+            ax, ay = (lines[i].coords[-1][k] - lines[i].coords[0][k] for k in (0, 1))
+            for j, _, _ in members[index + 1:]:
+                bx, by = (lines[j].coords[-1][k] - lines[j].coords[0][k] for k in (0, 1))
+                if abs(ax * bx + ay * by) >= math.cos(math.radians(3)) * lines[i].length * lines[j].length:
+                    transverse = False
+        original = sorted({tuple(point.coords[0]) for _, _, point in members})
+        if not transverse or len(original) < 2:
+            continue
+        target = original[0]
+        for i, end, _ in members:
+            coords[i][end] = target
+        joins.append({"reason": "NUMERICAL_TRANSVERSE_ENDPOINT_EQUIVALENCE",
+                      "source_segment_ids": sorted(str(records[i].get("segment_id")) for i, _, _ in members),
+                      "source_handles": sorted({str(records[i].get("source_handle")) for i, _, _ in members}),
+                      "original_endpoints": [list(p) for p in original], "endpoint": list(target),
+                      "tolerance": epsilon, "material": False})
+    return [LineString(points) for points in coords], joins
+
+
 def _source_topology(classified, tolerance):
     records = sorted((r for r in classified if r.get("status") == "ACCEPTED"
                       and r.get("wall_evidence_state") != "HARD_EXCLUDED_NON_ENCLOSURE_OBJECT"
@@ -39,9 +94,9 @@ def _source_topology(classified, tolerance):
     lines = [LineString(r["geometry"]) for r in records]
     if not lines:
         return [], []
+    lines, joins = _numerically_coincident_endpoints(records, lines, tolerance)
     tree = STRtree(lines)
     anchors = [[] for _ in lines]
-    joins = []
     # Insert an existing supported endpoint into another supported segment when
     # their numerical separation is already below drawing precision. No distant
     # endpoints, inferred openings, transitive snap chains, or generated walls.
