@@ -124,6 +124,7 @@
         "cad_engine/architecture_validator.py",
         "cad_engine/architecture_snapshot.py",
         "cad_engine/architecture_review_contract.py",
+        "cad_engine/architecture_review_engine.py",
         "cad_engine/planha_package.py",
         "cad_engine/architecture_benchmark.py",
         "tools/architectural_canonical_topology_qa.py",

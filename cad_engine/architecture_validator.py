@@ -15,6 +15,19 @@ VALIDATOR_VERSION = "1.0.0"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
+def validate_validator_report_integrity(report, expected_input_hash=None):
+    candidate = deepcopy(report)
+    supplied = candidate.pop("report_hash", None)
+    errors = []
+    if supplied != content_hash(candidate):
+        errors.append("VALIDATOR_REPORT_HASH_INVALID")
+    if expected_input_hash and report.get("input_hash_before") != expected_input_hash:
+        errors.append("VALIDATOR_REPORT_INPUT_MISMATCH")
+    if report.get("input_hash_before") != report.get("input_hash_after"):
+        errors.append("VALIDATOR_REPORT_MUTATION_DETECTED")
+    return {"status": "PASS" if not errors else "FAIL", "errors": errors}
+
+
 def _add(collection, code, **context):
     collection.append({"code": code, **context})
 
@@ -51,6 +64,19 @@ def _authority_valid(row, errors, entity_id):
     if set(origins) == {"VISION_SUPPORT_ONLY"} and any(authority.get(key) for key in
             ("material_geometry", "wall", "portal", "access", "routing", "release")):
         _add(errors, "VISION_ONLY_AUTHORITY_FORBIDDEN", entity_id=entity_id)
+
+
+def _review_overlay_valid(row, errors, entity_id, source_sha):
+    if row.get("review_status") != "CONFIRMED":
+        return
+    if row.get("review_authority") != "HUMAN_SOURCE_INTERPRETATION":
+        _add(errors, "REVIEW_AUTHORITY_INVALID", entity_id=entity_id)
+    traces = row.get("review_trace") or []
+    if not traces:
+        _add(errors, "REVIEW_TRACE_REQUIRED", entity_id=entity_id)
+    for trace in traces:
+        if trace.get("source_sha256") != source_sha or not trace.get("review_item_id") or not trace.get("review_fingerprint"):
+            _add(errors, "REVIEW_TRACE_IDENTITY_INVALID", entity_id=entity_id)
 
 
 def validate_architecture(model):
@@ -99,6 +125,7 @@ def validate_architecture(model):
             _add(required, "FRAME_LEVEL_UNRESOLVED", frame_id=frame.get("frame_id"))
     for wall in walls:
         wid = wall.get("wall_id"); _authority_valid(wall, hard, wid)
+        _review_overlay_valid(wall, hard, wid, source_sha)
         if wall.get("frame_id") not in frame_ids:
             _add(hard, "WALL_FRAME_REFERENCE_INVALID", wall_id=wid)
         centerline = wall.get("centerline") or []
@@ -112,6 +139,7 @@ def validate_architecture(model):
     space_polygons = {}
     for space in spaces:
         sid = space.get("physical_space_id"); _authority_valid(space, hard, sid)
+        _review_overlay_valid(space, hard, sid, source_sha)
         polygon = _polygon(space.get("polygon"), space.get("interior_rings"))
         if polygon is None or not polygon.is_valid or polygon.area <= 0:
             _add(hard, "PHYSICAL_SPACE_POLYGON_INVALID", physical_space_id=sid); continue
@@ -139,18 +167,21 @@ def validate_architecture(model):
 
     for zone in zones:
         zid = zone.get("zone_id"); _authority_valid(zone, hard, zid)
+        _review_overlay_valid(zone, hard, zid, source_sha)
         if zone.get("physical_space_id") not in space_ids:
             _add(hard, "FUNCTIONAL_ZONE_SPACE_REFERENCE_INVALID", zone_id=zid)
         if zone.get("boundary_status") == "approximate" and ((zone.get("authority") or {}).get("material_geometry") or zone.get("polygon")):
             _add(hard, "APPROXIMATE_ZONE_MATERIAL_AUTHORITY_FORBIDDEN", zone_id=zid)
 
     for aperture in apertures:
+        _review_overlay_valid(aperture, hard, aperture.get("aperture_id"), source_sha)
         if aperture.get("host_wall_ids") and not set(aperture["host_wall_ids"]).issubset(wall_ids):
             _add(hard, "APERTURE_WALL_REFERENCE_INVALID", aperture_id=aperture.get("aperture_id"))
 
     portal_by_id = {}
     for portal in portals:
         oid = portal.get("opening_id"); pid = portal.get("portal_id"); _authority_valid(portal, hard, oid)
+        _review_overlay_valid(portal, hard, oid, source_sha)
         if pid: portal_by_id[pid] = portal
         if portal.get("status") != "VERIFIED":
             continue
@@ -171,6 +202,7 @@ def validate_architecture(model):
     void_polygons = {}
     for void in voids:
         vid = void.get("void_id"); _authority_valid(void, hard, vid)
+        _review_overlay_valid(void, hard, vid, source_sha)
         polygon = _polygon(void.get("boundary"))
         if polygon is None or not polygon.is_valid or polygon.area <= 0:
             _add(hard, "VOID_GEOMETRY_INVALID", void_id=vid); continue
@@ -213,6 +245,14 @@ def validate_architecture(model):
         for row in review.get("stale_review_decisions"):
             if row.get("review_authority"):
                 _add(hard, "STALE_REVIEW_AUTHORITY_FORBIDDEN", question_id=row.get("question_id"))
+    critical_unresolved = [row for row in data.get("unresolved_items") or []
+                           if row.get("downstream_impact") != "NONCRITICAL_DIAGNOSTIC"]
+    release = data.get("release") or {}
+    if release.get("release_allowed") and critical_unresolved:
+        _add(hard, "UNRESOLVED_CRITICAL_RELEASE_FORBIDDEN", count=len(critical_unresolved))
+    if release.get("status") == "VERIFIED" and not (release.get("release_allowed") and
+                                                      release.get("downstream_engineering_allowed")):
+        _add(hard, "RELEASE_STATE_INCONSISTENT")
     if data.get("release", {}).get("status") == "INPUT_REQUIRED":
         _add(required, "ARCHITECTURE_RELEASE_INPUT_REQUIRED")
     if data.get("canonical_model_hash"):
@@ -234,13 +274,13 @@ def validate_architecture(model):
         status = "INPUT_REQUIRED"
     else:
         status = "PASS"
-    return {"schema": "planha-architecture-validation-report/1.0",
+    report = {"schema": "planha-architecture-validation-report/1.0",
             "validator_id": VALIDATOR_ID, "validator_version": VALIDATOR_VERSION,
             "status": status, "hard_errors": hard, "input_requirements": required,
             "warnings": warnings, "control_results": controls,
             "metrics": {"physical_spaces": len(spaces), "walls": len(walls), "portals": len(portals),
                         "voids": len(voids), "illegal_overlap_area": overlap,
                         "hard_error_count": len(hard), "input_requirement_count": len(required)},
-            "critical_score_masking": False, "input_hash_before": before, "input_hash_after": after,
-            "report_hash": content_hash({"hard_errors": hard, "input_requirements": required,
-                                         "warnings": warnings, "control_results": controls})}
+            "critical_score_masking": False, "input_hash_before": before, "input_hash_after": after}
+    report["report_hash"] = content_hash(report)
+    return report

@@ -56,6 +56,13 @@ def contract():
     return adapt_current_architecture(legacy_model(), {"sha": "engine"})
 
 
+def qualified_contract():
+    row = contract()
+    row["release"] = {"status": "VERIFIED", "downstream_engineering_allowed": True,
+                      "release_allowed": True}
+    return rehash(row)
+
+
 def rehash(model):
     model.pop("canonical_model_hash", None)
     model["canonical_model_hash"] = content_hash(model)
@@ -148,7 +155,7 @@ def test_review_is_bounded_and_stale_identity_is_rejected():
 
 
 def test_snapshot_identity_and_staleness():
-    model = contract(); report = validate_architecture(model)
+    model = qualified_contract(); report = validate_architecture(model)
     snap = create_snapshot(model, report, engine_identity={"sha": "engine"}, created_at="2026-01-01T00:00:00Z")
     assert validate_snapshot(snap, model, report)["status"] == "PASS"
     assert create_snapshot(model, report, engine_identity={"sha": "engine"}, created_at="2026-01-01T00:00:00Z") == snap
@@ -160,7 +167,7 @@ def test_snapshot_identity_and_staleness():
 
 
 def test_planha_package_round_trip_is_deterministic_and_corruption_fails():
-    model = contract(); report = validate_architecture(model)
+    model = qualified_contract(); report = validate_architecture(model)
     snap = create_snapshot(model, report, engine_identity={"sha": "engine"}, created_at="2026-01-01T00:00:00Z")
     first = pack_planha(architecture=model, snapshot=snap, validation=report, review={})
     second = pack_planha(architecture=model, snapshot=snap, validation=report, review={})
@@ -203,3 +210,25 @@ def test_benchmark_is_deterministic_and_hard_gates_cannot_be_masked():
     reviewed = truth(); reviewed["cohort"] = "EVALUATION_HELD_OUT"; reviewed["blind_output_sealed"] = False
     with pytest.raises(ValueError, match="HELD_OUT_BLIND_OUTPUT_NOT_SEALED"):
         compare_architecture(model, reviewed)
+
+
+def test_benchmark_includes_review_metrics_and_hard_gates_review_authority():
+    model = contract(); reviewed = truth()
+    preflight = {"reviewed_validation_pass": True, "metrics": {
+        "validator_issue_count": 3, "critical_issue_count": 2,
+        "reviewable_issue_count": 2, "nonreviewable_issue_count": 1,
+        "generated_review_item_count": 1, "issue_to_question_reduction_ratio": 0.5,
+        "resolved_issue_count": 2, "remaining_issue_count": 1,
+        "stale_decision_count": 0, "duplicate_question_count": 0,
+        "repeated_question_after_same_decision_count": 0,
+        "manual_geometry_creation_count": 0, "snapshot_created": True,
+    }}
+    report = compare_architecture(model, reviewed, preflight)
+    assert report["status"] == "PASS"
+    assert report["metrics"]["generated_review_item_count"] == 1
+    assert report["metrics"]["validated_after_review"] is True
+    unsafe = deepcopy(preflight)
+    unsafe["metrics"]["synthetic_portal_from_review_count"] = 1
+    failed = compare_architecture(model, reviewed, unsafe)
+    assert failed["status"] == "FAIL"
+    assert failed["hard_gates"]["synthetic_portal_from_review"] == 1

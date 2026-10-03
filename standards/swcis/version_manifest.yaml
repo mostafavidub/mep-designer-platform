@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.61.0",
+  "standard_version": "4.62.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-09-26",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "4.62.0",
+      "date": "2026-10-03",
+      "summary": "Add deterministic minimal architecture review planning, stale-safe interpretation replay, mandatory independent revalidation, convergence protection, actionable source-input requirements, and review-bound snapshot qualification without production activation."
+    },
     {
       "version": "4.61.0",
       "date": "2026-10-02",

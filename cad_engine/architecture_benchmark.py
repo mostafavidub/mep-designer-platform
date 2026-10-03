@@ -11,7 +11,11 @@ BENCHMARK_SCHEMA = "planha-architecture-benchmark-report/1.0"
 COHORTS = {"DEVELOPMENT", "VALIDATION", "EVALUATION_HELD_OUT"}
 HARD_GATE_FIELDS = ("false_authoritative_material_geometry", "false_portal_authority",
                     "false_access_edges", "false_void_authority", "illegal_space_overlap",
-                    "cross_level_topology_errors", "unsupported_downstream_release")
+                    "cross_level_topology_errors", "unsupported_downstream_release",
+                    "false_review_authority", "manual_geometry_creation_from_review",
+                    "critical_unresolved_hidden", "validator_bypass",
+                    "synthetic_portal_from_review", "synthetic_void_from_review",
+                    "synthetic_wall_from_review")
 
 
 def _polygons(rows, id_key):
@@ -33,7 +37,7 @@ def _precision_recall(predicted, reviewed):
             matched / len(reviewed) if reviewed else 1.0)
 
 
-def compare_architecture(prediction, truth):
+def compare_architecture(prediction, truth, preflight=None):
     if prediction.get("schema") != SCHEMA:
         raise ValueError("PREDICTION_SCHEMA_MISMATCH")
     if truth.get("schema") != TRUTH_SCHEMA:
@@ -103,6 +107,14 @@ def compare_architecture(prediction, truth):
     hard["cross_level_topology_errors"] = cross_level
     hard["unsupported_downstream_release"] = int(bool(prediction.get("release", {}).get("release_allowed")) and
                                                   truth.get("release_allowed") is not True)
+    review_metrics = dict((preflight or {}).get("metrics") or {})
+    hard["false_review_authority"] = int(review_metrics.get("false_review_authority_count", 0))
+    hard["manual_geometry_creation_from_review"] = int(review_metrics.get("manual_geometry_creation_count", 0))
+    hard["critical_unresolved_hidden"] = int(review_metrics.get("critical_unresolved_hidden_count", 0))
+    hard["validator_bypass"] = int(review_metrics.get("validator_bypass_count", 0))
+    hard["synthetic_portal_from_review"] = int(review_metrics.get("synthetic_portal_from_review_count", 0))
+    hard["synthetic_void_from_review"] = int(review_metrics.get("synthetic_void_from_review_count", 0))
+    hard["synthetic_wall_from_review"] = int(review_metrics.get("synthetic_wall_from_review_count", 0))
     hard_pass = not any(hard.values())
     metrics = {"level_precision": level_precision, "level_recall": level_recall,
                "level_count_error": abs(len(prediction.get("levels") or []) - len(truth.get("levels") or [])),
@@ -138,9 +150,24 @@ def compare_architecture(prediction, truth):
                "human_review_item_count": len((prediction.get("review_registry") or {}).get("decisions") or []),
                "critical_review_item_count": sum(1 for x in prediction.get("unresolved_items") or []
                                                    if x.get("downstream_impact") == "BLOCKS_RELEASE"),
-               "determinism_identity": prediction.get("canonical_model_hash")}
+               "determinism_identity": prediction.get("canonical_model_hash"),
+               "review_validator_issue_count": review_metrics.get("validator_issue_count", 0),
+               "review_critical_issue_count": review_metrics.get("critical_issue_count", 0),
+               "reviewable_issue_count": review_metrics.get("reviewable_issue_count", 0),
+               "nonreviewable_issue_count": review_metrics.get("nonreviewable_issue_count", 0),
+               "generated_review_item_count": review_metrics.get("generated_review_item_count", 0),
+               "issue_to_question_reduction_ratio": review_metrics.get("issue_to_question_reduction_ratio", 0.0),
+               "review_resolved_issue_count": review_metrics.get("resolved_issue_count", 0),
+               "review_remaining_issue_count": review_metrics.get("remaining_issue_count", 0),
+               "stale_review_decision_count": review_metrics.get("stale_decision_count", 0),
+               "duplicate_review_question_count": review_metrics.get("duplicate_question_count", 0),
+               "repeated_question_after_same_decision_count": review_metrics.get(
+                   "repeated_question_after_same_decision_count", 0),
+               "validated_after_review": bool((preflight or {}).get("reviewed_validation_pass")),
+               "review_snapshot_created": bool(review_metrics.get("snapshot_created", False))}
     identity = {"prediction_hash": prediction.get("canonical_model_hash"),
-                "truth_hash": content_hash(truth), "hard_gates": hard, "metrics": metrics}
+                "truth_hash": content_hash(truth), "preflight_hash": content_hash(preflight) if preflight else None,
+                "hard_gates": hard, "metrics": metrics}
     return {"schema": BENCHMARK_SCHEMA, "status": "PASS" if hard_pass else "FAIL",
             "cohort": cohort, "hard_gates": hard, "hard_gates_pass": hard_pass,
             "critical_score_masking": False, "metrics": metrics,

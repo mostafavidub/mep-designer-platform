@@ -644,6 +644,30 @@
       ]
     },
     {
+      "id": "architecture_preflight_review_engine",
+      "status": "LOCKED",
+      "requirements": [
+        "deterministic_issue_normalization",
+        "minimal_root_cause_grouped_questions",
+        "review_never_creates_geometry",
+        "stale_safe_idempotent_replay",
+        "independent_revalidation_mandatory",
+        "same_question_loop_prevention",
+        "source_insufficient_actionable_guidance",
+        "review_bound_snapshot_only_after_pass",
+        "production_consumers_unchanged"
+      ],
+      "tests": [
+        "test_validator_pass_auto_validates_and_allows_snapshot",
+        "test_one_semantic_question_replays_revalidates_and_creates_reviewed_snapshot",
+        "test_two_issues_with_one_root_cause_become_one_question",
+        "test_door_motif_without_aperture_is_source_input_required_not_a_question",
+        "test_same_decision_with_unchanged_validator_blocker_does_not_loop",
+        "test_review_item_tamper_and_validator_report_tamper_fail_closed",
+        "test_independent_critical_questions_are_stably_ordered_and_deterministic"
+      ]
+    },
+    {
       "id": "semantic_dimensioning",
       "status": "LOCKED",
       "requirements": [
