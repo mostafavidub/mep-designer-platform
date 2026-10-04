@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.0.0
+**Canonical version:** 5.1.0
 
 **Status:** LOCKED
 
@@ -233,3 +233,14 @@ authority through label containment or overlap. Candidate identities, relationsh
 and selection evidence are deterministic; local endpoint projection uses the
 existing bounded tolerance. Independent boundary evidence and invalid-polygon
 validation remain fail-closed. See ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.
+
+## Sealed cumulative integration
+
+A cumulative integration retains historical CR files unchanged and adds exactly one
+current integration CR. Its `integration` manifest binds the exact base commit,
+source commit/tree and every historical changed CR blob. `tools/swcis_scope.py`
+checks ancestry, complete membership, immutable historical blobs and absence of
+unlisted requests. The current CR must independently declare and validate the
+entire cumulative change-type and dependency closure. Historical PASS statements
+never replace current tests or official CI. Ordinary changes still require one CR.
+No waiver, filter bypass, history deletion or partial closure is permitted.

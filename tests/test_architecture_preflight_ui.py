@@ -246,3 +246,50 @@ def test_static_assets_have_accessibility_retry_and_no_unsafe_svg_or_geometry_ed
     assert ":focus-visible" in css and "@media(max-width:900px)" in css
     forbidden = ("draw-wall", "draw-portal", "vertex-handle", "edit-polygon", "create-access")
     assert not any(token in (template + script).lower() for token in forbidden)
+
+
+def test_stale_snapshot_is_never_current_in_server_view_or_html():
+    from types import SimpleNamespace
+    from app.architecture_preflight_ui import _load_state
+    from cad_engine.architecture_snapshot import validate_snapshot
+    current = model()
+    old = {'snapshot_id': 'STALE-SNAPSHOT-MARKER', 'schema': 'old',
+           'source_sha256': '0' * 64, 'validation_state': 'SUPERSEDED'}
+    project = SimpleNamespace(analysis={PERSISTENCE_KEY: {
+        'canonical_model': current, 'snapshot': old,
+        'review_registry': empty_review_registry()}})
+    _, _, _, result, view = _load_state(project)
+    assert view['state'] == 'AUTO_VALIDATED'
+    assert view['snapshot'] == result['snapshot']
+    assert view['snapshot']['snapshot_id'] != old['snapshot_id']
+    assert validate_snapshot(view['snapshot'], current, result['validator_report'])['current_authority']
+    assert project.analysis[PERSISTENCE_KEY]['snapshot'] == old  # read-only GET
+    client = TestClient(app)
+    pid = create_project(client, current)
+    db = legacy.Session(); saved = db.get(legacy.Project, pid)
+    data = deepcopy(saved.analysis); data[PERSISTENCE_KEY]['snapshot'] = old
+    saved.analysis = data; db.commit(); db.close()
+    response = client.get(f'/projects/{pid}/architecture-preflight/state')
+    assert response.status_code == 200
+    assert response.json()['snapshot']['snapshot_id'] != old['snapshot_id']
+    page = client.get(f'/projects/{pid}/architecture-preflight')
+    assert page.status_code == 200 and 'STALE-SNAPSHOT-MARKER' not in page.text
+
+
+
+def test_unresolved_and_old_contracts_cannot_expose_stored_snapshot():
+    from types import SimpleNamespace
+    from app.architecture_preflight_ui import _load_state
+    for state in ('review', 'input', 'v2'):
+        current = model()
+        if state == 'review': current = add_review(current)
+        elif state == 'input': current = add_source_required(current)
+        else:
+            current['schema'] = 'planha-canonical-architecture/2.0'
+            current = rehash(current)
+        project = SimpleNamespace(analysis={PERSISTENCE_KEY: {
+            'canonical_model': current, 'snapshot': {'snapshot_id': 'STALE'},
+            'review_registry': empty_review_registry()}})
+        _, _, _, result, view = _load_state(project)
+        assert view['state'] != 'AUTO_VALIDATED'
+        assert view['snapshot'] is None

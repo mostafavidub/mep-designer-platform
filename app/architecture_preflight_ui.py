@@ -195,7 +195,9 @@ def _load_state(project):
     result = execute_preflight(canonical, review_registry=registry,
                                engine_identity=build_identity(), created_at=stored.get("created_at") or "UNSPECIFIED")
     plan = result["preflight_plan"]
-    snapshot = stored.get("snapshot") or result.get("snapshot")
+    # Only current server revalidation can supply an authoritative snapshot.
+    # Persisted snapshots are historical artifacts, never a fallback authority.
+    snapshot = result.get("snapshot")
     return stored, canonical, registry, result, preflight_view_model(canonical, plan, snapshot, result.get("review_registry"))
 
 
@@ -275,7 +277,7 @@ def register_architecture_preflight_ui(app, legacy):
             if prior:
                 if prior.get("request_hash") != request_hash:
                     raise HTTPException(409, "IDEMPOTENCY_KEY_REUSED")
-                view = preflight_view_model(canonical, initial["preflight_plan"], stored.get("snapshot"), registry)
+                view = _view
                 return JSONResponse({"ok": True, "idempotent_replay": True, "preflight": view,
                                      "redirect_url": f"/projects/{pid}/architecture-preflight"})
             plan = initial["preflight_plan"]

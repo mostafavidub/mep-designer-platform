@@ -1,0 +1,129 @@
+{
+  "change_id": "SWCIS-2026-0299",
+  "summary": "Cumulative Architecture integration: preserved historical tree, governed cumulative CR validation, current-only snapshot presentation and review-scope reconciliation.",
+  "requester": "project-owner",
+  "change_types": [
+    "rule",
+    "test",
+    "documentation",
+    "governance",
+    "schema",
+    "drawing_output",
+    "deployment",
+    "ui_api"
+  ],
+  "changed_rule_ids": [
+    "MEP-ARCH-RECOG-001"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "cad_designer": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "deployment": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "detail_riser": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "docs": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "equipment": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "governance": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "manifest": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "manufacturer_selector": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "migration": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "planner": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "pmm": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "qa": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "questionnaire": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "routing": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "rule_book": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "sizing": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "ui_api": "Cumulative affected closure; integration validation required. No new downstream feature or production activation.",
+    "versioning": "Cumulative affected closure; integration validation required. No new downstream feature or production activation."
+  },
+  "evidence": {
+    "traceability": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "tests": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "docs": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "version_bump": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "migration": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "golden_regression": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "semantic_diff": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "artifact_diff": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "numeric_diff": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "contract_diff": [
+      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+    ],
+    "deployment_plan": [
+      "No merge, auto-merge or deployment."
+    ],
+    "rollback_plan": [
+      "One future Integration merge commit revert; retain incompatible artifacts stale; no production migration."
+    ]
+  },
+  "risk": {
+    "likelihood": 4,
+    "severity": 5,
+    "detectability": 4,
+    "score": 80,
+    "rationale": "Core authority semantics, stale review and downstream promotion risk; explicit owner design approval received."
+  },
+  "waiver": null,
+  "verification_status": {
+    "phase": "IMPLEMENTATION_IN_PROGRESS",
+    "qualification": "ARCHITECTURE_STACK_INTEGRATION_PARTIAL"
+  },
+  "integration": {
+    "base_sha": "9876f3fb0cb63e17055ff2d30e621fa2c9325939",
+    "source_sha": "c87df375cfe6c0388176de4599c4c0b689c94f24",
+    "source_tree": "15fe60340a61637d513f539a785c930b1d689c10",
+    "historical_requests": {
+      "changes/SWCIS-2026-0284.yaml": "af725ebced8e52e9a1808c4a1da06ee95d5015f7",
+      "changes/SWCIS-2026-0286.yaml": "ffe1f36384dcd20b1aa260d3d8b62c71fa67f6e9",
+      "changes/SWCIS-2026-0287.yaml": "d2bf9394a833301114741c472eb3347658cd7263",
+      "changes/SWCIS-2026-0288.yaml": "919d1f298d02be0719da8886b51da007f5ae951e",
+      "changes/SWCIS-2026-0289.yaml": "1fc5f25740b69c258ae9e0fc6dca2f2e2ca9df8d",
+      "changes/SWCIS-2026-0290.yaml": "1b8a837530f302848fb255038932e82ea2f29bbd",
+      "changes/SWCIS-2026-0291.yaml": "cddd769abe6bf2a7e6b29f09cef997d38ee0836f",
+      "changes/SWCIS-2026-0292.yaml": "49a3b188c9fe08941bdbe4eff846a4c144b0bb8e",
+      "changes/SWCIS-2026-0293.yaml": "a54539868f00cf57a7ec59611f86901980c0ae92",
+      "changes/SWCIS-2026-0294.yaml": "94b224eed7d9a5c91292f8c2de314bfe780f8102",
+      "changes/SWCIS-2026-0295.yaml": "94b98b5785805e4751c87569afc375dd36261132",
+      "changes/SWCIS-2026-0296.yaml": "526efe1262cc750c88320d8efbd09f158f7a1edb",
+      "changes/SWCIS-2026-0297.yaml": "71a4cfe009350020babfc11f6042a4c1c3d2c710",
+      "changes/SWCIS-2026-0298.yaml": "06d9e13b4313cd470454b3008c2548ca9777daf2"
+    }
+  }
+}
