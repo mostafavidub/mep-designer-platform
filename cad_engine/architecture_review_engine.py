@@ -55,6 +55,28 @@ def empty_review_registry():
             "convergence": {}, "manual_geometry_creation_count": 0}
 
 
+def normalize_review_registry(registry):
+    """Return the current registry shape without importing legacy authority.
+
+    Canonical adapters may retain the historical human-gap review result under
+    ``review_registry``.  Those decisions use a different scope and cannot be
+    treated as separator-interval decisions.  Preserve a deterministic audit
+    fingerprint while starting the current registry with no inherited grants.
+    """
+    if not registry:
+        return empty_review_registry()
+    if registry.get("schema") != REGISTRY_SCHEMA:
+        current = empty_review_registry()
+        current["legacy_registry_schema"] = registry.get("schema")
+        current["legacy_registry_fingerprint"] = content_hash(registry)
+        return current
+    current = empty_review_registry()
+    current.update(deepcopy(registry))
+    for key, default in empty_review_registry().items():
+        current.setdefault(key, deepcopy(default))
+    return current
+
+
 def _issue_id(source_sha, bucket, code, context):
     return "PREFLIGHT-ISSUE-" + content_hash([source_sha, bucket, code, context])[:20].upper()
 
@@ -201,7 +223,7 @@ def _make_item(model, group, recommendations):
 
 def plan_preflight(canonical_model, validator_report=None, review_registry=None,
                    recommendation_evidence=None):
-    registry = deepcopy(review_registry or empty_review_registry())
+    registry = normalize_review_registry(review_registry)
     recomputed = validate_architecture(canonical_model)
     supplied = validator_report or recomputed
     integrity = validate_validator_report_integrity(supplied, canonical_model_hash(canonical_model))
@@ -403,7 +425,7 @@ def _apply_overlay(model, item, decision, evidence_index=None):
 
 def replay_review_decisions(canonical_model, decisions, preflight_plan=None, review_registry=None):
     plan = preflight_plan or plan_preflight(canonical_model, review_registry=review_registry)
-    registry = deepcopy(review_registry or plan.get("review_registry") or empty_review_registry())
+    registry = normalize_review_registry(review_registry or plan.get("review_registry"))
     initial_registry = deepcopy(registry)
     model = deepcopy(canonical_model); before_geometry = _geometry_guard(model)
     items = {x["review_item_id"]: x for x in plan.get("review_items") or []}
@@ -509,7 +531,8 @@ def execute_preflight(canonical_model, decisions=None, review_registry=None, *,
     report = validate_architecture(canonical_model)
     initial = plan_preflight(canonical_model, report, review_registry, recommendation_evidence)
     if report["status"] == "PASS" and not decisions:
-        existing_registry = review_registry or canonical_model.get("review_registry") or {}
+        existing_registry = normalize_review_registry(
+            review_registry or canonical_model.get("review_registry"))
         reviewed = bool(existing_registry.get("accepted_decisions"))
         snapshot = create_snapshot(canonical_model, report, engine_identity=engine_identity or {},
                                    created_at=created_at or "UNSPECIFIED", validation_state="VALIDATED" if reviewed else "AUTO_VALIDATED",

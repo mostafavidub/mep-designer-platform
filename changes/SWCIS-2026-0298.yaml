@@ -58,7 +58,7 @@
       "MEP-ARCH-RECOG-001: separator evidence and independent authority checks."
     ],
     "tests": [
-      "32 new separator/region-scope tests; focused separator + existing review55 PASS. Complete governed1392 tests +14 subtests PASS on Python3.12.13. Final architecture subset and official CI reported per commit."
+      "33 new separator/region-scope tests; focused contract/review/validator100 PASS; architecture regression465 PASS. Complete governed1393 tests +14 subtests PASS on Python3.12.13. Final official CI reported per commit."
     ],
     "docs": [
       "docs/adr/ADR-ARCHITECTURAL-BOUNDARY-SEPARATOR-EVIDENCE.md"
@@ -70,7 +70,7 @@
       "standards/swcis/migrations/architecture-separator-contract-v3.json"
     ],
     "golden_regression": [
-      "Approved development replay: original negative controls0/19; expanded reviewed negatives0/22. All159 current candidate geometries exactly preserved across7 sources; 8 positive references retain VERIFIED geometry but require separator-role review. Historical9 decisions replayed only at original region scope."
+      "Approved development replay: original negative controls0/19; expanded reviewed negatives0/22. All159 current candidate geometries exactly preserved across7 sources. Historical9 region decisions replayed only at original scope. The owner explicitly classified all36 minimum source-witness intervals; 36/36 fingerprint-bound decisions accepted, with Q16/Q19/Q20 and the established positive references resolved only through their exact existing evidence."
     ],
     "semantic_diff": [
       "RAW DXF context/pairing alone yields review-required role; historical region decisions grant no interval role."
@@ -100,15 +100,16 @@
   },
   "waiver": null,
   "verification_status": {
-    "implementation": "IMPLEMENTED_BOUNDED_PARTIAL",
-    "qualification": "ARCHITECTURE_SEPARATOR_EVIDENCE_PARTIAL",
+    "implementation": "IMPLEMENTED_AND_SOURCE_WITNESS_REVIEWED",
+    "qualification": "ARCHITECTURE_SEPARATOR_EVIDENCE_QUALIFIED",
     "release": "BLOCKED",
-    "focused": "PASS_55",
-    "full_regression": "PASS_1392_PLUS_14_SUBTESTS",
+    "focused": "PASS_100",
+    "architecture_regression": "PASS_465",
+    "full_regression": "PASS_1393_PLUS_14_SUBTESTS",
     "original_negative_controls": "PASS_0_OF_19",
     "expanded_negative_controls": "PASS_0_OF_22",
     "determinism": "PASS_7_OF_7",
-    "human_review": "PASS_9_OF_9_ORIGINAL_SCOPE",
+    "human_review": "PASS_9_OF_9_ORIGINAL_SCOPE_AND_36_OF_36_SEPARATOR_WITNESSES",
     "official_ci": "PENDING_FINAL_SHA"
   }
 }

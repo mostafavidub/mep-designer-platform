@@ -57,6 +57,24 @@ def test_nonseparator_does_not_create_material():
     assert not result['reviewed_canonical_model']['physical_spaces'][0]['authority']['material_geometry']
 
 
+def test_legacy_gap_review_registry_cannot_break_or_authorize_separator_replay():
+    m=fixture()
+    legacy={'schema':'architectural-human-gap-review-result/1.0',
+            'accepted_review_decisions':[{'decision':'VERIFIED'}],
+            'review_application_status':'APPLIED'}
+    m['review_registry']=legacy
+    plan=plan_preflight(m,review_registry=legacy)
+    assert plan['review_registry']['legacy_registry_schema']==legacy['schema']
+    assert plan['review_registry']['accepted_decisions']==[]
+    item=plan['review_items'][0]
+    result=replay_review_decisions(m,[payload(item,'PHYSICAL_SEPARATOR')],plan,legacy)
+    assert len(result['accepted_review_decisions'])==1
+    assert result['review_registry']['legacy_registry_fingerprint']
+    reviewed_entry=next(e for e in result['reviewed_canonical_model']['evidence_registry']
+                        if e['evidence_id']==item['object_or_region_id'])
+    assert reviewed_entry['payload']['separator']['origin']=='HUMAN_SOURCE_INTERPRETATION'
+
+
 @pytest.mark.parametrize('key,value',[('source_sha256','c'*64),('geometry_fingerprint','changed'),('evidence_fingerprint','changed'),('review_scope','WHOLE_ROOM')])
 def test_stale_or_overbroad_payload_rejected(key,value):
     m=fixture();p=plan_preflight(m);d=payload(p['review_items'][0],'PHYSICAL_SEPARATOR');d[key]=value

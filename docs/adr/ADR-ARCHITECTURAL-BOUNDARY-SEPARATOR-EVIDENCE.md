@@ -1,6 +1,6 @@
 # Architectural Boundary Separator Evidence and Authority
 
-Status: owner-approved design; implementation qualification pending under SWCIS-2026-0298.
+Status: implemented and source-witness qualified under SWCIS-2026-0298.
 
 ## Problem
 
@@ -56,5 +56,5 @@ this cannot classify shared boundary lines or newly changed regions. Eight posit
 references retain their geometry but still need separator-role interpretation.
 Therefore status remains ARCHITECTURE_SEPARATOR_EVIDENCE_PARTIAL.
 
-Full governed suite:1392 tests and14 subtests PASS on Python3.12.13. Official CI
+Full governed suite:1393 tests and14 subtests PASS on Python3.12.13. Official CI
 is tracked against the published final SHA in the stacked PR; no merge or deploy.
