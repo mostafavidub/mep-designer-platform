@@ -60,19 +60,19 @@
       "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
     ],
     "tests": [
-      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+      "64 focused checks PASS; complete governed suite1404 tests and14 subtests PASS on Python3.12.13 with Vision disabled. Current implementation checkpoint906c259; subsequent evidence-only updates do not change tested implementation."
     ],
     "docs": [
-      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+      "docs/ARCHITECTURE_STACK_INTEGRATION.md"
     ],
     "version_bump": [
-      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+      "SWCIS5.1.0 additive sealed-integration policy; canonical3.0 unchanged."
     ],
     "migration": [
       "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
     ],
     "golden_regression": [
-      "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
+      "Scope-correct development replay; unresolved human interval scope is explicitly a qualification blocker, not an inherited PASS."
     ],
     "semantic_diff": [
       "Planned integration evidence: docs/ARCHITECTURE_STACK_INTEGRATION.md; no inherited PASS claim."
@@ -102,8 +102,13 @@
   },
   "waiver": null,
   "verification_status": {
-    "phase": "IMPLEMENTATION_IN_PROGRESS",
-    "qualification": "ARCHITECTURE_STACK_INTEGRATION_PARTIAL"
+    "qualification": "ARCHITECTURE_STACK_INTEGRATION_PARTIAL",
+    "focused": "PASS_64",
+    "full_regression": "PASS_1404_PLUS_14_SUBTESTS",
+    "swcis": "PASS_CUMULATIVE",
+    "runtime_guard": "PASS",
+    "review_scope": "SEVEN_INTERVAL_DECISIONS_REQUIRE_BOUNDED_REVIEW",
+    "official_ci": "PENDING_FINAL_HEAD"
   },
   "integration": {
     "base_sha": "9876f3fb0cb63e17055ff2d30e621fa2c9325939",
