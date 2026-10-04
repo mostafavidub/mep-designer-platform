@@ -53,7 +53,8 @@ def legacy_model():
 
 
 def contract():
-    return adapt_current_architecture(legacy_model(), {"sha": "engine"})
+    from tests.architecture_separator_fixtures import declare_structured_separators
+    return assign_canonical_model_hash(declare_structured_separators(adapt_current_architecture(legacy_model(), {"sha": "engine"})))
 
 
 def qualified_contract():
@@ -73,7 +74,7 @@ def codes(report):
 
 def test_schemas_are_machine_readable_and_named():
     root = Path(__file__).parents[1] / "standards" / "test-suites"
-    names = ["planha-canonical-architecture-v2.schema.json",
+    names = ["planha-canonical-architecture-v2.schema.json", "planha-canonical-architecture-v3.schema.json",
              "planha-validated-architecture-snapshot-v1.schema.json",
              "planha-architecture-review-v1.schema.json",
              "planha-architecture-truth-v1.schema.json",

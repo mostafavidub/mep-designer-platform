@@ -37,6 +37,9 @@ def create_snapshot(canonical_model, validator_report, *, engine_identity, creat
     report_integrity = validate_validator_report_integrity(validator_report, canonical_model_hash(canonical_model))
     if report_integrity["status"] != "PASS":
         raise ValueError(report_integrity["errors"][0])
+    from .architecture_validator import validate_architecture
+    if validator_report != validate_architecture(canonical_model):
+        raise ValueError("CURRENT_INDEPENDENT_VALIDATION_REQUIRED")
     report_hash = validator_report.get("report_hash")
     state = validation_state or ("AUTO_VALIDATED" if validator_report.get("status") == "PASS" else
                                  "ARCHITECTURE_INPUT_REQUIRED")
@@ -48,6 +51,9 @@ def create_snapshot(canonical_model, validator_report, *, engine_identity, creat
         raise ValueError("REVIEW_MANIFEST_REQUIRED")
     if state == "AUTO_VALIDATED" and review_manifest:
         raise ValueError("AUTO_VALIDATED_REVIEW_FORBIDDEN")
+    accepted = (canonical_model.get("review_registry") or {}).get("accepted_decisions") or []
+    if accepted and (state != "VALIDATED" or review_manifest != canonical_model.get("review_registry")):
+        raise ValueError("CURRENT_REVIEW_MANIFEST_REQUIRED")
     review_hash = content_hash(review_manifest) if review_manifest else None
     identity = {"canonical_schema_version": CANONICAL_SCHEMA, "canonical_model_hash": model_hash,
                 "source_sha256": canonical_model.get("source", {}).get("source_sha256"),
@@ -67,6 +73,10 @@ def create_snapshot(canonical_model, validator_report, *, engine_identity, creat
 def validate_snapshot(snapshot, canonical_model, validator_report, *, review_manifest=None,
                       current_source_sha256=None):
     errors = []
+    from .architecture_validator import validate_architecture
+    fresh = validate_architecture(canonical_model)
+    if canonical_model.get("schema") != CANONICAL_SCHEMA or fresh["status"] != "PASS" or validator_report != fresh:
+        errors.append("SNAPSHOT_CURRENT_QUALIFICATION_REQUIRED")
     if snapshot.get("schema") != SNAPSHOT_SCHEMA:
         errors.append("SNAPSHOT_SCHEMA_MISMATCH")
     if snapshot.get("validation_state") == "SUPERSEDED":

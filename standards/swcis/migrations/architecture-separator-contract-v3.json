@@ -1,0 +1,40 @@
+{
+  "migration_id": "architecture-separator-contract-v3",
+  "change_id": "SWCIS-2026-0298",
+  "standard_version": "5.0.0",
+  "from_contract": "planha-canonical-architecture/2.0",
+  "to_contract": "planha-canonical-architecture/3.0",
+  "status": "EXPERIMENTAL_NOT_ACTIVATED",
+  "production_consumer_enabled": false,
+  "strategy": "regenerate-and-revalidate",
+  "forward": [
+    "Detect schema identity; reject v2 as current qualification.",
+    "Read historical artifacts for diagnostic inspection only; regenerate from immutable source.",
+    "Replay source decisions only at their original scope after fingerprint validation.",
+    "Independently validate before any snapshot; no production data migration."
+  ],
+  "compatibility_order": [
+    "Diagnostic old-artifact reader",
+    "New evidence producer and independent validator together",
+    "Explicit experimental writer activation after qualification"
+  ],
+  "consumer_inventory": [
+    "architecture_contract",
+    "architecture_validator",
+    "architecture_review_engine",
+    "architecture_snapshot",
+    "planha_package",
+    "architecture_preflight_ui (transport only)",
+    "Mechanical consumers: not migrated or activated"
+  ],
+  "deprecation_window": "Historical artifacts remain readable by historical diagnostic tooling; no destructive expiration. They are immediately ineligible for current qualification.",
+  "rollback": [
+    "Use an approved Git commit; no parallel runtime copies.",
+    "Do not feed v3 qualification to v2 readers; keep snapshot eligibility blocked."
+  ],
+  "validation": [
+    "tests/test_architecture_separator_evidence.py",
+    "tests/test_architecture_preflight_review_engine.py",
+    "tests/test_architecture_input_foundation_v2.py"
+  ]
+}

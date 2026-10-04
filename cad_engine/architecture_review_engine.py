@@ -34,7 +34,7 @@ ENGINE_CODES = {"SCHEMA_MISMATCH", "ADAPTER_IDENTITY_MISSING", "MISSING_ID",
                 "VALIDATOR_MUTATED_INPUT", "UNKNOWN_AUTHORITY_STATUS",
                 "UNKNOWN_AUTHORITY_ORIGIN", "STALE_REVIEW_AUTHORITY_FORBIDDEN",
                 "VALIDATOR_REPORT_MISMATCH"}
-CONFLICT_CODES = {"ILLEGAL_PHYSICAL_SPACE_OVERLAP", "CROSS_LEVEL_PORTAL_FORBIDDEN",
+CONFLICT_CODES = {"SEPARATOR_CONFLICT", "SEPARATOR_ROLE_CONFLICT", "ILLEGAL_PHYSICAL_SPACE_OVERLAP", "CROSS_LEVEL_PORTAL_FORBIDDEN",
                   "SOURCE_REVISION_IDENTITY_MISMATCH"}
 SOURCE_CODES = {"SOURCE_SHA256_MISSING_OR_INVALID", "EFFECTIVE_SCALE_REQUIRED",
                 "FRAME_LEVEL_UNRESOLVED", "WALL_SOURCE_PROVENANCE_REQUIRED",
@@ -53,6 +53,28 @@ def empty_review_registry():
             "decision_history": [], "validation_history": [],
             "resolved_issue_ids": [], "unresolved_issue_ids": [],
             "convergence": {}, "manual_geometry_creation_count": 0}
+
+
+def normalize_review_registry(registry):
+    """Return the current registry shape without importing legacy authority.
+
+    Canonical adapters may retain the historical human-gap review result under
+    ``review_registry``.  Those decisions use a different scope and cannot be
+    treated as separator-interval decisions.  Preserve a deterministic audit
+    fingerprint while starting the current registry with no inherited grants.
+    """
+    if not registry:
+        return empty_review_registry()
+    if registry.get("schema") != REGISTRY_SCHEMA:
+        current = empty_review_registry()
+        current["legacy_registry_schema"] = registry.get("schema")
+        current["legacy_registry_fingerprint"] = content_hash(registry)
+        return current
+    current = empty_review_registry()
+    current.update(deepcopy(registry))
+    for key, default in empty_review_registry().items():
+        current.setdefault(key, deepcopy(default))
+    return current
 
 
 def _issue_id(source_sha, bucket, code, context):
@@ -122,6 +144,8 @@ def _normalize_issues(model, report, registry):
         for raw in rows:
             code = raw.get("code", "UNKNOWN")
             if code == "ARCHITECTURE_RELEASE_INPUT_REQUIRED" and has_specific:
+                continue
+            if code == "SEPARATOR_ROLE_REQUIRED" and any(str(r.get("unresolved_item_id", "")).startswith("SEPARATOR-") for r in unresolved):
                 continue
             context = {k: deepcopy(v) for k, v in raw.items() if k != "code"}
             if code in ENGINE_CODES:
@@ -199,7 +223,7 @@ def _make_item(model, group, recommendations):
 
 def plan_preflight(canonical_model, validator_report=None, review_registry=None,
                    recommendation_evidence=None):
-    registry = deepcopy(review_registry or empty_review_registry())
+    registry = normalize_review_registry(review_registry)
     recomputed = validate_architecture(canonical_model)
     supplied = validator_report or recomputed
     integrity = validate_validator_report_integrity(supplied, canonical_model_hash(canonical_model))
@@ -336,10 +360,33 @@ def _review_trace(entity, item, decision):
         entity.setdefault("review_trace", []).append(trace)
 
 
-def _apply_overlay(model, item, decision):
+def _apply_overlay(model, item, decision, evidence_index=None):
     if decision == "UNKNOWN":
         return False
     qtype = item["question_type"]; object_id = item["object_or_region_id"]
+    evidence_index = evidence_index if evidence_index is not None else {r["evidence_id"]: r for r in model.get("evidence_registry", [])}
+    if qtype == "OTHER_BOUNDED_SOURCE_INTERPRETATION" and item.get("review_scope") == "SOURCE_REGION_INTERPRETATION":
+        entry = evidence_index.get(object_id)
+        if entry and entry.get("kind") != "SOURCE_REVIEW_REGION": return False
+        if not entry: return False
+        p = entry["payload"]
+        if p.get("source_sha256") != model.get("source", {}).get("source_sha256") or any(item.get(k) != p.get(k) for k in ("geometry_fingerprint", "evidence_fingerprint")):
+            return False
+        if decision not in p["allowed_interpretations"]: return False
+        p["interpretation"] = {"decision": decision, "review_item": deepcopy(item), "scope": "SOURCE_REGION_INTERPRETATION", "separator_authority": False}
+        return True
+    if qtype == "SOURCE_ROLE_CLASSIFICATION":
+        from .architecture_separator_evidence import KIND, SCOPE, review_candidate
+        entry = evidence_index.get(object_id)
+        if entry and entry.get("kind") != KIND: return False
+        if not entry or item.get("review_scope") != SCOPE:
+            return False
+        current = review_candidate(entry)
+        if any(item.get(k) != current.get(k) for k in ("geometry_fingerprint", "evidence_fingerprint", "frame_or_level_id", "review_scope")):
+            return False
+        entry["payload"]["separator"] = {"role": decision, "status": "VERIFIED" if decision == "PHYSICAL_SEPARATOR" else "REJECTED",
+            "origin": "HUMAN_SOURCE_INTERPRETATION", "decision": decision, "review_item": deepcopy(item)}
+        return True
     if qtype == "SPACE_CLASSIFICATION":
         entity = next((x for x in model.get("physical_spaces") or [] if x.get("physical_space_id") == object_id), None)
         if not entity: return False
@@ -378,12 +425,14 @@ def _apply_overlay(model, item, decision):
 
 def replay_review_decisions(canonical_model, decisions, preflight_plan=None, review_registry=None):
     plan = preflight_plan or plan_preflight(canonical_model, review_registry=review_registry)
-    registry = deepcopy(review_registry or plan.get("review_registry") or empty_review_registry())
+    registry = normalize_review_registry(review_registry or plan.get("review_registry"))
+    initial_registry = deepcopy(registry)
     model = deepcopy(canonical_model); before_geometry = _geometry_guard(model)
     items = {x["review_item_id"]: x for x in plan.get("review_items") or []}
     previous = {(x.get("review_fingerprint"), x.get("decision")): x
                 for x in registry.get("accepted_decisions") or []}
     accepted_now = []; resolved = set(registry.get("resolved_issue_ids") or [])
+    evidence_index = {r["evidence_id"]: r for r in model.get("evidence_registry", [])}
     for payload in decisions or []:
         item = items.get(payload.get("review_item_id"))
         rejection = {"review_item_id": payload.get("review_item_id"), "decision": payload.get("decision")}
@@ -410,7 +459,7 @@ def replay_review_decisions(canonical_model, decisions, preflight_plan=None, rev
         if conflicting:
             rejection.update(status="REJECTED", errors=["DECISION_CONFLICT"])
             registry["rejected_decisions"].append(rejection); continue
-        applied = _apply_overlay(model, item, payload["decision"])
+        applied = _apply_overlay(model, item, payload["decision"], evidence_index)
         record = {"decision_id": "ARCHDECISION-" + content_hash(key)[:20].upper(),
                   "review_item_id": item["review_item_id"], "review_fingerprint": item["review_fingerprint"],
                   "decision": payload["decision"], "review_authority": "HUMAN_SOURCE_INTERPRETATION",
@@ -425,6 +474,12 @@ def replay_review_decisions(canonical_model, decisions, preflight_plan=None, rev
                                                "previous_decision": "UNKNOWN", "review_attempt_count": 1}
         elif applied:
             resolved.update(item["validator_issue_ids_covered"])
+    if not accepted_now and registry == initial_registry:
+        report = validate_architecture(model)
+        return {"reviewed_canonical_model": model, "validator_report": report,
+                "preflight_plan": plan_preflight(model, report, registry), "review_registry": registry,
+                "accepted_review_decisions": [], "stale_review_decisions": deepcopy(registry["stale_decisions"]),
+                "rejected_review_decisions": deepcopy(registry["rejected_decisions"])}
     if _geometry_guard(model) != before_geometry:
         registry["manual_geometry_creation_count"] += 1
         raise ValueError("REVIEW_GEOMETRY_MUTATION_FORBIDDEN")
@@ -441,6 +496,8 @@ def replay_review_decisions(canonical_model, decisions, preflight_plan=None, rev
     if not remaining_critical and accepted_now and all(x.get("decision") != "UNKNOWN" and x.get("applied") for x in accepted_now):
         model["release"] = {"status": "VERIFIED", "downstream_engineering_allowed": True, "release_allowed": True}
     model["review_registry"] = deepcopy(registry)
+    from .architecture_separator_evidence import refresh_separator_authority
+    refresh_separator_authority(model)
     assign_canonical_model_hash(model)
     post_report = validate_architecture(model)
     post_codes = sorted({x["code"] for key in ("hard_errors", "input_requirements") for x in post_report.get(key) or []})
@@ -457,6 +514,8 @@ def replay_review_decisions(canonical_model, decisions, preflight_plan=None, rev
                                                "review_attempt_count": 1,
                                                "post_decision_validator_codes": post_codes}
     model["review_registry"] = deepcopy(registry)
+    from .architecture_separator_evidence import refresh_separator_authority
+    refresh_separator_authority(model)
     assign_canonical_model_hash(model)
     post_report = validate_architecture(model)
     next_plan = plan_preflight(model, post_report, registry)
@@ -472,8 +531,13 @@ def execute_preflight(canonical_model, decisions=None, review_registry=None, *,
     report = validate_architecture(canonical_model)
     initial = plan_preflight(canonical_model, report, review_registry, recommendation_evidence)
     if report["status"] == "PASS" and not decisions:
+        existing_registry = normalize_review_registry(
+            review_registry or canonical_model.get("review_registry"))
+        reviewed = bool(existing_registry.get("accepted_decisions"))
         snapshot = create_snapshot(canonical_model, report, engine_identity=engine_identity or {},
-                                   created_at=created_at or "UNSPECIFIED", validation_state="AUTO_VALIDATED")
+                                   created_at=created_at or "UNSPECIFIED", validation_state="VALIDATED" if reviewed else "AUTO_VALIDATED",
+                                   review_manifest=existing_registry if reviewed else None,
+                                   review_decision_ids=[r["decision_id"] for r in existing_registry.get("accepted_decisions", [])])
         initial["metrics"]["snapshot_created"] = True
         return {"preflight_plan": initial, "canonical_model": canonical_model,
                 "validator_report": report, "review_registry": initial["review_registry"],

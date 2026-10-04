@@ -34,7 +34,12 @@ def test_real_diagonal_enclosure_still_has_geometry_authority(tmp_path, monkeypa
     model=reconstruct_architecture(path);canonical=adapt_current_architecture(model)
     assert len(canonical['physical_spaces'])==1
     assert canonical['physical_spaces'][0]['geometry_status']=='VERIFIED'
-    assert canonical['physical_spaces'][0]['authority']['material_geometry']
+    assert not canonical['physical_spaces'][0]['authority']['material_geometry']
+    from cad_engine.architecture_review_engine import plan_preflight, replay_review_decisions
+    from tests.test_architecture_separator_evidence import payload
+    plan=plan_preflight(canonical)
+    result=replay_review_decisions(canonical,[payload(i,'PHYSICAL_SEPARATOR') for i in plan['review_items'] if i['question_type']=='SOURCE_ROLE_CLASSIFICATION'],plan)
+    assert result['reviewed_canonical_model']['physical_spaces'][0]['authority']['material_geometry']
     assert not validate_architecture(canonical)['hard_errors']
 
 

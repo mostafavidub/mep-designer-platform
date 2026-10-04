@@ -23,7 +23,9 @@
       "path_patterns": [
         "app/project_mechanical_model.py",
         "app/*contract*.py",
-        "standards/projects/**"
+        "standards/projects/**",
+        "cad_engine/architecture_contract.py",
+        "standards/test-suites/planha-canonical-architecture-v3.schema.json"
       ],
       "seed_modules": [
         "pmm"
@@ -109,9 +111,9 @@
         "cad_engine/engineering_acceptance.py",
         "cad_engine/authority_architecture.py",
         "cad_engine/architecture_reconstruction.py",
-      "cad_engine/architectural_space_engine.py",
-      "cad_engine/pre_topology_object_classifier.py",
-      "cad_engine/architectural_vision_recovery.py",
+        "cad_engine/architectural_space_engine.py",
+        "cad_engine/pre_topology_object_classifier.py",
+        "cad_engine/architectural_vision_recovery.py",
         "cad_engine/candidate_architectural_classification.py",
         "cad_engine/local_visual_context.py",
         "cad_engine/architectural_semantic_scout.py",
@@ -135,9 +137,9 @@
         "cad_engine/planha_package.py",
         "cad_engine/architecture_benchmark.py",
         "tools/architectural_canonical_topology_qa.py",
-      "tools/architectural_wall_admission_qa.py",
-      "tools/pre_topology_candidate_audit.py",
-      "tools/generate_hybrid_architecture_qa.py",
+        "tools/architectural_wall_admission_qa.py",
+        "tools/pre_topology_candidate_audit.py",
+        "tools/generate_hybrid_architecture_qa.py",
         "cad_engine/mechanical_authority*.py",
         "cad_engine/mechanical_cad*.py",
         "cad_engine/mechanical_design_core.py",
@@ -155,7 +157,9 @@
         "cad_engine/plan_isolation_acceptance.py",
         "app/dxf_output.py",
         "cad_engine/semantic_dimension_engine.py",
-        "cad_engine/dimensioning/**"
+        "cad_engine/dimensioning/**",
+        "cad_engine/architecture_separator_evidence.py",
+        "cad_engine/architecture_separator_validator.py"
       ],
       "seed_modules": [
         "cad_designer",

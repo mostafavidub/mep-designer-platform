@@ -4,6 +4,7 @@ This does not infer boundaries. It measures source/derived boundary coverage and
 retains unresolved interior partitions instead of letting a label certify them.
 """
 from shapely.geometry import LineString
+import json
 from shapely.ops import unary_union
 
 from .pre_topology_object_classifier import excludes_from_wall_admission
@@ -77,7 +78,9 @@ def physical_boundary_evidence(poly, classified, walls, closures, tolerance):
     if missing > 1e-9: reasons.append("PHYSICAL_BOUNDARY_UNSUPPORTED")
     if interior_ids: reasons.append("UNRESOLVED_INTERIOR_WALL_EVIDENCE")
     status = "INPUT_REQUIRED" if reasons else "VERIFIED"
-    return {"status": status, "source_handles": sorted(handles), "segments": segments,
+    return {"status": status, "separator_status": "AMBIGUOUS",
+            "source_witness_records": [{key: row.get(key) for key in ("segment_id", "source_handle", "geometry", "source_insert_handle", "source_block_path", "source_transform", "evidence", "negative_evidence", "pre_topology_classification")} for row in sorted(positive, key=lambda value: json.dumps(value, sort_keys=True)) if LineString(row["geometry"]).intersection(boundary.buffer(tol)).length > tol],
+            "source_handles": sorted(handles), "segments": segments,
             "wall_ids": sorted(wall_ids), "closure_ids": sorted(x for x in closure_ids if x),
             "tolerance": tol, "uncovered_length": missing,
             "coverage_ratio": max(0.0, 1-missing/max(boundary.length,1e-12)),

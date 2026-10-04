@@ -20,13 +20,13 @@ def supported_space(model):
     space = model['physical_spaces'][0]
     points = space['polygon']
     space['geometry_status'] = 'VERIFIED'
-    space['geometry_evidence'] = {
+    space['geometry_evidence'].update({
         'status': 'VERIFIED', 'source_handles': list(space['source_handles']),
-        'segments': [[a, b] for a, b in zip(points, points[1:] + points[:1])]}
+        'segments': [[a, b] for a, b in zip(points, points[1:] + points[:1])]})
     return space
 
 
-def test_source_backed_legacy_contract_is_preserved():
+def test_explicit_structured_separator_contract_is_preserved():
     assert report(contract()) == set()
 
 

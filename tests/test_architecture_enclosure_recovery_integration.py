@@ -44,7 +44,15 @@ def test_supported_room_scale_does_not_drive_candidate_rejection(tmp_path, monke
     space = canonical['physical_spaces'][0]
     assert space['area_m2'] == pytest.approx(width * height)
     assert space['geometry_status'] == 'VERIFIED'
-    assert space['authority']['material_geometry']
+    # RAW WALL context proves geometry, not separator role (canonical 3.0).
+    assert not space['authority']['material_geometry']
+    assert space['geometry_evidence']['separator_status'] == 'AMBIGUOUS'
+    from cad_engine.architecture_review_engine import plan_preflight, replay_review_decisions
+    from tests.test_architecture_separator_evidence import payload
+    plan = plan_preflight(canonical)
+    answers = [payload(i, 'PHYSICAL_SEPARATOR') for i in plan['review_items'] if i['question_type'] == 'SOURCE_ROLE_CLASSIFICATION']
+    result = replay_review_decisions(canonical, answers, plan)
+    assert result['reviewed_canonical_model']['physical_spaces'][0]['authority']['material_geometry']
     assert not validate_architecture(canonical)['hard_errors']
 
 

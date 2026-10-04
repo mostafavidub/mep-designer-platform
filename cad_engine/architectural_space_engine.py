@@ -719,6 +719,7 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
             coords=list(line.coords)
             records.append({"segment_id":_stable_id("SEG",[meta.get("handle"),_round_points(coords)]),
                 "source_handle":meta.get("handle"),"geometry":coords,
+                "source_insert_handle":meta.get("source_insert_handle"), "source_block_path":meta.get("source_block_path"),
                 "source_context":{"layer":meta.get("layer"),"entity_type":meta.get("entity_type"),"closed":meta.get("closed")},
                 "semantic_class":pre_topology["object_class"],"wall_probability":0.0,
                 "wall_evidence_state":"HARD_EXCLUDED_NON_ENCLOSURE_OBJECT",
@@ -746,6 +747,7 @@ def _semantic_segment_classification(lines, metas, metres_per_unit, tolerance):
         if not evidence: negative.append("NO_RECURRING_OR_LOCAL_PARALLEL_PAIR")
         record={"segment_id":_stable_id("SEG",[meta.get("handle"),_round_points(coords)]),
                 "source_handle":meta.get("handle"),"geometry":coords,
+                "source_insert_handle":meta.get("source_insert_handle"), "source_block_path":meta.get("source_block_path"),
                 "source_context":{"layer":meta.get("layer"),"entity_type":meta.get("entity_type"),"closed":meta.get("closed")},
                 "semantic_class":semantic,"wall_probability":probability,"wall_evidence_state":state,
                 "evidence":evidence,"negative_evidence":negative,
@@ -1219,6 +1221,8 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded
             "objects": objects, "dimensions": dims, "confidence": 1.0 if status == "VERIFIED" else (.85 if status == "HIGH_CONFIDENCE" else .0),
             "status": status, "geometry_status":geometry_status, "topology_status":geometry_status,
             "semantic_status":semantic_status, "geometry_evidence":proof,
+            "separator_status":proof.get("separator_status", "INPUT_REQUIRED"),
+            "material_geometry":False,
             "semantic_candidates":unsupported_semantic, "unresolved_label_evidence":unresolved_labels,
             "evidence": evidence, "source_handles": list(proof.get("source_handles") or []),
             "traceability": {"source_sha256": source_hash, "frame_id": frame["frame_id"], "geometry_fingerprint": sha256(json.dumps(ring).encode()).hexdigest()}}
@@ -1485,6 +1489,8 @@ def _completeness(frames, spaces, units_known, *, coverage=None, openings=None,
         if frame.get("scope_relevance") == "MECHANICAL_AUTHORITY" and frame["frame_type"] == "UNKNOWN":
             issues.append({"code": "UNKNOWN_FRAME", "frame_id": frame["frame_id"], "status": "INPUT_REQUIRED"})
     for space in spaces:
+        if space.get("material_geometry") is not True or space.get("separator_status") != "VERIFIED":
+            issues.append({"code": "SEPARATOR_ROLE_REQUIRED", "space_id": space["physical_space_id"], "frame_id": space["frame_id"], "status": "INPUT_REQUIRED"})
         if space["status"] in {"INPUT_REQUIRED", "CONFLICT", "AMBIGUOUS"}:
             issues.append({"code": "UNRESOLVED_SPACE", "space_id": space["physical_space_id"], "frame_id": space["frame_id"], "status": space["status"]})
         if space["area_m2"] is None: issues.append({"code": "UNIT_CALIBRATION_REQUIRED", "space_id": space["physical_space_id"], "status": "INPUT_REQUIRED"})

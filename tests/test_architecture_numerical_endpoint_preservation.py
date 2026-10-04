@@ -76,6 +76,11 @@ def test_paired_source_room_survives_extraction_adapter_and_validator(tmp_path,m
     for a,b in zip(points,points[1:]+points[:1]):doc.modelspace().add_line(a,b,dxfattribs={'layer':'WALL'})
     path=tmp_path/'paired.dxf';doc.saveas(path)
     model=adapt_current_architecture(reconstruct_architecture(path))
+    assert all(not s['authority']['material_geometry'] for s in model['physical_spaces'])
+    from cad_engine.architecture_review_engine import plan_preflight, replay_review_decisions
+    from tests.test_architecture_separator_evidence import payload
+    plan=plan_preflight(model)
+    model=replay_review_decisions(model,[payload(i,'PHYSICAL_SEPARATOR') for i in plan['review_items'] if i['question_type']=='SOURCE_ROLE_CLASSIFICATION'],plan)['reviewed_canonical_model']
     rooms=[s for s in model['physical_spaces'] if s['authority']['material_geometry']]
     assert len(rooms)==1 and rooms[0]['area_m2']==pytest.approx(12,abs=1e-6)
     report=validate_architecture(model)

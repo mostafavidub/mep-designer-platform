@@ -15,7 +15,7 @@ import math
 import unicodedata
 
 
-SCHEMA = "planha-canonical-architecture/2.0"
+SCHEMA = "planha-canonical-architecture/3.0"
 ADAPTER_ID = "planha.raw-dxf-current-model-adapter"
 ADAPTER_VERSION = "1.0.0"
 IDENTITY_VERSION = "planha-canonical-identity/2.1"
@@ -252,11 +252,14 @@ def adapt_current_architecture(current_model, engine_identity=None):
                       "authority": _authority(wall_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
                                               material_geometry=True, wall=True)})
 
+    from .architecture_separator_evidence import bind_boundary, refresh_separator_authority
     spaces = []
     for row in model.get("physical_spaces") or []:
         ev = _evidence_ids(row.get("evidence") or [], "SPACE-EV", row.get("physical_space_id"))
         evidence_registry.extend(ev)
         geometry_status = _status(row.get("geometry_status") or row.get("status"))
+        if not (row.get("geometry_evidence") or {}).get("status"):
+            geometry_status = "INPUT_REQUIRED"
         # Legacy semantic-only records cannot acquire material authority merely
         # because this adapter supplies a SOURCE_GEOMETRIC origin flag.
         legacy_evidence=row.get("evidence") or []
@@ -277,7 +280,8 @@ def adapt_current_architecture(current_model, engine_identity=None):
                        "geometry_fingerprint": (row.get("traceability") or {}).get("geometry_fingerprint"),
                        **({"candidate_id": row["candidate_id"], "candidate_role": row.get("candidate_role")} if "candidate_id" in row else {}),
                        "authority": _authority(geometry_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
-                                               material_geometry=True)})
+                                               material_geometry=False)})
+        evidence_registry.extend(bind_boundary(spaces[-1], source_sha))
 
     zones = []
     for row in model.get("functional_zones") or []:
@@ -376,6 +380,8 @@ def adapt_current_architecture(current_model, engine_identity=None):
                  if left != right]
     unresolved = []
     for issue in (model.get("completeness") or {}).get("issues") or []:
+        if issue.get("code") == "SEPARATOR_ROLE_REQUIRED":
+            continue  # Rebuilt from source interval evidence below, never suppressed.
         unresolved.append({"unresolved_item_id": "UNRESOLVED-%s" % content_hash(issue)[:16].upper(),
                            "object_or_region_id": issue.get("space_id") or issue.get("frame_id"),
                            "issue_type": issue.get("code") or "UNKNOWN", "evidence": deepcopy(issue),
@@ -397,7 +403,7 @@ def adapt_current_architecture(current_model, engine_identity=None):
                            "access": access},
                 "unresolved_items": unresolved, "evidence_registry": evidence_registry,
                 "authority_model": {"dimensions": ["geometry_status", "semantic_status", "topology_status",
-                                                            "review_status", "release_status"],
+                                                            "separator_status", "review_status", "release_status"],
                                     "allowed_origins": sorted(ORIGINS),
                                     "vision_independent_grants": []},
                 "review_registry": deepcopy(model.get("gap_human_review") or {}),
@@ -413,4 +419,6 @@ def adapt_current_architecture(current_model, engine_identity=None):
                 "release": {"status": "VERIFIED" if current_release else "INPUT_REQUIRED",
                             "downstream_engineering_allowed": bool((model.get("completeness") or {}).get("downstream_engineering_allowed")),
                             "release_allowed": current_release}}
+    contract["evidence_registry"] = list({r["evidence_id"]: r for r in evidence_registry}.values())
+    refresh_separator_authority(contract)
     return assign_canonical_model_hash(contract)
