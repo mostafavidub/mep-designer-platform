@@ -96,8 +96,9 @@ def test_separate_line_walls_create_all_cells_without_closed_polylines(tmp_path)
         labels=(("اتاق خواب",(2,3)),("آشپزخانه",(8,3)))))
     assert len(model["physical_spaces"]) == 2
     assert {s["category"] for s in model["physical_spaces"]} == {"bedroom","kitchen"}
-    assert model["completeness"]["status"] == "VERIFIED"
-    assert require_complete_architecture(model)["allowed"] is True
+    assert model["completeness"]["status"] == "INPUT_REQUIRED"
+    assert any(r["code"] == "SEPARATOR_ROLE_REQUIRED" for r in model["completeness"]["issues"])
+    assert require_complete_architecture(model)["allowed"] is False
 
 
 def test_open_plan_is_one_physical_space_with_functional_zones(tmp_path):
@@ -108,7 +109,8 @@ def test_open_plan_is_one_physical_space_with_functional_zones(tmp_path):
     assert space["category"] == "open_plan"
     assert {z["category"] for z in space["functional_zones"]} == {"reception","dining","kitchen"}
     assert all(z["boundary_status"] == "approximate" for z in space["functional_zones"])
-    assert model["completeness"]["status"] == "VERIFIED"
+    assert model["completeness"]["status"] == "INPUT_REQUIRED"
+    assert any(r["code"] == "SEPARATOR_ROLE_REQUIRED" for r in model["completeness"]["issues"])
 
 
 def test_enclosed_service_label_inside_open_plan_fails_closed(tmp_path):
@@ -126,7 +128,7 @@ def test_mechanical_authority_frame_cannot_release_legacy_subdivision():
         subdivision_comparisons=[{"frame_id":"F1","selected_authority":"LEGACY_FALLBACK"}])
     assert completeness["status"] == "INPUT_REQUIRED"
     assert completeness["release_allowed"] is False
-    assert completeness["issues"][0]["code"] == "CANONICAL_TOPOLOGY_REQUIRED"
+    assert any(r["code"] == "CANONICAL_TOPOLOGY_REQUIRED" for r in completeness["issues"])
 
 
 def test_stable_ids_survive_layer_rename_and_reprocessing(tmp_path):
@@ -180,7 +182,7 @@ def test_reference_only_frames_do_not_duplicate_spaces_or_block_authoritative_fl
         {"frame_id": "FURN", "frame_type": "FURNITURE_PLAN", "scope_relevance": "REFERENCE_ONLY"},
         {"frame_id": "VIEW", "frame_type": "UNKNOWN", "scope_relevance": "REFERENCE_ONLY"},
     ]
-    result = _completeness(frames, [{"physical_space_id": "S1", "frame_id": "FLOOR", "status": "VERIFIED", "area_m2": 12}], True)
+    result = _completeness(frames, [{"physical_space_id": "S1", "frame_id": "FLOOR", "status": "VERIFIED", "area_m2": 12, "separator_status": "VERIFIED", "material_geometry": True}], True)
     assert result["status"] == "VERIFIED"
     assert result["relevant_space_count"] == 1
 

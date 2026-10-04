@@ -25,7 +25,8 @@ def rehash(row):
 
 
 def model(release=True):
-    return rehash({"schema": "planha-canonical-architecture/2.0", "contract_status": "EXPERIMENTAL_INTERNAL",
+    from tests.architecture_separator_fixtures import declare_structured_separators
+    return rehash(declare_structured_separators({"schema": "planha-canonical-architecture/2.0", "contract_status": "EXPERIMENTAL_INTERNAL",
         "source": {"source_type": "RAW_DXF", "source_sha256": SHA, "source_revision_identity": SHA,
                    "units": "METERS", "effective_scale": 1.0, "coordinate_system": {"status": "SUPPORTED"},
                    "adapter": {"adapter_id": "ui-test", "adapter_version": "1"}},
@@ -51,7 +52,7 @@ def model(release=True):
         "traceability": {"source_sha256": SHA, "adapter_id": "ui-test", "adapter_version": "1",
                          "legacy_model_hash": "e" * 64},
         "release": {"status": "VERIFIED" if release else "INPUT_REQUIRED",
-                    "downstream_engineering_allowed": release, "release_allowed": release}})
+                    "downstream_engineering_allowed": release, "release_allowed": release}}))
 
 
 def candidate(answers=None):

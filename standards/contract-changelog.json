@@ -2,6 +2,30 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-052",
+      "status": "IMPLEMENTED_PARTIAL",
+      "summary": "Canonical Architecture 3.0 separates geometric boundary support and physical separator authority; scoped source review cannot create geometry.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit Phase B approval of hybrid contract and breaking canonical revision."
+      },
+      "verification": {
+        "qualification": "ARCHITECTURE_SEPARATOR_EVIDENCE_PARTIAL: eight positive references require interval-role interpretation",
+        "tests": "PASS_1392_PLUS_14_SUBTESTS",
+        "required_ci": "PENDING",
+        "original_negatives": "0/19",
+        "expanded_negatives": "0/22",
+        "determinism": "7/7"
+      },
+      "migration": {
+        "forward": "Regenerate v2 evidence and revalidate; never preserve old qualification by relabeling.",
+        "rollback": "Approved Git commit; new artifacts remain unqualified for old readers."
+      }
+    },
+    {
       "id": "GOV-2026-051",
       "status": "IMPLEMENTED_PENDING_FINAL_VERIFICATION",
       "summary": "Restore source-supported enclosure recall lost at numerical transverse endpoint mismatch. Carry repeated-source-array negative evidence across candidate origins after bounded owner source review. Remaining landing false positives prevent qualification; no source-role hardcoding or validator relaxation.",

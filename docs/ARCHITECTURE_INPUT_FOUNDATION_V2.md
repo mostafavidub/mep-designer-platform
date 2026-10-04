@@ -175,3 +175,13 @@ Paired occupied material now uses the intersection of the occupied source-face
 spans, not their union. A subprecision common span preserves the unpaired source
 walls. Source candidate interiors must be resolvable at the existing evidence
 tolerance and cannot overlap supported occupied wall material.
+
+## Canonical 3.0 separator contract
+
+The historical v2 name is retained for document identity. Canonical 3.0 is a
+breaking authority contract: geometry support alone cannot grant material Physical
+Space authority. Source-owned role evidence and exact boundary references are
+independently validated. Historical artifacts require regeneration/revalidation,
+not relabeling. Region-level review does not classify all surrounding lines.
+See ADR-ARCHITECTURAL-BOUNDARY-SEPARATOR-EVIDENCE and migration
+architecture-separator-contract-v3. Production consumers are not activated.

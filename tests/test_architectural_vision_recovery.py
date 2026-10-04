@@ -615,7 +615,7 @@ def test_bounded_global_recovery_fuses_semantics_and_recomputes_gate(tmp_path):
     model = reconstruct_architecture(_drawing(tmp_path / "vision.dxf"), vision_adapter=adapter)
     assert model["physical_spaces"][0]["category"] == "living"
     assert model["physical_spaces"][0]["status"] == "HIGH_CONFIDENCE"
-    assert model["completeness"]["downstream_engineering_allowed"] is True
+    assert model["completeness"]["downstream_engineering_allowed"] is False
     assert model["vision_reconciliation"]["calls"] == 1
     assert len(adapter.calls) == 1
     assert model["diagnostics"]["dxf_parse_count"] == 1
@@ -627,8 +627,8 @@ def test_actual_engineering_entrypoint_uses_configured_adapter(monkeypatch, tmp_
                         lambda: (adapter, None))
     result = run_engineering_pipeline(_drawing(tmp_path / "entrypoint.dxf"), design_basis={})
     assert adapter.calls
-    assert result["architecture"]["vision_reconciliation"]["status"] == "COMPLETE"
-    assert result.get("blocked_at") != "architecture_completeness"
+    assert result["architecture"]["vision_reconciliation"]["status"] == "AUTOMATED_RECONSTRUCTION_INSUFFICIENT"
+    assert result.get("blocked_at") == "architecture_completeness"
 
 
 def test_actual_upload_analysis_path_invokes_vision_before_human_review(monkeypatch, tmp_path):
@@ -641,5 +641,5 @@ def test_actual_upload_analysis_path_invokes_vision_before_human_review(monkeypa
     result=main_auto.analyze_dxf_enhanced(_drawing(tmp_path/"upload.dxf"))
     canonical=result["canonical_architecture_model"]
     assert adapter.calls
-    assert canonical["vision_reconciliation"]["status"]=="COMPLETE"
-    assert canonical["completeness"]["downstream_engineering_allowed"] is True
+    assert canonical["vision_reconciliation"]["status"]=="AUTOMATED_RECONSTRUCTION_INSUFFICIENT"
+    assert canonical["completeness"]["downstream_engineering_allowed"] is False

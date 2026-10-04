@@ -49,6 +49,8 @@ def model(release=True):
                             "legacy_model_hash": "c" * 64},
            "release": {"status": "VERIFIED" if release else "INPUT_REQUIRED",
                        "downstream_engineering_allowed": release, "release_allowed": release}}
+    from tests.architecture_separator_fixtures import declare_structured_separators
+    declare_structured_separators(row)
     return rehash(row)
 
 

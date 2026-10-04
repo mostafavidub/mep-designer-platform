@@ -646,7 +646,12 @@
         "deterministic_parent_child_candidate_integrity",
         "parent_container_never_physical_space_by_label_or_overlap",
         "wall_face_pairing_axis_between_source_faces",
-        "hard_exclusions_preserved_during_enclosure_recovery"
+        "hard_exclusions_preserved_during_enclosure_recovery",
+        "geometry_support_never_implies_separator_authority",
+        "source_interval_separator_provenance",
+        "region_review_cannot_promote_interval_roles",
+        "canonical_v2_requires_regeneration",
+        "current_separator_validation_required_for_snapshot"
       ],
       "tests": [
         "test_column_cannot_be_verified_void",
@@ -678,7 +683,11 @@
         "test_array_veto_does_not_spread_to_adjacent_room_or_container",
         "test_independent_face_family_preserves_existing_subdivision",
         "test_array_origin_veto_is_translation_rotation_direction_order_invariant",
-        "test_paired_source_room_survives_extraction_adapter_and_validator"
+        "test_paired_source_room_survives_extraction_adapter_and_validator",
+        "test_closed_geometry_alone_is_not_material",
+        "test_reviewed_single_line_separator_preserves_geometry",
+        "test_room_answer_does_not_grant_separator_role",
+        "test_snapshot_refuses_ambiguous_and_forged_old_report"
       ]
     },
     {

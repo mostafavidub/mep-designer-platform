@@ -72,6 +72,8 @@ def _authority_valid(row, errors, entity_id):
         _add(errors, "UNRESOLVED_ENGINEERING_AUTHORITY_FORBIDDEN", entity_id=entity_id,
              status=authority.get("status"))
     entity_status = row.get("status") or row.get("topology_status") or row.get("geometry_status") or row.get("semantic_status")
+    if row.get("physical_space_id") and not row.get("zone_id"):
+        entity_status = row.get("independent_space_status") or (row.get("geometry_evidence") or {}).get("separator_status", "INPUT_REQUIRED")
     if entity_status in STATUSES and authority.get("status") != entity_status:
         _add(errors, "ENTITY_AUTHORITY_STATUS_MISMATCH", entity_id=entity_id,
              entity_status=entity_status, authority_status=authority.get("status"))
@@ -166,6 +168,13 @@ def validate_architecture(model):
     representation_before = content_hash(model)
     data = deepcopy(model)
     hard = []; required = []; warnings = []; controls = []
+    from .architecture_separator_validator import separator_errors
+    for code, entity_id in separator_errors(data):
+        _add(hard, code, entity_id=entity_id)
+    for space in data.get("physical_spaces") or []:
+        separator = (space.get("geometry_evidence") or {}).get("separator_status")
+        if separator not in {"VERIFIED", "REJECTED"} and space.get("independent_space_status") != "REJECTED":
+            _add(required, "SEPARATOR_ROLE_REQUIRED", physical_space_id=space.get("physical_space_id"))
 
     def control(control_id, passed, severity="HARD", detail=None):
         controls.append({"control_id": control_id, "status": "PASS" if passed else severity,
