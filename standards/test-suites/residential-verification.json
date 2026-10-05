@@ -1,0 +1,1148 @@
+{
+  "schema_version": "residential-verification/1.0",
+  "build_identity": {
+    "commit_sha": "062dd76951a51dd141934018a11eac29db814778",
+    "build_timestamp": "2026-10-04T13:33:06+03:30",
+    "production_entrypoint": "cad_engine.main:app",
+    "pmm_schema_revision": "project-mechanical-model/v3",
+    "pmm_schema_hash": "2b599b120a9d56b08910045acdcf9c223d32b5c90e2e148f93fd62e7c3540678",
+    "rulebook_schema_revision": "mechanical-rulebook/5.1",
+    "rulebook_hash": "23732758d892177afb4cd6952916c77ad86c093c01ebbc23e66d4b74d254292b",
+    "manufacturer_schema_revision": "manufacturer-catalogue/1",
+    "manufacturer_db_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compliance_profile_revision": "mechanical-design-governance/1",
+    "compliance_profile_hash": "8701079f63a5235907e4b1199cc506c7b26aad31e7b205f867ebc51853aaa3ea",
+    "dependency_hashes": {
+      "requirements.txt": "ed53e425d29f1ff1aaa6c6f3086ff98f489c5b93d417d7ec8a621870a36ea73e",
+      "cad_engine/requirements.txt": "71e71a1f2c335fdd49869517a4e772d713d82c3d9bc68dec682f86c5a9f47b7e"
+    },
+    "build_identity": "5722cf1b38cf7937ea4dd341a6c68febd47d68128fb76ec05ab7bc037c5b37c3"
+  },
+  "base_sha": "062dd76951a51dd141934018a11eac29db814778",
+  "full_tests": {
+    "passed": 1432,
+    "subtests_passed": 76,
+    "seconds": 88.38,
+    "note": "Before one additional output-proof schema test; final focused rerun covers that addition and final catalog/governance changes."
+  },
+  "final_focused_governance_tests": {
+    "passed": 52,
+    "subtests_passed": 62
+  },
+  "swcis": {
+    "status": "PASS",
+    "changed_paths": [
+      ".github/workflows/test.yml",
+      "cad_engine/requirements.txt",
+      "cad_engine/residential_foundation.py",
+      "cad_engine/residential_symbols.py",
+      "changes/SWCIS-2026-0301.yaml",
+      "data/rulebook/architecture/exam-coverage.json",
+      "data/rulebook/architecture/generation-contract.json",
+      "data/rulebook/architecture/heuristics.json",
+      "data/rulebook/architecture/owner-questionnaire.json",
+      "data/rulebook/architecture/plan-study.json",
+      "data/rulebook/architecture/qa-matrix.json",
+      "data/rulebook/architecture/rulebook.json",
+      "data/rulebook/architecture/sources.json",
+      "data/rulebook/architecture/symbols.json",
+      "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
+      "docs/residential/FOUNDATION.md",
+      "docs/residential/IMPACT.md",
+      "docs/residential/VERIFICATION.md",
+      "standards/capability-registry.json",
+      "standards/change-impact-matrix.json",
+      "standards/contract-changelog.json",
+      "standards/swcis/change_impact_matrix.yaml",
+      "standards/swcis/migrations/residential-foundation.json",
+      "standards/swcis/rule_traceability_matrix.yaml",
+      "standards/swcis/system_dependency_graph.yaml",
+      "standards/swcis/version_manifest.yaml",
+      "standards/test-suites/residential/exam-coverage.schema.json",
+      "standards/test-suites/residential/generation-contract.schema.json",
+      "standards/test-suites/residential/generation-input.schema.json",
+      "standards/test-suites/residential/generation-output.schema.json",
+      "standards/test-suites/residential/heuristics.schema.json",
+      "standards/test-suites/residential/owner-questionnaire.schema.json",
+      "standards/test-suites/residential/plan-study.schema.json",
+      "standards/test-suites/residential/qa-matrix.schema.json",
+      "standards/test-suites/residential/rulebook.schema.json",
+      "standards/test-suites/residential/sources.schema.json",
+      "standards/test-suites/residential/symbols.schema.json",
+      "tests/test_residential_foundation.py",
+      "tools/residential_foundation_report.py"
+    ],
+    "change_types": [
+      "deployment",
+      "documentation",
+      "drawing_output",
+      "governance",
+      "rule",
+      "schema",
+      "test"
+    ],
+    "affected_modules": [
+      "cad_designer",
+      "deployment",
+      "detail_riser",
+      "docs",
+      "equipment",
+      "governance",
+      "manifest",
+      "manufacturer_selector",
+      "migration",
+      "planner",
+      "pmm",
+      "qa",
+      "questionnaire",
+      "routing",
+      "rule_book",
+      "sizing",
+      "ui_api",
+      "versioning"
+    ],
+    "required_evidence": [
+      "artifact_diff",
+      "deployment_plan",
+      "docs",
+      "golden_regression",
+      "migration",
+      "rollback_plan",
+      "semantic_diff",
+      "tests",
+      "traceability",
+      "version_bump"
+    ],
+    "risk_score": 36,
+    "errors": []
+  },
+  "runtime_version_guard": "PASS",
+  "protected_files": [
+    {
+      "path": "app/analysis_workspace_guard.py",
+      "sha256": "27ef4bbb5860163672ca194dd25718dce7c3e8f82756e7311b6dd79dcba78a72"
+    },
+    {
+      "path": "app/architecture_preflight_ui.py",
+      "sha256": "333eac106516d9900d863f80c5d482cdd777bd2c94c00e374b43e3b7b333386f"
+    },
+    {
+      "path": "app/architecture_reconstruction_v1.py",
+      "sha256": "2afe8d5d4636f1c7d4460032ee646ce1503e0b3afdf500fafd4dc7f352bd8d84"
+    },
+    {
+      "path": "app/architecture_topology_v1.py",
+      "sha256": "0c9b74ec850731dadc9ba7ebdc979aaef5bd3cb3351ebf06290e80abbf70025b"
+    },
+    {
+      "path": "app/artifact_delivery_fix.py",
+      "sha256": "2eb445c08c715a95fa64c4aa87a5006c76b7d85172e53b579f7d9e227cf4e4f8"
+    },
+    {
+      "path": "app/artifact_storage.py",
+      "sha256": "f82cb1212ff427ff514aad59b33050aaa088adac77b6f584a01db59973971bfe"
+    },
+    {
+      "path": "app/auto_inference.py",
+      "sha256": "3526e26860cbf9787946da5c82f9786acf02c806e30cbc08748f9c60728d6336"
+    },
+    {
+      "path": "app/auto_inference_v2.py",
+      "sha256": "ea69bfc4f2ec189453ee8cc34ba69ee7df301a2d34a3f7f91153fa485b268bd8"
+    },
+    {
+      "path": "app/commercial_flow.py",
+      "sha256": "ea16302b8cac705e6eecbe81bba2ddb3d2ad7f1df5625a2928af4753a8558bdf"
+    },
+    {
+      "path": "app/design_basis_questionnaire_gate.py",
+      "sha256": "a5b1a0983363f908ea7a023852ad5a955829d3a32b3e5e613e942a38b6d57776"
+    },
+    {
+      "path": "app/design_progress.py",
+      "sha256": "e3a71b46b3a6c13a6e86432c8962844d7930a76a1f8c749081608e719004974e"
+    },
+    {
+      "path": "app/design_recovery.py",
+      "sha256": "89ba112479b13f634c14c8592f650e9758c8c88c1a9ee26f7b24bbc0e7838d22"
+    },
+    {
+      "path": "app/drawing_unit_sanity.py",
+      "sha256": "bb139aaa41f82fb70b77744a708c155d15cded81a7daf0c79da4e6a8456ae0f4"
+    },
+    {
+      "path": "app/dxf_input.py",
+      "sha256": "73795c25e23bd7f99a7964e0e854064e819e8b04206cdd99c0eb1cc834ad44b0"
+    },
+    {
+      "path": "app/dxf_output.py",
+      "sha256": "f5142834ce13873d6e39b26869a8b6e1e52896f37e8d51ad4ea78f690abd68fd"
+    },
+    {
+      "path": "app/fixture_context_v1.py",
+      "sha256": "888044506a95cbe3fc530a4d15c0422d57b6289e917eb5084613458949cee36e"
+    },
+    {
+      "path": "app/fixture_detection_v2.py",
+      "sha256": "62daede9cd0ce4487588bc97d4396aa3bcc557a3b97f8319362491615bcae9dd"
+    },
+    {
+      "path": "app/fixture_equipment_rulebook.py",
+      "sha256": "59b5116da7dadce730e790bb79fefeade344fa0ca441882d7e163fa047e710bc"
+    },
+    {
+      "path": "app/fixture_gate_v1.py",
+      "sha256": "f87828ae015eafea979292563f928ba2960794413287a6632d9f9f9faccbd042"
+    },
+    {
+      "path": "app/gsc_api.py",
+      "sha256": "6248048fdfc394e93f5705f3cbe9a464b3bb461dd9f9296fa6aafad52639da9d"
+    },
+    {
+      "path": "app/job_queue.py",
+      "sha256": "337f7c7981b3ee774a2d6439882f1bc0f6f68c986e1858ccaecd28a91845cb5e"
+    },
+    {
+      "path": "app/level_detection_v3.py",
+      "sha256": "ea6f4c3eccb9683e0523a17d51d4dbe7517df006cdb001d641fc782b7db3f631"
+    },
+    {
+      "path": "app/main.py",
+      "sha256": "d77472c83e642e1ae741f0589fa8b6252bfc9116c8a19669d17741305dae6336"
+    },
+    {
+      "path": "app/main_auto.py",
+      "sha256": "cd926ae775dd2e5da4aa205926face492217acc2138d4b16838a13d1bf05435b"
+    },
+    {
+      "path": "app/main_health.py",
+      "sha256": "eee4585cb893bcfdc8a2ae65647b5e959d7f35e63bebe419652f2f74348760dd"
+    },
+    {
+      "path": "app/manifest_contract_v2.py",
+      "sha256": "0b73029a26a15b2651d188a0085bd9a7137f62111ed7c3e8ae562d2f22b8665c"
+    },
+    {
+      "path": "app/mechanical_basis_contract.py",
+      "sha256": "6b2a7e55034c833a52a7fdb6916a2737d6f9f5bda3f2d3c5ce634fef5ecec0f2"
+    },
+    {
+      "path": "app/mechanical_drawing_set.py",
+      "sha256": "3a9f397d1f4de1c958e80ae375a6744585f3d8acf7fce214afaccaa0d7620539"
+    },
+    {
+      "path": "app/mechanical_review_fix.py",
+      "sha256": "0d76a2a4b844c51b7a398a2d5e0dad582555e84c6621cf3ee44d1f4d7f9d144f"
+    },
+    {
+      "path": "app/mechanical_rulebook.py",
+      "sha256": "2ce315914c2b1a723d8540174e2bde30d64fa6163e91e8fa2b651634a45fad60"
+    },
+    {
+      "path": "app/mechanical_site_manifest.py",
+      "sha256": "7d79155940ce1b244b4e329eefa3e025eca1c385df47d688077f535c01e757f0"
+    },
+    {
+      "path": "app/mechanical_site_manifest_v12.py",
+      "sha256": "1509f39ed6392e6877e995734f207cb3e36b6d4b025fc2c90bc5aa016b33eff0"
+    },
+    {
+      "path": "app/mechanical_workflow.py",
+      "sha256": "862782e1f16b8e99fca91b5b0e440e987ce890c8df0511947a9a547d1f78f023"
+    },
+    {
+      "path": "app/panel_bridge.py",
+      "sha256": "4baa42625f6d8fd9804dc17327ed9d1ac00a3b220336e62b12fbd30f7a514fdf"
+    },
+    {
+      "path": "app/panel_checkout.py",
+      "sha256": "c1e1c7094c6e02b93412b808474baa2b323e42bcf810d527a8922e8454afb8aa"
+    },
+    {
+      "path": "app/project_mechanical_model.py",
+      "sha256": "a023a293d14540c3c9e7c8dddf2e8b8db04ba06964f4e383d7cc26d6864ecbf6"
+    },
+    {
+      "path": "app/resumable_upload.py",
+      "sha256": "e130d364c7d7b2ca0cd35e423afa6e4a9fe4799759b2b0652952ba34d13d62a0"
+    },
+    {
+      "path": "app/seo_articles.py",
+      "sha256": "2b6de6ae3e4fc2d03cec98d3681bc9927ffea40198718eebae2c9cb541413605"
+    },
+    {
+      "path": "app/seo_runtime.py",
+      "sha256": "2ddb4cccaaf25e79abd6693ca563d741e5daca6ec28ce3c9289a53c34308936f"
+    },
+    {
+      "path": "app/service_art_runtime.py",
+      "sha256": "59ba900cda4bec5232dcf48f03c5c2186c7eafd3d3540feb0305fb9e06229b0d"
+    },
+    {
+      "path": "app/system_typical_v1.py",
+      "sha256": "173f780bdc6c416a82ddffe7a2ba2b9ddd8694a488a84fbaad0fc117cf89f6a0"
+    },
+    {
+      "path": "app/unit_sanity.py",
+      "sha256": "ccd28574cdc39dac510a68268a57d6c4471b7200e3688759854f5e3fa1efc3cc"
+    },
+    {
+      "path": "cad_engine/__init__.py",
+      "sha256": "16b364c419f724dcb2b70952d74da74e42e11f8141ef4275295c22e231c6a5cd"
+    },
+    {
+      "path": "cad_engine/acceptance_v13.py",
+      "sha256": "1bf2e9ee4c7b73b774dfa184fd2d27fc805720a967066699b8a7c6736df302a1"
+    },
+    {
+      "path": "cad_engine/adaptive_sheet_planner.py",
+      "sha256": "705e2244c336706c4c6fd7876507dd254c564375671e2ec6245623d5ce43b6e8"
+    },
+    {
+      "path": "cad_engine/adaptive_sheet_planner_v13.py",
+      "sha256": "705e2244c336706c4c6fd7876507dd254c564375671e2ec6245623d5ce43b6e8"
+    },
+    {
+      "path": "cad_engine/annotation.py",
+      "sha256": "4c7a79c21f84fa7803c9e94af8320c8b40072673430512a95f753364b4dd249a"
+    },
+    {
+      "path": "cad_engine/annotation_solver.py",
+      "sha256": "2e5a2dfbc67983608b701e223fe70a2c1cbcd0d0249bdc75dc249aef4a71afb0"
+    },
+    {
+      "path": "cad_engine/annotation_v13.py",
+      "sha256": "4c7a79c21f84fa7803c9e94af8320c8b40072673430512a95f753364b4dd249a"
+    },
+    {
+      "path": "cad_engine/annotation_v14.py",
+      "sha256": "bc580c8d7da04d66ac58e171e82dc124ec114cb1a5bdcb8f0d61dd36c5c1b54a"
+    },
+    {
+      "path": "cad_engine/architectural_block_classifier_qa.py",
+      "sha256": "f4f7ad1d09f15134c8f8fb254d5f7778a7b7c3bbb7ed4edeae9a2e6addb07bc8"
+    },
+    {
+      "path": "cad_engine/architectural_gap_review.py",
+      "sha256": "6e6c074233bcd1435f174827685a1df6b71348682792b66fb93235c789ce2feb"
+    },
+    {
+      "path": "cad_engine/architectural_semantic_scout.py",
+      "sha256": "2a4d9073eae5a99f121760d78994677b15901ce5335115244889d4ea3b1e4aed"
+    },
+    {
+      "path": "cad_engine/architectural_source_roles.py",
+      "sha256": "334db4153fcbcf11a88a2de6cb52c360b90862c99f75bc9dd20517a14032163a"
+    },
+    {
+      "path": "cad_engine/architectural_space_engine.py",
+      "sha256": "a5ed65ebc89551b51864ae383da4d5fe25392ff5fa4da82fda2ec11872d2d67e"
+    },
+    {
+      "path": "cad_engine/architectural_topology_quality.py",
+      "sha256": "120c2717a1125b67351d89179f03cde0caf4b845179bdad969c1a57046988c66"
+    },
+    {
+      "path": "cad_engine/architectural_vision_recovery.py",
+      "sha256": "cfca2d747cf7cf22060cea21c9fa036c3e5d06fce09a653a06ab3806c2767d80"
+    },
+    {
+      "path": "cad_engine/architecture_benchmark.py",
+      "sha256": "9b5e8ec77520dfaf6d6bfe5786c4746fb8c63a4addde0cafd1f47e32a6296f88"
+    },
+    {
+      "path": "cad_engine/architecture_boundary_evidence.py",
+      "sha256": "d19288f64b9618cd695bbbd79f563f17e47e62669775b62fde149c24ca594438"
+    },
+    {
+      "path": "cad_engine/architecture_contract.py",
+      "sha256": "33b26f5853cbaa3b413d57593e33208d7927a80ac02d744227987241b578cc5b"
+    },
+    {
+      "path": "cad_engine/architecture_enclosure_candidates.py",
+      "sha256": "5051cb53890b35282276cc6a0bec5812c87383909510f036aafbdc349bf435c2"
+    },
+    {
+      "path": "cad_engine/architecture_preservation_gate.py",
+      "sha256": "7b7ee2da8991c06dd5f3a24b861e7de35785aace9b2b521fff89dd72155e588e"
+    },
+    {
+      "path": "cad_engine/architecture_preservation_gate_v16.py",
+      "sha256": "4e4df34d32c4c5d7518b3e0c8308b4931a70cda2bc96eae34dc0a9887b861265"
+    },
+    {
+      "path": "cad_engine/architecture_reconstruction.py",
+      "sha256": "a88173993610c3abdbb6762507a3948ac9b5534831eea25022596a8db2d3aa23"
+    },
+    {
+      "path": "cad_engine/architecture_reconstruction_v14.py",
+      "sha256": "a88173993610c3abdbb6762507a3948ac9b5534831eea25022596a8db2d3aa23"
+    },
+    {
+      "path": "cad_engine/architecture_review_contract.py",
+      "sha256": "d7a2515a5db29ea2894a58c01cee9a23122b3d17d3922ba1b8549e1fab259492"
+    },
+    {
+      "path": "cad_engine/architecture_review_engine.py",
+      "sha256": "96b743a258ced20b8c497174ee2157e2462b15ce4daefd2d4f64c6f39edb734c"
+    },
+    {
+      "path": "cad_engine/architecture_separator_evidence.py",
+      "sha256": "9ae6b81cfff2605ae60c373294ff3433d0dafb0a61892fd17945aaaf3d22efee"
+    },
+    {
+      "path": "cad_engine/architecture_separator_validator.py",
+      "sha256": "62776a2ec08884746cdac52f1bf16b73225dfcb002253843e6f3362ccc574057"
+    },
+    {
+      "path": "cad_engine/architecture_snapshot.py",
+      "sha256": "f244b279b3380d668946c66aac7f59e37878224fe1d1c3b02530bee0f7874152"
+    },
+    {
+      "path": "cad_engine/architecture_space_equipment_gate.py",
+      "sha256": "81aa3654ad0b4c7c7cad8b53cc2ce4a19c99f5bc81513610735eb0a87ab66346"
+    },
+    {
+      "path": "cad_engine/architecture_validator.py",
+      "sha256": "68a8f195e701ec55f07358587f57ea8508727ee7b8d7fd91c5ec5b30cc209957"
+    },
+    {
+      "path": "cad_engine/authority_architecture.py",
+      "sha256": "3d5a462a85d3d8c9003a3908ca59da53aa18ef4cea3380810b3dd18fdf111634"
+    },
+    {
+      "path": "cad_engine/authority_architecture_v14.py",
+      "sha256": "3d5a462a85d3d8c9003a3908ca59da53aa18ef4cea3380810b3dd18fdf111634"
+    },
+    {
+      "path": "cad_engine/build_identity.py",
+      "sha256": "4dd963097572e589f7b95d0f5dd0159bc4ae3eb7ac8d422c8e5a5183baf196f5"
+    },
+    {
+      "path": "cad_engine/calculation_book.py",
+      "sha256": "635bc57c3e79e1f14fd1399a004720955e67ebdbb23fde76eaf04bcdb4f6c180"
+    },
+    {
+      "path": "cad_engine/calculation_reasonableness.py",
+      "sha256": "4d892d735b71e1ecdd2a27ea5a37ff5ea6e7a0aa72ad6f71303030a2f63b4519"
+    },
+    {
+      "path": "cad_engine/candidate_architectural_classification.py",
+      "sha256": "a1e40c8af31f2edda5b78bc8777a71523e2ed67d3a1159d12c8f3cb3118e2ec5"
+    },
+    {
+      "path": "cad_engine/coordination_v19.py",
+      "sha256": "87252103dc203785d9d5e61aefc14d7247a92ee1b6e283619f607b4c1ae5283d"
+    },
+    {
+      "path": "cad_engine/detail_library.py",
+      "sha256": "2b9878016f65d80e66e12d41c9dca65b87ed038a11af22629090dfe239b0b682"
+    },
+    {
+      "path": "cad_engine/detail_library_v13.py",
+      "sha256": "2b9878016f65d80e66e12d41c9dca65b87ed038a11af22629090dfe239b0b682"
+    },
+    {
+      "path": "cad_engine/detail_library_v14.py",
+      "sha256": "57660882c9289d6387526725c4e26a74c2b9d423bf37256543012e09a62f83e2"
+    },
+    {
+      "path": "cad_engine/dimensioning/__init__.py",
+      "sha256": "3a6b36b3163364678cc7ee512cfb4655a2c53e863825edde2665fc916537913d"
+    },
+    {
+      "path": "cad_engine/dimensioning/architecture.py",
+      "sha256": "36010ce06301680940726c2ac7a3361f83aef4204fc5779b9d24690a4e96e22d"
+    },
+    {
+      "path": "cad_engine/dimensioning/chains.py",
+      "sha256": "aa21ab2afcc4b1ee1d7128d07d02c2b10e6c5ad46aff4d1fbd1beeedf3304dbc"
+    },
+    {
+      "path": "cad_engine/dimensioning/coordinate_frames.py",
+      "sha256": "8cb8ffef518bfe709fd72a360f2a74b7a3657be3ca099a40584be480293ab421"
+    },
+    {
+      "path": "cad_engine/dimensioning/determinacy.py",
+      "sha256": "0c8f7608acf2fdde0775607d1aa804b142643f743fd99660e5059670704048b9"
+    },
+    {
+      "path": "cad_engine/dimensioning/model.py",
+      "sha256": "0fcbd1cd0714baa5676347a6eb50ea94192ffb0be7affff21fa61cf5dc927c6b"
+    },
+    {
+      "path": "cad_engine/dimensioning/placement.py",
+      "sha256": "c4e5a9e8e40094c830c84ebd00fa22455f62432bcbd1832af86ed18e8538645f"
+    },
+    {
+      "path": "cad_engine/dimensioning/profiles.py",
+      "sha256": "52d43e6a1b04cfdca95dd09e9432519abd3e47854fd6b570c61d15cf38b170fb"
+    },
+    {
+      "path": "cad_engine/dimensioning/qa.py",
+      "sha256": "a85cdaee82a223a1ccc0c418bc68cf2cf307cb040f49d9fbd19deb373b235ed2"
+    },
+    {
+      "path": "cad_engine/dimensioning/references.py",
+      "sha256": "2c661d017bbc0b015c4239af65e810ef6b66c454a3fde8e4b0dcbbfd59c8baa3"
+    },
+    {
+      "path": "cad_engine/dimensioning/requirements.py",
+      "sha256": "cf0249f04e9a203d2006c0119d86586b59d5a97710503e5ff517caaa879bae97"
+    },
+    {
+      "path": "cad_engine/dimensioning/specialists/__init__.py",
+      "sha256": "fc220d226d841c1e8d11f5a205052f3ab474d825c43da28cff8f19efccd9e9be"
+    },
+    {
+      "path": "cad_engine/dimensioning/specialists/openings.py",
+      "sha256": "88f989ab8bf908153de74073bb32ccdbb2124b93095e1fbcb8eb37581c115628"
+    },
+    {
+      "path": "cad_engine/dimensioning/specialists/parking.py",
+      "sha256": "f95f97be1b0998f0c652399f294565b4c308778a2aedda38c33d15f6a254b02c"
+    },
+    {
+      "path": "cad_engine/dimensioning/specialists/shafts.py",
+      "sha256": "9b24f63fb38fd5e945ea35d35f08d1c77bf4fb9e605aefe1982bbc5d7c005484"
+    },
+    {
+      "path": "cad_engine/dimensioning/specialists/site.py",
+      "sha256": "37c6e07b84e16e06e2bffcad6e78181568519714a77f416be72ce7dd2b0c283d"
+    },
+    {
+      "path": "cad_engine/dimensioning/specialists/stairs.py",
+      "sha256": "66ac6f3e89e3274bc12e70e8093b0e5bd0d9790dbfe47b5b1d9a741f9f060aab"
+    },
+    {
+      "path": "cad_engine/documentation_content_gate.py",
+      "sha256": "3093f96d48397c030c0d3098e84c3cd4e1ad9ae41b1e8b7d895302460e0f02ca"
+    },
+    {
+      "path": "cad_engine/documentation_enhancer.py",
+      "sha256": "f8c041a9d2d6d571bb78ae1b6474e386ea0e19229cfd3160103747be1db0ed8a"
+    },
+    {
+      "path": "cad_engine/documentation_enhancer_v17.py",
+      "sha256": "54ab14dc35f8d4476458d2e3788afdbb07158f556ef543568ea656cb4d4fffb9"
+    },
+    {
+      "path": "cad_engine/documentation_v12.py",
+      "sha256": "f85501ba0f266d2fe74b88d65dda4496e1a76107fd15d8fe1c1dadf82ffcc2ea"
+    },
+    {
+      "path": "cad_engine/drawing_content_qa_v12.py",
+      "sha256": "2d80209fccd91578e983f315e95f4cfc7b027dc45dd9a37c3f243b5459047ded"
+    },
+    {
+      "path": "cad_engine/dynamic_detail_engine.py",
+      "sha256": "c48481b0ab508b52aac6e199d6ef5150074380fd9adb0aec27403eab2e771862"
+    },
+    {
+      "path": "cad_engine/dynamic_detail_engine_v14.py",
+      "sha256": "c48481b0ab508b52aac6e199d6ef5150074380fd9adb0aec27403eab2e771862"
+    },
+    {
+      "path": "cad_engine/engineering_acceptance.py",
+      "sha256": "e56940641c9e137e619a4df50e04e5a3cd9e1e4b480a95a6fafd85d59272f890"
+    },
+    {
+      "path": "cad_engine/engineering_feedback.py",
+      "sha256": "3aac4494eb3b1832d318b0cef2e47502675f6d3d280fe628335f1e11abd97b9a"
+    },
+    {
+      "path": "cad_engine/engineering_pipeline.py",
+      "sha256": "e50e907fb214ba1001caf1dfda0ea15096c3ca5b312da159622331be9efa6974"
+    },
+    {
+      "path": "cad_engine/engineering_pipeline_v13.py",
+      "sha256": "e5ec2edab14e754e7e180b7b9e857ea3bf6e515fe089b08aae746959eb12954d"
+    },
+    {
+      "path": "cad_engine/engineering_qa_v11.py",
+      "sha256": "f01f53a450893822c003855199705ab9318e8d3c7a2faa113651168234cec968"
+    },
+    {
+      "path": "cad_engine/engineering_runner.py",
+      "sha256": "12370a6e4c3571574a6b7f402ce5cd49081737323e4c2e2d2fd82a35e4724b86"
+    },
+    {
+      "path": "cad_engine/engineering_runner_v13.py",
+      "sha256": "b8b44bc67f698996c70b939c27d5a124aaa7fa779e779fb7a0d32b26b58c0ffd"
+    },
+    {
+      "path": "cad_engine/engineering_runner_v14.py",
+      "sha256": "c2cd6d579a6aeb40f463f164fcef3b288a03cdeea9e3b17d57678b224a96a81d"
+    },
+    {
+      "path": "cad_engine/equipment_representation.py",
+      "sha256": "8b45c73ad641cbf4be51ff33540570dc2aa78b2ea5ae7f3b9ed89f130c9393f7"
+    },
+    {
+      "path": "cad_engine/equipment_representation_v14.py",
+      "sha256": "8b45c73ad641cbf4be51ff33540570dc2aa78b2ea5ae7f3b9ed89f130c9393f7"
+    },
+    {
+      "path": "cad_engine/equipment_selection_placement_gate.py",
+      "sha256": "92c6eb7fff1d3b70895ee25e0ec7a667a1eb7b61c84c63c77717366c330950c5"
+    },
+    {
+      "path": "cad_engine/final_delivery_gate.py",
+      "sha256": "0027ff78e9365ae208a6cb23ebc806980953188a15eab62d4450adf5272523ff"
+    },
+    {
+      "path": "cad_engine/final_delivery_gate_v17.py",
+      "sha256": "817a1e953ef3eccd3d540fc3a58e375474b766379f5a880c394f3a55d5a879c7"
+    },
+    {
+      "path": "cad_engine/final_engineering_release_gate.py",
+      "sha256": "860d7f424c558dc87327bd3f5b9096e0ebd6f68e43a125a4ab06b58e691c5735"
+    },
+    {
+      "path": "cad_engine/fixture_recognition.py",
+      "sha256": "a43c039786e60ebf8b400b5075ba526d53a3c285b2cddc6bd5230d0806b9bdf6"
+    },
+    {
+      "path": "cad_engine/fixture_recognition_v14.py",
+      "sha256": "a43c039786e60ebf8b400b5075ba526d53a3c285b2cddc6bd5230d0806b9bdf6"
+    },
+    {
+      "path": "cad_engine/gas_v11.py",
+      "sha256": "abe8f24ffca3bc30785fdac1a1c28360de652c39826e6a70701dc9bec814bee6"
+    },
+    {
+      "path": "cad_engine/golden_artifacts_v19.py",
+      "sha256": "fe83162dba98c5d9b1a17fd65fd0d938204d7cc4731128ab4fcca9a81e51eeb9"
+    },
+    {
+      "path": "cad_engine/hvac_calculations.py",
+      "sha256": "5d4ef2a4bf55dd6e9e59d45fea04baa1d6a9d5d0905ebc4b3b9f3b202290d6c4"
+    },
+    {
+      "path": "cad_engine/hvac_v11.py",
+      "sha256": "cc5e23920ca99f52a6d0b1b18639719b3ceccf08af2a5429edb7a95a9522f357"
+    },
+    {
+      "path": "cad_engine/hybrid_architectural_recovery.py",
+      "sha256": "b91acefa79b76e4b3366e6be206668a2d6da8d8845884aa2cbe521f4ff661043"
+    },
+    {
+      "path": "cad_engine/isolated_service.py",
+      "sha256": "720e216f3104333bba88be1f908e1be8a0b7ae371af08767da0834c50b0b3822"
+    },
+    {
+      "path": "cad_engine/isolated_worker.py",
+      "sha256": "d01ee0c86e97492a04d6fa9caa2c44e2dde74eb2f08ba138714910878edcd080"
+    },
+    {
+      "path": "cad_engine/level_geometry_v11.py",
+      "sha256": "81f040c95c07763fe21c236c7dec967f4d309033208372345d288f033af8dd6b"
+    },
+    {
+      "path": "cad_engine/local_visual_context.py",
+      "sha256": "41d56b6eaa930b9700a1f5f8941d2372dd79b8fcc78c110e154e4e1071c828bc"
+    },
+    {
+      "path": "cad_engine/main.py",
+      "sha256": "9c7d2ee114d29486004cc96164f8ab39851ace51e119c5a61d171d79835211aa"
+    },
+    {
+      "path": "cad_engine/main_transport.py",
+      "sha256": "0d77c484107c2b1067c384fd360c3e9696ec0527f1d67f50211a4b84c08f9233"
+    },
+    {
+      "path": "cad_engine/main_v10.py",
+      "sha256": "5bf929bc22ee52660f34009970a6912aabe906a45cd7f2ccc013e065ece89e4a"
+    },
+    {
+      "path": "cad_engine/main_v10_2.py",
+      "sha256": "868f83cafdd6c419e85ccc7dafb34f2266f2b834fc78ffaf8bc2d0625314c183"
+    },
+    {
+      "path": "cad_engine/main_v10_3.py",
+      "sha256": "4ff217605ceea7d9626263ad120881a05a921cfe544bad8fff149a8ac859a83e"
+    },
+    {
+      "path": "cad_engine/main_v10_4.py",
+      "sha256": "061c4f4716997035782e65fae0db4ac994b14105c432cfa24e4389c269f4f0df"
+    },
+    {
+      "path": "cad_engine/main_v10_5.py",
+      "sha256": "484dcf114495025f2898c8a23112701f4720e33483db05db1b87a14830b516d1"
+    },
+    {
+      "path": "cad_engine/main_v10_fix.py",
+      "sha256": "444c5b8884e0a998b4e33f8b9c456d2e621bec525e565eafd7c003a6d5c8635b"
+    },
+    {
+      "path": "cad_engine/main_v15.py",
+      "sha256": "012f0c17c70073565f2e7dd3b5f20fe2459a078fa6636ad0480b7874c38f45fb"
+    },
+    {
+      "path": "cad_engine/main_v15_2.py",
+      "sha256": "783669c7fe4bedf917f5d03245b0bee82123bf51a5c2d004808d9818b327a1df"
+    },
+    {
+      "path": "cad_engine/main_v16.py",
+      "sha256": "4e73842492ff7565cdedcf785f6cbd12338ec37da62231a8a48a64fe99774eed"
+    },
+    {
+      "path": "cad_engine/main_v17.py",
+      "sha256": "2ea10c659c1ea89affbb914d463f2a53eb358e20461f88dd66ffc9a94e1039ff"
+    },
+    {
+      "path": "cad_engine/main_v18.py",
+      "sha256": "33f803302543223a3e099a78079cccb825ff41d423d208dcf4f22fab9e34283c"
+    },
+    {
+      "path": "cad_engine/main_v19.py",
+      "sha256": "53abc496a446540564a9995db31291d9ad3cd6ea3784c3492fe7079212af1f14"
+    },
+    {
+      "path": "cad_engine/main_v3.py",
+      "sha256": "117d2a18a1e8c1d605a9bcd519927275f2e49ea9cbecf0985d04ed3decae3a00"
+    },
+    {
+      "path": "cad_engine/main_v4.py",
+      "sha256": "2d8ed32d7cfeae6a2452c3fc9e5ffbf370bded0f21a4eda1c967f0524095e953"
+    },
+    {
+      "path": "cad_engine/main_v5.py",
+      "sha256": "b2c1d45b35fbb85a0a2709e203e3024f24aaa63ba812a727c429f73bed89a60b"
+    },
+    {
+      "path": "cad_engine/main_v6.py",
+      "sha256": "267642865a065ca96ec4a82afc28ed7067ea8632e9d4aedc80fb4a914878228e"
+    },
+    {
+      "path": "cad_engine/main_v7.py",
+      "sha256": "15dede527fffe29e1514c9c706a8e05fedf4071207cef2de323855b6cbb4f603"
+    },
+    {
+      "path": "cad_engine/main_v8.py",
+      "sha256": "c7927797caacfbfa75d6e3c5ded8a9f513f0eb663e96d3292159c41df1f0e241"
+    },
+    {
+      "path": "cad_engine/main_v9.py",
+      "sha256": "78574e6ad2e962aec82d1645305d9b293fbe1da722ff949bb80ffe8df41b0ea9"
+    },
+    {
+      "path": "cad_engine/manufacturer_database.py",
+      "sha256": "b30565af63539f970368e0cd084268979eea1b59818dd492d91ad453b7cf633f"
+    },
+    {
+      "path": "cad_engine/manufacturer_selector_v19.py",
+      "sha256": "e1fdd2815167fdd15a0a1688f5a72c062ac3a5cf7fd7103d3ad7d8489d5d6978"
+    },
+    {
+      "path": "cad_engine/mechanical_authority.py",
+      "sha256": "4605ce7e072b87db0ad5f2246d6ea9fbc50427cff1db7757873d2316afd59136"
+    },
+    {
+      "path": "cad_engine/mechanical_authority_site_v15.py",
+      "sha256": "e95245e2a2d1787c5eb39247df5790d1867434d3e0550d42f458e27f2e862f5d"
+    },
+    {
+      "path": "cad_engine/mechanical_authority_site_v16.py",
+      "sha256": "a51a49eef46eaba1e2992331ac545bd102495140c29fc473576df461a15df600"
+    },
+    {
+      "path": "cad_engine/mechanical_authority_site_v17.py",
+      "sha256": "4a12dc99fdc47955ff1301bcecb621b3bdb8ae28a16fe91d01f69c75529720c7"
+    },
+    {
+      "path": "cad_engine/mechanical_authority_site_v19.py",
+      "sha256": "52d942ca2b9c44e53bf9e1c4e12a45bad7c1585029e1dfda0e4626b8a2278e92"
+    },
+    {
+      "path": "cad_engine/mechanical_authority_v15.py",
+      "sha256": "a7ac5092ef97d5b40c04ed05ec16e90f4c60f32e327fed1a2acf848dae92dcc7"
+    },
+    {
+      "path": "cad_engine/mechanical_cad_base.py",
+      "sha256": "b4a51cb983d3db215fdd013d18594abdd72699686c65e110a29170a948b0ad2b"
+    },
+    {
+      "path": "cad_engine/mechanical_cad_preservation.py",
+      "sha256": "89da8c2940ac1b4b5cef76db8a7ed58be714f2650a118afc9b2b3228ce28cb30"
+    },
+    {
+      "path": "cad_engine/mechanical_cad_shell.py",
+      "sha256": "f9039cc885ed12aa638d663928964b48572100f976876e1017dc847a14036bc0"
+    },
+    {
+      "path": "cad_engine/mechanical_calculation_traceability.py",
+      "sha256": "478ceb4b05c8152d710ed2ef145f3e4bbd8b08f7875eef19662394cf01d10507"
+    },
+    {
+      "path": "cad_engine/mechanical_calculations.py",
+      "sha256": "14601fa03e718c6da24914ee3293cc030bbda5a653c9b22776934aa22db5b8d5"
+    },
+    {
+      "path": "cad_engine/mechanical_calculations_v13.py",
+      "sha256": "14601fa03e718c6da24914ee3293cc030bbda5a653c9b22776934aa22db5b8d5"
+    },
+    {
+      "path": "cad_engine/mechanical_calculations_v14.py",
+      "sha256": "478ceb4b05c8152d710ed2ef145f3e4bbd8b08f7875eef19662394cf01d10507"
+    },
+    {
+      "path": "cad_engine/mechanical_coordination.py",
+      "sha256": "3db995aa3f8b4b267cda015436fe24f4bd0f9c24b4915dad3b873bab2878aa10"
+    },
+    {
+      "path": "cad_engine/mechanical_design_core.py",
+      "sha256": "8f406652fb0d4b97634d73134ffde4f01ae11c6e239063b3f04e6907080f7c67"
+    },
+    {
+      "path": "cad_engine/mechanical_documentation.py",
+      "sha256": "a42cae621791cfcea29aeb51838b80a17e427b7dd48b6f75cd74b03f9100ce1d"
+    },
+    {
+      "path": "cad_engine/mechanical_execution_sizing.py",
+      "sha256": "436bce607236f1a8d7d861d0f04acbcf75c0bfecda64ab8d512f845f36bcbc14"
+    },
+    {
+      "path": "cad_engine/mechanical_governance.py",
+      "sha256": "ed40a00fea3241cb3e96acca64f08501a6acec0c4d5ba9302b4a8a42f7332dfb"
+    },
+    {
+      "path": "cad_engine/mechanical_governance_v1.py",
+      "sha256": "22d7288cf3519e1242c22f05694c0090b56b7aab045c127d3afdc039ade15e1c"
+    },
+    {
+      "path": "cad_engine/mechanical_manufacturer_selector.py",
+      "sha256": "955ecf2e97ab1957ca735a1d64f341380ce7b596a7e5acfd01191084b563462a"
+    },
+    {
+      "path": "cad_engine/mechanical_network_materializer.py",
+      "sha256": "86859f5802977cf24e3b4b0de577b12cf0a43bbe01631395fe41fb884c19e9c3"
+    },
+    {
+      "path": "cad_engine/mechanical_network_topology.py",
+      "sha256": "d67f82f437dc9a7f87ae36835ca348a29c91e6543f0cab3312d27ad161268243"
+    },
+    {
+      "path": "cad_engine/mechanical_pipeline.py",
+      "sha256": "2a7ac17d67a01a628409a6ad22c7476fc1d48d7e1b74afc6d918a070fdfd76b8"
+    },
+    {
+      "path": "cad_engine/mechanical_pipeline_construction_delivery.py",
+      "sha256": "920644a1649ef1d9ed10e7e657ea932a3eb3aa995e49607c4ab0651bc9428c0c"
+    },
+    {
+      "path": "cad_engine/mechanical_pipeline_v19.py",
+      "sha256": "964fe60b76bee6d2976fff6db93bc5407a7d67d25b701355d49d3b5dad874055"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract.py",
+      "sha256": "17fe6d38c3cb1e090671f1e75bae6cd4248a14a5db3a56a2f394c8886cf4cd09"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_base.py",
+      "sha256": "721bc4a85e9d9ab383eff2e4af31ec7d7dcbeb29a9f70d17a273abf9b261268e"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_preservation.py",
+      "sha256": "d2fd1d857bb540bf209130e60258a3461cadc286402717ebeeccf9d9a669186f"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_reference.py",
+      "sha256": "ab0fafbf523030d4d886cd3aefea00e080fb708d88243a1bb8129cce6563c94b"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_v15.py",
+      "sha256": "8c2c53bdda94e980f1c3487e8182d03b5a0af2c2e2ec7cdb9d614da290148ade"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_v16.py",
+      "sha256": "be2e5c33c4c5cb171a29d1da344df7025b9a9603dbab6329f831c03647b5ebc7"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_v17.py",
+      "sha256": "b60d6e3da79fe199e5665c8e4890b90481e53ff80b5eb9636df997b73fcabbd4"
+    },
+    {
+      "path": "cad_engine/mechanical_release_contract_v19.py",
+      "sha256": "98947f98d60f59466659ebc72a43f18753884d1187f98e427ef518ef646c4e9b"
+    },
+    {
+      "path": "cad_engine/mechanical_release_hardening.py",
+      "sha256": "7de2d5df265a3c35279e88cf642dcc84b66a645212837ad3779d28691c2ef331"
+    },
+    {
+      "path": "cad_engine/mechanical_release_hardening_v18.py",
+      "sha256": "7de2d5df265a3c35279e88cf642dcc84b66a645212837ad3779d28691c2ef331"
+    },
+    {
+      "path": "cad_engine/mechanical_release_scope.py",
+      "sha256": "08448d7e3669371a96e56eba061d06deb294bd6683eb81fe4eec1318caf387d1"
+    },
+    {
+      "path": "cad_engine/mechanical_segment_execution.py",
+      "sha256": "35ff969e4d9113cf7e6bcaebda3971677fbe7dcdd53b089955724fa59bcec3aa"
+    },
+    {
+      "path": "cad_engine/mechanical_submission_qa.py",
+      "sha256": "e2368175bc776bf3ef92aa7fa25ff6f6c36d5a7df3925c59c967e7ba1370bfed"
+    },
+    {
+      "path": "cad_engine/mechanical_target_design.py",
+      "sha256": "d9442de43480ad34f0edef35af68289ca149c8b3f8e4d03f357cab9e5968a693"
+    },
+    {
+      "path": "cad_engine/mechanical_upgrade_v11.py",
+      "sha256": "3a567f5c22ef6531966ba4feb0510f723593f40986c21b1db435c97ff3305e46"
+    },
+    {
+      "path": "cad_engine/output_sanitizer.py",
+      "sha256": "e8e582ff882f5e2d5814186b0a62e29a5e0b8ea607ef570dd4b6275f5c80ca49"
+    },
+    {
+      "path": "cad_engine/output_sanitizer_v13.py",
+      "sha256": "e8e582ff882f5e2d5814186b0a62e29a5e0b8ea607ef570dd4b6275f5c80ca49"
+    },
+    {
+      "path": "cad_engine/parametric_documentation_v19.py",
+      "sha256": "03245aee0f6f09506f477da786173f7258a9a3705a8aef93dc354a29e806525e"
+    },
+    {
+      "path": "cad_engine/plan_isolation_acceptance.py",
+      "sha256": "53972dd6775aa90c5ae16216c8c620661802608493390c434cc92a565f538a58"
+    },
+    {
+      "path": "cad_engine/plan_isolation_acceptance_v13.py",
+      "sha256": "53972dd6775aa90c5ae16216c8c620661802608493390c434cc92a565f538a58"
+    },
+    {
+      "path": "cad_engine/plan_segmentation.py",
+      "sha256": "a7c60472f43ba3eff456d81e6e22b01cc7ad6bc75997a4fed6f9dea3abe47a8d"
+    },
+    {
+      "path": "cad_engine/plan_segmentation_v13.py",
+      "sha256": "a01ae522fdb56b17fd2d7431049c22e6718d14c84264c9a6ceda58c65ec723d5"
+    },
+    {
+      "path": "cad_engine/planha_package.py",
+      "sha256": "7f4cdfeb4fb29ee0cdf28b3ac4d61fdbc4bb96956e61b055fb2bfae39b92e8c0"
+    },
+    {
+      "path": "cad_engine/pre_topology_object_classifier.py",
+      "sha256": "c8045b1555b58485f4d2905df0254539b0c1d2939103ecaf56f47cf178afefa9"
+    },
+    {
+      "path": "cad_engine/preauthority_candidate_graph.py",
+      "sha256": "e7553663a70f0e352acb6b8f5af243bb1e0d99beda312fbbaaa9999bf3c47e2d"
+    },
+    {
+      "path": "cad_engine/production_engineering_v13.py",
+      "sha256": "349ba9d08c75d6924c8104cfd02803b4ba94d1df7694786e4354912b5b428616"
+    },
+    {
+      "path": "cad_engine/production_engineering_v14.py",
+      "sha256": "a1aae2006506641230e02fd308a03c43d7a62aec9853ada852880eb65ebffcd2"
+    },
+    {
+      "path": "cad_engine/project_hvac.py",
+      "sha256": "2db0cddf4c7b4ba367cb50d76b8e636a56e138b50e16297a832d8ba911b6f44b"
+    },
+    {
+      "path": "cad_engine/project_hvac_v13.py",
+      "sha256": "2db0cddf4c7b4ba367cb50d76b8e636a56e138b50e16297a832d8ba911b6f44b"
+    },
+    {
+      "path": "cad_engine/quality_acceptance.py",
+      "sha256": "8caf702fa13d8842654109cc80fc18ac8fc5ca83d145f6339f06dc34119fffb0"
+    },
+    {
+      "path": "cad_engine/rainwater_calculations.py",
+      "sha256": "f8678ed97727c233232a2b07a80bc7cd92dc44f2bcaef392995cdd345e58fd30"
+    },
+    {
+      "path": "cad_engine/rainwater_v11.py",
+      "sha256": "7ef210d338e146dd627ff73d95b508cf47ab8cc53d85c9ff6eeea6370fcfc4fe"
+    },
+    {
+      "path": "cad_engine/reference_parity_engine.py",
+      "sha256": "c6f776606667b99337f8df4849ba9f5446b8463db8cbfb56ce05cf1fbb32e24d"
+    },
+    {
+      "path": "cad_engine/reference_parity_engine_v17.py",
+      "sha256": "17d0f9be3541b2877ef5f1a8a8dc9eb85ad76194b1234c7ff4f244f1e15a4bc7"
+    },
+    {
+      "path": "cad_engine/routing.py",
+      "sha256": "b4d02337c93266e1b874813858db49efd7c5f801e7e29e07c01e948dff7b4a39"
+    },
+    {
+      "path": "cad_engine/routing_v13.py",
+      "sha256": "5e8398abb9370fcab4bf1dbc3661bb1fb88d33c68fbdf96144f4e16c6a286d0d"
+    },
+    {
+      "path": "cad_engine/routing_v14.py",
+      "sha256": "de04f976301831cc5c194a4d46d6ffc3549ae4c6ea9d782dfa996358c8cc413e"
+    },
+    {
+      "path": "cad_engine/runtime_contract.py",
+      "sha256": "a13ae60f753a3802bd51ac8babfcc9d86e1fdd00c795a1d373c06306effc2550"
+    },
+    {
+      "path": "cad_engine/runtime_contract_sync_gate.py",
+      "sha256": "9de4210f1bee835d1eb4a689cf0c1492ed076936eedffd498492d259166fc5d0"
+    },
+    {
+      "path": "cad_engine/runtime_core.py",
+      "sha256": "d1b76fc01d387057062ac89e8b9c39711206983958a504db161dabde4e2f76ce"
+    },
+    {
+      "path": "cad_engine/semantic_dimension_engine.py",
+      "sha256": "6a0829d8975b3660d5d0c9963f069172651d70b2a17005fcb27bc094110304f9"
+    },
+    {
+      "path": "cad_engine/semantic_sheet_qa.py",
+      "sha256": "c7c9cac58a1dc46cda47a52dc37773f8e38b3be65d5c6556dea8475e2a393880"
+    },
+    {
+      "path": "cad_engine/semantic_sheet_qa_v14.py",
+      "sha256": "c7c9cac58a1dc46cda47a52dc37773f8e38b3be65d5c6556dea8475e2a393880"
+    },
+    {
+      "path": "cad_engine/sheet_cleanup_policy.py",
+      "sha256": "896935b3eddec06347a8fcfa0b5e4a30c257f6f34dbf1e1e9d248b9339165e9c"
+    },
+    {
+      "path": "cad_engine/sheet_cleanup_policy_v1.py",
+      "sha256": "896935b3eddec06347a8fcfa0b5e4a30c257f6f34dbf1e1e9d248b9339165e9c"
+    },
+    {
+      "path": "cad_engine/sheet_composer_v13.py",
+      "sha256": "540b4eeaaa223e52f6497c58e669cc5804eaddce48facc7b5daf221b0eeed495"
+    },
+    {
+      "path": "cad_engine/sheet_composer_v14.py",
+      "sha256": "584b0457e57657506b87bed60213c5e3398214588ea62e92f4c2b9932bb43a8b"
+    },
+    {
+      "path": "cad_engine/sheet_visual_qa.py",
+      "sha256": "0813aff60e4b8b7a2f99885a0ca5e70ed4502992563d8c495648076ed1bcb2c1"
+    },
+    {
+      "path": "cad_engine/sizing.py",
+      "sha256": "be6b72d223582da5d5035b047ad264a1b14cb2022907724d9d1165718aceb32a"
+    },
+    {
+      "path": "cad_engine/sizing_v13.py",
+      "sha256": "be6b72d223582da5d5035b047ad264a1b14cb2022907724d9d1165718aceb32a"
+    },
+    {
+      "path": "cad_engine/sizing_v14.py",
+      "sha256": "d319c959b118ad77b1507629eadfb02e050be3faf4b93f18dd7b72da8ac3417f"
+    },
+    {
+      "path": "cad_engine/submission_qa_v19.py",
+      "sha256": "faccfe5e1cf265ea3704594e236e6404570dc6c5138bebef6921fbf79cf0c11b"
+    },
+    {
+      "path": "cad_engine/system_requirements.py",
+      "sha256": "cf9bbdc6b5b377a70209b4f5c15abd3a28206ec50dd24799cead24d74f4d4c4a"
+    },
+    {
+      "path": "cad_engine/system_requirements_v13.py",
+      "sha256": "cf9bbdc6b5b377a70209b4f5c15abd3a28206ec50dd24799cead24d74f4d4c4a"
+    },
+    {
+      "path": "cad_engine/system_requirements_v14.py",
+      "sha256": "5bf252d8e51d259efb2cb5f6c631300d9ed088d37f86d305eb85b7b99ed4a49d"
+    },
+    {
+      "path": "cad_engine/topology.py",
+      "sha256": "024df1a9fb936204f9ab199bf2cec298ea485a2e110726573d9a8b25425e0857"
+    },
+    {
+      "path": "cad_engine/topology_routing_gate.py",
+      "sha256": "6b11d051d7b9bd34946361aec68b266a8f28c2e93ad5a6ecfd9ea7383c7a9cbb"
+    },
+    {
+      "path": "cad_engine/topology_v13.py",
+      "sha256": "024df1a9fb936204f9ab199bf2cec298ea485a2e110726573d9a8b25425e0857"
+    },
+    {
+      "path": "cad_engine/topology_v14.py",
+      "sha256": "535269d9b8e75b3769eab469b6013f654bbb2c08b891c85e02fcd9ab6efdd25f"
+    },
+    {
+      "path": "cad_engine/version_manifest.py",
+      "sha256": "9caef298ce043da89aaba2ed3e84bcd61ec814225518a5b72d137d76ecd74671"
+    },
+    {
+      "path": "cad_engine/water_sanitary_v11.py",
+      "sha256": "835057386cb6f9b9d80b6fae1bd5c759d1e394429ca31918a1aee4ae586d859a"
+    },
+    {
+      "path": "data/rulebook/MEP_Design_Rulebook.docx",
+      "sha256": "b24535a04634258a07f5cad710b8225ca05026117715a93f449fa2eec67899aa"
+    },
+    {
+      "path": "data/rulebook/MEP_Design_Rulebook_v3.docx.b64",
+      "sha256": "04ee4ad068e99b7518129413628ba5618837ffe4fb63d58b5a744f6c6c10fc0f"
+    },
+    {
+      "path": "data/rulebook/MEP_Design_Rulebook_v4.docx.b64",
+      "sha256": "ad2ec1a42848c2ae1b1298fb7edb279894bd44649844af2e919bf55ff4f57a7d"
+    },
+    {
+      "path": "data/rulebook/README.txt",
+      "sha256": "0c7bec134ef8a63556a9774a01ee6acaa4a9b3e1e6f218ba7c236e86b2e443d4"
+    },
+    {
+      "path": "data/rulebook/generate_rulebook.py",
+      "sha256": "611b88d7ed603747b86180da834f69b05cb45669866d9cb15a21f7810f8380dd"
+    },
+    {
+      "path": "data/rulebook/generate_rulebook_v4.py",
+      "sha256": "e5c469be189f8019177968981314848711312c8eb3ce2f0d61d7d2b9affb326c"
+    },
+    {
+      "path": "standards/golden/mechanical-steps-10-13.baseline.json",
+      "sha256": "cb7f793583275def0c3ad9202936ae14fb4f7a519a4f52f9da86d9b679472983"
+    },
+    {
+      "path": "standards/golden/mechanical-steps-14-19.baseline.json",
+      "sha256": "8c9ff16ca75eb59c03ded6d36dc4c1f3629a91db703400353279efaaf60e77c1"
+    },
+    {
+      "path": "standards/golden/mechanical-steps-7-9.baseline.json",
+      "sha256": "595f0608f40a61532d863adf536b99c039d77f2bc990d8881b89618890e425a2"
+    },
+    {
+      "path": "standards/golden/project-1.baseline.json",
+      "sha256": "0151a488ccb8599b76f5d7a4e1802afcb0b77f9d2efe267d10df5e406d2b82bb"
+    },
+    {
+      "path": "standards/golden/project-10.reference-truth.json",
+      "sha256": "72be27e656729b34da0d18daeeaff0278d3242ebcac50204838617c8bdebd01a"
+    },
+    {
+      "path": "standards/golden/seven-project-v19.baseline.json",
+      "sha256": "58ce00755832b7af458daec193cb10010b1995b20236cacd484fa576c0f9e77d"
+    }
+  ],
+  "protected_files_unchanged": 252,
+  "performance": {
+    "workload": "10000 pure numeric checks;5 repeats, local machine only",
+    "median_ms": 6.693584145978093,
+    "samples_ms": [
+      6.741750054061413,
+      6.693584145978093,
+      6.6471251193434,
+      7.434624945744872,
+      6.68666698038578
+    ],
+    "generator_performance": "NOT_IMPLEMENTED_NOT_MEASURED"
+  },
+  "human_golden": "HUMAN_ARCHITECTURE_GOLDEN_REQUIRED",
+  "readiness": "ARCHITECTURE_FOUNDATION_PARTIAL",
+  "browser_render": "BLOCKED_FILE_PROTOCOL_NOT_VERIFIED",
+  "merge": false,
+  "deployment": false
+}

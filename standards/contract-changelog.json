@@ -2,6 +2,27 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-RESIDENTIAL-FOUNDATION",
+      "status": "IMPLEMENTED_PARTIAL",
+      "summary": "Add offline residential research and generation contracts;122 actual plan reviews,32 disabled extracted rules,24 coverage gaps,41 original symbol types,58 owner questions. No generator or production activation.",
+      "affected_capabilities": [
+        "residential_foundation_fail_closed"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit residential architecture foundation request; no merge/deploy."
+      },
+      "verification": {
+        "focused": "Final29 foundation tests plus23 governance tests and62 subtests PASS",
+        "full": "1432 tests and76 subtests PASS",
+        "human_architecture_golden": "HUMAN_ARCHITECTURE_GOLDEN_REQUIRED"
+      },
+      "migration": {
+        "forward": "New catalogs and schemas only; old architecture and Mechanical contracts unchanged.",
+        "rollback": "Approved Git commit only; no historical runtime copies."
+      }
+    },
+    {
       "id": "GOV-2026-052",
       "status": "IMPLEMENTED_PARTIAL",
       "summary": "Canonical Architecture 3.0 separates geometric boundary support and physical separator authority; scoped source review cannot create geometry.",

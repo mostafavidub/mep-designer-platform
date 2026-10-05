@@ -1,0 +1,326 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "normative_completeness": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "architecture-reference-geometry/1.0"
+    },
+    "source_coverage_limit": {
+      "type": "string"
+    },
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "access_side": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "cad_integration": {
+            "type": "object",
+            "properties": {
+              "block_name": {
+                "type": "string"
+              },
+              "identity": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "layers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "placement": {
+                "type": "string"
+              },
+              "units": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "block_name",
+              "identity",
+              "layers",
+              "placement",
+              "units"
+            ],
+            "additionalProperties": false
+          },
+          "category": {
+            "type": "string"
+          },
+          "clearance_envelope": {
+            "type": "string"
+          },
+          "collision_footprint": {
+            "type": "string"
+          },
+          "connection_side": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "ergonomic_ranges": {
+            "type": "null"
+          },
+          "ergonomic_source": {
+            "type": "null"
+          },
+          "manufacturer_example": {
+            "type": "object",
+            "properties": {
+              "access_date": {
+                "type": "string"
+              },
+              "authority": {
+                "type": "string"
+              },
+              "automatic_default": {
+                "type": "boolean"
+              },
+              "depth_m": {
+                "type": "number"
+              },
+              "manufacturer": {
+                "type": "string"
+              },
+              "printed_page": {
+                "type": "integer"
+              },
+              "product": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "usage_clearance_m": {
+                "type": "null"
+              },
+              "width_m": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "access_date",
+              "authority",
+              "automatic_default",
+              "depth_m",
+              "manufacturer",
+              "product",
+              "url",
+              "usage_clearance_m",
+              "width_m"
+            ],
+            "additionalProperties": false
+          },
+          "mep_ports": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "point": {
+                  "type": "string"
+                },
+                "system": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "point",
+                "system"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "normative_dimensions": {
+            "type": "null"
+          },
+          "normative_source_rule_ids": {
+            "type": "array",
+            "items": {}
+          },
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "depth_m": {
+                "type": "object",
+                "properties": {
+                  "exclusive_minimum": {
+                    "type": "integer"
+                  },
+                  "required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "exclusive_minimum",
+                  "required"
+                ],
+                "additionalProperties": false
+              },
+              "dimension_basis": {
+                "type": "object",
+                "properties": {
+                  "enum": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enum",
+                  "required"
+                ],
+                "additionalProperties": false
+              },
+              "origin_m": {
+                "type": "object",
+                "properties": {
+                  "length": {
+                    "type": "integer"
+                  },
+                  "required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "length",
+                  "required"
+                ],
+                "additionalProperties": false
+              },
+              "rotation_deg": {
+                "type": "object",
+                "properties": {
+                  "required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "required"
+                ],
+                "additionalProperties": false
+              },
+              "usage_clearance_m": {
+                "type": "object",
+                "properties": {
+                  "required_for_fit_validation": {
+                    "type": "boolean"
+                  },
+                  "source_required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "required_for_fit_validation",
+                  "source_required"
+                ],
+                "additionalProperties": false
+              },
+              "width_m": {
+                "type": "object",
+                "properties": {
+                  "exclusive_minimum": {
+                    "type": "integer"
+                  },
+                  "required": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "exclusive_minimum",
+                  "required"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "depth_m",
+              "dimension_basis",
+              "origin_m",
+              "rotation_deg",
+              "usage_clearance_m",
+              "width_m"
+            ],
+            "additionalProperties": false
+          },
+          "representation": {
+            "type": "object",
+            "properties": {
+              "original": {
+                "type": "boolean"
+              },
+              "primitive": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "original",
+              "primitive"
+            ],
+            "additionalProperties": false
+          },
+          "symbol_id": {
+            "type": "string"
+          },
+          "visualization_only": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_side",
+          "anchor",
+          "cad_integration",
+          "category",
+          "clearance_envelope",
+          "collision_footprint",
+          "connection_side",
+          "ergonomic_ranges",
+          "ergonomic_source",
+          "mep_ports",
+          "normative_dimensions",
+          "normative_source_rule_ids",
+          "parameters",
+          "representation",
+          "symbol_id",
+          "visualization_only"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "normative_completeness",
+    "notes",
+    "schema_version",
+    "source_coverage_limit",
+    "symbols",
+    "version"
+  ],
+  "additionalProperties": false
+}

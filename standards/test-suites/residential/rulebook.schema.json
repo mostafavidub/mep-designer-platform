@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "authority_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authority_status": {
+      "type": "string"
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "applicability": {
+            "type": "string"
+          },
+          "authority_type": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "check": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "all": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "field": {
+                          "type": "string"
+                        },
+                        "op": {
+                          "type": "string"
+                        },
+                        "unit": {
+                          "type": "string"
+                        },
+                        "value": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "number"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "field",
+                        "op",
+                        "unit",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "factor": {
+                    "type": "number"
+                  },
+                  "field": {
+                    "type": "string"
+                  },
+                  "op": {
+                    "type": "string"
+                  },
+                  "rhs_field": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "conflict_priority": {
+            "type": "string"
+          },
+          "discipline": {
+            "type": "string"
+          },
+          "failure_message_fa": {
+            "type": "string"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "release_enabled": {
+            "type": "boolean"
+          },
+          "requirement_fa": {
+            "type": "string"
+          },
+          "rule_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "clause": {
+                "type": "string"
+              },
+              "edition_year": {
+                "type": "integer"
+              },
+              "issuer": {
+                "type": "string"
+              },
+              "pdf_page": {
+                "type": "integer"
+              },
+              "printed_page": {
+                "type": "integer"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "clause",
+              "edition_year",
+              "issuer",
+              "pdf_page",
+              "printed_page",
+              "title"
+            ],
+            "additionalProperties": false
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "title_fa": {
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "validation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "applicability",
+          "authority_type",
+          "category",
+          "check",
+          "conflict_priority",
+          "discipline",
+          "failure_message_fa",
+          "inputs",
+          "notes",
+          "output",
+          "release_enabled",
+          "requirement_fa",
+          "rule_id",
+          "severity",
+          "source_id",
+          "title_fa",
+          "unit",
+          "validation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "schema_version": {
+      "const": "architecture-rulebook/1.0"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "authority_order",
+    "authority_status",
+    "categories",
+    "rules",
+    "schema_version",
+    "scope",
+    "status",
+    "version"
+  ],
+  "additionalProperties": false
+}

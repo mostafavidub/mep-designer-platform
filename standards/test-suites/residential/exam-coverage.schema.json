@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "additional_project_authorities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "candidate_topics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "candidate_edition": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "type": "string"
+          },
+          "gap": {
+            "type": "string"
+          },
+          "official_current_exam_confirmed": {
+            "type": "boolean"
+          },
+          "rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "topic_fa": {
+            "type": "string"
+          },
+          "v1_relevance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "candidate_edition",
+          "coverage",
+          "gap",
+          "official_current_exam_confirmed",
+          "rule_ids",
+          "source_id",
+          "topic_fa",
+          "v1_relevance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "official_completeness_verified": {
+      "type": "boolean"
+    },
+    "official_coverage_percent": {
+      "type": "null"
+    },
+    "schema_version": {
+      "const": "architecture-exam-coverage/1.0"
+    }
+  },
+  "required": [
+    "additional_project_authorities",
+    "candidate_topics",
+    "notes",
+    "official_completeness_verified",
+    "official_coverage_percent",
+    "schema_version"
+  ],
+  "additionalProperties": false
+}

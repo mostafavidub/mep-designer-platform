@@ -816,6 +816,24 @@
         "test_multi_axis_building_produces_multiple_coordinate_frames",
         "test_final_release_cannot_pass_without_exact_file_and_visual_evidence"
       ]
+    },
+    {
+      "id": "residential_foundation_fail_closed",
+      "status": "LOCKED",
+      "qualification": "FOUNDATION_PARTIAL_NO_GENERATOR_NO_RELEASE",
+      "requirements": [
+        "unqualified_architecture_rules_never_certify",
+        "public_patterns_never_become_code",
+        "hard_gate_before_soft_rank",
+        "unknown_clearance_blocks_fit",
+        "missing_golden_blocks_release"
+      ],
+      "tests": [
+        "test_source_qualification_and_stale_input",
+        "test_soft_score_never_compensates_hard_failure",
+        "test_foundation_audit_cannot_claim_release",
+        "test_missing_clearance_and_invalid_dimensions"
+      ]
     }
   ]
 }

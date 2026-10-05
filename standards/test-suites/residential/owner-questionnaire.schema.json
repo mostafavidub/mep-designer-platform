@@ -1,0 +1,485 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "auto_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "owner_may_override_law": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          },
+          "when_missing": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "field",
+          "owner_may_override_law",
+          "source",
+          "when_missing"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "flow": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "persistence_contract": {
+      "type": "object",
+      "properties": {
+        "binding": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflict": {
+          "type": "string"
+        },
+        "invalidation": {
+          "type": "string"
+        },
+        "private_fields": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding",
+        "conflict",
+        "invalidation",
+        "private_fields"
+      ],
+      "additionalProperties": false
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "allowed_values": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "exclusive_minimum": {
+                    "type": "integer"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "minimum": {
+                    "type": "integer"
+                  },
+                  "unit": {
+                    "type": "string"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "auto_inference": {
+            "type": "boolean"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "field": {
+                    "type": "string"
+                  },
+                  "gt": {
+                    "type": "integer"
+                  },
+                  "in": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "nonempty": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "field"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "data_type": {
+            "type": "string"
+          },
+          "default_allowed": {
+            "type": "boolean"
+          },
+          "downstream": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "field": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "option_labels_fa": {
+            "type": "object",
+            "properties": {
+              "ADAPTABILITY": {
+                "type": "string"
+              },
+              "ALL": {
+                "type": "string"
+              },
+              "ALL_ROOMS": {
+                "type": "string"
+              },
+              "BALCONY": {
+                "type": "string"
+              },
+              "BATHROOM": {
+                "type": "string"
+              },
+              "BATHTUB": {
+                "type": "string"
+              },
+              "BEDROOM": {
+                "type": "string"
+              },
+              "BOTH": {
+                "type": "string"
+              },
+              "CAN_DIFFER": {
+                "type": "string"
+              },
+              "CLOSED": {
+                "type": "string"
+              },
+              "CODE_MINIMUM": {
+                "type": "string"
+              },
+              "COMBINED": {
+                "type": "string"
+              },
+              "COOKTOP": {
+                "type": "string"
+              },
+              "COST": {
+                "type": "string"
+              },
+              "DAYLIGHT": {
+                "type": "string"
+              },
+              "DEFINED": {
+                "type": "string"
+              },
+              "DELIVERY": {
+                "type": "string"
+              },
+              "DESK_IN_ROOM": {
+                "type": "string"
+              },
+              "DISCUSS": {
+                "type": "string"
+              },
+              "DISHWASHER": {
+                "type": "string"
+              },
+              "DRYER": {
+                "type": "string"
+              },
+              "ECONOMIC": {
+                "type": "string"
+              },
+              "ENTRY": {
+                "type": "string"
+              },
+              "EXTRA_CAR": {
+                "type": "string"
+              },
+              "HIGH": {
+                "type": "string"
+              },
+              "INDOOR": {
+                "type": "string"
+              },
+              "KITCHEN": {
+                "type": "string"
+              },
+              "LARGER_CAR": {
+                "type": "string"
+              },
+              "LARGE_REQUIRED": {
+                "type": "string"
+              },
+              "LIVING": {
+                "type": "string"
+              },
+              "LUXURY": {
+                "type": "string"
+              },
+              "MEDIUM": {
+                "type": "string"
+              },
+              "MICROWAVE": {
+                "type": "string"
+              },
+              "MIXED": {
+                "type": "string"
+              },
+              "NO": {
+                "type": "string"
+              },
+              "NONE": {
+                "type": "string"
+              },
+              "NO_EXTRA": {
+                "type": "string"
+              },
+              "NO_PREFERENCE": {
+                "type": "string"
+              },
+              "OFFICE": {
+                "type": "string"
+              },
+              "OPEN": {
+                "type": "string"
+              },
+              "OUTDOOR_SCREENED": {
+                "type": "string"
+              },
+              "OVEN": {
+                "type": "string"
+              },
+              "OWNER_USE": {
+                "type": "string"
+              },
+              "PREFERRED": {
+                "type": "string"
+              },
+              "PREFERRED_EQUAL": {
+                "type": "string"
+              },
+              "PREFER_ADAPTABLE": {
+                "type": "string"
+              },
+              "PREMIUM": {
+                "type": "string"
+              },
+              "PRIVACY": {
+                "type": "string"
+              },
+              "REFRIGERATOR": {
+                "type": "string"
+              },
+              "RENT": {
+                "type": "string"
+              },
+              "REQUIRED": {
+                "type": "string"
+              },
+              "REQUIRED_EQUAL": {
+                "type": "string"
+              },
+              "SALE": {
+                "type": "string"
+              },
+              "SEATED": {
+                "type": "string"
+              },
+              "SEMI_OPEN": {
+                "type": "string"
+              },
+              "SEPARATE": {
+                "type": "string"
+              },
+              "SEPARATE_ROOM": {
+                "type": "string"
+              },
+              "SERVICE_BALCONY": {
+                "type": "string"
+              },
+              "SHOWER": {
+                "type": "string"
+              },
+              "SQUAT": {
+                "type": "string"
+              },
+              "STANDARD": {
+                "type": "string"
+              },
+              "STROLLER": {
+                "type": "string"
+              },
+              "UNDECIDED": {
+                "type": "string"
+              },
+              "USABLE_AREA": {
+                "type": "string"
+              },
+              "WAITING": {
+                "type": "string"
+              },
+              "WASHER": {
+                "type": "string"
+              },
+              "YES": {
+                "type": "string"
+              },
+              "false": {
+                "type": "string"
+              },
+              "true": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "persistence": {
+            "type": "string"
+          },
+          "question_id": {
+            "type": "string"
+          },
+          "requirement": {
+            "type": "string"
+          },
+          "text_fa": {
+            "type": "string"
+          },
+          "unanswered_risk": {
+            "type": "string"
+          },
+          "when_to_ask": {
+            "type": "string"
+          },
+          "why_fa": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "allowed_values",
+          "auto_inference",
+          "condition",
+          "data_type",
+          "default_allowed",
+          "downstream",
+          "field",
+          "group",
+          "impact",
+          "persistence",
+          "question_id",
+          "requirement",
+          "text_fa",
+          "unanswered_risk",
+          "when_to_ask",
+          "why_fa"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "schema_version": {
+      "const": "architecture-owner-program/1.0"
+    },
+    "structured_program_limit": {
+      "type": "string"
+    },
+    "v1_progression": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "step": {
+            "type": "integer"
+          },
+          "title_fa": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "question_ids",
+          "step",
+          "title_fa"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "auto_facts",
+    "flow",
+    "persistence_contract",
+    "questions",
+    "schema_version",
+    "structured_program_limit",
+    "v1_progression",
+    "version"
+  ],
+  "additionalProperties": false
+}

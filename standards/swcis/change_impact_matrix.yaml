@@ -25,7 +25,9 @@
         "app/*contract*.py",
         "standards/projects/**",
         "cad_engine/architecture_contract.py",
-        "standards/test-suites/planha-canonical-architecture-v3.schema.json"
+        "standards/test-suites/planha-canonical-architecture-v3.schema.json",
+        "cad_engine/residential_foundation.py",
+        "standards/test-suites/residential/**"
       ],
       "seed_modules": [
         "pmm"
@@ -159,7 +161,9 @@
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**",
         "cad_engine/architecture_separator_evidence.py",
-        "cad_engine/architecture_separator_validator.py"
+        "cad_engine/architecture_separator_validator.py",
+        "cad_engine/residential_symbols.py",
+        "tools/residential_foundation_report.py"
       ],
       "seed_modules": [
         "cad_designer",

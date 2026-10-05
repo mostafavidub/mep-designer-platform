@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
 
 jobs:
   storage-regression:
@@ -66,3 +65,17 @@ jobs:
           MPLBACKEND: Agg
           CAD_DESIGNER_URL: http://127.0.0.1:9999
         run: python -m pytest tests -q
+
+  residential-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt -r cad_engine/requirements.txt
+      - name: Offline residential foundation regression
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s tests -p test_residential_foundation.py -v

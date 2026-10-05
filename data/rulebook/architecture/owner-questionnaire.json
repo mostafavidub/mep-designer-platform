@@ -1,0 +1,2019 @@
+{
+  "schema_version": "architecture-owner-program/1.0",
+  "version": "0.1.0",
+  "questions": [
+    {
+      "question_id": "OWN-PURPOSE",
+      "field": "purpose",
+      "text_fa": "ساختمان را برای سکونت خودتان، فروش یا اجاره می‌سازید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "OWNER_USE",
+        "SALE",
+        "RENT",
+        "MIXED"
+      ],
+      "group": "BUSINESS",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "business",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "COST",
+        "MARKETABILITY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "OWNER_USE": "سکونت خودم",
+        "SALE": "فروش",
+        "RENT": "اجاره",
+        "MIXED": "ترکیبی"
+      }
+    },
+    {
+      "question_id": "OWN-QUALITY",
+      "field": "quality",
+      "text_fa": "چه سطحی از امکانات و کیفیت ساخت را در نظر دارید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "ECONOMIC",
+        "STANDARD",
+        "PREMIUM",
+        "LUXURY"
+      ],
+      "group": "BUSINESS",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "business",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "COST",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "ECONOMIC": "اقتصادی",
+        "STANDARD": "متعارف",
+        "PREMIUM": "با امکانات بیشتر",
+        "LUXURY": "لوکس"
+      }
+    },
+    {
+      "question_id": "OWN-PRIORITY",
+      "field": "priority",
+      "text_fa": "بین هزینه، مساحت مفید، نور، حریم خصوصی و انعطاف آینده، کدام‌ها برای شما مهم‌ترند؟",
+      "data_type": "ranked_unique_array",
+      "allowed_values": [
+        "COST",
+        "USABLE_AREA",
+        "DAYLIGHT",
+        "PRIVACY",
+        "ADAPTABILITY"
+      ],
+      "group": "BUSINESS",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "business",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "COST",
+        "QUALITY",
+        "PRIVACY",
+        "MARKETABILITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "COST": "هزینه",
+        "USABLE_AREA": "مساحت مفید",
+        "DAYLIGHT": "نور طبیعی",
+        "PRIVACY": "حریم خصوصی",
+        "ADAPTABILITY": "انعطاف آینده"
+      }
+    },
+    {
+      "question_id": "OWN-MARKET",
+      "field": "market",
+      "text_fa": "مخاطب اصلی واحدهای فروشی یا اجاره‌ای چه کسانی هستند؟",
+      "data_type": "string",
+      "allowed_values": null,
+      "group": "BUSINESS",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "purpose",
+        "in": [
+          "SALE",
+          "RENT",
+          "MIXED"
+        ]
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "business",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "MARKETABILITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-UNITS_PER_FLOOR",
+      "field": "units_per_floor",
+      "text_fa": "در هر طبقهٔ مسکونی چند واحد می‌خواهید؟",
+      "data_type": "integer",
+      "allowed_values": {
+        "minimum": 1
+      },
+      "group": "UNITS",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "units",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-UNIT_PROGRAM",
+      "field": "unit_program",
+      "text_fa": "برای هر نوع واحد، تعداد اتاق‌خواب و بازهٔ مساحت مورد نظر را مشخص کنید. مساحت را به‌صورت مفید داخل واحد وارد کنید.",
+      "data_type": "unit_program_array",
+      "allowed_values": {
+        "items": [
+          "unit_type_id",
+          "count",
+          "bedrooms",
+          "target_usable_area_min_m2",
+          "target_usable_area_max_m2",
+          "requirement_strength"
+        ]
+      },
+      "group": "UNITS",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "units",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "COST",
+        "MARKETABILITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-EQUAL_UNITS",
+      "field": "equal_units",
+      "text_fa": "آیا واحدها باید هم‌اندازه باشند؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "REQUIRED_EQUAL",
+        "PREFERRED_EQUAL",
+        "CAN_DIFFER"
+      ],
+      "group": "UNITS",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "units_per_floor",
+        "gt": 1
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "units",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REQUIRED_EQUAL": "برابری واحدها الزامی است",
+        "PREFERRED_EQUAL": "برابری واحدها ترجیح دارد",
+        "CAN_DIFFER": "واحدها می‌توانند متفاوت باشند"
+      }
+    },
+    {
+      "question_id": "OWN-MASTER",
+      "field": "master",
+      "text_fa": "آیا اتاق‌خواب اصلی باید حمام اختصاصی داشته باشد؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "BEDROOM",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "bedroom",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP",
+        "PRIVACY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-GUEST_ROOM",
+      "field": "guest_room",
+      "text_fa": "آیا اتاق مهمان جداگانه نیاز دارید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "BEDROOM",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "bedroom",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-OFFICE",
+      "field": "office",
+      "text_fa": "آیا فضای کار در خانه نیاز دارید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "NONE",
+        "DESK_IN_ROOM",
+        "SEPARATE_ROOM"
+      ],
+      "group": "BEDROOM",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "bedroom",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "NONE": "هیچ‌کدام",
+        "DESK_IN_ROOM": "میز در یکی از اتاق‌ها",
+        "SEPARATE_ROOM": "اتاق مستقل"
+      }
+    },
+    {
+      "question_id": "OWN-FLEX_ROOM",
+      "field": "flex_room",
+      "text_fa": "آیا اتاقی می‌خواهید که در آینده کاربری آن تغییر کند؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "BEDROOM",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "bedroom",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-ROOM_TARGETS",
+      "field": "room_targets",
+      "text_fa": "آیا برای اتاق‌ها اندازه‌ای بزرگ‌تر از حداقل ضوابط می‌خواهید؟ نام فضا و اندازهٔ دلخواه را بنویسید.",
+      "data_type": "space_target_array",
+      "allowed_values": null,
+      "group": "BEDROOM",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "bedroom",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-RECEPTION",
+      "field": "reception",
+      "text_fa": "پذیرایی مهمان از نشیمن خانوادگی جدا باشد؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "SEPARATE",
+        "COMBINED",
+        "NO_PREFERENCE"
+      ],
+      "group": "LIVING",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "living",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "PRIVACY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "SEPARATE": "مستقل",
+        "COMBINED": "ترکیب‌شده",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-DINING",
+      "field": "dining",
+      "text_fa": "میز غذاخوری معمولاً برای چند نفر باشد؟",
+      "data_type": "integer",
+      "allowed_values": {
+        "minimum": 1
+      },
+      "group": "DINING",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "dining",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-TV",
+      "field": "tv",
+      "text_fa": "آیا محل تلویزیون و نشیمن روزمره جدا از پذیرایی می‌خواهید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "LIVING",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "living",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-KITCHEN",
+      "field": "kitchen",
+      "text_fa": "چه نوع آشپزخانه‌ای ترجیح می‌دهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "OPEN",
+        "SEMI_OPEN",
+        "CLOSED",
+        "NO_PREFERENCE"
+      ],
+      "group": "KITCHEN",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "PRIVACY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "OPEN": "باز",
+        "SEMI_OPEN": "نیمه‌باز",
+        "CLOSED": "بسته",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-ISLAND",
+      "field": "island",
+      "text_fa": "آیا جزیرهٔ آشپزخانه می‌خواهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "REQUIRED",
+        "PREFERRED",
+        "NO"
+      ],
+      "group": "KITCHEN",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REQUIRED": "الزامی",
+        "PREFERRED": "ترجیحی",
+        "NO": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-BREAKFAST",
+      "field": "breakfast",
+      "text_fa": "آیا محل صبحانه‌خوری در آشپزخانه می‌خواهید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "KITCHEN",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-PANTRY",
+      "field": "pantry",
+      "text_fa": "آیا انبار مواد غذایی جدا از کابینت‌ها می‌خواهید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "KITCHEN",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-APPLIANCES",
+      "field": "appliances",
+      "text_fa": "کدام وسایل باید در آشپزخانه جا بگیرند؟",
+      "data_type": "unique_array",
+      "allowed_values": [
+        "REFRIGERATOR",
+        "DISHWASHER",
+        "OVEN",
+        "COOKTOP",
+        "WASHER",
+        "MICROWAVE"
+      ],
+      "group": "KITCHEN",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REFRIGERATOR": "یخچال",
+        "DISHWASHER": "ماشین ظرف‌شویی",
+        "OVEN": "فر",
+        "COOKTOP": "اجاق",
+        "WASHER": "ماشین لباس‌شویی",
+        "MICROWAVE": "مایکروویو"
+      }
+    },
+    {
+      "question_id": "OWN-APPLIANCE_SIZES",
+      "field": "appliance_sizes",
+      "text_fa": "برای وسایل انتخاب‌شده، مدل یا ابعاد واقعی بدنه و فضای بازشدن در را مشخص کنید.",
+      "data_type": "equipment_array",
+      "allowed_values": null,
+      "group": "KITCHEN",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "appliances",
+        "nonempty": true
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-SECONDARY_KITCHEN",
+      "field": "secondary_kitchen",
+      "text_fa": "آیا آشپزخانهٔ دوم یا فضای پخت‌وپز جدا می‌خواهید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "KITCHEN",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-KITCHEN_SERVICE_ACCESS",
+      "field": "kitchen_service_access",
+      "text_fa": "آیا دسترسی مستقیم آشپزخانه به بالکن خدماتی می‌خواهید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "KITCHEN",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "kitchen",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-GUEST_WC",
+      "field": "guest_wc",
+      "text_fa": "آیا سرویس مهمان جداگانه می‌خواهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "REQUIRED",
+        "PREFERRED",
+        "NO"
+      ],
+      "group": "SANITARY",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "sanitary",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "PRIVACY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REQUIRED": "الزامی",
+        "PREFERRED": "ترجیحی",
+        "NO": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-COMMON_BATHS",
+      "field": "common_baths",
+      "text_fa": "برای هر نوع واحد چند حمام عمومی نیاز دارید؟",
+      "data_type": "per_unit_type_integer",
+      "allowed_values": {
+        "minimum": 0
+      },
+      "group": "SANITARY",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "sanitary",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-BATHING",
+      "field": "bathing",
+      "text_fa": "دوش، وان یا هر دو را ترجیح می‌دهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "SHOWER",
+        "BATHTUB",
+        "BOTH"
+      ],
+      "group": "SANITARY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "sanitary",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "SHOWER": "دوش",
+        "BATHTUB": "وان",
+        "BOTH": "هر دو"
+      }
+    },
+    {
+      "question_id": "OWN-WC_TYPE",
+      "field": "wc_type",
+      "text_fa": "توالت ایرانی، فرنگی یا هر دو را ترجیح می‌دهید؟ الزامات قانونی مستقل کنترل می‌شوند.",
+      "data_type": "enum",
+      "allowed_values": [
+        "SQUAT",
+        "SEATED",
+        "BOTH",
+        "NO_PREFERENCE"
+      ],
+      "group": "SANITARY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "sanitary",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "SQUAT": "توالت ایرانی",
+        "SEATED": "توالت فرنگی",
+        "BOTH": "هر دو",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-LAUNDRY",
+      "field": "laundry",
+      "text_fa": "ماشین لباس‌شویی و فضای شست‌وشو کجا باشد؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "SEPARATE_ROOM",
+        "KITCHEN",
+        "BATHROOM",
+        "SERVICE_BALCONY",
+        "NO_PREFERENCE"
+      ],
+      "group": "LAUNDRY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "laundry",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "SEPARATE_ROOM": "اتاق مستقل",
+        "KITCHEN": "آشپزخانه",
+        "BATHROOM": "حمام / سرویس",
+        "SERVICE_BALCONY": "تراس خدماتی",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-DRYING",
+      "field": "drying",
+      "text_fa": "برای خشک‌کردن لباس چه فضایی می‌خواهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "OUTDOOR_SCREENED",
+        "INDOOR",
+        "DRYER",
+        "NO_PREFERENCE"
+      ],
+      "group": "LAUNDRY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "laundry",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP",
+        "PRIVACY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "OUTDOOR_SCREENED": "فضای باز محفوظ از دید",
+        "INDOOR": "داخل واحد",
+        "DRYER": "خشک‌کن",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-WARDROBES",
+      "field": "wardrobes",
+      "text_fa": "برای هر اتاق چه مقدار کمد نیاز دارید؟ طول یا تعداد کمد را مشخص کنید.",
+      "data_type": "per_room_storage",
+      "allowed_values": null,
+      "group": "STORAGE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "storage",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-LINEN",
+      "field": "linen",
+      "text_fa": "آیا کمد جدا برای ملحفه و لوازم نظافت می‌خواهید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "STORAGE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "storage",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-UNIT_STORAGE",
+      "field": "unit_storage",
+      "text_fa": "آیا داخل هر واحد انباری مستقل نیاز دارید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "STORAGE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "storage",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-COMMON_STORAGE",
+      "field": "common_storage",
+      "text_fa": "آیا برای تجهیزات مشترک ساختمان انبار نیاز دارید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "STORAGE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "storage",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-BALCONY",
+      "field": "balcony",
+      "text_fa": "علاوه بر حداقل قانونی، بالکن چه اهمیتی برای شما دارد؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "LARGE_REQUIRED",
+        "PREFERRED",
+        "CODE_MINIMUM"
+      ],
+      "group": "BALCONY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "balcony",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "LARGE_REQUIRED": "تراس بزرگ الزامی است",
+        "PREFERRED": "ترجیحی",
+        "CODE_MINIMUM": "فقط مقدار لازم طبق ضابطه"
+      }
+    },
+    {
+      "question_id": "OWN-BALCONY_AREA",
+      "field": "balcony_area",
+      "text_fa": "مساحت دلخواه بالکن چند مترمربع است؟",
+      "data_type": "number",
+      "allowed_values": {
+        "exclusive_minimum": 0,
+        "unit": "m2"
+      },
+      "group": "BALCONY",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "balcony",
+        "in": [
+          "LARGE_REQUIRED",
+          "PREFERRED"
+        ]
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "balcony",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-BALCONY_ACCESS",
+      "field": "balcony_access",
+      "text_fa": "بالکن ترجیحاً از کدام فضا در دسترس باشد؟",
+      "data_type": "unique_array",
+      "allowed_values": [
+        "LIVING",
+        "BEDROOM",
+        "KITCHEN"
+      ],
+      "group": "BALCONY",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "balcony",
+        "in": [
+          "LARGE_REQUIRED",
+          "PREFERRED"
+        ]
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "balcony",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "PRIVACY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "LIVING": "نشیمن",
+        "BEDROOM": "اتاق خواب",
+        "KITCHEN": "آشپزخانه"
+      }
+    },
+    {
+      "question_id": "OWN-BALCONY_PRIVACY",
+      "field": "balcony_privacy",
+      "text_fa": "آیا برای بالکن پوشیدگی دید از همسایه یا خیابان می‌خواهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "HIGH",
+        "MEDIUM",
+        "NO_PREFERENCE"
+      ],
+      "group": "BALCONY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "balcony",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "PRIVACY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "HIGH": "زیاد",
+        "MEDIUM": "متوسط",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-ENTRY_PRIVACY",
+      "field": "entry_privacy",
+      "text_fa": "آیا می‌خواهید با بازشدن درِ واحد، نشیمن خانواده دیده نشود؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "REQUIRED",
+        "PREFERRED",
+        "NO_PREFERENCE"
+      ],
+      "group": "PRIVACY",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "privacy",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "PRIVACY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REQUIRED": "الزامی",
+        "PREFERRED": "ترجیحی",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-GUEST_PATH",
+      "field": "guest_path",
+      "text_fa": "آیا رفت‌وآمد مهمان باید از بخش خواب خانواده جدا باشد؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "REQUIRED",
+        "PREFERRED",
+        "NO_PREFERENCE"
+      ],
+      "group": "PRIVACY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "privacy",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "PRIVACY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REQUIRED": "الزامی",
+        "PREFERRED": "ترجیحی",
+        "NO_PREFERENCE": "ترجیح مشخصی ندارم"
+      }
+    },
+    {
+      "question_id": "OWN-ACOUSTIC_PRIORITY",
+      "field": "acoustic_priority",
+      "text_fa": "کدام فضاها باید آرام‌تر باشند؟",
+      "data_type": "unique_array",
+      "allowed_values": [
+        "BEDROOM",
+        "OFFICE",
+        "LIVING",
+        "ALL"
+      ],
+      "group": "ACOUSTICS",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "acoustics",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "BEDROOM": "اتاق خواب",
+        "OFFICE": "اتاق کار",
+        "LIVING": "نشیمن",
+        "ALL": "همهٔ فضاها"
+      }
+    },
+    {
+      "question_id": "OWN-PREFERRED_VIEWS",
+      "field": "preferred_views",
+      "text_fa": "اگر از منظره یا مزاحمت خاصی اطلاع دارید، جهت و توضیح آن را بنویسید.",
+      "data_type": "site_observation_array",
+      "allowed_values": null,
+      "group": "DAYLIGHT",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "daylight",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "QUALITY",
+        "PRIVACY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-ORIENTATION_PRIORITY",
+      "field": "orientation_priority",
+      "text_fa": "در صورت امکان قانونی و هندسی، نور صبح یا عصر را برای کدام فضاها ترجیح می‌دهید؟",
+      "data_type": "space_orientation_preferences",
+      "allowed_values": null,
+      "group": "DAYLIGHT",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "daylight",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-CORE_STRATEGY",
+      "field": "core_strategy",
+      "text_fa": "آیا درباره محل پله و آسانسور محدودیت یا ترجیح مشخصی دارید؟",
+      "data_type": "core_preferences",
+      "allowed_values": null,
+      "group": "CORE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "core",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "STRUCTURE",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-EXTRA_LIFT",
+      "field": "extra_lift",
+      "text_fa": "آیا آسانسور اضافه یا بزرگ‌تر از حداقل الزامی می‌خواهید؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "NO_EXTRA",
+        "EXTRA_CAR",
+        "LARGER_CAR",
+        "DISCUSS"
+      ],
+      "group": "CORE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "core",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "COST",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "NO_EXTRA": "بیش از الزام قانونی لازم نیست",
+        "EXTRA_CAR": "آسانسور اضافه",
+        "LARGER_CAR": "کابین بزرگ‌تر",
+        "DISCUSS": "نیاز به بررسی دارم"
+      }
+    },
+    {
+      "question_id": "OWN-LOBBY",
+      "field": "lobby",
+      "text_fa": "در لابی طبقه چه امکاناتی می‌خواهید؟",
+      "data_type": "unique_array",
+      "allowed_values": [
+        "WAITING",
+        "STROLLER",
+        "DELIVERY",
+        "NONE"
+      ],
+      "group": "CORE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "core",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "WAITING": "فضای انتظار",
+        "STROLLER": "جای کالسکه",
+        "DELIVERY": "محل دریافت بسته",
+        "NONE": "هیچ‌کدام"
+      }
+    },
+    {
+      "question_id": "OWN-VEHICLES",
+      "field": "vehicles",
+      "text_fa": "تعداد و نوع خودروها یا وسایل نقلیه‌ای را که باید پارک شوند مشخص کنید.",
+      "data_type": "vehicle_program",
+      "allowed_values": null,
+      "group": "PARKING",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "parking",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "STRUCTURE"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-ACCESS_NEEDS",
+      "field": "access_needs",
+      "text_fa": "آیا ساکنان به مسیر بدون پله، فضای گردش ویلچر یا امکانات دسترس‌پذیر فراتر از حداقل قانونی نیاز دارند؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "YES",
+        "NO",
+        "PREFER_ADAPTABLE"
+      ],
+      "group": "ACCESSIBILITY",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "accessibility",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "CODE",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "YES": "بله",
+        "NO": "خیر",
+        "PREFER_ADAPTABLE": "ترجیح می‌دهم قابل مناسب‌سازی باشد"
+      }
+    },
+    {
+      "question_id": "OWN-ACCESS_DETAILS",
+      "field": "access_details",
+      "text_fa": "کدام فضاها و امکانات باید برای نیازهای دسترس‌پذیری شما مناسب باشند؟ بدون ذکر اطلاعات پزشکی توضیح دهید.",
+      "data_type": "unique_array",
+      "allowed_values": [
+        "ENTRY",
+        "ALL_ROOMS",
+        "BATHROOM",
+        "KITCHEN",
+        "BALCONY"
+      ],
+      "group": "ACCESSIBILITY",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "access_needs",
+        "in": [
+          "YES",
+          "PREFER_ADAPTABLE"
+        ]
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "accessibility",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "ENTRY": "ورودی",
+        "ALL_ROOMS": "همهٔ اتاق‌ها",
+        "BATHROOM": "حمام / سرویس",
+        "KITCHEN": "آشپزخانه",
+        "BALCONY": "بالکن"
+      }
+    },
+    {
+      "question_id": "OWN-CHILDREN",
+      "field": "children",
+      "text_fa": "آیا نیاز خاصی برای ایمنی یا بازی کودکان داخل واحد دارید؟",
+      "data_type": "string",
+      "allowed_values": null,
+      "group": "HOUSEHOLD",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "household",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-PETS",
+      "field": "pets",
+      "text_fa": "آیا برای حیوان خانگی فضای مشخصی نیاز دارید؟",
+      "data_type": "string",
+      "allowed_values": null,
+      "group": "HOUSEHOLD",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "household",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-FUTURE_ADAPT",
+      "field": "future_adapt",
+      "text_fa": "آیا امکان تغییر تعداد اتاق یا ترکیب واحدها در آینده مهم است؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "REQUIRED",
+        "PREFERRED",
+        "NO"
+      ],
+      "group": "ADAPTABILITY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "adaptability",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "STRUCTURE",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "REQUIRED": "الزامی",
+        "PREFERRED": "ترجیحی",
+        "NO": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-CULTURAL_PRIVACY",
+      "field": "cultural_privacy",
+      "text_fa": "آیا نیاز مشخص دیگری درباره حریم مهمان و خانواده دارید؟ فقط در صورت تمایل توضیح دهید.",
+      "data_type": "string",
+      "allowed_values": null,
+      "group": "PRIVACY",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "privacy",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "PRIVACY",
+        "GEOMETRY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-HVAC_RESERVATION",
+      "field": "hvac_reservation",
+      "text_fa": "آیا نوع سرمایش یا محل تجهیزات بیرونی از قبل تعیین شده است؟",
+      "data_type": "enum",
+      "allowed_values": [
+        "UNDECIDED",
+        "DEFINED"
+      ],
+      "group": "MEP",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "mep",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "UNDECIDED": "هنوز تصمیم نگرفته‌ام",
+        "DEFINED": "تجهیزات مشخص است"
+      }
+    },
+    {
+      "question_id": "OWN-HVAC_DETAILS",
+      "field": "hvac_details",
+      "text_fa": "نام سامانه و محدودیت محل تجهیزات یا دسترسی سرویس را وارد کنید.",
+      "data_type": "equipment_reservations",
+      "allowed_values": null,
+      "group": "MEP",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "hvac_reservation",
+        "in": [
+          "DEFINED"
+        ]
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "mep",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "MEP"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-EXISTING_FURNITURE",
+      "field": "existing_furniture",
+      "text_fa": "آیا مبلمان موجودی دارید که پلان باید با ابعاد آن هماهنگ باشد؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "FURNITURE",
+      "requirement": "OPTIONAL",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "OPTIONAL_REFINEMENT",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "furniture",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "PREFERENCE_NOT_SCORED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    },
+    {
+      "question_id": "OWN-FURNITURE_SIZES",
+      "field": "furniture_sizes",
+      "text_fa": "ابعاد بدنه، فضای استفاده و محل دسترسی مبلمان مورد نظر را مشخص کنید.",
+      "data_type": "equipment_array",
+      "allowed_values": null,
+      "group": "FURNITURE",
+      "requirement": "CONDITIONAL",
+      "condition": {
+        "field": "existing_furniture",
+        "in": [
+          true
+        ]
+      },
+      "auto_inference": false,
+      "when_to_ask": "CONDITIONAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "furniture",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "DEPENDENT_FEATURE_INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-COMPROMISE",
+      "field": "compromise",
+      "text_fa": "اگر همه خواسته‌ها با هم جا نشوند، کدام ترجیح‌ها قابل تغییرند؟ خواستهٔ قطعی را جدا مشخص کنید.",
+      "data_type": "requirement_strength_map",
+      "allowed_values": null,
+      "group": "PROGRAM",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "program",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "COST",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse"
+    },
+    {
+      "question_id": "OWN-CONFIRMATION",
+      "field": "confirmation",
+      "text_fa": "آیا خلاصهٔ خواسته‌ها، خواسته‌های قطعی و ترجیح‌های قابل تغییر را تأیید می‌کنید؟",
+      "data_type": "boolean",
+      "allowed_values": [
+        true,
+        false
+      ],
+      "group": "PROGRAM",
+      "requirement": "MANDATORY",
+      "condition": null,
+      "auto_inference": false,
+      "when_to_ask": "ESSENTIAL",
+      "why_fa": "این انتخاب بر چیدمان و کیفیت استفاده از فضا اثر می‌گذارد.",
+      "downstream": [
+        "program",
+        "candidate_program_validation"
+      ],
+      "impact": [
+        "GEOMETRY",
+        "QUALITY"
+      ],
+      "default_allowed": false,
+      "unanswered_risk": "INPUT_REQUIRED",
+      "persistence": "Explicit owner answer + revision + timestamp + scope + mandatory/preferred intent; no cross-project reuse",
+      "option_labels_fa": {
+        "true": "بله",
+        "false": "خیر"
+      }
+    }
+  ],
+  "auto_facts": [
+    {
+      "field": "city",
+      "source": "project.location.authority",
+      "when_missing": "Ask city once",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "north",
+      "source": "survey.north_evidence",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "plot_polygon",
+      "source": "survey.signed_boundary",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "street_frontages",
+      "source": "parcel.authority",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "climate",
+      "source": "versioned official city climate table",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "solar_latitude",
+      "source": "georeferenced survey",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "local_authority",
+      "source": "official jurisdiction mapping",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "buildable_envelope",
+      "source": "approved planning constraints",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "floor_count",
+      "source": "permit.floor_schedule",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "setbacks",
+      "source": "permit.setbacks",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "parking_requirement",
+      "source": "local authority rule with applicability",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "elevator_requirement",
+      "source": "qualified M15/M3/M4 applicability",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    },
+    {
+      "field": "accessible_obligation",
+      "source": "qualified accessibility regulation",
+      "when_missing": "INPUT_REQUIRED",
+      "owner_may_override_law": false,
+      "confirmation": "Show evidence and permit corrections with provenance; never silently infer from city name alone"
+    }
+  ],
+  "flow": [
+    "DERIVED_FACT_REVIEW",
+    "ESSENTIAL",
+    "CONDITIONAL",
+    "OPTIONAL_REFINEMENT",
+    "CONFIRM_IMMUTABLE_PROGRAM"
+  ],
+  "persistence_contract": {
+    "binding": [
+      "project_id",
+      "program_revision",
+      "plot_hash",
+      "authority_profile_hash",
+      "questionnaire_hash",
+      "owner_decision_timestamp"
+    ],
+    "invalidation": "Geometry-affecting changes invalidate candidates; optional unanswered preferences do not block",
+    "conflict": "Latest explicit owner decision only for owner-controlled preferences; never overrides code",
+    "private_fields": "Minimize identity/health data; ask functional needs only; project access control and retention policy required before UI rollout"
+  },
+  "v1_progression": [
+    {
+      "step": 1,
+      "title_fa": "برنامهٔ ضروری",
+      "question_ids": [
+        "OWN-PURPOSE",
+        "OWN-UNITS_PER_FLOOR",
+        "OWN-UNIT_PROGRAM",
+        "OWN-MASTER",
+        "OWN-RECEPTION",
+        "OWN-DINING",
+        "OWN-KITCHEN",
+        "OWN-GUEST_WC",
+        "OWN-COMMON_BATHS",
+        "OWN-ENTRY_PRIVACY",
+        "OWN-ACCESS_NEEDS",
+        "OWN-COMPROMISE",
+        "OWN-CONFIRMATION"
+      ]
+    },
+    {
+      "step": 2,
+      "title_fa": "جزئیات وابسته به پاسخ‌های شما",
+      "question_ids": [
+        "OWN-MARKET",
+        "OWN-EQUAL_UNITS",
+        "OWN-APPLIANCE_SIZES",
+        "OWN-BALCONY_AREA",
+        "OWN-BALCONY_ACCESS",
+        "OWN-ACCESS_DETAILS",
+        "OWN-HVAC_DETAILS",
+        "OWN-FURNITURE_SIZES"
+      ]
+    },
+    {
+      "step": 3,
+      "title_fa": "ترجیحات تکمیلی اختیاری",
+      "question_ids": [
+        "OWN-QUALITY",
+        "OWN-PRIORITY",
+        "OWN-GUEST_ROOM",
+        "OWN-OFFICE",
+        "OWN-FLEX_ROOM",
+        "OWN-ROOM_TARGETS",
+        "OWN-TV",
+        "OWN-ISLAND",
+        "OWN-BREAKFAST",
+        "OWN-PANTRY",
+        "OWN-APPLIANCES",
+        "OWN-SECONDARY_KITCHEN",
+        "OWN-KITCHEN_SERVICE_ACCESS",
+        "OWN-BATHING",
+        "OWN-WC_TYPE",
+        "OWN-LAUNDRY",
+        "OWN-DRYING",
+        "OWN-WARDROBES",
+        "OWN-LINEN",
+        "OWN-UNIT_STORAGE",
+        "OWN-COMMON_STORAGE",
+        "OWN-BALCONY",
+        "OWN-BALCONY_PRIVACY",
+        "OWN-GUEST_PATH",
+        "OWN-ACOUSTIC_PRIORITY",
+        "OWN-PREFERRED_VIEWS",
+        "OWN-ORIENTATION_PRIORITY",
+        "OWN-CORE_STRATEGY",
+        "OWN-EXTRA_LIFT",
+        "OWN-LOBBY",
+        "OWN-VEHICLES",
+        "OWN-CHILDREN",
+        "OWN-PETS",
+        "OWN-FUTURE_ADAPT",
+        "OWN-CULTURAL_PRIVACY",
+        "OWN-HVAC_RESERVATION",
+        "OWN-EXISTING_FURNITURE"
+      ]
+    }
+  ],
+  "structured_program_limit": "Typed unit program validated in foundation; other complex preference arrays require full project-contract review. Questionnaire alone does not approve feasibility."
+}

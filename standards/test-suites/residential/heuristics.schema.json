@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "heuristics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "already_in_rulebook": {
+            "type": "string"
+          },
+          "classification": {
+            "type": "string"
+          },
+          "code_rule": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "string"
+          },
+          "conflict_policy": {
+            "type": "string"
+          },
+          "description_fa": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generalization_limit": {
+            "type": "string"
+          },
+          "harmful_contexts": {
+            "type": "string"
+          },
+          "heuristic_id": {
+            "type": "string"
+          },
+          "international_project_frequency": {
+            "type": "integer"
+          },
+          "iran_project_frequency": {
+            "type": "integer"
+          },
+          "numeric_threshold": {
+            "type": "null"
+          },
+          "plan_frequency": {
+            "type": "integer"
+          },
+          "project_denominator": {
+            "type": "integer"
+          },
+          "project_frequency": {
+            "type": "integer"
+          },
+          "useful_contexts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "already_in_rulebook",
+          "classification",
+          "code_rule",
+          "confidence",
+          "conflict_policy",
+          "description_fa",
+          "evidence_ids",
+          "generalization_limit",
+          "harmful_contexts",
+          "heuristic_id",
+          "international_project_frequency",
+          "iran_project_frequency",
+          "numeric_threshold",
+          "plan_frequency",
+          "project_denominator",
+          "project_frequency",
+          "useful_contexts"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "schema_version": {
+      "const": "architecture-heuristics/1.0"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "heuristics",
+    "schema_version",
+    "version"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "authority_ref": {
+            "type": "string"
+          },
+          "case_id": {
+            "type": "string"
+          },
+          "executed": {
+            "type": "boolean"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "fixture": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "implementation_note": {
+            "type": "string"
+          },
+          "scenario": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "authority_ref",
+          "case_id",
+          "executed",
+          "expected",
+          "fixture",
+          "group",
+          "implementation_note",
+          "scenario",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "coverage_claim": {
+      "type": "string"
+    },
+    "golden_status": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "architecture-generation-qa/1.0"
+    }
+  },
+  "required": [
+    "cases",
+    "coverage_claim",
+    "golden_status",
+    "schema_version"
+  ],
+  "additionalProperties": false
+}

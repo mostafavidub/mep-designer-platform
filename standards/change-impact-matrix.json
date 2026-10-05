@@ -218,6 +218,24 @@
         "governance_validation",
         "contract_changelog"
       ]
+    },
+    {
+      "paths": [
+        "cad_engine/residential_foundation.py",
+        "cad_engine/residential_symbols.py",
+        "data/rulebook/architecture/**",
+        "standards/test-suites/residential/**"
+      ],
+      "capabilities": [
+        "residential_foundation_fail_closed"
+      ],
+      "requires": [
+        "positive_test",
+        "negative_test",
+        "existing_golden_regression",
+        "authority_regression",
+        "human_architecture_golden_before_release"
+      ]
     }
   ],
   "default_for_cad_engine_change": [
