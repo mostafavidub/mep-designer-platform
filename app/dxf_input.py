@@ -1,4 +1,5 @@
 from pathlib import Path
+from contextvars import ContextVar
 import re
 import tempfile
 
@@ -8,6 +9,17 @@ from ezdxf.lldxf.const import DXFStructureError
 
 
 _TAG_ZERO = re.compile(rb"^[ \t]*0[ \t]*$")
+_REQUEST_READ_CACHE = ContextVar("dxf_request_read_cache", default=None)
+
+
+def begin_input_read_cache():
+    """Start an analysis-local DXF read-through cache."""
+    return _REQUEST_READ_CACHE.set({})
+
+
+def end_input_read_cache(token):
+    """End the current cache scope and restore any enclosing scope."""
+    _REQUEST_READ_CACHE.reset(token)
 
 
 def _entity_count(doc) -> int:
@@ -160,7 +172,7 @@ def normalize_input_copy(path: Path):
         }
 
 
-def read_input_dxf(path: Path):
+def _read_input_dxf_uncached(path: Path):
     """Read uploaded DXF, recovering intact geometry from malformed tails."""
     source = Path(path)
     try:
@@ -191,3 +203,16 @@ def read_input_dxf(path: Path):
             raise DXFStructureError(
                 f"ترمیم امن DXF ممکن نشد: {repair_error}; recovery: {recovery_error}"
             ) from strict_error
+
+
+def read_input_dxf(path: Path):
+    """Read once per explicit analysis scope, keyed by the resolved input path."""
+    source = Path(path)
+    cache = _REQUEST_READ_CACHE.get()
+    key = str(source.resolve())
+    if cache is not None and key in cache:
+        return cache[key]
+    result = _read_input_dxf_uncached(source)
+    if cache is not None:
+        cache[key] = result
+    return result
