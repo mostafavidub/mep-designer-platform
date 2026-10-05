@@ -183,6 +183,41 @@ def test_customer_projects_are_durable_across_sessions(monkeypatch):
     assert [p['id'] for p in second_login['projects']] == ['PRJ-LEGACY-001']
 
 
+def test_questionnaire_job_identity_is_durable_and_owner_bound(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-panel-token": "checkout-test-only-secret"}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    auth = {**headers, 'x-customer-session': login['session']}
+    project = {
+        "id": f"PRJ-POLL-{uuid4().hex[:12]}",
+        "title": "پیش‌نویس تحلیل معماری",
+        "service": "طراحی مکانیک",
+        "status": "در انتظار تکمیل",
+        "progress": 0,
+        "amount": 0,
+        "fileKey": f"projects/{login['userId']}/plan.dxf",
+        "fileName": "plan.dxf",
+        "analysisJobId": "a" * 64,
+        "checkoutState": "draft",
+        "resumeAction": "complete",
+        "currentStep": 1,
+    }
+
+    imported = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [project]})
+    assert imported.status_code == 200, imported.text
+    restored = next(row for row in imported.json()['projects'] if row['id'] == project['id'])
+    assert restored['analysisJobId'] == project['analysisJobId']
+    assert restored['fileKey'] == project['fileKey']
+    assert restored['currentStep'] == 1
+
+    tampered = {**project, "id": f"PRJ-POLL-{uuid4().hex[:12]}",
+                "fileKey": "projects/CUST-999999/other.dxf"}
+    rejected = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [tampered]})
+    assert rejected.status_code == 403
+
+
 def test_phone_login_reuses_established_profile_account(monkeypatch):
     monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
     browser = TestClient(app, raise_server_exceptions=False)
