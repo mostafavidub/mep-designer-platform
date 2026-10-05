@@ -117,7 +117,8 @@
         "cad_engine/semantic_dimension_engine.py",
         "cad_engine/dimensioning/**",
         "cad_engine/architecture_separator_evidence.py",
-        "cad_engine/architecture_separator_validator.py"
+        "cad_engine/architecture_separator_validator.py",
+        "cad_engine/architecture_text_evidence.py"
       ],
       "depends_on": [
         "planner"

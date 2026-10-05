@@ -48,60 +48,21 @@ from .pre_topology_object_classifier import (
 
 from .architecture_boundary_evidence import physical_boundary_evidence
 from .architecture_enclosure_candidates import reconcile_enclosure_candidates
+from .architecture_text_evidence import (
+    bind_text_hosts,
+    build_title_block_fields,
+    extract_text_evidence,
+    functional_composition,
+    legacy_text_records,
+    normalize_text as canonical_normalize_text,
+    semantic_candidates as canonical_semantic_candidates,
+    SPACE_ONTOLOGY as CANONICAL_SPACE_ONTOLOGY,
+)
 
 SCHEMA = "canonical-architectural-model/1.0"
 STATUSES = {"VERIFIED", "HIGH_CONFIDENCE", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"}
 
-SPACE_ONTOLOGY = {
-    "bedroom": ("bedroom", "bed room", "اتاق خواب", "خواب"),
-    "master_bedroom": ("master bedroom", "master", "اتاق مستر", "خواب مستر"),
-    "living": ("living", "family living", "نشیمن"),
-    "reception": ("reception", "پذیرایی"),
-    "dining": ("dining", "ناهارخوری", "غذاخوری"),
-    "kitchen": ("kitchen", "آشپزخانه"),
-    "kitchenette": ("kitchenette", "آبدارخانه"),
-    "bathroom": ("bathroom", "bath", "حمام"),
-    "shower": ("shower", "دوش"),
-    "toilet": ("toilet", "w.c", "wc", "دستشویی", "توالت", "سرویس"),
-    "entrance": ("entrance", "entry", "ورودی"),
-    "vestibule": ("vestibule", "هشتی"),
-    "shoe_area": ("shoe area", "کفش کن", "کفش‌کن"),
-    "corridor": ("corridor", "hallway", "راهرو"),
-    "lobby": ("lobby", "لابی"),
-    "closet": ("closet", "wardrobe", "کمد"),
-    "storage": ("storage", "store", "انباری"),
-    "laundry": ("laundry", "رختشویخانه", "لباسشویی"),
-    "utility": ("utility", "خدمات"),
-    "stair": ("stair", "stairs", "پله", "راه پله", "راه‌پله"),
-    "stair_landing": ("stair landing", "پاگرد"),
-    "elevator": ("elevator", "lift", "آسانسور"),
-    "elevator_lobby": ("elevator lobby", "لابی آسانسور"),
-    "shaft": ("shaft", "شفت"),
-    "duct": ("duct", "داکت"),
-    "pipe_shaft": ("pipe shaft", "شفت لوله"),
-    "mechanical_shaft": ("mechanical shaft", "شفت مکانیک"),
-    "electrical_shaft": ("electrical shaft", "شفت برق"),
-    "void": ("void", "بازشو", "فضای خالی"),
-    "balcony": ("balcony", "بالکن"),
-    "terrace": ("terrace", "تراس"),
-    "patio": ("patio",),
-    "yard": ("yard", "حیاط"),
-    "backyard": ("backyard", "حیاط پشتی", "حیاط خلوت"),
-    "lightwell": ("lightwell", "نورگیر"),
-    "roof_terrace": ("roof terrace", "تراس بام"),
-    "parking": ("parking", "پارکینگ"),
-    "parking_stall": ("parking stall", "محل پارک"),
-    "ramp": ("ramp", "رمپ"),
-    "driveway": ("driveway", "مسیر خودرو"),
-    "office": ("office", "اداری", "دفتر"),
-    "shop": ("shop", "فروشگاه", "مغازه"),
-    "commercial": ("commercial", "تجاری"),
-    "mechanical_room": ("mechanical room", "موتورخانه"),
-    "electrical_room": ("electrical room", "اتاق برق"),
-    "boiler_room": ("boiler room", "دیگ خانه", "دیگ‌خانه"),
-    "janitor": ("janitor", "سرایداری"),
-    "common_room": ("common room", "فضای مشترک"),
-}
+SPACE_ONTOLOGY = CANONICAL_SPACE_ONTOLOGY
 
 OBJECT_TERMS = {
     "bed": ("bed", "تخت"), "wardrobe": ("wardrobe", "closet", "کمد"),
@@ -121,11 +82,7 @@ WALL_TOKENS = ("wall", "a-wall", "دیوار", "partition")
 
 
 def normalize_text(value):
-    value = str(value or "").replace("ي", "ی").replace("ك", "ک").replace("ۀ", "ه")
-    value = value.replace("\u200c", " ").lower()
-    value = value.translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789"))
-    value = re.sub(r"[_.:/\\,;()\[\]{}\-]+", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
+    return canonical_normalize_text(value)
 
 
 def _stable_id(prefix, payload):
@@ -175,14 +132,19 @@ def _layer(entity):
 
 
 def _classify_text(text):
-    normalized = normalize_text(text)
-    matches = []
-    for category, aliases in SPACE_ONTOLOGY.items():
-        for alias in aliases:
-            token = normalize_text(alias)
-            if token and (normalized == token or re.search(rf"(?:^|\s){re.escape(token)}(?:$|\s|\d)", normalized)):
-                matches.append((len(token), category, token))
-    return max(matches)[1:] if matches else (None, None)
+    candidates = canonical_semantic_candidates(text)
+    return (candidates[0], normalize_text(text)) if candidates else (None, None)
+
+
+def _is_space_label_record(text):
+    candidates=text.get("role_candidates")
+    if candidates is None:  # Compatibility for direct synthetic helper inputs.
+        return bool(canonical_semantic_candidates(text.get("text")))
+    roles={row.get("role") for row in candidates}
+    document={"PLAN_TITLE","DRAWING_TYPE_TITLE","LEVEL_TITLE","SECTION_ELEVATION_LABEL",
+              "PROJECT_METADATA","DRAWING_NUMBER","REVISION","DATE","SCALE_TEXT",
+              "DISCIPLINE","DESIGNER_OR_COMPANY_METADATA"}
+    return "SPACE_LABEL" in roles and not roles.intersection(document)
 
 
 def _classify_object(name, layer):
@@ -484,7 +446,7 @@ def _ingest(path):
                  "metres_per_unit": declared_scale}
 
 
-def _extract(doc):
+def _extract(doc, source_sha256=None):
     primitives, texts, objects, dimensions, boundary_lines, boundary_meta, boundary_rejections = [], [], [], [], [], [], []
     counts = Counter(); seen_nested = set()
 
@@ -588,7 +550,10 @@ def _extract(doc):
             boundary_rejections.append({**meta,"geometry":[list(point) for point in line.coords],"reason":"GLYPH_FILTER"})
     retained=[(line,meta) for line,meta in zip(boundary_lines,boundary_meta) if meta["layer"] not in glyph_layers]
     boundary_lines=[line for line,_ in retained]; boundary_meta=[meta for _,meta in retained]
-    return {"primitives": primitives, "texts": texts, "objects": objects, "dimensions": dimensions,
+    text_evidence = extract_text_evidence(doc, source_sha256=source_sha256 or "0" * 64)
+    canonical_texts = legacy_text_records(text_evidence)
+    return {"primitives": primitives, "texts": canonical_texts, "text_evidence": text_evidence,
+            "objects": objects, "dimensions": dimensions,
             "boundary_lines": boundary_lines, "boundary_meta":boundary_meta,
             "boundary_rejections":boundary_rejections,
             "excluded_graphic_glyph_layers":sorted(glyph_layers), "entity_counts": dict(counts)}
@@ -1036,6 +1001,8 @@ def _evidence_for_cell(poly, extracted):
     labels, objects = [], []
     for text in extracted["texts"]:
         if text.get("pre_topology_role") == "REFERENCE_ONLY": continue
+        if not _is_space_label_record(text):
+            continue
         if poly.covers(Point(text["point"])):
             category, alias = _classify_text(text["text"])
             if category: labels.append({"category": category, "value": text["text"], "handle": text["handle"], "alias": alias, "point":list(text["point"]),
@@ -1056,6 +1023,8 @@ def _label_bindings(spaces, texts, tolerance):
     rows=[]; edge_tolerance=max(float(tolerance or .001)*3,1e-8)
     for text in texts:
         if text.get("pre_topology_role") == "REFERENCE_ONLY": continue
+        if not _is_space_label_record(text):
+            continue
         category,_=_classify_text(text.get("text")); point=text.get("point")
         if not category or not point: continue
         probe=Point(point)
@@ -1536,7 +1505,7 @@ def recognition_svg(model):
 def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = None,
                              gap_review_manifest: dict | None = None):
     started = time.perf_counter(); stage_started=started; timings={}
-    doc, source = _ingest(path); extracted = _extract(doc); timings["parsing"]=time.perf_counter()-stage_started
+    doc, source = _ingest(path); extracted = _extract(doc, source["source_sha256"]); timings["parsing"]=time.perf_counter()-stage_started
     stage_started=time.perf_counter()
     fallback = _frame_from_extent(extracted, source["source_sha256"])
     frames = _detected_frames(path, source["source_sha256"], fallback)
@@ -1629,6 +1598,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         frame_labels=[]
         for text in extracted["texts"]:
             if text.get("pre_topology_role") == "REFERENCE_ONLY": continue
+            if not _is_space_label_record(text):
+                continue
             point=text.get("point")
             if not point or (clip is not None and not clip.buffer(tolerance).covers(Point(point))): continue
             category,_=_classify_text(text.get("text"))
@@ -1833,6 +1804,14 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             rooms.append({"id": space["physical_space_id"], "type": "unknown", "polygon": space["polygon"],
                           "area": space["geometric_area_drawing_units"], "centroid": space["centroid"], "evidence": space["evidence"],
                           "status": "INPUT_REQUIRED", "plan_id": space["frame_id"]})
+    text_evidence = bind_text_hosts(extracted["text_evidence"], frames=frames, spaces=spaces, tolerance=tolerance)
+    for space in spaces:
+        space["functional_composition"] = functional_composition(text_evidence, space["physical_space_id"])
+        space["text_evidence_ids"] = sorted(
+            item["text_evidence_id"] for item in text_evidence.get("items") or []
+            if (item.get("host_binding") or {}).get("host_id") == space["physical_space_id"]
+        )
+    title_block_fields = build_title_block_fields(text_evidence)
     review=_review_payload(spaces,frames,openings,coverage,dimension_reconciliation)
     enclosure_edges=sorted({tuple(sorted((space["physical_space_id"],adjacent))) for space in spaces
                             for adjacent in space.get("adjacent_space_ids") or []})
@@ -1866,6 +1845,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                 "site_exterior_area":sum(r["area"] for r in plan_regions if r["role"]=="SITE_EXTERIOR"),
                                 "overlap_area":0.0},
              "label_bindings":label_bindings,
+             "text_evidence":text_evidence,
+             "title_block_fields":title_block_fields,
              "source_role_diagnostics":source_role_diagnostics,
              "pre_topology_object_standardization":{"schema":"pre-topology-architectural-object-standardization/1.0",
                                                       "items":pre_topology_objects,
@@ -1918,7 +1899,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                          "centroid":list(Polygon(row["boundary"]).centroid.coords)[0],"area":row["area"],
                          "source_handles":row["source_handles"],"routing_authority":"NONE"}
                         for row in architectural_voids if row["status"]=="VERIFIED"],
-             "all_inserts": extracted["objects"], "all_texts": extracted["texts"],
+             "all_inserts": extracted["objects"], "all_texts": legacy_text_records(text_evidence),
              "quality": {"room_count": len(rooms), "rooms_with_polygon": len(rooms), "wall_segments": len(extracted["boundary_lines"]),
                          "canonical_space_count": len(spaces), "status": completeness["status"]}}
     model["recognition_preview_svg"] = recognition_svg(model)

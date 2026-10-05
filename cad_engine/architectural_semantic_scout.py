@@ -129,6 +129,18 @@ def assign_hint_ids(items: list[dict[str, Any]], *, source_sha256: str, frame_id
 
 def build_text_sidecar(graph: dict[str, Any]) -> list[dict[str, Any]]:
     bounds = graph["frame_bounds"]
+    canonical = (graph.get("text_evidence") or {}).get("items") or []
+    if canonical:
+        rows = []
+        for item in canonical:
+            if item.get("occurrence_kind") == "TEMPLATE_DEFINITION" or not item.get("position"):
+                continue
+            rows.append({"text": str(item.get("plain_text") or ""),
+                         "normalized_position": cad_to_normalized(item["position"], bounds),
+                         "source_class": item.get("extraction_authority"),
+                         "text_evidence_id": item.get("text_evidence_id"),
+                         "semantic_candidates": list(item.get("semantic_candidates") or [])})
+        return sorted(rows, key=lambda x: (x["normalized_position"], x["text_evidence_id"]))
     diagnostics = (graph.get("preauthority") or {}).get("label_host_diagnostics") or []
     diagnostic_points = {str(item.get("label_id")): item.get("point") for item in diagnostics
                          if item.get("label_id") and item.get("point")}
@@ -659,11 +671,16 @@ def build_exact_semantic_anchors(labels: list[dict[str, Any]], *, source_sha256:
         if not raw_point:
             continue
         point = _point(raw_point, "exact semantic anchor")
-        for semantic_type in sorted(_label_semantic_candidates(label.get("text", ""))):
-            anchor_id = _stable("ANCHOR", [source_sha256, frame_id, label.get("text"), point, semantic_type])
+        candidates = label.get("semantic_candidates")
+        if candidates is None:
+            candidates = _label_semantic_candidates(label.get("text", ""))
+        for semantic_type in sorted(str(value).upper() for value in candidates):
+            anchor_id = _stable("ANCHOR", [source_sha256, frame_id, label.get("text_evidence_id"),
+                                            label.get("text"), point, semantic_type])
             anchors.append({"semantic_anchor_id": anchor_id, "semantic_type": semantic_type,
                             "normalized_position": point,
                             "exact_text": str(label.get("text") or ""),
+                            "text_evidence_id": label.get("text_evidence_id"),
                             "mep_groups": MEP_GROUPS.get(semantic_type, []),
                             "authority": SEMANTIC_ANCHOR_AUTHORITY,
                             "material_geometry": "NONE", "routing_authority": "NONE",

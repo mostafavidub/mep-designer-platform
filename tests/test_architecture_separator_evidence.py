@@ -2,7 +2,7 @@
 from copy import deepcopy
 import pytest
 from shapely.geometry import Polygon
-from cad_engine.architecture_contract import assign_canonical_model_hash
+from cad_engine.architecture_contract import SCHEMA, assign_canonical_model_hash
 from cad_engine.architecture_separator_evidence import bind_boundary, refresh_separator_authority, review_candidate
 from cad_engine.architecture_separator_validator import separator_errors
 from cad_engine.architecture_review_contract import create_review_item
@@ -12,7 +12,10 @@ from cad_engine.architecture_validator import validate_architecture
 
 def fixture():
     from tests.test_architecture_preflight_review_engine import model
-    m = model(); m['schema'] = 'planha-canonical-architecture/3.0'; m['source']['source_type']='RAW_DXF'
+    m = model(); m['schema'] = SCHEMA; m['source']['source_type']='RAW_DXF'
+    m['text_evidence'] = {'schema': 'planha-architectural-text-evidence/1.0',
+                          'contract_version': SCHEMA, 'items': [], 'metrics': {}}
+    m['title_block_fields'] = []
     m['physical_spaces'] = m['physical_spaces'][:1]
     m['graphs']['enclosure'] = []; m['walls'] = []; m['apertures'] = []
     s=m['physical_spaces'][0]; points=s['polygon']; sha=m['source']['source_sha256']
@@ -124,7 +127,7 @@ def test_legacy_adapter_cannot_repromote():
     from tests.test_architecture_input_foundation_v2 import legacy_model
     from cad_engine.architecture_contract import adapt_current_architecture
     m=adapt_current_architecture(legacy_model())
-    assert m['schema']=='planha-canonical-architecture/3.0'
+    assert m['schema']==SCHEMA
     assert all(not s['authority']['material_geometry'] for s in m['physical_spaces'])
 
 
