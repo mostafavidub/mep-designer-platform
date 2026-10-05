@@ -4,6 +4,7 @@ import zipfile
 
 import ezdxf
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.main_health import app
@@ -69,10 +70,18 @@ def test_real_analyze_path_returns_canonical_questionnaire(monkeypatch, tmp_path
 
 
 def test_real_dxf_and_zip_jobs_reach_ready(monkeypatch, tmp_path):
-    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "questionnaire-job-test-secret")
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
-    with TestClient(app) as client:
-        owner = _session(client, "09120000031")
+    from app import main_auto
+    isolated_app = FastAPI()
+    monkeypatch.setattr(
+        questionnaire_jobs, "session_user",
+        lambda request: request.headers["x-test-owner"],
+    )
+    questionnaire_jobs.register_questionnaire_jobs(
+        isolated_app, main_auto, main_auto.legacy,
+    )
+    with TestClient(isolated_app) as client:
+        owner = {"x-test-owner": "real-analysis-owner"}
         dxf = _valid_dxf_bytes(tmp_path)
 
         for filename, content, content_type in (
