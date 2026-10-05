@@ -48,3 +48,18 @@ def test_unsealed_multiple_requests_still_fail(tmp_path):
 def test_ordinary_single_request_unchanged(tmp_path):
     git,_,_,_=setup_history(tmp_path)
     assert resolve_request(git('rev-parse','HEAD^'),root=tmp_path)=='changes/two.yaml'
+
+
+def test_new_cumulative_request_can_seal_prior_integration_request(tmp_path):
+    git,base,_,commit=setup_history(tmp_path);commit()
+    prior=git('rev-parse','HEAD')
+    paths=git('diff','--name-only',base,prior,'--','changes/*.yaml').splitlines()
+    manifest={
+        'base_sha':base,
+        'source_sha':prior,
+        'source_tree':git('rev-parse',f'{prior}^{{tree}}'),
+        'historical_requests':{path:git('rev-parse',f'{prior}:{path}') for path in paths},
+    }
+    (tmp_path/'changes/integration-next.yaml').write_text(json.dumps({'integration':manifest}))
+    git('add','.');git('commit','-qm','next integration')
+    assert resolve_request(base,root=tmp_path)=='changes/integration-next.yaml'

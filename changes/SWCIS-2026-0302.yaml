@@ -1,0 +1,135 @@
+{
+  "change_id": "SWCIS-2026-0302",
+  "summary": "Seal the cumulative Architecture integration after the owner-approved PR #314 merge while preserving PR #313 runtime and Canonical Architecture 3.1 qualification.",
+  "requester": "project-owner",
+  "change_types": [
+    "deployment",
+    "documentation",
+    "drawing_output",
+    "governance",
+    "rule",
+    "schema",
+    "test",
+    "ui_api"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "cad_designer": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "deployment": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "detail_riser": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "docs": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "equipment": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "governance": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "manifest": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "manufacturer_selector": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "migration": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "planner": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "pmm": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "qa": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "questionnaire": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "routing": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "rule_book": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "sizing": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "ui_api": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation.",
+    "versioning": "Cumulative closure only: hash-seal the owner-approved PR #313/#314 integration history; no implementation or production activation."
+  },
+  "evidence": {
+    "traceability": [
+      "main 9876f3f -> sealed Architecture history -> PR #313 runtime merge b99d4f6 -> PR #314 Canonical Architecture 3.1 merge fd97246 -> cumulative validator and CI"
+    ],
+    "tests": [
+      "Pre-merge final candidate: 522 Architecture tests PASS and 1428 tests + 14 subtests governed suite PASS on Python 3.12.13.",
+      "Post-merge identical tree: 45 Text/Separator tests PASS, 12 real questionnaire runtime tests PASS, imports PASS."
+    ],
+    "docs": [
+      "docs/ARCHITECTURE_STACK_INTEGRATION.md"
+    ],
+    "version_bump": [
+      "not required: SWCIS 5.2.0 policy is unchanged; this record declares the newly integrated history"
+    ],
+    "migration": [
+      "No new migration. Canonical 3.1 claim-scoped regeneration/revalidation remains governed by SWCIS-2026-0301."
+    ],
+    "golden_regression": [
+      "Seven-source candidate replay matched the previously qualified a3466a3 model hashes 7/7; original negatives 0/19, expanded negatives 0/22, Q02 INPUT_REQUIRED."
+    ],
+    "semantic_diff": [
+      "none: governance-only cumulative seal after owner-approved merge"
+    ],
+    "artifact_diff": [
+      "none: no engineering artifact changes"
+    ],
+    "numeric_diff": [
+      "none"
+    ],
+    "contract_diff": [
+      "Declare SWCIS-2026-0300 and SWCIS-2026-0301 in the cumulative integration history without changing their contents."
+    ],
+    "deployment_plan": [
+      "No deployment. PR #312 remains Draft and requires a separate owner merge decision."
+    ],
+    "rollback_plan": [
+      "Revert this governance-only commit and the PR #314 merge commit if the integrated capability must be removed; no production data migration."
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 5,
+    "detectability": 1,
+    "score": 5,
+    "rationale": "The change is governance-only, but an incomplete cumulative manifest blocks the mandatory merge gate."
+  },
+  "waiver": null,
+  "verification_status": {
+    "qualification": "ARCHITECTURE_STACK_MERGE_READY",
+    "pr313_runtime": "PASS",
+    "pr314_text_evidence": "INTEGRATED_TEXT_EVIDENCE_QUALIFIED",
+    "full_regression": "PASS_1428_PLUS_14_SUBTESTS",
+    "sealed_replay": "PASS_7_OF_7_HASH_IDENTICAL",
+    "official_ci": "PENDING_FINAL_HEAD"
+  },
+  "integration": {
+    "base_sha": "9876f3fb0cb63e17055ff2d30e621fa2c9325939",
+    "source_sha": "fd972467d049e650e7184929db6d390dbf74cc07",
+    "source_tree": "22d42a2700e3a8e120987e7fc45e2206ff597d15",
+    "historical_requests": {
+      "changes/SWCIS-2026-0284.yaml": "af725ebced8e52e9a1808c4a1da06ee95d5015f7",
+      "changes/SWCIS-2026-0286.yaml": "ffe1f36384dcd20b1aa260d3d8b62c71fa67f6e9",
+      "changes/SWCIS-2026-0287.yaml": "d2bf9394a833301114741c472eb3347658cd7263",
+      "changes/SWCIS-2026-0288.yaml": "919d1f298d02be0719da8886b51da007f5ae951e",
+      "changes/SWCIS-2026-0289.yaml": "1fc5f25740b69c258ae9e0fc6dca2f2e2ca9df8d",
+      "changes/SWCIS-2026-0290.yaml": "1b8a837530f302848fb255038932e82ea2f29bbd",
+      "changes/SWCIS-2026-0291.yaml": "cddd769abe6bf2a7e6b29f09cef997d38ee0836f",
+      "changes/SWCIS-2026-0292.yaml": "49a3b188c9fe08941bdbe4eff846a4c144b0bb8e",
+      "changes/SWCIS-2026-0293.yaml": "a54539868f00cf57a7ec59611f86901980c0ae92",
+      "changes/SWCIS-2026-0294.yaml": "94b224eed7d9a5c91292f8c2de314bfe780f8102",
+      "changes/SWCIS-2026-0295.yaml": "94b98b5785805e4751c87569afc375dd36261132",
+      "changes/SWCIS-2026-0296.yaml": "526efe1262cc750c88320d8efbd09f158f7a1edb",
+      "changes/SWCIS-2026-0297.yaml": "71a4cfe009350020babfc11f6042a4c1c3d2c710",
+      "changes/SWCIS-2026-0298.yaml": "06d9e13b4313cd470454b3008c2548ca9777daf2",
+      "changes/SWCIS-2026-0299.yaml": "86afcace80f78492a0b097eac07d4b50c7c7646f",
+      "changes/SWCIS-2026-0300.yaml": "cd216f6737807d6e195c90884674d9ce084f6d5f",
+      "changes/SWCIS-2026-0301.yaml": "860b8a5e90cdf37f79f8afb7ea14d1e61b5bff4d"
+    }
+  }
+}
