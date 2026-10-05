@@ -48,8 +48,9 @@ questionnaire producer is introduced.
 ## Integrity and rollback
 
 The backend accepts a persisted file key only under the authenticated
-customer's `projects/CUST-<id>/` prefix. Questionnaire job IDs must be lowercase
-SHA-256 hex identities. Checkout and resume states are closed enumerations.
+customer's `projects/CUST-<id>/` prefix. Questionnaire job IDs must be the
+canonical 32-character lowercase UUID hex identities. Checkout and resume
+states are closed enumerations.
 Cross-owner file references fail with `403`.
 
 Rollback is the coordinated redeployment of the prior Site version and prior
