@@ -1,0 +1,117 @@
+{
+  "change_id": "SWCIS-2026-0300",
+  "summary": "Source-bound commercial gross measurement and read-only shadow pricing; no live financial mutation.",
+  "requester": "project-owner",
+  "change_types": [
+    "deployment",
+    "documentation",
+    "governance",
+    "rule",
+    "schema",
+    "test",
+    "ui_api"
+  ],
+  "changed_rule_ids": [
+    "COM-AREA-001"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "pmm": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "ui_api": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "planner": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "rule_book": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "questionnaire": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "manifest": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "qa": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "docs": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "versioning": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "deployment": "CI installs pinned JSON Schema validator for new contract tests; no trigger/filter/gate relaxed, no deploy or merge.",
+    "migration": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "routing": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "detail_riser": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "equipment": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "governance": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "cad_designer": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "sizing": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "manufacturer_selector": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section."
+  },
+  "evidence": {
+    "traceability": [
+      "COM-AREA-001"
+    ],
+    "tests": [
+      "Full governed regression: 1480 passed +14 subtests, Python3.12.13; tests unchanged/none skipped.",
+      "Commercial/Golden/governance contract subset:92 passed;76 new commercial cases.",
+      "docs/COMMERCIAL_MEASUREMENT.md local validation section; official CI tracked on PR."
+    ],
+    "docs": [
+      "docs/COMMERCIAL_MEASUREMENT.md"
+    ],
+    "version_bump": [
+      "SWCIS5.2.0; new commercial measurement/shadow/Golden1.0 schemas."
+    ],
+    "migration": [
+      "standards/swcis/migrations/commercial-measurement-shadow.json"
+    ],
+    "golden_regression": [
+      "Synthetic exact geometry/financial destructive cases; current seven private models reused read-only. HUMAN_GOLDEN_REQUIRED: no real gross-area truth claimed."
+    ],
+    "semantic_diff": [
+      "No existing live/pricing/payment/Architecture source code modified. New fail-closed shadow output only."
+    ],
+    "artifact_diff": [
+      "Immutable new private shadow JSON; original source/sealed model files unchanged."
+    ],
+    "numeric_diff": [
+      "Exact Decimal synthetic comparison only; no real-project tolerance authorized."
+    ],
+    "contract_diff": [
+      "New independent commercial contracts; Canonical Architecture3.0 unchanged."
+    ],
+    "deployment_plan": [
+      "No merge, Staging or Production deployment authorized."
+    ],
+    "rollback_plan": [
+      "Revert approved commit; retain private sidecars as historical data; no customer database rollback needed."
+    ]
+  },
+  "risk": {
+    "likelihood": 3,
+    "severity": 5,
+    "detectability": 4,
+    "score": 60,
+    "rationale": "Financial false authority; isolated shadow only, release remains gated."
+  },
+  "waiver": null,
+  "verification_status": {
+    "implementation": "SHADOW_FOUNDATION_IMPLEMENTED",
+    "qualification": "COMMERCIAL_MEASUREMENT_PARTIAL",
+    "full_regression": "PASS_1480_PLUS_14_SUBTESTS",
+    "focused_contracts": "PASS_92",
+    "real_replay": "PASS_7_OF_7",
+    "real_automatic_coverage": "0_OF_7",
+    "golden": "HUMAN_GOLDEN_REQUIRED",
+    "live_pricing": "UNCHANGED",
+    "merge_deploy": "NOT_AUTHORIZED",
+    "official_ci": "PENDING_PR"
+  }
+}

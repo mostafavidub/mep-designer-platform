@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-commercial-golden/1.0",
+  "type": "object",
+  "required": [
+    "schema",
+    "project_id",
+    "source_sha256s",
+    "status",
+    "building_count",
+    "levels",
+    "expected_total_billable_area_m2",
+    "reviewer",
+    "reviewed_at",
+    "authority_source"
+  ],
+  "properties": {
+    "schema": {
+      "const": "planha-commercial-golden/1.0"
+    },
+    "status": {
+      "enum": [
+        "HUMAN_GOLDEN_REQUIRED",
+        "HUMAN_VERIFIED"
+      ]
+    },
+    "source_sha256s": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "levels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_sha256",
+          "frame_id",
+          "building_id",
+          "represented_level_ids",
+          "commercial_level_type",
+          "multiplicity",
+          "billable",
+          "gross_area_m2",
+          "authority_note"
+        ]
+      }
+    },
+    "building_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "expected_total_billable_area_m2": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    }
+  }
+}

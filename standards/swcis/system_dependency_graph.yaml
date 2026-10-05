@@ -268,14 +268,22 @@
         "app/templates/**",
         "app/static/**",
         "templates/**",
-        "static/**"
+        "static/**",
+        "app/commercial_measurement.py",
+        "app/commercial_shadow.py",
+        "app/commercial_golden.py",
+        "tools/commercial_measurement.py"
       ],
       "depends_on": [
         "pmm",
         "planner",
         "qa",
         "manifest"
-      ]
+      ],
+      "component_contracts": {
+        "commercial_measurement": "planha-commercial-measurement/1.0; read-only bound cad_designer evidence",
+        "commercial_shadow": "planha-commercial-shadow-quote/1.0; ServicePricing SELECT-only"
+      }
     },
     "docs": {
       "owners": [

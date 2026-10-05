@@ -1246,6 +1246,36 @@
         "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
         "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md"
       ]
+    },
+    {
+      "rule_id": "COM-AREA-001",
+      "title": "Evidence-bound gross area in shadow only; never file extents or room sum",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "commercial_measurement.binding (separate from PMM)",
+        "commercial_measurement.levels",
+        "commercial_measurement.totals"
+      ],
+      "engines": [
+        "app/commercial_measurement.py",
+        "app/commercial_shadow.py"
+      ],
+      "drawing_outputs": [
+        "No CAD output; private shadow measurement JSON only"
+      ],
+      "qa_rules": [
+        "no_false_financial_authority",
+        "source_model_rules_review_binding",
+        "paid_and_live_unchanged"
+      ],
+      "regression_tests": [
+        "tests/test_commercial_measurement.py",
+        "tests/test_commercial_shadow_integration.py",
+        "tests/test_commercial_golden.py"
+      ],
+      "docs": [
+        "docs/COMMERCIAL_MEASUREMENT.md"
+      ]
     }
   ]
 }

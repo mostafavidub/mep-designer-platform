@@ -25,7 +25,8 @@
         "app/*contract*.py",
         "standards/projects/**",
         "cad_engine/architecture_contract.py",
-        "standards/test-suites/planha-canonical-architecture-v3.schema.json"
+        "standards/test-suites/planha-canonical-architecture-v3.schema.json",
+        "standards/test-suites/commercial-*.schema.json"
       ],
       "seed_modules": [
         "pmm"
@@ -176,7 +177,8 @@
       "path_patterns": [
         "app/**",
         "templates/**",
-        "static/**"
+        "static/**",
+        "tools/commercial_measurement.py"
       ],
       "seed_modules": [
         "ui_api"

@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.1.0
+**Canonical version:** 5.2.0
 
 **Status:** LOCKED
 
@@ -244,3 +244,12 @@ unlisted requests. The current CR must independently declare and validate the
 entire cumulative change-type and dependency closure. Historical PASS statements
 never replace current tests or official CI. Ordinary changes still require one CR.
 No waiver, filter bypass, history deletion or partial closure is permitted.
+
+## Commercial measurement shadow authority
+
+COM-AREA-001 governs a separate source/model/build/rules-bound gross-area projection.
+Only Roof and Yard/Site are commercially excluded; engineering scope is unchanged.
+Native outer-face geometry, explicit level inventory, multiplicity, units and independent
+reconciliation are mandatory. Bounding boxes and room-area sums confer no billing
+authority. Shadow output cannot mutate live quotes, wallet, payment or Project.analysis.
+Real independent human Golden evidence remains required for financial qualification.

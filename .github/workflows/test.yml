@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt -r cad_engine/requirements.txt
       - name: Install full-suite test runner
-        run: pip install pytest
+        run: pip install pytest jsonschema==4.26.0
       - name: Run full unittest and pytest suite
         env:
           DATABASE_URL: sqlite:///./test_ci.db
