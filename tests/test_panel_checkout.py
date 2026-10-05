@@ -60,6 +60,18 @@ def test_phone_login_starts_with_zero_not_demo_credit(flow):
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
 
 
+def test_customer_identity_is_lightweight_and_owner_bound(flow):
+    browser, auth, uid, pid, token, order = flow
+    response = browser.post('/internal/panel/customer/identity', headers=auth, json={})
+    assert response.status_code == 200
+    assert response.json() == {'userId': f'CUST-{uid}'}
+    assert browser.post(
+        '/internal/panel/customer/identity',
+        headers={**auth, 'x-customer-session': '1.9999999999.fake'},
+        json={},
+    ).status_code == 401
+
+
 def test_account_snapshot_exposes_one_revisioned_authoritative_progress(flow):
     browser, auth, uid, pid, token, order = flow
     fund(uid, order['amount'])
