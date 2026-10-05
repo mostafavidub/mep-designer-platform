@@ -2,6 +2,32 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-053",
+      "status": "APPROVED_IN_QUALIFICATION",
+      "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2",
+        "architectural_space_understanding",
+        "architectural_semantic_scout"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit project-owner approval of ARCH-P0 Phase B and Canonical Architecture 3.1 with claim-scoped migration."
+      },
+      "verification": {
+        "positive_test": "PASS",
+        "destructive_test": "PASS",
+        "architecture_regression": "PASS_486",
+        "determinism": "PASS_7_OF_7",
+        "full_regression": "PASS_1416_PLUS_14_SUBTESTS",
+        "required_ci": "PENDING"
+      },
+      "migration": {
+        "forward": "Regenerate exact text evidence and revalidate only text/title/level/semantic-dependent claims; keep independent 3.0 geometry and separator evidence valid.",
+        "rollback": "Revert the independent stacked PR; do not project 3.1 authority backward into 3.0."
+      }
+    },
+    {
       "id": "GOV-2026-052",
       "status": "IMPLEMENTED_PARTIAL",
       "summary": "Canonical Architecture 3.0 separates geometric boundary support and physical separator authority; scoped source review cannot create geometry.",
