@@ -39,6 +39,18 @@ analysis without financial source binding. Payment guards read that same paid
 row; wallet/gateway paths mutate it. `service_pricing` seeds defaults on read if a
 row is missing. Shadow therefore never invokes either write-on-read helper.
 
+The current application also registers `panel_bridge` / `panel_checkout`. Its
+separate `panel_checkouts` order accepts a bounded, finite browser-confirmed area,
+uses server ServicePricing, and binds a quote token to amount/answers/area. It
+already preserves paid orders and atomically coordinates wallet/ledger/job writes;
+that token still does not bind source/model/build/pricing-version identity. Thus
+it is inaccurate to describe every current payment surface as the legacy
+ProjectQuote lifecycle. Shadow accepts the server's panel_checkout model namespace,
+reads an existing order if present and labels/selects it as the comparison source;
+otherwise the comparison explicitly identifies the legacy ProjectQuote. Both
+financial models, their tokens, ledger and live paths remain unchanged. The SQL
+integration test verifies both paid models and the correct panel comparison.
+
 Authoritative architecture remains `reconstruct_architecture` → current
 `architecture_contract.adapt_current_architecture` (3.0) → independent validator
 and Preflight. Per-file producer evidence lives in
@@ -200,7 +212,7 @@ Full governed regression: **1480 passed + 14 subtests**, no skipped tests.
 Commercial/Golden plus governance contract subset: **92 passed**. The three new
 commercial test files contain **76 cases** (parameterized cases counted).
 `git diff --check`, Python AST parsing, runtime-version guard and SWCIS pass.
-CI adds pinned jsonschema4.26.0 to the existing full-suite runner and expands
+CI adds pinned jsonschema4.26.0 to both existing full-suite runners (Web and Mechanical Coordination) and expands
 Web Regression to all PR base branches, including this stacked PR. Existing main
 coverage and all tests remain mandatory; no check is weakened. Other workflows
 retain their existing triggers; NOT_TRIGGERED is not reported as PASS. Official
@@ -231,3 +243,7 @@ local machine (not a deployed SLA). All28 consumed Architecture files remained
 byte-identical. All56 original blind payload hashes also matched their14 seals.
 There is no independently verified commercial Golden denominator: accuracy and
 false-authority metrics remain unmeasured, rather than reported as zero errors.
+
+The initial Mechanical Coordination remote run failed only because its separate
+full-suite environment lacked jsonschema. The dependency was added there as well;
+no test or check was skipped to resolve it. Final CI evidence supersedes that run.

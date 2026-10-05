@@ -36,7 +36,7 @@
   ],
   "impact_notes": {
     "pmm": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
-    "ui_api": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
+    "ui_api": "New opt-in SELECT-only projection reads actual ServicePricing and explicitly identifies existing Panel Checkout or legacy ProjectQuote for comparison; both paid models, wallet, ledger, analysis and live endpoints unchanged.",
     "planner": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "rule_book": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "questionnaire": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
@@ -44,7 +44,7 @@
     "qa": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "docs": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "versioning": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
-    "deployment": "CI installs pinned JSON Schema validator and expands existing Web Regression to all PR bases so the stacked PR runs the full suite. No checks weakened; no deploy or merge.",
+    "deployment": "Both full-suite CI runners install pinned jsonschema; Web Regression expands to all PR bases. No gate/test weakened, no deployment.",
     "migration": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "routing": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "detail_riser": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",

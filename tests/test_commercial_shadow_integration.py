@@ -24,18 +24,29 @@ def test_actual_database_shadow_reads_never_write_paid_quote_wallet_or_analysis(
     live=commercial['quote_for'](project)
     q=db.query(commercial['ProjectQuote']).filter_by(project_id=pid).first()
     q.paid=True;q.payment_method='synthetic';q.paid_at=datetime(2026,10,5);db.commit()
+    order=app.state.panel_checkout.Checkout(project_id=pid,user_id=project.user_id,external_id='shadow-test-'+str(pid),
+        amount=123456,paid=1,area='200',quote_token='immutable-existing-token')
+    db.add(order);db.commit()
+    order_before={col.name:getattr(order,col.name) for col in order.__table__.columns}
     before={col.name:getattr(q,col.name) for col in q.__table__.columns}
     analysis=deepcopy(project.analysis); wallet_before=commercial['wallet_for'](project.user_id)
     statements=[]
     def collect(conn,cursor,statement,parameters,context,executemany): statements.append(statement)
     event.listen(legacy.engine,'before_cursor_execute',collect)
     try:
-        result=run_internal_shadow(project,db,commercial,bundles=[b],project_directory=project_directory,created_at='fixed')
+        result=run_internal_shadow(project,db,commercial,bundles=[b],project_directory=project_directory,created_at='fixed',panel_checkout=app.state.panel_checkout)
     finally:
         event.remove(legacy.engine,'before_cursor_execute',collect)
     assert all(s.lstrip().upper().startswith('SELECT') for s in statements)
     assert result['shadow_quote']['pricing']['price_per_m2']==config['price_per_m2']
     assert result['shadow_quote']['final_amount'] is None
+    assert result['shadow_quote']['comparison']['current_quote']['source']=='PANEL_CHECKOUT'
+    assert result['shadow_quote']['comparison']['current_quote']['amount']==123456
+    assert result['shadow_quote']['comparison']['current_live_area_m2']==200
+    import json
+    assert 'immutable-existing-token' not in json.dumps(result)
+    db.refresh(order)
+    assert order_before=={col.name:getattr(order,col.name) for col in order.__table__.columns}
     db.refresh(q); db.refresh(project)
     assert before=={col.name:getattr(q,col.name) for col in q.__table__.columns}
     assert project.analysis==analysis
@@ -44,7 +55,7 @@ def test_actual_database_shadow_reads_never_write_paid_quote_wallet_or_analysis(
     (project_directory/'architecture.dxf').write_bytes(b'changed-source')
     import pytest
     with pytest.raises(ValueError,match='STALE_PROJECT_ANALYSIS'):
-        run_internal_shadow(project,db,commercial,bundles=[b],project_directory=project_directory,created_at='fixed')
+        run_internal_shadow(project,db,commercial,bundles=[b],project_directory=project_directory,created_at='fixed',panel_checkout=app.state.panel_checkout)
     db.close()
 
 

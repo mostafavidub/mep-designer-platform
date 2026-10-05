@@ -90,7 +90,7 @@ def current_upload_sources(project_directory, project_id):
     return sorted(hashes)
 
 
-def run_internal_shadow(project, db, commercial, *, bundles, project_directory, answers=(), created_at):
+def run_internal_shadow(project, db, commercial, *, bundles, project_directory, answers=(), created_at, panel_checkout=None):
     """Read actual ServicePricing WITHOUT service_pricing()/quote_for() write-on-read.
 
     Caller owns transaction, authenticates internal operator, resolves current source
@@ -111,9 +111,15 @@ def run_internal_shadow(project, db, commercial, *, bundles, project_directory, 
         quote=db.query(commercial["ProjectQuote"]).filter(commercial["ProjectQuote"].project_id==project.id).first()
         pricing=pricing_snapshot(pricing_row)
         measurement=measure(project.id,bundles,current_sources=current_sources,answers=answers)
-        current={"id":quote.id,"amount":quote.amount,"paid":quote.paid,"currency":quote.currency} if quote else {}
+        current={"source":"PROJECT_QUOTE","id":quote.id,"amount":quote.amount,"paid":quote.paid,"currency":quote.currency} if quote else {}
+        current_area=commercial["project_area_m2"](project)
+        order=db.get(panel_checkout.Checkout,project.id) if panel_checkout is not None else None
+        if order is not None:
+            current={"source":"PANEL_CHECKOUT","project_id":order.project_id,"amount":order.amount,
+                "paid":bool(order.paid),"quote_token_fingerprint":digest(order.quote_token)}
+            current_area=float(number(order.area)) if order.area else None
         shadow=shadow_quote(measurement,pricing,discipline=discipline,created_at=created_at,current_quote=current,
-            current_area=commercial["project_area_m2"](project))
+            current_area=current_area)
     return {"measurement":measurement,"shadow_quote":shadow}
 
 

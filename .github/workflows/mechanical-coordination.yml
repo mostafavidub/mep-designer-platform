@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12', cache: pip}
-      - run: pip install -r requirements.txt -r cad_engine/requirements.txt pytest
+      - run: pip install -r requirements.txt -r cad_engine/requirements.txt pytest jsonschema==4.26.0
       - name: Ordered mechanical gates and full regression
         env: {PYTHONPATH: '.:tests', MPLBACKEND: Agg, DATABASE_URL: 'sqlite:///./test_mechanical.db', DATA_DIR: /tmp/mechanical-data, CAD_OUTPUT_DIR: /tmp/mechanical-cad}
         run: |
