@@ -109,7 +109,7 @@
     "architecture_regression": "PASS_522",
     "full_regression": "PASS_1428_PLUS_14_SUBTESTS",
     "determinism": "PASS_7_OF_7",
-    "official_ci": "PENDING_FINAL_INTEGRATION_SHA",
+    "official_ci": "REQUIRED_5_EXECUTED_SUCCESS_ON_FINAL_SHA",
     "private_replay": "PASS_7_OF_7_SEALED",
     "original_negative_controls": "PASS_0_OF_19",
     "expanded_reviewed_negative_controls": "PASS_0_OF_22",
