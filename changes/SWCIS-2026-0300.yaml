@@ -1,119 +1,58 @@
 {
   "change_id": "SWCIS-2026-0300",
-  "summary": "Canonicalize architectural text evidence, title-block interpretation, role and host authority with instance-safe DXF provenance and fail-closed review/validation.",
+  "summary": "Restore the canonical owner-bound questionnaire background-job API on the Architecture Stack Integration branch and fail closed on terminal or exhausted analysis failures.",
   "requester": "project-owner",
-  "change_types": [
-    "rule",
-    "test",
-    "documentation",
-    "governance",
-    "schema",
-    "ui_api",
-    "drawing_output"
-  ],
-  "changed_rule_ids": [
-    "MEP-ARCH-RECOG-001"
-  ],
-  "impacted_modules": [
-    "cad_designer",
-    "deployment",
-    "detail_riser",
-    "docs",
-    "equipment",
-    "governance",
-    "manifest",
-    "manufacturer_selector",
-    "migration",
-    "planner",
-    "pmm",
-    "qa",
-    "questionnaire",
-    "routing",
-    "rule_book",
-    "sizing",
-    "ui_api",
-    "versioning"
-  ],
+  "change_types": ["ui_api", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "versioning", "deployment", "migration", "manifest"],
   "impact_notes": {
-    "cad_designer": "One canonical exact-text occurrence pipeline, deterministic role/host/title-block evidence, and Semantic Scout consumption without geometry authority.",
-    "deployment": "No merge, auto-merge, staging deploy or production deploy; Draft stacked PR only.",
-    "detail_riser": "No algorithm change; semantic inputs remain fail-closed and require valid canonical evidence.",
-    "docs": "New Architectural Text Evidence and Semantic Authority ADR plus contract and migration documentation.",
-    "equipment": "No algorithm change; room semantics consumed only after canonical host/role validation.",
-    "governance": "New CR0300 and proportional SWCIS closure; no waiver.",
-    "manifest": "Canonical 3.1 text occurrence, binding and review identities become deterministic contract inputs.",
-    "manufacturer_selector": "No algorithm change; semantic consumer boundary verified.",
-    "migration": "Affected Canonical 3.0 semantic/text/title/level claims require regeneration or bounded revalidation; independent geometry and separator claims remain valid.",
-    "planner": "No geometry/planning behavior may be created from text; consumer boundary verified.",
-    "pmm": "Accepted text semantics are projected with provenance; unresolved text remains non-authoritative.",
-    "qa": "Independent validator, Golden-separated metrics, negative authority controls, determinism and architecture regression.",
-    "questionnaire": "Preflight reuses bounded review for text role/host facts; no parallel review engine.",
-    "routing": "Text cannot create routing obstacles, shafts or access; existing fail-closed behavior retained.",
-    "rule_book": "MEP-ARCH-RECOG-001 requires exact occurrence provenance and separate text role/host/semantic authority.",
-    "sizing": "Scale text alone cannot grant engineering scale; existing calibration remains authoritative.",
-    "ui_api": "Server-resolved text review identity only; no client geometry or free-form authority fields.",
-    "versioning": "Proposed additive Canonical Architecture 3.1 and SWCIS minor bump; exact result governed by validation. Runtime remains Git-identified."
+    "ui_api": "Restore the authenticated POST /internal/panel/questionnaire/start and GET /internal/panel/questionnaire/{job_id} contract consumed by the Staging project-creation client; terminal failures are explicit and transient retries are bounded.",
+    "qa": "Add route registration, real DXF and ZIP analysis-to-ready execution, cache isolation/cleanup, owner isolation, terminal failure, bounded retry and existing customer-state regression coverage.",
+    "docs": "Document the canonical background-job contract, failure classes and recovery behavior.",
+    "governance": "No engineering algorithm or locked rule changes; this restores a previously governed API capability omitted from the integrated Staging branch.",
+    "versioning": "No schema or policy bump: backward-compatible restoration of the already documented internal contract.",
+    "deployment": "No Staging or Production deployment is authorized by this change record. Staging requires a separate explicit owner approval after local validation; Production is out of scope.",
+    "migration": "No database migration. Existing questionnaire-job workspaces remain compatible and disposable after retention expiry.",
+    "manifest": "Verified unaffected: build identity and generated artifact manifests are unchanged; route availability is covered by API contract tests."
   },
   "evidence": {
     "traceability": [
-      "MEP-ARCH-RECOG-001: exact source text -> role -> host -> semantic evidence -> independent validation -> downstream authority."
+      "authenticated panel upload -> canonical start endpoint -> owner-bound durable workspace -> bounded analysis attempts -> explicit ready/failed state -> questionnaire result",
+      "active Staging integration build 062dd76951a51dd141934018a11eac29db814778 lacks the route while historical governed implementation ce343f4 contains it",
+      "historical runtime commit 20d4e492bbe2474700fb5a6d9df36dfa8b83f072 introduced the analysis-local DXF read-cache contract; the integration branch omitted that dependency while restoring its questionnaire consumer"
     ],
     "tests": [
-      "Focused text/contract/review/validator and consumer suites PASS (153 before final bounded authority correction; final affected suite PASS 66). Architecture regression PASS 486. Full governed suite PASS 1416 tests + 14 subtests on Python 3.12.13. Pre-fix exact parent proof: attached ATTRIB occurrences were absent and TITLE-layer Kitchen was falsely bound as a VERIFIED room label."
+      "targeted questionnaire background-job contract tests",
+      "panel checkout customer/state regression tests",
+      "application route inventory assertion",
+      "real _analyze execution plus authenticated direct-DXF and ZIP route-to-ready tests",
+      "analysis-local cache reuse, concurrency isolation and exception cleanup tests",
+      "SWCIS validation against origin/feature/architecture-stack-integration"
     ],
-    "docs": [
-      "docs/adr/ADR-ARCHITECTURAL-TEXT-EVIDENCE-AND-SEMANTIC-AUTHORITY.md",
-      "docs/ARCHITECTURE_INPUT_FOUNDATION_V2.md",
-      "standards/swcis/migrations/architecture-text-evidence-contract-v31.json"
-    ],
-    "version_bump": [
-      "SWCIS 5.2.0; Canonical Architecture 3.1."
-    ],
-    "migration": [
-      "Only text/semantic/title/level-dependent Canonical 3.0 claims become stale; independent geometry/separator claims are preserved."
-    ],
-    "golden_regression": [
-      "Golden truth remains independently curated; no engine-output truth generation and no private DXF/coordinates committed. Architecture regression PASS 486. Fresh sealed seven-source replay on the implementation SHA preserved every candidate geometry exactly, retained P1-P4, duct and Q16/Q19/Q20 as REVIEW_RESOLVED, kept Q02 INPUT_REQUIRED, kept all three B/B/B candidates absent, and independently revalidated zero unsupported separator grants, zero invalid authoritative polygons and zero duplicate Wall IDs. Original frozen negatives remain 0/19 and expanded reviewed negatives remain 0/22."
-    ],
-    "semantic_diff": [
-      "Canonical exact occurrences now own text identity; title context cannot become room semantics; containment-only room hosting; text grants zero engineering geometry."
-    ],
-    "artifact_diff": [
-      "Canonical 3.1 adds text_evidence and title_block_fields. Existing physical geometry is not modified."
-    ],
-    "numeric_diff": [
-      "No geometry tolerance, coordinate, scale or north change from text alone."
-    ],
+    "docs": ["docs/QUESTIONNAIRE_BACKGROUND_JOBS.md"],
+    "version_bump": ["not required: no schema, policy, rule or externally versioned contract change"],
+    "migration": ["none: additive runtime route registration and compatible filesystem state"],
+    "golden_regression": ["not affected: no engineering calculation, routing, sizing or drawing output mutation"],
+    "semantic_diff": ["no Mechanical design semantic change"],
+    "artifact_diff": ["not affected: no generated drawing mutation"],
+    "numeric_diff": ["not affected: the same architecture analyzer and questionnaire builder remain authoritative"],
     "contract_diff": [
-      "Text evidence, role, host and semantic authority become separate durable dimensions with stale-safe review binding."
+      "the integrated Staging runtime again serves the canonical authenticated questionnaire start/status endpoints expected by the panel",
+      "404 and other terminal failures stop polling; retryable execution failures are retried only up to the documented limit before a stable failed state is returned"
     ],
     "deployment_plan": [
-      "No merge, auto-merge or deployment; staging requires separate approval after qualification."
+      "branch -> targeted tests -> static/regression checks -> commit -> stacked PR",
+      "deploy only the exact CI-green SHA to Staging under the owner's explicit error-fix request",
+      "validate Mechanical + Residential + DXF ZIP flow; Production remains out of scope"
     ],
-    "rollback_plan": [
-      "Revert the independent stacked PR; preserve 3.1 artifacts as requiring compatible validation rather than silently projecting authority into 3.0."
-    ]
+    "rollback_plan": ["redeploy the previously approved Git commit; no data rollback required"]
   },
   "risk": {
-    "likelihood": 4,
+    "likelihood": 2,
     "severity": 5,
-    "detectability": 4,
-    "score": 80,
-    "rationale": "Upstream semantic authority and downstream interpretation change; exact provenance, fail-closed migration, destructive tests and independent validation are mandatory."
+    "detectability": 2,
+    "score": 20,
+    "rationale": "The missing route blocks all new Staging projects using the asynchronous questionnaire flow. Owner/session binding, bounded retries, durable terminal state and focused regressions contain the change."
   },
-  "waiver": null,
-  "verification_status": {
-    "implementation": "IMPLEMENTED",
-    "qualification": "ARCHITECTURE_TEXT_EVIDENCE_QUALIFIED",
-    "focused": "PASS_153",
-    "architecture_regression": "PASS_486",
-    "full_regression": "PASS_1416_PLUS_14_SUBTESTS",
-    "determinism": "PASS_7_OF_7",
-    "official_ci": "REQUIRED_5_EXECUTED_ON_FINAL_SHA",
-    "private_replay": "PASS_7_OF_7_SEALED",
-    "original_negative_controls": "PASS_0_OF_19",
-    "expanded_reviewed_negative_controls": "PASS_0_OF_22",
-    "positive_references": "PASS_P1_P4_DUCT_Q16_Q19_Q20",
-    "q02": "INPUT_REQUIRED"
-  }
+  "waiver": null
 }

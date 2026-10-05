@@ -1,6 +1,6 @@
 # Architectural Text Evidence and Semantic Authority
 
-Status: implemented for qualification under SWCIS-2026-0300.
+Status: implemented for qualification under SWCIS-2026-0301.
 
 ## Problem
 

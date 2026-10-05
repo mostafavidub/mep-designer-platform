@@ -1,6 +1,6 @@
 {
   "schema": "planha-contract-migration/1.0",
-  "change_id": "SWCIS-2026-0300",
+  "change_id": "SWCIS-2026-0301",
   "from_contract": "planha-canonical-architecture/3.0",
   "to_contract": "planha-canonical-architecture/3.1",
   "automatic_reinterpretation": false,
