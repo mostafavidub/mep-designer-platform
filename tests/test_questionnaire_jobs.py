@@ -1,9 +1,24 @@
+import io
 import time
+import zipfile
+
+import ezdxf
 
 from fastapi.testclient import TestClient
 
 from app.main_health import app
 from app import questionnaire_jobs
+
+
+def _valid_dxf_bytes(tmp_path):
+    path = tmp_path / "valid-room.dxf"
+    doc = ezdxf.new("R2010")
+    msp = doc.modelspace()
+    msp.add_lwpolyline([(0, 0), (8000, 0), (8000, 6000), (0, 6000)],
+                       close=True, dxfattribs={"layer": "WALL"})
+    msp.add_text("LIVING", dxfattribs={"layer": "ROOM", "height": 250}).set_placement((4000, 3000))
+    doc.saveas(path)
+    return path.read_bytes()
 
 
 def _session(client, phone):
@@ -31,6 +46,55 @@ def test_canonical_questionnaire_routes_are_registered_once():
     ]
     assert routes.count(("/internal/panel/questionnaire/start", frozenset({"POST"}))) == 1
     assert routes.count(("/internal/panel/questionnaire/{job_id}", frozenset({"GET"}))) == 1
+
+
+def test_real_analyze_path_returns_canonical_questionnaire(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    from app import main_auto
+    workspace = tmp_path / "direct"
+    workspace.mkdir()
+    (workspace / "architecture.dxf").write_bytes(_valid_dxf_bytes(tmp_path))
+
+    result = questionnaire_jobs._analyze(
+        workspace, "architecture.dxf", "mechanical", "residential",
+        main_auto, main_auto.legacy,
+    )
+
+    assert result["version"] == main_auto.QUESTIONNAIRE_VERSION
+    assert result["discipline"] == "mechanical"
+    assert isinstance(result["questions"], list)
+    assert isinstance(result["inferred_answers"], dict)
+    assert isinstance(result["auto_summary"], list)
+    assert isinstance(result["panel_analysis"], dict)
+
+
+def test_real_dxf_and_zip_jobs_reach_ready(monkeypatch, tmp_path):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "questionnaire-job-test-secret")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    with TestClient(app) as client:
+        owner = _session(client, "09120000031")
+        dxf = _valid_dxf_bytes(tmp_path)
+
+        for filename, content, content_type in (
+            ("architecture.dxf", dxf, "application/dxf"),
+            ("architecture.zip", _zip_with_dxf(dxf), "application/zip"),
+        ):
+            started = client.post(
+                "/internal/panel/questionnaire/start?discipline=mechanical&occupancy=residential",
+                headers=owner, files={"file": (filename, content, content_type)},
+            )
+            assert started.status_code in {200, 202}
+            result = _wait_for_terminal(client, started.json()["job_id"], owner)
+            assert result is not None and result.status_code == 200
+            assert result.json()["status"] == "ready"
+            assert result.json()["result"]["version"]
+
+
+def _zip_with_dxf(content):
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("architecture.dxf", content)
+    return output.getvalue()
 
 
 def test_questionnaire_job_is_deduplicated_resumable_and_owner_bound(monkeypatch, tmp_path):

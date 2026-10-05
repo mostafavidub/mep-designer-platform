@@ -124,7 +124,7 @@ def _analyze(workspace, name, discipline, occupancy, main_auto, legacy):
         end_input_read_cache(token)
     from .mechanical_workflow import _question_payload
     return {
-        "identity": main_auto.QUESTIONNAIRE_IDENTITY,
+        "version": main_auto.QUESTIONNAIRE_VERSION,
         "discipline": discipline,
         "source": "engi-design-engine",
         "questions": [main_auto._present_question(q) for q in legacy.qlist(unresolved)],

@@ -7,7 +7,7 @@
   "impacted_modules": ["ui_api", "qa", "docs", "governance", "versioning", "deployment", "migration", "manifest"],
   "impact_notes": {
     "ui_api": "Restore the authenticated POST /internal/panel/questionnaire/start and GET /internal/panel/questionnaire/{job_id} contract consumed by the Staging project-creation client; terminal failures are explicit and transient retries are bounded.",
-    "qa": "Add route registration, success, owner isolation, terminal failure, bounded retry and existing customer-state regression coverage.",
+    "qa": "Add route registration, real DXF and ZIP analysis-to-ready execution, cache isolation/cleanup, owner isolation, terminal failure, bounded retry and existing customer-state regression coverage.",
     "docs": "Document the canonical background-job contract, failure classes and recovery behavior.",
     "governance": "No engineering algorithm or locked rule changes; this restores a previously governed API capability omitted from the integrated Staging branch.",
     "versioning": "No schema or policy bump: backward-compatible restoration of the already documented internal contract.",
@@ -18,12 +18,15 @@
   "evidence": {
     "traceability": [
       "authenticated panel upload -> canonical start endpoint -> owner-bound durable workspace -> bounded analysis attempts -> explicit ready/failed state -> questionnaire result",
-      "active Staging integration build 062dd76951a51dd141934018a11eac29db814778 lacks the route while historical governed implementation ce343f4 contains it"
+      "active Staging integration build 062dd76951a51dd141934018a11eac29db814778 lacks the route while historical governed implementation ce343f4 contains it",
+      "historical runtime commit 20d4e492bbe2474700fb5a6d9df36dfa8b83f072 introduced the analysis-local DXF read-cache contract; the integration branch omitted that dependency while restoring its questionnaire consumer"
     ],
     "tests": [
       "targeted questionnaire background-job contract tests",
       "panel checkout customer/state regression tests",
       "application route inventory assertion",
+      "real _analyze execution plus authenticated direct-DXF and ZIP route-to-ready tests",
+      "analysis-local cache reuse, concurrency isolation and exception cleanup tests",
       "SWCIS validation against origin/feature/architecture-stack-integration"
     ],
     "docs": ["docs/QUESTIONNAIRE_BACKGROUND_JOBS.md"],
