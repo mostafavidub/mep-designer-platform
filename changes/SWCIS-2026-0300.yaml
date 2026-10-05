@@ -73,7 +73,7 @@
       "Only text/semantic/title/level-dependent Canonical 3.0 claims become stale; independent geometry/separator claims are preserved."
     ],
     "golden_regression": [
-      "Golden truth remains independently curated; no engine-output truth generation and no private DXF/coordinates committed. Existing Architecture regression PASS 486; governed/private replay pending final gate."
+      "Golden truth remains independently curated; no engine-output truth generation and no private DXF/coordinates committed. Architecture regression PASS 486. Fresh sealed seven-source replay on the implementation SHA preserved every candidate geometry exactly, retained P1-P4, duct and Q16/Q19/Q20 as REVIEW_RESOLVED, kept Q02 INPUT_REQUIRED, kept all three B/B/B candidates absent, and independently revalidated zero unsupported separator grants, zero invalid authoritative polygons and zero duplicate Wall IDs. Original frozen negatives remain 0/19 and expanded reviewed negatives remain 0/22."
     ],
     "semantic_diff": [
       "Canonical exact occurrences now own text identity; title context cannot become room semantics; containment-only room hosting; text grants zero engineering geometry."
@@ -104,11 +104,16 @@
   "waiver": null,
   "verification_status": {
     "implementation": "IMPLEMENTED",
-    "qualification": "ARCHITECTURE_TEXT_EVIDENCE_PARTIAL",
+    "qualification": "ARCHITECTURE_TEXT_EVIDENCE_QUALIFIED",
     "focused": "PASS_153",
     "architecture_regression": "PASS_486",
     "full_regression": "PASS_1416_PLUS_14_SUBTESTS",
     "determinism": "PASS_7_OF_7",
-    "official_ci": "PENDING"
+    "official_ci": "REQUIRED_5_EXECUTED_ON_FINAL_SHA",
+    "private_replay": "PASS_7_OF_7_SEALED",
+    "original_negative_controls": "PASS_0_OF_19",
+    "expanded_reviewed_negative_controls": "PASS_0_OF_22",
+    "positive_references": "PASS_P1_P4_DUCT_Q16_Q19_Q20",
+    "q02": "INPUT_REQUIRED"
   }
 }

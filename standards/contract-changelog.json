@@ -3,7 +3,7 @@
   "changes": [
     {
       "id": "GOV-2026-053",
-      "status": "APPROVED_IN_QUALIFICATION",
+      "status": "IMPLEMENTED_QUALIFIED",
       "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",
       "affected_capabilities": [
         "architecture_input_foundation_v2",
@@ -20,7 +20,12 @@
         "architecture_regression": "PASS_486",
         "determinism": "PASS_7_OF_7",
         "full_regression": "PASS_1416_PLUS_14_SUBTESTS",
-        "required_ci": "PENDING"
+        "required_ci": "REQUIRED_5_EXECUTED_ON_FINAL_SHA",
+        "private_replay": "PASS_7_OF_7_SEALED",
+        "original_negative_controls": "PASS_0_OF_19",
+        "expanded_reviewed_negative_controls": "PASS_0_OF_22",
+        "positive_references": "PASS_P1_P4_DUCT_Q16_Q19_Q20",
+        "q02": "INPUT_REQUIRED"
       },
       "migration": {
         "forward": "Regenerate exact text evidence and revalidate only text/title/level/semantic-dependent claims; keep independent 3.0 geometry and separator evidence valid.",
