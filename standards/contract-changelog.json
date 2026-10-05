@@ -2,6 +2,26 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-053",
+      "status": "IMPLEMENTED_PARTIAL",
+      "summary": "Commercial Measurement1.0 and read-only Shadow Quote1.0, explicit bounded interpretation and source/build/rules staleness. Existing live prices unchanged.",
+      "affected_capabilities": [
+        "commercial_measurement_shadow"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Commercial Measurement Authority request; no merge/deployment/live authorization."
+      },
+      "verification": {
+        "qualification": "COMMERCIAL_MEASUREMENT_PARTIAL",
+        "golden": "HUMAN_GOLDEN_REQUIRED"
+      },
+      "migration": {
+        "forward": "Opt-in private sidecars only, no database migration.",
+        "rollback": "Revert approved Git commit; ignore new sidecar schemas."
+      }
+    },
+    {
       "id": "GOV-2026-052",
       "status": "IMPLEMENTED_PARTIAL",
       "summary": "Canonical Architecture 3.0 separates geometric boundary support and physical separator authority; scoped source review cannot create geometry.",

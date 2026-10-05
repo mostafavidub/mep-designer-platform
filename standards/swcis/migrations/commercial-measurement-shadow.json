@@ -1,0 +1,33 @@
+{
+  "migration_id": "commercial-measurement-shadow",
+  "change_id": "SWCIS-2026-0300",
+  "standard_version": "5.2.0",
+  "from_contract": "NONE",
+  "to_contract": "planha-commercial-measurement/1.0",
+  "status": "SHADOW_ONLY",
+  "production_consumer_enabled": false,
+  "strategy": "additive-private-sidecar",
+  "forward": [
+    "Persist immutable content-addressed private measurements and quotes outside customer tables.",
+    "Derive each run from current source identities and matching Architecture model/evidence; replay facts after validation.",
+    "Future live schema requires separate approved source/measurement/pricing bindings and paid adjustment records."
+  ],
+  "rollback": [
+    "Revert approved Git commit; retain historical private artifacts, never treat unknown schemas as pricing authority."
+  ],
+  "validation": [
+    "tests/test_commercial_measurement.py",
+    "tests/test_commercial_shadow_integration.py"
+  ],
+  "consumer_inventory": [
+    "internal shadow service",
+    "offline CLI",
+    "Golden evaluator"
+  ],
+  "compatibility_order": [
+    "New contract reader",
+    "opt-in internal producer",
+    "future separately approved live migration"
+  ],
+  "deprecation_window": "Existing ProjectQuote remains unchanged indefinitely until separately approved migration."
+}

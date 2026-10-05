@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-commercial-measurement/1.0",
+  "type": "object",
+  "required": [
+    "schema",
+    "measurement_version",
+    "build_identity",
+    "binding",
+    "source",
+    "rules",
+    "buildings",
+    "levels",
+    "totals",
+    "reconciliation",
+    "commercial_status",
+    "blockers",
+    "review_items",
+    "review_registry",
+    "provider_calls",
+    "mode",
+    "release_qualification",
+    "measurement_hash"
+  ],
+  "properties": {
+    "build_identity": {
+      "type": "object"
+    },
+    "binding": {
+      "type": "object"
+    },
+    "source": {
+      "type": "object"
+    },
+    "rules": {
+      "type": "object"
+    },
+    "totals": {
+      "type": "object",
+      "required": [
+        "detected_level_count",
+        "billable_level_count",
+        "gross_detected_area_m2",
+        "excluded_area_m2",
+        "billable_area_m2"
+      ],
+      "properties": {
+        "billable_level_count": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "gross_detected_area_m2": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "excluded_area_m2": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "billable_area_m2": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "reconciliation": {
+      "type": "object"
+    },
+    "buildings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "levels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "source_sha256",
+          "frame_id",
+          "building_id",
+          "level_id",
+          "represented_level_ids",
+          "commercial_level_type",
+          "source_evidence",
+          "source_handles",
+          "geometry_fingerprint",
+          "gross_area_m2",
+          "scale_evidence",
+          "metres_per_unit",
+          "area_authority_source",
+          "envelope_status",
+          "level_confidence",
+          "billable",
+          "exclusion_reason",
+          "multiplicity",
+          "multiplicity_authority",
+          "billable_contribution_m2",
+          "cross_checks",
+          "conflicts",
+          "commercial_status",
+          "human_confirmed_facts"
+        ]
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "review_items": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "review_registry": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "schema": {
+      "const": "planha-commercial-measurement/1.0"
+    },
+    "measurement_version": {
+      "const": "1.0.0"
+    },
+    "commercial_status": {
+      "enum": [
+        "AUTO_VERIFIED",
+        "QUICK_CONFIRMATION_REQUIRED",
+        "INPUT_REQUIRED",
+        "CONFLICT"
+      ]
+    },
+    "provider_calls": {
+      "const": 0
+    },
+    "mode": {
+      "const": "SHADOW"
+    },
+    "release_qualification": {
+      "const": "HUMAN_GOLDEN_REQUIRED"
+    },
+    "measurement_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

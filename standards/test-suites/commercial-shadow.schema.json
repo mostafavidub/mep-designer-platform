@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-commercial-shadow-quote/1.0",
+  "type": "object",
+  "required": [
+    "schema",
+    "mode",
+    "status",
+    "binding",
+    "pricing",
+    "billable_area_m2",
+    "final_amount",
+    "created_at",
+    "comparison",
+    "live_quote_unchanged",
+    "paid_records_immutable",
+    "customer_activation_allowed",
+    "shadow_quote_hash"
+  ],
+  "properties": {
+    "schema": {
+      "const": "planha-commercial-shadow-quote/1.0"
+    },
+    "mode": {
+      "const": "SHADOW"
+    },
+    "status": {
+      "enum": [
+        "PROPOSED",
+        "BLOCKED"
+      ]
+    },
+    "customer_activation_allowed": {
+      "const": false
+    },
+    "live_quote_unchanged": {
+      "const": true
+    },
+    "paid_records_immutable": {
+      "const": true
+    },
+    "final_amount": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    }
+  }
+}

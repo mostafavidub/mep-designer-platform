@@ -816,6 +816,30 @@
         "test_multi_axis_building_produces_multiple_coordinate_frames",
         "test_final_release_cannot_pass_without_exact_file_and_visual_evidence"
       ]
+    },
+    {
+      "id": "commercial_measurement_shadow",
+      "status": "LOCKED",
+      "requirements": [
+        "no_live_activation",
+        "source_bound_gross_area",
+        "no_bbox_billing",
+        "no_room_sum_authority",
+        "roof_yard_excluded",
+        "other_building_floors_included",
+        "explicit_typical",
+        "no_duplicate_billing",
+        "trusted_units",
+        "stale_safe_review",
+        "independent_reconciliation",
+        "human_golden_release_gate"
+      ],
+      "tests": [
+        "test_single_floor_and_gross_not_room_sum",
+        "test_duplicate_level_presentation_cannot_double_bill",
+        "test_actual_database_shadow_reads_never_write_paid_quote_wallet_or_analysis",
+        "test_absent_truth_does_not_claim_zero_errors_or_accuracy"
+      ]
     }
   ]
 }
