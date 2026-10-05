@@ -62,6 +62,7 @@ def test_real_analyze_path_returns_canonical_questionnaire(monkeypatch, tmp_path
     )
 
     assert result["version"] == main_auto.QUESTIONNAIRE_VERSION
+    assert result["identity"] == f"{main_auto.QUESTIONNAIRE_VERSION}:mechanical"
     assert result["discipline"] == "mechanical"
     assert isinstance(result["questions"], list)
     assert isinstance(result["inferred_answers"], dict)
@@ -97,6 +98,15 @@ def test_real_dxf_and_zip_jobs_reach_ready(monkeypatch, tmp_path):
             assert result is not None and result.status_code == 200
             assert result.json()["status"] == "ready"
             assert result.json()["result"]["version"]
+            assert result.json()["result"]["identity"].endswith(":mechanical")
+
+
+def test_legacy_ready_result_gets_current_contract_identity():
+    projected = questionnaire_jobs._contract_payload(
+        {"status": "ready", "result": {"version": "5.1-single-source"}},
+        {"discipline": "mechanical"},
+    )
+    assert projected["result"]["identity"] == "5.1-single-source:mechanical"
 
 
 def _zip_with_dxf(content):
