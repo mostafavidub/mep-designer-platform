@@ -59,7 +59,7 @@
       "MEP-ARCH-RECOG-001: exact source text -> role -> host -> semantic evidence -> independent validation -> downstream authority."
     ],
     "tests": [
-      "Focused text/contract/review/validator and consumer suites PASS (153 before final bounded authority correction; final affected suite PASS 66). Architecture regression PASS 486. Full governed suite PASS 1416 tests + 14 subtests on Python 3.12.13. Pre-fix exact parent proof: attached ATTRIB occurrences were absent and TITLE-layer Kitchen was falsely bound as a VERIFIED room label."
+      "Original focused text/contract/review/validator and consumer suites PASS 153; final affected feature suite PASS 66. New-parent integration checks PASS 57, Architecture regression PASS 522, and full governed suite PASS 1428 tests + 14 subtests on Python 3.12.13. PR #313 real questionnaire tests remain PASS 12. Pre-fix exact parent proof: attached ATTRIB occurrences were absent and TITLE-layer Kitchen was falsely bound as a VERIFIED room label."
     ],
     "docs": [
       "docs/adr/ADR-ARCHITECTURAL-TEXT-EVIDENCE-AND-SEMANTIC-AUTHORITY.md",
@@ -73,7 +73,7 @@
       "Only text/semantic/title/level-dependent Canonical 3.0 claims become stale; independent geometry/separator claims are preserved."
     ],
     "golden_regression": [
-      "Golden truth remains independently curated; no engine-output truth generation and no private DXF/coordinates committed. Architecture regression PASS 486. Fresh sealed seven-source replay on the implementation SHA preserved every candidate geometry exactly, retained P1-P4, duct and Q16/Q19/Q20 as REVIEW_RESOLVED, kept Q02 INPUT_REQUIRED, kept all three B/B/B candidates absent, and independently revalidated zero unsupported separator grants, zero invalid authoritative polygons and zero duplicate Wall IDs. Original frozen negatives remain 0/19 and expanded reviewed negatives remain 0/22."
+      "Golden truth remains independently curated; no engine-output truth generation and no private DXF/coordinates committed. Final integration Architecture regression PASS 522. Fresh sealed seven-source replay on the integration candidate matched all seven qualified a3466a3 model hashes exactly, thereby retaining the previously adjudicated P1-P4, duct and Q16/Q19/Q20 REVIEW_RESOLVED results, Q02 INPUT_REQUIRED, all three B/B/B candidates absent, zero unsupported separator grants, zero invalid authoritative polygons and zero duplicate Wall IDs. Original frozen negatives remain 0/19 and expanded reviewed negatives remain 0/22."
     ],
     "semantic_diff": [
       "Canonical exact occurrences now own text identity; title context cannot become room semantics; containment-only room hosting; text grants zero engineering geometry."
@@ -104,12 +104,12 @@
   "waiver": null,
   "verification_status": {
     "implementation": "IMPLEMENTED",
-    "qualification": "ARCHITECTURE_TEXT_EVIDENCE_QUALIFIED",
-    "focused": "PASS_153",
-    "architecture_regression": "PASS_486",
-    "full_regression": "PASS_1416_PLUS_14_SUBTESTS",
+    "qualification": "ARCHITECTURE_TEXT_EVIDENCE_INTEGRATION_READY",
+    "focused": "PASS_153_FEATURE_PLUS_57_INTEGRATION",
+    "architecture_regression": "PASS_522",
+    "full_regression": "PASS_1428_PLUS_14_SUBTESTS",
     "determinism": "PASS_7_OF_7",
-    "official_ci": "REQUIRED_5_EXECUTED_ON_FINAL_SHA",
+    "official_ci": "PENDING_FINAL_INTEGRATION_SHA",
     "private_replay": "PASS_7_OF_7_SEALED",
     "original_negative_controls": "PASS_0_OF_19",
     "expanded_reviewed_negative_controls": "PASS_0_OF_22",
