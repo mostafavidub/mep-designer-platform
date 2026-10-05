@@ -34,6 +34,8 @@ from .job_queue import queue_health, register_job_queue
 from .gsc_api import register_gsc_routes
 from .commercial_flow import register_commercial_flow
 from .panel_bridge import register_panel_bridge
+from .architecture_preflight_ui import register_architecture_preflight_ui
+from .questionnaire_jobs import register_questionnaire_jobs
 
 app = main_auto.app
 # R2 must serve CAD artifacts as binary DXF/ZIP attachments before any route or
@@ -64,6 +66,8 @@ DesignJob = register_job_queue(app, main_auto.legacy)
 register_gsc_routes(app)
 register_commercial_flow(app, main_auto.legacy)
 register_panel_bridge(app, main_auto.legacy, DesignJob)
+register_architecture_preflight_ui(app, main_auto.legacy)
+register_questionnaire_jobs(app, main_auto, main_auto.legacy)
 
 app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 

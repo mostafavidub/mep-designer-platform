@@ -1,0 +1,40 @@
+{
+  "change_id": "SWCIS-2026-0289",
+  "summary": "Add local gap/opening evidence fusion, stale-safe human gap replay, and reference-bound Dimension Association without granting invented geometry authority.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "rule", "schema", "drawing_output", "test", "documentation", "governance", "versioning", "deployment"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001", "MEP-ARCH-PRESERVE-001"],
+  "impacted_modules": ["rule_book", "pmm", "questionnaire", "planner", "cad_designer", "routing", "sizing", "equipment", "manufacturer_selector", "detail_riser", "qa", "manifest", "ui_api", "docs", "versioning", "governance", "deployment", "migration"],
+  "impact_notes": {
+    "rule_book": "Opening evidence must be locally compatible with the exact host-wall gap.",
+    "pmm": "Adds replayable gap review identities and authority sentinels.",
+    "questionnaire": "Exposes only topology-material review questions after deterministic exhaustion.",
+    "planner": "Human gap answers do not directly authorize planning or access.",
+    "cad_designer": "Keeps one canonical producer and validates review decisions before replay.",
+    "routing": "No decision creates access without a qualified Portal and valid sides.",
+    "qa": "Adds locality, stale, atomic replay, authority-ceiling and dimension-reference regressions.",
+    "manifest": "Private Fasihi decisions remain outside Git.",
+    "ui_api": "Defines deterministic question and decision payloads.",
+    "docs": "Extends the canonical architecture ADR.",
+    "versioning": "Bumps SWCIS 4.58.0 to 4.59.0.",
+    "governance": "Introduces a first-run stop gate before topology replay.",
+    "deployment": "No merge or deployment is authorized.",
+    "migration": "Additive schema and optional review input only."
+  },
+  "evidence": {
+    "traceability": ["source -> wall -> exact gap -> localized opening evidence -> review question -> validated decision"],
+    "tests": ["localized fusion and replay validation suites", "governed CI"],
+    "docs": ["docs/adr/ADR-ARCH-CANONICAL-SPACE-ENGINE.md"],
+    "version_bump": ["SWCIS 4.58.0 -> 4.59.0"],
+    "migration": ["additive review fields; no destructive migration"],
+    "golden_regression": ["private Fasihi evidence package outside Git", "synthetic fixtures in Git"],
+    "semantic_diff": ["same wall ID is insufficient for gap/opening fusion", "human interpretation never becomes material geometry", "unbound dimensions are not geometric conflicts"],
+    "artifact_diff": ["32-gap ledger, motif ledger, localized review package"],
+    "numeric_diff": ["local tolerance derives from source tolerance, wall thickness, opening width and gap width", "dimension checks use the distance between two bound witness references instead of a whole-space bounding box"],
+    "contract_diff": ["stale decisions never replay", "window never creates access", "unknown remains input-required"],
+    "deployment_plan": ["stacked branch -> deterministic audit -> human stop gate -> no deploy"],
+    "rollback_plan": ["redeploy previous approved SHA; private review artifacts are non-authoritative"]
+  },
+  "risk": {"likelihood": 5, "severity": 5, "detectability": 2, "score": 50, "rationale": "Gap interpretation controls enclosure, Portal and downstream Mechanical authority."},
+  "waiver": null
+}

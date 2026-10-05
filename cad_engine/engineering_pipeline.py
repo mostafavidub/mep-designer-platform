@@ -12,6 +12,8 @@ import re
 
 import ezdxf
 
+from .architectural_space_engine import reconstruct_architecture as _canonical_reconstruct_architecture
+
 
 ROOM_ALIASES = {
     "bathroom": ("bath", "bathroom", "حمام"),
@@ -137,7 +139,7 @@ def _polygon_area(poly):
     return abs(sum(poly[i][0] * poly[(i + 1) % len(poly)][1] - poly[(i + 1) % len(poly)][0] * poly[i][1] for i in range(len(poly))) / 2.0)
 
 
-def reconstruct_architecture(path):
+def _legacy_reconstruct_architecture(path):
     """Reconstruct a conservative architectural model from DXF."""
     doc = ezdxf.readfile(path)
     msp = doc.modelspace()
@@ -226,6 +228,12 @@ def reconstruct_architecture(path):
             "all_inserts": inserts, "all_texts": texts,
             "quality": {"room_count": len(rooms), "rooms_with_polygon": sum(1 for r in rooms if r["polygon"]),
                         "wall_segments": len(walls), "shaft_count": len(shafts)}}
+
+
+# Single living system: all active callers use the canonical geometry-first
+# producer.  The legacy implementation remains private during the compatibility
+# window and is covered only by migration regression tests.
+reconstruct_architecture = _canonical_reconstruct_architecture
 
 
 def recognize_fixtures_equipment(architecture):

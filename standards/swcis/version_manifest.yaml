@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "4.41.0",
+  "standard_version": "5.2.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-09-24",
+  "effective_date": "2026-10-05",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,146 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.2.0",
+      "date": "2026-10-05",
+      "summary": "Add Canonical Architecture 3.1 exact text occurrence, role, host, title-block and stale-safe review authority while prohibiting text-derived engineering geometry."
+    },
+    {
+      "version": "5.1.0",
+      "date": "2026-10-04",
+      "summary": "Govern sealed cumulative integration history with one current CR and complete impact closure; preserve ordinary single-CR policy."
+    },
+    {
+      "version": "5.0.0",
+      "date": "2026-10-04",
+      "summary": "Breaking canonical Architecture 3.0 separator authority contract, source interval provenance, scope-bound review and mandatory revalidation."
+    },
+    {
+      "version": "4.66.2",
+      "date": "2026-10-04",
+      "summary": "Carry existing repeated-source-array veto across candidate origins; record owner interpretation and remaining false-authority blockers."
+    },
+    {
+      "version": "4.66.1",
+      "date": "2026-10-03",
+      "summary": "Preserve independently supported enclosure recall through bounded numerical transverse endpoint equivalence; retain source proof and ambiguous-space qualification blockers."
+    },
+    {
+      "version": "4.66.0",
+      "date": "2026-10-03",
+      "summary": "Govern deterministic source-supported enclosure candidates and parent/container separation without relaxing hard source exclusions or physical boundary proof."
+    },
+    {
+      "version": "4.65.0",
+      "date": "2026-10-03",
+      "summary": "Eliminate source-role, boundary and semantic false authority with local recomputable physical evidence, negative-evidence vetoes, and independent validation; preserve existing release gates and canonical runtime."
+    },
+    {
+      "version": "4.64.0",
+      "date": "2026-10-03",
+      "summary": "Define schema-aware deterministic Canonical Architecture identity, collision-free world-space Wall identity, represented-level and Persian title propagation, fail-closed authority/status invariants, and explicit stale review/snapshot migration without changing recognition geometry or production consumers."
+    },
+    {
+      "version": "4.63.0",
+      "date": "2026-10-03",
+      "summary": "Add an experimental Persian RTL Architecture Preflight presentation and safe owner-bound decision transport with finite primitive visualization, CSRF, strict allowed-answer replay, independent revalidation feedback and server-qualified snapshot display."
+    },
+    {
+      "version": "4.62.0",
+      "date": "2026-10-03",
+      "summary": "Add deterministic minimal architecture review planning, stale-safe interpretation replay, mandatory independent revalidation, convergence protection, actionable source-input requirements, and review-bound snapshot qualification without production activation."
+    },
+    {
+      "version": "4.61.0",
+      "date": "2026-10-02",
+      "summary": "Add one experimental input-independent Canonical Architecture v2 contract, independent read-only validation, immutable snapshots, bounded review, deterministic Planha packages and hard-gated architecture benchmarks without activating production consumers."
+    },
+    {
+      "version": "4.60.0",
+      "date": "2026-10-01",
+      "summary": "Require gap-first provenance-complete Portals and Access edges, accept only current human-confirmed gap semantics, and prohibit arc- or label-generated material geometry."
+    },
+    {
+      "version": "4.59.0",
+      "date": "2026-09-30",
+      "summary": "Require exact local gap compatibility for opening evidence and define stale-safe, replayable human gap interpretation with no material, routing, portal or access authority."
+    },
+    {
+      "version": "4.58.0",
+      "date": "2026-09-30",
+      "summary": "Classify source-backed internal wall gaps before enclosure closure, preserve nested assembly provenance, and prohibit Portal or access authority without a compatible classified host-wall interruption."
+    },
+    {
+      "version": "4.57.0",
+      "date": "2026-09-30",
+      "summary": "Close bounded source-supported wall endpoint gaps as non-material enclosure evidence, reject legacy subdivision as release authority, and keep incompatible exact service labels fail-closed when partitions remain unresolved."
+    },
+    {
+      "version": "4.56.0",
+      "date": "2026-09-30",
+      "summary": "Standardize architectural objects before wall admission and polygonization, with independent object class, domain and topology role, deterministic evidence, and fail-closed exclusion of non-enclosure geometry from physical-space creation."
+    },
+    {
+      "version": "4.55.0",
+      "date": "2026-09-28",
+      "summary": "Qualify compact Semantic Scout evidence for bounded MEP pre-analysis with explicit non-geometry sentinels, exhaustive forbidden engineering uses, normalized exact anchors, discipline investigation priorities, functional-label auditing, and complete two-attempt observability."
+    },
+    {
+      "version": "4.54.0",
+      "date": "2026-09-28",
+      "summary": "Add exact DXF semantic anchors, coexistence-aware Semantic Anchor Fusion, bounded MEP_PREANALYSIS qualification, and exactly one technical DeepSeek retry for an unusable first response without any fallback or authority increase."
+    },
+    {
+      "version": "4.53.0",
+      "date": "2026-09-28",
+      "summary": "Replace unstable monolithic Semantic Scout transport with compact inventory and bounded semantic-group localization calls, strict response budgeting, complete failure observability and non-authoritative local enrichment."
+    },
+    {
+      "version": "4.52.0",
+      "date": "2026-09-28",
+      "summary": "Add a whole-floor Semantic Scout that permits approximate normalized functional localization as VISION_SEMANTIC_HINT while prohibiting all Vision-derived engineering geometry, routing authority and final-design use; expose hints only through bounded MEP_PREANALYSIS."
+    },
+    {
+      "version": "4.51.0",
+      "date": "2026-09-28",
+      "summary": "Move candidate topology before canonical wall/envelope authority; retain hard, soft and excluded source geometry, polygonize traceable atomic faces, group weak-boundary faces, host labels explicitly and gate ID-only Vision on multi-signal Candidate Graph v2 evidence."
+    },
+    {
+      "version": "4.50.0",
+      "date": "2026-09-28",
+      "summary": "Replace engineering-authoritative free-form Vision geometry with bounded CAD-derived region, boundary and bridge candidates, strict ID-only classification, a pre-provider candidate sufficiency gate and deterministic shell derivation."
+    },
+    {
+      "version": "4.49.0",
+      "date": "2026-09-28",
+      "summary": "Separate architectural Vision task, provider, transport and canonical evidence authority; add transport-qualified DeepSeek strict-tool and bounded JSON-object fallback paths with transport-specific cache identity and fail-closed validation."
+    },
+    {
+      "version": "4.48.0",
+      "date": "2026-09-28",
+      "summary": "Replace space-first Vision reconciliation with a boundary-first Evidence Graph, explicit authority lattice, traceable Hybrid topology, minimal replayable human decisions and strict separation of topological boundaries from physical wall material."
+    },
+    {
+      "version": "4.45.0",
+      "date": "2026-09-28",
+      "summary": "Expose native CAD opening evidence before envelope inference without granting Portal, material-gap, continuity or Access-Edge authority, and stop deterministic Fasihi heuristics when source evidence is exhausted."
+    },
+    {
+      "version": "4.44.0",
+      "date": "2026-09-28",
+      "summary": "Separate physical wall material, pre-envelope enclosure continuity and portal-driven access authority; promote only independently proven closures and preserve fail-closed topology when Fasihi evidence is insufficient."
+    },
+    {
+      "version": "4.43.0",
+      "date": "2026-09-28",
+      "summary": "Replace premature binary wall admission with an auditable, bounded multi-evidence funnel supporting local and partial face pairs, junction recovery, negative-cell checks and fail-closed envelope reruns."
+    },
+    {
+      "version": "4.42.0",
+      "date": "2026-09-26",
+      "summary": "Add the canonical deterministic-first architectural-space model, separate physical spaces from functional zones, preserve evidence provenance, and fail closed before downstream Mechanical engineering when critical architecture remains unresolved."
+    },
     {
       "version": "4.41.0",
       "date": "2026-09-25",

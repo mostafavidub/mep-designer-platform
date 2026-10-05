@@ -1,0 +1,42 @@
+{
+  "migration_id": "architecture-false-authority-evidence",
+  "change_id": "SWCIS-2026-0295",
+  "from_contract": "planha-canonical-architecture/2.0",
+  "to_contract": "planha-canonical-architecture/2.0",
+  "standard_version": "4.65.0",
+  "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
+  "strategy": "additive-reader-before-writer; regenerate corrected authority and invalidate stale fingerprints",
+  "database_migration_required": false,
+  "production_v2_consumer_enabled": false,
+  "consumer_inventory": [
+    "raw DXF reconstruction",
+    "canonical v2 adapter and independent validator",
+    "legacy room projection and completeness gate",
+    "preflight review and immutable snapshots",
+    "PMM and mechanical gate"
+  ],
+  "forward": [
+    "Deploy only after complete regression and required CI pass.",
+    "Regenerate source-role classifications, physical boundary evidence and canonical recognition from the unchanged authoritative source.",
+    "Retain genuinely source-backed legacy structured records when optional new proof fields are absent; explicit semantic-only or contradictory evidence never receives material authority.",
+    "Validate new evidence independently; recompute canonical hashes and validator reports.",
+    "Existing review fingerprints and snapshot hashes bind geometry/evidence/authority; changed meaning becomes stale. Rebuild qualifications after independent PASS, never copy old approval onto changed geometry."
+  ],
+  "compatibility_order": [
+    "read optional evidence fields",
+    "emit evidence and source roles",
+    "revalidate and regenerate snapshots",
+    "retain v2 production activation as a separate governed migration"
+  ],
+  "deprecation_window": "No field removal; old audit artifacts remain readable but never current authority when fingerprints differ.",
+  "validation": [
+    "tests/test_architecture_false_authority_validator.py",
+    "tests/test_architecture_source_roles.py",
+    "tests/test_architecture_semantic_authority.py",
+    "tests/test_architecture_identity_determinism.py",
+    "tests/test_architecture_preflight_review_engine.py",
+    "tests/test_architecture_preflight_ui.py",
+    "tests/test_architecture_false_authority_integration.py"
+  ],
+  "rollback": "Use the preceding approved Git commit and regenerate its artifacts. Source files remain immutable; no parallel runtime or failed-gate bypass."
+}

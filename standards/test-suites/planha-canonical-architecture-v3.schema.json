@@ -1,0 +1,608 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-canonical-architecture/3.1",
+  "title": "Planha Canonical Architecture v3.1: separator and text evidence authority",
+  "type": "object",
+  "required": [
+    "schema",
+    "source",
+    "levels",
+    "frames",
+    "walls",
+    "physical_spaces",
+    "functional_zones",
+    "apertures",
+    "portals",
+    "voids",
+    "dimensions",
+    "graphs",
+    "unresolved_items",
+    "traceability",
+    "release",
+    "canonical_model_hash",
+    "evidence_registry",
+    "text_evidence",
+    "title_block_fields"
+  ],
+  "properties": {
+    "schema": {
+      "const": "planha-canonical-architecture/3.1"
+    },
+    "contract_status": {
+      "const": "EXPERIMENTAL_INTERNAL"
+    },
+    "canonical_model_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "source_type",
+        "source_sha256",
+        "source_revision_identity",
+        "adapter"
+      ],
+      "properties": {
+        "source_type": {
+          "enum": [
+            "RAW_DXF",
+            "CERTIFIED_DXF",
+            "PLANHA_PACKAGE",
+            "IFC"
+          ]
+        },
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_revision_identity": {
+          "type": "string"
+        },
+        "effective_scale": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "units": {},
+        "coordinate_system": {
+          "type": "object"
+        },
+        "adapter": {
+          "type": "object",
+          "required": [
+            "adapter_id",
+            "adapter_version"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "levels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/identified"
+      }
+    },
+    "frames": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "frame_id",
+          "level_id",
+          "primary_level_id",
+          "represented_level_ids",
+          "level_relationship",
+          "source_identity",
+          "status",
+          "title_evidence"
+        ],
+        "properties": {
+          "represented_level_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "level_relationship": {
+            "enum": [
+              "SINGLE",
+              "TYPICAL",
+              "ROOF",
+              "ROOF_HEADROOM",
+              "UNRESOLVED"
+            ]
+          },
+          "title_evidence": {
+            "type": "object",
+            "required": [
+              "raw_text",
+              "normalized_interpretation",
+              "represented_level_ids",
+              "source_handles",
+              "provenance"
+            ]
+          }
+        }
+      }
+    },
+    "walls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "wall_id",
+          "frame_id",
+          "centerline",
+          "source_handles",
+          "authority"
+        ],
+        "properties": {
+          "centerline": {
+            "$ref": "#/$defs/line"
+          },
+          "source_roles": {
+            "$ref": "#/$defs/source_roles"
+          },
+          "negative_evidence": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "physical_spaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "physical_space_id",
+          "frame_id",
+          "polygon",
+          "interior_rings",
+          "topology_status",
+          "authority",
+          "geometry_evidence"
+        ],
+        "properties": {
+          "polygon": {
+            "$ref": "#/$defs/ring"
+          },
+          "represented_level_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "source_roles": {
+            "$ref": "#/$defs/source_roles"
+          },
+          "negative_evidence": {
+            "type": "array"
+          },
+          "geometry_evidence": {
+            "$ref": "#/$defs/geometry_evidence"
+          },
+          "geometry_status": {
+            "type": "string"
+          },
+          "semantic_status": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "functional_zones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "zone_id",
+          "physical_space_id",
+          "boundary_status",
+          "semantic_status",
+          "authority"
+        ]
+      }
+    },
+    "apertures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "aperture_id",
+          "frame_id",
+          "status",
+          "host_wall_ids"
+        ]
+      }
+    },
+    "portals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "opening_id",
+          "type",
+          "status",
+          "authority"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "DOOR",
+              "WINDOW",
+              "OPEN_PASSAGE",
+              "UNKNOWN"
+            ]
+          }
+        }
+      }
+    },
+    "voids": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "void_id",
+          "frame_id",
+          "type",
+          "boundary",
+          "source_handles",
+          "authority"
+        ],
+        "properties": {
+          "source_roles": {
+            "$ref": "#/$defs/source_roles"
+          },
+          "negative_evidence": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "dimensions": {
+      "type": "array"
+    },
+    "graphs": {
+      "type": "object",
+      "required": [
+        "adjacency",
+        "enclosure",
+        "access"
+      ]
+    },
+    "unresolved_items": {
+      "type": "array"
+    },
+    "traceability": {
+      "type": "object",
+      "required": [
+        "source_sha256",
+        "adapter_id",
+        "adapter_version",
+        "legacy_model_hash",
+        "canonical_identity_version"
+      ],
+      "properties": {
+        "canonical_identity_version": {
+          "const": "planha-canonical-identity/2.1"
+        },
+        "legacy_model_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "legacy_content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "status",
+        "downstream_engineering_allowed",
+        "release_allowed"
+      ]
+    },
+    "evidence_registry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "origin"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "text_evidence": {
+      "type": "object",
+      "required": [
+        "schema",
+        "contract_version",
+        "items",
+        "metrics"
+      ],
+      "properties": {
+        "schema": {
+          "const": "planha-architectural-text-evidence/1.0"
+        },
+        "contract_version": {
+          "const": "planha-canonical-architecture/3.1"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "text_evidence_id",
+              "source_sha256",
+              "entity_type",
+              "position",
+              "authority",
+              "provenance_fingerprint"
+            ],
+            "properties": {
+              "text_evidence_id": {
+                "type": "string"
+              },
+              "source_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "entity_type": {
+                "enum": [
+                  "TEXT",
+                  "MTEXT",
+                  "ATTRIB",
+                  "ATTDEF"
+                ]
+              },
+              "position": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "provenance_fingerprint": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "authority": {
+                "type": "object",
+                "properties": {
+                  "material_geometry": {
+                    "const": false
+                  },
+                  "engineering_scale": {
+                    "const": false
+                  },
+                  "north": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object"
+        }
+      }
+    },
+    "title_block_fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "title_block_field_id",
+          "text_evidence_id",
+          "field_role",
+          "authority"
+        ],
+        "properties": {
+          "title_block_field_id": {
+            "type": "string"
+          },
+          "text_evidence_id": {
+            "type": "string"
+          },
+          "field_role": {
+            "type": "string"
+          },
+          "authority": {
+            "type": "object",
+            "properties": {
+              "material_geometry": {
+                "const": false
+              },
+              "engineering_scale": {
+                "const": false
+              },
+              "north": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source_roles": {
+      "type": "array",
+      "items": {
+        "type": [
+          "string",
+          "object"
+        ]
+      }
+    },
+    "geometry_evidence": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "VERIFIED",
+            "SUPPORTED",
+            "AMBIGUOUS",
+            "INPUT_REQUIRED",
+            "CONFLICT",
+            "REJECTED"
+          ]
+        },
+        "source_handles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/line"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "geometry": {
+                    "$ref": "#/$defs/line"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "tolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "negative_evidence": {
+          "type": "array"
+        },
+        "unresolved_internal_segment_ids": {
+          "type": "array"
+        },
+        "separator_status": {
+          "enum": [
+            "VERIFIED",
+            "SUPPORTED",
+            "AMBIGUOUS",
+            "INPUT_REQUIRED",
+            "CONFLICT",
+            "REJECTED"
+          ]
+        },
+        "separator_policy": {
+          "const": "planha-separator-evidence/1.0"
+        },
+        "boundary_witnesses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "evidence_id",
+              "ring",
+              "edge",
+              "boundary_interval",
+              "source_interval",
+              "derivation"
+            ],
+            "properties": {
+              "evidence_id": {
+                "type": "string"
+              },
+              "ring": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "edge": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "derivation": {
+                "const": "DIRECT"
+              },
+              "boundary_interval": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "source_interval": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": true,
+      "required": [
+        "separator_status",
+        "boundary_witnesses",
+        "separator_policy"
+      ]
+    },
+    "point": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 3
+    },
+    "line": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/point"
+      },
+      "minItems": 2
+    },
+    "ring": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/point"
+      },
+      "minItems": 3
+    },
+    "identified": {
+      "type": "object",
+      "required": [
+        "level_id",
+        "status"
+      ]
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "migration_id": "architecture-input-foundation-v1-to-v2",
+  "change_id": "SWCIS-2026-0291",
+  "from_contract": "canonical-architectural-model/1.0",
+  "to_contract": "planha-canonical-architecture/2.0",
+  "status": "EXPERIMENTAL_NOT_ACTIVATED",
+  "strategy": "reader-before-writer",
+  "production_consumer_enabled": false,
+  "rules": [
+    "preserve source identity and geometry",
+    "preserve unresolved states",
+    "never promote authority",
+    "validate independently before snapshot",
+    "keep legacy production readers unchanged until an explicit migration"
+  ],
+  "rollback": "Remove the experimental adapter and contracts; production behavior is unchanged."
+}

@@ -7,8 +7,11 @@ Uncertain rectangles are reported but never promoted to mechanical authority.
 """
 from __future__ import annotations
 from collections import Counter
+from hashlib import sha256
 import re
 import ezdxf
+
+from .architecture_text_evidence import extract_text_evidence, normalize_text
 
 
 def _point(entity):
@@ -36,8 +39,7 @@ def _text(entity):
 
 
 def _norm(value):
-    value=str(value or "").replace("ي","ی").replace("ك","ک").replace("\u200c"," ").lower()
-    return re.sub(r"\s+"," ",value).strip()
+    return normalize_text(value)
 
 
 def _classify(text_blob):
@@ -68,6 +70,7 @@ def _classify(text_blob):
 
 def _level(text_blob):
     s=_norm(text_blob)
+    if "خرپشته" in s or "roof headroom" in s: return "ROOF_HEADROOM"
     if "زیرزمین" in s or "basement" in s: return "BASEMENT"
     if "طبقه سوم" in s: return "LEVEL-03"
     if "طبقه دوم" in s: return "LEVEL-02"
@@ -81,6 +84,7 @@ def _level(text_blob):
 def _levels(text_blob):
     """Return every level explicitly represented by a drawing title."""
     s=_norm(text_blob); result=[]
+    if "خرپشته" in s or "roof headroom" in s: result.append("ROOF_HEADROOM")
     if "همکف" in s or re.search(r"\bground\b",s): result.append("GROUND")
     names=(("اول","LEVEL-01"),("دوم","LEVEL-02"),("سوم","LEVEL-03"),
            ("چهارم","LEVEL-04"),("پنجم","LEVEL-05"))
@@ -132,6 +136,8 @@ def _contains(outer,inner,tol=1e-6):
 def analyze_plan_frames(src):
     """Return candidates plus an explainable, fail-closed separation decision."""
     doc=ezdxf.readfile(src);msp=doc.modelspace();entities=list(msp)
+    source_sha256=sha256(open(src,"rb").read()).hexdigest()
+    canonical_text=extract_text_evidence(doc,source_sha256=source_sha256)
     raw=[]
     for e in entities:
         bounds=_rect_bounds(e)
@@ -149,18 +155,30 @@ def analyze_plan_frames(src):
         family_count=families[(round(row["short"],1),round(row["long"],1))]
         nested=sum(1 for other in raw if other is not row and _contains(row["bounds"],other["bounds"]) and
                    .70<=((other["width"]*other["height"])/(row["width"]*row["height"]))<.98)
-        texts=[];count=0;graphic=0
+        texts=[];title_records=[];count=0;graphic=0
         for e in entities:
             p=_point(e)
             if not p or not _inside(p,row["bounds"]):continue
             count+=1
             if e.dxftype() in {"LINE","LWPOLYLINE","POLYLINE","ARC","CIRCLE","INSERT","HATCH"}:graphic+=1
-            if e.dxftype() in {"TEXT","MTEXT"}:
-                value=_text(e)
-                if value:texts.append(value)
+        for item in canonical_text["items"]:
+            if item.get("occurrence_kind")=="TEMPLATE_DEFINITION" or not _inside(item.get("position"),row["bounds"]):
+                continue
+            roles={candidate["role"] for candidate in item.get("role_candidates") or []}
+            if not roles.intersection({"PLAN_TITLE","DRAWING_TYPE_TITLE","LEVEL_TITLE","SECTION_ELEVATION_LABEL"}):
+                continue
+            value=item.get("plain_text") or ""
+            texts.append(value)
+            title_records.append({"text":value,"normalized_text":item.get("normalized_text"),
+                                  "source_handle":item.get("entity_handle"),
+                                  "text_evidence_id":item.get("text_evidence_id"),
+                                  "source_insert_handle":item.get("source_insert_handle"),
+                                  "instance_path":item.get("instance_path") or []})
         blob="\n".join(texts);drawing_type=_classify(blob);levels=_levels(blob)
         title_hit=drawing_type!="UNKNOWN"
-        content_hit=graphic>=25 and len(texts)>=2
+        exact_text_count=sum(1 for item in canonical_text["items"]
+                             if item.get("occurrence_kind")!="TEMPLATE_DEFINITION" and _inside(item.get("position"),row["bounds"]))
+        content_hit=graphic>=25 and exact_text_count>=2
         # Repeated geometry without either a print layer or a drawing title is
         # normally an inner wall/room outline, not a sheet frame.
         if not content_hit:continue
@@ -169,6 +187,7 @@ def analyze_plan_frames(src):
                   "nested_border":nested>0,"drawing_title":title_hit,"substantial_content":content_hit}
         score=(30 if layer_hit else 0)+(20 if family_count>=2 else 0)+(10 if nested else 0)+(25 if title_hit else 0)+(15 if content_hit else 0)
         candidates.append({**row,"title_text":texts,"entity_count":count,"graphic_entity_count":graphic,
+                           "title_evidence":title_records,
                            "drawing_type":drawing_type,"level":levels[0] if len(levels)==1 else None,
                            "represented_levels":levels,"evidence":evidence,"confidence":score})
     # Suppress inset wall borders when a stronger print-layer rectangle contains
@@ -206,7 +225,8 @@ def detect_print_plans(src):
         arc=next((x for x in frame_text if re.search(r"arc\s*-\s*\d+",_norm(x))),None)
         plans.append({"plan_id":f"PLAN-{i+1:02d}","bounds":b,"drawing_type":frame["drawing_type"],
                       "level":frame["level"] or _level(blob),"represented_levels":frame["represented_levels"],
-                      "title_text":frame_text,"arc_sheet":arc,"entity_count":frame["entity_count"],
+                      "title_text":frame_text,"title_evidence":frame.get("title_evidence") or [],
+                      "arc_sheet":arc,"entity_count":frame["entity_count"],
                       "frame_confidence":frame["confidence"],"frame_evidence":frame["evidence"],
                       "frame_detection_status":"CONFIRMED","mechanical_role":"EXCLUDE"})
 
@@ -345,20 +365,22 @@ def apply_plan_scopes(src,architecture,recognition,authoritative_profiles=None):
         promoted=_promote_room_evidenced_floor_plans(plans,architecture.get("rooms") or [])
         architecture.setdefault("quality",{})["room_evidence_promoted_plan_ids"]=promoted
 
-    doc=ezdxf.readfile(src); text_shafts=[]
-    for e in doc.modelspace():
-        if e.dxftype() not in {"TEXT","MTEXT"}: continue
-        text=_text(e); point=_point(e)
-        if not point or not ("داکت" in text or "شفت" in text): continue
-        p=owner(point)
-        if p:text_shafts.append({"layer":str(e.dxf.layer),"polygon":None,"point":point,"area":None,
-                                 "plan_id":p["plan_id"],"source":"textual_vertical_core"})
+    doc=ezdxf.readfile(src)
+    source_sha256=sha256(open(src,"rb").read()).hexdigest()
+    text_contract=extract_text_evidence(doc,source_sha256=source_sha256)
+    vertical_core_hints=[]
+    for item in text_contract["items"]:
+        if not set(item.get("semantic_candidates") or []).intersection({"duct","shaft"}): continue
+        point=item.get("position");p=owner(point)
+        if p:vertical_core_hints.append({"text_evidence_id":item["text_evidence_id"],"point":point,
+                                         "plan_id":p["plan_id"],"authority":"SEMANTIC_HINT_ONLY",
+                                         "material_geometry":False})
     for shaft in architecture.get("shafts") or []:
         point=shaft.get("point")
         if point is None and shaft.get("polygon"):
             poly=shaft["polygon"]; point=(sum(x for x,y in poly)/len(poly),sum(y for x,y in poly)/len(poly))
         p=owner(point); shaft["plan_id"]=p["plan_id"] if p else None; shaft["point"]=point
-    architecture["shafts"]=(architecture.get("shafts") or [])+text_shafts
+    architecture["textual_vertical_core_hints"]=vertical_core_hints
     architecture["plans"]=plans
     architecture["mechanical_plan_ids"]=[p["plan_id"] for p in plans if p.get("mechanical_role") in {"PRIMARY_FLOOR","ROOF_SUPPORT"}]
     architecture["primary_floor_plan_ids"]=[p["plan_id"] for p in plans if p.get("mechanical_role")=="PRIMARY_FLOOR"]

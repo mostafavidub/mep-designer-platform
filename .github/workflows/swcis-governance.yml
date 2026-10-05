@@ -29,13 +29,9 @@ jobs:
           else
             base="${{ github.event.before }}"
           fi
-          mapfile -t requests < <(git diff --name-only "$base...HEAD" -- 'changes/*.yaml')
-          if [[ ${#requests[@]} -ne 1 ]]; then
-            echo "Exactly one changed changes/*.yaml file is required; found ${#requests[@]}." >&2
-            exit 1
-          fi
+          request="$(python tools/swcis_scope.py --base "$base")"
           echo "base=$base" >> "$GITHUB_OUTPUT"
-          echo "request=${requests[0]}" >> "$GITHUB_OUTPUT"
+          echo "request=$request" >> "$GITHUB_OUTPUT"
       - name: Validate repository and computed change impact
         run: python tools/swcis_validate.py --base "${{ steps.scope.outputs.base }}" --change-request "${{ steps.scope.outputs.request }}" --report swcis-report.json
       - name: Run governance contract tests
@@ -43,7 +39,7 @@ jobs:
       - name: Reject parallel runtime versions and stale entrypoints
         run: python tools/runtime_version_guard.py --base "${{ steps.scope.outputs.base }}" --report runtime-version-audit.json
       - name: Verify automatic build identity
-        run: python -m pytest -q tests/test_single_living_system.py tests/test_runtime_contract.py
+        run: python -m pytest -q tests/test_single_living_system.py tests/test_runtime_contract.py tests/test_swcis_integration_scope.py
       - name: Publish impact report
         if: always()
         uses: actions/upload-artifact@v4

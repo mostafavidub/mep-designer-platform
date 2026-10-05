@@ -1,0 +1,19 @@
+{
+  "migration_id": "architecture-preflight-review-v1",
+  "change_id": "SWCIS-2026-0292",
+  "from_contract": "planha-architecture-review/1.0",
+  "to_contract": "planha-architecture-preflight/1.0",
+  "status": "EXPERIMENTAL_NOT_ACTIVATED",
+  "strategy": "additive-reader-before-writer",
+  "production_consumer_enabled": false,
+  "rules": [
+    "preserve raw validator issue evidence",
+    "ask only bounded source-interpretation questions",
+    "never create material geometry from review",
+    "reject stale or tampered review decisions",
+    "revalidate independently after accepted review",
+    "create snapshots only from current PASS reports",
+    "keep legacy production readers unchanged"
+  ],
+  "rollback": "Remove the experimental preflight module and schema; production behavior is unchanged."
+}

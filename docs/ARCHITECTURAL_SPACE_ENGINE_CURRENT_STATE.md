@@ -1,0 +1,231 @@
+# Architectural Space Engine — Current State and Root Cause
+
+## Whole-floor Semantic Scout (PR #295)
+
+An additive `architectural-semantic-map/1.0` contract now supports strict
+approximate functional observations from a clean whole-floor render plus exact
+DXF text/object sidecars. It audits semantic coverage, plans adaptive local
+review, reconciles global/local observations, maps hints to CAD candidates
+without mutation, and exposes only bounded `MEP_PREANALYSIS`.
+
+Every Vision localization remains `VISION_SEMANTIC_HINT`; it has no material,
+routing, physical-space, or engineering-geometry authority. The authorized
+Fasihi Ground whole-floor qualification made exactly one global call. DeepSeek
+returned malformed/truncated tool JSON at character 4473; the entire response
+was rejected before semantic-map construction, fusion, CAD mapping or MEP
+pre-analysis. No retry or local call was made. Current provider status is
+`DEEPSEEK_SEMANTIC_SCOUT_UNQUALIFIED`.
+
+Compact multi-pass v2 subsequently completed one inventory and four bounded
+localization calls on Fasihi Ground. All five returned valid forced-tool JSON;
+actual response sizes were 398, 217, 97, 274, and 207 bytes. Transport is
+qualified for this case, but the semantic result is `SEMANTIC_SCOUT_PARTIAL`:
+Storage was inventoried but omitted by the initial group planner, and one broad
+Stair hint conflicts with exact Duct label evidence. Partial hints remain QA diagnostics and are not a final semantic map.
+
+Semantic Anchor Fusion now treats exact DXF functional labels as independent
+point anchors with higher semantic authority than Vision. Compatible colocated
+functions such as Stair+Duct remain a functional composition rather than a false
+conflict, while incompatible labels still fail closed. MEP_PREANALYSIS may use
+both non-conflicting Vision hints and exact anchors for search/prioritization,
+but neither source gains engineering geometry authority. Compact DeepSeek calls
+may retry exactly once only when the first response is technically unusable
+(provider failure, missing/invalid tool call, malformed JSON, or invalid compact
+schema); a valid but semantically weak answer is never retried automatically and
+no fallback transport is introduced.
+
+The governed Fasihi Ground qualification then completed a fresh compact run:
+one Inventory and four deterministic Localization calls, all valid on their
+first attempt with `finish_reason = tool_calls`. It produced 13 approximate
+Vision hints and six exact semantic anchors. Kitchen, Toilet, Living, Stair,
+Duct, Yard, Parking, Entrance and Corridor are available for bounded search and
+verification priorities. Stair+Duct is retained as
+`COLOCATED_FUNCTIONAL_COMPOSITION`; one oversized Vestibule hypothesis is
+rejected as `CONFLICT` and cannot enter MEP pre-analysis. Storage is absent from
+both the fresh Inventory and exact labels, while a deterministic regression
+proves it is scheduled whenever either source requires it. All 54 exact text
+records were audited: six functional records (five unique texts) were explained
+and 48 drafting annotations were excluded from semantic completeness.
+
+`MEP_PREANALYSIS` remains intentionally non-engineering: every Vision hint and
+exact anchor has `material_geometry = NONE`, `routing_authority = NONE`, and
+`engineering_geometry = false`. Its only outputs are semantic search targets,
+workflow/input-planning signals, verification priority, and discipline-specific
+investigation prompts. Fixture/equipment placement, pipe/drain/vent/duct/cable
+routes, room-area loads, penetrations, sleeves, obstacles, and engineer-ready
+output are expressly forbidden.
+
+## Blind real-project validation — 2026-09-26
+
+The private Fasihi architectural DXF was processed blind. Reference Mechanical
+drawings were not opened or used during generation.
+
+| Check | Expected from independent drawing evidence | Detected | Status |
+|---|---:|---:|---|
+| Authoritative frames | Roof, Level 01, Ground | 3 | PASS |
+| Reference-only views | sections/elevations/furniture excluded | excluded | PASS |
+| Unit calibration | metres despite an incorrect mm header | metres + declared conflict | PASS |
+| Overlapping space area | 0 | 0 after interior-ring preservation | PASS |
+| Label-evidenced uses | yard, toilet, terrace, bathroom, duct, bedroom, living, closet, reception, kitchen | extracted; mostly not bound to valid cells | PARTIAL |
+| Physical spaces | all real rooms, no drafting cells | 157 candidates, 153 unresolved | FAIL |
+| Door/window topology | every accepted opening hosted and linked | no reliable source openings accepted | FAIL |
+| Geometric accounted coverage | all authoritative usable area, without overlap | 56.88% | FAIL |
+| Vision runtime | localized ambiguity adapter | interface complete; provider absent | CONFIG_REQUIRED |
+| Mechanical release | blocked while critical architecture is unresolved | blocked | PASS |
+
+### New root causes and fixes
+
+Exploded SHX/graphic geometry and nested block graphics were entering the wall
+graph. Polygon interior rings were also lost during canonical materialization,
+recreating overlap after correct polygonization. The implementation now admits
+nested/curved boundaries conservatively, rejects high-density glyph layers by
+their drawing signature, preserves interior rings in identity and QA, models
+accepted openings with host-wall/space topology, reports geometric coverage and
+dimension reconciliation, and exposes only unresolved regions for review.
+
+The branch is **not ready for Staging**. The remaining unresolved cells require
+a general portal/wall-semantic reconstruction slice. No Fasihi coordinate, name
+or dimension has been encoded.
+
+### Multi-project blind regression
+
+| Project | Authority frames | Candidates | Verified | Unknown | Accounted coverage | Overlap | Result |
+|---|---:|---:|---:|---:|---:|---:|---|
+| P1 | 4 | 444 | 12 | 432 | 47.18% | 0 | CONFLICT |
+| P3 | 4 | 268 | 6 | 261 | 9.06% | 0 | CONFLICT |
+| P7 | 4 | 399 | 6 | 393 | 48.85% | 0 | CONFLICT |
+| Fasihi | 3 | 157 | 4 | 153 | 56.88% | 0 | CONFLICT |
+
+This table is intentionally a release blocker, not a claim of completion. It
+shows that overlap preservation is fixed across the corpus while semantic wall
+and portal reconstruction remains the dominant unsolved capability.
+
+## General wall reconstruction iteration — 2026-09-26
+
+Boundary-to-source diagnostics were run before changing production inference.
+They show that the dominant false-cell source is anonymous top-level geometry,
+not short lines: UNKNOWN_GEOMETRY accounts for 98.04% of unresolved Fasihi
+cells, 99.07% in P1, 37.79% in P3 and 100% in P7. P3 additionally has 62.21%
+of unresolved cells dominated by wall-face geometry. Layer `0` is the largest
+unknown contributor in Fasihi, P1 and P7. The unknown segments include both
+LINE and LWPOLYLINE entities with long tails up to roughly 30--43 drawing
+units, so a generic length cutoff would delete legitimate architecture while
+retaining many drafting objects.
+
+The current branch now classifies segments before polygonization, infers
+recurring parallel wall-face offsets through a spatial index, keeps unknown
+geometry out of the wall graph, selectively admits only label-supported
+partitions connected to the accepted wall network, and rejects wall-solid
+strip cells using thicknesses inferred from the drawing. Every admission and
+rejection is traceable. Anonymous door candidates require combined swing-arc,
+leaf and host-wall proximity evidence; an arc alone is rejected.
+
+| Project | Before candidates | After candidates | After verified | After unknown | Coverage | Overlap | Runtime |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| P1 | 444 | 132 | 9 | 123 | 97.96% | 0 | 16.79 s |
+| P3 | 268 | 160 | 4 | 156 | 11.00% | 0 | 11.00 s |
+| P7 | 399 | 146 | 3 | 143 | 59.22% | 0 | 10.30 s |
+| Fasihi | 157 | 33 | 4 | 29 | 71.52% | 0 | 23.30 s |
+
+These numbers demonstrate general reduction of false topology without restoring
+overlap, but they are not exit evidence. The four real drawings still have zero
+verified geometry-derived doors and windows, many unknown regions, and no
+independent Golden polygons/portals from which precision, recall or IoU can be
+computed. Completeness therefore remains `CONFLICT` and Mechanical remains
+fail-closed. Open passage reconstruction, window reconstruction, envelope-first
+classification, weak-edge merging and Golden scoring are still release blockers.
+
+### Topology-closure baseline and independent Golden gate
+
+The topology-closure phase deliberately made no further runtime reconstruction
+change before creating measurable QA infrastructure. The selected independent
+review floors are Fasihi Ground, Fasihi Level 01, P1 Ground and P3 Ground. A
+source-only annotation package renders raw DXF primitives for those frame bounds
+without importing the reconstruction engine, and creates an initially PENDING
+Golden document. The scorer refuses to calculate metrics until an independent
+reviewer marks the annotation APPROVED and includes reviewed space polygons.
+Golden data lives under test-suite governance and has no runtime import path.
+
+Per-frame diagnostics explain distinct failure modes. P1 has high area coverage
+but remains over-segmented/semantically unresolved: its authoritative floors
+contain 40--47 remaining cells while only 7--14 architectural labels are hosted.
+P3 is a separate envelope failure: every authoritative frame has less than 40%
+accounted coverage, and its Ground frame retains 50 cells with only 3 hosted
+labels. P7 Ground/Mezzanine primarily combine over-segmentation and semantic
+binding failure; its roof frames have envelope failure. Fasihi's two primary
+floors are geometrically closer, but semantic binding and real portal detection
+remain incomplete. These classifications are diagnostic evidence, not new
+project-specific production rules.
+
+Baseline Golden precision/recall/IoU is currently `INCOMPLETE_GOLDEN`, not zero:
+the four source-only packages still require independent polygon/portal review.
+Runtime envelope, merge and portal changes remain prohibited until this review
+establishes the measurable baseline required by the closure specification.
+
+## Runtime authority
+
+The deployed canonical application enters through `cad_engine.main:app`; the web
+application installs `app.architecture_reconstruction_v1`, while the Mechanical
+CAD pipeline declares `cad_engine.engineering_pipeline_v13` as its reconstruction
+authority. File names that contain historical revisions are compatibility debt,
+not proof that a capability is complete.
+
+## Current-state classification
+
+| Area | Status | Evidence |
+|---|---|---|
+| DXF ingestion | PARTIAL | DXF reading and bounded underlay inventory exist; ZIP safety, source cache and complete primitive provenance are not one canonical stage. |
+| Frame/level isolation | IMPLEMENTED BUT UNVERIFIED | Plan segmentation and level detectors exist, but unknown frames can still reach independent consumers and no single completeness report owns every frame. |
+| Room reconstruction | PARTIAL | Active reconstruction starts with recognized TEXT/MTEXT and optionally attaches the smallest enclosing closed polyline. |
+| LINE/ARC wall topology | OPEN | LINE entities are inventoried but not polygonized into all physical-space cells. ARC/SPLINE wall faces are not canonical topology inputs. |
+| Semantic classification | PARTIAL | Small duplicated alias maps classify labelled rooms; evidence fusion and canonical ontology are absent. |
+| Physical space vs functional zone | OPEN | The current record conflates geometry and room use. |
+| Dimensions | PARTIAL | A separate semantic dimension engine exists, but architectural space reconstruction does not associate DIMENSION provenance with each space. |
+| Completeness gate | PARTIAL | An 18-control QA gate exists, but it validates supplied records; the producer cannot prove all frame area is accounted for. |
+| Visual/human checkpoint | PARTIAL | Architecture review UI exists, but its overlay is built from incomplete geometry and can ask the user to repair what the engine never reconstructed. |
+| PMM integration | PARTIAL | PMM stores aggregated `space-group` counts derived from labels, not canonical polygons/zones/openings. |
+
+## Symptom → evidence → root cause → impact
+
+**Symptom:** the review preview omits large portions of a plan, open/unlabelled
+spaces disappear, and the user is asked to confirm incomplete polygons.
+
+**Evidence:** `cad_engine.engineering_pipeline_v13.reconstruct_architecture`
+creates `rooms` by iterating recognized text and selecting an enclosing closed
+polyline. Separate alias dictionaries exist in multiple application and CAD
+modules. Individual wall faces, openings, dimensions and unexplained frame area
+do not drive room creation.
+
+**Root cause:** there is no canonical, geometry-first architectural model. The
+system has parallel feature detectors, not a staged reconstruction engine whose
+output is measured for completeness.
+
+**Impact:** downstream Mechanical logic can receive aggregated room counts while
+actual regions are missing or mis-hosted. A green feature test therefore cannot
+prove that the uploaded architecture is complete.
+
+## Target architecture
+
+One canonical pipeline owns source identity, frames, units, primitives, topology,
+physical spaces, functional zones, openings, objects, dimensions, evidence,
+ambiguity and completeness. Exact CAD facts are processed first. Vision is an
+optional adapter for unresolved semantics only and cannot overwrite contradictory
+CAD evidence. Every unresolved critical region becomes `INPUT_REQUIRED`; affected
+downstream engineering is blocked.
+
+## Local visual context v3 qualification
+
+Candidate Graph v2 now has deterministic source-only, region-geometry,
+evidence, topology and local Context Pack projections. Each pack preserves the
+frozen source/graph hashes, CAD crop, target and direct-neighbor IDs, source
+label/object handles, boundary IDs and render hash. Provider schemas contain
+only target IDs; visible neighboring IDs are context and cannot be returned.
+
+The Fasihi Ground diagnosis found that 72 of 76 unresolved regions had no hosted
+semantic label, 21 had no CAD-confirmed boundary support, 19 were small cells
+and four sat in dense local topology. Local QA also exposed candidate regions
+over vehicle/detail geometry and mixed building/site areas. A controlled six-ID
+test reduced UNKNOWN from six to five: one stair candidate was recovered while
+five remained explicitly insufficient. Transport and atomic validation passed,
+but semantic classification remains unqualified. Boundary and Bridge calls stay
+paused; the next blocker is deterministic candidate-region quality.

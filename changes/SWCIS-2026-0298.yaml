@@ -1,0 +1,115 @@
+{
+  "change_id": "SWCIS-2026-0298",
+  "summary": "Separate geometric boundary support from physical separator authority using durable interval evidence and scope-bound review; breaking canonical 3.0 contract.",
+  "requester": "project-owner",
+  "change_types": [
+    "rule",
+    "test",
+    "documentation",
+    "governance",
+    "schema",
+    "drawing_output"
+  ],
+  "changed_rule_ids": [
+    "MEP-ARCH-RECOG-001"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "cad_designer": "Source interval registry and producer material gate; legacy completeness also blocks missing separator role. Geometry unchanged.",
+    "deployment": "No merge/auto-merge/deploy; draft stacked PR only.",
+    "detail_riser": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "docs": "Approved hybrid contract, region-vs-interval limits and migration documented.",
+    "equipment": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "governance": "NewCR0298, new ADR, 18-module closure; no waiver.",
+    "manifest": "New canonical evidence and role references hashed; packages retain embedded schema identity, old schema rejected.",
+    "manufacturer_selector": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "migration": "Explicit v2 regeneration and current validation; no production data mutation.",
+    "planner": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "pmm": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "qa": "Independent read-only witness/role/review validator, source replay and destructive controls.",
+    "questionnaire": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "routing": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "rule_book": "MEP-ARCH-RECOG-001 source role and material authority traceability extended.",
+    "sizing": "No consumer implementation change or activation. Fail-closed legacy completeness protects downstream use; complete governed regression PASS. No Mechanical migration.",
+    "ui_api": "Existing owner/CSRF/server-resolved review transport retained; no UI redesign or added client authority fields.",
+    "versioning": "Canonical3.0; SWCIS5.0.0 because authority qualification is breaking. Runtime remains canonical Git build."
+  },
+  "evidence": {
+    "traceability": [
+      "MEP-ARCH-RECOG-001: separator evidence and independent authority checks."
+    ],
+    "tests": [
+      "33 new separator/region-scope tests; focused contract/review/validator100 PASS; architecture regression465 PASS. Complete governed1393 tests +14 subtests PASS on Python3.12.13. Final official CI reported per commit."
+    ],
+    "docs": [
+      "docs/adr/ADR-ARCHITECTURAL-BOUNDARY-SEPARATOR-EVIDENCE.md"
+    ],
+    "version_bump": [
+      "Canonical 3.0 breaking authority semantics; SWCIS5.0.0 per major-version policy."
+    ],
+    "migration": [
+      "standards/swcis/migrations/architecture-separator-contract-v3.json"
+    ],
+    "golden_regression": [
+      "Approved development replay: original negative controls0/19; expanded reviewed negatives0/22. All159 current candidate geometries exactly preserved across7 sources. Historical9 region decisions replayed only at original scope. The owner explicitly classified all36 minimum source-witness intervals; 36/36 fingerprint-bound decisions accepted, with Q16/Q19/Q20 and the established positive references resolved only through their exact existing evidence."
+    ],
+    "semantic_diff": [
+      "RAW DXF context/pairing alone yields review-required role; historical region decisions grant no interval role."
+    ],
+    "artifact_diff": [
+      "Exact geometry retained7/7; three reviewed current nonspaces rejected by source-bound region decisions without reclassifying their lines. Region and interval evidence remain distinct."
+    ],
+    "numeric_diff": [
+      "No new geometry tolerance, snapping or repair. Existing source and polygon coordinates retained."
+    ],
+    "contract_diff": [
+      "Geometry VERIFIED no longer grants material_geometry; exact interval separator role required."
+    ],
+    "deployment_plan": [
+      "No merge, auto-merge or deployment."
+    ],
+    "rollback_plan": [
+      "Independent stacked PR; revert approved commit; new artifacts remain unqualified under old readers."
+    ]
+  },
+  "risk": {
+    "likelihood": 4,
+    "severity": 5,
+    "detectability": 4,
+    "score": 80,
+    "rationale": "Core authority semantics, stale review and downstream promotion risk; explicit owner design approval received."
+  },
+  "waiver": null,
+  "verification_status": {
+    "implementation": "IMPLEMENTED_AND_SOURCE_WITNESS_REVIEWED",
+    "qualification": "ARCHITECTURE_SEPARATOR_EVIDENCE_QUALIFIED",
+    "release": "BLOCKED",
+    "focused": "PASS_100",
+    "architecture_regression": "PASS_465",
+    "full_regression": "PASS_1393_PLUS_14_SUBTESTS",
+    "original_negative_controls": "PASS_0_OF_19",
+    "expanded_negative_controls": "PASS_0_OF_22",
+    "determinism": "PASS_7_OF_7",
+    "human_review": "PASS_9_OF_9_ORIGINAL_SCOPE_AND_36_OF_36_SEPARATOR_WITNESSES",
+    "official_ci": "PENDING_FINAL_SHA"
+  }
+}

@@ -2,6 +2,136 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-053",
+      "status": "IMPLEMENTED_QUALIFIED",
+      "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2",
+        "architectural_space_understanding",
+        "architectural_semantic_scout"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit project-owner approval of ARCH-P0 Phase B and Canonical Architecture 3.1 with claim-scoped migration."
+      },
+      "verification": {
+        "positive_test": "PASS",
+        "destructive_test": "PASS",
+        "architecture_regression": "PASS_522_ON_NEW_PARENT",
+        "determinism": "PASS_7_OF_7",
+        "full_regression": "PASS_1428_PLUS_14_SUBTESTS",
+        "required_ci": "REQUIRED_5_EXECUTED_SUCCESS_ON_FINAL_SHA",
+        "private_replay": "PASS_7_OF_7_SEALED",
+        "original_negative_controls": "PASS_0_OF_19",
+        "expanded_reviewed_negative_controls": "PASS_0_OF_22",
+        "positive_references": "PASS_P1_P4_DUCT_Q16_Q19_Q20",
+        "q02": "INPUT_REQUIRED"
+      },
+      "migration": {
+        "forward": "Regenerate exact text evidence and revalidate only text/title/level/semantic-dependent claims; keep independent 3.0 geometry and separator evidence valid.",
+        "rollback": "Revert the independent stacked PR; do not project 3.1 authority backward into 3.0."
+      }
+    },
+    {
+      "id": "GOV-2026-052",
+      "status": "IMPLEMENTED_PARTIAL",
+      "summary": "Canonical Architecture 3.0 separates geometric boundary support and physical separator authority; scoped source review cannot create geometry.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit Phase B approval of hybrid contract and breaking canonical revision."
+      },
+      "verification": {
+        "qualification": "ARCHITECTURE_SEPARATOR_EVIDENCE_PARTIAL: eight positive references require interval-role interpretation",
+        "tests": "PASS_1392_PLUS_14_SUBTESTS",
+        "required_ci": "PENDING",
+        "original_negatives": "0/19",
+        "expanded_negatives": "0/22",
+        "determinism": "7/7"
+      },
+      "migration": {
+        "forward": "Regenerate v2 evidence and revalidate; never preserve old qualification by relabeling.",
+        "rollback": "Approved Git commit; new artifacts remain unqualified for old readers."
+      }
+    },
+    {
+      "id": "GOV-2026-051",
+      "status": "IMPLEMENTED_PENDING_FINAL_VERIFICATION",
+      "summary": "Restore source-supported enclosure recall lost at numerical transverse endpoint mismatch. Carry repeated-source-array negative evidence across candidate origins after bounded owner source review. Remaining landing false positives prevent qualification; no source-role hardcoding or validator relaxation.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Verified-space preservation task; no merge/deployment."
+      },
+      "verification": {
+        "focused_tests": "PASS_56",
+        "full_regression": "PASS_1360_PLUS_14_SUBTESTS",
+        "required_ci": "PENDING",
+        "architecture": "PASS_479",
+        "qualification": "PARTIAL: three owner-confirmed landing false positives remain; three additional downgraded outputs require independent interpretation."
+      },
+      "migration": {
+        "forward": "Regenerate canonical models and stale-safe review/snapshot identities using existing enclosure migration; schema unchanged.",
+        "rollback": "Revert commit and regenerate; preserve fail-closed gates."
+      }
+    },
+    {
+      "id": "GOV-2026-050",
+      "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
+      "summary": "Recover source-supported enclosure candidates with correct wall-face axis placement and deterministic parent/container separation; preserve existing false-authority exclusions and physical boundary proof.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Task C enclosure recall recovery; no merge or deployment authorization."
+      },
+      "verification": {
+        "focused_tests": "PENDING",
+        "full_regression": "PENDING",
+        "required_ci": "PENDING",
+        "private_pilot_replay": "Exact seven-project #308 baseline reproduced before edits; final candidate replay pending."
+      },
+      "migration": {
+        "forward": "Regenerate canonical candidates and qualifications; see standards/swcis/migrations/architecture-enclosure-candidate-integrity.json.",
+        "rollback": "Use prior approved Git commit and regenerate; never bypass failed engineering gates."
+      }
+    },
+    {
+      "id": "GOV-2026-049",
+      "status": "IMPLEMENTED_PENDING_FULL_VERIFICATION",
+      "summary": "Separate physical boundary evidence from semantic recognition and veto contradictory source roles before architectural material or void authority.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "User-requested false-authority root-cause elimination; merge and deployment remain gated."
+      },
+      "verification": {
+        "focused_validator_tests": "23 passed",
+        "foundation_identity_review_tests": "53 passed",
+        "preflight_ui_tests": "11 passed",
+        "full_regression": "PENDING",
+        "required_ci": "must_pass before merge",
+        "private_pilot_replay": "PRELIMINARY_EXECUTED_NOT_FINAL; seven development pilots twice, final positive-recall replay pending"
+      },
+      "migration": {
+        "forward": "Regenerate corrected recognition and canonical evidence; invalidate identity-dependent reviews and snapshots. See standards/swcis/migrations/architecture-false-authority-evidence.json.",
+        "rollback": "Revert to the prior approved Git commit and regenerate; never bypass failed engineering gates."
+      }
+    },
+    {
       "id": "GOV-2026-040",
       "status": "APPROVED",
       "summary": "Require all eighteen topology and routing controls to pass at exactly 100 before Mechanical CAD delivery.",
@@ -1586,6 +1716,34 @@
       "migration": {
         "forward": "Regenerate applicable architectural drawing artifacts from approved semantic geometry; no persisted project data rewrite.",
         "rollback": "Revert the protected merge commit; no destructive data migration."
+      }
+    },
+    {
+      "id": "GOV-2026-048",
+      "status": "APPROVED",
+      "summary": "Recover deterministic Canonical Architecture semantic identity, collision-free world-space Wall identity, represented-level and Persian title propagation, and fail-closed authority/status consistency without changing recognition geometry or production consumers.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2",
+        "architecture_preflight_review_engine"
+      ],
+      "affected_projects": [
+        "all"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "explicit project-owner instruction to perform Architecture Canonical Identity, Determinism and Level/Title Propagation Recovery on the exact stacked dependency"
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "development_pilot_replay": "must_pass",
+        "geometry_unchanged": "must_pass",
+        "full_regression": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Adopt planha-canonical-identity/2.1, regenerate corrected entity identity, mark identity-bound reviews stale and snapshots superseded only when governed meaning changes; production activation remains a separate decision.",
+        "rollback": "Revert the stacked branch before activation; never preserve a collision-prone legacy ID as canonical authority."
       }
     }
   ]

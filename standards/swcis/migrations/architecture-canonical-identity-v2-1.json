@@ -1,0 +1,21 @@
+{
+  "migration_id": "architecture-canonical-identity-v2-1",
+  "change_id": "SWCIS-2026-0294",
+  "from_contract": "planha-canonical-identity/2.0-implicit",
+  "to_contract": "planha-canonical-identity/2.1",
+  "status": "EXPERIMENTAL_NOT_ACTIVATED",
+  "strategy": "reader-before-writer-with-explicit-one-time-invalidation",
+  "production_consumer_enabled": false,
+  "database_migration_required": false,
+  "rules": [
+    "derive canonical identity only from the schema-aware semantic projection",
+    "exclude timestamps, durations, host paths and diagnostic runtime metadata",
+    "include source, frame, represented-level, world-space geometry, authority and topology meaning",
+    "regenerate corrected Wall and evidence IDs where the legacy identity was collision-prone",
+    "mark reviews stale when governed entity or evidence identity changes",
+    "mark snapshots superseded when canonical semantic identity changes",
+    "preserve old hashes only as non-authoritative migration audit evidence",
+    "keep production consumers on the existing path until a separate migration is approved"
+  ],
+  "rollback": "Revert the stacked branch before activation. Never treat legacy collision-prone IDs as canonical after activation."
+}

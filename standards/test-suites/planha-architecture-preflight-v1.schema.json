@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "planha-architecture-preflight/1.0",
+  "type": "object",
+  "required": ["schema", "primary_state", "source_sha256", "canonical_model_hash", "validator_report_hash", "raw_validator_codes", "normalized_issues", "review_items", "source_input_requirements", "engine_defects", "noncritical_diagnostics", "review_registry", "metrics", "validator_bypass_count", "review_engine_self_pass"],
+  "properties": {
+    "schema": {"const": "planha-architecture-preflight/1.0"},
+    "primary_state": {"enum": ["AUTO_VALIDATED", "QUICK_REVIEW_REQUIRED", "ARCHITECTURE_INPUT_REQUIRED", "CONFLICT"]},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "canonical_model_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "validator_report_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "raw_validator_codes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "normalized_issues": {"type": "array", "items": {"type": "object", "required": ["issue_id", "normalized_code", "raw_validator_codes", "classification", "impact_classification", "root_cause_key"]}},
+    "review_items": {"type": "array", "items": {"type": "object", "required": ["review_item_id", "question_type", "allowed_answers", "validator_issue_ids_covered", "expected_effects", "review_fingerprint"]}},
+    "source_input_requirements": {"type": "array"},
+    "engine_defects": {"type": "array"},
+    "noncritical_diagnostics": {"type": "array"},
+    "review_registry": {"type": "object", "required": ["schema", "generated_review_items", "accepted_decisions", "rejected_decisions", "stale_decisions", "decision_history", "validation_history", "resolved_issue_ids", "unresolved_issue_ids", "convergence"]},
+    "metrics": {"type": "object", "required": ["validator_issue_count", "critical_issue_count", "reviewable_issue_count", "nonreviewable_issue_count", "generated_review_item_count", "issue_to_question_reduction_ratio", "resolved_issue_count", "remaining_issue_count", "stale_decision_count", "duplicate_question_count", "repeated_question_after_same_decision_count", "manual_geometry_creation_count", "critical_unresolved_hidden", "snapshot_created"]},
+    "validator_bypass_count": {"const": 0},
+    "review_engine_self_pass": {"const": false}
+  }
+}

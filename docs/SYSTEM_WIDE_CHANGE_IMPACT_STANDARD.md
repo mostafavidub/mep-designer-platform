@@ -1,10 +1,10 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 4.40.0
+**Canonical version:** 5.1.0
 
 **Status:** LOCKED
 
-**Effective:** 2026-09-24
+**Effective:** 2026-09-26
 
 This document is the human-readable canonical reference for every repository change. The versioned machine contracts in `standards/swcis/` are authoritative for automation. If prose and automation disagree, merging is blocked until both are reconciled and versioned together.
 
@@ -223,3 +223,24 @@ A final architectural issue cannot be Submission Ready until exact-file
 DimensionIntent identity and visual QA pass. The six-project architectural
 reference corpus is validation evidence only and cannot supply hidden numeric or
 regulatory defaults.
+
+## Source-supported enclosure candidate integrity
+
+SWCIS 4.66.0 preserves hard non-enclosure exclusions while correcting wall-face
+reconstruction and selecting source-supported bounded enclosure candidates.
+Building envelopes and containing parent polygons do not obtain Physical Space
+authority through label containment or overlap. Candidate identities, relationships
+and selection evidence are deterministic; local endpoint projection uses the
+existing bounded tolerance. Independent boundary evidence and invalid-polygon
+validation remain fail-closed. See ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.
+
+## Sealed cumulative integration
+
+A cumulative integration retains historical CR files unchanged and adds exactly one
+current integration CR. Its `integration` manifest binds the exact base commit,
+source commit/tree and every historical changed CR blob. `tools/swcis_scope.py`
+checks ancestry, complete membership, immutable historical blobs and absence of
+unlisted requests. The current CR must independently declare and validate the
+entire cumulative change-type and dependency closure. Historical PASS statements
+never replace current tests or official CI. Ordinary changes still require one CR.
+No waiver, filter bypass, history deletion or partial closure is permitted.
