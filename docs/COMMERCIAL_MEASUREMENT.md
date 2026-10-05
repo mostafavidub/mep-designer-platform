@@ -200,8 +200,11 @@ Full governed regression: **1480 passed + 14 subtests**, no skipped tests.
 Commercial/Golden plus governance contract subset: **92 passed**. The three new
 commercial test files contain **76 cases** (parameterized cases counted).
 `git diff --check`, Python AST parsing, runtime-version guard and SWCIS pass.
-CI adds only pinned jsonschema4.26.0 to the existing full-suite runner; no test,
-workflow trigger or filter is removed or relaxed. Official CI is reported on the PR.
+CI adds pinned jsonschema4.26.0 to the existing full-suite runner and expands
+Web Regression to all PR base branches, including this stacked PR. Existing main
+coverage and all tests remain mandatory; no check is weakened. Other workflows
+retain their existing triggers; NOT_TRIGGERED is not reported as PASS. Official
+CI is reported on the PR.
 
 The first full collection failed because CAD_OUTPUT_DIR defaulted to unwritable
 /data; rerun used isolated temporary storage. An intermediate SWCIS inventory

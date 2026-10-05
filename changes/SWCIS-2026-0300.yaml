@@ -44,7 +44,7 @@
     "qa": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "docs": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "versioning": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
-    "deployment": "CI installs pinned JSON Schema validator for new contract tests; no trigger/filter/gate relaxed, no deploy or merge.",
+    "deployment": "CI installs pinned JSON Schema validator and expands existing Web Regression to all PR bases so the stacked PR runs the full suite. No checks weakened; no deploy or merge.",
     "migration": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "routing": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
     "detail_riser": "New isolated commercial shadow capability; existing engineering/live financial implementation unchanged; full regression required. See docs/COMMERCIAL_MEASUREMENT.md impact section.",
