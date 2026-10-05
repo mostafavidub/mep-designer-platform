@@ -453,8 +453,13 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     async def customer(action: str, request: Request):
         uid = session_user(request)
         body = await request.json()
-        if action not in ("state", "import", "claim", "quote", "pay", "topup"):
+        if action not in ("identity", "state", "import", "claim", "quote", "pay", "topup"):
             raise HTTPException(404)
+        # Lightweight owner proof for stored-file resume. Do not load the full
+        # project/account snapshot merely to verify the signed panel session;
+        # CPU-heavy architecture analysis must not delay polling recovery.
+        if action == "identity":
+            return {"userId": account_id(uid)}
         with legacy.Session() as db:
             begin(db)
             require_account(db, uid)

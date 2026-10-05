@@ -42,6 +42,11 @@ The single lifecycle remains:
    identity may call start once; backend content-addressed deduplication returns
    the existing job.
 
+Stored-file recovery verifies the signed customer identity through the
+lightweight `POST /internal/panel/customer/identity` contract. It deliberately
+does not load the full account/project snapshot, so architecture CPU load
+cannot turn a resume ownership check into a polling timeout.
+
 No second analysis lifecycle, engineering rule, architecture authority, or
 questionnaire producer is introduced.
 
