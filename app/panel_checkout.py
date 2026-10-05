@@ -316,7 +316,7 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             if "fileName" in payload:
                 payload["fileName"] = str(payload["fileName"])[:255]
             job_id = str(payload.get("analysisJobId") or "")
-            if job_id and not re.fullmatch(r"[0-9a-f]{64}", job_id):
+            if job_id and not re.fullmatch(r"[0-9a-f]{32}", job_id):
                 raise HTTPException(400, "شناسه تحلیل فایل معتبر نیست.")
             if payload.get("checkoutState") not in (None, "draft", "awaiting_payment", "paid"):
                 raise HTTPException(400, "وضعیت پیش‌نویس معتبر نیست.")

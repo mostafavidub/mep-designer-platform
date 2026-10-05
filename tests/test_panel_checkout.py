@@ -199,7 +199,7 @@ def test_questionnaire_job_identity_is_durable_and_owner_bound(monkeypatch):
         "amount": 0,
         "fileKey": f"projects/{login['userId']}/plan.dxf",
         "fileName": "plan.dxf",
-        "analysisJobId": "a" * 64,
+        "analysisJobId": "a" * 32,
         "checkoutState": "draft",
         "resumeAction": "complete",
         "currentStep": 1,
