@@ -1,0 +1,58 @@
+{
+  "change_id": "SWCIS-2026-0300",
+  "summary": "Restore the canonical owner-bound questionnaire background-job API on the Architecture Stack Integration branch and fail closed on terminal or exhausted analysis failures.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "documentation", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "docs", "governance", "versioning", "deployment", "migration", "manifest"],
+  "impact_notes": {
+    "ui_api": "Restore the authenticated POST /internal/panel/questionnaire/start and GET /internal/panel/questionnaire/{job_id} contract consumed by the Staging project-creation client; terminal failures are explicit and transient retries are bounded.",
+    "qa": "Add route registration, real DXF and ZIP analysis-to-ready execution, cache isolation/cleanup, owner isolation, terminal failure, bounded retry and existing customer-state regression coverage.",
+    "docs": "Document the canonical background-job contract, failure classes and recovery behavior.",
+    "governance": "No engineering algorithm or locked rule changes; this restores a previously governed API capability omitted from the integrated Staging branch.",
+    "versioning": "No schema or policy bump: backward-compatible restoration of the already documented internal contract.",
+    "deployment": "No Staging or Production deployment is authorized by this change record. Staging requires a separate explicit owner approval after local validation; Production is out of scope.",
+    "migration": "No database migration. Existing questionnaire-job workspaces remain compatible and disposable after retention expiry.",
+    "manifest": "Verified unaffected: build identity and generated artifact manifests are unchanged; route availability is covered by API contract tests."
+  },
+  "evidence": {
+    "traceability": [
+      "authenticated panel upload -> canonical start endpoint -> owner-bound durable workspace -> bounded analysis attempts -> explicit ready/failed state -> questionnaire result",
+      "active Staging integration build 062dd76951a51dd141934018a11eac29db814778 lacks the route while historical governed implementation ce343f4 contains it",
+      "historical runtime commit 20d4e492bbe2474700fb5a6d9df36dfa8b83f072 introduced the analysis-local DXF read-cache contract; the integration branch omitted that dependency while restoring its questionnaire consumer"
+    ],
+    "tests": [
+      "targeted questionnaire background-job contract tests",
+      "panel checkout customer/state regression tests",
+      "application route inventory assertion",
+      "real _analyze execution plus authenticated direct-DXF and ZIP route-to-ready tests",
+      "analysis-local cache reuse, concurrency isolation and exception cleanup tests",
+      "SWCIS validation against origin/feature/architecture-stack-integration"
+    ],
+    "docs": ["docs/QUESTIONNAIRE_BACKGROUND_JOBS.md"],
+    "version_bump": ["not required: no schema, policy, rule or externally versioned contract change"],
+    "migration": ["none: additive runtime route registration and compatible filesystem state"],
+    "golden_regression": ["not affected: no engineering calculation, routing, sizing or drawing output mutation"],
+    "semantic_diff": ["no Mechanical design semantic change"],
+    "artifact_diff": ["not affected: no generated drawing mutation"],
+    "numeric_diff": ["not affected: the same architecture analyzer and questionnaire builder remain authoritative"],
+    "contract_diff": [
+      "the integrated Staging runtime again serves the canonical authenticated questionnaire start/status endpoints expected by the panel",
+      "404 and other terminal failures stop polling; retryable execution failures are retried only up to the documented limit before a stable failed state is returned"
+    ],
+    "deployment_plan": [
+      "branch -> targeted tests -> static/regression checks -> commit -> stacked PR",
+      "deploy only the exact CI-green SHA to Staging under the owner's explicit error-fix request",
+      "validate Mechanical + Residential + DXF ZIP flow; Production remains out of scope"
+    ],
+    "rollback_plan": ["redeploy the previously approved Git commit; no data rollback required"]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "The missing route blocks all new Staging projects using the asynchronous questionnaire flow. Owner/session binding, bounded retries, durable terminal state and focused regressions contain the change."
+  },
+  "waiver": null
+}

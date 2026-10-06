@@ -1,26 +1,26 @@
-# Residential architecture foundation 0.1.0
+# Residential architecture foundation 0.2.0
 
-Status: **ARCHITECTURE_FOUNDATION_PARTIAL**. Source qualification additionally requires **ARCHITECTURE_RULEBOOK_INPUT_REQUIRED**. This is an offline research/contract foundation, not a released plan generator. No API route, customer flow, pricing action, source reconstruction algorithm, mechanical engine, sealed Pilot output, or accepted Golden is changed.
+Status: **ARCHITECTURE_FOUNDATION_RESEARCH_REQUIRED**. The original catalogs remain **ARCHITECTURE_FOUNDATION_PARTIAL** and source qualification remains **ARCHITECTURE_RULEBOOK_INPUT_REQUIRED**. This is an offline research/contract foundation, not a released plan generator. It is reintegrated after Canonical Architecture 3.1 without changing text, geometry, separator, portal, shaft, scale, north or Q02 authority. No customer activation, pricing action, mechanical authority, sealed Pilot output or accepted Golden is changed.
 
 ## Seven deliverables and exact limits
 
 | Deliverable | Canonical artifact | Current qualification |
 |---|---|---|
-| Architecture Rulebook | `data/rulebook/architecture/rulebook.json` | 32 extracted M4 hard-rule clauses, all disabled for release; 24 explicit gaps. Significant coverage missing. |
+| Architecture Rulebook | `data/rulebook/architecture/rulebook.json`, `research-completion.json` | 32 extracted M4 hard-rule clauses audited for extraction, all disabled for release; all 24 gaps have an explicit resolution class. Significant authority coverage remains missing. |
 | Exam source coverage | `exam-coverage.json`, `sources.json` | Ten candidate topics; current official list not verified, denominator unknown, percentage null. |
 | Public-plan study | `plan-study.json`, `heuristics.json` | 122 visually inspected distinct floor/layout records, 74 projects; 22 context-only/partial/multilevel examples. Qualitative, not dimensional certification. |
 | Original symbols | `symbols.json`, `cad_engine/residential_symbols.py` | 41 parametric references; four manufacturer footprint examples; most normative/ergonomic dimensions and operating clearances unresolved. |
-| Owner requirements | `owner-questionnaire.json` | 58 Persian questions:13 mandatory,8 conditional,37 optional;13 auto facts. Progressive V1 and branches defined; complex preference structures still require project review. |
+| Owner requirements | `owner-questionnaire.json`, `owner-program.schema.json` | 58 Persian questions:13 mandatory,8 conditional,37 optional;13 auto facts. Typed future Owner Program fields are defined; complete cross-field validation still requires implementation. |
 | QA matrix | `qa-matrix.json` | 104 planned engine scenarios, not 104 executed tests. Actual foundation regressions separately reported. |
-| Generation contract | `generation-contract.json`, input/output schemas | Version0.1.0;14-stage bounded deterministic workflow. Input preflight and ranking guards implemented; candidate search and complete independent layout validator not implemented. |
+| Generation contract | `generation-contract.json`, input/output schemas | Version0.2.0;15-stage constraint-first workflow. Input preflight and ranking guards are implemented; candidate search and complete independent layout validator are not implemented. |
 
-All nine catalogs have Draft2020-12 structural schemas under `standards/test-suites/residential/`. Tests audit source references, unique record hashes, evidence frequencies, source qualification, geometry, input typing, branches and quality gating. Schemas are not a claim of legal completeness.
+All eleven catalogs have Draft2020-12 structural schemas under `standards/test-suites/residential/`; a separate Owner Program schema is also included. Tests audit source references, the 32-rule inventory, 24 gap classifications, authority isolation, unique record hashes, evidence frequencies, geometry, input typing, branches and quality gating. Schemas are not a claim of legal completeness.
 
 ## Scope and repository reuse
 
 V1 is residential apartment floor plans with an explicit identical residential-floor schedule. Parking dependencies, cores, shafts, wet areas, equipment access and known structural reservations constrain the floor plan, but this foundation does not design parking, structure, MEP systems, facades, sections or roofs.
 
-Existing Canonical Architecture3.0 is recognition/evidence authority. Generated proposals need a future generated-origin adapter; invented source handles or DXF witnesses are forbidden. Existing `architecture_validator` and snapshot gates cannot be replaced with this preflight. Mechanical fixture/basis questionnaires remain separate. This foundation does not write PMM, billable area or a quote.
+Canonical Architecture3.1 remains the recognition/evidence authority. Residential Foundation is design knowledge only. Text cannot create walls, rooms, separators, portals, shafts or engineering geometry and cannot grant scale or north authority. Q02 remains fail-closed. Generated proposals need a future generated-origin adapter; invented source handles or DXF witnesses are forbidden. Existing `architecture_validator` and snapshot gates cannot be replaced with this preflight. Mechanical fixture/basis questionnaires remain separate. This foundation does not write PMM, billable area or a quote.
 
 ## Source audit and release qualification
 
@@ -76,9 +76,15 @@ NO_FEASIBLE_LAYOUT requires exhaustive finite/certified proof with binding const
 
 Architecture→MEP handoff must preserve room/use/level IDs, exact polygons, openings, fixed shafts and vertical groups, wet fixture roles, equipment footprints and service access. It reserves space without choosing capacities, pipe sizes, routes, loads or connection coordinates. Missing shaft/port evidence remains INPUT_REQUIRED.
 
+## Gap closure, local authority and ergonomics
+
+`research-completion.json` assigns exactly one result to each of the24 gaps. Site, envelope, shaft, MEP and structural items require project evidence. Urban and parking items use a local-rule interface keyed by city, jurisdiction, parcel, instruction date, source hash and reviewer; absent local data returns INPUT_REQUIRED and no Tehran or national default is supplied. Dining, master-bedroom, laundry and storage program choices remain owner inputs. Fire, elevator, acoustic, accessibility and security clause coverage remains source work, not inferred rules.
+
+The ergonomic model distinguishes OBJECT_FOOTPRINT, USAGE_CLEARANCE, ACCESS_CLEARANCE, MAINTENANCE_CLEARANCE and CODE_REQUIRED_CLEARANCE for15 essential object groups. It records the evidence hierarchy but deliberately supplies no invented clearance values. A missing envelope returns FIT_INPUT_REQUIRED. The41 original symbols therefore remain a useful geometry foundation but are insufficient for V1 fit validation.
+
 ## Golden, performance and delivery
 
-**HUMAN_ARCHITECTURE_GOLDEN_REQUIRED**: approved owner programs, authoritative site constraints, acceptable layouts, rejected layouts and reasoned architect decisions are absent. Synthetic unit tests do not replace them. Production and staging deployment are not recommended. An offline architect review packet is useful now.
+**HUMAN_ARCHITECTURE_GOLDEN_REQUIRED**: approved owner programs, authoritative site constraints, acceptable layouts, rejected layouts and reasoned architect decisions are absent. `golden-review-template.json` supplies an empty independent-review form and eight required case types; it is not Golden truth. Synthetic unit tests do not replace human cases. Production and staging deployment are not recommended. An offline architect review packet is useful now.
 
 No network/LLM call occurs in validation, symbols or ranking. Search budget/cache/cancellation policy is defined for future work. Cache key must include all source/rule/program/reservation/build hashes, not just plot size. Current catalog reads are bounded by small local JSON; repeated parsing can be cached only by content identity in a future profile. No current-engine throughput claims.
 

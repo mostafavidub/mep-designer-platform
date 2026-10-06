@@ -72,6 +72,21 @@ source, object, geometry, or evidence fingerprints invalidate the decision.
 Production routes and consumers are unchanged. Future independent tasks should
 cover the review engine/UI, Certified DXF profile, production package I/O,
 AutoCAD plugin, IFC adapter, production V2 migration, and held-out qualification.
+
+## Canonical 3.1 text evidence extension
+
+Canonical 3.1 adds exact occurrence-level text evidence without weakening the
+3.0 separator contract. TEXT, MTEXT and ATTRIB occurrences retain source and
+INSERT-instance identity; ATTDEF remains template evidence. Document/title
+context and Physical Space label context are separate. Labels bind only to
+existing topology, and compatible co-located labels form functional composition.
+Text cannot grant geometry, separator, void, Portal, Access, routing, scale or
+north authority.
+
+The 3.0 to 3.1 migration is claim-scoped. Text-, title-, level- and semantic-
+dependent claims are regenerated or revalidated; independent geometry and
+separator claims are retained. A 3.0 artifact is never silently accepted as 3.1.
+See `standards/swcis/migrations/architecture-text-evidence-contract-v31.json`.
 Constraint reasoning and targeted vision tie-breakers remain separate research.
 
 Multi-level frame metadata is additive. A typical-floor frame carries every

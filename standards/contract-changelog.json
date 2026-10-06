@@ -4,22 +4,53 @@
     {
       "id": "GOV-2026-RESIDENTIAL-FOUNDATION",
       "status": "IMPLEMENTED_PARTIAL",
-      "summary": "Add offline residential research and generation contracts;122 actual plan reviews,32 disabled extracted rules,24 coverage gaps,41 original symbol types,58 owner questions. No generator or production activation.",
+      "summary": "Add an offline residential research and future-generation contract foundation without changing Canonical Architecture 3.1 authority or activating a generator.",
       "affected_capabilities": [
         "residential_foundation_fail_closed"
       ],
       "approval": {
         "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
-        "basis": "Explicit residential architecture foundation request; no merge/deploy."
+        "basis": "Explicit residential architecture foundation and reintegration request; no merge or deployment."
       },
       "verification": {
-        "focused": "Final29 foundation tests plus23 governance tests and62 subtests PASS",
-        "full": "1432 tests and76 subtests PASS",
+        "focused": "PASS_122_PLUS_64_SUBTESTS_AND_22_RUNTIME_GOVERNANCE",
+        "full": "PASS_1463_PLUS_78_SUBTESTS_ON_CURRENT_PARENT",
         "human_architecture_golden": "HUMAN_ARCHITECTURE_GOLDEN_REQUIRED"
       },
       "migration": {
-        "forward": "New catalogs and schemas only; old architecture and Mechanical contracts unchanged.",
-        "rollback": "Approved Git commit only; no historical runtime copies."
+        "forward": "Additive offline catalogs and schemas only; Canonical Architecture 3.1 and existing Mechanical contracts remain authoritative and unchanged.",
+        "rollback": "Revert the approved Git commit; no runtime data migration or historical runtime copy."
+      }
+    },
+    {
+      "id": "GOV-2026-053",
+      "status": "IMPLEMENTED_QUALIFIED",
+      "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",
+      "affected_capabilities": [
+        "architecture_input_foundation_v2",
+        "architectural_space_understanding",
+        "architectural_semantic_scout"
+      ],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit project-owner approval of ARCH-P0 Phase B and Canonical Architecture 3.1 with claim-scoped migration."
+      },
+      "verification": {
+        "positive_test": "PASS",
+        "destructive_test": "PASS",
+        "architecture_regression": "PASS_522_ON_NEW_PARENT",
+        "determinism": "PASS_7_OF_7",
+        "full_regression": "PASS_1428_PLUS_14_SUBTESTS",
+        "required_ci": "REQUIRED_5_EXECUTED_SUCCESS_ON_FINAL_SHA",
+        "private_replay": "PASS_7_OF_7_SEALED",
+        "original_negative_controls": "PASS_0_OF_19",
+        "expanded_reviewed_negative_controls": "PASS_0_OF_22",
+        "positive_references": "PASS_P1_P4_DUCT_Q16_Q19_Q20",
+        "q02": "INPUT_REQUIRED"
+      },
+      "migration": {
+        "forward": "Regenerate exact text evidence and revalidate only text/title/level/semantic-dependent claims; keep independent 3.0 geometry and separator evidence valid.",
+        "rollback": "Revert the independent stacked PR; do not project 3.1 authority backward into 3.0."
       }
     },
     {

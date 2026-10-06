@@ -843,7 +843,13 @@
         "uncovered_boundary_segments",
         "geometry_evidence.boundary_witnesses",
         "geometry_evidence.separator_status",
-        "evidence_registry.payload.separator"
+        "evidence_registry.payload.separator",
+        "text_evidence",
+        "title_block_fields",
+        "text_role_status",
+        "text_host_binding",
+        "text_review_fingerprint",
+        "functional_composition"
       ],
       "engines": [
         "cad_engine/architectural_source_roles.py",
@@ -871,7 +877,8 @@
         "tools/pre_topology_candidate_audit.py",
         "cad_engine/architecture_enclosure_candidates.py",
         "cad_engine/architecture_separator_evidence.py",
-        "cad_engine/architecture_separator_validator.py"
+        "cad_engine/architecture_separator_validator.py",
+        "cad_engine/architecture_text_evidence.py"
       ],
       "drawing_outputs": [
         "typed architecture model",
@@ -957,7 +964,14 @@
         "candidate_origin_never_bypasses_source_array_negative_evidence",
         "MATERIAL_AUTHORITY_WITHOUT_SEPARATOR_EVIDENCE",
         "SEPARATOR_REVIEW_INVALID",
-        "SEPARATOR_INTERVAL_INVALID"
+        "SEPARATOR_INTERVAL_INVALID",
+        "text_never_engineering_geometry_authority",
+        "attrib_insert_occurrence_identity",
+        "attdef_template_not_instance_authority",
+        "title_room_context_separation",
+        "containment_only_space_label_hosting",
+        "text_review_stale_safe_and_geometry_free",
+        "dimension_specific_text_benchmark_metrics"
       ],
       "regression_tests": [
         "tests/test_architecture_source_roles.py",
@@ -981,7 +995,8 @@
         "tests/test_architecture_numerical_endpoint_preservation.py",
         "tests/test_architecture_enclosure_candidates.py",
         "tests/test_architecture_candidate_authority.py",
-        "tests/test_architecture_separator_evidence.py"
+        "tests/test_architecture_separator_evidence.py",
+        "tests/test_architecture_text_evidence.py"
       ],
       "docs": [
         "docs/ARCHITECTURAL_SPACE_UNDERSTANDING_ENGINE.md",
@@ -999,7 +1014,8 @@
         "docs/ARCHITECTURE_PREFLIGHT_UI.md",
         "docs/ARCHITECTURE_CANONICAL_IDENTITY_AND_LEVEL_PROPAGATION.md",
         "docs/adr/ADR-ARCHITECTURAL-ENCLOSURE-CANDIDATE-INTEGRITY.md",
-        "docs/adr/ADR-ARCHITECTURAL-BOUNDARY-SEPARATOR-EVIDENCE.md"
+        "docs/adr/ADR-ARCHITECTURAL-BOUNDARY-SEPARATOR-EVIDENCE.md",
+        "docs/adr/ADR-ARCHITECTURAL-TEXT-EVIDENCE-AND-SEMANTIC-AUTHORITY.md"
       ]
     },
     {

@@ -1,0 +1,26 @@
+{
+  "schema": "planha-contract-migration/1.0",
+  "change_id": "SWCIS-2026-0301",
+  "from_contract": "planha-canonical-architecture/3.0",
+  "to_contract": "planha-canonical-architecture/3.1",
+  "automatic_reinterpretation": false,
+  "production_data_migration": "NOT_PERFORMED",
+  "detection": "schema must equal planha-canonical-architecture/3.1 and include a valid planha-architectural-text-evidence/1.0 contract",
+  "affected_claims": [
+    "text role",
+    "title block metadata",
+    "level/title interpretation",
+    "space semantic classification",
+    "text review binding"
+  ],
+  "unaffected_claims": [
+    "source geometry",
+    "separator evidence",
+    "wall geometry",
+    "physical-space polygon independently proven without text",
+    "portal/access evidence independently proven without text"
+  ],
+  "strategy": "Regenerate exact text evidence and revalidate only affected claims. Mark dependent snapshots stale until validation succeeds.",
+  "review_rebinding": "Never copy review authority. Re-resolve the exact occurrence and require all 3.1 binding fingerprints to match.",
+  "rollback": "Revert the stacked implementation PR. Preserve 3.1 artifacts as unsupported by 3.0 rather than projecting their authority backward."
+}

@@ -1,73 +1,18 @@
 {
   "change_id": "SWCIS-2026-0301",
-  "summary": "Residential floor-plan foundation: source-governed rules, study metadata, original symbols, owner program and deterministic generation contract; no production activation.",
+  "summary": "Canonicalize architectural text evidence, title-block interpretation, role and host authority with instance-safe DXF provenance and fail-closed review/validation.",
   "requester": "project-owner",
   "change_types": [
     "rule",
-    "schema",
     "test",
     "documentation",
     "governance",
-    "drawing_output",
-    "deployment"
+    "schema",
+    "ui_api",
+    "drawing_output"
   ],
   "changed_rule_ids": [
-    "ARCH-RES-LIVING-001",
-    "ARCH-RES-LIVING-002",
-    "ARCH-RES-BEDROOM-001",
-    "ARCH-RES-LIVING-003",
-    "ARCH-RES-CIRCULATION-001",
-    "ARCH-RES-STAIRS-001",
-    "ARCH-RES-STAIRS-002",
-    "ARCH-RES-STAIRS-003",
-    "ARCH-RES-KITCHEN-001",
-    "ARCH-RES-KITCHEN-002",
-    "ARCH-RES-KITCHEN-003",
-    "ARCH-RES-KITCHEN-004",
-    "ARCH-RES-DAYLIGHT-001",
-    "ARCH-RES-VENTILATION-001",
-    "ARCH-RES-WC-001",
-    "ARCH-RES-BATHROOM-001",
-    "ARCH-RES-BATHROOM-002",
-    "ARCH-RES-ACCESSIBILITY-001",
-    "ARCH-RES-PRIVACY-001",
-    "ARCH-RES-PRIVACY-002",
-    "ARCH-RES-PRIVACY-003",
-    "ARCH-RES-BALCONY-001",
-    "ARCH-RES-DAYLIGHT-002",
-    "ARCH-RES-DAYLIGHT-003",
-    "ARCH-RES-DAYLIGHT-004",
-    "ARCH-RES-DAYLIGHT-005",
-    "ARCH-RES-DOOR-001",
-    "ARCH-RES-EGRESS-001",
-    "ARCH-RES-KITCHEN-005",
-    "ARCH-RES-VENTILATION-002",
-    "ARCH-RES-DAYLIGHT-006",
-    "ARCH-RES-DAYLIGHT-007",
-    "ARCH-GAP-SITE-001",
-    "ARCH-GAP-URBAN-001",
-    "ARCH-GAP-BUILDING_ENVELOPE-001",
-    "ARCH-GAP-ACCESS-001",
-    "ARCH-GAP-FIRE-001",
-    "ARCH-GAP-ELEVATOR-001",
-    "ARCH-GAP-PARKING-001",
-    "ARCH-GAP-UNIT_ENTRY-001",
-    "ARCH-GAP-DINING-001",
-    "ARCH-GAP-MASTER_BEDROOM-001",
-    "ARCH-GAP-LAUNDRY-001",
-    "ARCH-GAP-STORAGE-001",
-    "ARCH-GAP-TERRACE-001",
-    "ARCH-GAP-ACOUSTICS-001",
-    "ARCH-GAP-ENERGY-001",
-    "ARCH-GAP-WINDOW-001",
-    "ARCH-GAP-SHAFT-001",
-    "ARCH-GAP-WET_CORE-001",
-    "ARCH-GAP-SECURITY-001",
-    "ARCH-GAP-FURNITURE_FIT-001",
-    "ARCH-GAP-MEP_COORDINATION-001",
-    "ARCH-GAP-STRUCTURAL_COORDINATION-001",
-    "ARCH-GAP-DRAWING_CONVENTION-001",
-    "ARCH-GAP-OWNER_PREFERENCE-001"
+    "MEP-ARCH-RECOG-001"
   ],
   "impacted_modules": [
     "cad_designer",
@@ -90,70 +35,85 @@
     "versioning"
   ],
   "impact_notes": {
-    "rule_book": "added: offline residential catalogs, contracts or QA; see impact report",
-    "pmm": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "questionnaire": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "planner": "added: offline residential catalogs, contracts or QA; see impact report",
-    "cad_designer": "added: offline residential catalogs, contracts or QA; see impact report",
-    "routing": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "sizing": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "equipment": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "manufacturer_selector": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "detail_riser": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "qa": "added: offline residential catalogs, contracts or QA; see impact report",
-    "manifest": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "ui_api": "verified-not-affected: no existing runtime consumer imports residential modules; unchanged implementation and full regression PASS",
-    "docs": "added: offline residential catalogs, contracts or QA; see impact report",
-    "versioning": "added: offline residential catalogs, contracts or QA; see impact report",
-    "migration": "added: offline residential catalogs, contracts or QA; see impact report",
-    "governance": "added: offline residential catalogs, contracts or QA; see impact report",
-    "deployment": "added: offline residential catalogs, contracts or QA; see impact report"
+    "cad_designer": "One canonical exact-text occurrence pipeline, deterministic role/host/title-block evidence, and Semantic Scout consumption without geometry authority.",
+    "deployment": "No merge, auto-merge, staging deploy or production deploy; Draft stacked PR only.",
+    "detail_riser": "No algorithm change; semantic inputs remain fail-closed and require valid canonical evidence.",
+    "docs": "New Architectural Text Evidence and Semantic Authority ADR plus contract and migration documentation.",
+    "equipment": "No algorithm change; room semantics consumed only after canonical host/role validation.",
+    "governance": "New CR0301 and proportional SWCIS closure; no waiver.",
+    "manifest": "Canonical 3.1 text occurrence, binding and review identities become deterministic contract inputs.",
+    "manufacturer_selector": "No algorithm change; semantic consumer boundary verified.",
+    "migration": "Affected Canonical 3.0 semantic/text/title/level claims require regeneration or bounded revalidation; independent geometry and separator claims remain valid.",
+    "planner": "No geometry/planning behavior may be created from text; consumer boundary verified.",
+    "pmm": "Accepted text semantics are projected with provenance; unresolved text remains non-authoritative.",
+    "qa": "Independent validator, Golden-separated metrics, negative authority controls, determinism and architecture regression.",
+    "questionnaire": "Preflight reuses bounded review for text role/host facts; no parallel review engine.",
+    "routing": "Text cannot create routing obstacles, shafts or access; existing fail-closed behavior retained.",
+    "rule_book": "MEP-ARCH-RECOG-001 requires exact occurrence provenance and separate text role/host/semantic authority.",
+    "sizing": "Scale text alone cannot grant engineering scale; existing calibration remains authoritative.",
+    "ui_api": "Server-resolved text review identity only; no client geometry or free-form authority fields.",
+    "versioning": "Proposed additive Canonical Architecture 3.1 and SWCIS minor bump; exact result governed by validation. Runtime remains Git-identified."
   },
   "evidence": {
     "traceability": [
-      "standards/swcis/rule_traceability_matrix.yaml"
+      "MEP-ARCH-RECOG-001: exact source text -> role -> host -> semantic evidence -> independent validation -> downstream authority."
     ],
     "tests": [
-      "tests/test_residential_foundation.py",
-      "docs/residential/VERIFICATION.md"
+      "Original focused text/contract/review/validator and consumer suites PASS 153; final affected feature suite PASS 66. New-parent integration checks PASS 57, Architecture regression PASS 522, and full governed suite PASS 1428 tests + 14 subtests on Python 3.12.13. PR #313 real questionnaire tests remain PASS 12. Pre-fix exact parent proof: attached ATTRIB occurrences were absent and TITLE-layer Kitchen was falsely bound as a VERIFIED room label."
     ],
     "docs": [
-      "docs/residential/IMPACT.md"
+      "docs/adr/ADR-ARCHITECTURAL-TEXT-EVIDENCE-AND-SEMANTIC-AUTHORITY.md",
+      "docs/ARCHITECTURE_INPUT_FOUNDATION_V2.md",
+      "standards/swcis/migrations/architecture-text-evidence-contract-v31.json"
     ],
     "version_bump": [
-      "standards/swcis/version_manifest.yaml"
+      "SWCIS 5.2.0; Canonical Architecture 3.1."
     ],
     "migration": [
-      "standards/swcis/migrations/residential-foundation.json"
+      "Only text/semantic/title/level-dependent Canonical 3.0 claims become stale; independent geometry/separator claims are preserved."
     ],
     "golden_regression": [
-      "docs/residential/IMPACT.md"
+      "Golden truth remains independently curated; no engine-output truth generation and no private DXF/coordinates committed. Final integration Architecture regression PASS 522. Fresh sealed seven-source replay on the integration candidate matched all seven qualified a3466a3 model hashes exactly, thereby retaining the previously adjudicated P1-P4, duct and Q16/Q19/Q20 REVIEW_RESOLVED results, Q02 INPUT_REQUIRED, all three B/B/B candidates absent, zero unsupported separator grants, zero invalid authoritative polygons and zero duplicate Wall IDs. Original frozen negatives remain 0/19 and expanded reviewed negatives remain 0/22."
     ],
     "semantic_diff": [
-      "docs/residential/IMPACT.md"
+      "Canonical exact occurrences now own text identity; title context cannot become room semantics; containment-only room hosting; text grants zero engineering geometry."
     ],
     "artifact_diff": [
-      "docs/residential/IMPACT.md"
+      "Canonical 3.1 adds text_evidence and title_block_fields. Existing physical geometry is not modified."
     ],
     "numeric_diff": [
-      "docs/residential/IMPACT.md"
+      "No geometry tolerance, coordinate, scale or north change from text alone."
     ],
     "contract_diff": [
-      "docs/residential/IMPACT.md"
+      "Text evidence, role, host and semantic authority become separate durable dimensions with stale-safe review binding."
     ],
     "deployment_plan": [
-      "docs/residential/IMPACT.md"
+      "No merge, auto-merge or deployment; staging requires separate approval after qualification."
     ],
     "rollback_plan": [
-      "docs/residential/IMPACT.md"
+      "Revert the independent stacked PR; preserve 3.1 artifacts as requiring compatible validation rather than silently projecting authority into 3.0."
     ]
   },
   "risk": {
-    "likelihood": 3,
-    "severity": 4,
-    "detectability": 3,
-    "score": 36,
-    "rationale": "Unverified architectural authority must fail closed; offline additive foundation only."
+    "likelihood": 4,
+    "severity": 5,
+    "detectability": 4,
+    "score": 80,
+    "rationale": "Upstream semantic authority and downstream interpretation change; exact provenance, fail-closed migration, destructive tests and independent validation are mandatory."
   },
-  "waiver": null
+  "waiver": null,
+  "verification_status": {
+    "implementation": "IMPLEMENTED",
+    "qualification": "ARCHITECTURE_TEXT_EVIDENCE_INTEGRATION_READY",
+    "focused": "PASS_153_FEATURE_PLUS_57_INTEGRATION",
+    "architecture_regression": "PASS_522",
+    "full_regression": "PASS_1428_PLUS_14_SUBTESTS",
+    "determinism": "PASS_7_OF_7",
+    "official_ci": "REQUIRED_5_EXECUTED_SUCCESS_ON_FINAL_SHA",
+    "private_replay": "PASS_7_OF_7_SEALED",
+    "original_negative_controls": "PASS_0_OF_19",
+    "expanded_reviewed_negative_controls": "PASS_0_OF_22",
+    "positive_references": "PASS_P1_P4_DUCT_Q16_Q19_Q20",
+    "q02": "INPUT_REQUIRED"
+  }
 }

@@ -18,16 +18,20 @@
     },
     "build_identity": "5722cf1b38cf7937ea4dd341a6c68febd47d68128fb76ec05ab7bc037c5b37c3"
   },
-  "base_sha": "062dd76951a51dd141934018a11eac29db814778",
+  "build_identity_scope": "HISTORICAL_FOUNDATION_EXPORT_EVIDENCE_AT_OLD_PARENT",
+  "historical_base_sha": "062dd76951a51dd141934018a11eac29db814778",
+  "historical_foundation_head": "8751924f19a7cef84146fc58ad4bd75cc68bec72",
+  "base_sha": "ab3a6c970e4083d62325d9d568d5ec0644327a51",
   "full_tests": {
-    "passed": 1432,
-    "subtests_passed": 76,
-    "seconds": 88.38,
-    "note": "Before one additional output-proof schema test; final focused rerun covers that addition and final catalog/governance changes."
+    "passed": 1463,
+    "subtests_passed": 78,
+    "seconds": 134.46,
+    "note": "Controlled offline environment on the current integration parent; ARCH_VISION_PROVIDER disabled and external provider keys removed."
   },
   "final_focused_governance_tests": {
-    "passed": 52,
-    "subtests_passed": 62
+    "passed": 144,
+    "subtests_passed": 64,
+    "breakdown": "122 targeted Architecture/questionnaire/panel plus22 runtime/governance"
   },
   "swcis": {
     "status": "PASS",
@@ -36,13 +40,15 @@
       "cad_engine/requirements.txt",
       "cad_engine/residential_foundation.py",
       "cad_engine/residential_symbols.py",
-      "changes/SWCIS-2026-0301.yaml",
+      "changes/SWCIS-2026-0304.yaml",
       "data/rulebook/architecture/exam-coverage.json",
       "data/rulebook/architecture/generation-contract.json",
+      "data/rulebook/architecture/golden-review-template.json",
       "data/rulebook/architecture/heuristics.json",
       "data/rulebook/architecture/owner-questionnaire.json",
       "data/rulebook/architecture/plan-study.json",
       "data/rulebook/architecture/qa-matrix.json",
+      "data/rulebook/architecture/research-completion.json",
       "data/rulebook/architecture/rulebook.json",
       "data/rulebook/architecture/sources.json",
       "data/rulebook/architecture/symbols.json",
@@ -62,10 +68,13 @@
       "standards/test-suites/residential/generation-contract.schema.json",
       "standards/test-suites/residential/generation-input.schema.json",
       "standards/test-suites/residential/generation-output.schema.json",
+      "standards/test-suites/residential/golden-review-template.schema.json",
       "standards/test-suites/residential/heuristics.schema.json",
       "standards/test-suites/residential/owner-questionnaire.schema.json",
+      "standards/test-suites/residential/owner-program.schema.json",
       "standards/test-suites/residential/plan-study.schema.json",
       "standards/test-suites/residential/qa-matrix.schema.json",
+      "standards/test-suites/residential/research-completion.schema.json",
       "standards/test-suites/residential/rulebook.schema.json",
       "standards/test-suites/residential/sources.schema.json",
       "standards/test-suites/residential/symbols.schema.json",
@@ -1128,6 +1137,7 @@
     }
   ],
   "protected_files_unchanged": 252,
+  "protected_files_evidence_scope": "HISTORICAL_8751924_VS_062DD76; current-parent non-impact is established separately by tree/dependency diff",
   "performance": {
     "workload": "10000 pure numeric checks;5 repeats, local machine only",
     "median_ms": 6.693584145978093,
@@ -1141,7 +1151,7 @@
     "generator_performance": "NOT_IMPLEMENTED_NOT_MEASURED"
   },
   "human_golden": "HUMAN_ARCHITECTURE_GOLDEN_REQUIRED",
-  "readiness": "ARCHITECTURE_FOUNDATION_PARTIAL",
+  "readiness": "ARCHITECTURE_FOUNDATION_RESEARCH_REQUIRED",
   "browser_render": "BLOCKED_FILE_PROTOCOL_NOT_VERIFIED",
   "merge": false,
   "deployment": false

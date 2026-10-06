@@ -70,6 +70,44 @@ class CatalogTests(unittest.TestCase):
         schema=json.loads((SCHEMAS/'rulebook.schema.json').read_text())
         self.assertTrue(list(Draft202012Validator(schema).iter_errors(x)))
 
+    def test_research_completion_is_fail_closed_and_reconciled(self):
+        research=f.load_catalog('research-completion')
+        sources=f.load_catalog('sources')['sources']
+        rules=f.load_catalog('rulebook')['rules']
+        hard=[r for r in rules if r['authority_type']=='HARD_RULE']
+        self.assertEqual(research['source_inventory']['total_entries'],len(sources))
+        self.assertEqual(research['rule_audit']['audited_rule_count'],len(hard))
+        self.assertEqual(set(research['rule_audit']['rule_ids']),{r['rule_id'] for r in hard})
+        self.assertEqual(research['rule_audit']['release_enabled_count'],sum(r['release_enabled'] for r in rules))
+        self.assertEqual(len(research['gap_resolution']),24)
+        self.assertFalse(research['authority_boundary']['text_may_create_geometry'])
+        self.assertFalse(research['authority_boundary']['mechanical_or_commercial_authority'])
+        self.assertEqual(research['authority_boundary']['canonical_architecture_version'],'3.1')
+        self.assertEqual(research['golden_program']['available_cases'],0)
+        self.assertFalse(research['golden_program']['engine_output_may_create_truth'])
+        self.assertFalse(research['readiness']['generator_implemented'])
+        self.assertFalse(research['readiness']['customer_generation_enabled'])
+        self.assertFalse(research['readiness']['production_authorized'])
+        golden=f.load_catalog('golden-review-template')
+        self.assertEqual(golden['status'],'EMPTY_TEMPLATE_NOT_GOLDEN_TRUTH')
+        self.assertIsNone(golden['case']['golden_id'])
+        self.assertFalse(golden['case']['sealed_before_engine_comparison'])
+        owner_schema=json.loads((SCHEMAS/'owner-program.schema.json').read_text())
+        Draft202012Validator.check_schema(owner_schema)
+
+    def test_rule_source_traceability_cannot_masquerade(self):
+        sources={s['source_id']:s for s in f.load_catalog('sources')['sources']}
+        for rule in f.load_catalog('rulebook')['rules']:
+            self.assertIn(rule['source_id'],sources)
+            if rule['release_enabled']:
+                self.assertIn(rule['authority_type'],{'HARD_RULE','CONDITIONAL_REQUIREMENT','LOCAL_AUTHORITY_REQUIREMENT','ERGONOMIC_REQUIREMENT'})
+                self.assertIsNotNone(rule.get('source'))
+                self.assertNotIn(sources[rule['source_id']]['status'],{'UNKNOWN_CURRENT_STATUS','SUPERSEDED'})
+            if rule['source_id']=='IR-LOCAL':
+                self.assertNotEqual(rule['authority_type'],'HARD_RULE')
+        for heuristic in f.load_catalog('heuristics')['heuristics']:
+            self.assertFalse(heuristic['code_rule'])
+
 class RuleTests(unittest.TestCase):
     def test_exact_boundary_pass_and_below_fail(self):
         c={'field':'width','unit':'m','op':'>=','value':.9}

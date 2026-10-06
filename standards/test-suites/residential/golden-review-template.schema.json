@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "template_version", "status", "instructions_fa", "case", "acceptance"],
+  "properties": {
+    "schema_version": {"const": "architecture-human-golden-template/1.0"},
+    "template_version": {"type": "string"},
+    "status": {"const": "EMPTY_TEMPLATE_NOT_GOLDEN_TRUTH"},
+    "instructions_fa": {"type": "array", "minItems": 6, "items": {"type": "string"}},
+    "case": {"type": "object"},
+    "acceptance": {"type": "object"}
+  },
+  "additionalProperties": false
+}

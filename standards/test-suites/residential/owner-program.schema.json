@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-owner-program/1.0",
+  "type": "object",
+  "required": ["program_id", "questionnaire_version", "answers_hash", "required_spaces", "optional_spaces", "minimum_counts", "preferred_counts", "adjacency_preferences", "avoid_adjacency", "privacy_tiers", "day_night_zoning", "guest_family_zoning", "service_zoning", "furniture_expectations", "accessibility_needs", "priority_weights", "confirmed"],
+  "properties": {
+    "program_id": {"type": "string", "minLength": 1},
+    "questionnaire_version": {"type": "string", "minLength": 1},
+    "answers_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "required_spaces": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "optional_spaces": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "minimum_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "preferred_counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "adjacency_preferences": {"type": "array", "items": {"$ref": "#/$defs/relation"}},
+    "avoid_adjacency": {"type": "array", "items": {"$ref": "#/$defs/relation"}},
+    "privacy_tiers": {"type": "object", "additionalProperties": {"enum": ["PUBLIC", "SEMI_PRIVATE", "PRIVATE", "SERVICE"]}},
+    "day_night_zoning": {"type": "object"},
+    "guest_family_zoning": {"type": "object"},
+    "service_zoning": {"type": "object"},
+    "furniture_expectations": {"type": "array", "items": {"type": "object"}},
+    "accessibility_needs": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "priority_weights": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}},
+    "confirmed": {"const": true}
+  },
+  "$defs": {
+    "relation": {"type": "object", "required": ["from", "to", "strength"], "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "strength": {"enum": ["MANDATORY", "PREFERRED"]}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": "architecture-plan-generation/1.0",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "scope": {
     "occupancy": "RESIDENTIAL_APARTMENT",
     "residential_floors": "IDENTICAL_TYPICAL",
@@ -55,73 +55,78 @@
   "pipeline": [
     {
       "stage": 1,
-      "name": "PROJECT_AUTHORITY",
+      "name": "INPUT_VALIDATION_AND_PROJECT_AUTHORITY",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 2,
-      "name": "OWNER_PROGRAM",
+      "name": "SITE_AND_BUILDABLE_ENVELOPE",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 3,
-      "name": "BUILDABLE_ENVELOPE",
+      "name": "MANDATORY_CONSTRAINTS",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 4,
-      "name": "COMMON_CORE",
+      "name": "CORE_AND_VERTICAL_CIRCULATION",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 5,
-      "name": "UNIT_PARTITIONING",
+      "name": "SERVICE_AND_WET_CORE_RESERVATIONS",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 6,
-      "name": "FUNCTIONAL_ZONING",
+      "name": "OWNER_PROGRAM_GRAPH",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 7,
-      "name": "WET_CORE_SHAFT_COORDINATION",
+      "name": "CANDIDATE_ZONING",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 8,
-      "name": "ROOM_GEOMETRY",
+      "name": "CANDIDATE_GEOMETRY",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 9,
-      "name": "OPENINGS",
-      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
-    },
-    {
-      "stage": 10,
       "name": "FURNITURE_FIT",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
+      "stage": 10,
+      "name": "CIRCULATION",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
       "stage": 11,
-      "name": "MEP_STRUCTURAL_COORDINATION",
+      "name": "DAYLIGHT_AND_VENTILATION",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 12,
-      "name": "RULE_VALIDATION",
+      "name": "CODE_VALIDATION",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 13,
-      "name": "QUALITY_OPTIMIZATION",
+      "name": "CROSS_DISCIPLINE_RESERVATION",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
     },
     {
       "stage": 14,
-      "name": "OUTPUT",
+      "name": "QUALITY_RANKING",
       "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 15,
+      "name": "HUMAN_REVIEW_AND_OUTPUT",
+      "stop": "REVIEW_REQUIRED until independent review and output validation"
     }
   ],
   "candidate_strategy": {

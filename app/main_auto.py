@@ -5,6 +5,7 @@ import traceback
 import zipfile
 import tempfile
 from collections import Counter
+from hashlib import sha256
 from pathlib import Path
 
 import requests
@@ -23,6 +24,7 @@ from .auto_inference_v2 import (
 )
 from .mechanical_rulebook import RULEBOOK_VERSION
 from .mechanical_rulebook import is_confirmation
+from cad_engine.architecture_text_evidence import extract_text_evidence, normalize_text
 
 app = legacy.app
 
@@ -106,8 +108,10 @@ def analyze_dxf_enhanced(path):
         input_recovery = reader_recovery
     msp = doc.modelspace()
     counts = Counter(e.dxftype() for e in msp)
+    source_sha256 = sha256(Path(path).read_bytes()).hexdigest()
+    canonical_text = extract_text_evidence(doc, source_sha256=source_sha256)
     def normalized(value):
-        return str(value or '').replace('ي', 'ی').replace('ك', 'ک').replace('\u200c', ' ').lower()
+        return normalize_text(value)
 
     def is_plan_title(value):
         value = normalized(value)
@@ -226,6 +230,28 @@ def analyze_dxf_enhanced(path):
     else:
         texts, text_labels, fixture_blocks = [], [], []
 
+    # Canonical exact occurrences are the preferred source for modelspace and
+    # referenced blocks. Legacy candidate scanning remains only for unusual
+    # exports whose authoritative sheet is an unreferenced named block.
+    seen_labels = {(normalized(item['text']), round(item['x'], 4), round(item['y'], 4))
+                   for item in text_labels}
+    for item in canonical_text['items']:
+        if item.get('occurrence_kind') == 'TEMPLATE_DEFINITION':
+            continue
+        roles = {row['role'] for row in item.get('role_candidates') or []}
+        if not roles.intersection({'SPACE_LABEL', 'PLAN_TITLE', 'DRAWING_TYPE_TITLE', 'LEVEL_TITLE'}):
+            continue
+        point = item.get('position')
+        key = (item.get('normalized_text'), round(point[0], 4), round(point[1], 4))
+        if key in seen_labels:
+            continue
+        seen_labels.add(key)
+        text_labels.append({'text': item.get('plain_text'), 'x': point[0], 'y': point[1],
+                            'source_type': 'canonical_text_evidence',
+                            'source_name': item.get('text_evidence_id'),
+                            'text_evidence_id': item.get('text_evidence_id')})
+        texts.append(item.get('plain_text'))
+
     insunits = int(doc.header.get('$INSUNITS', 0) or 0)
     unit_to_m = INSUNITS_TO_M.get(insunits)
     geom = [e for e in msp if e.dxftype() not in ('TEXT', 'MTEXT', 'DIMENSION', 'LEADER', 'MLEADER')]
@@ -260,6 +286,7 @@ def analyze_dxf_enhanced(path):
         'entities': dict(counts),
         'texts': retained_texts[:20000],
         'text_labels': semantic_labels[:20000],
+        'text_evidence_metrics': canonical_text['metrics'],
         'fixture_blocks': fixture_blocks[:20000],
         'fixture_counts': dict(fixture_counts),
         'roof_drain_count': roof_drain_count,
@@ -541,6 +568,7 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
         from .mechanical_workflow import _question_payload
         return {
             'version': QUESTIONNAIRE_VERSION,
+            'identity': f'{QUESTIONNAIRE_VERSION}:{discipline}',
             'discipline': discipline,
             'source': 'engi-design-engine',
             'questions': [_present_question(q) for q in legacy.qlist(unresolved)],

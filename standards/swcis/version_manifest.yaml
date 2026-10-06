@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.2.0",
+  "standard_version": "5.3.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-10-05",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -21,9 +21,14 @@
   ],
   "history": [
     {
+      "version": "5.3.0",
+      "date": "2026-10-06",
+      "summary": "Integrate the offline residential research foundation after Canonical Architecture 3.1 with separate design-knowledge authority, fail-closed sources and no runtime generation activation."
+    },
+    {
       "version": "5.2.0",
       "date": "2026-10-05",
-      "summary": "Govern offline residential foundation catalogs, source gaps, public-plan study, owner contracts and original reference vectors; no production or legal qualification."
+      "summary": "Add Canonical Architecture 3.1 exact text occurrence, role, host, title-block and stale-safe review authority while prohibiting text-derived engineering geometry."
     },
     {
       "version": "5.1.0",

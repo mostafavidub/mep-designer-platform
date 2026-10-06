@@ -19,7 +19,8 @@ def stable_hash(value):
 
 def load_catalog(name):
     if name not in {"rulebook", "sources", "owner-questionnaire", "symbols", "generation-contract",
-                    "qa-matrix", "exam-coverage", "plan-study", "heuristics"}:
+                    "qa-matrix", "exam-coverage", "plan-study", "heuristics", "research-completion",
+                    "golden-review-template"}:
         raise ValueError("Unknown foundation catalog")
     return json.loads((DATA / (name + ".json")).read_text())
 

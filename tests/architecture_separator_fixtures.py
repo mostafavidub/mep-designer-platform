@@ -3,11 +3,15 @@
 This is not DXF inference or benchmark truth; each synthetic edge is declared
 as a separator by the test author.
 """
+from cad_engine.architecture_contract import SCHEMA
 from cad_engine.architecture_separator_evidence import bind_boundary, refresh_separator_authority
 
 
 def declare_structured_separators(model):
-    model['schema']='planha-canonical-architecture/3.0'
+    model['schema']=SCHEMA
+    model.setdefault('text_evidence', {'schema':'planha-architectural-text-evidence/1.0',
+        'contract_version':SCHEMA,'items':[],'metrics':{}})
+    model.setdefault('title_block_fields', [])
     model['source']['source_type']='CERTIFIED_DXF'
     for space in model.get('physical_spaces', []):
         rings=[space['polygon']]+space.get('interior_rings', [])

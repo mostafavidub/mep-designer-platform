@@ -9,6 +9,7 @@ from shapely.geometry import LineString, Polygon
 from shapely.ops import unary_union
 
 from .architecture_contract import ORIGINS, SCHEMA, STATUSES, canonical_model_hash, content_hash
+from .architecture_text_evidence import CONTRACT_VERSION as TEXT_CONTRACT_VERSION, validate_text_contract
 
 
 VALIDATOR_ID = "planha.architecture-validator"
@@ -194,6 +195,23 @@ def validate_architecture(model):
         _add(hard, "ADAPTER_IDENTITY_MISSING")
     linear_tolerance = max(1e-9, abs(float(source.get("effective_scale") or 1.0)) * 1e-7)
     control("SOURCE_IDENTITY", not any(x["code"].startswith("SOURCE_") for x in hard))
+
+    text_evidence = data.get("text_evidence") or {}
+    if text_evidence.get("contract_version") != TEXT_CONTRACT_VERSION:
+        _add(hard, "TEXT_CONTRACT_VERSION_MISMATCH",
+             expected=TEXT_CONTRACT_VERSION, actual=text_evidence.get("contract_version"))
+    for error in validate_text_contract(text_evidence, source_sha256=source_sha):
+        _add(hard, error.pop("code"), **error)
+    text_ids = {row.get("text_evidence_id") for row in text_evidence.get("items") or []}
+    for field in data.get("title_block_fields") or []:
+        if field.get("text_evidence_id") not in text_ids:
+            _add(hard, "TITLE_FIELD_TEXT_EVIDENCE_REFERENCE_INVALID",
+                 title_block_field_id=field.get("title_block_field_id"))
+        authority = field.get("authority") or {}
+        if any(authority.get(key) for key in ("material_geometry", "engineering_scale", "north")):
+            _add(hard, "TITLE_FIELD_ENGINEERING_AUTHORITY_FORBIDDEN",
+                 title_block_field_id=field.get("title_block_field_id"))
+    control("TEXT_AUTHORITY_INTEGRITY", not any(x["code"].startswith(("TEXT_", "TITLE_FIELD_")) for x in hard))
 
     frames = data.get("frames") or []; levels = data.get("levels") or []
     walls = data.get("walls") or []; spaces = data.get("physical_spaces") or []

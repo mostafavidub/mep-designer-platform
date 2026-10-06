@@ -15,7 +15,7 @@ import math
 import unicodedata
 
 
-SCHEMA = "planha-canonical-architecture/3.0"
+SCHEMA = "planha-canonical-architecture/3.1"
 ADAPTER_ID = "planha.raw-dxf-current-model-adapter"
 ADAPTER_VERSION = "1.0.0"
 IDENTITY_VERSION = "planha-canonical-identity/2.1"
@@ -39,6 +39,7 @@ _ENTITY_COLLECTION_IDS = {
     "apertures": "aperture_id", "portals": "opening_id", "voids": "void_id",
     "dimensions": "dimension_id", "unresolved_items": "unresolved_item_id",
     "evidence_registry": "evidence_id",
+    "title_block_fields": "title_block_field_id",
 }
 _SET_LIKE_LISTS = {"source_handles", "source_frame_ids", "represented_level_ids",
                    "evidence_ids", "host_wall_ids", "review_decision_ids", "origins",
@@ -46,7 +47,8 @@ _SET_LIKE_LISTS = {"source_handles", "source_frame_ids", "represented_level_ids"
 _SEMANTIC_TOP_LEVEL = ("schema", "contract_status", "source", "levels", "frames", "walls",
                        "physical_spaces", "functional_zones", "apertures", "portals", "voids",
                        "dimensions", "graphs", "unresolved_items", "evidence_registry",
-                       "authority_model", "review_registry", "traceability", "release")
+                       "text_evidence", "title_block_fields", "authority_model",
+                       "review_registry", "traceability", "release")
 
 
 def _normalized_scalar(value):
@@ -398,6 +400,13 @@ def adapt_current_architecture(current_model, engine_identity=None):
                 "source": source_record, "levels": levels, "frames": frames, "walls": walls,
                 "physical_spaces": spaces, "functional_zones": zones, "apertures": apertures, "portals": portals,
                 "voids": voids, "dimensions": dimensions,
+                "text_evidence": deepcopy(model.get("text_evidence") or {
+                    "schema": "planha-architectural-text-evidence/1.0",
+                    "contract_version": SCHEMA, "items": [],
+                    "metrics": {"exact_occurrence_count": 0, "template_definition_count": 0,
+                                "attribute_instance_count": 0, "geometry_authority_count": 0},
+                }),
+                "title_block_fields": deepcopy(model.get("title_block_fields") or []),
                 "graphs": {"adjacency": adjacency,
                            "enclosure": deepcopy((model.get("enclosure_graph") or {}).get("edges") or []),
                            "access": access},

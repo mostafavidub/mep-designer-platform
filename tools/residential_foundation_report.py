@@ -15,14 +15,18 @@ def export(destination):
     (destination/'audit.json').write_text(json.dumps(audit,ensure_ascii=False,indent=2)+'\n')
     esc=html.escape
     parts=['<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><title>پایهٔ طراحی پلان مسکونی — PLANHA</title><style>body{font:17px/1.9 Tahoma,sans-serif;max-width:1180px;margin:30px auto;padding:20px;color:#183247;background:#f7fafb}h1,h2{color:#14675e}article{background:white;padding:18px;margin:16px 0;border:1px solid #ccd9de;border-radius:10px}code,pre{direction:ltr;unicode-bidi:isolate;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%}td,th{padding:10px;border:1px solid #ccd9de;vertical-align:top}a{color:#126e85}svg{height:160px;max-width:220px}small{color:#536875}details{margin:10px 0}summary{cursor:pointer}input,textarea,select{font:inherit;max-width:100%;box-sizing:border-box}</style><body><h1>پایهٔ طراحی پلان مسکونی</h1><article><b>وضعیت: پایهٔ پژوهشی ناقص؛ نیازمند تکمیل منابع و بازبینی معماری</b><p>این بسته مجوز طراحی خودکار یا ساخت نیست. قواعد عددی تا تأیید نسخه، اصلاحیه و دامنهٔ کاربرد فعال نمی‌شوند. هیچ پلان اینترنتی به‌عنوان نمونهٔ طلایی تأیید نشده است.</p><p>خروجی هدف: فقط پلان طبقات مسکونی یکسان. طراحی نما، مقطع، سازه و محاسبات تأسیسات خارج از این نسخه است.</p></article>']
-    nav=[('sources','منابع و وضعیت نسخه‌ها'),('rulebook','قواعد معماری'),('exam-coverage','پوشش منابع آزمون'),('plan-study','مطالعهٔ پلان‌ها'),('heuristics','الگوهای طراحی'),('symbols','نمادهای پارامتریک'),('owner-questionnaire','پرسش‌نامهٔ مالک'),('qa-matrix','ماتریس کنترل کیفیت'),('generation-contract','قرارداد تولید')]
+    nav=[('research-completion','نتیجهٔ تکمیل پژوهش'),('golden-review-template','فرم Golden انسانی'),('sources','منابع و وضعیت نسخه‌ها'),('rulebook','قواعد معماری'),('exam-coverage','پوشش منابع آزمون'),('plan-study','مطالعهٔ پلان‌ها'),('heuristics','الگوهای طراحی'),('symbols','نمادهای پارامتریک'),('owner-questionnaire','پرسش‌نامهٔ مالک'),('qa-matrix','ماتریس کنترل کیفیت'),('generation-contract','قرارداد تولید')]
     parts.append('<nav>'+ ' | '.join(f'<a href="#{n}">{t}</a>' for n,t in nav)+'</nav>')
     for name,title in nav:
         data=load_catalog(name)
         envelope={'build_identity':audit['build_identity'],'catalog':data}
         (destination/(name+'.json')).write_text(json.dumps(envelope,ensure_ascii=False,indent=2)+'\n')
         parts.append(f'<h2 id="{name}">{title}</h2><p><a href="{name}.json">دادهٔ کامل و قابل پیگیری</a></p>')
-        if name=='sources':
+        if name=='research-completion':
+            parts.append('<article><p><b>وضعیت:</b> پژوهش هنوز برای فعال‌کردن قواعد یا تولید خودکار کافی نیست.</p><p>هر ۳۲ استخراج مبحث چهارم از نظر محل و انتقال محتوا ممیزی شده‌اند، اما احراز ویرایش جاری، همهٔ استثناها، تعارض منابع و بازبینی مستقل کامل نشده است؛ بنابراین تعداد قواعد فعال صفر باقی می‌ماند.</p><p>۲۴ شکاف به نتیجه‌های مشخص مانند نیاز به ورودی پروژه، منبع مفقود، مدل ضوابط محلی، ترجیح مالک یا بازبینی متخصص طبقه‌بندی شده‌اند.</p><details><summary>قرارداد کامل پژوهش، ارگونومی و Golden</summary><pre>'+esc(json.dumps(data,ensure_ascii=False,indent=2))+'</pre></details></article>')
+        elif name=='golden-review-template':
+            parts.append('<article><p>این فرم خالی است و Golden محسوب نمی‌شود. معمار مستقل باید آن را فقط از منابع پروژه تکمیل و پیش از مشاهدهٔ خروجی Planha مهر زمانی و قفل کند.</p><ol>'+''.join('<li>'+esc(x)+'</li>' for x in data['instructions_fa'])+'</ol><details><summary>ساختار کامل فرم</summary><pre>'+esc(json.dumps(data,ensure_ascii=False,indent=2))+'</pre></details></article>')
+        elif name=='sources':
             parts.append('<table><tr><th>منبع</th><th>سال</th><th>وضعیت بررسی</th></tr>')
             for s in data['sources']:parts.append(f'<tr><td>{esc(s["title"])}</td><td dir="ltr">{s.get("edition_year") or "—"}</td><td><code>{esc(s["status"])}</code><br>{esc(s.get("notes", ""))}</td></tr>')
             parts.append('</table>')
