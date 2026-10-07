@@ -1,6 +1,6 @@
 {
   "schema_version": "architecture-owner-program/1.0",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "questions": [
     {
       "question_id": "OWN-PURPOSE",
@@ -43,7 +43,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-QUALITY",
@@ -85,7 +87,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-PRIORITY",
@@ -131,7 +135,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-MARKET",
@@ -168,7 +174,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-UNITS_PER_FLOOR",
@@ -201,7 +209,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-UNIT_PROGRAM",
@@ -242,7 +252,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-EQUAL_UNITS",
@@ -285,7 +297,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-MASTER",
@@ -324,7 +338,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-GUEST_ROOM",
@@ -362,7 +378,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-OFFICE",
@@ -402,7 +420,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-FLEX_ROOM",
@@ -440,7 +460,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ROOM_TARGETS",
@@ -471,7 +493,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-RECEPTION",
@@ -512,7 +536,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-DINING",
@@ -545,7 +571,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-TV",
@@ -583,7 +611,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-KITCHEN",
@@ -626,7 +656,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ISLAND",
@@ -666,7 +698,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-BREAKFAST",
@@ -704,7 +738,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-PANTRY",
@@ -742,7 +778,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-APPLIANCES",
@@ -788,7 +826,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-APPLIANCE_SIZES",
@@ -822,7 +862,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-SECONDARY_KITCHEN",
@@ -860,7 +902,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-KITCHEN_SERVICE_ACCESS",
@@ -898,7 +942,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-GUEST_WC",
@@ -939,7 +985,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-COMMON_BATHS",
@@ -972,7 +1020,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-BATHING",
@@ -1012,7 +1062,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-WC_TYPE",
@@ -1054,7 +1106,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-LAUNDRY",
@@ -1098,7 +1152,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-DRYING",
@@ -1141,7 +1197,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-WARDROBES",
@@ -1172,7 +1230,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-LINEN",
@@ -1210,7 +1270,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-UNIT_STORAGE",
@@ -1248,7 +1310,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-COMMON_STORAGE",
@@ -1286,7 +1350,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-BALCONY",
@@ -1326,7 +1392,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-BALCONY_AREA",
@@ -1366,7 +1434,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-BALCONY_ACCESS",
@@ -1412,7 +1482,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-BALCONY_PRIVACY",
@@ -1452,7 +1524,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ENTRY_PRIVACY",
@@ -1492,7 +1566,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-GUEST_PATH",
@@ -1532,7 +1608,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ACOUSTIC_PRIORITY",
@@ -1574,7 +1652,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-PREFERRED_VIEWS",
@@ -1605,7 +1685,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ORIENTATION_PRIORITY",
@@ -1636,7 +1718,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-CORE_STRATEGY",
@@ -1668,7 +1752,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-EXTRA_LIFT",
@@ -1711,7 +1797,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-LOBBY",
@@ -1753,7 +1841,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-VEHICLES",
@@ -1784,7 +1874,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ACCESS_NEEDS",
@@ -1825,7 +1917,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-ACCESS_DETAILS",
@@ -1875,7 +1969,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-CHILDREN",
@@ -1906,7 +2002,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-PETS",
@@ -1937,7 +2035,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-FUTURE_ADAPT",
@@ -1978,7 +2078,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-CULTURAL_PRIVACY",
@@ -2009,7 +2111,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-HVAC_RESERVATION",
@@ -2047,7 +2151,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-HVAC_DETAILS",
@@ -2083,7 +2189,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-EXISTING_FURNITURE",
@@ -2121,7 +2229,9 @@
       "ask_stage": "OPTIONAL_REFINEMENT",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-FURNITURE_SIZES",
@@ -2157,7 +2267,9 @@
       "ask_stage": "CONDITIONAL",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "DELAY",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "DELAY",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-COMPROMISE",
@@ -2189,7 +2301,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     },
     {
       "question_id": "OWN-CONFIRMATION",
@@ -2227,7 +2341,9 @@
       "ask_stage": "PROGRAM_FREEZE",
       "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
       "re_audit_disposition": "KEEP",
-      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it.",
+      "activation_reaudit_disposition": "KEEP",
+      "activation_reaudit_reason": "Owner program/preference remains explicit input; code minima are evaluated separately and never asked as preference."
     }
   ],
   "auto_facts": [
@@ -2433,6 +2549,15 @@
     "DERIVE_FROM_CODE": 0,
     "DERIVE_FROM_CITY": 0,
     "DERIVE_FROM_GEOMETRY": 0,
+    "KEEP": 13,
+    "DELAY": 45,
+    "REMOVE": 0
+  },
+  "activation_reaudit_summary": {
+    "DERIVE_FROM_CODE": 0,
+    "DERIVE_FROM_CITY": 0,
+    "DERIVE_FROM_GEOMETRY": 0,
+    "DERIVE_FROM_PROJECT_INPUT": 0,
     "KEEP": 13,
     "DELAY": 45,
     "REMOVE": 0

@@ -1,6 +1,6 @@
 {
   "schema_version": "architecture-source-gaps/1.0",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "gaps": [
     {
       "gap_id": "ARCH-SG-001",
@@ -19,7 +19,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -36,10 +36,10 @@
       ],
       "best_evidence_found": "RESOLVED_LOCAL_RULE_MODEL",
       "remaining_uncertainty": "jurisdiction package required per parcel",
-      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "recommended_action": "Supply the versioned city/municipality/parcel/project-date local rule pack.",
       "human_required": false,
-      "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "status": "LOCAL_RULE_REQUIRED",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -56,10 +56,10 @@
       ],
       "best_evidence_found": "PROJECT_INPUT_REQUIRED",
       "remaining_uncertainty": "approved planning constraints",
-      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "recommended_action": "Supply the versioned city/municipality/parcel/project-date local rule pack.",
       "human_required": true,
-      "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "status": "LOCAL_RULE_REQUIRED",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -74,12 +74,12 @@
         "Owner-supplied official-document copies",
         "Official public-source discovery"
       ],
-      "best_evidence_found": "SOURCE_MISSING",
-      "remaining_uncertainty": "M4 plus official accessibility source",
-      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "best_evidence_found": "OWNER_METADATA_CODE_246_FILE_BYTES_UNAVAILABLE",
+      "remaining_uncertainty": "Code 246 hash, clause/page mapping, applicability branches and rounding",
+      "recommended_action": "Provide 895917_Code0246-r1-13990324.pdf for exact ingestion.",
       "human_required": false,
-      "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "status": "OPEN",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -96,12 +96,12 @@
         "Owner-supplied official-document copies",
         "Official public-source discovery"
       ],
-      "best_evidence_found": "SOURCE_MISSING",
-      "remaining_uncertainty": "M3 1395 clause extraction",
-      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "best_evidence_found": "M3_1395_OWNER_CONFIRMED_PROJECT_BASELINE",
+      "remaining_uncertainty": "Architecture-relevant M3 clause/table mapping and cross-code QA",
+      "recommended_action": "Map M3 architectural egress clauses without importing fire-system engineering.",
       "human_required": false,
       "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -121,7 +121,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
       "status": "OPEN",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -138,10 +138,10 @@
       ],
       "best_evidence_found": "RESOLVED_LOCAL_RULE_MODEL",
       "remaining_uncertainty": "municipality and project instruction",
-      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "recommended_action": "Supply the versioned city/municipality/parcel/project-date local rule pack.",
       "human_required": false,
-      "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "status": "LOCAL_RULE_REQUIRED",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -161,7 +161,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -181,7 +181,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -203,7 +203,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -223,7 +223,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -243,7 +243,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -265,7 +265,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -285,7 +285,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
       "status": "OPEN",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -305,7 +305,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -333,7 +333,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -353,7 +353,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -373,7 +373,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
       "status": "RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Classification/interface resolved; this does not grant numeric or geometry authority."
     },
     {
@@ -393,7 +393,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
       "status": "OPEN",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -413,7 +413,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -433,7 +433,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -453,7 +453,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -473,7 +473,7 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
       "status": "HUMAN_REVIEW_REQUIRED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Material source or project evidence remains required."
     },
     {
@@ -493,16 +493,17 @@
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
       "status": "RESOLVED",
-      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
       "closure_note": "Classification/interface resolved; this does not grant numeric or geometry authority."
     }
   ],
   "summary": {
-    "OPEN": 3,
-    "PARTIALLY_RESOLVED": 7,
+    "total": 24,
     "RESOLVED": 2,
-    "HUMAN_REVIEW_REQUIRED": 12,
+    "PARTIALLY_RESOLVED": 4,
+    "HUMAN_REVIEW_REQUIRED": 11,
+    "LOCAL_RULE_REQUIRED": 3,
     "NOT_APPLICABLE": 0,
-    "total": 24
+    "OPEN": 4
   }
 }

@@ -17,7 +17,7 @@
       "type": "string"
     },
     "status": {
-      "const": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+      "type": "string"
     },
     "reviewer_decisions": {
       "type": "array",
@@ -34,9 +34,6 @@
             "type": "string"
           },
           "rule_id": {
-            "type": "string"
-          },
-          "plain_language_rule": {
             "type": "string"
           },
           "source": {
@@ -68,13 +65,33 @@
             "type": "string"
           },
           "status": {
-            "const": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+            "type": "string"
+          },
+          "rule_summary_fa": {
+            "type": "string"
+          },
+          "boundary_example": {
+            "type": "string"
+          },
+          "recommended_decision": {
+            "type": "string"
+          },
+          "human_review_status": {
+            "type": "string"
+          },
+          "open_issue": {
+            "type": "string"
+          },
+          "cross_code_interaction": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "review_item_id",
           "rule_id",
-          "plain_language_rule",
           "source",
           "edition",
           "clause",
@@ -85,7 +102,13 @@
           "pass_example",
           "fail_example",
           "open_question",
-          "status"
+          "status",
+          "rule_summary_fa",
+          "boundary_example",
+          "recommended_decision",
+          "human_review_status",
+          "open_issue",
+          "cross_code_interaction"
         ],
         "additionalProperties": false
       }

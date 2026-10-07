@@ -54,3 +54,13 @@ current official lifecycle, M3 amendment currency and the applicable accessibili
 instrument remain unresolved. See `PRIMARY_AUTHORITY_CLOSURE.md`. All hard rules
 remain `SOURCE_GAP`, release-disabled and subject to human architect review; the
 Architecture Generator remains disabled.
+
+## Independent rule activation gates
+
+ARCH-P0.3 removes aggregate all-or-nothing qualification. Each hard rule now
+reports source, applicability, logic, static-QA, human-review and Golden gates.
+M4/M3 currentness for this project is owner-confirmed rather than represented as
+independent registry verification. Thirty rules are ready for structured architect
+review; the group-8 stair rule and accessible-sanitary rule retain explicit
+M3/Code-246 dependency blockers. `READY_FOR_HUMAN_REVIEW` never implies runtime or
+Golden authority.

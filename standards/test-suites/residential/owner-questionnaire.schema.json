@@ -445,6 +445,12 @@
           },
           "re_audit_reason": {
             "type": "string"
+          },
+          "activation_reaudit_disposition": {
+            "type": "string"
+          },
+          "activation_reaudit_reason": {
+            "type": "string"
           }
         },
         "required": [
@@ -470,7 +476,9 @@
           "ask_stage",
           "derivation_policy",
           "re_audit_disposition",
-          "re_audit_reason"
+          "re_audit_reason",
+          "activation_reaudit_disposition",
+          "activation_reaudit_reason"
         ],
         "additionalProperties": false
       }
@@ -515,6 +523,9 @@
     },
     "regulatory_reaudit_summary": {
       "type": "object"
+    },
+    "activation_reaudit_summary": {
+      "type": "object"
     }
   },
   "required": [
@@ -527,7 +538,8 @@
     "v1_progression",
     "version",
     "qualification_summary",
-    "regulatory_reaudit_summary"
+    "regulatory_reaudit_summary",
+    "activation_reaudit_summary"
   ],
   "additionalProperties": false
 }

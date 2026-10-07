@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-golden-matrix/1.0",
-  "version": "0.1.0",
-  "status": "PROPOSED_HUMAN_GOLDEN_REQUIRED",
+  "version": "0.2.0",
+  "status": "PREPARED_NOT_AUTHORIZED_CODE246_AND_M3_BLOCKERS",
   "engine_output_may_create_truth": false,
   "cases": [
     {
@@ -22,7 +22,9 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "ordinary_private_unit_not_assumed_accessible",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-02",
@@ -42,7 +44,9 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "common_area_accessibility",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-03",
@@ -62,7 +66,9 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "accessible_unit_trigger_and_5_percent_rounding",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-04",
@@ -82,11 +88,13 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "elevator_and_accessible_route_applicability",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-05",
-      "case_type": "difficult_parking",
+      "case_type": "difficult_parking_layout",
       "scope": "parking geometry, columns, ramp and pedestrian route",
       "required_authority": [
         "current city/jurisdiction package",
@@ -102,11 +110,13 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "accessible_parking_applicability",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-06",
-      "case_type": "irregular_site",
+      "case_type": "irregular_corner_site",
       "scope": "irregular/corner site and envelope constraints",
       "required_authority": [
         "current city/jurisdiction package",
@@ -122,11 +132,13 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "public_private_scope_negative_control",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-07",
-      "case_type": "shaft_wet_core",
+      "case_type": "shaft_wet_core_challenge",
       "scope": "shaft and wet-core coordination challenge",
       "required_authority": [
         "current city/jurisdiction package",
@@ -142,11 +154,13 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "accessible_sanitary_space_geometry",
+      "execution_authorized": false
     },
     {
       "case_id": "GOLDEN-08",
-      "case_type": "daylight_circulation_privacy",
+      "case_type": "daylight_circulation_privacy_challenge",
       "scope": "daylight, circulation and privacy trade-offs",
       "required_authority": [
         "current city/jurisdiction package",
@@ -162,7 +176,9 @@
         "rule decisions"
       ],
       "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
-      "status": "NOT_COLLECTED"
+      "status": "NOT_COLLECTED",
+      "accessibility_coverage": "combined_M3_M4_246_route_case",
+      "execution_authorized": false
     }
   ]
 }

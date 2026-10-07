@@ -86,7 +86,8 @@
               "PARTIALLY_RESOLVED",
               "RESOLVED",
               "HUMAN_REVIEW_REQUIRED",
-              "NOT_APPLICABLE"
+              "NOT_APPLICABLE",
+              "LOCAL_RULE_REQUIRED"
             ]
           },
           "transition_evidence": {

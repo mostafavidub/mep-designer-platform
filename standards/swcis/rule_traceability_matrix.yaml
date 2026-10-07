@@ -1267,7 +1267,7 @@
       "rule_id": "ARCH-RES-LIVING-001",
       "title": "اندازهٔ حداقل یک فضای اقامت اصلی",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1284,7 +1284,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1294,7 +1295,7 @@
       "rule_id": "ARCH-RES-LIVING-002",
       "title": "فضای اقامت واحد کوچک",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1311,7 +1312,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1321,7 +1323,7 @@
       "rule_id": "ARCH-RES-BEDROOM-001",
       "title": "عرض سایر اتاق‌های اقامت مسکونی",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1338,7 +1340,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1348,7 +1351,7 @@
       "rule_id": "ARCH-RES-LIVING-003",
       "title": "مساحت عمومی اتاق اقامت",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1365,7 +1368,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1375,7 +1379,7 @@
       "rule_id": "ARCH-RES-CIRCULATION-001",
       "title": "عرض راهروی داخلی واحد",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1392,7 +1396,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1402,7 +1407,7 @@
       "rule_id": "ARCH-RES-STAIRS-001",
       "title": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1419,7 +1424,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1429,7 +1435,7 @@
       "rule_id": "ARCH-RES-STAIRS-002",
       "title": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1446,7 +1452,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1456,7 +1463,7 @@
       "rule_id": "ARCH-RES-STAIRS-003",
       "title": "پلهٔ ساختمان مسکونی گروه ۸",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "DEPENDENCY_BLOCKED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1473,7 +1480,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1483,7 +1491,7 @@
       "rule_id": "ARCH-RES-KITCHEN-001",
       "title": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1500,7 +1508,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1510,7 +1519,7 @@
       "rule_id": "ARCH-RES-KITCHEN-002",
       "title": "آشپزخانه همراه محل صرف غذا",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1527,7 +1536,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1537,7 +1547,7 @@
       "rule_id": "ARCH-RES-KITCHEN-003",
       "title": "عرض آشپزخانه",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1554,7 +1564,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1564,7 +1575,7 @@
       "rule_id": "ARCH-RES-KITCHEN-004",
       "title": "فضای کار آشپزخانه دیواری",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1581,7 +1592,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1591,7 +1603,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-001",
       "title": "نور و هوای آشپزخانه مستقل",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1608,7 +1620,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1618,7 +1631,7 @@
       "rule_id": "ARCH-RES-VENTILATION-001",
       "title": "بازشوی تهویه آشپزخانه",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1635,7 +1648,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1645,7 +1659,7 @@
       "rule_id": "ARCH-RES-WC-001",
       "title": "پیش‌بینی توالت فرنگی برای واحد بزرگ",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1662,7 +1676,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1672,7 +1687,7 @@
       "rule_id": "ARCH-RES-BATHROOM-001",
       "title": "ابعاد فضای بهداشتی مسکونی معمول",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1689,7 +1704,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1699,7 +1715,7 @@
       "rule_id": "ARCH-RES-BATHROOM-002",
       "title": "ارتفاع فضای بهداشتی مسکونی",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1716,7 +1732,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1726,7 +1743,7 @@
       "rule_id": "ARCH-RES-ACCESSIBILITY-001",
       "title": "فضای بهداشتی قابل استفاده معلول",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "DEPENDENCY_BLOCKED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1743,7 +1760,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1753,7 +1771,7 @@
       "rule_id": "ARCH-RES-PRIVACY-001",
       "title": "دسترسی مستقل اتاق‌ها",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1770,7 +1788,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1780,7 +1799,7 @@
       "rule_id": "ARCH-RES-PRIVACY-002",
       "title": "دید به سرویس بهداشتی",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1797,7 +1816,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1807,7 +1827,7 @@
       "rule_id": "ARCH-RES-PRIVACY-003",
       "title": "دید به محل کار آشپزخانه",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1824,7 +1844,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1834,7 +1855,7 @@
       "rule_id": "ARCH-RES-BALCONY-001",
       "title": "فضای نیمه‌باز اختصاصی",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1851,7 +1872,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1861,7 +1883,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-002",
       "title": "سطح شیشه اتاق اقامت",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1878,7 +1900,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1888,7 +1911,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-003",
       "title": "پنجره با لبه بالایی کوتاه",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1905,7 +1928,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1915,7 +1939,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-004",
       "title": "عمق قابل قبول نورگیری",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1932,7 +1956,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1942,7 +1967,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-005",
       "title": "نورگیری زیر ایوان",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1959,7 +1984,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1969,7 +1995,7 @@
       "rule_id": "ARCH-RES-DOOR-001",
       "title": "در ورودی اتاق اقامت",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1986,7 +2012,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -1996,7 +2023,7 @@
       "rule_id": "ARCH-RES-EGRESS-001",
       "title": "بازشدن در خروج از داخل",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2013,7 +2040,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -2023,7 +2051,7 @@
       "rule_id": "ARCH-RES-KITCHEN-005",
       "title": "ممنوعیت عبور الزامی از آشپزخانه",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2040,7 +2068,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -2050,7 +2079,7 @@
       "rule_id": "ARCH-RES-VENTILATION-002",
       "title": "هود به هوای آزاد",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2067,7 +2096,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -2077,7 +2107,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-006",
       "title": "حیاط بین دو تصرف مسکونی",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2094,7 +2124,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"
@@ -2104,7 +2135,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-007",
       "title": "حیاط مشترک آشپزخانه و اقامت",
       "status": "LOCKED",
-      "qualification": "CLAUSE_VERIFIED_LIFECYCLE_UNRESOLVED_HUMAN_REVIEW_REQUIRED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2121,7 +2152,8 @@
         "no_release_authority"
       ],
       "regression_tests": [
-        "tests/test_residential_foundation.py"
+        "tests/test_residential_foundation.py",
+        "tests/test_architecture_rule_activation.py"
       ],
       "docs": [
         "docs/residential/FOUNDATION.md"

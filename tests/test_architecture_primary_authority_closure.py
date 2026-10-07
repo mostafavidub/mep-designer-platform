@@ -21,18 +21,18 @@ class PrimaryAuthorityClosureTests(unittest.TestCase):
                     "applicability_scope", "official_reference", "retrieved_date", "evidence_strength"}
         for item in assessments.values():
             self.assertTrue(required <= item.keys())
-            self.assertEqual(item["current_status"], "AUTHORITY_STATUS_UNRESOLVED")
-        self.assertEqual(assessments["IR-ACCESS"]["evidence_strength"], "E")
+            self.assertIn(item["current_status"], {"OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE", "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING"})
+        self.assertEqual(assessments["IR-ACCESS"]["verification_status"], "FILE_BYTES_HASH_CLAUSE_PAGE_REQUIRED")
 
     def test_all_numerical_candidates_remain_release_disabled(self):
         rules = [r for r in load("rulebook")["rules"] if r["authority_type"] == "HARD_RULE"]
         self.assertEqual(len(rules), 32)
         for rule in rules:
             self.assertEqual(rule["classification"], "MANDATORY_NATIONAL")
-            self.assertEqual(rule["release_status"], "SOURCE_GAP")
+            self.assertIn(rule["release_status"], {"SOURCE_GAP", "HUMAN_REVIEW_REQUIRED"})
             self.assertFalse(rule["release_enabled"])
-            self.assertEqual(rule["amendment_state"], "AUTHORITY_STATUS_UNRESOLVED")
-            self.assertIsNone(rule["effective_from"])
+            self.assertEqual(rule["amendment_state"], "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE")
+            self.assertEqual(rule["effective_from"], "PROJECT_BASELINE_CONFIRMED_2026-10-08")
             self.assertTrue(rule["human_review_required"])
             self.assertTrue(rule["source_clause"])
             self.assertTrue(rule["source_page"])
@@ -53,9 +53,9 @@ class PrimaryAuthorityClosureTests(unittest.TestCase):
         matrix = load("conflict-matrix")
         self.assertEqual(len(matrix["conflicts"]), 8)
         self.assertEqual(len({x["conflict_id"] for x in matrix["conflicts"]}), 8)
-        self.assertTrue(any({x["authority_a"], x["authority_b"]} == {"IR-M3", "IR-M4"} for x in matrix["conflicts"]))
-        self.assertTrue(any("LOCAL" in x["authority_b"] for x in matrix["conflicts"]))
-        self.assertTrue(all(x["actual_conflict_or_not"] != "AUTO_RESOLVED" for x in matrix["conflicts"]))
+        self.assertTrue(any({x["source_a"], x["source_b"]} == {"IR-M3", "IR-M4"} for x in matrix["conflicts"]))
+        self.assertTrue(any("LOCAL" in x["source_b"] for x in matrix["conflicts"]))
+        self.assertTrue(all(x["result"] != "MORE_RESTRICTIVE_RESULT" for x in matrix["conflicts"]))
 
     def test_owner_questions_remain_owner_intent(self):
         catalog = load("owner-questionnaire")
@@ -71,15 +71,15 @@ class PrimaryAuthorityClosureTests(unittest.TestCase):
         self.assertEqual(package["reviewer_decisions"], [])
         self.assertEqual(len(package["items"]), 32)
         self.assertEqual(len({x["rule_id"] for x in package["items"]}), 32)
-        self.assertTrue(all(x["status"] == "HUMAN_ARCHITECT_REVIEW_REQUIRED" for x in package["items"]))
+        self.assertTrue(all(x["human_review_status"] == "REQUIRED" for x in package["items"]))
 
     def test_generator_and_golden_validation_remain_unauthorized(self):
         report = load("qualification-report")
         completion = load("research-completion")
-        self.assertEqual(report["status"], "PRIMARY_AUTHORITY_CLOSURE_BLOCKED")
+        self.assertEqual(report["status"], "ARCH_RULE_ACTIVATION_PARTIAL")
         self.assertEqual(report["generator_readiness"], "NOT_READY")
         self.assertEqual(report["metrics"]["release_ready_count"], 0)
-        self.assertEqual(completion["primary_authority_closure"]["generator_gate"], "NOT_AUTHORIZED_FOR_GOLDEN_VALIDATION")
+        self.assertEqual(completion["primary_authority_closure"]["generator_gate"], "NOT_AUTHORIZED_FOR_HUMAN_GOLDEN_VALIDATION")
         self.assertFalse(completion["readiness"]["generator_implemented"])
 
 

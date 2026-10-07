@@ -68,3 +68,26 @@ Numerical values, operators and existing clause/page references were not changed
 Release-ready rules: 0. Generator and Golden execution remain unauthorized. No
 layout generation, geometry, runtime, MEP, deployment or production behavior was
 changed.
+
+## ARCH-P0.3 project-baseline requalification — 2026-10-08
+
+The owner explicitly confirmed M4 third edition 1396 and M3 third edition 1395
+as the current primary baseline for this project. This is recorded as
+`OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE`, separately from independent
+government-registry verification. It closes the project-baseline lifecycle gate
+without rewriting provenance.
+
+The named accessibility file
+`895917_Code0246-r1-13990324.pdf` was not present in the repository, Downloads,
+workspace or attachment cache during qualification. Owner-provided metadata is
+registered, but no local hash, exact clause, page, percentage-rounding rule or
+residential applicability branch is claimed. `ARCH-RES-ACCESSIBILITY-001` remains
+source-blocked. `ARCH-RES-STAIRS-003` remains logic-blocked pending the applicable
+M3 architectural egress mapping.
+
+The former global gate was replaced by per-rule source, applicability, logic,
+static-QA, human-review and Golden gates. Thirty M4 rules are independently
+`READY_FOR_HUMAN_REVIEW`; two remain `BLOCKED`; zero are human-reviewed or
+release-enabled. The eight proposed Golden cases now cover accessibility diversity,
+but their execution remains unauthorized until the two P0 dependency blockers are
+closed.

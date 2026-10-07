@@ -1,8 +1,8 @@
 {
   "schema_version": "architecture-rulebook/1.1",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "scope": "RESIDENTIAL_TYPICAL_FLOOR_PLAN_ONLY",
-  "status": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
+  "status": "ARCH_RULE_ACTIVATION_PARTIAL",
   "authority_order": [
     "IR_NATIONAL_BUILDING_REGULATIONS",
     "IR_MANDATORY_LAW_STANDARD",
@@ -165,11 +165,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "unit_area_m2",
         "largest_habitable_area_m2",
@@ -188,30 +184,39 @@
       "source_quote_or_precise_summary": "حداقل یک فضای اقامت با مساحت ۱۲ مترمربع و عرض ۲٫۷۰ متر لازم است.",
       "evidence_strength": "A",
       "warning_message_fa": "اندازهٔ حداقل یک فضای اقامت اصلی تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-LIVING-002",
@@ -323,11 +328,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "unit_area_m2",
         "largest_habitable_area_m2",
@@ -346,30 +347,39 @@
       "source_quote_or_precise_summary": "حداقل یک اتاق ۹ مترمربع و هیچ‌یک از ابعاد افقی آن کمتر از ۲٫۵ متر نباشد.",
       "evidence_strength": "A",
       "warning_message_fa": "فضای اقامت واحد کوچک تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-BEDROOM-001",
@@ -450,11 +460,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "room_width_m",
         "room_use"
@@ -472,30 +478,39 @@
       "source_quote_or_precise_summary": "حداقل عرض سایر فضاهای اقامت ۲٫۴۰ متر است؛ مساحت طبق نوع استفاده کنترل شود.",
       "evidence_strength": "A",
       "warning_message_fa": "عرض سایر اتاق‌های اقامت مسکونی تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-LIVING-003",
@@ -574,11 +589,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "room_area_m2"
       ],
@@ -595,30 +606,39 @@
       "source_quote_or_precise_summary": "حداقل مساحت ۶٫۵ مترمربع؛ حکم اختصاصی تصرف مقدم است.",
       "evidence_strength": "A",
       "warning_message_fa": "مساحت عمومی اتاق اقامت تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-CIRCULATION-001",
@@ -699,8 +719,7 @@
       "exceptions": [],
       "conflicts": [
         "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-ACCESS"
       ],
       "dependencies": [
         "corridor_width_m"
@@ -718,30 +737,45 @@
       "source_quote_or_precise_summary": "پهنای الزامی حداقل ۰٫۹۰ متر؛ الزامات خروج و دسترس‌پذیری جداگانه کنترل شوند.",
       "evidence_strength": "A",
       "warning_message_fa": "عرض راهروی داخلی واحد تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-STAIRS-001",
@@ -797,7 +831,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential building group 1,2,3 established by authority",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "building_group",
+            "stair_type",
+            "stair_clear_width_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -808,8 +854,7 @@
       "exceptions": [],
       "conflicts": [
         "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-ACCESS"
       ],
       "dependencies": [
         "building_group",
@@ -829,30 +874,45 @@
       "source_quote_or_precise_summary": "عرض مفید پله مستقیم حداقل ۰٫۹۰ و پله دارای گردش یا پاگرد حداقل ۱٫۱۰ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳ تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-STAIRS-002",
@@ -910,7 +970,20 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential building group 4,5,6,7 established by authority",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "building_group",
+            "stair_type",
+            "stair_clear_width_m",
+            "stair_enclosure_width_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -921,8 +994,7 @@
       "exceptions": [],
       "conflicts": [
         "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-ACCESS"
       ],
       "dependencies": [
         "building_group",
@@ -943,30 +1015,45 @@
       "source_quote_or_precise_summary": "عرض مفید پله مستقیم حداقل ۱٫۱۰ و عرض قفسهٔ پلکان دارای پاگرد حداقل ۲٫۴۰ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷ تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-STAIRS-003",
@@ -1022,7 +1109,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential building group 8",
-      "rule_logic": null,
+      "rule_logic": {
+        "predicate": {
+          "inputs": [
+            "building_group",
+            "occupant_load",
+            "m3_egress_result"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -1033,8 +1132,7 @@
       "exceptions": [],
       "conflicts": [
         "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-ACCESS"
       ],
       "dependencies": [
         "building_group",
@@ -1054,30 +1152,47 @@
       "source_quote_or_precise_summary": "ابعاد با جمعیت متصرف و الزامات راه خروج مبحث سوم تعیین شود؛ عدد ثابت جایگزین نشود.",
       "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۸ تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
-      "machine_checkable": false,
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
+      "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
         "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "DEPENDENT_PRIMARY_CLAUSE_MAPPING_REQUIRED"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "BLOCKED",
+      "qa_gate": "QUALIFIED_STATIC_RULE_SPECIFICATION",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "activation_state": "BLOCKED",
+      "blocking_gates": [
+        "logic_gate",
+        "human_review_gate"
+      ],
+      "blocking_reason": "M3 architectural egress clauses/tables are not mapped to deterministic logic",
+      "required_next_action": "Map the applicable M3 exit/stair requirements and combined M4/M3 branches."
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-001",
@@ -1186,11 +1301,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "kitchen_area_m2",
         "kitchen_free_area_m2"
@@ -1208,30 +1319,39 @@
       "source_quote_or_precise_summary": "مساحت حداقل ۵٫۵۰ مترمربع؛ سطح آزاد خارج از قفسه‌بندی حداقل ۲٫۷۵ مترمربع.",
       "evidence_strength": "A",
       "warning_message_fa": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-002",
@@ -1310,11 +1430,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "kitchen_area_m2"
       ],
@@ -1331,30 +1447,39 @@
       "source_quote_or_precise_summary": "حداقل مساحت ۷٫۵۰ مترمربع.",
       "evidence_strength": "A",
       "warning_message_fa": "آشپزخانه همراه محل صرف غذا تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-003",
@@ -1408,7 +1533,18 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Independent/open residential kitchen",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "kitchen_use",
+            "kitchen_width_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -1417,11 +1553,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "kitchen_use",
         "kitchen_width_m"
@@ -1439,30 +1571,39 @@
       "source_quote_or_precise_summary": "حداقل عرض ۱٫۸۰ متر؛ برای پخت‌وپز همراه صرف غذا ۲٫۱۵ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "عرض آشپزخانه تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-004",
@@ -1571,11 +1712,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "work_aisle_width_m",
         "wall_kitchen_length_m"
@@ -1593,30 +1730,39 @@
       "source_quote_or_precise_summary": "فضای کار آزاد در تمام طول از لبه قفسه‌ها حداقل ۱٫۱۰ متر و طول آشپزخانه حداقل ۳ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "فضای کار آشپزخانه دیواری تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-001",
@@ -1676,7 +1822,21 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Independent residential kitchen",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "unit_area_m2",
+            "kitchen_type",
+            "distance_to_adjacent_window_m",
+            "natural_light",
+            "natural_ventilation"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -1685,11 +1845,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "unit_area_m2",
         "kitchen_type",
@@ -1710,30 +1866,39 @@
       "source_quote_or_precise_summary": "نور و تهویه طبیعی مستقل؛ در واحد زیر ۷۵ مترمربع اگر دورترین نقطه آشپزخانه از پنجره فضای مجاور کمتر از ۷ متر باشد استثنا بررسی شود.",
       "evidence_strength": "A",
       "warning_message_fa": "نور و هوای آشپزخانه مستقل تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-VENTILATION-001",
@@ -1820,11 +1985,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "kitchen_area_m2",
         "vent_opening_area_m2"
@@ -1842,30 +2003,39 @@
       "source_quote_or_precise_summary": "حداقل سطح بازشوی تهویه یک شانزدهم مساحت کف آشپزخانه.",
       "evidence_strength": "A",
       "warning_message_fa": "بازشوی تهویه آشپزخانه تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-WC-001",
@@ -1923,7 +2093,20 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential unit area >=75m2",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "unit_area_m2",
+            "wc_reservation",
+            "water_port",
+            "waste_port"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -1932,11 +2115,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "unit_area_m2",
         "wc_reservation",
@@ -1956,30 +2135,39 @@
       "source_quote_or_precise_summary": "فضا و تأسیسات آب و فاضلاب لازم برای نصب حداقل یک توالت فرنگی فراهم شود.",
       "evidence_strength": "A",
       "warning_message_fa": "پیش‌بینی توالت فرنگی برای واحد بزرگ تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-BATHROOM-001",
@@ -2037,7 +2225,20 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Separate residential sanitary space without mandatory accessible designation",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "accessible_required",
+            "sanitary_width_m",
+            "sanitary_length_m",
+            "shower_dressing_inside"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2046,11 +2247,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "accessible_required",
         "sanitary_width_m",
@@ -2070,30 +2267,39 @@
       "source_quote_or_precise_summary": "حداقل عرض ۱ متر و طول ۱٫۲۰ متر؛ برای دوش مستقل با رختکن داخل فضا حداقل یکی از ابعاد ۱٫۵۰ متر. ادامه و استثنای سرویس ترکیبی در صفحه بعد بررسی شود.",
       "evidence_strength": "A",
       "warning_message_fa": "ابعاد فضای بهداشتی مسکونی معمول تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-BATHROOM-002",
@@ -2149,7 +2355,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential sanitary space",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "clear_height_m",
+            "height_coverage_fraction",
+            "sloped_roof_min_height_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2158,11 +2376,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "clear_height_m",
         "height_coverage_fraction",
@@ -2181,30 +2395,39 @@
       "source_quote_or_precise_summary": "ارتفاع حداقل ۲٫۲۰ متر در ۸۰ درصد سطح الزامی؛ زیر سقف شیب‌دار کوتاه‌ترین قسمت حداقل ۲٫۰۵ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "ارتفاع فضای بهداشتی مسکونی تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-ACCESSIBILITY-001",
@@ -2258,7 +2481,18 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Accessible sanitary space required under applicable classification",
-      "rule_logic": null,
+      "rule_logic": {
+        "predicate": {
+          "inputs": [
+            "accessible_required",
+            "sanitary_dimensions_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2268,9 +2502,7 @@
       "allowed_values": null,
       "exceptions": [],
       "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-ACCESS"
       ],
       "dependencies": [
         "accessible_required",
@@ -2289,30 +2521,45 @@
       "source_quote_or_precise_summary": "اندازه حداقل ۱٫۵۰ در ۱٫۷۰ متر؛ مسیر و گردش و تجهیزات طبق ضوابط دسترس‌پذیری نیز کنترل شود.",
       "evidence_strength": "A",
       "warning_message_fa": "فضای بهداشتی قابل استفاده معلول تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
-      "machine_checkable": false,
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
+      "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
         "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "DEPENDENT_PRIMARY_CLAUSE_MAPPING_REQUIRED"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+        "IR-ACCESS"
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "BLOCKED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "QUALIFIED_STATIC_RULE_SPECIFICATION",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-ACCESS"
+      ],
+      "activation_state": "BLOCKED",
+      "blocking_gates": [
+        "source_gate",
+        "human_review_gate"
+      ],
+      "blocking_reason": "Owner-named Code 246 file is absent from the workspace, so clause/page/hash and residential applicability cannot be verified",
+      "required_next_action": "Provide 895917_Code0246-r1-13990324.pdf; hash and map sections 3-2, 3-2-2 and 3-2-3."
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-001",
@@ -2372,7 +2619,21 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential habitable rooms; apply listed exceptions a-1,a-2,a-3",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "access_graph",
+            "unit_area_m2",
+            "habitable_count",
+            "entry_buffer",
+            "sightlines"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2381,11 +2642,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "access_graph",
         "unit_area_m2",
@@ -2406,30 +2663,39 @@
       "source_quote_or_precise_summary": "دسترسی اتاق اقامت مستقیماً از اتاق دیگر یا نشیمن عمومی نباشد مگر استثناهای صریح همین بند؛ دید مستقیم از نشیمن عمومی به خواب در هر حال مجاز نیست.",
       "evidence_strength": "A",
       "warning_message_fa": "دسترسی مستقل اتاق‌ها تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-002",
@@ -2485,7 +2751,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Combined sanitary facility visible from living/hall",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "sanitary_sightlines",
+            "ante_room",
+            "fixture_access"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2494,11 +2772,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "sanitary_sightlines",
         "ante_room",
@@ -2517,30 +2791,39 @@
       "source_quote_or_precise_summary": "دید به داخل سرویس ممنوع؛ پیش‌ورودی دارای روشویی فقط با حفظ حرکت و دسترسی به سایر تجهیزات مجاز است.",
       "evidence_strength": "A",
       "warning_message_fa": "دید به سرویس بهداشتی تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-003",
@@ -2596,7 +2879,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Residential unit area >=75m2, wall/open kitchen",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "unit_area_m2",
+            "kitchen_type",
+            "living_kitchen_sightlines"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2605,11 +2900,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "unit_area_m2",
         "kitchen_type",
@@ -2628,30 +2919,39 @@
       "source_quote_or_precise_summary": "از نشیمن عمومی یا سالن دید مستقیم به قسمت‌های اصلی پخت‌وپز و کار آشپزخانه نباشد.",
       "evidence_strength": "A",
       "warning_message_fa": "دید به محل کار آشپزخانه تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-BALCONY-001",
@@ -2707,7 +3007,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Apartment/unit without direct adjacency and access to open space",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "direct_open_space_access",
+            "private_semiopen_space",
+            "m4_5_7_result"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2716,11 +3028,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "direct_open_space_access",
         "private_semiopen_space",
@@ -2739,30 +3047,39 @@
       "source_quote_or_precise_summary": "حداقل یک فضای نیمه‌باز اختصاصی مطابق ۴-۵-۷ لازم است؛ اندازه بدون منبع فرض نشود.",
       "evidence_strength": "A",
       "warning_message_fa": "فضای نیمه‌باز اختصاصی تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-002",
@@ -2822,7 +3139,21 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Habitable room; chapter4-6 and window-head exception3 apply",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "floor_area_m2",
+            "glazing_area_m2",
+            "single_window_wall",
+            "room_depth_m",
+            "window_head_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2831,11 +3162,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "floor_area_m2",
         "glazing_area_m2",
@@ -2856,30 +3183,39 @@
       "source_quote_or_precise_summary": "حداقل نسبت شیشه به کف ۱/۸؛ اگر پنجره‌ها تنها در یک دیوار و عمق بیش از ۴٫۵۰ متر باشد ۱/۷.",
       "evidence_strength": "A",
       "warning_message_fa": "سطح شیشه اتاق اقامت تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-003",
@@ -2939,7 +3275,21 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Window head below2.10m excluding sloped-roof light",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "floor_area_m2",
+            "glazing_area_m2",
+            "window_head_m",
+            "single_window_wall",
+            "room_depth_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -2948,11 +3298,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "floor_area_m2",
         "glazing_area_m2",
@@ -2973,30 +3319,39 @@
       "source_quote_or_precise_summary": "نسبت شیشه شفاف به کف حداقل ۱/۶؛ برای پنجره‌های یک‌طرفه و عمق بیش از۴٫۵۰ متر حداقل۱/۵.",
       "evidence_strength": "A",
       "warning_message_fa": "پنجره با لبه بالایی کوتاه تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-004",
@@ -3075,11 +3430,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "daylight_depth_m"
       ],
@@ -3096,30 +3447,39 @@
       "source_quote_or_precise_summary": "حداکثر عمق قابل قبول نورگیری از یک پنجره ۷ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "عمق قابل قبول نورگیری تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-005",
@@ -3173,7 +3533,18 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Window below balcony/terrace projection",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "balcony_outer_edge",
+            "room_daylight_geometry"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -3182,11 +3553,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "balcony_outer_edge",
         "room_daylight_geometry"
@@ -3204,30 +3571,39 @@
       "source_quote_or_precise_summary": "عمق نورگیری از لبه خارجی ایوان محسوب شود.",
       "evidence_strength": "A",
       "warning_message_fa": "نورگیری زیر ایوان تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DOOR-001",
@@ -3338,8 +3714,7 @@
       "exceptions": [],
       "conflicts": [
         "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-ACCESS"
       ],
       "dependencies": [
         "door_clear_width_m",
@@ -3358,30 +3733,45 @@
       "source_quote_or_precise_summary": "پهنای مفید حداقل۰٫۸۰ متر و ارتفاع مفید۲٫۰۵ متر؛ لنگه فعال در دولنگه نیز حداقل۰٫۸۰ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "در ورودی اتاق اقامت تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-EGRESS-001",
@@ -3437,7 +3827,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Doors on access/egress paths; explicit listed exceptions apply",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "door_hardware",
+            "egress_path",
+            "exception_authority"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -3447,9 +3849,7 @@
       "allowed_values": null,
       "exceptions": [],
       "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
+        "IR-M3"
       ],
       "dependencies": [
         "door_hardware",
@@ -3469,30 +3869,43 @@
       "source_quote_or_precise_summary": "بازکردن در از داخل ساده و فوری باشد؛ قفل یا مانع نباید خروج به‌موقع را مختل کند.",
       "evidence_strength": "A",
       "warning_message_fa": "بازشدن در خروج از داخل تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
       "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
         "IR-M3"
-      ]
+      ],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [
+        "IR-M3"
+      ],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-005",
@@ -3548,7 +3961,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Access to workplace/habitable room",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "access_graph",
+            "habitable_count",
+            "independent_openings"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -3557,11 +3982,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "access_graph",
         "habitable_count",
@@ -3580,30 +4001,39 @@
       "source_quote_or_precise_summary": "دسترسی فضای اقامت از آشپزخانه نباشد؛ استثنای واحد دو فضایی فقط با ورودی فعال و نور و تهویه مستقل بررسی شود.",
       "evidence_strength": "A",
       "warning_message_fa": "ممنوعیت عبور الزامی از آشپزخانه تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-VENTILATION-002",
@@ -3659,7 +4089,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Kitchen ventilation requires over-cooktop extraction",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "extract_required",
+            "hood_port",
+            "independent_exhaust_route"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -3668,11 +4110,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "extract_required",
         "hood_port",
@@ -3691,30 +4129,39 @@
       "source_quote_or_precise_summary": "هود با کانال مستقل مکش به خارج ساختمان مرتبط شود.",
       "evidence_strength": "A",
       "warning_message_fa": "هود به هوای آزاد تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-006",
@@ -3772,7 +4219,20 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Land area >200m2; main habitable rooms of two independent units use same internal court",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "land_area_m2",
+            "shared_court",
+            "opposing_room_uses",
+            "window_wall_distance_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -3781,11 +4241,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "land_area_m2",
         "shared_court",
@@ -3805,30 +4261,39 @@
       "source_quote_or_precise_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۶ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "حیاط بین دو تصرف مسکونی تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-007",
@@ -3884,7 +4349,19 @@
       ],
       "derived_inputs": [],
       "applicability_expression": "Independent units: kitchen/habitable or two kitchens use same internal court",
-      "rule_logic": null,
+      "rule_logic": {
+        "review_predicate": {
+          "inputs": [
+            "shared_court",
+            "opposing_room_uses",
+            "window_wall_distance_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
       "formula_if_any": null,
       "parameters": [],
       "units": [],
@@ -3893,11 +4370,7 @@
       "target_value": null,
       "allowed_values": null,
       "exceptions": [],
-      "conflicts": [
-        "IR-M3",
-        "IR-ACCESS",
-        "IR-LOCAL"
-      ],
+      "conflicts": [],
       "dependencies": [
         "shared_court",
         "opposing_room_uses",
@@ -3916,30 +4389,39 @@
       "source_quote_or_precise_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۴ متر.",
       "evidence_strength": "A",
       "warning_message_fa": "حیاط مشترک آشپزخانه و اقامت تأمین یا تأیید نشده است.",
-      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": false,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
-        "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "M4_LIFECYCLE_UNRESOLVED"
+        "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CLAUSE_PAGE_VERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
-      "effective_from": null,
+      "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
       "transition_start": null,
       "transition_end": null,
       "supersedes": [],
       "superseded_by": [],
-      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
-      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
-      "cross_references": [
-        "IR-ACCESS",
-        "IR-LOCAL",
-        "IR-M3"
-      ]
+      "amendment_state": "OWNER_CONFIRMED_NO_LATER_APPLICABLE_CHANGE",
+      "legal_strength": "MANDATORY_NATIONAL_PROJECT_BASELINE",
+      "cross_references": [],
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_gate": "QUALIFIED",
+      "applicability_gate": "QUALIFIED",
+      "logic_gate": "READY_FOR_HUMAN_REVIEW",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
+      "human_review_gate": "REQUIRED",
+      "golden_validation_gate": "NOT_EVALUATED",
+      "human_review_status": "REQUIRED",
+      "cross_rule_dependencies": [],
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
+      "blocking_gates": [
+        "human_review_gate"
+      ],
+      "blocking_reason": "Licensed architect decision has not been recorded.",
+      "required_next_action": "Complete the structured rule-level architect review."
     },
     {
       "rule_id": "ARCH-GAP-SITE-001",
@@ -4473,18 +4955,13 @@
   "authority_status": "ARCHITECTURE_RULEBOOK_INPUT_REQUIRED",
   "qualification_summary": {
     "candidate_count": 32,
-    "audited_count": 32,
-    "release_ready_count": 0,
-    "mandatory_national_count": 32,
-    "mandatory_local_count": 0,
-    "recommended_count": 0,
-    "empirical_pattern_count": 0,
-    "owner_decision_count": 0,
-    "rejected_count": 0,
-    "blocking_reason": "Current official edition/amendment status and cross-authority applicability are not fully qualified.",
-    "human_review_required_count": 32,
-    "source_gap_count": 32,
-    "reclassification_changes": 0,
-    "primary_authority_closure": "BLOCKED"
+    "SOURCE_QUALIFIED": 32,
+    "LOGIC_QUALIFIED": 11,
+    "QA_QUALIFIED": 0,
+    "READY_FOR_HUMAN_REVIEW": 30,
+    "HUMAN_REVIEWED": 0,
+    "RELEASE_READY_FOR_GOLDEN_VALIDATION": 0,
+    "BLOCKED": 2,
+    "release_enabled": 0
   }
 }

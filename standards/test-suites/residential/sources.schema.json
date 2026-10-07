@@ -3,7 +3,7 @@
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": "architecture-sources/1.1"
+      "const": "architecture-sources/1.2"
     },
     "sources": {
       "type": "array",
@@ -103,6 +103,81 @@
             "type": "array"
           },
           "verification_status": {
+            "type": "string"
+          },
+          "document_verified": {
+            "type": "boolean"
+          },
+          "current_source_basis": {
+            "type": "string"
+          },
+          "owner_confirmed_current_baseline": {
+            "type": "boolean"
+          },
+          "independent_government_registry_currentness_verified": {
+            "type": "boolean"
+          },
+          "project_baseline_date": {
+            "type": "string"
+          },
+          "authority": {
+            "type": "string"
+          },
+          "edition": {
+            "type": "string"
+          },
+          "document_type": {
+            "type": "string"
+          },
+          "primary_source": {
+            "type": "boolean"
+          },
+          "owner_supplied": {
+            "type": "boolean"
+          },
+          "approval_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "circular_number": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "circular_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mandatory_from": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "document_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expected_filename": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "local_hash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "qualification": {
             "type": "string"
           }
         },

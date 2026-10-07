@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-rulebook-per-rule-activation-gates",
+  "from": "architecture-sources/1.1 and aggregate rule qualification",
+  "to": "architecture-sources/1.2 and independent source/applicability/logic/QA/human/golden gates",
+  "compatibility": "Additive offline qualification metadata. No runtime compliance, Generator, geometry, API, database, MEP or deployment consumer is activated.",
+  "forward": [
+    "Record M3/M4 owner-confirmed project baseline separately from independent government-registry verification",
+    "Evaluate each hard rule through independent qualification gates",
+    "Keep Code 246 and M3-dependent rules blocked until exact clause mapping exists",
+    "Keep all rules release_enabled=false pending human review and Golden qualification"
+  ],
+  "validation": [
+    "tests/test_architecture_rule_activation.py",
+    "tests/test_architecture_rulebook_qualification.py",
+    "SWCIS"
+  ],
+  "consumers": ["offline residential rule qualification and future Golden planning"],
+  "deprecation_window": "Aggregate status remains reportable but cannot override per-rule gates.",
+  "deployment": "Not authorized.",
+  "rollback": "Revert qualification metadata; do not reinterpret READY_FOR_HUMAN_REVIEW as runtime authority."
+}

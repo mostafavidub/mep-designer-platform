@@ -1,5 +1,5 @@
 {
-  "schema_version": "architecture-sources/1.1",
+  "schema_version": "architecture-sources/1.2",
   "sources": [
     {
       "source_id": "IR-M3-OLD",
@@ -42,7 +42,13 @@
       "source_class": "PRIMARY_OFFICIAL",
       "official_url_or_identifier": "Local source bearing inbr.ir identity; SHA-256 ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6. Official public index returned HTTP 403 during retrieval.",
       "amendment_chain": [],
-      "verification_status": "CLAUSES_VERIFIED_LIFECYCLE_UNRESOLVED"
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "document_verified": true,
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "owner_confirmed_current_baseline": true,
+      "independent_government_registry_currentness_verified": false,
+      "project_baseline_date": "2026-10-08",
+      "qualification": "SOURCE_QUALIFIED_FOR_PROJECT_BASELINE"
     },
     {
       "source_id": "IR-M15",
@@ -123,7 +129,13 @@
       "amendment_chain": [
         "A 1397 professional/administrative single-stair corrigendum was located only through secondary discovery and is not imported as authority."
       ],
-      "verification_status": "EDITION_VERIFIED_LIFECYCLE_AND_CLAUSE_MODEL_UNRESOLVED"
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "document_verified": true,
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "owner_confirmed_current_baseline": true,
+      "independent_government_registry_currentness_verified": false,
+      "project_baseline_date": "2026-10-08",
+      "qualification": "SOURCE_QUALIFIED_FOR_PROJECT_BASELINE"
     },
     {
       "source_id": "IR-ENERGY-TRANSITION",
@@ -181,7 +193,7 @@
     },
     {
       "source_id": "IR-ACCESS",
-      "title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت",
+      "title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت — تجدیدنظر اول — ضابطه 246",
       "issuer": "شورای عالی شهرسازی و معماری / مرکز تحقیقات",
       "edition_year": 1399,
       "status": "UNKNOWN_CURRENT_STATUS",
@@ -194,7 +206,22 @@
       "source_class": "UNVERIFIED_DISCOVERY",
       "official_url_or_identifier": "No exact official instrument, approval identifier or current amendment chain was retrievable from primary endpoints.",
       "amendment_chain": [],
-      "verification_status": "SOURCE_GAP"
+      "verification_status": "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING",
+      "authority": "شورای عالی شهرسازی و معماری ایران",
+      "edition": "تجدیدنظر اول ۱۳۹۹",
+      "document_type": "NATIONAL_ACCESSIBILITY_REGULATION",
+      "primary_source": true,
+      "owner_supplied": true,
+      "document_verified": false,
+      "current_source_basis": "OWNER_CONFIRMED_PRIMARY_BASELINE_FILE_NOT_AVAILABLE",
+      "approval_date": "1398-08-20",
+      "circular_number": "99/129340",
+      "circular_date": "1399-03-24",
+      "mandatory_from": "1399-07-01",
+      "document_date": "1399-02-20",
+      "expected_filename": "895917_Code0246-r1-13990324.pdf",
+      "local_hash": null,
+      "qualification": "SOURCE_GAP"
     },
     {
       "source_id": "IR-LOCAL",
@@ -242,19 +269,14 @@
         "Earlier M4 editions"
       ],
       "superseding_documents": [],
-      "current_status": "AUTHORITY_STATUS_UNRESOLVED",
+      "current_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "applicability_scope": "Buildings subject to the Engineering and Building Control Law; local stricter approved rules may govern within their scope.",
-      "official_reference": "Local source bearing inbr.ir identity; SHA-256 ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6. Official public index returned HTTP 403 during retrieval.",
+      "official_reference": "Local source bearing inbr.ir identity; SHA-256 ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6. Official public index returned HTTP 403 during retrieval. Current project applicability baseline confirmed by owner on 2026-10-08; not independent government-registry verification.",
       "retrieved_date": "2026-10-07",
       "source_class": "PRIMARY_OFFICIAL",
       "evidence_strength": "A",
-      "verification_status": "CLAUSES_VERIFIED_LIFECYCLE_UNRESOLVED",
-      "unresolved": [
-        "Effective-date issuance letter",
-        "Complete amendment/corrigendum register",
-        "Later replacement/non-replacement confirmation",
-        "Exact mandatory annex lifecycle"
-      ]
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "unresolved": []
     },
     {
       "assessment_id": "AUTH-IR-M3-2026-10-07",
@@ -278,30 +300,27 @@
         "IR-M3-OLD — second edition 1392"
       ],
       "superseding_documents": [],
-      "current_status": "AUTHORITY_STATUS_UNRESOLVED",
+      "current_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "applicability_scope": "Fire/life-safety requirements depend on occupancy, height, storeys, occupant load and other M3 conditions.",
-      "official_reference": "Local ministry/Research Center copy; SHA-256 b06648469e73785f101f3c4735db6454eb6b41ec2f00fc2793e3f6153db3473d. Complete official amendment register unavailable.",
+      "official_reference": "Local ministry/Research Center copy; SHA-256 b06648469e73785f101f3c4735db6454eb6b41ec2f00fc2793e3f6153db3473d. Complete official amendment register unavailable. Current project applicability baseline confirmed by owner on 2026-10-08; not independent government-registry verification.",
       "retrieved_date": "2026-10-07",
       "source_class": "PRIMARY_OFFICIAL",
       "evidence_strength": "A",
-      "verification_status": "EDITION_VERIFIED_LIFECYCLE_AND_CLAUSE_MODEL_UNRESOLVED",
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "unresolved": [
-        "Official issuance/effective date",
-        "Complete corrigendum/amendment chain",
-        "Current replacement status",
         "Architecture-only clause extraction and applicability tables"
       ]
     },
     {
       "assessment_id": "AUTH-IR-ACCESS-2026-10-07",
       "source_id": "IR-ACCESS",
-      "document_title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت",
-      "issuing_authority": "شورای عالی شهرسازی و معماری ایران / مرکز تحقیقات راه، مسکن و شهرسازی (candidate attribution)",
-      "approval_authority": "شورای عالی شهرسازی و معماری ایران (candidate attribution)",
-      "publication_date": null,
-      "effective_date": null,
-      "edition": "ویرایش سوم ۱۳۹۹ — unverified candidate",
-      "revision": null,
+      "document_title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت — تجدیدنظر اول — ضابطه 246",
+      "issuing_authority": "شورای عالی شهرسازی و معماری ایران",
+      "approval_authority": "شورای عالی شهرسازی و معماری ایران",
+      "publication_date": "1399-03-24",
+      "effective_date": "1399-07-01",
+      "edition": "تجدیدنظر اول ۱۳۹۹",
+      "revision": "FIRST_REVISION_CODE_246",
       "printing": null,
       "amendments": [],
       "corrigenda": [],
@@ -310,19 +329,18 @@
       "transition_rules": [],
       "superseded_documents": [],
       "superseding_documents": [],
-      "current_status": "AUTHORITY_STATUS_UNRESOLVED",
-      "applicability_scope": "M4 requires the latest accessibility rules when accessible design is required; exact project/building triggers require the authoritative instrument.",
-      "official_reference": "No exact official instrument, approval identifier or current amendment chain was retrievable from primary endpoints.",
-      "retrieved_date": "2026-10-07",
-      "source_class": "UNVERIFIED_DISCOVERY",
-      "evidence_strength": "E",
-      "verification_status": "SOURCE_GAP",
+      "current_status": "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING",
+      "applicability_scope": "Public and residential buildings; residential conditions require exact sections 3-2, 3-2-2 and 3-2-3 mapping.",
+      "official_reference": "Owner supplied metadata for 895917_Code0246-r1-13990324.pdf; bytes were not available in the qualification workspace on 2026-10-08.",
+      "retrieved_date": "2026-10-08",
+      "source_class": "PRIMARY_OFFICIAL_OWNER_SUPPLIED_METADATA",
+      "evidence_strength": "B",
+      "verification_status": "FILE_BYTES_HASH_CLAUSE_PAGE_REQUIRED",
       "unresolved": [
-        "Exact official document",
-        "Approval/resolution number",
-        "Effective date",
-        "Current edition/amendments",
-        "Residential/public/private/new-build/renovation triggers and exemptions"
+        "Local file hash",
+        "Exact clause/page extraction",
+        "Five-percent rounding behavior",
+        "Residential/common-area/elevator/parking applicability branches"
       ]
     }
   ]

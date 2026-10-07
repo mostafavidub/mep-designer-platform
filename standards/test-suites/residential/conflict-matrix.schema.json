@@ -33,10 +33,16 @@
           "rule_b": {
             "type": "string"
           },
-          "authority_a": {
+          "rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_a": {
             "type": "string"
           },
-          "authority_b": {
+          "source_b": {
             "type": "string"
           },
           "jurisdiction": {
@@ -45,11 +51,33 @@
           "scope": {
             "type": "string"
           },
-          "actual_conflict_or_not": {
+          "applicability_a": {
             "type": "string"
           },
-          "resolution": {
+          "applicability_b": {
             "type": "string"
+          },
+          "true_conflict": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "combined_requirement": {
+            "type": "string"
+          },
+          "precedence_basis": {
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "NO_CONFLICT",
+              "BOTH_APPLY",
+              "MORE_RESTRICTIVE_RESULT",
+              "SOURCE_SPECIFIC_EXCEPTION",
+              "LOCAL_SUPPLEMENT",
+              "HUMAN_REVIEW_REQUIRED"
+            ]
           },
           "reason": {
             "type": "string"
@@ -62,12 +90,17 @@
           "conflict_id",
           "rule_a",
           "rule_b",
-          "authority_a",
-          "authority_b",
+          "rule_ids",
+          "source_a",
+          "source_b",
           "jurisdiction",
           "scope",
-          "actual_conflict_or_not",
-          "resolution",
+          "applicability_a",
+          "applicability_b",
+          "true_conflict",
+          "combined_requirement",
+          "precedence_basis",
+          "result",
           "reason",
           "human_review_required"
         ],

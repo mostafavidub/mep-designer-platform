@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.4.0
+**Canonical version:** 5.6.0
 
 **Status:** LOCKED
 
@@ -260,3 +260,14 @@ failure is recorded as an authority gap, never filled from a mirror. National an
 local rule layers retain independent provenance. Human architect review may close
 professional interpretation, but cannot substitute for missing primary legal
 currency or activate a generator.
+
+
+## Independent architecture rule-activation gate
+
+SWCIS 5.6.0 prohibits aggregate source status from blocking or authorizing unrelated
+architecture rules. Each mandatory candidate carries distinct source, applicability,
+logic, QA, human-review and Golden gates. Owner confirmation may establish the
+project regulatory baseline only when labelled as owner provenance; it cannot be
+reported as independent government-registry verification. `READY_FOR_HUMAN_REVIEW`
+grants no runtime, Generator, Golden or production authority. Missing source bytes,
+clause mappings or cross-code branches remain fail-closed at the affected rule only.

@@ -336,7 +336,9 @@
               "HUMAN_REVIEW_REQUIRED",
               "OWNER_DECISION_REQUIRED",
               "SOURCE_GAP",
-              "REJECTED"
+              "REJECTED",
+              "READY_FOR_HUMAN_REVIEW",
+              "RELEASE_READY_FOR_GOLDEN_VALIDATION"
             ]
           },
           "qualification_reason_codes": {
@@ -383,6 +385,51 @@
           },
           "cross_references": {
             "type": "array"
+          },
+          "current_source_basis": {
+            "type": "string"
+          },
+          "source_gate": {
+            "type": "string"
+          },
+          "applicability_gate": {
+            "type": "string"
+          },
+          "logic_gate": {
+            "type": "string"
+          },
+          "qa_gate": {
+            "type": "string"
+          },
+          "human_review_gate": {
+            "type": "string"
+          },
+          "golden_validation_gate": {
+            "type": "string"
+          },
+          "human_review_status": {
+            "type": "string"
+          },
+          "activation_state": {
+            "type": "string"
+          },
+          "blocking_reason": {
+            "type": "string"
+          },
+          "required_next_action": {
+            "type": "string"
+          },
+          "cross_rule_dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocking_gates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -467,7 +514,20 @@
                 "superseded_by",
                 "amendment_state",
                 "legal_strength",
-                "cross_references"
+                "cross_references",
+                "current_source_basis",
+                "source_gate",
+                "applicability_gate",
+                "logic_gate",
+                "qa_gate",
+                "human_review_gate",
+                "golden_validation_gate",
+                "human_review_status",
+                "activation_state",
+                "blocking_gates",
+                "blocking_reason",
+                "required_next_action",
+                "cross_rule_dependencies"
               ]
             }
           }

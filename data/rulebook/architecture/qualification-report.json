@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-rulebook-qualification/1.0",
-  "version": "0.2.0",
-  "status": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
+  "version": "0.3.0",
+  "status": "ARCH_RULE_ACTIVATION_PARTIAL",
   "generator_readiness": "NOT_READY",
   "metrics": {
     "candidate_count": 32,
@@ -19,26 +19,35 @@
     "qa_case_count": 136,
     "golden_available": 0,
     "golden_required": 8,
-    "still_source_gap": 32,
+    "still_source_gap": 2,
     "human_review_required": 32,
     "source_gap_statuses": {
-      "OPEN": 3,
-      "PARTIALLY_RESOLVED": 7,
+      "total": 24,
       "RESOLVED": 2,
-      "HUMAN_REVIEW_REQUIRED": 12,
-      "NOT_APPLICABLE": 0
-    }
+      "PARTIALLY_RESOLVED": 4,
+      "HUMAN_REVIEW_REQUIRED": 11,
+      "LOCAL_RULE_REQUIRED": 3,
+      "NOT_APPLICABLE": 0,
+      "OPEN": 4
+    },
+    "SOURCE_QUALIFIED": 32,
+    "LOGIC_QUALIFIED": 11,
+    "QA_QUALIFIED": 0,
+    "READY_FOR_HUMAN_REVIEW": 30,
+    "HUMAN_REVIEWED": 0,
+    "RELEASE_READY_FOR_GOLDEN_VALIDATION": 0,
+    "BLOCKED": 2,
+    "release_enabled": 0
   },
   "critical_findings": [
-    "M4 third-edition 1396 document and all 32 cited clauses are traceable, but effective-date and complete amendment/replacement lifecycle remain unresolved.",
-    "M3 third-edition 1395 document identity is verified locally; official effective date, complete corrigenda and current replacement status remain unresolved.",
-    "The exact current Council-approved accessibility instrument, amendments and applicability triggers were not obtained from a primary endpoint."
+    "M4 1396 and M3 1395 are owner-confirmed current primary project baselines; this is not independent government-registry currency verification.",
+    "The owner-named Code 246 PDF is not present locally, so exact clause/page/hash, residential applicability and five-percent rounding cannot be qualified.",
+    "M3 architecture-relevant clause/table mapping remains incomplete for group-8 stair/egress integration."
   ],
   "root_causes": [
-    "source currency not established",
-    "applicability model previously prose-only",
-    "mandatory and release authority previously coupled",
-    "source gaps represented as placeholder rules"
+    "previous global lifecycle gate coupled unrelated rules",
+    "per-rule source/applicability/logic/QA/human/golden gates were absent",
+    "Code 246 file bytes unavailable for exact ingestion"
   ],
-  "release_decision": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED: zero rules activated; independent primary lifecycle evidence and human architect review remain required."
+  "release_decision": "Thirty M4 rules are READY_FOR_HUMAN_REVIEW; two rules remain dependency-blocked. Human Golden Validation is not authorized until Code 246 and M3 architectural interfaces are qualified."
 }

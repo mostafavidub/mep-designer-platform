@@ -27,7 +27,8 @@
     "status": {
       "enum": [
         "ARCHITECTURE_RULEBOOK_BLOCKED",
-        "PRIMARY_AUTHORITY_CLOSURE_BLOCKED"
+        "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
+        "ARCH_RULE_ACTIVATION_PARTIAL"
       ]
     },
     "authority_boundary": {
