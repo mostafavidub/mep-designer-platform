@@ -15,7 +15,7 @@ import math
 import unicodedata
 
 
-SCHEMA = "planha-canonical-architecture/3.1"
+SCHEMA = "planha-canonical-architecture/3.2"
 ADAPTER_ID = "planha.raw-dxf-current-model-adapter"
 ADAPTER_VERSION = "1.0.0"
 IDENTITY_VERSION = "planha-canonical-identity/2.1"
@@ -48,7 +48,8 @@ _SEMANTIC_TOP_LEVEL = ("schema", "contract_status", "source", "levels", "frames"
                        "physical_spaces", "functional_zones", "apertures", "portals", "voids",
                        "dimensions", "graphs", "unresolved_items", "evidence_registry",
                        "text_evidence", "title_block_fields", "authority_model",
-                       "review_registry", "traceability", "release")
+                       "review_registry", "spatial_authority", "engineering_authority_matrix",
+                       "traceability", "release")
 
 
 def _normalized_scalar(value):
@@ -280,6 +281,14 @@ def adapt_current_architecture(current_model, engine_identity=None):
                        "source_handles": deepcopy(row.get("source_handles") or []),
                        "evidence_ids": [x["evidence_id"] for x in ev],
                        "geometry_fingerprint": (row.get("traceability") or {}).get("geometry_fingerprint"),
+                       "space_geometry_type": row.get("space_geometry_type") or "OTHER",
+                       "boundary_segments": deepcopy(row.get("boundary_segments") or []),
+                       "authority_level": row.get("authority_level") or "GEOMETRY_CANDIDATE",
+                       "area_authority": row.get("area_authority") or "NONE",
+                       "centroid": deepcopy(row.get("centroid")),
+                       "bounding_box": deepcopy(row.get("bounding_box")),
+                       "stair_assembly_ids": deepcopy(row.get("stair_assembly_ids") or []),
+                       "provenance_fingerprint": row.get("provenance_fingerprint"),
                        **({"candidate_id": row["candidate_id"], "candidate_role": row.get("candidate_role")} if "candidate_id" in row else {}),
                        "authority": _authority(geometry_status, ["SOURCE_GEOMETRIC", "DERIVED_DETERMINISTIC"],
                                                material_geometry=False)})
@@ -395,7 +404,8 @@ def adapt_current_architecture(current_model, engine_identity=None):
                                "evidence": {"status": row["status"]}, "downstream_impact": "NO_ACCESS_AUTHORITY",
                                "review_requirement": "SOURCE_DEPENDENT"})
 
-    current_release = bool((model.get("completeness") or {}).get("release_allowed"))
+    spatial_authority = deepcopy(model.get("spatial_authority") or {})
+    current_release = bool((model.get("completeness") or {}).get("release_allowed")) and spatial_authority.get("status") == "VERIFIED"
     contract = {"schema": SCHEMA, "contract_status": "EXPERIMENTAL_INTERNAL",
                 "source": source_record, "levels": levels, "frames": frames, "walls": walls,
                 "physical_spaces": spaces, "functional_zones": zones, "apertures": apertures, "portals": portals,
@@ -416,6 +426,22 @@ def adapt_current_architecture(current_model, engine_identity=None):
                                     "allowed_origins": sorted(ORIGINS),
                                     "vision_independent_grants": []},
                 "review_registry": deepcopy(model.get("gap_human_review") or {}),
+                "spatial_authority": deepcopy(spatial_authority or {
+                    "schema": "planha-architecture-spatial-authority/1.0",
+                    "status": "INPUT_REQUIRED", "text_creates_geometry": False,
+                    "vision_geometry_authority": False,
+                    "site_boundaries": [], "site_spaces": [],
+                    "vertical_circulation": {"stair_assemblies": [], "elevators": [], "shafts": []},
+                    "graph_qualification": {"enclosure_graph": {"status": "INPUT_REQUIRED"},
+                                            "access_graph": {"status": "INPUT_REQUIRED"}},
+                    "engineering_authority_matrix": {"facts": {}, "consumers": {}},
+                    "counters": {"unsupported_verified_geometry": 0,
+                                 "text_created_verified_geometry": 0,
+                                 "unsupported_verified_stairs": 0},
+                }),
+                "engineering_authority_matrix": deepcopy(
+                    ((model.get("spatial_authority") or {}).get("engineering_authority_matrix") or
+                     {"facts": {}, "consumers": {}})),
                 "traceability": {"source_sha256": source_sha, "adapter_id": ADAPTER_ID,
                                  "adapter_version": ADAPTER_VERSION,
                                  "engine_identity": _semantic_engine_identity(engine_identity),
@@ -426,7 +452,7 @@ def adapt_current_architecture(current_model, engine_identity=None):
                 "execution_diagnostics": {"engine_identity": deepcopy(engine_identity or {}),
                                           "enclosure_candidates": deepcopy(model.get("enclosure_candidates") or [])},
                 "release": {"status": "VERIFIED" if current_release else "INPUT_REQUIRED",
-                            "downstream_engineering_allowed": bool((model.get("completeness") or {}).get("downstream_engineering_allowed")),
+                            "downstream_engineering_allowed": current_release and bool((model.get("completeness") or {}).get("downstream_engineering_allowed")),
                             "release_allowed": current_release}}
     contract["evidence_registry"] = list({r["evidence_id"]: r for r in evidence_registry}.values())
     refresh_separator_authority(contract)

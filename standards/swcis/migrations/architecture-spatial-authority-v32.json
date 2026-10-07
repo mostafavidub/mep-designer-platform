@@ -1,0 +1,22 @@
+{
+  "schema": "planha-contract-migration/1.0",
+  "change_id": "SWCIS-2026-0306",
+  "from_contract": "planha-canonical-architecture/3.1",
+  "to_contract": "planha-canonical-architecture/3.2",
+  "automatic_reinterpretation": false,
+  "production_data_migration": "NOT_PERFORMED",
+  "detection": "schema must equal planha-canonical-architecture/3.2 and contain planha-architecture-spatial-authority/1.0 plus a non-empty per-consumer engineering authority matrix",
+  "affected_claims": [
+    "physical-space authority", "site and property boundary", "yard and backyard classification",
+    "courtyard, lightwell and internal void classification", "boundary segment provenance",
+    "stair, landing, flight and tread/riser recognition", "enclosure and access topology",
+    "downstream engineering prerequisites"
+  ],
+  "unaffected_claims": [
+    "source DXF bytes", "exact text occurrence identity", "source wall primitives",
+    "existing review decisions whose source and geometry fingerprints remain unchanged"
+  ],
+  "strategy": "Regenerate from the exact source. Never project 3.1 geometry or topology booleans into 3.2 authority. Re-annotate the independent Golden schema and require source-handle coverage before a VERIFIED claim.",
+  "review_rebinding": "Spatial and gap decisions are stale after any source, frame, polygon, boundary-handle or geometry-fingerprint change.",
+  "rollback": "Revert the focused implementation commit. Preserve 3.2 artifacts as unsupported by 3.1 and do not downgrade their authority claims."
+}

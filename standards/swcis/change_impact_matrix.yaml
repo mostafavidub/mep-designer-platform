@@ -112,6 +112,7 @@
         "cad_engine/authority_architecture.py",
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
+        "cad_engine/architecture_spatial_authority.py",
         "cad_engine/pre_topology_object_classifier.py",
         "cad_engine/architectural_vision_recovery.py",
         "cad_engine/candidate_architectural_classification.py",
@@ -161,6 +162,7 @@
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
         "cad_engine/architecture_text_evidence.py"
+        ,"tools/architectural_golden_annotation_package.py"
       ],
       "seed_modules": [
         "cad_designer",

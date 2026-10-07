@@ -1,0 +1,30 @@
+{
+  "schema": "planha-architecture-spatial-real-corpus/1.0",
+  "change_id": "SWCIS-2026-0306",
+  "privacy": {
+    "source_drawings_committed": false,
+    "customer_names_committed": false,
+    "identity": "SHA256_ONLY",
+    "generation_input_policy": "REFERENCE_FILES_ARE_LOCAL_REPLAY_INPUTS_AND_NEVER_HIDDEN_DEFAULTS"
+  },
+  "candidate_contract": "planha-canonical-architecture/3.2",
+  "vision_provider_calls": 0,
+  "review_status": "HUMAN_REVIEW_REQUIRED",
+  "review_case_count": 8,
+  "cases": [
+    {"case_id":"PILOT-01","source_sha256":"08b2e3f2a16a90727e1ef44e8dbc96455a57a553a6f7ef6b2d0800dcadeb13ca","frames":9,"spaces":4,"openings":0,"stair_candidates":0,"verified_stairs":0,"unsupported_verified_geometry":0,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":30.23},
+    {"case_id":"PILOT-02","source_sha256":"2c0d46c5f60b34af766fc57b4d5b2ba751e5073319242fcdf14551ef6ccb1bce","frames":17,"spaces":50,"openings":0,"stair_candidates":3,"verified_stairs":0,"unsupported_verified_geometry":3,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":41.34},
+    {"case_id":"PILOT-03","source_sha256":"f9343f559bb1d70083dad39591e11b1e69bc53254a6e2265d4529ab84b5f9741","frames":11,"spaces":23,"openings":0,"stair_candidates":4,"verified_stairs":1,"unsupported_verified_geometry":3,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":25.89},
+    {"case_id":"PILOT-04","source_sha256":"edf63eda0710f1e1195a1ac5581f038a5cdf8b1b15c0c467756541bf8b173d99","frames":8,"spaces":2,"openings":162,"stair_candidates":0,"verified_stairs":0,"unsupported_verified_geometry":0,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":19.4},
+    {"case_id":"PILOT-05","source_sha256":"c9bac2cf6d74a29b1deabb08ab3d47ac105feda43b1da193b2da3c01d1a6cb16","frames":11,"spaces":7,"openings":0,"stair_candidates":4,"verified_stairs":0,"unsupported_verified_geometry":1,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":21.11},
+    {"case_id":"PILOT-06","source_sha256":"5dbf11f4004fe497cd03f65572ad8a8147449d556efd768ea71d3d5060420b72","frames":9,"spaces":12,"openings":0,"stair_candidates":0,"verified_stairs":0,"unsupported_verified_geometry":3,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":19.4},
+    {"case_id":"PILOT-07","source_sha256":"43c696a6e2703ce746d22b169b90108f0a6a44d3873e56e32f80124793fe1d70","frames":10,"spaces":19,"openings":0,"stair_candidates":0,"verified_stairs":0,"unsupported_verified_geometry":7,"enclosure_graph":"INPUT_REQUIRED","access_graph":"INPUT_REQUIRED","status":"INPUT_REQUIRED","runtime_seconds":33.17}
+  ],
+  "qualification": {
+    "fully_qualified_cases": 0,
+    "human_review_required_cases": 8,
+    "first_backyard_regression": "INPUT_REQUIRED_SOURCE_SITE_BOUNDARY_AND_PER_SEGMENT_PROVENANCE",
+    "first_stair_regression": "INPUT_REQUIRED_NO_SOURCE_QUALIFIED_STAIR_ASSEMBLY",
+    "release_claim": "FORBIDDEN_UNTIL_INDEPENDENT_GOLDEN_APPROVAL"
+  }
+}

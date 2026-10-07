@@ -850,6 +850,12 @@
         "text_host_binding",
         "text_review_fingerprint",
         "functional_composition"
+        ,"spatial_authority",
+        "site_boundaries",
+        "site_spaces",
+        "boundary_segments",
+        "vertical_circulation",
+        "engineering_authority_matrix"
       ],
       "engines": [
         "cad_engine/architectural_source_roles.py",
@@ -879,6 +885,8 @@
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
         "cad_engine/architecture_text_evidence.py"
+        ,"cad_engine/architecture_spatial_authority.py",
+        "tools/architectural_golden_annotation_package.py"
       ],
       "drawing_outputs": [
         "typed architecture model",
@@ -889,6 +897,9 @@
         "semantic coverage report",
         "MEP pre-analysis evidence",
         "recognition QA report"
+        ,"source-only spatial Golden package",
+        "per-plan raw source preview",
+        "per-plan annotated spatial overlay"
       ],
       "qa_rules": [
         "source_role_negative_evidence_veto_before_wall_and_void_authority",
@@ -966,6 +977,14 @@
         "SEPARATOR_REVIEW_INVALID",
         "SEPARATOR_INTERVAL_INVALID",
         "text_never_engineering_geometry_authority",
+        "text_never_creates_physical_space",
+        "site_boundary_distinct_from_building_envelope",
+        "yard_and_internal_void_geometry_relation",
+        "source_backed_boundary_segment_traceability",
+        "stair_core_flight_landing_tread_separation",
+        "stair_repeated_line_negative_controls",
+        "enclosure_graph_distinct_from_access_graph",
+        "per_capability_downstream_architecture_prerequisites",
         "attrib_insert_occurrence_identity",
         "attdef_template_not_instance_authority",
         "title_room_context_separation",

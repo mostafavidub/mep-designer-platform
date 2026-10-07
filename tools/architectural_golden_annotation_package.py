@@ -66,6 +66,59 @@ def _source_svg(doc,bounds,case_id):
     return svg,counts
 
 
+def _candidate_overlay_svg(raw_svg, model, frame_id, bounds):
+    """Overlay finite candidate primitives; never alter or redraw the raw source."""
+    width=max(bounds[2]-bounds[0],1e-9); height=max(bounds[3]-bounds[1],1e-9)
+    label_size=max(height*.018,width*.008,.001)
+    body=['<g id="candidate-spatial-overlay">']
+    def polygon(points,stroke,fill,status,label=None):
+        if not points:return
+        encoded=' '.join(f'{float(x):.6f},{-float(y):.6f}' for x,y in points)
+        dash=' stroke-dasharray="6 4"' if status not in {'VERIFIED','HIGH_CONFIDENCE'} else ''
+        body.append(f'<polygon points="{encoded}" fill="{fill}" stroke="{stroke}" stroke-width="2" vector-effect="non-scaling-stroke"{dash}/>')
+        if label:
+            x=sum(float(p[0]) for p in points)/len(points);y=sum(float(p[1]) for p in points)/len(points)
+            body.append(f'<text x="{x:.6f}" y="{-y:.6f}" font-size="{label_size:.6f}" fill="{stroke}" paint-order="stroke" stroke="white" stroke-width="3" vector-effect="non-scaling-stroke">{html.escape(label)} · {html.escape(status)}</text>')
+    spatial=model.get('spatial_authority') or {}
+    for site in spatial.get('site_boundaries') or []:
+        if site.get('frame_id')==frame_id:polygon(site.get('polygon'),'#166534','#22c55e18',site.get('status','INPUT_REQUIRED'),'SITE')
+    for site_space in spatial.get('site_spaces') or []:
+        if site_space.get('frame_id')==frame_id:polygon(site_space.get('polygon'),'#65a30d','#84cc1622',site_space.get('status','INPUT_REQUIRED'),site_space.get('site_space_id'))
+    envelope=next((row for row in model.get('building_envelopes') or [] if row.get('frame_id')==frame_id),None)
+    if envelope:polygon(envelope.get('outer_ring') or envelope.get('polygon'),'#7c3aed','#c084fc16',envelope.get('status','INPUT_REQUIRED'),'BUILDING')
+    for space in model.get('physical_spaces') or []:
+        if space.get('frame_id')!=frame_id:continue
+        status=space.get('geometry_status') or space.get('status') or 'INPUT_REQUIRED'
+        color='#0284c7' if status in {'VERIFIED','HIGH_CONFIDENCE'} else '#d97706'
+        polygon(space.get('polygon'),color,color+'22',status,space.get('physical_space_id'))
+        for segment in space.get('boundary_segments') or []:
+            if segment.get('status')=='VERIFIED':continue
+            points=segment.get('geometry') or []
+            if len(points)==2:
+                body.append(f'<line x1="{points[0][0]}" y1="{-points[0][1]}" x2="{points[1][0]}" y2="{-points[1][1]}" stroke="#dc2626" stroke-width="4" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>')
+    for void in (model.get('architectural_voids') or {}).get('items') or []:
+        if void.get('frame_id')==frame_id:polygon(void.get('boundary'),'#be123c','#fb718522',void.get('status','INPUT_REQUIRED'),void.get('void_type') or 'VOID')
+    for stair in ((spatial.get('vertical_circulation') or {}).get('stair_assemblies') or []):
+        if stair.get('frame_id')!=frame_id:continue
+        polygon(stair.get('core_polygon'),'#c2410c','#fb923c22',stair.get('status','INPUT_REQUIRED'),stair.get('stair_assembly_id'))
+        for line in stair.get('tread_riser_lines') or []:
+            points=line.get('geometry') or []
+            if len(points)==2:body.append(f'<line x1="{points[0][0]}" y1="{-points[0][1]}" x2="{points[1][0]}" y2="{-points[1][1]}" stroke="#9a3412" stroke-width="2" vector-effect="non-scaling-stroke"/>')
+    for opening in model.get('openings') or []:
+        if opening.get('frame_id') not in {None,frame_id}:continue
+        points=opening.get('portal_geometry') or opening.get('opening_geometry') or opening.get('geometry') or []
+        if isinstance(points,dict):points=points.get('points') or points.get('geometry') or []
+        coordinates=[(float(p[0]),float(p[1])) for p in points if isinstance(p,(list,tuple)) and len(p)>=2]
+        if len(coordinates)>=2:body.append(f'<polyline points="{" ".join(f"{x},{-y}" for x,y in coordinates)}" fill="none" stroke="#db2777" stroke-width="4" vector-effect="non-scaling-stroke"/>')
+    for item in (model.get('text_evidence') or {}).get('items') or []:
+        binding=item.get('host_binding') or {}
+        if binding.get('frame_id') not in {None,frame_id} or binding.get('status')=='VERIFIED':continue
+        point=item.get('position')
+        if point:body.append(f'<circle cx="{point[0]}" cy="{-point[1]}" r="{max(height*.006,.001)}" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"><title>TEXT ONLY</title></circle>')
+    body.append('</g>')
+    return raw_svg.replace('</svg>',''.join(body)+'</svg>')
+
+
 def _viewer(svg,case_id,level,bounds,golden):
     initial=",".join(str(v) for v in (bounds[0],-bounds[3],bounds[2]-bounds[0],bounds[3]-bounds[1]))
     seed=json.dumps(golden,ensure_ascii=False).replace("</","<\\/")
@@ -87,7 +140,11 @@ svg{{width:100%;height:100%;touch-action:none;cursor:crosshair;background:#fff}}
 <h2>چه کاری باید انجام دهید؟</h2><div class="step">۱. ابتدا با ابزار <b>محدوده ساختمان</b> دور ساختمان را نقطه‌گذاری کنید.<br>۲. سپس هر <b>فضای واقعی</b> مثل اتاق، آشپزخانه یا راه‌پله را جدا رسم کنید.<br>۳. در پایان درها، پنجره‌ها و مسیرهای باز را علامت بزنید.<br><b>اگر مطمئن نیستید، نوع را «نامشخص» بگذارید.</b></div>
 <h3>ابزار ترسیم</h3><div class="tools">
 <button data-mode="pan" class="active">✋ جابه‌جایی پلان</button><button data-mode="envelope">⬡ محدوده ساختمان</button>
-<button data-mode="space">▣ فضای واقعی</button><button data-mode="void">◌ حیاط‌خلوت / Void</button>
+<button data-mode="site">◇ مرز زمین / سایت</button><button data-mode="site-space">▱ فضای باز سایت</button>
+<button data-mode="space">▣ فضای واقعی</button><button data-mode="void">◌ نورگیر / فضای خالی داخلی</button>
+<button data-mode="stair-core">▤ هستهٔ راه‌پله</button><button data-mode="landing">▬ پاگرد</button>
+<button data-mode="tread">≡ خط کف‌پله</button><button data-mode="elevator">▥ آسانسور</button>
+<button data-mode="shaft">▧ شفت</button><button data-mode="semantic-label">T برچسب معنایی</button>
 <button data-mode="door">🚪 در</button><button data-mode="window">▭ پنجره</button><button data-mode="passage">↔ مسیر باز</button><button id="fit">نمایش کامل پلان</button><button id="toggle-points">پنهان‌کردن نقاط آبی</button></div>
 <div id="draw-options"><label>نوع فضا</label><select id="category"><option value="UNKNOWN">نامشخص / نیازمند بررسی</option><option value="living">پذیرایی / نشیمن</option><option value="dining">ناهارخوری</option><option value="kitchen">آشپزخانه</option><option value="bedroom">اتاق خواب</option><option value="bathroom">حمام</option><option value="toilet">سرویس بهداشتی</option><option value="corridor">راهرو / هال</option><option value="stair">راه‌پله</option><option value="elevator">آسانسور</option><option value="parking">پارکینگ</option><option value="balcony">بالکن / تراس</option><option value="shaft">شفت</option><option value="utility">فضای خدماتی</option><option value="exterior">فضای نیمه‌باز / بیرونی</option></select>
 <label>نام نمایشی اختیاری</label><input id="label" placeholder="مثلاً اتاق خواب والدین"></div>
@@ -109,15 +166,15 @@ function snap(e){{let best=sourcePoint(e),dist=16;for(const point of s.querySele
 function path(points,closed,color,fill='none'){{if(!points.length)return;const p=document.createElementNS(NS,closed?'polygon':'polyline');p.setAttribute('points',points.map(q=>q[0]+','+(-q[1])).join(' '));p.setAttribute('class','ann');p.setAttribute('stroke',color);p.setAttribute('fill',fill);overlay.appendChild(p);return p}}
 function dot(point,color){{const c=document.createElementNS(NS,'circle');c.setAttribute('cx',point[0]);c.setAttribute('cy',-point[1]);c.setAttribute('r',Math.max(view[2],view[3])*.004);c.setAttribute('fill','#fff');c.setAttribute('stroke',color);c.setAttribute('class','vertex');overlay.appendChild(c)}}
 function portalMark(item){{const colors={{door:'#ea580c',window:'#16a34a',open_passage:'#db2777'}},color=colors[item.kind],segment=item.opening_segment||[],scale=Math.max(view[2],view[3]);if(segment.length===2){{const line=path(segment,false,color);line.style.strokeWidth='6px';line.setAttribute('stroke-linecap','round');segment.forEach(x=>dot(x,color))}}dot(item.point,color);const t=document.createElementNS(NS,'text');t.setAttribute('x',item.point[0]);t.setAttribute('y',-item.point[1]-scale*.012);t.setAttribute('fill',color);t.style.fill=color;t.setAttribute('font-size',scale*.018);t.setAttribute('font-weight','900');t.setAttribute('paint-order','stroke');t.setAttribute('stroke','#fff');t.setAttribute('stroke-width',scale*.004);t.textContent={{door:'در',window:'پنجره',open_passage:'مسیر باز'}}[item.kind];overlay.appendChild(t)}}
-function render(){{overlay.innerHTML='';const env=golden.building_envelope||{{}};path(env.outer_ring||[],true,'#7c3aed','#7c3aed18');(env.interior_voids||[]).forEach(x=>path(x,true,'#dc2626','#dc262618'));(golden.spaces||[]).forEach((x,i)=>path(x.polygon,true,'#0284c7',i%2?'#38bdf822':'#0ea5e922'));(golden.portals||[]).forEach(portalMark);path(draft,false,'#f59e0b');draft.forEach(x=>dot(x,'#f59e0b'));summary()}}
+function render(){{overlay.innerHTML='';const env=golden.building_envelope||{{}};path(golden.site_boundary?.polygon||[],true,'#166534','#22c55e18');(golden.site_spaces||[]).forEach(x=>path(x.polygon,true,'#65a30d','#84cc1622'));path(env.outer_ring||[],true,'#7c3aed','#7c3aed18');(env.interior_voids||[]).forEach(x=>path(x,true,'#dc2626','#dc262618'));(golden.spaces||[]).forEach((x,i)=>path(x.polygon,true,'#0284c7',i%2?'#38bdf822':'#0ea5e922'));(golden.stair_assemblies||[]).forEach(x=>{{path(x.core_polygon||[],true,'#c2410c','#fb923c22');(x.landings||[]).forEach(y=>path(y.polygon||[],true,'#ea580c','#fdba7422'));(x.tread_riser_lines||[]).forEach(y=>path(y.geometry||[],false,'#9a3412'))}});(golden.elevators||[]).forEach(x=>path(x.polygon||[],true,'#7e22ce','#c084fc22'));(golden.shafts||[]).forEach(x=>path(x.polygon||[],true,'#be123c','#fb718522'));(golden.portals||[]).forEach(portalMark);(golden.semantic_labels||[]).forEach(x=>dot(x.point,'#0f766e'));path(draft,false,'#f59e0b');draft.forEach(x=>dot(x,'#f59e0b'));summary()}}
 function save(){{localStorage.setItem(key,JSON.stringify(golden));render()}}
-function summary(){{const n=(golden.spaces||[]).length,p=(golden.portals||[]).length,v=(golden.building_envelope?.interior_voids||[]).length;document.querySelector('#summary').innerHTML=`محدوده ساختمان: <b>${{golden.building_envelope?.outer_ring?.length?'ثبت شده':'ثبت نشده'}}</b><br>فضاها: <b>${{n}}</b><br>Voidها: <b>${{v}}</b><br>بازشوها: <b>${{p}}</b>`}}
-function setMode(next){{mode=next;draft=[];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const msg={{pan:'پلان را بکشید و با چرخ ماوس زوم کنید.',envelope:'گوشه‌های بیرونی ساختمان را به ترتیب کلیک کنید.',space:'دور یک فضای واقعی را نقطه‌گذاری کنید.',void:'دور حیاط‌خلوت، نورگیر یا فضای خالی داخلی را مشخص کنید.',door:'روی دو سر دهانهٔ در کلیک کنید؛ پس از کلیک دوم ثبت می‌شود.',window:'روی دو سر دهانهٔ پنجره کلیک کنید؛ پس از کلیک دوم ثبت می‌شود.',passage:'روی دو سر مسیر باز کلیک کنید؛ پس از کلیک دوم ثبت می‌شود.'}};statusBox.textContent=msg[mode];render()}}
+function summary(){{const n=(golden.spaces||[]).length,p=(golden.portals||[]).length,v=(golden.building_envelope?.interior_voids||[]).length,st=(golden.stair_assemblies||[]).length;document.querySelector('#summary').innerHTML=`مرز سایت: <b>${{golden.site_boundary?.polygon?.length?'ثبت شده':'ثبت نشده'}}</b><br>محدوده ساختمان: <b>${{golden.building_envelope?.outer_ring?.length?'ثبت شده':'ثبت نشده'}}</b><br>فضاها: <b>${{n}}</b><br>Voidها: <b>${{v}}</b><br>پله‌ها: <b>${{st}}</b><br>بازشوها: <b>${{p}}</b>`}}
+function setMode(next){{mode=next;draft=[];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));const msg={{pan:'پلان را بکشید و با چرخ ماوس زوم کنید.',site:'گوشه‌های مرز واقعی زمین را از روی خط منبع انتخاب کنید.',envelope:'گوشه‌های بیرونی ساختمان را به ترتیب کلیک کنید.','site-space':'دور فضای باز واقعیِ داخل مرز سایت رسم کنید.',space:'دور یک فضای واقعی را نقطه‌گذاری کنید.',void:'دور نورگیر، حیاط مرکزی یا فضای خالی داخلی رسم کنید.','stair-core':'دور هستهٔ واقعی راه‌پله رسم کنید.',landing:'دور پاگرد رسم کنید.',tread:'دو سر خط واقعی کف‌پله را انتخاب کنید.',elevator:'دور آسانسور رسم کنید.',shaft:'دور شفت رسم کنید.','semantic-label':'محل درج برچسب منبع را انتخاب کنید.',door:'روی دو سر دهانهٔ در کلیک کنید؛ پس از کلیک دوم ثبت می‌شود.',window:'روی دو سر دهانهٔ پنجره کلیک کنید؛ پس از کلیک دوم ثبت می‌شود.',passage:'روی دو سر مسیر باز کلیک کنید؛ پس از کلیک دوم ثبت می‌شود.'}};statusBox.textContent=msg[mode];render()}}
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 s.onwheel=e=>{{e.preventDefault();const p=svgPoint(e),f=e.deltaY>0?1.12:.88;view=[p.x+(view[0]-p.x)*f,p.y+(view[1]-p.y)*f,view[2]*f,view[3]*f];applyView();render()}};
-s.onpointerdown=e=>{{if(mode==='pan'){{drag=[e.clientX,e.clientY,...view];s.setPointerCapture(e.pointerId)}}else{{const point=snap(e);if(['door','window','passage'].includes(mode)){{draft.push(point);if(draft.length===1){{statusBox.textContent='نقطهٔ اول ثبت شد؛ اکنون سر دیگر بازشو را انتخاب کنید.';render();return}}const kind=mode==='passage'?'open_passage':mode,a=draft[0],b=draft[1],mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];golden.portals.push({{golden_portal_id:`PORTAL-${{String(golden.portals.length+1).padStart(3,'0')}}`,kind,status:'VERIFIED',point:mid,opening_segment:[a,b],space_a:null,space_b:null}});draft=[];save();statusBox.textContent=`${{kind==='door'?'در':kind==='window'?'پنجره':'مسیر باز'}} ثبت شد. تعداد بازشوها: ${{golden.portals.length}}`}}else{{draft.push(point);render()}}}}}};
+s.onpointerdown=e=>{{if(mode==='pan'){{drag=[e.clientX,e.clientY,...view];s.setPointerCapture(e.pointerId)}}else{{const point=snap(e);if(mode==='semantic-label'){{golden.semantic_labels.push({{label_id:`LABEL-${{String(golden.semantic_labels.length+1).padStart(3,'0')}}`,text:document.querySelector('#label').value||null,point,status:document.querySelector('#label').value?'VERIFIED':'UNKNOWN',host_object_id:null}});save();return}}if(['door','window','passage','tread'].includes(mode)){{draft.push(point);if(draft.length===1){{statusBox.textContent='نقطهٔ اول ثبت شد؛ اکنون سر دیگر را انتخاب کنید.';render();return}}const a=draft[0],b=draft[1],mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];if(mode==='tread'){{let stair=golden.stair_assemblies.at(-1);if(!stair){{stair={{golden_stair_id:`STAIR-${{String(golden.stair_assemblies.length+1).padStart(3,'0')}}`,status:'UNKNOWN',core_polygon:[],flights:[],landings:[],tread_riser_lines:[]}};golden.stair_assemblies.push(stair)}}stair.tread_riser_lines.push({{geometry:[a,b],status:'VERIFIED'}})}}else{{const kind=mode==='passage'?'open_passage':mode;golden.portals.push({{golden_portal_id:`PORTAL-${{String(golden.portals.length+1).padStart(3,'0')}}`,kind,status:'VERIFIED',point:mid,opening_segment:[a,b],space_a:null,space_b:null}})}}draft=[];save()}}else{{draft.push(point);render()}}}}}};
 s.onpointermove=e=>{{const p=sourcePoint(e);xy.textContent=`مختصات X: ${{p[0].toFixed(3)}} ، Y: ${{p[1].toFixed(3)}}`;if(drag){{view[0]=drag[2]-(e.clientX-drag[0])*view[2]/s.clientWidth;view[1]=drag[3]-(e.clientY-drag[1])*view[3]/s.clientHeight;applyView();render()}}}};s.onpointerup=()=>drag=null;
-document.querySelector('#finish').onclick=()=>{{if(!['envelope','space','void'].includes(mode)){{statusBox.textContent='ابتدا یکی از ابزارهای محدوده یا فضا را انتخاب کنید.';return}}if(draft.length<3){{statusBox.textContent='حداقل سه گوشه لازم است.';return}}const ring=[...draft,draft[0]];if(mode==='envelope')golden.building_envelope={{status:'VERIFIED',outer_ring:ring,interior_voids:golden.building_envelope?.interior_voids||[]}};if(mode==='void')golden.building_envelope.interior_voids.push(ring);if(mode==='space'){{const id=`SPACE-${{String(golden.spaces.length+1).padStart(3,'0')}}`;golden.spaces.push({{golden_space_id:id,status:document.querySelector('#category').value==='UNKNOWN'?'UNKNOWN':'VERIFIED',polygon:ring,interior_rings:[],category:document.querySelector('#category').value,display_name:document.querySelector('#label').value||null,open_plan_group:null}})}}draft=[];save();statusBox.textContent='محدوده ثبت شد. می‌توانید مورد بعدی را رسم کنید.'}};
+document.querySelector('#finish').onclick=()=>{{if(!['site','envelope','site-space','space','void','stair-core','landing','elevator','shaft'].includes(mode)){{statusBox.textContent='ابتدا یکی از ابزارهای محدوده یا فضا را انتخاب کنید.';return}}if(draft.length<3){{statusBox.textContent='حداقل سه گوشه لازم است.';return}}const ring=[...draft,draft[0]];if(mode==='site')golden.site_boundary={{status:'VERIFIED',polygon:ring}};if(mode==='envelope')golden.building_envelope={{status:'VERIFIED',outer_ring:ring,interior_voids:golden.building_envelope?.interior_voids||[]}};if(mode==='site-space')golden.site_spaces.push({{golden_site_space_id:`SITE-SPACE-${{String(golden.site_spaces.length+1).padStart(3,'0')}}`,status:'VERIFIED',polygon:ring,category:document.querySelector('#category').value,display_name:document.querySelector('#label').value||null}});if(mode==='void')golden.building_envelope.interior_voids.push(ring);if(mode==='space'){{const id=`SPACE-${{String(golden.spaces.length+1).padStart(3,'0')}}`;golden.spaces.push({{golden_space_id:id,status:document.querySelector('#category').value==='UNKNOWN'?'UNKNOWN':'VERIFIED',polygon:ring,interior_rings:[],category:document.querySelector('#category').value,display_name:document.querySelector('#label').value||null,open_plan_group:null}})}}if(mode==='stair-core')golden.stair_assemblies.push({{golden_stair_id:`STAIR-${{String(golden.stair_assemblies.length+1).padStart(3,'0')}}`,status:'VERIFIED',core_polygon:ring,flights:[],landings:[],tread_riser_lines:[]}});if(mode==='landing'){{let stair=golden.stair_assemblies.at(-1);if(stair)stair.landings.push({{polygon:ring,status:'VERIFIED'}})}}if(mode==='elevator')golden.elevators.push({{golden_elevator_id:`ELEVATOR-${{String(golden.elevators.length+1).padStart(3,'0')}}`,status:'VERIFIED',polygon:ring}});if(mode==='shaft')golden.shafts.push({{golden_shaft_id:`SHAFT-${{String(golden.shafts.length+1).padStart(3,'0')}}`,status:'VERIFIED',polygon:ring}});draft=[];save();statusBox.textContent='محدوده ثبت شد. می‌توانید مورد بعدی را رسم کنید.'}};
 document.querySelector('#undo').onclick=()=>{{draft.pop();render()}};document.querySelector('#fit').onclick=()=>{{view=[...initial];applyView();render()}};
 document.querySelector('#toggle-points').onclick=e=>{{const g=document.querySelector('#snap-points'),hidden=g.style.display==='none';g.style.display=hidden?'':'none';e.target.textContent=hidden?'پنهان‌کردن نقاط آبی':'نمایش نقاط آبی'}};
 document.querySelector('#download').onclick=()=>{{golden.review.annotation_date=new Date().toISOString().slice(0,10);const blob=new Blob([JSON.stringify(golden,null,2)+'\\n'],{{type:'application/json'}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='{html.escape(case_id)}-golden-DRAFT.json';a.click();URL.revokeObjectURL(a.href)}};
@@ -143,45 +200,54 @@ provides explicit pan, envelope, space, void, door, window and open-passage
 tools. It snaps clicks to nearby source vertices, saves drafts in the browser,
 and downloads the Golden JSON; reviewers do not edit JSON manually.
 
-1. Trace building outer ring and real courtyard/lightwell voids.
+1. Trace the source-backed property/site boundary when shown, then the building outer ring and real courtyard/lightwell voids.
 2. Trace every physical space. Furniture, cabinets, dimensions, annotations and
    stair-tread graphics are not physical spaces.
 3. Use stable IDs (`SPACE-001`, ...); use `UNKNOWN` instead of guessing.
 4. Add functional zones only when independently clear; do not invent boundaries.
 5. Add DOOR, WINDOW and OPEN_PASSAGE independently with connected spaces or
    EXTERIOR. Unclear portals remain UNKNOWN.
-6. Record geometric adjacency separately from portal access connectivity.
-7. Annotator records name/date and changes DRAFT to REVIEWED.
-8. A different reviewer validates the source, records review/approval dates and
+6. Trace stair core, flights/landings/tread-riser lines, elevators and shafts as separate objects; repeated lines alone are not a stair.
+7. Record semantic labels separately and bind them only to an already traced geometric object.
+8. Record geometric adjacency separately from portal access connectivity.
+9. Annotator records name/date and changes DRAFT to REVIEWED.
+10. A different reviewer validates the source, records review/approval dates and
    changes REVIEWED to APPROVED. Scoring is disabled before APPROVED.
 
 Run the structural validator before review and approval. It never edits data.
 """
 
 
-def build(source,case_id,level,bounds,runtime_frame_id):
+def build(source,case_id,level,bounds,runtime_frame_id,candidate=None):
     source=Path(source); data=source.read_bytes(); source_hash=sha256(data).hexdigest(); doc=ezdxf.readfile(source)
     svg,counts=_source_svg(doc,bounds,case_id)
-    golden={"schema":"architectural-topology-golden/1.0","case_id":case_id,"source_sha256":source_hash,"review_status":"DRAFT",
+    golden={"schema":"architectural-topology-golden/2.0","case_id":case_id,"source_sha256":source_hash,"review_status":"DRAFT",
             "review":{"method":"INDEPENDENT_SOURCE_ARCHITECTURE_REVIEW","annotator":None,"annotation_date":None,"reviewer":None,
                       "reviewed_at":None,"approved_at":None,"runtime_output_visible_during_annotation":False},
             "frame":{"runtime_frame_id":runtime_frame_id,"level":level,"bounds":bounds},"space_match_iou":.5,
+            "site_boundary":{"status":"UNKNOWN","polygon":[]},"site_spaces":[],
             "building_envelope":{"status":"UNKNOWN","outer_ring":[],"interior_voids":[]},"spaces":[],"functional_zones":[],
+            "stair_assemblies":[],"elevators":[],"shafts":[],"semantic_labels":[],
             "portals":[],"geometric_adjacency":[],"access_connectivity":[],
             "annotation_notes":["Review source-only material without runtime output.","UNKNOWN is preferred to guessing."]}
     manifest={"case_id":case_id,"source_sha256":source_hash,"frame_identity":runtime_frame_id,"level":level,"bounds":bounds,
               "coordinate_system":"SOURCE_DXF_XY; SVG display uses -Y","render_source":"RAW_DXF_RECURSIVE_PRIMITIVES_ONLY",
               "rendered_primitive_counts":counts,"excluded_runtime_material":True}
-    return svg,golden,manifest,_viewer(svg,case_id,level,bounds,golden),_instructions(case_id,level,source_hash,runtime_frame_id,bounds)
+    annotated=_candidate_overlay_svg(svg,candidate,runtime_frame_id,bounds) if candidate else None
+    manifest['candidate_overlay_status']='GENERATED' if annotated else 'NOT_PROVIDED'
+    return svg,golden,manifest,_viewer(svg,case_id,level,bounds,golden),_instructions(case_id,level,source_hash,runtime_frame_id,bounds),annotated
 
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--source",required=True); p.add_argument("--case-id",required=True); p.add_argument("--level",required=True)
     p.add_argument("--bounds",required=True,nargs=4,type=float); p.add_argument("--runtime-frame-id",required=True); p.add_argument("--output-dir",required=True)
+    p.add_argument("--candidate",help="Optional deterministic candidate JSON used only for an annotated overlay")
     a=p.parse_args(); target=Path(a.output_dir); target.mkdir(parents=True,exist_ok=True)
-    svg,golden,manifest,viewer,instructions=build(a.source,a.case_id,a.level,a.bounds,a.runtime_frame_id)
+    candidate=json.loads(Path(a.candidate).read_text()) if a.candidate else None
+    svg,golden,manifest,viewer,instructions,annotated=build(a.source,a.case_id,a.level,a.bounds,a.runtime_frame_id,candidate)
     for name,value in (("raw-source.svg",svg),("review.html",viewer),("REVIEWER-INSTRUCTIONS.md",instructions)): (target/name).write_text(value,encoding="utf-8")
     for name,value in (("golden.json",golden),("manifest.json",manifest)): (target/name).write_text(json.dumps(value,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    if annotated: (target/"annotated-spatial-overlay.svg").write_text(annotated,encoding="utf-8")
     print(json.dumps({"status":"DRAFT_WAITING_FOR_INDEPENDENT_REVIEW","case_id":a.case_id,"package":str(target),"source_sha256":manifest["source_sha256"]},indent=2))
 
 

@@ -178,7 +178,7 @@ def _add_locked_design_endpoints(architecture, recognition, design_basis):
 def run_engineering_pipeline(src,design_basis=None,project_overrides=None):
     architecture=reconstruct_architecture(src);recognition=recognize_fixtures_equipment(architecture)
     architecture,recognition=apply_plan_scopes(src,architecture,recognition,(project_overrides or {}).get('authoritative_level_profiles'))
-    architecture_gate=require_complete_architecture(architecture)
+    architecture_gate=require_complete_architecture(architecture, consumer="MECHANICAL_ROUTING")
     if not architecture_gate['allowed']:
         blocked={'status':'INPUT_REQUIRED','blocked_at':'architecture_completeness',
                  'missing_inputs':[x.get('code') for x in architecture_gate.get('issues') or []],
