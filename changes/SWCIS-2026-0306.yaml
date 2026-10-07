@@ -1,0 +1,50 @@
+{
+  "change_id": "SWCIS-2026-0306",
+  "summary": "Add fail-closed source-backed physical-space, site/void, vertical-circulation, opening-topology and per-capability engineering-authority qualification to Canonical Architecture.",
+  "requester": "project-owner",
+  "change_types": ["schema", "rule", "drawing_output", "routing", "ui_api", "test", "documentation", "governance"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001", "MEP-ROUTE-001"],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "pmm", "qa", "questionnaire", "routing", "rule_book", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Extend the canonical architecture contract with independently qualified spatial geometry, site/void relations, stairs/cores, source-backed boundary segments and distinct enclosure/access topology.",
+    "deployment": "No deployment is authorized; the new spatial release gate must remain fail-closed in every environment.",
+    "detail_riser": "Riser/detail generation receives no authority until its required spatial and vertical-circulation facts are granted.",
+    "equipment": "Equipment placement and room-load consumers remain blocked when room polygons or metric area authority are missing.",
+    "manufacturer_selector": "No selector logic changes; downstream selection remains unable to infer missing architectural prerequisites.",
+    "planner": "Planning consumers must use the per-capability matrix instead of a global completeness inference.",
+    "pmm": "PMM governance records the new fail-closed Architecture authority dependency without changing pricing or commercial logic.",
+    "questionnaire": "No questionnaire route changes; unresolved geometric facts are surfaced as review requirements rather than fabricated answers.",
+    "routing": "Require explicit architectural capability grants before downstream routing or precise engineering calculations consume spatial facts.",
+    "rule_book": "Register the physical-space, site/void, stair and topology authority rules and their source-evidence requirements.",
+    "sizing": "Sizing remains blocked where metric area or other consumer-specific architectural facts are not granted.",
+    "qa": "Add positive, destructive, synthetic-negative, schema, Golden-package and exact real-DXF replay evidence; any nonzero unsupported-verified-geometry counter blocks qualification.",
+    "ui_api": "Extend the source-only Golden annotation package and deterministic review overlay; no production route is activated.",
+    "manifest": "Record source hashes, frame identity, provenance fingerprints, authority counters and review status without committing private drawings.",
+    "docs": "Document evidence classes, authority lattice, failure statuses, review procedure and downstream prerequisite matrix.",
+    "versioning": "Backward-compatible Canonical Architecture schema addition and coordinated SWCIS minor bump; executable identity remains Git-derived.",
+    "migration": "Invalidate stale spatial reviews and regenerate Canonical Architecture candidates under the new authority contract; do not promote legacy booleans.",
+    "governance": "One isolated Architecture P0 change; separate from PR #316 and runtime P0 task 86e3m78mg; no deployment or merge authority."
+  },
+  "evidence": {
+    "traceability": ["Source DXF handle -> reconstruction rule -> canonical spatial object -> independent validation -> capability authority -> downstream prerequisite"],
+    "tests": ["focused spatial contract tests", "stair motif positive and repeated-line negative controls", "text-only and unknown-site destructive tests", "opening host and topology tests", "real-DXF replay by source SHA-256"],
+    "docs": ["docs/ARCHITECTURE_SPATIAL_AUTHORITY_STANDARD.md"],
+    "version_bump": ["Canonical Architecture 3.1 -> 3.2; SWCIS coordinated minor bump"],
+    "migration": ["standards/swcis/migrations/architecture-spatial-authority-v32.json"],
+    "golden_regression": ["Independent source-only Golden schema extended for site boundaries, site spaces, stairs, landings, tread/riser lines, elevators, shafts and semantic labels"],
+    "semantic_diff": ["Text evidence remains semantic-only; physical geometry, topology and engineering readiness become separate explicit authorities"],
+    "artifact_diff": ["Per-plan raw source preview and annotated spatial overlay plus review inventory and manifest"],
+    "numeric_diff": ["Metric area is authoritative only when source scale is verified; comparison tolerances derive from drawing scale and source precision"],
+    "contract_diff": ["Add source-backed boundary segments, spatial authority levels, site/void and vertical-circulation collections, graph qualification and capability authority matrix"],
+    "deployment_plan": ["Draft PR and official CI only; Staging requires later explicit owner approval; Production untouched"],
+    "rollback_plan": ["Revert the focused commit and regenerate candidates with the prior 3.1 adapter; never reuse 3.2 reviews against changed source or geometry fingerprints"]
+  },
+  "risk": {
+    "likelihood": 4,
+    "severity": 5,
+    "detectability": 3,
+    "score": 60,
+    "rationale": "Spatial false authority can corrupt every downstream discipline; the change is high-risk and remains experimental/fail-closed until independent Golden qualification is complete."
+  },
+  "waiver": null
+}

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "planha-canonical-architecture/3.1",
-  "title": "Planha Canonical Architecture v3.1: separator and text evidence authority",
+  "$id": "planha-canonical-architecture/3.2",
+  "title": "Planha Canonical Architecture v3.2: granular spatial engineering authority",
   "type": "object",
   "required": [
     "schema",
@@ -22,11 +22,13 @@
     "canonical_model_hash",
     "evidence_registry",
     "text_evidence",
-    "title_block_fields"
+    "title_block_fields",
+    "spatial_authority",
+    "engineering_authority_matrix"
   ],
   "properties": {
     "schema": {
-      "const": "planha-canonical-architecture/3.1"
+      "const": "planha-canonical-architecture/3.2"
     },
     "contract_status": {
       "const": "EXPERIMENTAL_INTERNAL"
@@ -164,7 +166,12 @@
           "interior_rings",
           "topology_status",
           "authority",
-          "geometry_evidence"
+          "geometry_evidence",
+          "space_geometry_type",
+          "boundary_segments",
+          "authority_level",
+          "area_authority",
+          "provenance_fingerprint"
         ],
         "properties": {
           "polygon": {
@@ -185,6 +192,25 @@
           },
           "geometry_evidence": {
             "$ref": "#/$defs/geometry_evidence"
+          },
+          "space_geometry_type": {
+            "enum": ["ENCLOSED_INTERIOR", "COVERED_SEMI_OPEN", "EXTERIOR_SITE_SPACE", "INTERNAL_VOID", "VERTICAL_CIRCULATION", "SERVICE_VOID", "OTHER"]
+          },
+          "boundary_segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["boundary_segment_id", "geometry", "source_handles", "status"]
+            }
+          },
+          "authority_level": {
+            "enum": ["TEXT_ONLY", "GEOMETRY_CANDIDATE", "BOUNDARY_SUPPORTED", "PHYSICAL_SPACE_VERIFIED", "SEMANTICALLY_HOSTED", "TOPOLOGY_VERIFIED", "ENGINEERING_READY"]
+          },
+          "area_authority": {
+            "enum": ["METRIC", "DRAWING_UNITS_ONLY", "NONE"]
+          },
+          "provenance_fingerprint": {
+            "type": ["string", "null"]
           },
           "geometry_status": {
             "type": "string"
@@ -278,6 +304,26 @@
     "unresolved_items": {
       "type": "array"
     },
+    "spatial_authority": {
+      "type": "object",
+      "required": ["schema", "text_creates_geometry", "vision_geometry_authority", "site_boundaries", "site_spaces", "vertical_circulation", "graph_qualification", "engineering_authority_matrix", "counters", "status"],
+      "properties": {
+        "schema": {"const": "planha-architecture-spatial-authority/1.0"},
+        "text_creates_geometry": {"const": false},
+        "vision_geometry_authority": {"const": false},
+        "site_boundaries": {"type": "array"},
+        "site_spaces": {"type": "array"},
+        "vertical_circulation": {"type": "object"},
+        "graph_qualification": {"type": "object"},
+        "engineering_authority_matrix": {"type": "object"},
+        "counters": {"type": "object"},
+        "status": {"enum": ["VERIFIED", "INPUT_REQUIRED", "AMBIGUOUS", "CONFLICT", "HUMAN_REVIEW_REQUIRED"]}
+      }
+    },
+    "engineering_authority_matrix": {
+      "type": "object",
+      "required": ["facts", "consumers"]
+    },
     "traceability": {
       "type": "object",
       "required": [
@@ -340,7 +386,7 @@
           "const": "planha-architectural-text-evidence/1.0"
         },
         "contract_version": {
-          "const": "planha-canonical-architecture/3.1"
+          "const": "planha-canonical-architecture/3.2"
         },
         "items": {
           "type": "array",

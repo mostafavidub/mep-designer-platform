@@ -3,6 +3,7 @@ from tools.architectural_golden_annotation_package import build
 from tools.architectural_golden_validate import validate
 
 import ezdxf
+from xml.etree import ElementTree
 
 
 def _space(identifier, polygon, category="bedroom", adjacent=()):
@@ -46,16 +47,20 @@ def test_phantom_and_missing_spaces_are_not_hidden_by_aggregate_area():
 def test_annotation_package_is_source_only_and_pending(tmp_path):
     source=tmp_path/"source.dxf"; doc=ezdxf.new("R2013"); doc.header["$INSUNITS"]=6
     doc.modelspace().add_lwpolyline([(0,0),(4,0),(4,2),(0,2)],close=True); doc.saveas(source)
-    svg,golden,manifest,viewer,instructions=build(source,"case","GROUND",[0,0,4,2],"FRAME-G")
+    svg,golden,manifest,viewer,instructions,annotated=build(source,"case","GROUND",[0,0,4,2],"FRAME-G")
     assert "<polyline" in svg
     assert golden["review_status"]=="DRAFT"
     assert golden["spaces"]==[] and golden["portals"]==[]
+    assert golden["schema"]=="architectural-topology-golden/2.0"
+    assert golden["site_spaces"]==[] and golden["stair_assemblies"]==[]
+    assert annotated is None
     assert golden["review"]["runtime_output_visible_during_annotation"] is False
     assert "RAW DXF ONLY" in viewer and "current Planha" not in viewer
     assert "بازبینی مستقل پلان" in viewer
     assert 'data-mode="envelope"' in viewer
     assert 'data-mode="space"' in viewer
     assert 'data-mode="door"' in viewer
+    assert 'data-mode="site"' in viewer and 'data-mode="stair-core"' in viewer
     assert "localStorage" in viewer and "دانلود فایل Golden" in viewer
     assert "const initial=[0,-2,4,2]" in viewer
     assert 'id="snap-points"' in svg and 'class="snap-point"' in svg
@@ -67,6 +72,20 @@ def test_annotation_package_is_source_only_and_pending(tmp_path):
     assert "UNKNOWN" in instructions
     report=validate(golden,source.read_bytes())
     assert report["status"]=="PASS" and report["official_scoring_enabled"] is False
+
+
+def test_annotation_package_renders_separate_deterministic_candidate_overlay(tmp_path):
+    source=tmp_path/"source.dxf";doc=ezdxf.new("R2013");doc.modelspace().add_lwpolyline([(0,0),(4,0),(4,2),(0,2)],close=True);doc.saveas(source)
+    candidate={"frames":[{"frame_id":"FRAME-G","bounds":[0,0,4,2]}],
+        "building_envelopes":[{"frame_id":"FRAME-G","status":"VERIFIED","outer_ring":[[0,0],[4,0],[4,2],[0,2],[0,0]]}],
+        "physical_spaces":[{"physical_space_id":"PS-1","frame_id":"FRAME-G","polygon":[[0,0],[4,0],[4,2],[0,2],[0,0]],"status":"INPUT_REQUIRED","boundary_segments":[]}],
+        "architectural_voids":{"items":[]},"openings":[],"text_evidence":{"items":[]},
+        "spatial_authority":{"site_boundaries":[],"site_spaces":[],"vertical_circulation":{"stair_assemblies":[]}}}
+    svg,golden,manifest,viewer,instructions,annotated=build(source,"case","GROUND",[0,0,4,2],"FRAME-G",candidate)
+    assert annotated is not None and annotated != svg
+    assert 'id="candidate-spatial-overlay"' in annotated and "PS-1 · INPUT_REQUIRED" in annotated
+    assert manifest["candidate_overlay_status"]=="GENERATED"
+    ElementTree.fromstring(annotated)
 
 
 def test_validator_rejects_self_intersection_and_unknown_references():

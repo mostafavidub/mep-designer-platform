@@ -213,6 +213,31 @@ def validate_architecture(model):
                  title_block_field_id=field.get("title_block_field_id"))
     control("TEXT_AUTHORITY_INTEGRITY", not any(x["code"].startswith(("TEXT_", "TITLE_FIELD_")) for x in hard))
 
+    spatial = data.get("spatial_authority") or {}
+    if spatial.get("schema") != "planha-architecture-spatial-authority/1.0":
+        _add(required, "SPATIAL_AUTHORITY_CONTRACT_REQUIRED")
+    if spatial.get("text_creates_geometry") is not False:
+        _add(hard, "TEXT_CREATED_GEOMETRY_AUTHORITY_FORBIDDEN")
+    if spatial.get("vision_geometry_authority") is not False:
+        _add(hard, "VISION_GEOMETRY_AUTHORITY_FORBIDDEN")
+    counters = spatial.get("counters") or {}
+    for name in ("unsupported_verified_geometry", "text_created_verified_geometry", "unsupported_verified_stairs"):
+        value = counters.get(name)
+        if not isinstance(value, int) or value < 0:
+            _add(hard, "SPATIAL_COUNTER_INVALID", counter=name, value=value)
+    matrix = data.get("engineering_authority_matrix") or {}
+    if matrix != (spatial.get("engineering_authority_matrix") or {}):
+        _add(hard, "ENGINEERING_AUTHORITY_MATRIX_DIVERGENCE")
+    facts = matrix.get("facts") or {}
+    for consumer, decision in (matrix.get("consumers") or {}).items():
+        required_facts = decision.get("required_authorities") or []
+        missing = sorted(name for name in required_facts if not (facts.get(name) or {}).get("granted"))
+        if decision.get("allowed") is True and missing:
+            _add(hard, "CONSUMER_AUTHORITY_WITH_MISSING_PREREQUISITE", consumer=consumer, missing=missing)
+        if sorted(decision.get("missing_authorities") or []) != missing:
+            _add(hard, "CONSUMER_MISSING_AUTHORITY_LIST_INVALID", consumer=consumer)
+    control("SPATIAL_AUTHORITY_INTEGRITY", not any(x["code"].startswith(("SPATIAL_", "TEXT_CREATED_", "VISION_GEOMETRY_", "ENGINEERING_AUTHORITY_", "CONSUMER_")) for x in hard))
+
     frames = data.get("frames") or []; levels = data.get("levels") or []
     walls = data.get("walls") or []; spaces = data.get("physical_spaces") or []
     zones = data.get("functional_zones") or []; apertures = data.get("apertures") or []
@@ -282,6 +307,12 @@ def validate_architecture(model):
             hole_poly = _polygon(hole)
             if hole_poly is None or not polygon.envelope.covers(hole_poly):
                 _add(hard, "SPACE_INTERIOR_RING_INVALID", physical_space_id=sid)
+        if space.get("authority_level") == "ENGINEERING_READY":
+            if not space.get("boundary_segments") or any(row.get("status") != "VERIFIED" or not row.get("source_handles")
+                                                          for row in space.get("boundary_segments") or []):
+                _add(hard, "ENGINEERING_READY_SPACE_BOUNDARY_UNSUPPORTED", physical_space_id=sid)
+            if space.get("area_authority") != "METRIC":
+                _add(hard, "ENGINEERING_READY_SPACE_METRIC_AREA_REQUIRED", physical_space_id=sid)
     ordered = sorted(space_polygons)
     overlap = 0.0
     for index, left_id in enumerate(ordered):
@@ -353,6 +384,18 @@ def validate_architecture(model):
             if area > overlap_tolerance:
                 _add(hard, "VOID_OCCUPIED_SPACE_OVERLAP", void_id=vid, physical_space_id=sid, area=area)
 
+    for stair in ((spatial.get("vertical_circulation") or {}).get("stair_assemblies") or []):
+        if stair.get("status") != "VERIFIED":
+            continue
+        controls_for_stair = stair.get("negative_controls") or {}
+        if not stair.get("core_polygon") or not stair.get("core_source_handles"):
+            _add(hard, "VERIFIED_STAIR_CORE_SOURCE_REQUIRED", stair_assembly_id=stair.get("stair_assembly_id"))
+        if not stair.get("tread_riser_lines") or not all(row.get("source_handle") for row in stair.get("tread_riser_lines") or []):
+            _add(hard, "VERIFIED_STAIR_TREAD_SOURCE_REQUIRED", stair_assembly_id=stair.get("stair_assembly_id"))
+        if not all(controls_for_stair.get(name) is True for name in
+                   ("minimum_treads", "regular_spacing", "two_side_boundaries", "source_closed_core")):
+            _add(hard, "VERIFIED_STAIR_NEGATIVE_CONTROLS_REQUIRED", stair_assembly_id=stair.get("stair_assembly_id"))
+
     access_edges = (data.get("graphs") or {}).get("access") or []
     for edge in access_edges:
         pid = edge.get("portal_id") if isinstance(edge, dict) else None
@@ -383,6 +426,12 @@ def validate_architecture(model):
     critical_unresolved = [row for row in data.get("unresolved_items") or []
                            if row.get("downstream_impact") != "NONCRITICAL_DIAGNOSTIC"]
     release = data.get("release") or {}
+    if release.get("release_allowed") and (spatial.get("status") != "VERIFIED"
+            or not facts or any(row.get("granted") is not True for row in facts.values())
+            or any(space.get("authority_level") != "ENGINEERING_READY" for space in spaces)
+            or any(counters.get(name) != 0 for name in
+                   ("unsupported_verified_geometry", "text_created_verified_geometry", "unsupported_verified_stairs"))):
+        _add(hard, "SPATIAL_AUTHORITY_RELEASE_FORBIDDEN")
     if release.get("release_allowed") and critical_unresolved:
         _add(hard, "UNRESOLVED_CRITICAL_RELEASE_FORBIDDEN", count=len(critical_unresolved))
     if release.get("status") == "VERIFIED" and not (release.get("release_allowed") and

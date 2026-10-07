@@ -2,6 +2,24 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-054",
+      "status": "IMPLEMENTED_PENDING_GOLDEN_QUALIFICATION",
+      "summary": "Add Canonical Architecture 3.2 source-backed physical-space, site/void, stair/core, opening-topology and granular downstream engineering authority.",
+      "affected_capabilities": ["architecture_input_foundation_v2", "topology_routing_100", "architecture_space_equipment_recognition_100"],
+      "approval": {"status": "OWNER_AUTHORIZED_IMPLEMENTATION", "basis": "ARCH-P0 complete spatial understanding task; Draft PR only, no merge or deployment."},
+      "verification": {
+        "positive_test": "PENDING_FINAL",
+        "destructive_test": "PENDING_FINAL",
+        "real_dxf_replay": "PENDING_FINAL",
+        "independent_golden": "HUMAN_REVIEW_REQUIRED",
+        "required_ci": "PENDING"
+      },
+      "migration": {
+        "forward": "Regenerate exact-source candidates and independently annotate architectural-topology-golden/2.0; never promote legacy booleans.",
+        "rollback": "Revert the focused commit and preserve 3.2 artifacts as unsupported by 3.1."
+      }
+    },
+    {
       "id": "GOV-2026-053",
       "status": "IMPLEMENTED_QUALIFIED",
       "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",

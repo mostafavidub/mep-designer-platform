@@ -59,6 +59,20 @@ def contract():
 
 def qualified_contract():
     row = contract()
+    for space in row["physical_spaces"]:
+        ring=space["polygon"]
+        handle=space["source_handles"][0]
+        space["boundary_segments"]=[{"boundary_segment_id":f"{space['physical_space_id']}-B{i}",
+                                      "geometry":[a,b],"source_handles":[handle],"status":"VERIFIED"}
+                                     for i,(a,b) in enumerate(zip(ring,ring[1:]))]
+        space["authority_level"]="ENGINEERING_READY"
+        space["area_authority"]="METRIC"
+    facts={name:{"status":"VERIFIED","granted":True} for name in
+           ("ROOM_POLYGON","METRIC_AREA","SITE_RELATION","ENCLOSURE_TOPOLOGY","ACCESS_TOPOLOGY","VERTICAL_CIRCULATION")}
+    matrix={"facts":facts,"consumers":{"MECHANICAL_ROUTING":{"status":"VERIFIED","allowed":True,
+            "required_authorities":["ROOM_POLYGON","ENCLOSURE_TOPOLOGY","ACCESS_TOPOLOGY"],"missing_authorities":[]}}}
+    row["spatial_authority"].update(status="VERIFIED",engineering_authority_matrix=matrix)
+    row["engineering_authority_matrix"]=matrix
     row["release"] = {"status": "VERIFIED", "downstream_engineering_allowed": True,
                       "release_allowed": True}
     return rehash(row)

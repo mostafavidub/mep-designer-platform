@@ -15,7 +15,11 @@ def validate(golden,source_bytes=None):
     required=("schema","case_id","source_sha256","review_status","review","frame","building_envelope","spaces","functional_zones","portals","geometric_adjacency","access_connectivity")
     errors.extend(f"missing_required:{name}" for name in required if name not in golden)
     if errors: return {"status":"FAIL","errors":errors,"warnings":warnings}
-    if golden.get("schema")!="architectural-topology-golden/1.0": errors.append("invalid_schema_identity")
+    schema=golden.get("schema")
+    if schema not in {"architectural-topology-golden/1.0","architectural-topology-golden/2.0"}: errors.append("invalid_schema_identity")
+    if schema=="architectural-topology-golden/2.0":
+        for name in ("site_boundary","site_spaces","stair_assemblies","elevators","shafts","semantic_labels"):
+            if name not in golden: errors.append(f"missing_required:{name}")
     if not isinstance(golden.get("case_id"),str) or not golden["case_id"].strip(): errors.append("invalid_case_id")
     source_hash=golden.get("source_sha256")
     if not isinstance(source_hash,str) or len(source_hash)!=64 or any(char not in "0123456789abcdef" for char in source_hash): errors.append("invalid_source_sha256")
@@ -50,6 +54,30 @@ def validate(golden,source_bytes=None):
             if not poly.is_valid or poly.is_empty or poly.area<=0: errors.append("building_envelope_invalid")
             elif frame is not None and not frame.covers(poly): errors.append("building_envelope_outside_frame")
     elif state=="APPROVED": errors.append("approved_golden_requires_envelope")
+    def validate_polygon_record(row,identifier,prefix):
+        ring=row.get("polygon") or row.get("core_polygon") or []
+        if row.get("status")!="UNKNOWN" or ring:
+            if len(ring)<4: errors.append(f"{prefix}_polygon_missing:{identifier}"); return
+            poly=Polygon(ring,row.get("interior_rings") or [])
+            if not poly.is_valid or poly.is_empty or poly.area<=0: errors.append(f"{prefix}_polygon_invalid:{identifier}")
+            elif frame is not None and not frame.covers(poly): errors.append(f"{prefix}_outside_frame:{identifier}")
+    if schema=="architectural-topology-golden/2.0":
+        site=golden.get("site_boundary") or {};validate_polygon_record(site,"SITE","site_boundary")
+        for row in golden.get("site_spaces") or []:validate_polygon_record(row,row.get("golden_site_space_id"),"site_space")
+        for stair in golden.get("stair_assemblies") or []:
+            sid=stair.get("golden_stair_id")
+            if not sid:errors.append("stair_id_missing")
+            validate_polygon_record(stair,sid,"stair_core")
+            for index,landing in enumerate(stair.get("landings") or []):validate_polygon_record(landing,f"{sid}:{index}","landing")
+            for index,line in enumerate(stair.get("tread_riser_lines") or []):
+                geometry=line.get("geometry") or []
+                if len(geometry)!=2 or geometry[0]==geometry[1]:errors.append(f"tread_line_invalid:{sid}:{index}")
+        for kind,key in (("elevators","golden_elevator_id"),("shafts","golden_shaft_id")):
+            for row in golden.get(kind) or []:validate_polygon_record(row,row.get(key),kind[:-1])
+        for row in golden.get("semantic_labels") or []:
+            if not row.get("label_id"):errors.append("semantic_label_id_missing")
+            point=row.get("point")
+            if not point or (frame is not None and not frame.covers(Point(point))):errors.append(f"semantic_label_point_invalid:{row.get('label_id')}")
     known=set(ids)|{"EXTERIOR","UNKNOWN"}; portal_ids=set()
     for portal in golden["portals"]:
         identifier=portal.get("golden_portal_id")
@@ -70,7 +98,8 @@ def validate(golden,source_bytes=None):
     if state in {"DRAFT","REVIEWED"}: warnings.append("official_scoring_disabled_until_approved")
     if state=="APPROVED" and not golden["spaces"]: errors.append("approved_golden_requires_spaces")
     return {"status":"PASS" if not errors else "FAIL","review_status":state,"official_scoring_enabled":state=="APPROVED" and not errors,
-            "errors":errors,"warnings":warnings,"counts":{"spaces":len(golden["spaces"]),"zones":len(golden["functional_zones"]),"portals":len(golden["portals"])}}
+            "errors":errors,"warnings":warnings,"counts":{"spaces":len(golden["spaces"]),"zones":len(golden["functional_zones"]),"portals":len(golden["portals"]),
+            "site_spaces":len(golden.get("site_spaces") or []),"stairs":len(golden.get("stair_assemblies") or [])}}
 
 
 def main():

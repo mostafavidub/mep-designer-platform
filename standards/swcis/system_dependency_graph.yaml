@@ -82,6 +82,7 @@
         "cad_engine/project_hvac.py",
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
+        "cad_engine/architecture_spatial_authority.py",
         "cad_engine/architectural_source_roles.py",
         "cad_engine/architecture_boundary_evidence.py",
         "cad_engine/architecture_enclosure_candidates.py",
@@ -119,6 +120,7 @@
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
         "cad_engine/architecture_text_evidence.py"
+        ,"tools/architectural_golden_annotation_package.py"
       ],
       "depends_on": [
         "planner"

@@ -1902,11 +1902,21 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "all_inserts": extracted["objects"], "all_texts": legacy_text_records(text_evidence),
              "quality": {"room_count": len(rooms), "rooms_with_polygon": len(rooms), "wall_segments": len(extracted["boundary_lines"]),
                          "canonical_space_count": len(spaces), "status": completeness["status"]}}
+    from .architecture_spatial_authority import qualify_spatial_understanding
+    qualify_spatial_understanding(model, extracted, tolerance)
     model["recognition_preview_svg"] = recognition_svg(model)
     return model
 
 
-def require_complete_architecture(model):
+def require_complete_architecture(model, consumer=None):
+    if consumer:
+        from .architecture_spatial_authority import require_architecture_authorities
+        capability = require_architecture_authorities(model, consumer)
+        if capability.get("allowed") is not True:
+            return {"status": "INPUT_REQUIRED", "allowed": False,
+                    "consumer": consumer,
+                    "issues": [{"code": "ARCHITECTURE_AUTHORITY_REQUIRED", "status": "INPUT_REQUIRED",
+                                "missing_authorities": capability.get("missing_authorities") or []}]}
     completeness = (model or {}).get("completeness") or {}
     if completeness.get("downstream_engineering_allowed") is not True:
         return {"status": "INPUT_REQUIRED", "allowed": False, "issues": completeness.get("issues") or [

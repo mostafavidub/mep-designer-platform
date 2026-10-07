@@ -51,6 +51,8 @@ def model(release=True):
                        "downstream_engineering_allowed": release, "release_allowed": release}}
     from tests.architecture_separator_fixtures import declare_structured_separators
     declare_structured_separators(row)
+    from tests.architecture_spatial_fixtures import declare_verified_spatial_authority
+    declare_verified_spatial_authority(row)
     return rehash(row)
 
 

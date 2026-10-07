@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.2.0",
+  "standard_version": "5.3.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-10-05",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.3.0",
+      "date": "2026-10-07",
+      "summary": "Add Canonical Architecture 3.2 source-backed spatial authority, site/void and stair/core evidence, distinct enclosure/access topology and per-consumer engineering prerequisite gates."
+    },
     {
       "version": "5.2.0",
       "date": "2026-10-05",
