@@ -145,6 +145,8 @@ def test_review_authority_fingerprint_ignores_advisory_presentation_but_not_evid
 
 def test_snapshot_id_excludes_creation_time():
     model = adapt_current_architecture(legacy())
+    from tests.architecture_spatial_fixtures import declare_verified_spatial_authority
+    declare_verified_spatial_authority(model)
     model["release"] = {"status": "VERIFIED", "downstream_engineering_allowed": True, "release_allowed": True}
     assign_canonical_model_hash(model)
     report = validate_architecture(model)
