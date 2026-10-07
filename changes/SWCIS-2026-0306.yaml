@@ -1,0 +1,27 @@
+{
+  "change_id": "SWCIS-2026-0306",
+  "summary": "Add a production-image Local Staging contract with isolated PostgreSQL 18, health gates, safety tests, and reversible online-Staging recovery guidance.",
+  "requester": "project-owner",
+  "change_types": ["deployment", "documentation", "test", "governance"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["qa", "manifest", "ui_api", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "qa": "Adds static contract tests for canonical image reuse, database isolation, local-only networking, and health ordering.",
+    "manifest": "Build and runtime identity continue to come from the canonical Git-derived manifest inside the production image.",
+    "ui_api": "Representative public and API routes run through the unchanged canonical FastAPI application on loopback.",
+    "docs": "Documents exact Local Staging lifecycle, limitations, safety, and reversible Railway recovery.",
+    "versioning": "SWCIS 5.2.0 and Git build identity remain unchanged.",
+    "migration": "Uses the existing SQLAlchemy deployment initialization contract against an isolated PostgreSQL 18 database; no schema change.",
+    "governance": "Removes no CI or engineering gate and makes online Staging exceptional rather than an implicit release gate.",
+    "deployment": "Adds an opt-in local Compose topology; canonical production Dockerfile and no-argument startup remain unchanged."
+  },
+  "evidence": {
+    "tests": ["python3 -m pytest -q tests/test_local_staging_environment.py", "docker compose -f docker-compose.local-staging.yml up --build -d --wait", "curl --fail http://127.0.0.1:8080/system_health"],
+    "docs": ["docs/LOCAL_STAGING.md", "README.md"],
+    "version_bump": ["not required; no SWCIS policy, graph, traceability, gate, migration contract, or golden inventory change"],
+    "deployment_plan": ["Validate the production Dockerfile with isolated PostgreSQL 18 on loopback; do not deploy this branch to Railway or Production."],
+    "rollback_plan": ["Run docker compose -f docker-compose.local-staging.yml down --volumes and revert this commit; online resources are preserved for restoration."]
+  },
+  "risk": {"likelihood": 1, "severity": 3, "detectability": 1, "score": 3, "rationale": "The topology is opt-in, loopback-only, uses local named volumes, and cannot inherit an exported cloud database URL."},
+  "waiver": null
+}
