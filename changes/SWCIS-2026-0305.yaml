@@ -1,0 +1,134 @@
+{
+  "change_id": "SWCIS-2026-0305",
+  "summary": "Qualify every residential hard-rule candidate with explicit authority, enforcement, applicability, source-gap, owner-decision and QA metadata while retaining fail-closed release authority.",
+  "requester": "project-owner",
+  "change_types": [
+    "rule",
+    "schema",
+    "test",
+    "documentation",
+    "governance"
+  ],
+  "changed_rule_ids": [
+    "ARCH-RES-LIVING-001",
+    "ARCH-RES-LIVING-002",
+    "ARCH-RES-BEDROOM-001",
+    "ARCH-RES-LIVING-003",
+    "ARCH-RES-CIRCULATION-001",
+    "ARCH-RES-STAIRS-001",
+    "ARCH-RES-STAIRS-002",
+    "ARCH-RES-STAIRS-003",
+    "ARCH-RES-KITCHEN-001",
+    "ARCH-RES-KITCHEN-002",
+    "ARCH-RES-KITCHEN-003",
+    "ARCH-RES-KITCHEN-004",
+    "ARCH-RES-DAYLIGHT-001",
+    "ARCH-RES-VENTILATION-001",
+    "ARCH-RES-WC-001",
+    "ARCH-RES-BATHROOM-001",
+    "ARCH-RES-BATHROOM-002",
+    "ARCH-RES-ACCESSIBILITY-001",
+    "ARCH-RES-PRIVACY-001",
+    "ARCH-RES-PRIVACY-002",
+    "ARCH-RES-PRIVACY-003",
+    "ARCH-RES-BALCONY-001",
+    "ARCH-RES-DAYLIGHT-002",
+    "ARCH-RES-DAYLIGHT-003",
+    "ARCH-RES-DAYLIGHT-004",
+    "ARCH-RES-DAYLIGHT-005",
+    "ARCH-RES-DOOR-001",
+    "ARCH-RES-EGRESS-001",
+    "ARCH-RES-KITCHEN-005",
+    "ARCH-RES-VENTILATION-002",
+    "ARCH-RES-DAYLIGHT-006",
+    "ARCH-RES-DAYLIGHT-007"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "rule_book": "changed: additive qualification metadata; all unresolved authority remains disabled",
+    "questionnaire": "changed: explicit KEEP/DELAY disposition without hidden defaults",
+    "qa": "added: qualification and source-gap guards; no generator claim",
+    "docs": "added: rulebook and qualification report",
+    "governance": "changed: SWCIS traceability and version evidence",
+    "versioning": "changed: backward-compatible rulebook schema addition",
+    "migration": "verified: offline foundation data must be revalidated before runtime activation",
+    "cad_designer": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "deployment": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "detail_riser": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "equipment": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "manifest": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "manufacturer_selector": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "planner": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "pmm": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "routing": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "sizing": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "ui_api": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed"
+  },
+  "evidence": {
+    "traceability": [
+      "standards/swcis/rule_traceability_matrix.yaml"
+    ],
+    "tests": [
+      "tests/test_architecture_rulebook_qualification.py",
+      "tests/test_residential_foundation.py"
+    ],
+    "docs": [
+      "docs/residential/RULEBOOK.md",
+      "docs/residential/RULEBOOK_QUALIFICATION.md"
+    ],
+    "version_bump": [
+      "standards/swcis/version_manifest.yaml"
+    ],
+    "migration": [
+      "standards/swcis/migrations/residential-rulebook-qualification.json"
+    ],
+    "golden_regression": [
+      "data/rulebook/architecture/golden-matrix.json"
+    ],
+    "semantic_diff": [
+      "docs/residential/RULEBOOK_QUALIFICATION.md"
+    ],
+    "artifact_diff": [
+      "docs/residential/RULEBOOK_QUALIFICATION.md"
+    ],
+    "numeric_diff": [
+      "No new numeric requirement; extracted candidate values remain release-disabled"
+    ],
+    "contract_diff": [
+      "Backward-compatible qualification fields and registries"
+    ],
+    "deployment_plan": [
+      "No deployment; stacked draft PR only"
+    ],
+    "rollback_plan": [
+      "Revert the qualification commit; parent foundation remains unchanged"
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Incorrect legal authority is high severity; all candidate rules remain fail-closed until primary-source currency and conflicts are qualified."
+  },
+  "waiver": null
+}

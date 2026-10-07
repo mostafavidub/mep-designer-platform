@@ -1,0 +1,35 @@
+{
+  "schema_version": "architecture-rulebook-qualification/1.0",
+  "version": "0.1.0",
+  "status": "ARCHITECTURE_RULEBOOK_BLOCKED",
+  "generator_readiness": "NOT_READY",
+  "metrics": {
+    "candidate_count": 32,
+    "audited_count": 32,
+    "release_ready_count": 0,
+    "mandatory_national_count": 32,
+    "mandatory_local_count": 0,
+    "recommended_count": 0,
+    "empirical_pattern_count": 0,
+    "owner_decision_count": 0,
+    "rejected_count": 0,
+    "blocking_reason": "Current official edition/amendment status and cross-authority applicability are not fully qualified.",
+    "source_gap_register_count": 24,
+    "owner_question_count": 58,
+    "qa_case_count": 136,
+    "golden_available": 0,
+    "golden_required": 8
+  },
+  "critical_findings": [
+    "No current official edition/amendment register establishes release authority for IR-M4 candidate clauses.",
+    "Fire/egress and accessibility conflict/applicability sources are incomplete.",
+    "Parcel/city rules are absent and cannot be generalized nationally."
+  ],
+  "root_causes": [
+    "source currency not established",
+    "applicability model previously prose-only",
+    "mandatory and release authority previously coupled",
+    "source gaps represented as placeholder rules"
+  ],
+  "release_decision": "No candidate may execute as a release hard block until its source gap is closed and its QA cases are implemented."
+}

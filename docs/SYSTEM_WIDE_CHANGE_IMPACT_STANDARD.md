@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.3.0
+**Canonical version:** 5.4.0
 
 **Status:** LOCKED
 
@@ -244,3 +244,8 @@ unlisted requests. The current CR must independently declare and validate the
 entire cumulative change-type and dependency closure. Historical PASS statements
 never replace current tests or official CI. Ordinary changes still require one CR.
 No waiver, filter bypass, history deletion or partial closure is permitted.
+
+
+## Architecture rulebook qualification gate
+
+Every architectural hard-rule candidate must keep legal classification, enforcement, applicability, evidence strength and release status as separate fields. A candidate extracted from a primary regulation copy remains release-disabled when the current edition, amendments, exceptions, jurisdiction or cross-authority conflicts are unresolved. Local requirements require a parcel/date/jurisdiction package and never become national defaults. Empirical patterns cannot block. Owner decisions have no hidden defaults. Generator readiness requires independently qualified release rules and Human Golden evidence; planned scenarios or source-gap guards do not substitute for those gates.

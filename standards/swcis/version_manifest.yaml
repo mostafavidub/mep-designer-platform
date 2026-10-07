@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.3.0",
+  "standard_version": "5.4.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-10-05",
+  "effective_date": "2026-10-07",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.4.0",
+      "date": "2026-10-07",
+      "summary": "Qualify every residential hard-rule candidate with separate authority, enforcement, applicability, source-gap, owner-decision and QA metadata while retaining fail-closed generator readiness."
+    },
     {
       "version": "5.3.0",
       "date": "2026-10-06",

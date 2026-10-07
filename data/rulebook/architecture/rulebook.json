@@ -1,8 +1,8 @@
 {
-  "schema_version": "architecture-rulebook/1.0",
-  "version": "0.1.0",
+  "schema_version": "architecture-rulebook/1.1",
+  "version": "0.3.0",
   "scope": "RESIDENTIAL_TYPICAL_FLOOR_PLAN_ONLY",
-  "status": "ARCHITECTURE_FOUNDATION_PARTIAL",
+  "status": "ARCHITECTURE_RULEBOOK_BLOCKED",
   "authority_order": [
     "IR_NATIONAL_BUILDING_REGULATIONS",
     "IR_MANDATORY_LAW_STANDARD",
@@ -100,7 +100,103 @@
       "failure_message_fa": "اندازهٔ حداقل یک فضای اقامت اصلی تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Habitable-space minimum",
+      "sub_category": "LIVING",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential unit area >=75m2"
+      ],
+      "inputs_required": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential unit area >=75m2",
+      "rule_logic": {
+        "all": [
+          {
+            "field": "largest_habitable_area_m2",
+            "op": ">=",
+            "value": 12,
+            "unit": "m2"
+          },
+          {
+            "field": "largest_habitable_width_m",
+            "op": ">=",
+            "value": 2.7,
+            "unit": "m"
+          }
+        ]
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 12,
+          "unit": "m2"
+        },
+        {
+          "operator": ">=",
+          "value": 2.7,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m",
+        "m2"
+      ],
+      "minimum_value": [
+        12,
+        2.7
+      ],
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-8",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل یک فضای اقامت با مساحت ۱۲ مترمربع و عرض ۲٫۷۰ متر لازم است.",
+      "evidence_strength": "B",
+      "warning_message_fa": "اندازهٔ حداقل یک فضای اقامت اصلی تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-LIVING-002",
@@ -147,7 +243,103 @@
       "failure_message_fa": "فضای اقامت واحد کوچک تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Habitable-space minimum",
+      "sub_category": "LIVING",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential unit area <75m2"
+      ],
+      "inputs_required": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential unit area <75m2",
+      "rule_logic": {
+        "all": [
+          {
+            "field": "largest_habitable_area_m2",
+            "op": ">=",
+            "value": 9,
+            "unit": "m2"
+          },
+          {
+            "field": "largest_habitable_width_m",
+            "op": ">=",
+            "value": 2.5,
+            "unit": "m"
+          }
+        ]
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 9,
+          "unit": "m2"
+        },
+        {
+          "operator": ">=",
+          "value": 2.5,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m",
+        "m2"
+      ],
+      "minimum_value": [
+        9,
+        2.5
+      ],
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-8",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل یک اتاق ۹ مترمربع و هیچ‌یک از ابعاد افقی آن کمتر از ۲٫۵ متر نباشد.",
+      "evidence_strength": "B",
+      "warning_message_fa": "فضای اقامت واحد کوچک تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-BEDROOM-001",
@@ -183,7 +375,82 @@
       "failure_message_fa": "عرض سایر اتاق‌های اقامت مسکونی تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Other habitable-room width",
+      "sub_category": "BEDROOM",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Other habitable rooms in residential units; use-specific dimensions also apply"
+      ],
+      "inputs_required": [
+        "room_width_m",
+        "room_use"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Other habitable rooms in residential units; use-specific dimensions also apply",
+      "rule_logic": {
+        "field": "room_width_m",
+        "op": ">=",
+        "value": 2.4,
+        "unit": "m"
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 2.4,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m"
+      ],
+      "minimum_value": 2.4,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "room_width_m",
+        "room_use"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-8",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل عرض سایر فضاهای اقامت ۲٫۴۰ متر است؛ مساحت طبق نوع استفاده کنترل شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "عرض سایر اتاق‌های اقامت مسکونی تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-LIVING-003",
@@ -218,7 +485,80 @@
       "failure_message_fa": "مساحت عمومی اتاق اقامت تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Habitable-space minimum",
+      "sub_category": "LIVING",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Habitable room unless specific occupancy provisions supersede"
+      ],
+      "inputs_required": [
+        "room_area_m2"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Habitable room unless specific occupancy provisions supersede",
+      "rule_logic": {
+        "field": "room_area_m2",
+        "op": ">=",
+        "value": 6.5,
+        "unit": "m2"
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 6.5,
+          "unit": "m2"
+        }
+      ],
+      "units": [
+        "m2"
+      ],
+      "minimum_value": 6.5,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "room_area_m2"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-2-2-1",
+      "source_page": {
+        "printed": 52,
+        "pdf": 66
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل مساحت ۶٫۵ مترمربع؛ حکم اختصاصی تصرف مقدم است.",
+      "evidence_strength": "B",
+      "warning_message_fa": "مساحت عمومی اتاق اقامت تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-CIRCULATION-001",
@@ -253,7 +593,80 @@
       "failure_message_fa": "عرض راهروی داخلی واحد تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Internal dwelling corridor width",
+      "sub_category": "CIRCULATION",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential internal corridor or straight internal stair"
+      ],
+      "inputs_required": [
+        "corridor_width_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential internal corridor or straight internal stair",
+      "rule_logic": {
+        "field": "corridor_width_m",
+        "op": ">=",
+        "value": 0.9,
+        "unit": "m"
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 0.9,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m"
+      ],
+      "minimum_value": 0.9,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "corridor_width_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-6",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "پهنای الزامی حداقل ۰٫۹۰ متر؛ الزامات خروج و دسترس‌پذیری جداگانه کنترل شوند.",
+      "evidence_strength": "B",
+      "warning_message_fa": "عرض راهروی داخلی واحد تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-STAIRS-001",
@@ -285,7 +698,71 @@
       "failure_message_fa": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳ تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential stair geometry",
+      "sub_category": "STAIRS",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential building group 1,2,3 established by authority"
+      ],
+      "inputs_required": [
+        "building_group",
+        "stair_type",
+        "stair_clear_width_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential building group 1,2,3 established by authority",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "building_group",
+        "stair_type",
+        "stair_clear_width_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-3",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "عرض مفید پله مستقیم حداقل ۰٫۹۰ و پله دارای گردش یا پاگرد حداقل ۱٫۱۰ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳ تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-STAIRS-002",
@@ -318,7 +795,73 @@
       "failure_message_fa": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷ تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential stair geometry",
+      "sub_category": "STAIRS",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential building group 4,5,6,7 established by authority"
+      ],
+      "inputs_required": [
+        "building_group",
+        "stair_type",
+        "stair_clear_width_m",
+        "stair_enclosure_width_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential building group 4,5,6,7 established by authority",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "building_group",
+        "stair_type",
+        "stair_clear_width_m",
+        "stair_enclosure_width_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-4",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "عرض مفید پله مستقیم حداقل ۱٫۱۰ و عرض قفسهٔ پلکان دارای پاگرد حداقل ۲٫۴۰ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷ تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-STAIRS-003",
@@ -350,7 +893,71 @@
       "failure_message_fa": "پلهٔ ساختمان مسکونی گروه ۸ تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential stair geometry",
+      "sub_category": "STAIRS",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential building group 8"
+      ],
+      "inputs_required": [
+        "building_group",
+        "occupant_load",
+        "m3_egress_result"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential building group 8",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "building_group",
+        "occupant_load",
+        "m3_egress_result"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-5",
+      "source_page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "ابعاد با جمعیت متصرف و الزامات راه خروج مبحث سوم تعیین شود؛ عدد ثابت جایگزین نشود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۸ تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-001",
@@ -396,7 +1003,100 @@
       "failure_message_fa": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential kitchen requirement",
+      "sub_category": "KITCHEN",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Independent or open residential kitchen used only for cooking"
+      ],
+      "inputs_required": [
+        "kitchen_area_m2",
+        "kitchen_free_area_m2"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Independent or open residential kitchen used only for cooking",
+      "rule_logic": {
+        "all": [
+          {
+            "field": "kitchen_area_m2",
+            "op": ">=",
+            "value": 5.5,
+            "unit": "m2"
+          },
+          {
+            "field": "kitchen_free_area_m2",
+            "op": ">=",
+            "value": 2.75,
+            "unit": "m2"
+          }
+        ]
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 5.5,
+          "unit": "m2"
+        },
+        {
+          "operator": ">=",
+          "value": 2.75,
+          "unit": "m2"
+        }
+      ],
+      "units": [
+        "m2"
+      ],
+      "minimum_value": [
+        5.5,
+        2.75
+      ],
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "kitchen_area_m2",
+        "kitchen_free_area_m2"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-10",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "مساحت حداقل ۵٫۵۰ مترمربع؛ سطح آزاد خارج از قفسه‌بندی حداقل ۲٫۷۵ مترمربع.",
+      "evidence_strength": "B",
+      "warning_message_fa": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-002",
@@ -431,7 +1131,80 @@
       "failure_message_fa": "آشپزخانه همراه محل صرف غذا تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential kitchen requirement",
+      "sub_category": "KITCHEN",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential independent/open kitchen for cooking and eating"
+      ],
+      "inputs_required": [
+        "kitchen_area_m2"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential independent/open kitchen for cooking and eating",
+      "rule_logic": {
+        "field": "kitchen_area_m2",
+        "op": ">=",
+        "value": 7.5,
+        "unit": "m2"
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 7.5,
+          "unit": "m2"
+        }
+      ],
+      "units": [
+        "m2"
+      ],
+      "minimum_value": 7.5,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "kitchen_area_m2"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-11",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل مساحت ۷٫۵۰ مترمربع.",
+      "evidence_strength": "B",
+      "warning_message_fa": "آشپزخانه همراه محل صرف غذا تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-003",
@@ -462,7 +1235,69 @@
       "failure_message_fa": "عرض آشپزخانه تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential kitchen requirement",
+      "sub_category": "KITCHEN",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Independent/open residential kitchen"
+      ],
+      "inputs_required": [
+        "kitchen_use",
+        "kitchen_width_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Independent/open residential kitchen",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "kitchen_use",
+        "kitchen_width_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-12",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل عرض ۱٫۸۰ متر؛ برای پخت‌وپز همراه صرف غذا ۲٫۱۵ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "عرض آشپزخانه تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-004",
@@ -508,7 +1343,100 @@
       "failure_message_fa": "فضای کار آشپزخانه دیواری تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential kitchen requirement",
+      "sub_category": "KITCHEN",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Wall kitchen in residential unit"
+      ],
+      "inputs_required": [
+        "work_aisle_width_m",
+        "wall_kitchen_length_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Wall kitchen in residential unit",
+      "rule_logic": {
+        "all": [
+          {
+            "field": "work_aisle_width_m",
+            "op": ">=",
+            "value": 1.1,
+            "unit": "m"
+          },
+          {
+            "field": "wall_kitchen_length_m",
+            "op": ">=",
+            "value": 3,
+            "unit": "m"
+          }
+        ]
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 1.1,
+          "unit": "m"
+        },
+        {
+          "operator": ">=",
+          "value": 3,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m"
+      ],
+      "minimum_value": [
+        1.1,
+        3
+      ],
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "work_aisle_width_m",
+        "wall_kitchen_length_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-13",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "فضای کار آزاد در تمام طول از لبه قفسه‌ها حداقل ۱٫۱۰ متر و طول آشپزخانه حداقل ۳ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "فضای کار آشپزخانه دیواری تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-001",
@@ -542,7 +1470,75 @@
       "failure_message_fa": "نور و هوای آشپزخانه مستقل تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Independent residential kitchen"
+      ],
+      "inputs_required": [
+        "unit_area_m2",
+        "kitchen_type",
+        "distance_to_adjacent_window_m",
+        "natural_light",
+        "natural_ventilation"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Independent residential kitchen",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "unit_area_m2",
+        "kitchen_type",
+        "distance_to_adjacent_window_m",
+        "natural_light",
+        "natural_ventilation"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-14",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "نور و تهویه طبیعی مستقل؛ در واحد زیر ۷۵ مترمربع اگر دورترین نقطه آشپزخانه از پنجره فضای مجاور کمتر از ۷ متر باشد استثنا بررسی شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "نور و هوای آشپزخانه مستقل تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-VENTILATION-001",
@@ -579,7 +1575,87 @@
       "failure_message_fa": "بازشوی تهویه آشپزخانه تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential ventilation requirement",
+      "sub_category": "VENTILATION",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Kitchen serving habitable rooms"
+      ],
+      "inputs_required": [
+        "kitchen_area_m2",
+        "vent_opening_area_m2"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Kitchen serving habitable rooms",
+      "rule_logic": {
+        "field": "vent_opening_area_m2",
+        "op": ">=",
+        "rhs_field": "kitchen_area_m2",
+        "factor": 0.0625,
+        "unit": "m2"
+      },
+      "formula_if_any": {
+        "field": "vent_opening_area_m2",
+        "op": ">=",
+        "rhs_field": "kitchen_area_m2",
+        "factor": 0.0625,
+        "unit": "m2"
+      },
+      "parameters": [
+        {
+          "operator": "factor",
+          "value": 0.0625,
+          "unit": null
+        }
+      ],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "kitchen_area_m2",
+        "vent_opening_area_m2"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-15",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل سطح بازشوی تهویه یک شانزدهم مساحت کف آشپزخانه.",
+      "evidence_strength": "B",
+      "warning_message_fa": "بازشوی تهویه آشپزخانه تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-WC-001",
@@ -612,7 +1688,73 @@
       "failure_message_fa": "پیش‌بینی توالت فرنگی برای واحد بزرگ تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential water-closet provision",
+      "sub_category": "WC",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential unit area >=75m2"
+      ],
+      "inputs_required": [
+        "unit_area_m2",
+        "wc_reservation",
+        "water_port",
+        "waste_port"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential unit area >=75m2",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "unit_area_m2",
+        "wc_reservation",
+        "water_port",
+        "waste_port"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-17",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "فضا و تأسیسات آب و فاضلاب لازم برای نصب حداقل یک توالت فرنگی فراهم شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "پیش‌بینی توالت فرنگی برای واحد بزرگ تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-BATHROOM-001",
@@ -645,7 +1787,73 @@
       "failure_message_fa": "ابعاد فضای بهداشتی مسکونی معمول تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential sanitary-space geometry",
+      "sub_category": "BATHROOM",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Separate residential sanitary space without mandatory accessible designation"
+      ],
+      "inputs_required": [
+        "accessible_required",
+        "sanitary_width_m",
+        "sanitary_length_m",
+        "shower_dressing_inside"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Separate residential sanitary space without mandatory accessible designation",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "accessible_required",
+        "sanitary_width_m",
+        "sanitary_length_m",
+        "shower_dressing_inside"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-18",
+      "source_page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل عرض ۱ متر و طول ۱٫۲۰ متر؛ برای دوش مستقل با رختکن داخل فضا حداقل یکی از ابعاد ۱٫۵۰ متر. ادامه و استثنای سرویس ترکیبی در صفحه بعد بررسی شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "ابعاد فضای بهداشتی مسکونی معمول تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-BATHROOM-002",
@@ -677,7 +1885,71 @@
       "failure_message_fa": "ارتفاع فضای بهداشتی مسکونی تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential sanitary-space geometry",
+      "sub_category": "BATHROOM",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential sanitary space"
+      ],
+      "inputs_required": [
+        "clear_height_m",
+        "height_coverage_fraction",
+        "sloped_roof_min_height_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential sanitary space",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "clear_height_m",
+        "height_coverage_fraction",
+        "sloped_roof_min_height_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-19",
+      "source_page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "ارتفاع حداقل ۲٫۲۰ متر در ۸۰ درصد سطح الزامی؛ زیر سقف شیب‌دار کوتاه‌ترین قسمت حداقل ۲٫۰۵ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "ارتفاع فضای بهداشتی مسکونی تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-ACCESSIBILITY-001",
@@ -708,7 +1980,69 @@
       "failure_message_fa": "فضای بهداشتی قابل استفاده معلول تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Accessible sanitary-space requirement",
+      "sub_category": "ACCESSIBILITY",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Accessible sanitary space required under applicable classification"
+      ],
+      "inputs_required": [
+        "accessible_required",
+        "sanitary_dimensions_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Accessible sanitary space required under applicable classification",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "accessible_required",
+        "sanitary_dimensions_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-6-2-2",
+      "source_page": {
+        "printed": 61,
+        "pdf": 75
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "اندازه حداقل ۱٫۵۰ در ۱٫۷۰ متر؛ مسیر و گردش و تجهیزات طبق ضوابط دسترس‌پذیری نیز کنترل شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "فضای بهداشتی قابل استفاده معلول تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-001",
@@ -742,7 +2076,75 @@
       "failure_message_fa": "دسترسی مستقل اتاق‌ها تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential privacy requirement",
+      "sub_category": "PRIVACY",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential habitable rooms; apply listed exceptions a-1,a-2,a-3"
+      ],
+      "inputs_required": [
+        "access_graph",
+        "unit_area_m2",
+        "habitable_count",
+        "entry_buffer",
+        "sightlines"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential habitable rooms; apply listed exceptions a-1,a-2,a-3",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "access_graph",
+        "unit_area_m2",
+        "habitable_count",
+        "entry_buffer",
+        "sightlines"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-2.a",
+      "source_page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "دسترسی اتاق اقامت مستقیماً از اتاق دیگر یا نشیمن عمومی نباشد مگر استثناهای صریح همین بند؛ دید مستقیم از نشیمن عمومی به خواب در هر حال مجاز نیست.",
+      "evidence_strength": "B",
+      "warning_message_fa": "دسترسی مستقل اتاق‌ها تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-002",
@@ -774,7 +2176,71 @@
       "failure_message_fa": "دید به سرویس بهداشتی تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential privacy requirement",
+      "sub_category": "PRIVACY",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Combined sanitary facility visible from living/hall"
+      ],
+      "inputs_required": [
+        "sanitary_sightlines",
+        "ante_room",
+        "fixture_access"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Combined sanitary facility visible from living/hall",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "sanitary_sightlines",
+        "ante_room",
+        "fixture_access"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-2.p",
+      "source_page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "دید به داخل سرویس ممنوع؛ پیش‌ورودی دارای روشویی فقط با حفظ حرکت و دسترسی به سایر تجهیزات مجاز است.",
+      "evidence_strength": "B",
+      "warning_message_fa": "دید به سرویس بهداشتی تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-003",
@@ -806,7 +2272,71 @@
       "failure_message_fa": "دید به محل کار آشپزخانه تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential privacy requirement",
+      "sub_category": "PRIVACY",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Residential unit area >=75m2, wall/open kitchen"
+      ],
+      "inputs_required": [
+        "unit_area_m2",
+        "kitchen_type",
+        "living_kitchen_sightlines"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Residential unit area >=75m2, wall/open kitchen",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "unit_area_m2",
+        "kitchen_type",
+        "living_kitchen_sightlines"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-2.th",
+      "source_page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "از نشیمن عمومی یا سالن دید مستقیم به قسمت‌های اصلی پخت‌وپز و کار آشپزخانه نباشد.",
+      "evidence_strength": "B",
+      "warning_message_fa": "دید به محل کار آشپزخانه تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-BALCONY-001",
@@ -838,7 +2368,71 @@
       "failure_message_fa": "فضای نیمه‌باز اختصاصی تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Private semi-open space",
+      "sub_category": "BALCONY",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Apartment/unit without direct adjacency and access to open space"
+      ],
+      "inputs_required": [
+        "direct_open_space_access",
+        "private_semiopen_space",
+        "m4_5_7_result"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Apartment/unit without direct adjacency and access to open space",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "direct_open_space_access",
+        "private_semiopen_space",
+        "m4_5_7_result"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-22",
+      "source_page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل یک فضای نیمه‌باز اختصاصی مطابق ۴-۵-۷ لازم است؛ اندازه بدون منبع فرض نشود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "فضای نیمه‌باز اختصاصی تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-002",
@@ -872,7 +2466,75 @@
       "failure_message_fa": "سطح شیشه اتاق اقامت تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Habitable room; chapter4-6 and window-head exception3 apply"
+      ],
+      "inputs_required": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "single_window_wall",
+        "room_depth_m",
+        "window_head_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Habitable room; chapter4-6 and window-head exception3 apply",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "single_window_wall",
+        "room_depth_m",
+        "window_head_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-2-3-2",
+      "source_page": {
+        "printed": 53,
+        "pdf": 67
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداقل نسبت شیشه به کف ۱/۸؛ اگر پنجره‌ها تنها در یک دیوار و عمق بیش از ۴٫۵۰ متر باشد ۱/۷.",
+      "evidence_strength": "B",
+      "warning_message_fa": "سطح شیشه اتاق اقامت تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-003",
@@ -906,7 +2568,75 @@
       "failure_message_fa": "پنجره با لبه بالایی کوتاه تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Window head below2.10m excluding sloped-roof light"
+      ],
+      "inputs_required": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "window_head_m",
+        "single_window_wall",
+        "room_depth_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Window head below2.10m excluding sloped-roof light",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "window_head_m",
+        "single_window_wall",
+        "room_depth_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-2-3-3",
+      "source_page": {
+        "printed": 53,
+        "pdf": 67
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "نسبت شیشه شفاف به کف حداقل ۱/۶؛ برای پنجره‌های یک‌طرفه و عمق بیش از۴٫۵۰ متر حداقل۱/۵.",
+      "evidence_strength": "B",
+      "warning_message_fa": "پنجره با لبه بالایی کوتاه تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-004",
@@ -941,7 +2671,80 @@
       "failure_message_fa": "عمق قابل قبول نورگیری تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Habitable room served by a window"
+      ],
+      "inputs_required": [
+        "daylight_depth_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Habitable room served by a window",
+      "rule_logic": {
+        "field": "daylight_depth_m",
+        "op": "<=",
+        "value": 7,
+        "unit": "m"
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": "<=",
+          "value": 7,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m"
+      ],
+      "minimum_value": null,
+      "maximum_value": 7,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "daylight_depth_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-2-8-3",
+      "source_page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "حداکثر عمق قابل قبول نورگیری از یک پنجره ۷ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "عمق قابل قبول نورگیری تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-005",
@@ -972,7 +2775,69 @@
       "failure_message_fa": "نورگیری زیر ایوان تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Window below balcony/terrace projection"
+      ],
+      "inputs_required": [
+        "balcony_outer_edge",
+        "room_daylight_geometry"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Window below balcony/terrace projection",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "balcony_outer_edge",
+        "room_daylight_geometry"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-2-8-4",
+      "source_page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "عمق نورگیری از لبه خارجی ایوان محسوب شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "نورگیری زیر ایوان تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DOOR-001",
@@ -1018,7 +2883,100 @@
       "failure_message_fa": "در ورودی اتاق اقامت تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Habitable-room entrance door",
+      "sub_category": "DOOR",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Habitable room entry; specific accessible/egress provisions also apply"
+      ],
+      "inputs_required": [
+        "door_clear_width_m",
+        "door_clear_height_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Habitable room entry; specific accessible/egress provisions also apply",
+      "rule_logic": {
+        "all": [
+          {
+            "field": "door_clear_width_m",
+            "op": ">=",
+            "value": 0.8,
+            "unit": "m"
+          },
+          {
+            "field": "door_clear_height_m",
+            "op": ">=",
+            "value": 2.05,
+            "unit": "m"
+          }
+        ]
+      },
+      "formula_if_any": null,
+      "parameters": [
+        {
+          "operator": ">=",
+          "value": 0.8,
+          "unit": "m"
+        },
+        {
+          "operator": ">=",
+          "value": 2.05,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "m"
+      ],
+      "minimum_value": [
+        0.8,
+        2.05
+      ],
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "door_clear_width_m",
+        "door_clear_height_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-2-8-2",
+      "source_page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "پهنای مفید حداقل۰٫۸۰ متر و ارتفاع مفید۲٫۰۵ متر؛ لنگه فعال در دولنگه نیز حداقل۰٫۸۰ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "در ورودی اتاق اقامت تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": true,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-EGRESS-001",
@@ -1050,7 +3008,71 @@
       "failure_message_fa": "بازشدن در خروج از داخل تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Exit-door operation",
+      "sub_category": "EGRESS",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Doors on access/egress paths; explicit listed exceptions apply"
+      ],
+      "inputs_required": [
+        "door_hardware",
+        "egress_path",
+        "exception_authority"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Doors on access/egress paths; explicit listed exceptions apply",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "door_hardware",
+        "egress_path",
+        "exception_authority"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-1-5-4",
+      "source_page": {
+        "printed": 47,
+        "pdf": 61
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "بازکردن در از داخل ساده و فوری باشد؛ قفل یا مانع نباید خروج به‌موقع را مختل کند.",
+      "evidence_strength": "B",
+      "warning_message_fa": "بازشدن در خروج از داخل تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-005",
@@ -1082,7 +3104,71 @@
       "failure_message_fa": "ممنوعیت عبور الزامی از آشپزخانه تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential kitchen requirement",
+      "sub_category": "KITCHEN",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Access to workplace/habitable room"
+      ],
+      "inputs_required": [
+        "access_graph",
+        "habitable_count",
+        "independent_openings"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Access to workplace/habitable room",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "access_graph",
+        "habitable_count",
+        "independent_openings"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-5-1-2",
+      "source_page": {
+        "printed": 58,
+        "pdf": 72
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "دسترسی فضای اقامت از آشپزخانه نباشد؛ استثنای واحد دو فضایی فقط با ورودی فعال و نور و تهویه مستقل بررسی شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "ممنوعیت عبور الزامی از آشپزخانه تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-VENTILATION-002",
@@ -1114,7 +3200,71 @@
       "failure_message_fa": "هود به هوای آزاد تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential ventilation requirement",
+      "sub_category": "VENTILATION",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Kitchen ventilation requires over-cooktop extraction"
+      ],
+      "inputs_required": [
+        "extract_required",
+        "hood_port",
+        "independent_exhaust_route"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Kitchen ventilation requires over-cooktop extraction",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "extract_required",
+        "hood_port",
+        "independent_exhaust_route"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-5-5-3-3",
+      "source_page": {
+        "printed": 59,
+        "pdf": 73
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "هود با کانال مستقل مکش به خارج ساختمان مرتبط شود.",
+      "evidence_strength": "B",
+      "warning_message_fa": "هود به هوای آزاد تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-006",
@@ -1147,7 +3297,73 @@
       "failure_message_fa": "حیاط بین دو تصرف مسکونی تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Land area >200m2; main habitable rooms of two independent units use same internal court"
+      ],
+      "inputs_required": [
+        "land_area_m2",
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Land area >200m2; main habitable rooms of two independent units use same internal court",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "land_area_m2",
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-24",
+      "source_page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۶ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "حیاط بین دو تصرف مسکونی تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-RES-DAYLIGHT-007",
@@ -1179,7 +3395,71 @@
       "failure_message_fa": "حیاط مشترک آشپزخانه و اقامت تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
       "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
-      "release_enabled": false
+      "release_enabled": false,
+      "title_en": "Residential daylight requirement",
+      "sub_category": "DAYLIGHT",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_level": "BLOCK",
+      "jurisdiction": "IRAN_NATIONAL_BUILDING_REGULATIONS",
+      "applicable_country": "IR",
+      "applicable_city": null,
+      "building_use": [
+        "RESIDENTIAL"
+      ],
+      "building_type": [
+        "BUILDING"
+      ],
+      "project_conditions": [
+        "Independent units: kitchen/habitable or two kitchens use same internal court"
+      ],
+      "inputs_required": [
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "derived_inputs": [],
+      "applicability_expression": "Independent units: kitchen/habitable or two kitchens use same internal court",
+      "rule_logic": null,
+      "formula_if_any": null,
+      "parameters": [],
+      "units": [],
+      "minimum_value": null,
+      "maximum_value": null,
+      "target_value": null,
+      "allowed_values": null,
+      "exceptions": [],
+      "conflicts": [
+        "IR-M3",
+        "IR-ACCESS",
+        "IR-LOCAL"
+      ],
+      "dependencies": [
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "source_type": "PRIMARY_REGULATION_COPY",
+      "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
+      "source_authority": "وزارت راه و شهرسازی",
+      "source_edition": "1396",
+      "source_clause": "4-7-1-1-25",
+      "source_page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
+      "source_quote_or_precise_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۴ متر.",
+      "evidence_strength": "B",
+      "warning_message_fa": "حیاط مشترک آشپزخانه و اقامت تأمین یا تأیید نشده است.",
+      "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
+      "machine_checkable": false,
+      "human_review_required": true,
+      "release_status": "SOURCE_GAP",
+      "qualification_reason_codes": [
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "AMENDMENTS_UNVERIFIED",
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+      ]
     },
     {
       "rule_id": "ARCH-GAP-SITE-001",
@@ -1710,5 +3990,17 @@
       "notes": "Coverage gap, not an extracted legal rule."
     }
   ],
-  "authority_status": "ARCHITECTURE_RULEBOOK_INPUT_REQUIRED"
+  "authority_status": "ARCHITECTURE_RULEBOOK_INPUT_REQUIRED",
+  "qualification_summary": {
+    "candidate_count": 32,
+    "audited_count": 32,
+    "release_ready_count": 0,
+    "mandatory_national_count": 32,
+    "mandatory_local_count": 0,
+    "recommended_count": 0,
+    "empirical_pattern_count": 0,
+    "owner_decision_count": 0,
+    "rejected_count": 0,
+    "blocking_reason": "Current official edition/amendment status and cross-authority applicability are not fully qualified."
+  }
 }

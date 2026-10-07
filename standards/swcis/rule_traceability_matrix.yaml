@@ -1267,7 +1267,7 @@
       "rule_id": "ARCH-RES-LIVING-001",
       "title": "اندازهٔ حداقل یک فضای اقامت اصلی",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1280,6 +1280,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1293,7 +1294,7 @@
       "rule_id": "ARCH-RES-LIVING-002",
       "title": "فضای اقامت واحد کوچک",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1306,6 +1307,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1319,7 +1321,7 @@
       "rule_id": "ARCH-RES-BEDROOM-001",
       "title": "عرض سایر اتاق‌های اقامت مسکونی",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1332,6 +1334,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1345,7 +1348,7 @@
       "rule_id": "ARCH-RES-LIVING-003",
       "title": "مساحت عمومی اتاق اقامت",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1358,6 +1361,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1371,7 +1375,7 @@
       "rule_id": "ARCH-RES-CIRCULATION-001",
       "title": "عرض راهروی داخلی واحد",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1384,6 +1388,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1397,7 +1402,7 @@
       "rule_id": "ARCH-RES-STAIRS-001",
       "title": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1410,6 +1415,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1423,7 +1429,7 @@
       "rule_id": "ARCH-RES-STAIRS-002",
       "title": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1436,6 +1442,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1449,7 +1456,7 @@
       "rule_id": "ARCH-RES-STAIRS-003",
       "title": "پلهٔ ساختمان مسکونی گروه ۸",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1462,6 +1469,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1475,7 +1483,7 @@
       "rule_id": "ARCH-RES-KITCHEN-001",
       "title": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1488,6 +1496,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1501,7 +1510,7 @@
       "rule_id": "ARCH-RES-KITCHEN-002",
       "title": "آشپزخانه همراه محل صرف غذا",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1514,6 +1523,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1527,7 +1537,7 @@
       "rule_id": "ARCH-RES-KITCHEN-003",
       "title": "عرض آشپزخانه",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1540,6 +1550,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1553,7 +1564,7 @@
       "rule_id": "ARCH-RES-KITCHEN-004",
       "title": "فضای کار آشپزخانه دیواری",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1566,6 +1577,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1579,7 +1591,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-001",
       "title": "نور و هوای آشپزخانه مستقل",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1592,6 +1604,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1605,7 +1618,7 @@
       "rule_id": "ARCH-RES-VENTILATION-001",
       "title": "بازشوی تهویه آشپزخانه",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1618,6 +1631,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1631,7 +1645,7 @@
       "rule_id": "ARCH-RES-WC-001",
       "title": "پیش‌بینی توالت فرنگی برای واحد بزرگ",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1644,6 +1658,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1657,7 +1672,7 @@
       "rule_id": "ARCH-RES-BATHROOM-001",
       "title": "ابعاد فضای بهداشتی مسکونی معمول",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1670,6 +1685,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1683,7 +1699,7 @@
       "rule_id": "ARCH-RES-BATHROOM-002",
       "title": "ارتفاع فضای بهداشتی مسکونی",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1696,6 +1712,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1709,7 +1726,7 @@
       "rule_id": "ARCH-RES-ACCESSIBILITY-001",
       "title": "فضای بهداشتی قابل استفاده معلول",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1722,6 +1739,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1735,7 +1753,7 @@
       "rule_id": "ARCH-RES-PRIVACY-001",
       "title": "دسترسی مستقل اتاق‌ها",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1748,6 +1766,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1761,7 +1780,7 @@
       "rule_id": "ARCH-RES-PRIVACY-002",
       "title": "دید به سرویس بهداشتی",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1774,6 +1793,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1787,7 +1807,7 @@
       "rule_id": "ARCH-RES-PRIVACY-003",
       "title": "دید به محل کار آشپزخانه",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1800,6 +1820,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1813,7 +1834,7 @@
       "rule_id": "ARCH-RES-BALCONY-001",
       "title": "فضای نیمه‌باز اختصاصی",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1826,6 +1847,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1839,7 +1861,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-002",
       "title": "سطح شیشه اتاق اقامت",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1852,6 +1874,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1865,7 +1888,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-003",
       "title": "پنجره با لبه بالایی کوتاه",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1878,6 +1901,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1891,7 +1915,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-004",
       "title": "عمق قابل قبول نورگیری",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1904,6 +1928,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1917,7 +1942,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-005",
       "title": "نورگیری زیر ایوان",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1930,6 +1955,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1943,7 +1969,7 @@
       "rule_id": "ARCH-RES-DOOR-001",
       "title": "در ورودی اتاق اقامت",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1956,6 +1982,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1969,7 +1996,7 @@
       "rule_id": "ARCH-RES-EGRESS-001",
       "title": "بازشدن در خروج از داخل",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1982,6 +2009,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -1995,7 +2023,7 @@
       "rule_id": "ARCH-RES-KITCHEN-005",
       "title": "ممنوعیت عبور الزامی از آشپزخانه",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2008,6 +2036,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2021,7 +2050,7 @@
       "rule_id": "ARCH-RES-VENTILATION-002",
       "title": "هود به هوای آزاد",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2034,6 +2063,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2047,7 +2077,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-006",
       "title": "حیاط بین دو تصرف مسکونی",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2060,6 +2090,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2073,7 +2104,7 @@
       "rule_id": "ARCH-RES-DAYLIGHT-007",
       "title": "حیاط مشترک آشپزخانه و اقامت",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2086,6 +2117,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2099,7 +2131,7 @@
       "rule_id": "ARCH-GAP-SITE-001",
       "title": "تکمیل مرجع معتبر برای SITE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2112,6 +2144,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2125,7 +2158,7 @@
       "rule_id": "ARCH-GAP-URBAN-001",
       "title": "تکمیل مرجع معتبر برای URBAN",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2138,6 +2171,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2151,7 +2185,7 @@
       "rule_id": "ARCH-GAP-BUILDING_ENVELOPE-001",
       "title": "تکمیل مرجع معتبر برای BUILDING_ENVELOPE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2164,6 +2198,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2177,7 +2212,7 @@
       "rule_id": "ARCH-GAP-ACCESS-001",
       "title": "تکمیل مرجع معتبر برای ACCESS",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2190,6 +2225,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2203,7 +2239,7 @@
       "rule_id": "ARCH-GAP-FIRE-001",
       "title": "تکمیل مرجع معتبر برای FIRE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2216,6 +2252,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2229,7 +2266,7 @@
       "rule_id": "ARCH-GAP-ELEVATOR-001",
       "title": "تکمیل مرجع معتبر برای ELEVATOR",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2242,6 +2279,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2255,7 +2293,7 @@
       "rule_id": "ARCH-GAP-PARKING-001",
       "title": "تکمیل مرجع معتبر برای PARKING",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2268,6 +2306,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2281,7 +2320,7 @@
       "rule_id": "ARCH-GAP-UNIT_ENTRY-001",
       "title": "تکمیل مرجع معتبر برای UNIT_ENTRY",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2294,6 +2333,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2307,7 +2347,7 @@
       "rule_id": "ARCH-GAP-DINING-001",
       "title": "تکمیل مرجع معتبر برای DINING",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2320,6 +2360,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2333,7 +2374,7 @@
       "rule_id": "ARCH-GAP-MASTER_BEDROOM-001",
       "title": "تکمیل مرجع معتبر برای MASTER_BEDROOM",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2346,6 +2387,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2359,7 +2401,7 @@
       "rule_id": "ARCH-GAP-LAUNDRY-001",
       "title": "تکمیل مرجع معتبر برای LAUNDRY",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2372,6 +2414,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2385,7 +2428,7 @@
       "rule_id": "ARCH-GAP-STORAGE-001",
       "title": "تکمیل مرجع معتبر برای STORAGE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2398,6 +2441,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2411,7 +2455,7 @@
       "rule_id": "ARCH-GAP-TERRACE-001",
       "title": "تکمیل مرجع معتبر برای TERRACE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2424,6 +2468,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2437,7 +2482,7 @@
       "rule_id": "ARCH-GAP-ACOUSTICS-001",
       "title": "تکمیل مرجع معتبر برای ACOUSTICS",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2450,6 +2495,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2463,7 +2509,7 @@
       "rule_id": "ARCH-GAP-ENERGY-001",
       "title": "تکمیل مرجع معتبر برای ENERGY",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2476,6 +2522,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2489,7 +2536,7 @@
       "rule_id": "ARCH-GAP-WINDOW-001",
       "title": "تکمیل مرجع معتبر برای WINDOW",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2502,6 +2549,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2515,7 +2563,7 @@
       "rule_id": "ARCH-GAP-SHAFT-001",
       "title": "تکمیل مرجع معتبر برای SHAFT",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2528,6 +2576,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2541,7 +2590,7 @@
       "rule_id": "ARCH-GAP-WET_CORE-001",
       "title": "تکمیل مرجع معتبر برای WET_CORE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2554,6 +2603,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2567,7 +2617,7 @@
       "rule_id": "ARCH-GAP-SECURITY-001",
       "title": "تکمیل مرجع معتبر برای SECURITY",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2580,6 +2630,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2593,7 +2644,7 @@
       "rule_id": "ARCH-GAP-FURNITURE_FIT-001",
       "title": "تکمیل مرجع معتبر برای FURNITURE_FIT",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2606,6 +2657,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2619,7 +2671,7 @@
       "rule_id": "ARCH-GAP-MEP_COORDINATION-001",
       "title": "تکمیل مرجع معتبر برای MEP_COORDINATION",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2632,6 +2684,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2645,7 +2698,7 @@
       "rule_id": "ARCH-GAP-STRUCTURAL_COORDINATION-001",
       "title": "تکمیل مرجع معتبر برای STRUCTURAL_COORDINATION",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2658,6 +2711,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2671,7 +2725,7 @@
       "rule_id": "ARCH-GAP-DRAWING_CONVENTION-001",
       "title": "تکمیل مرجع معتبر برای DRAWING_CONVENTION",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2684,6 +2738,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [
@@ -2697,7 +2752,7 @@
       "rule_id": "ARCH-GAP-OWNER_PREFERENCE-001",
       "title": "تکمیل مرجع معتبر برای OWNER_PREFERENCE",
       "status": "LOCKED",
-      "qualification": "DISABLED_SOURCE_OR_COVERAGE_INPUT_REQUIRED",
+      "qualification": "AUDITED_SOURCE_GAP_RELEASE_DISABLED",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -2710,6 +2765,7 @@
       ],
       "qa_rules": [
         "source_hash_applicability_qualification",
+        "classification_enforcement_release_status_contract",
         "no_release_authority"
       ],
       "regression_tests": [

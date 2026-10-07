@@ -1,0 +1,168 @@
+{
+  "schema_version": "architecture-golden-matrix/1.0",
+  "version": "0.1.0",
+  "status": "PROPOSED_HUMAN_GOLDEN_REQUIRED",
+  "engine_output_may_create_truth": false,
+  "cases": [
+    {
+      "case_id": "GOLDEN-01",
+      "case_type": "small_apartment",
+      "scope": "small apartment; single unit; compact program",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-02",
+      "case_type": "medium_apartment",
+      "scope": "medium apartment; two-bedroom functional zoning",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-03",
+      "case_type": "large_residential_unit",
+      "scope": "larger unit; privacy and furniture challenge",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-04",
+      "case_type": "multi_unit_floor",
+      "scope": "multiple units; shared core and access",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-05",
+      "case_type": "difficult_parking",
+      "scope": "parking geometry, columns, ramp and pedestrian route",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-06",
+      "case_type": "irregular_site",
+      "scope": "irregular/corner site and envelope constraints",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-07",
+      "case_type": "shaft_wet_core",
+      "scope": "shaft and wet-core coordination challenge",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    },
+    {
+      "case_id": "GOLDEN-08",
+      "case_type": "daylight_circulation_privacy",
+      "scope": "daylight, circulation and privacy trade-offs",
+      "required_authority": [
+        "current city/jurisdiction package",
+        "current national sources",
+        "signed source provenance"
+      ],
+      "required_truth": [
+        "site and envelope",
+        "physical spaces",
+        "access and openings",
+        "daylight faces",
+        "shafts/wet core",
+        "rule decisions"
+      ],
+      "reviewer": "INDEPENDENT_LICENSED_ARCHITECT_REQUIRED",
+      "status": "NOT_COLLECTED"
+    }
+  ]
+}

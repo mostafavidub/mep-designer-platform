@@ -68,6 +68,27 @@
           },
           "url": {
             "type": "string"
+          },
+          "evidence_grade": {
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ]
+          },
+          "qualification_status": {
+            "enum": [
+              "QUALIFIED_REFERENCE",
+              "SOURCE_GAP"
+            ]
+          },
+          "permitted_use": {
+            "type": "string"
+          },
+          "may_solo_support_release_block": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -75,7 +96,11 @@
           "notes",
           "source_id",
           "status",
-          "title"
+          "title",
+          "evidence_grade",
+          "qualification_status",
+          "permitted_use",
+          "may_solo_support_release_block"
         ],
         "additionalProperties": false
       }

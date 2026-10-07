@@ -14,7 +14,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M4",
@@ -29,7 +33,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M15",
@@ -44,7 +52,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M18",
@@ -59,7 +71,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": "Filename 1402 is not edition evidence; cover states 1396."
+      "notes": "Filename 1402 is not edition evidence; cover states 1396.",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M19-4",
@@ -74,7 +90,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "IR-ENERGY-TRANSITION",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": true
     },
     {
       "source_id": "IR-M3",
@@ -87,7 +107,11 @@
       "cover_verified": true,
       "access_date": "2026-10-05",
       "copyright_note": "Previously supplied project source; not redistributed",
-      "notes": "Third edition1395 cover visually verified; current amendments and plan-clause extraction unresolved."
+      "notes": "Third edition1395 cover visually verified; current amendments and plan-clause extraction unresolved.",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-ENERGY-TRANSITION",
@@ -97,7 +121,11 @@
       "status": "CURRENT_MANDATORY",
       "access_date": "2026-10-05",
       "publication_date": null,
-      "notes": "Both editions permitted from 1404-10-20 through 1405-12-29. Record project permit date and selected complete edition; do not mix convenient clauses."
+      "notes": "Both editions permitted from 1404-10-20 through 1405-12-29. Record project permit date and selected complete edition; do not mix convenient clauses.",
+      "evidence_grade": "B",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": true
     },
     {
       "source_id": "IR-M19-5",
@@ -108,7 +136,11 @@
       "status": "CURRENT_MANDATORY",
       "access_date": "2026-10-05",
       "publication_date": null,
-      "notes": "Fifth edition officially published; full clause-level migration still required. Concurrent fourth edition permitted under IR-ENERGY-TRANSITION."
+      "notes": "Fifth edition officially published; full clause-level migration still required. Concurrent fourth edition permitted under IR-ENERGY-TRANSITION.",
+      "evidence_grade": "B",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": true
     },
     {
       "source_id": "IR-EXAM",
@@ -117,7 +149,11 @@
       "url": "https://inbr.ir",
       "status": "UNKNOWN_CURRENT_STATUS",
       "access_date": "2026-10-05",
-      "notes": "Official endpoint inaccessible. Secondary exam lists are discovery leads only, not authority."
+      "notes": "Official endpoint inaccessible. Secondary exam lists are discovery leads only, not authority.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M4-SECURITY",
@@ -125,7 +161,11 @@
       "issuer": "وزارت راه و شهرسازی",
       "edition_year": null,
       "status": "UNKNOWN_CURRENT_STATUS",
-      "notes": "Owner mentions 1402; discovered ministry-authored PDF cover lead says 1403. Exact supplied file and official amendment/issue pending."
+      "notes": "Owner mentions 1402; discovered ministry-authored PDF cover lead says 1403. Exact supplied file and official amendment/issue pending.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-ACCESS",
@@ -133,21 +173,33 @@
       "issuer": "شورای عالی شهرسازی و معماری / مرکز تحقیقات",
       "edition_year": 1399,
       "status": "UNKNOWN_CURRENT_STATUS",
-      "notes": "Third-edition candidate from request; exact source and current status pending."
+      "notes": "Third-edition candidate from request; exact source and current status pending.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-LOCAL",
       "title": "ضوابط مصوب محلی و دستور نقشه پلاک",
       "issuer": null,
       "status": "MANDATORY_BUT_LOCAL",
-      "notes": "Must be supplied or fetched per parcel/city/date; no Tehran default."
+      "notes": "Must be supplied or fetched per parcel/city/date; no Tehran default.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "PLANHA-CONTRACT",
       "title": "Owner-authorized typical residential floor-plan scope",
       "issuer": "Project owner",
       "status": "GUIDANCE",
-      "notes": "Product contract only; not legal authority."
+      "notes": "Product contract only; not legal authority.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "OWNER_PROGRAM_ONLY",
+      "may_solo_support_release_block": false
     }
   ]
 }

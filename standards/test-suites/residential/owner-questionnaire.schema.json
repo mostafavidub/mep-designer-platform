@@ -412,6 +412,26 @@
           },
           "why_fa": {
             "type": "string"
+          },
+          "qualification_disposition": {
+            "enum": [
+              "KEEP",
+              "DERIVE_AUTOMATICALLY",
+              "REMOVE",
+              "DELAY"
+            ]
+          },
+          "classification": {
+            "const": "OWNER_DECISION"
+          },
+          "enforcement_level": {
+            "const": "ASK_USER"
+          },
+          "ask_stage": {
+            "type": "string"
+          },
+          "derivation_policy": {
+            "type": "string"
           }
         },
         "required": [
@@ -430,7 +450,12 @@
           "text_fa",
           "unanswered_risk",
           "when_to_ask",
-          "why_fa"
+          "why_fa",
+          "qualification_disposition",
+          "classification",
+          "enforcement_level",
+          "ask_stage",
+          "derivation_policy"
         ],
         "additionalProperties": false
       }
@@ -469,6 +494,9 @@
     },
     "version": {
       "type": "string"
+    },
+    "qualification_summary": {
+      "type": "object"
     }
   },
   "required": [
@@ -479,7 +507,8 @@
     "schema_version",
     "structured_program_limit",
     "v1_progression",
-    "version"
+    "version",
+    "qualification_summary"
   ],
   "additionalProperties": false
 }

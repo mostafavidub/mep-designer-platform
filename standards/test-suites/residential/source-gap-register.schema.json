@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "version",
+    "gaps"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "architecture-source-gaps/1.0"
+    },
+    "version": {
+      "type": "string"
+    },
+    "gaps": {
+      "type": "array",
+      "minItems": 24,
+      "items": {
+        "type": "object",
+        "required": [
+          "gap_id",
+          "related_rule_ids",
+          "missing_information",
+          "why_it_matters",
+          "risk_if_wrong",
+          "severity",
+          "searched_sources",
+          "best_evidence_found",
+          "remaining_uncertainty",
+          "recommended_action",
+          "human_required",
+          "status"
+        ],
+        "properties": {
+          "gap_id": {
+            "type": "string"
+          },
+          "related_rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "missing_information": {
+            "type": "string"
+          },
+          "why_it_matters": {
+            "type": "string"
+          },
+          "risk_if_wrong": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "CRITICAL",
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ]
+          },
+          "searched_sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "best_evidence_found": {
+            "type": "string"
+          },
+          "remaining_uncertainty": {
+            "type": "string"
+          },
+          "recommended_action": {
+            "type": "string"
+          },
+          "human_required": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,452 @@
+{
+  "schema_version": "architecture-source-gaps/1.0",
+  "version": "0.1.0",
+  "gaps": [
+    {
+      "gap_id": "ARCH-SG-001",
+      "related_rule_ids": [],
+      "missing_information": "site inputs",
+      "why_it_matters": "signed survey and parcel evidence",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "PROJECT_INPUT_REQUIRED",
+      "remaining_uncertainty": "signed survey and parcel evidence",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-002",
+      "related_rule_ids": [],
+      "missing_information": "urban/local planning rules",
+      "why_it_matters": "jurisdiction package required per parcel",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "RESOLVED_LOCAL_RULE_MODEL",
+      "remaining_uncertainty": "jurisdiction package required per parcel",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-003",
+      "related_rule_ids": [],
+      "missing_information": "buildable envelope",
+      "why_it_matters": "approved planning constraints",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "PROJECT_INPUT_REQUIRED",
+      "remaining_uncertainty": "approved planning constraints",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-004",
+      "related_rule_ids": [],
+      "missing_information": "access",
+      "why_it_matters": "M4 plus official accessibility source",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "SOURCE_MISSING",
+      "remaining_uncertainty": "M4 plus official accessibility source",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-005",
+      "related_rule_ids": [
+        "ARCH-RES-EGRESS-001"
+      ],
+      "missing_information": "fire/egress",
+      "why_it_matters": "M3 1395 clause extraction",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "CRITICAL",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "SOURCE_MISSING",
+      "remaining_uncertainty": "M3 1395 clause extraction",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-006",
+      "related_rule_ids": [],
+      "missing_information": "elevator",
+      "why_it_matters": "M15 1392 clause extraction",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "SOURCE_MISSING",
+      "remaining_uncertainty": "M15 1392 clause extraction",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-007",
+      "related_rule_ids": [],
+      "missing_information": "parking",
+      "why_it_matters": "municipality and project instruction",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "RESOLVED_LOCAL_RULE_MODEL",
+      "remaining_uncertainty": "municipality and project instruction",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-008",
+      "related_rule_ids": [],
+      "missing_information": "unit entry",
+      "why_it_matters": "M4/M3 applicability review",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "remaining_uncertainty": "M4/M3 applicability review",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-009",
+      "related_rule_ids": [],
+      "missing_information": "dining",
+      "why_it_matters": "owner program; hard spatial rules still apply",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "OWNER_INPUT_REQUIRED",
+      "remaining_uncertainty": "owner program; hard spatial rules still apply",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-010",
+      "related_rule_ids": [
+        "ARCH-RES-BEDROOM-001"
+      ],
+      "missing_information": "master bedroom",
+      "why_it_matters": "owner program",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "OWNER_INPUT_REQUIRED",
+      "remaining_uncertainty": "owner program",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-011",
+      "related_rule_ids": [],
+      "missing_information": "laundry",
+      "why_it_matters": "owner program and MEP reservations",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "OWNER_INPUT_REQUIRED",
+      "remaining_uncertainty": "owner program and MEP reservations",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-012",
+      "related_rule_ids": [],
+      "missing_information": "storage",
+      "why_it_matters": "owner program",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "OWNER_INPUT_REQUIRED",
+      "remaining_uncertainty": "owner program",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-013",
+      "related_rule_ids": [
+        "ARCH-RES-BALCONY-001"
+      ],
+      "missing_information": "terrace/balcony",
+      "why_it_matters": "M4 extraction exists; local and safety conditions incomplete",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "remaining_uncertainty": "M4 extraction exists; local and safety conditions incomplete",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-014",
+      "related_rule_ids": [],
+      "missing_information": "acoustics",
+      "why_it_matters": "M18 1396 clause extraction",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "SOURCE_MISSING",
+      "remaining_uncertainty": "M18 1396 clause extraction",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-015",
+      "related_rule_ids": [],
+      "missing_information": "energy",
+      "why_it_matters": "project must select complete M19 edition during transition",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "PROJECT_INPUT_REQUIRED",
+      "remaining_uncertainty": "project must select complete M19 edition during transition",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-016",
+      "related_rule_ids": [
+        "ARCH-RES-DAYLIGHT-001",
+        "ARCH-RES-DAYLIGHT-002",
+        "ARCH-RES-DAYLIGHT-003",
+        "ARCH-RES-DAYLIGHT-004",
+        "ARCH-RES-DAYLIGHT-005",
+        "ARCH-RES-DAYLIGHT-006",
+        "ARCH-RES-DAYLIGHT-007"
+      ],
+      "missing_information": "windows/daylight",
+      "why_it_matters": "M4 extraction exists; envelope and M19 coordination incomplete",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "remaining_uncertainty": "M4 extraction exists; envelope and M19 coordination incomplete",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-017",
+      "related_rule_ids": [],
+      "missing_information": "shafts",
+      "why_it_matters": "MEP and fire coordination reservations",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "PROJECT_INPUT_REQUIRED",
+      "remaining_uncertainty": "MEP and fire coordination reservations",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-018",
+      "related_rule_ids": [],
+      "missing_information": "wet-core coordination",
+      "why_it_matters": "coordination heuristic; never a legal minimum",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "RESOLVED_HEURISTIC",
+      "remaining_uncertainty": "coordination heuristic; never a legal minimum",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-019",
+      "related_rule_ids": [],
+      "missing_information": "security/protective requirements",
+      "why_it_matters": "exact official appendix required",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "SOURCE_MISSING",
+      "remaining_uncertainty": "exact official appendix required",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-020",
+      "related_rule_ids": [],
+      "missing_information": "furniture fit",
+      "why_it_matters": "ergonomic and product evidence model defined; ranges incomplete",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "remaining_uncertainty": "ergonomic and product evidence model defined; ranges incomplete",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-021",
+      "related_rule_ids": [],
+      "missing_information": "MEP coordination",
+      "why_it_matters": "versioned shaft/service reservation contract",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "PROJECT_INPUT_REQUIRED",
+      "remaining_uncertainty": "versioned shaft/service reservation contract",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-022",
+      "related_rule_ids": [],
+      "missing_information": "structural coordination",
+      "why_it_matters": "structural grid and prohibited zones",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "HIGH",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "PROJECT_INPUT_REQUIRED",
+      "remaining_uncertainty": "structural grid and prohibited zones",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-023",
+      "related_rule_ids": [],
+      "missing_information": "drawing conventions",
+      "why_it_matters": "office/authority issue standard",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "remaining_uncertainty": "office/authority issue standard",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": true,
+      "status": "OPEN"
+    },
+    {
+      "gap_id": "ARCH-SG-024",
+      "related_rule_ids": [],
+      "missing_information": "owner preference",
+      "why_it_matters": "structured Owner Program; cannot override law",
+      "risk_if_wrong": "False compliance authority or invalid design applicability.",
+      "severity": "MEDIUM",
+      "searched_sources": [
+        "Existing source registry",
+        "Owner-supplied official-document copies",
+        "Official public-source discovery"
+      ],
+      "best_evidence_found": "RESOLVED_HEURISTIC",
+      "remaining_uncertainty": "structured Owner Program; cannot override law",
+      "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
+      "human_required": false,
+      "status": "OPEN"
+    }
+  ]
+}
