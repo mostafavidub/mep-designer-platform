@@ -1,0 +1,244 @@
+{
+  "schema_version": "architecture-plan-generation/1.0",
+  "version": "0.2.0",
+  "scope": {
+    "occupancy": "RESIDENTIAL_APARTMENT",
+    "residential_floors": "IDENTICAL_TYPICAL",
+    "output": [
+      "FLOOR_PLAN"
+    ],
+    "excluded": [
+      "ELEVATION",
+      "SECTION",
+      "ROOF_DRAWING",
+      "STRUCTURAL_DESIGN",
+      "MEP_CALCULATIONS",
+      "FACADE",
+      "LANDSCAPE"
+    ]
+  },
+  "status_enum": [
+    "VALIDATED",
+    "REVIEW_REQUIRED",
+    "INPUT_REQUIRED",
+    "CONFLICT",
+    "NO_FEASIBLE_LAYOUT"
+  ],
+  "implemented": "FOUNDATION_ONLY_NO_CANDIDATE_GENERATOR",
+  "inputs": {
+    "project_id": "opaque stable id",
+    "location": "city + parcel + source/date, never generic Tehran defaults",
+    "plot": "closed valid simple polygon, metre coordinates, north evidence, survey hash, road/access edges",
+    "authority_profile": "issuer/date/permit/current-edition choices and jurisdiction, source hashes, per-clause applicability reviews",
+    "program": "immutable confirmed owner program, questionnaire version/hash, per-unit counts/bedrooms/usable area targets and hard/preferred distinction",
+    "typical_floor_schedule": "explicit unique floor ids and identical-residential assertion; mixed residential floors reject V1",
+    "reservations": "known columns, cores, parking transfer dependencies, shafts and equipment/service access envelopes",
+    "weights": "explicit versioned bounded nonnegative soft quality weights; never legal authority",
+    "seed": "explicit deterministic integer, search budget and algorithm identity"
+  },
+  "derived_facts": [
+    "validated envelope from authority-backed setbacks and permit; never percentage default",
+    "plot geometry measures with explicit usable/gross definitions",
+    "location climate lookup only when authoritative source found",
+    "required exit/access/lift profile after applicability qualification",
+    "owner program area budget with core/wall/reservation allowance derived from actual geometry"
+  ],
+  "design_variables": [
+    "core position/type/count",
+    "unit boundary partition",
+    "room polygons and named uses",
+    "door/window host and opening geometry",
+    "fixture/furniture placement and usage envelopes",
+    "shaft polygon and vertical group",
+    "public/private/service adjacency graph"
+  ],
+  "pipeline": [
+    {
+      "stage": 1,
+      "name": "INPUT_VALIDATION_AND_PROJECT_AUTHORITY",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 2,
+      "name": "SITE_AND_BUILDABLE_ENVELOPE",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 3,
+      "name": "MANDATORY_CONSTRAINTS",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 4,
+      "name": "CORE_AND_VERTICAL_CIRCULATION",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 5,
+      "name": "SERVICE_AND_WET_CORE_RESERVATIONS",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 6,
+      "name": "OWNER_PROGRAM_GRAPH",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 7,
+      "name": "CANDIDATE_ZONING",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 8,
+      "name": "CANDIDATE_GEOMETRY",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 9,
+      "name": "FURNITURE_FIT",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 10,
+      "name": "CIRCULATION",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 11,
+      "name": "DAYLIGHT_AND_VENTILATION",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 12,
+      "name": "CODE_VALIDATION",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 13,
+      "name": "CROSS_DISCIPLINE_RESERVATION",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 14,
+      "name": "QUALITY_RANKING",
+      "stop": "INPUT_REQUIRED or CONFLICT on unresolved authoritative dependency"
+    },
+    {
+      "stage": 15,
+      "name": "HUMAN_REVIEW_AND_OUTPUT",
+      "stop": "REVIEW_REQUIRED until independent review and output validation"
+    }
+  ],
+  "candidate_strategy": {
+    "enumeration": "Bounded core alternatives then area partition candidates; retain stable candidate IDs from normalized inputs + seed + strategy. Do not use source plans as templates.",
+    "geometry": "Exact polygon containment/disjointness and minimum widths; preserve holes/courts, test rotation invariance, metre units.",
+    "reconstruction_integration": "Existing canonical3.0 describes recognized source evidence. Proposed generated objects require a future explicit generated-origin adapter and independent validator; no fake DXF witness handles.",
+    "determinism": "Sort variable domains and candidates; fixed numeric policy, dependency hashes, rulebook/source/program/reservation versions; stable tie-break by candidate ID.",
+    "cost": "No AI call in deterministic geometry/rule checks. Cache by full semantic input+rules+build hash. Bounded search with progress and cancellation; exhausted budget is REVIEW_REQUIRED, not mathematical infeasibility."
+  },
+  "hard_gate": [
+    "complete applicable rule inventory and qualified current authority",
+    "valid plot/envelope, no self-intersection/overlap/outside geometry",
+    "mandatory owner requirements",
+    "egress, access, stairs/lifts and accessibility",
+    "required daylight/ventilation",
+    "required furniture and equipment usability where program hard",
+    "shafts/reservations and vertical repeat compatibility"
+  ],
+  "soft_metrics": [
+    "AREA_EFFICIENCY",
+    "DAYLIGHT_QUALITY",
+    "PRIVACY",
+    "FURNITURE_USABILITY",
+    "WET_CORE_EFFICIENCY",
+    "MEP_COORDINATION",
+    "STRUCTURAL_COMPATIBILITY",
+    "MARKETABILITY",
+    "DESIGN_QUALITY"
+  ],
+  "metric_contract": {
+    "range": [
+      0,
+      1
+    ],
+    "missing": "Do not replace unavailable metric with zero or a favorable score; mark INPUT_REQUIRED or omit only by explicit objective contract.",
+    "weights": "Owner/project policy preferences; law cannot be traded against weighted score.",
+    "ranking": "Reject failed/unknown hard gate before weighted score; report each component and tradeoff independently."
+  },
+  "infeasibility": {
+    "proof": "NO_FEASIBLE_LAYOUT only with complete finite search/certified infeasibility and binding constraint IDs. Unknown authority -> INPUT_REQUIRED; incompatible authority -> CONFLICT; heuristic timeout -> REVIEW_REQUIRED.",
+    "explanation": "Identify binding legal/program/geometry constraints and source refs, identify smallest tested owner-controlled relaxations with alternative outcomes; never recommend waiving law."
+  },
+  "human_checkpoint": [
+    "ambiguous local applicability",
+    "conflicting source editions/permit instructions",
+    "unusual plot outside supported topology",
+    "mandatory owner-program conflict",
+    "materially different feasible strategies",
+    "source interpretation uncertainty"
+  ],
+  "output_contract": {
+    "candidate": "id,input_hash,source_hashes,rulebook_hash,program_hash,geometry_hash,canonical_adapter_version,build_identity",
+    "geometry": [
+      "building",
+      "typical_floor",
+      "common_core",
+      "units",
+      "spaces",
+      "openings",
+      "furniture",
+      "fixtures",
+      "shafts",
+      "circulation",
+      "structural_reservations"
+    ],
+    "drawing": [
+      "wall thickness",
+      "opening swings",
+      "window locations",
+      "metre units and explicit output scale",
+      "north provenance",
+      "Persian labels",
+      "no annotation overlap",
+      "dimension network and references",
+      "A-WALL/A-OPENING/A-SPACE/A-REF/A-SHAFT/A-DIM/A-TEXT layers",
+      "lineweight hierarchy",
+      "project title and automatic build/revision identity",
+      "exact issued-file reopen QA"
+    ],
+    "validation": "per-rule input/source/clause/applicability/result/failure geometry, candidate scoring, review reasons and completeness",
+    "authority": "VALIDATED means enumerated scope checks passed; construction issue still requires architect Golden qualification and responsible review. No automatic price or commercial area authority."
+  },
+  "architecture_to_mep": {
+    "required": [
+      "exact approved snapshot hash",
+      "unit/space/level identities",
+      "fixture hosts and source-backed ports",
+      "shaft geometry/access and vertical groups",
+      "wet-core adjacency",
+      "equipment service/outdoor reservations",
+      "door/access paths"
+    ],
+    "prohibited": [
+      "invented MEP sizing",
+      "unverified shaft inferred from white space",
+      "implicit source-model approval",
+      "commercial measurement derived from target owner area"
+    ]
+  },
+  "golden_contract": {
+    "schema_version": "architecture-generation-golden/1.0",
+    "status": "HUMAN_ARCHITECTURE_GOLDEN_REQUIRED",
+    "required": [
+      "plot_and_authority_input_hashes",
+      "confirmed_owner_program_hash",
+      "independently_accepted_layout_geometry",
+      "applicable_rules_and_results",
+      "architect_identity_and_approval",
+      "review_timestamp",
+      "candidate_frozen_before_comparison",
+      "split_development_validation_evaluation"
+    ],
+    "anti_leakage": "No synthetic accepted architect plans; sample public study is heuristic evidence only."
+  }
+}

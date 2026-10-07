@@ -1,0 +1,2832 @@
+{
+  "schema_version": "architecture-reference-geometry/1.0",
+  "version": "0.1.0",
+  "symbols": [
+    {
+      "symbol_id": "AR-WC",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_WC",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-WALL_HUNG_WC",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_WALL_HUNG_WC",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      },
+      "manufacturer_example": {
+        "manufacturer": "Duravit",
+        "product": "D-Code251309",
+        "width_m": 0.37,
+        "depth_m": 0.54,
+        "url": "https://www.duravit.co.uk/file/8a8a818d9227d0b10192290806020627.uk-en.0/d-code_brochure_2024_uk.pdf",
+        "printed_page": 22,
+        "access_date": "2026-10-05",
+        "authority": "MANUFACTURER_PRODUCT_EXAMPLE_ONLY",
+        "usage_clearance_m": null,
+        "automatic_default": false
+      }
+    },
+    {
+      "symbol_id": "AR-SQUAT_WC",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SQUAT_WC",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-WASHBASIN",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_WASHBASIN",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      },
+      "manufacturer_example": {
+        "manufacturer": "Duravit",
+        "product": "D-Code03426500002",
+        "width_m": 0.65,
+        "depth_m": 0.485,
+        "url": "https://www.duravit.com/en-en/products/all-series/d-code/",
+        "access_date": "2026-10-05",
+        "authority": "MANUFACTURER_PRODUCT_EXAMPLE_ONLY",
+        "usage_clearance_m": null,
+        "automatic_default": false
+      }
+    },
+    {
+      "symbol_id": "AR-VANITY",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_VANITY",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-SHOWER",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SHOWER",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      },
+      "manufacturer_example": {
+        "manufacturer": "Duravit",
+        "product": "D-Code720163000000000",
+        "width_m": 0.7,
+        "depth_m": 1.6,
+        "url": "https://www.duravit.com/en-en/products/all-series/d-code/",
+        "access_date": "2026-10-05",
+        "authority": "MANUFACTURER_PRODUCT_EXAMPLE_ONLY",
+        "usage_clearance_m": null,
+        "automatic_default": false
+      }
+    },
+    {
+      "symbol_id": "AR-BATHTUB",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_BATHTUB",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-FLOOR_DRAIN",
+      "category": "SANITARY",
+      "representation": {
+        "primitive": "SANITARY",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_FLOOR_DRAIN",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-SINK",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SINK",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-COOKTOP",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "POWER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "EXTRACT_RESERVATION",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_COOKTOP",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-OVEN",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "POWER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "EXTRACT_RESERVATION",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_OVEN",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-REFRIGERATOR",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_REFRIGERATOR",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DISHWASHER",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DISHWASHER",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-WASHING_MACHINE",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [
+        {
+          "system": "WASTE",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        },
+        {
+          "system": "WATER",
+          "point": "PROJECT_OR_MANUFACTURER_INPUT_REQUIRED"
+        }
+      ],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_WASHING_MACHINE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-CABINET",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_CABINET",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-ISLAND",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_ISLAND",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-COUNTER",
+      "category": "KITCHEN",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": "rear",
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_COUNTER",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-SINGLE_BED",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "BED",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SINGLE_BED",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DOUBLE_BED",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "BED",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DOUBLE_BED",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-QUEEN_BED",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "BED",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_QUEEN_BED",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      },
+      "manufacturer_example": {
+        "manufacturer": "IKEA",
+        "product": "MALM160x200 /402.494.71",
+        "width_m": 1.76,
+        "depth_m": 2.09,
+        "url": "https://www.ikea.com/fi/en/p/malm-bed-frame-high-white-s09929373/",
+        "access_date": "2026-10-05",
+        "authority": "MANUFACTURER_PRODUCT_EXAMPLE_ONLY",
+        "usage_clearance_m": null,
+        "automatic_default": false
+      }
+    },
+    {
+      "symbol_id": "AR-KING_BED",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "BED",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_KING_BED",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-BEDSIDE_TABLE",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_BEDSIDE_TABLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-WARDROBE",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_WARDROBE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DRESSER",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DRESSER",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DESK",
+      "category": "BEDROOM",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DESK",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-SOFA",
+      "category": "LIVING",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SOFA",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-ARMCHAIR",
+      "category": "LIVING",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_ARMCHAIR",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-COFFEE_TABLE",
+      "category": "LIVING",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_COFFEE_TABLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-TV_CONSOLE",
+      "category": "LIVING",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_TV_CONSOLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DINING_TABLE",
+      "category": "LIVING",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DINING_TABLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DINING_CHAIR",
+      "category": "LIVING",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DINING_CHAIR",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-VEHICLE",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_VEHICLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-MOTORCYCLE",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_MOTORCYCLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-BICYCLE",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_BICYCLE",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-DOOR",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "DOOR_SWING",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_DOOR",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-WINDOW",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "WINDOW",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_WINDOW",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-STAIR",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "STAIR_FLIGHT",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_STAIR",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-ELEVATOR",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_ELEVATOR",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-SHAFT",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SHAFT",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-CLOSET",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_CLOSET",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    },
+    {
+      "symbol_id": "AR-SHELVING",
+      "category": "OTHER",
+      "representation": {
+        "primitive": "RECTANGLE_WITH_FUNCTION_MARK",
+        "original": true
+      },
+      "parameters": {
+        "width_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "depth_m": {
+          "required": true,
+          "exclusive_minimum": 0
+        },
+        "rotation_deg": {
+          "required": true
+        },
+        "origin_m": {
+          "required": true,
+          "length": 2
+        },
+        "usage_clearance_m": {
+          "required_for_fit_validation": true,
+          "source_required": true
+        },
+        "dimension_basis": {
+          "enum": [
+            "MANUFACTURER",
+            "OWNER_MEASURED",
+            "VISUALIZATION_ONLY"
+          ],
+          "required": true
+        }
+      },
+      "anchor": "rear-left footprint corner before rotation",
+      "access_side": "front unless project-specific port/side evidence",
+      "connection_side": null,
+      "mep_ports": [],
+      "collision_footprint": "Closed actual object outline; conservative rectangle until product outline supplied",
+      "clearance_envelope": "Separate polygon; never equated to object footprint; unknown blocks fit approval",
+      "normative_dimensions": null,
+      "normative_source_rule_ids": [],
+      "ergonomic_ranges": null,
+      "ergonomic_source": null,
+      "visualization_only": "Caller-supplied illustrative dimensions may draw but never certify fit",
+      "cad_integration": {
+        "block_name": "PLANHA_AR_SHELVING",
+        "units": "m",
+        "layers": [
+          "A-REF-OBJECT",
+          "A-REF-USAGE",
+          "A-REF-PORT"
+        ],
+        "identity": [
+          "symbol_id",
+          "catalog_hash",
+          "parameter_hash",
+          "instance_id",
+          "build_identity"
+        ],
+        "placement": "No CAD INSERT until host and parameters validated; no third-party blocks"
+      }
+    }
+  ],
+  "normative_completeness": "INPUT_REQUIRED",
+  "notes": "Original parametric representations. No fabricated manufacturer dimensions or universal ergonomic defaults.",
+  "source_coverage_limit": "Four product examples only. Ergonomic ranges/operating clearances for full V1 remain INPUT_REQUIRED; library not release sufficient."
+}

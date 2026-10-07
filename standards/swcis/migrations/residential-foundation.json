@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-foundation-additive",
+  "from": "no residential-generation contract",
+  "to": "architecture-plan-generation/1.0 catalogs0.1.0",
+  "compatibility": "Existing Canonical Architecture3.0, PMM, Mechanical and commercial contracts unchanged. New input contract is not interchangeable with recognized-source architecture.",
+  "forward": [
+    "Install pinned jsonschema dependency",
+    "Read and validate catalogs before offline report/preflight use",
+    "Require complete source qualification and human Golden before any future integration"
+  ],
+  "validation": [
+    "tests/test_residential_foundation.py",
+    "existing full regression suite",
+    "SWCIS",
+    "runtime_version_guard"
+  ],
+  "consumers": [
+    "offline report CLI only"
+  ],
+  "deprecation_window": "None: additive opt-in offline feature; no old consumer removed.",
+  "deployment": "Not authorized; draft PR only. No server or database change.",
+  "rollback": "Revert feature commit or use owner-approved Git commit; preserve reports for audit, never reinterpret as qualified output."
+}

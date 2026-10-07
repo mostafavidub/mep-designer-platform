@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "architecture-sources/1.0"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "access_date": {
+            "type": "string"
+          },
+          "copyright_note": {
+            "type": "string"
+          },
+          "cover_verified": {
+            "type": "boolean"
+          },
+          "current_status_basis": {
+            "type": "string"
+          },
+          "edition_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "local_filename": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "publication_date": {
+            "type": "null"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "issuer",
+          "notes",
+          "source_id",
+          "status",
+          "title"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "sources"
+  ],
+  "additionalProperties": false
+}

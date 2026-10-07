@@ -127,6 +127,7 @@
         "cad_engine/architecture_enclosure_candidates.py",
         "cad_engine/architecture_contract.py",
         "cad_engine/architecture_validator.py",
+        "cad_engine/residential_foundation.py",
         "cad_engine/architecture_snapshot.py",
         "cad_engine/architecture_review_contract.py",
         "cad_engine/architecture_review_engine.py",
@@ -160,7 +161,9 @@
         "cad_engine/dimensioning/**",
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
-        "cad_engine/architecture_text_evidence.py"
+        "cad_engine/architecture_text_evidence.py",
+        "cad_engine/residential_symbols.py",
+        "tools/residential_foundation_report.py"
       ],
       "seed_modules": [
         "cad_designer",

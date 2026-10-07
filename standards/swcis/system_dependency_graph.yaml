@@ -97,6 +97,7 @@
         "cad_engine/architectural_gap_review.py",
         "cad_engine/architecture_contract.py",
         "cad_engine/architecture_validator.py",
+        "cad_engine/residential_foundation.py",
         "cad_engine/architecture_snapshot.py",
         "cad_engine/architecture_review_contract.py",
         "cad_engine/architecture_review_engine.py",
@@ -118,7 +119,9 @@
         "cad_engine/dimensioning/**",
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
-        "cad_engine/architecture_text_evidence.py"
+        "cad_engine/architecture_text_evidence.py",
+        "cad_engine/residential_symbols.py",
+        "tools/residential_foundation_report.py"
       ],
       "depends_on": [
         "planner"

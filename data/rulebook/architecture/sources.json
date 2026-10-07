@@ -1,0 +1,153 @@
+{
+  "schema_version": "architecture-sources/1.0",
+  "sources": [
+    {
+      "source_id": "IR-M3-OLD",
+      "title": "حفاظت ساختمان‌ها در مقابل حریق",
+      "issuer": "وزارت راه و شهرسازی / دفتر مقررات ملی ساختمان",
+      "edition_year": 1392,
+      "status": "SUPERSEDED",
+      "sha256": "dc2c5ea6fcdfd7a8797fa30942df616b95c12e20cceaa01616d17f528812ac35",
+      "local_filename": "mabhas-3.pdf",
+      "cover_verified": true,
+      "scope": "Residential floor-plan implications only",
+      "access_date": "2026-10-05",
+      "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
+      "current_status_basis": "Full current official edition/amendment register not yet verified",
+      "notes": ""
+    },
+    {
+      "source_id": "IR-M4",
+      "title": "الزامات عمومی ساختمان",
+      "issuer": "وزارت راه و شهرسازی / دفتر مقررات ملی ساختمان",
+      "edition_year": 1396,
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "sha256": "ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6",
+      "local_filename": "mabhas4-96.pdf",
+      "cover_verified": true,
+      "scope": "Residential floor-plan implications only",
+      "access_date": "2026-10-05",
+      "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
+      "current_status_basis": "Full current official edition/amendment register not yet verified",
+      "notes": ""
+    },
+    {
+      "source_id": "IR-M15",
+      "title": "آسانسورها و پلکان برقی",
+      "issuer": "وزارت راه و شهرسازی / دفتر مقررات ملی ساختمان",
+      "edition_year": 1392,
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "sha256": "e27e1d74e6ded86ecfe6399b524b612d2cf6fdd2da4c6a36df7d94a3ed6ea477",
+      "local_filename": "mabhas-15.pdf",
+      "cover_verified": true,
+      "scope": "Residential floor-plan implications only",
+      "access_date": "2026-10-05",
+      "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
+      "current_status_basis": "Full current official edition/amendment register not yet verified",
+      "notes": ""
+    },
+    {
+      "source_id": "IR-M18",
+      "title": "عایق‌بندی و تنظیم صدا",
+      "issuer": "وزارت راه و شهرسازی / دفتر مقررات ملی ساختمان",
+      "edition_year": 1396,
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "sha256": "f3b54dfed8835e92f416bcaaa22ff7308f114f815c20620fc2c42e56b08d9b24",
+      "local_filename": "mabhas-18-1402.pdf",
+      "cover_verified": true,
+      "scope": "Residential floor-plan implications only",
+      "access_date": "2026-10-05",
+      "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
+      "current_status_basis": "Full current official edition/amendment register not yet verified",
+      "notes": "Filename 1402 is not edition evidence; cover states 1396."
+    },
+    {
+      "source_id": "IR-M19-4",
+      "title": "صرفه‌جویی در مصرف انرژی",
+      "issuer": "وزارت راه و شهرسازی / دفتر مقررات ملی ساختمان",
+      "edition_year": 1399,
+      "status": "CURRENT_MANDATORY",
+      "sha256": "5610343dee584455257b1c607677804da98fa237ed403bb3d5738b305982af64",
+      "local_filename": "Mabhas19-v4_0-1399-ATNasr.ir.pdf",
+      "cover_verified": true,
+      "scope": "Residential floor-plan implications only",
+      "access_date": "2026-10-05",
+      "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
+      "current_status_basis": "IR-ENERGY-TRANSITION",
+      "notes": ""
+    },
+    {
+      "source_id": "IR-M3",
+      "title": "حفاظت ساختمان‌ها در مقابل حریق",
+      "issuer": "وزارت راه و شهرسازی",
+      "edition_year": 1395,
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "sha256": "b06648469e73785f101f3c4735db6454eb6b41ec2f00fc2793e3f6153db3473d",
+      "local_filename": "mabhas-3-1395.pdf",
+      "cover_verified": true,
+      "access_date": "2026-10-05",
+      "copyright_note": "Previously supplied project source; not redistributed",
+      "notes": "Third edition1395 cover visually verified; current amendments and plan-clause extraction unresolved."
+    },
+    {
+      "source_id": "IR-ENERGY-TRANSITION",
+      "title": "تمدید اجرای همزمان ویرایش چهارم و پنجم مبحث نوزدهم",
+      "url": "https://irceo.ir/fa/news/36375/تمدید-اجرای-همزمان-ویرایش-چهار",
+      "issuer": "سازمان نظام مهندسی ساختمان، نقل ابلاغ وزیر راه و شهرسازی",
+      "status": "CURRENT_MANDATORY",
+      "access_date": "2026-10-05",
+      "publication_date": null,
+      "notes": "Both editions permitted from 1404-10-20 through 1405-12-29. Record project permit date and selected complete edition; do not mix convenient clauses."
+    },
+    {
+      "source_id": "IR-M19-5",
+      "title": "مدیریت انرژی در ساختمان",
+      "edition_year": 1404,
+      "issuer": "وزارت راه و شهرسازی",
+      "url": "https://irceo.ir/fa/news/36052/ابلاغ-ویرایش-پنجم-مبحث-نوزدهم",
+      "status": "CURRENT_MANDATORY",
+      "access_date": "2026-10-05",
+      "publication_date": null,
+      "notes": "Fifth edition officially published; full clause-level migration still required. Concurrent fourth edition permitted under IR-ENERGY-TRANSITION."
+    },
+    {
+      "source_id": "IR-EXAM",
+      "title": "فهرست رسمی منابع آزمون طراحی معماری دوره جاری",
+      "issuer": "دفتر مقررات ملی و کنترل ساختمان",
+      "url": "https://inbr.ir",
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "access_date": "2026-10-05",
+      "notes": "Official endpoint inaccessible. Secondary exam lists are discovery leads only, not authority."
+    },
+    {
+      "source_id": "IR-M4-SECURITY",
+      "title": "پیوست لازم‌الاجرای مبحث چهارم: ضوابط حفاظتی انتظامی",
+      "issuer": "وزارت راه و شهرسازی",
+      "edition_year": null,
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "notes": "Owner mentions 1402; discovered ministry-authored PDF cover lead says 1403. Exact supplied file and official amendment/issue pending."
+    },
+    {
+      "source_id": "IR-ACCESS",
+      "title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت",
+      "issuer": "شورای عالی شهرسازی و معماری / مرکز تحقیقات",
+      "edition_year": 1399,
+      "status": "UNKNOWN_CURRENT_STATUS",
+      "notes": "Third-edition candidate from request; exact source and current status pending."
+    },
+    {
+      "source_id": "IR-LOCAL",
+      "title": "ضوابط مصوب محلی و دستور نقشه پلاک",
+      "issuer": null,
+      "status": "MANDATORY_BUT_LOCAL",
+      "notes": "Must be supplied or fetched per parcel/city/date; no Tehran default."
+    },
+    {
+      "source_id": "PLANHA-CONTRACT",
+      "title": "Owner-authorized typical residential floor-plan scope",
+      "issuer": "Project owner",
+      "status": "GUIDANCE",
+      "notes": "Product contract only; not legal authority."
+    }
+  ]
+}

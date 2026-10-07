@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "architecture-generation-input/1.0"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "units": {
+      "const": "m"
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "city": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parcel_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "jurisdiction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "city",
+        "parcel_id",
+        "jurisdiction",
+        "evidence_hash"
+      ],
+      "additionalProperties": false
+    },
+    "plot": {
+      "type": "object",
+      "properties": {
+        "boundary": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "minItems": 4
+        },
+        "north_deg": {
+          "type": "number"
+        },
+        "survey_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "access_edges": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "boundary",
+        "north_deg",
+        "survey_hash",
+        "access_edges"
+      ],
+      "additionalProperties": false
+    },
+    "authority": {
+      "type": "object",
+      "properties": {
+        "profile_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "edition_decisions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "decision": {
+                "enum": [
+                  "APPLICABLE",
+                  "NOT_APPLICABLE"
+                ]
+              },
+              "reviewer_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "source_id",
+              "source_hash",
+              "decision",
+              "reviewer_id",
+              "evidence_hash"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "envelope": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "minItems": 4
+        },
+        "envelope_evidence_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "profile_hash",
+        "edition_decisions",
+        "envelope",
+        "envelope_evidence_hash"
+      ],
+      "additionalProperties": false
+    },
+    "program": {
+      "type": "object",
+      "properties": {
+        "answers_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "questionnaire_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confirmed": {
+          "const": true
+        },
+        "units_per_floor": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "unit_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "unit_type_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "bedrooms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "target_usable_area_min_m2": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "target_usable_area_max_m2": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "requirement_strength": {
+                "enum": [
+                  "MANDATORY",
+                  "PREFERRED"
+                ]
+              }
+            },
+            "required": [
+              "unit_type_id",
+              "count",
+              "bedrooms",
+              "target_usable_area_min_m2",
+              "target_usable_area_max_m2",
+              "requirement_strength"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "answers_hash",
+        "questionnaire_version",
+        "confirmed",
+        "units_per_floor",
+        "unit_types"
+      ],
+      "additionalProperties": false
+    },
+    "typical_floors": {
+      "type": "object",
+      "properties": {
+        "identical_residential": {
+          "const": true
+        },
+        "floor_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "identical_residential",
+        "floor_ids"
+      ],
+      "additionalProperties": false
+    },
+    "reservations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "STRUCTURE",
+              "SHAFT",
+              "CORE",
+              "SERVICE_ACCESS",
+              "PARKING_DEPENDENCY"
+            ]
+          },
+          "polygon": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "minItems": 4
+          },
+          "source_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "vertical_group": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "polygon",
+          "source_hash",
+          "vertical_group"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "search": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "integer"
+        },
+        "max_candidates": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "strategy_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "seed",
+        "max_candidates",
+        "max_seconds",
+        "strategy_version"
+      ],
+      "additionalProperties": false
+    },
+    "weights": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "project_id",
+    "revision",
+    "units",
+    "location",
+    "plot",
+    "authority",
+    "program",
+    "typical_floors",
+    "reservations",
+    "search",
+    "weights"
+  ],
+  "additionalProperties": false
+}

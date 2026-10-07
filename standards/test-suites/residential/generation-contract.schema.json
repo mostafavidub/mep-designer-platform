@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "architecture_to_mep": {
+      "type": "object",
+      "properties": {
+        "prohibited": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "prohibited",
+        "required"
+      ],
+      "additionalProperties": false
+    },
+    "candidate_strategy": {
+      "type": "object",
+      "properties": {
+        "cost": {
+          "type": "string"
+        },
+        "determinism": {
+          "type": "string"
+        },
+        "enumeration": {
+          "type": "string"
+        },
+        "geometry": {
+          "type": "string"
+        },
+        "reconstruction_integration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cost",
+        "determinism",
+        "enumeration",
+        "geometry",
+        "reconstruction_integration"
+      ],
+      "additionalProperties": false
+    },
+    "derived_facts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "design_variables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "golden_contract": {
+      "type": "object",
+      "properties": {
+        "anti_leakage": {
+          "type": "string"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "anti_leakage",
+        "required",
+        "schema_version",
+        "status"
+      ],
+      "additionalProperties": false
+    },
+    "hard_gate": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "human_checkpoint": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "implemented": {
+      "type": "string"
+    },
+    "infeasibility": {
+      "type": "object",
+      "properties": {
+        "explanation": {
+          "type": "string"
+        },
+        "proof": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "explanation",
+        "proof"
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "authority_profile": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "plot": {
+          "type": "string"
+        },
+        "program": {
+          "type": "string"
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "reservations": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "string"
+        },
+        "typical_floor_schedule": {
+          "type": "string"
+        },
+        "weights": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority_profile",
+        "location",
+        "plot",
+        "program",
+        "project_id",
+        "reservations",
+        "seed",
+        "typical_floor_schedule",
+        "weights"
+      ],
+      "additionalProperties": false
+    },
+    "metric_contract": {
+      "type": "object",
+      "properties": {
+        "missing": {
+          "type": "string"
+        },
+        "range": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "ranking": {
+          "type": "string"
+        },
+        "weights": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "missing",
+        "range",
+        "ranking",
+        "weights"
+      ],
+      "additionalProperties": false
+    },
+    "output_contract": {
+      "type": "object",
+      "properties": {
+        "authority": {
+          "type": "string"
+        },
+        "candidate": {
+          "type": "string"
+        },
+        "drawing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "geometry": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "validation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "authority",
+        "candidate",
+        "drawing",
+        "geometry",
+        "validation"
+      ],
+      "additionalProperties": false
+    },
+    "pipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "integer"
+          },
+          "stop": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "stage",
+          "stop"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "schema_version": {
+      "const": "architecture-plan-generation/1.0"
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "occupancy": {
+          "type": "string"
+        },
+        "output": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "residential_floors": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "excluded",
+        "occupancy",
+        "output",
+        "residential_floors"
+      ],
+      "additionalProperties": false
+    },
+    "soft_metrics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status_enum": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "architecture_to_mep",
+    "candidate_strategy",
+    "derived_facts",
+    "design_variables",
+    "golden_contract",
+    "hard_gate",
+    "human_checkpoint",
+    "implemented",
+    "infeasibility",
+    "inputs",
+    "metric_contract",
+    "output_contract",
+    "pipeline",
+    "schema_version",
+    "scope",
+    "soft_metrics",
+    "status_enum",
+    "version"
+  ],
+  "additionalProperties": false
+}

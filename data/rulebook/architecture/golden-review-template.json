@@ -1,0 +1,49 @@
+{
+  "schema_version": "architecture-human-golden-template/1.0",
+  "template_version": "0.1.0",
+  "status": "EMPTY_TEMPLATE_NOT_GOLDEN_TRUTH",
+  "instructions_fa": [
+    "این فرم را فقط معمار واجد صلاحیت و مستقل از خروجی Planha تکمیل کند.",
+    "پلان، مرز زمین، دستور نقشه و ضوابط همان شهر و تاریخ پروژه باید منابع اصلی تصمیم باشند.",
+    "هیچ هندسه، برچسب یا تصمیمی را از خروجی Planha به‌عنوان حقیقت اولیه وارد نکنید.",
+    "هر تصمیم ضابطه‌ای باید منبع، بند، صفحه، دامنهٔ کاربرد و نتیجهٔ بازبینی داشته باشد.",
+    "مقدار نامعلوم را UNKNOWN یا INPUT_REQUIRED ثبت کنید؛ از تخمین ابعاد یا رفع ابهام با ظاهر پلان خودداری کنید.",
+    "پس از تکمیل، هویت منبع و پاسخ‌ها را هش کنید و پرونده را پیش از مقایسه با خروجی موتور قفل کنید."
+  ],
+  "case": {
+    "golden_id": null,
+    "project_identity": null,
+    "city": null,
+    "jurisdiction": null,
+    "building_type": "RESIDENTIAL_APARTMENT_TYPICAL_FLOOR",
+    "site_dimensions": null,
+    "buildable_envelope": null,
+    "floor_identity": null,
+    "unit_count": null,
+    "unit_program": [],
+    "human_architect_plan_reference": null,
+    "space_inventory": [],
+    "room_polygons_and_areas": [],
+    "adjacency_graph": [],
+    "doors_and_windows": [],
+    "core": null,
+    "shafts": [],
+    "wet_core": [],
+    "daylight_faces": [],
+    "furniture_fit_decisions": [],
+    "rule_compliance_decisions": [],
+    "intent_notes": null,
+    "human_reviewer": null,
+    "review_date": null,
+    "source_provenance": [],
+    "source_hashes": [],
+    "sealed_before_engine_comparison": false
+  },
+  "acceptance": {
+    "qualified_human_required": true,
+    "all_unknowns_explicit": true,
+    "source_hashes_required": true,
+    "independent_of_planha_output": true,
+    "seal_required_before_comparison": true
+  }
+}

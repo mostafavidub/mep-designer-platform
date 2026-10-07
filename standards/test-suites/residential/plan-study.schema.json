@@ -1,0 +1,515 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "methodology": {
+      "type": "object",
+      "properties": {
+        "analysis_limit": {
+          "type": "string"
+        },
+        "count_unit": {
+          "type": "string"
+        },
+        "dedup": {
+          "type": "string"
+        },
+        "publisher_diversity": {
+          "type": "string"
+        },
+        "rejected_generalizations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sampling": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "analysis_limit",
+        "count_unit",
+        "dedup",
+        "publisher_diversity",
+        "rejected_generalizations",
+        "sampling"
+      ],
+      "additionalProperties": false
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "access_date": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "approximate_floor_area_m2": {
+                "type": "null"
+              },
+              "balcony_terrace": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "bathrooms": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "bedrooms_per_unit": {
+                "type": "null"
+              },
+              "bedrooms_zoning": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "building_type": {
+                "type": "string"
+              },
+              "circulation_efficiency": {
+                "type": "null"
+              },
+              "common_core_type": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "corridor_type": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "cross_ventilation_potential": {
+                "type": "null"
+              },
+              "daylight_exposure": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "dead_space": {
+                "type": "null"
+              },
+              "elevator_position": {
+                "type": "null"
+              },
+              "entry_sequence": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "external_faces_per_unit": {
+                "type": "null"
+              },
+              "furniture_fit": {
+                "type": "null"
+              },
+              "guest_wc": {
+                "type": "null"
+              },
+              "kitchen_adjacency": {
+                "type": "null"
+              },
+              "kitchen_type": {
+                "type": "null"
+              },
+              "laundry": {
+                "type": "null"
+              },
+              "living_dining_relationship": {
+                "type": "null"
+              },
+              "master_bedroom_presence": {
+                "type": "null"
+              },
+              "mep_coordination": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "number_of_units": {
+                "type": "null"
+              },
+              "privacy": {
+                "type": "null"
+              },
+              "public_private_zoning": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "shaft_strategy": {
+                "type": "null"
+              },
+              "stair_position": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "storage": {
+                "type": "null"
+              },
+              "structural_grid_compatibility": {
+                "type": "null"
+              },
+              "unit_areas_m2": {
+                "type": "null"
+              },
+              "wet_core_arrangement": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "approximate_floor_area_m2",
+              "balcony_terrace",
+              "bathrooms",
+              "bedrooms_per_unit",
+              "bedrooms_zoning",
+              "building_type",
+              "circulation_efficiency",
+              "common_core_type",
+              "corridor_type",
+              "cross_ventilation_potential",
+              "daylight_exposure",
+              "dead_space",
+              "elevator_position",
+              "entry_sequence",
+              "external_faces_per_unit",
+              "furniture_fit",
+              "guest_wc",
+              "kitchen_adjacency",
+              "kitchen_type",
+              "laundry",
+              "living_dining_relationship",
+              "master_bedroom_presence",
+              "mep_coordination",
+              "number_of_units",
+              "privacy",
+              "public_private_zoning",
+              "shaft_strategy",
+              "stair_position",
+              "storage",
+              "structural_grid_compatibility",
+              "unit_areas_m2",
+              "wet_core_arrangement"
+            ],
+            "additionalProperties": false
+          },
+          "bed_count_scope": {
+            "type": "string"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "copyright": {
+            "type": "string"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "evidence_confidence": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "new_generalized_insight_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notable_strength": {
+            "type": "string"
+          },
+          "notable_weakness_or_risk": {
+            "type": "string"
+          },
+          "observation": {
+            "type": "string"
+          },
+          "observed_patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "project_id": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "review_method": {
+            "type": "string"
+          },
+          "review_status": {
+            "type": "string"
+          },
+          "reviewed_view": {
+            "type": "string"
+          },
+          "source_image_sha256": {
+            "type": "string"
+          },
+          "source_title": {
+            "type": "string"
+          },
+          "source_type": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": "string"
+          },
+          "study_id": {
+            "type": "string"
+          },
+          "unknown_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "unknown_policy": {
+            "type": "string"
+          },
+          "v1_relation": {
+            "type": "string"
+          },
+          "visible_bed_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "access_date",
+          "attributes",
+          "bed_count_scope",
+          "city",
+          "copyright",
+          "country",
+          "evidence_confidence",
+          "image_url",
+          "new_generalized_insight_refs",
+          "notable_strength",
+          "notable_weakness_or_risk",
+          "observation",
+          "observed_patterns",
+          "project_id",
+          "publisher",
+          "review_method",
+          "review_status",
+          "reviewed_view",
+          "source_image_sha256",
+          "source_title",
+          "source_type",
+          "source_url",
+          "study_id",
+          "unknown_fields",
+          "unknown_policy",
+          "v1_relation",
+          "visible_bed_count"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "schema_version": {
+      "const": "architecture-plan-study/1.0"
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "actual_plan_count": {
+          "type": "integer"
+        },
+        "context_only_count": {
+          "type": "integer"
+        },
+        "country_counts": {
+          "type": "object",
+          "properties": {
+            "Bosnia and Herzegovina": {
+              "type": "integer"
+            },
+            "Brazil": {
+              "type": "integer"
+            },
+            "China": {
+              "type": "integer"
+            },
+            "Colombia": {
+              "type": "integer"
+            },
+            "Denmark": {
+              "type": "integer"
+            },
+            "France": {
+              "type": "integer"
+            },
+            "Germany": {
+              "type": "integer"
+            },
+            "Indonesia": {
+              "type": "integer"
+            },
+            "Iran": {
+              "type": "integer"
+            },
+            "Italy": {
+              "type": "integer"
+            },
+            "Japan": {
+              "type": "integer"
+            },
+            "Mexico": {
+              "type": "integer"
+            },
+            "Portugal": {
+              "type": "integer"
+            },
+            "Spain": {
+              "type": "integer"
+            },
+            "The Netherlands": {
+              "type": "integer"
+            },
+            "UNKNOWN": {
+              "type": "integer"
+            },
+            "United States": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "Bosnia and Herzegovina",
+            "Brazil",
+            "China",
+            "Colombia",
+            "Denmark",
+            "France",
+            "Germany",
+            "Indonesia",
+            "Iran",
+            "Italy",
+            "Japan",
+            "Mexico",
+            "Portugal",
+            "Spain",
+            "The Netherlands",
+            "UNKNOWN",
+            "United States"
+          ],
+          "additionalProperties": false
+        },
+        "distinct_projects": {
+          "type": "integer"
+        },
+        "human_approved_golden_count": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "actual_plan_count",
+        "context_only_count",
+        "country_counts",
+        "distinct_projects",
+        "human_approved_golden_count"
+      ],
+      "additionalProperties": false
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "methodology",
+    "records",
+    "schema_version",
+    "summary",
+    "version"
+  ],
+  "additionalProperties": false
+}
