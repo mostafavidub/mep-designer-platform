@@ -1,0 +1,722 @@
+{
+  "schema_version": "architecture-human-rule-review/1.0",
+  "version": "0.1.0",
+  "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED",
+  "reviewer_decisions": [],
+  "items": [
+    {
+      "review_item_id": "HAR-ARCH-RES-LIVING-001",
+      "rule_id": "ARCH-RES-LIVING-001",
+      "plain_language_rule": "حداقل یک فضای اقامت با مساحت ۱۲ مترمربع و عرض ۲٫۷۰ متر لازم است.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-8",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Residential unit area >=75m2",
+      "exceptions": [],
+      "machine_logic": {
+        "all": [
+          {
+            "field": "largest_habitable_area_m2",
+            "op": ">=",
+            "value": 12,
+            "unit": "m2"
+          },
+          {
+            "field": "largest_habitable_width_m",
+            "op": ">=",
+            "value": 2.7,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 12 m2, >= 2.7 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 12 m2, >= 2.7 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-LIVING-002",
+      "rule_id": "ARCH-RES-LIVING-002",
+      "plain_language_rule": "حداقل یک اتاق ۹ مترمربع و هیچ‌یک از ابعاد افقی آن کمتر از ۲٫۵ متر نباشد.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-8",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Residential unit area <75m2",
+      "exceptions": [],
+      "machine_logic": {
+        "all": [
+          {
+            "field": "largest_habitable_area_m2",
+            "op": ">=",
+            "value": 9,
+            "unit": "m2"
+          },
+          {
+            "field": "largest_habitable_width_m",
+            "op": ">=",
+            "value": 2.5,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 9 m2, >= 2.5 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 9 m2, >= 2.5 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BEDROOM-001",
+      "rule_id": "ARCH-RES-BEDROOM-001",
+      "plain_language_rule": "حداقل عرض سایر فضاهای اقامت ۲٫۴۰ متر است؛ مساحت طبق نوع استفاده کنترل شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-8",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Other habitable rooms in residential units; use-specific dimensions also apply",
+      "exceptions": [],
+      "machine_logic": {
+        "field": "room_width_m",
+        "op": ">=",
+        "value": 2.4,
+        "unit": "m"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 2.4 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 2.4 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-LIVING-003",
+      "rule_id": "ARCH-RES-LIVING-003",
+      "plain_language_rule": "حداقل مساحت ۶٫۵ مترمربع؛ حکم اختصاصی تصرف مقدم است.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-2-1",
+      "page": {
+        "printed": 52,
+        "pdf": 66
+      },
+      "applicability": "Habitable room unless specific occupancy provisions supersede",
+      "exceptions": [],
+      "machine_logic": {
+        "field": "room_area_m2",
+        "op": ">=",
+        "value": 6.5,
+        "unit": "m2"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 6.5 m2",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 6.5 m2",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-CIRCULATION-001",
+      "rule_id": "ARCH-RES-CIRCULATION-001",
+      "plain_language_rule": "پهنای الزامی حداقل ۰٫۹۰ متر؛ الزامات خروج و دسترس‌پذیری جداگانه کنترل شوند.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-6",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Residential internal corridor or straight internal stair",
+      "exceptions": [],
+      "machine_logic": {
+        "field": "corridor_width_m",
+        "op": ">=",
+        "value": 0.9,
+        "unit": "m"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 0.9 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 0.9 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-STAIRS-001",
+      "rule_id": "ARCH-RES-STAIRS-001",
+      "plain_language_rule": "عرض مفید پله مستقیم حداقل ۰٫۹۰ و پله دارای گردش یا پاگرد حداقل ۱٫۱۰ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-3",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Residential building group 1,2,3 established by authority",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-STAIRS-002",
+      "rule_id": "ARCH-RES-STAIRS-002",
+      "plain_language_rule": "عرض مفید پله مستقیم حداقل ۱٫۱۰ و عرض قفسهٔ پلکان دارای پاگرد حداقل ۲٫۴۰ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-4",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Residential building group 4,5,6,7 established by authority",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-STAIRS-003",
+      "rule_id": "ARCH-RES-STAIRS-003",
+      "plain_language_rule": "ابعاد با جمعیت متصرف و الزامات راه خروج مبحث سوم تعیین شود؛ عدد ثابت جایگزین نشود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-5",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "applicability": "Residential building group 8",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-001",
+      "rule_id": "ARCH-RES-KITCHEN-001",
+      "plain_language_rule": "مساحت حداقل ۵٫۵۰ مترمربع؛ سطح آزاد خارج از قفسه‌بندی حداقل ۲٫۷۵ مترمربع.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-10",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Independent or open residential kitchen used only for cooking",
+      "exceptions": [],
+      "machine_logic": {
+        "all": [
+          {
+            "field": "kitchen_area_m2",
+            "op": ">=",
+            "value": 5.5,
+            "unit": "m2"
+          },
+          {
+            "field": "kitchen_free_area_m2",
+            "op": ">=",
+            "value": 2.75,
+            "unit": "m2"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 5.5 m2, >= 2.75 m2",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 5.5 m2, >= 2.75 m2",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-002",
+      "rule_id": "ARCH-RES-KITCHEN-002",
+      "plain_language_rule": "حداقل مساحت ۷٫۵۰ مترمربع.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-11",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Residential independent/open kitchen for cooking and eating",
+      "exceptions": [],
+      "machine_logic": {
+        "field": "kitchen_area_m2",
+        "op": ">=",
+        "value": 7.5,
+        "unit": "m2"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 7.5 m2",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 7.5 m2",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-003",
+      "rule_id": "ARCH-RES-KITCHEN-003",
+      "plain_language_rule": "حداقل عرض ۱٫۸۰ متر؛ برای پخت‌وپز همراه صرف غذا ۲٫۱۵ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-12",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Independent/open residential kitchen",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-004",
+      "rule_id": "ARCH-RES-KITCHEN-004",
+      "plain_language_rule": "فضای کار آزاد در تمام طول از لبه قفسه‌ها حداقل ۱٫۱۰ متر و طول آشپزخانه حداقل ۳ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-13",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Wall kitchen in residential unit",
+      "exceptions": [],
+      "machine_logic": {
+        "all": [
+          {
+            "field": "work_aisle_width_m",
+            "op": ">=",
+            "value": 1.1,
+            "unit": "m"
+          },
+          {
+            "field": "wall_kitchen_length_m",
+            "op": ">=",
+            "value": 3,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 1.1 m, >= 3 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 1.1 m, >= 3 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-001",
+      "rule_id": "ARCH-RES-DAYLIGHT-001",
+      "plain_language_rule": "نور و تهویه طبیعی مستقل؛ در واحد زیر ۷۵ مترمربع اگر دورترین نقطه آشپزخانه از پنجره فضای مجاور کمتر از ۷ متر باشد استثنا بررسی شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-14",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Independent residential kitchen",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-VENTILATION-001",
+      "rule_id": "ARCH-RES-VENTILATION-001",
+      "plain_language_rule": "حداقل سطح بازشوی تهویه یک شانزدهم مساحت کف آشپزخانه.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-15",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Kitchen serving habitable rooms",
+      "exceptions": [],
+      "machine_logic": {
+        "field": "vent_opening_area_m2",
+        "op": ">=",
+        "rhs_field": "kitchen_area_m2",
+        "factor": 0.0625,
+        "unit": "m2"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying factor 0.0625 ",
+      "fail_example": "Applicable project with complete authoritative inputs violating factor 0.0625 ",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-WC-001",
+      "rule_id": "ARCH-RES-WC-001",
+      "plain_language_rule": "فضا و تأسیسات آب و فاضلاب لازم برای نصب حداقل یک توالت فرنگی فراهم شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-17",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Residential unit area >=75m2",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BATHROOM-001",
+      "rule_id": "ARCH-RES-BATHROOM-001",
+      "plain_language_rule": "حداقل عرض ۱ متر و طول ۱٫۲۰ متر؛ برای دوش مستقل با رختکن داخل فضا حداقل یکی از ابعاد ۱٫۵۰ متر. ادامه و استثنای سرویس ترکیبی در صفحه بعد بررسی شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-18",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "applicability": "Separate residential sanitary space without mandatory accessible designation",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BATHROOM-002",
+      "rule_id": "ARCH-RES-BATHROOM-002",
+      "plain_language_rule": "ارتفاع حداقل ۲٫۲۰ متر در ۸۰ درصد سطح الزامی؛ زیر سقف شیب‌دار کوتاه‌ترین قسمت حداقل ۲٫۰۵ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-19",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "applicability": "Residential sanitary space",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-ACCESSIBILITY-001",
+      "rule_id": "ARCH-RES-ACCESSIBILITY-001",
+      "plain_language_rule": "اندازه حداقل ۱٫۵۰ در ۱٫۷۰ متر؛ مسیر و گردش و تجهیزات طبق ضوابط دسترس‌پذیری نیز کنترل شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-6-2-2",
+      "page": {
+        "printed": 61,
+        "pdf": 75
+      },
+      "applicability": "Accessible sanitary space required under applicable classification",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-PRIVACY-001",
+      "rule_id": "ARCH-RES-PRIVACY-001",
+      "plain_language_rule": "دسترسی اتاق اقامت مستقیماً از اتاق دیگر یا نشیمن عمومی نباشد مگر استثناهای صریح همین بند؛ دید مستقیم از نشیمن عمومی به خواب در هر حال مجاز نیست.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-2.a",
+      "page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "applicability": "Residential habitable rooms; apply listed exceptions a-1,a-2,a-3",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-PRIVACY-002",
+      "rule_id": "ARCH-RES-PRIVACY-002",
+      "plain_language_rule": "دید به داخل سرویس ممنوع؛ پیش‌ورودی دارای روشویی فقط با حفظ حرکت و دسترسی به سایر تجهیزات مجاز است.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-2.p",
+      "page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "applicability": "Combined sanitary facility visible from living/hall",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-PRIVACY-003",
+      "rule_id": "ARCH-RES-PRIVACY-003",
+      "plain_language_rule": "از نشیمن عمومی یا سالن دید مستقیم به قسمت‌های اصلی پخت‌وپز و کار آشپزخانه نباشد.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-2.th",
+      "page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "applicability": "Residential unit area >=75m2, wall/open kitchen",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BALCONY-001",
+      "rule_id": "ARCH-RES-BALCONY-001",
+      "plain_language_rule": "حداقل یک فضای نیمه‌باز اختصاصی مطابق ۴-۵-۷ لازم است؛ اندازه بدون منبع فرض نشود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-22",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "applicability": "Apartment/unit without direct adjacency and access to open space",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-002",
+      "rule_id": "ARCH-RES-DAYLIGHT-002",
+      "plain_language_rule": "حداقل نسبت شیشه به کف ۱/۸؛ اگر پنجره‌ها تنها در یک دیوار و عمق بیش از ۴٫۵۰ متر باشد ۱/۷.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-3-2",
+      "page": {
+        "printed": 53,
+        "pdf": 67
+      },
+      "applicability": "Habitable room; chapter4-6 and window-head exception3 apply",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-003",
+      "rule_id": "ARCH-RES-DAYLIGHT-003",
+      "plain_language_rule": "نسبت شیشه شفاف به کف حداقل ۱/۶؛ برای پنجره‌های یک‌طرفه و عمق بیش از۴٫۵۰ متر حداقل۱/۵.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-3-3",
+      "page": {
+        "printed": 53,
+        "pdf": 67
+      },
+      "applicability": "Window head below2.10m excluding sloped-roof light",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-004",
+      "rule_id": "ARCH-RES-DAYLIGHT-004",
+      "plain_language_rule": "حداکثر عمق قابل قبول نورگیری از یک پنجره ۷ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-8-3",
+      "page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "applicability": "Habitable room served by a window",
+      "exceptions": [],
+      "machine_logic": {
+        "field": "daylight_depth_m",
+        "op": "<=",
+        "value": 7,
+        "unit": "m"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying <= 7 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating <= 7 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-005",
+      "rule_id": "ARCH-RES-DAYLIGHT-005",
+      "plain_language_rule": "عمق نورگیری از لبه خارجی ایوان محسوب شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-8-4",
+      "page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "applicability": "Window below balcony/terrace projection",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DOOR-001",
+      "rule_id": "ARCH-RES-DOOR-001",
+      "plain_language_rule": "پهنای مفید حداقل۰٫۸۰ متر و ارتفاع مفید۲٫۰۵ متر؛ لنگه فعال در دولنگه نیز حداقل۰٫۸۰ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-8-2",
+      "page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "applicability": "Habitable room entry; specific accessible/egress provisions also apply",
+      "exceptions": [],
+      "machine_logic": {
+        "all": [
+          {
+            "field": "door_clear_width_m",
+            "op": ">=",
+            "value": 0.8,
+            "unit": "m"
+          },
+          {
+            "field": "door_clear_height_m",
+            "op": ">=",
+            "value": 2.05,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 0.8 m, >= 2.05 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 0.8 m, >= 2.05 m",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-EGRESS-001",
+      "rule_id": "ARCH-RES-EGRESS-001",
+      "plain_language_rule": "بازکردن در از داخل ساده و فوری باشد؛ قفل یا مانع نباید خروج به‌موقع را مختل کند.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-1-5-4",
+      "page": {
+        "printed": 47,
+        "pdf": 61
+      },
+      "applicability": "Doors on access/egress paths; explicit listed exceptions apply",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-005",
+      "rule_id": "ARCH-RES-KITCHEN-005",
+      "plain_language_rule": "دسترسی فضای اقامت از آشپزخانه نباشد؛ استثنای واحد دو فضایی فقط با ورودی فعال و نور و تهویه مستقل بررسی شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-5-1-2",
+      "page": {
+        "printed": 58,
+        "pdf": 72
+      },
+      "applicability": "Access to workplace/habitable room",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-VENTILATION-002",
+      "rule_id": "ARCH-RES-VENTILATION-002",
+      "plain_language_rule": "هود با کانال مستقل مکش به خارج ساختمان مرتبط شود.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-5-3-3",
+      "page": {
+        "printed": 59,
+        "pdf": 73
+      },
+      "applicability": "Kitchen ventilation requires over-cooktop extraction",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-006",
+      "rule_id": "ARCH-RES-DAYLIGHT-006",
+      "plain_language_rule": "فاصله دیوارهای پنجره‌های مقابل حداقل۶ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-24",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "applicability": "Land area >200m2; main habitable rooms of two independent units use same internal court",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-007",
+      "rule_id": "ARCH-RES-DAYLIGHT-007",
+      "plain_language_rule": "فاصله دیوارهای پنجره‌های مقابل حداقل۴ متر.",
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-25",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "applicability": "Independent units: kitchen/habitable or two kitchens use same internal court",
+      "exceptions": [],
+      "machine_logic": null,
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "open_question": "Confirm current M4 lifecycle, applicability, exceptions and M3/accessibility/local interactions for this clause.",
+      "status": "HUMAN_ARCHITECT_REVIEW_REQUIRED"
+    }
+  ]
+}

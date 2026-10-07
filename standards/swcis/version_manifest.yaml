@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.4.0",
+  "standard_version": "5.5.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-10-07",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.5.0",
+      "date": "2026-10-07",
+      "summary": "Record clause-level Iranian M4 evidence separately from unresolved legal lifecycle, add M3/accessibility authority assessments, conflict and architect-review gates, and keep every residential rule release-disabled."
+    },
     {
       "version": "5.4.0",
       "date": "2026-10-07",

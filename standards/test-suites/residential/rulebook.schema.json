@@ -344,6 +344,45 @@
             "items": {
               "type": "string"
             }
+          },
+          "effective_from": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "effective_until": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transition_start": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transition_end": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supersedes": {
+            "type": "array"
+          },
+          "superseded_by": {
+            "type": "array"
+          },
+          "amendment_state": {
+            "type": "string"
+          },
+          "legal_strength": {
+            "type": "string"
+          },
+          "cross_references": {
+            "type": "array"
           }
         },
         "required": [
@@ -419,7 +458,16 @@
                 "machine_checkable",
                 "human_review_required",
                 "release_status",
-                "qualification_reason_codes"
+                "qualification_reason_codes",
+                "effective_from",
+                "effective_until",
+                "transition_start",
+                "transition_end",
+                "supersedes",
+                "superseded_by",
+                "amendment_state",
+                "legal_strength",
+                "cross_references"
               ]
             }
           }

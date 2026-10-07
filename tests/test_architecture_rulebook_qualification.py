@@ -58,7 +58,8 @@ class ArchitectureRulebookQualificationTests(unittest.TestCase):
         self.assertEqual(len(gaps), 24)
         self.assertEqual(len(gaps), len({g["gap_id"] for g in gaps}))
         self.assertTrue(any(g["severity"] == "CRITICAL" for g in gaps))
-        self.assertTrue(all(g["status"] == "OPEN" for g in gaps))
+        self.assertTrue(all(g["status"] in {"OPEN", "PARTIALLY_RESOLVED", "RESOLVED", "HUMAN_REVIEW_REQUIRED", "NOT_APPLICABLE"} for g in gaps))
+        self.assertEqual(load("source-gap-register")["summary"]["total"], 24)
 
     def test_owner_questions_are_explicit_choices_and_never_hidden_defaults(self):
         catalog = load("owner-questionnaire")
@@ -84,7 +85,7 @@ class ArchitectureRulebookQualificationTests(unittest.TestCase):
 
     def test_generator_readiness_remains_blocked(self):
         report = load("qualification-report")
-        self.assertEqual(report["status"], "ARCHITECTURE_RULEBOOK_BLOCKED")
+        self.assertEqual(report["status"], "PRIMARY_AUTHORITY_CLOSURE_BLOCKED")
         self.assertEqual(report["generator_readiness"], "NOT_READY")
         self.assertEqual(report["metrics"]["release_ready_count"], 0)
 

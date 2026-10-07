@@ -1,8 +1,8 @@
 {
   "schema_version": "architecture-rulebook/1.1",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "scope": "RESIDENTIAL_TYPICAL_FLOOR_PLAN_ONLY",
-  "status": "ARCHITECTURE_RULEBOOK_BLOCKED",
+  "status": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
   "authority_order": [
     "IR_NATIONAL_BUILDING_REGULATIONS",
     "IR_MANDATORY_LAW_STANDARD",
@@ -186,16 +186,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل یک فضای اقامت با مساحت ۱۲ مترمربع و عرض ۲٫۷۰ متر لازم است.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "اندازهٔ حداقل یک فضای اقامت اصلی تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -329,16 +344,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل یک اتاق ۹ مترمربع و هیچ‌یک از ابعاد افقی آن کمتر از ۲٫۵ متر نباشد.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "فضای اقامت واحد کوچک تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -440,16 +470,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل عرض سایر فضاهای اقامت ۲٫۴۰ متر است؛ مساحت طبق نوع استفاده کنترل شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "عرض سایر اتاق‌های اقامت مسکونی تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -548,16 +593,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل مساحت ۶٫۵ مترمربع؛ حکم اختصاصی تصرف مقدم است.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "مساحت عمومی اتاق اقامت تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -656,16 +716,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "پهنای الزامی حداقل ۰٫۹۰ متر؛ الزامات خروج و دسترس‌پذیری جداگانه کنترل شوند.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "عرض راهروی داخلی واحد تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -752,16 +827,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "عرض مفید پله مستقیم حداقل ۰٫۹۰ و پله دارای گردش یا پاگرد حداقل ۱٫۱۰ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳ تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -851,16 +941,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "عرض مفید پله مستقیم حداقل ۱٫۱۰ و عرض قفسهٔ پلکان دارای پاگرد حداقل ۲٫۴۰ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷ تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -947,16 +1052,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "ابعاد با جمعیت متصرف و الزامات راه خروج مبحث سوم تعیین شود؛ عدد ثابت جایگزین نشود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۸ تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1086,16 +1206,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "مساحت حداقل ۵٫۵۰ مترمربع؛ سطح آزاد خارج از قفسه‌بندی حداقل ۲٫۷۵ مترمربع.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1194,16 +1329,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل مساحت ۷٫۵۰ مترمربع.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "آشپزخانه همراه محل صرف غذا تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1287,16 +1437,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل عرض ۱٫۸۰ متر؛ برای پخت‌وپز همراه صرف غذا ۲٫۱۵ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "عرض آشپزخانه تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1426,16 +1591,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "فضای کار آزاد در تمام طول از لبه قفسه‌ها حداقل ۱٫۱۰ متر و طول آشپزخانه حداقل ۳ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "فضای کار آشپزخانه دیواری تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1528,16 +1708,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "نور و تهویه طبیعی مستقل؛ در واحد زیر ۷۵ مترمربع اگر دورترین نقطه آشپزخانه از پنجره فضای مجاور کمتر از ۷ متر باشد استثنا بررسی شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "نور و هوای آشپزخانه مستقل تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1645,16 +1840,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل سطح بازشوی تهویه یک شانزدهم مساحت کف آشپزخانه.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "بازشوی تهویه آشپزخانه تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1744,16 +1954,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "فضا و تأسیسات آب و فاضلاب لازم برای نصب حداقل یک توالت فرنگی فراهم شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "پیش‌بینی توالت فرنگی برای واحد بزرگ تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1843,16 +2068,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل عرض ۱ متر و طول ۱٫۲۰ متر؛ برای دوش مستقل با رختکن داخل فضا حداقل یکی از ابعاد ۱٫۵۰ متر. ادامه و استثنای سرویس ترکیبی در صفحه بعد بررسی شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "ابعاد فضای بهداشتی مسکونی معمول تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -1939,16 +2179,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "ارتفاع حداقل ۲٫۲۰ متر در ۸۰ درصد سطح الزامی؛ زیر سقف شیب‌دار کوتاه‌ترین قسمت حداقل ۲٫۰۵ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "ارتفاع فضای بهداشتی مسکونی تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2032,16 +2287,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "اندازه حداقل ۱٫۵۰ در ۱٫۷۰ متر؛ مسیر و گردش و تجهیزات طبق ضوابط دسترس‌پذیری نیز کنترل شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "فضای بهداشتی قابل استفاده معلول تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2134,16 +2404,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "دسترسی اتاق اقامت مستقیماً از اتاق دیگر یا نشیمن عمومی نباشد مگر استثناهای صریح همین بند؛ دید مستقیم از نشیمن عمومی به خواب در هر حال مجاز نیست.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "دسترسی مستقل اتاق‌ها تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2230,16 +2515,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "دید به داخل سرویس ممنوع؛ پیش‌ورودی دارای روشویی فقط با حفظ حرکت و دسترسی به سایر تجهیزات مجاز است.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "دید به سرویس بهداشتی تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2326,16 +2626,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "از نشیمن عمومی یا سالن دید مستقیم به قسمت‌های اصلی پخت‌وپز و کار آشپزخانه نباشد.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "دید به محل کار آشپزخانه تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2422,16 +2737,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل یک فضای نیمه‌باز اختصاصی مطابق ۴-۵-۷ لازم است؛ اندازه بدون منبع فرض نشود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "فضای نیمه‌باز اختصاصی تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2524,16 +2854,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداقل نسبت شیشه به کف ۱/۸؛ اگر پنجره‌ها تنها در یک دیوار و عمق بیش از ۴٫۵۰ متر باشد ۱/۷.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "سطح شیشه اتاق اقامت تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2626,16 +2971,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "نسبت شیشه شفاف به کف حداقل ۱/۶؛ برای پنجره‌های یک‌طرفه و عمق بیش از۴٫۵۰ متر حداقل۱/۵.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "پنجره با لبه بالایی کوتاه تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2734,16 +3094,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "حداکثر عمق قابل قبول نورگیری از یک پنجره ۷ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "عمق قابل قبول نورگیری تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2827,16 +3202,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "عمق نورگیری از لبه خارجی ایوان محسوب شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "نورگیری زیر ایوان تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -2966,16 +3356,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "پهنای مفید حداقل۰٫۸۰ متر و ارتفاع مفید۲٫۰۵ متر؛ لنگه فعال در دولنگه نیز حداقل۰٫۸۰ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "در ورودی اتاق اقامت تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": true,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -3062,16 +3467,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "بازکردن در از داخل ساده و فوری باشد؛ قفل یا مانع نباید خروج به‌موقع را مختل کند.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "بازشدن در خروج از داخل تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -3158,16 +3578,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "دسترسی فضای اقامت از آشپزخانه نباشد؛ استثنای واحد دو فضایی فقط با ورودی فعال و نور و تهویه مستقل بررسی شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "ممنوعیت عبور الزامی از آشپزخانه تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -3254,16 +3689,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "هود با کانال مستقل مکش به خارج ساختمان مرتبط شود.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "هود به هوای آزاد تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -3353,16 +3803,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۶ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "حیاط بین دو تصرف مسکونی تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -3449,16 +3914,31 @@
       },
       "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
       "source_quote_or_precise_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۴ متر.",
-      "evidence_strength": "B",
+      "evidence_strength": "A",
       "warning_message_fa": "حیاط مشترک آشپزخانه و اقامت تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "تا احراز نسخه جاری، اصلاحات، استثناها و تعارض منابع، این بند فقط شاهد پژوهشی است و مجوز انتشار نمی‌دهد.",
       "machine_checkable": false,
       "human_review_required": true,
       "release_status": "SOURCE_GAP",
       "qualification_reason_codes": [
-        "CURRENT_EDITION_STATUS_UNVERIFIED",
         "AMENDMENTS_UNVERIFIED",
-        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED"
+        "CROSS_AUTHORITY_CONFLICT_REVIEW_REQUIRED",
+        "CURRENT_EDITION_STATUS_UNVERIFIED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
+        "M4_LIFECYCLE_UNRESOLVED"
+      ],
+      "effective_from": null,
+      "effective_until": null,
+      "transition_start": null,
+      "transition_end": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "amendment_state": "AUTHORITY_STATUS_UNRESOLVED",
+      "legal_strength": "MANDATORY_CANDIDATE_NOT_RELEASE_QUALIFIED",
+      "cross_references": [
+        "IR-ACCESS",
+        "IR-LOCAL",
+        "IR-M3"
       ]
     },
     {
@@ -4001,6 +4481,10 @@
     "empirical_pattern_count": 0,
     "owner_decision_count": 0,
     "rejected_count": 0,
-    "blocking_reason": "Current official edition/amendment status and cross-authority applicability are not fully qualified."
+    "blocking_reason": "Current official edition/amendment status and cross-authority applicability are not fully qualified.",
+    "human_review_required_count": 32,
+    "source_gap_count": 32,
+    "reclassification_changes": 0,
+    "primary_authority_closure": "BLOCKED"
   }
 }

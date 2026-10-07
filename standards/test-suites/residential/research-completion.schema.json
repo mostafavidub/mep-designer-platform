@@ -14,7 +14,8 @@
     "ergonomics",
     "owner_program",
     "golden_program",
-    "readiness"
+    "readiness",
+    "primary_authority_closure"
   ],
   "properties": {
     "schema_version": {
@@ -24,7 +25,10 @@
       "type": "string"
     },
     "status": {
-      "const": "ARCHITECTURE_RULEBOOK_BLOCKED"
+      "enum": [
+        "ARCHITECTURE_RULEBOOK_BLOCKED",
+        "PRIMARY_AUTHORITY_CLOSURE_BLOCKED"
+      ]
     },
     "authority_boundary": {
       "type": "object"
@@ -85,6 +89,46 @@
     },
     "readiness": {
       "type": "object"
+    },
+    "primary_authority_closure": {
+      "type": "object",
+      "required": [
+        "retrieved_date",
+        "final_status",
+        "m4",
+        "m3",
+        "accessibility",
+        "release_ready_rules",
+        "human_architect_review_required_rules",
+        "generator_gate"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "retrieved_date": {
+          "type": "string"
+        },
+        "final_status": {
+          "type": "string"
+        },
+        "m4": {
+          "type": "string"
+        },
+        "m3": {
+          "type": "string"
+        },
+        "accessibility": {
+          "type": "string"
+        },
+        "release_ready_rules": {
+          "type": "integer"
+        },
+        "human_architect_review_required_rules": {
+          "type": "integer"
+        },
+        "generator_gate": {
+          "type": "string"
+        }
+      }
     }
   },
   "additionalProperties": false

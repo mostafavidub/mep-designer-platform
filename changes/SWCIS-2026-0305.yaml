@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0305",
-  "summary": "Qualify every residential hard-rule candidate with explicit authority, enforcement, applicability, source-gap, owner-decision and QA metadata while retaining fail-closed release authority.",
+  "summary": "Qualify residential rule candidates and record M3, M4 and Iranian accessibility authority lifecycles, cross-authority conflicts and architect review without activating unresolved rules.",
   "requester": "project-owner",
   "change_types": [
     "rule",
@@ -64,13 +64,13 @@
     "versioning"
   ],
   "impact_notes": {
-    "rule_book": "changed: additive qualification metadata; all unresolved authority remains disabled",
+    "rule_book": "changed: additive qualification, lifecycle, conflict and review metadata; activation remains zero",
     "questionnaire": "changed: explicit KEEP/DELAY disposition without hidden defaults",
-    "qa": "added: qualification and source-gap guards; no generator claim",
-    "docs": "added: rulebook and qualification report",
+    "qa": "added: qualification, source-gap, authority lifecycle and conflict integrity tests",
+    "docs": "added: rulebook qualification and primary-authority closure reports",
     "governance": "changed: SWCIS traceability and version evidence",
-    "versioning": "changed: backward-compatible rulebook schema addition",
-    "migration": "verified: offline foundation data must be revalidated before runtime activation",
+    "versioning": "changed: backward-compatible rulebook and authority-registry metadata",
+    "migration": "verified: offline metadata must be revalidated before runtime activation; no production migration",
     "cad_designer": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
     "deployment": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
     "detail_riser": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
@@ -89,32 +89,35 @@
     ],
     "tests": [
       "tests/test_architecture_rulebook_qualification.py",
+      "tests/test_architecture_primary_authority_closure.py",
       "tests/test_residential_foundation.py"
     ],
     "docs": [
       "docs/residential/RULEBOOK.md",
-      "docs/residential/RULEBOOK_QUALIFICATION.md"
+      "docs/residential/RULEBOOK_QUALIFICATION.md",
+      "docs/residential/PRIMARY_AUTHORITY_CLOSURE.md"
     ],
     "version_bump": [
       "standards/swcis/version_manifest.yaml"
     ],
     "migration": [
-      "standards/swcis/migrations/residential-rulebook-qualification.json"
+      "standards/swcis/migrations/residential-rulebook-qualification.json",
+      "standards/swcis/migrations/residential-primary-authority-closure.json"
     ],
     "golden_regression": [
       "data/rulebook/architecture/golden-matrix.json"
     ],
     "semantic_diff": [
-      "docs/residential/RULEBOOK_QUALIFICATION.md"
+      "No release rule activated; clause evidence and authority-lifecycle uncertainty are represented separately"
     ],
     "artifact_diff": [
-      "docs/residential/RULEBOOK_QUALIFICATION.md"
+      "Authority assessments, conflict matrix and human-architect review package added to the canonical offline catalog"
     ],
     "numeric_diff": [
       "No new numeric requirement; extracted candidate values remain release-disabled"
     ],
     "contract_diff": [
-      "Backward-compatible qualification fields and registries"
+      "Backward-compatible authority lifecycle, source-class, conflict and review metadata"
     ],
     "deployment_plan": [
       "No deployment; stacked draft PR only"

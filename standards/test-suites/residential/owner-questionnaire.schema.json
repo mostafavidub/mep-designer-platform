@@ -432,6 +432,19 @@
           },
           "derivation_policy": {
             "type": "string"
+          },
+          "re_audit_disposition": {
+            "enum": [
+              "DERIVE_FROM_CODE",
+              "DERIVE_FROM_CITY",
+              "DERIVE_FROM_GEOMETRY",
+              "KEEP",
+              "DELAY",
+              "REMOVE"
+            ]
+          },
+          "re_audit_reason": {
+            "type": "string"
           }
         },
         "required": [
@@ -455,7 +468,9 @@
           "classification",
           "enforcement_level",
           "ask_stage",
-          "derivation_policy"
+          "derivation_policy",
+          "re_audit_disposition",
+          "re_audit_reason"
         ],
         "additionalProperties": false
       }
@@ -497,6 +512,9 @@
     },
     "qualification_summary": {
       "type": "object"
+    },
+    "regulatory_reaudit_summary": {
+      "type": "object"
     }
   },
   "required": [
@@ -508,7 +526,8 @@
     "structured_program_limit",
     "v1_progression",
     "version",
-    "qualification_summary"
+    "qualification_summary",
+    "regulatory_reaudit_summary"
   ],
   "additionalProperties": false
 }

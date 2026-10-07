@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "version",
+    "status",
+    "conflicts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "architecture-authority-conflicts/1.0"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "conflicts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "conflict_id": {
+            "type": "string"
+          },
+          "rule_a": {
+            "type": "string"
+          },
+          "rule_b": {
+            "type": "string"
+          },
+          "authority_a": {
+            "type": "string"
+          },
+          "authority_b": {
+            "type": "string"
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "actual_conflict_or_not": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "human_review_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "conflict_id",
+          "rule_a",
+          "rule_b",
+          "authority_a",
+          "authority_b",
+          "jurisdiction",
+          "scope",
+          "actual_conflict_or_not",
+          "resolution",
+          "reason",
+          "human_review_required"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

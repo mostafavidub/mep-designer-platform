@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-rulebook-qualification/1.0",
-  "version": "0.1.0",
-  "status": "ARCHITECTURE_RULEBOOK_BLOCKED",
+  "version": "0.2.0",
+  "status": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
   "generator_readiness": "NOT_READY",
   "metrics": {
     "candidate_count": 32,
@@ -18,12 +18,21 @@
     "owner_question_count": 58,
     "qa_case_count": 136,
     "golden_available": 0,
-    "golden_required": 8
+    "golden_required": 8,
+    "still_source_gap": 32,
+    "human_review_required": 32,
+    "source_gap_statuses": {
+      "OPEN": 3,
+      "PARTIALLY_RESOLVED": 7,
+      "RESOLVED": 2,
+      "HUMAN_REVIEW_REQUIRED": 12,
+      "NOT_APPLICABLE": 0
+    }
   },
   "critical_findings": [
-    "No current official edition/amendment register establishes release authority for IR-M4 candidate clauses.",
-    "Fire/egress and accessibility conflict/applicability sources are incomplete.",
-    "Parcel/city rules are absent and cannot be generalized nationally."
+    "M4 third-edition 1396 document and all 32 cited clauses are traceable, but effective-date and complete amendment/replacement lifecycle remain unresolved.",
+    "M3 third-edition 1395 document identity is verified locally; official effective date, complete corrigenda and current replacement status remain unresolved.",
+    "The exact current Council-approved accessibility instrument, amendments and applicability triggers were not obtained from a primary endpoint."
   ],
   "root_causes": [
     "source currency not established",
@@ -31,5 +40,5 @@
     "mandatory and release authority previously coupled",
     "source gaps represented as placeholder rules"
   ],
-  "release_decision": "No candidate may execute as a release hard block until its source gap is closed and its QA cases are implemented."
+  "release_decision": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED: zero rules activated; independent primary lifecycle evidence and human architect review remain required."
 }

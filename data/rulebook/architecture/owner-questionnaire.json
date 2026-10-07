@@ -1,6 +1,6 @@
 {
   "schema_version": "architecture-owner-program/1.0",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "questions": [
     {
       "question_id": "OWN-PURPOSE",
@@ -41,7 +41,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-QUALITY",
@@ -81,7 +83,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-PRIORITY",
@@ -125,7 +129,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-MARKET",
@@ -160,7 +166,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-UNITS_PER_FLOOR",
@@ -191,7 +199,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-UNIT_PROGRAM",
@@ -230,7 +240,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-EQUAL_UNITS",
@@ -271,7 +283,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-MASTER",
@@ -308,7 +322,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-GUEST_ROOM",
@@ -344,7 +360,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-OFFICE",
@@ -382,7 +400,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-FLEX_ROOM",
@@ -418,7 +438,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ROOM_TARGETS",
@@ -447,7 +469,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-RECEPTION",
@@ -486,7 +510,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-DINING",
@@ -517,7 +543,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-TV",
@@ -553,7 +581,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-KITCHEN",
@@ -594,7 +624,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ISLAND",
@@ -632,7 +664,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-BREAKFAST",
@@ -668,7 +702,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-PANTRY",
@@ -704,7 +740,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-APPLIANCES",
@@ -748,7 +786,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-APPLIANCE_SIZES",
@@ -780,7 +820,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-SECONDARY_KITCHEN",
@@ -816,7 +858,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-KITCHEN_SERVICE_ACCESS",
@@ -852,7 +896,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-GUEST_WC",
@@ -891,7 +937,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-COMMON_BATHS",
@@ -922,7 +970,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-BATHING",
@@ -960,7 +1010,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-WC_TYPE",
@@ -1000,7 +1052,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-LAUNDRY",
@@ -1042,7 +1096,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-DRYING",
@@ -1083,7 +1139,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-WARDROBES",
@@ -1112,7 +1170,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-LINEN",
@@ -1148,7 +1208,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-UNIT_STORAGE",
@@ -1184,7 +1246,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-COMMON_STORAGE",
@@ -1220,7 +1284,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-BALCONY",
@@ -1258,7 +1324,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-BALCONY_AREA",
@@ -1296,7 +1364,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-BALCONY_ACCESS",
@@ -1340,7 +1410,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-BALCONY_PRIVACY",
@@ -1378,7 +1450,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ENTRY_PRIVACY",
@@ -1416,7 +1490,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-GUEST_PATH",
@@ -1454,7 +1530,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ACOUSTIC_PRIORITY",
@@ -1494,7 +1572,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-PREFERRED_VIEWS",
@@ -1523,7 +1603,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ORIENTATION_PRIORITY",
@@ -1552,7 +1634,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-CORE_STRATEGY",
@@ -1582,7 +1666,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-EXTRA_LIFT",
@@ -1623,7 +1709,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-LOBBY",
@@ -1663,7 +1751,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-VEHICLES",
@@ -1692,7 +1782,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ACCESS_NEEDS",
@@ -1731,7 +1823,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-ACCESS_DETAILS",
@@ -1779,7 +1873,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-CHILDREN",
@@ -1808,7 +1904,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-PETS",
@@ -1837,7 +1935,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-FUTURE_ADAPT",
@@ -1876,7 +1976,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-CULTURAL_PRIVACY",
@@ -1905,7 +2007,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-HVAC_RESERVATION",
@@ -1941,7 +2045,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-HVAC_DETAILS",
@@ -1975,7 +2081,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-EXISTING_FURNITURE",
@@ -2011,7 +2119,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "OPTIONAL_REFINEMENT",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-FURNITURE_SIZES",
@@ -2045,7 +2155,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "CONDITIONAL",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "DELAY",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-COMPROMISE",
@@ -2075,7 +2187,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     },
     {
       "question_id": "OWN-CONFIRMATION",
@@ -2111,7 +2225,9 @@
       "classification": "OWNER_DECISION",
       "enforcement_level": "ASK_USER",
       "ask_stage": "PROGRAM_FREEZE",
-      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT"
+      "derivation_policy": "DO_NOT_INFER_OWNER_INTENT",
+      "re_audit_disposition": "KEEP",
+      "re_audit_reason": "Explicit owner program, lifestyle, cost, quality or project intent; regulatory closure cannot choose it."
     }
   ],
   "auto_facts": [
@@ -2312,5 +2428,13 @@
     "derive_automatically": 0,
     "remove": 0,
     "delay": 45
+  },
+  "regulatory_reaudit_summary": {
+    "DERIVE_FROM_CODE": 0,
+    "DERIVE_FROM_CITY": 0,
+    "DERIVE_FROM_GEOMETRY": 0,
+    "KEEP": 13,
+    "DELAY": 45,
+    "REMOVE": 0
   }
 }

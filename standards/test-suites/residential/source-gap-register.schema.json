@@ -4,7 +4,8 @@
   "required": [
     "schema_version",
     "version",
-    "gaps"
+    "gaps",
+    "summary"
   ],
   "properties": {
     "schema_version": {
@@ -30,7 +31,9 @@
           "remaining_uncertainty",
           "recommended_action",
           "human_required",
-          "status"
+          "status",
+          "transition_evidence",
+          "closure_note"
         ],
         "properties": {
           "gap_id": {
@@ -78,11 +81,26 @@
             "type": "boolean"
           },
           "status": {
+            "enum": [
+              "OPEN",
+              "PARTIALLY_RESOLVED",
+              "RESOLVED",
+              "HUMAN_REVIEW_REQUIRED",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "transition_evidence": {
+            "type": "string"
+          },
+          "closure_note": {
             "type": "string"
           }
         },
         "additionalProperties": false
       }
+    },
+    "summary": {
+      "type": "object"
     }
   },
   "additionalProperties": false

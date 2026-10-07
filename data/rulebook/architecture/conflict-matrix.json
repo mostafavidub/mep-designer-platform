@@ -1,0 +1,111 @@
+{
+  "schema_version": "architecture-authority-conflicts/1.0",
+  "version": "0.1.0",
+  "status": "OPEN_P0_CONFLICTS",
+  "conflicts": [
+    {
+      "conflict_id": "AUTH-CONFLICT-001",
+      "rule_a": "M4 residential stair clauses",
+      "rule_b": "M3 egress width/exit requirements",
+      "authority_a": "IR-M4",
+      "authority_b": "IR-M3",
+      "jurisdiction": "IR_NATIONAL",
+      "scope": "Stairs used as required egress",
+      "actual_conflict_or_not": "UNRESOLVED_INTERACTION",
+      "resolution": "Apply the stricter applicable requirement only after both applicability models and current lifecycles are qualified.",
+      "reason": "M4 expressly defers group-8/egress conditions to M3.",
+      "human_review_required": true
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-002",
+      "rule_a": "ARCH-RES-EGRESS-001",
+      "rule_b": "M3 exit door requirements",
+      "authority_a": "IR-M4",
+      "authority_b": "IR-M3",
+      "jurisdiction": "IR_NATIONAL",
+      "scope": "Required exit doors",
+      "actual_conflict_or_not": "UNRESOLVED_INTERACTION",
+      "resolution": "M3 life-safety conditions cannot be replaced by the general M4 door rule.",
+      "reason": "Occupancy/load/direction conditions require M3 extraction.",
+      "human_review_required": true
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-003",
+      "rule_a": "ARCH-RES-ACCESSIBILITY-001",
+      "rule_b": "Current accessibility instrument",
+      "authority_a": "IR-M4",
+      "authority_b": "IR-ACCESS",
+      "jurisdiction": "IR_NATIONAL",
+      "scope": "Accessible sanitary spaces and routes",
+      "actual_conflict_or_not": "UNRESOLVED_REFERENCE",
+      "resolution": "Use the latest applicable accessibility instrument after official identity and trigger verification.",
+      "reason": "M4 expressly incorporates the latest Council-approved accessibility rules when applicable.",
+      "human_review_required": true
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-004",
+      "rule_a": "M3 egress",
+      "rule_b": "Accessibility route/refuge requirements",
+      "authority_a": "IR-M3",
+      "authority_b": "IR-ACCESS",
+      "jurisdiction": "IR_NATIONAL",
+      "scope": "Evacuation of mobility-impaired occupants",
+      "actual_conflict_or_not": "UNRESOLVED_INTERACTION",
+      "resolution": "Require both applicable life-safety and accessibility evidence; do not average or select a convenient value.",
+      "reason": "Exact current accessibility and M3 lifecycle/applicability are unresolved.",
+      "human_review_required": true
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-005",
+      "rule_a": "National M4 minima",
+      "rule_b": "Approved local stricter rules",
+      "authority_a": "IR-M4",
+      "authority_b": "IR-LOCAL",
+      "jurisdiction": "PROJECT_CITY_PARCEL",
+      "scope": "Envelope, height, area, local planning constraints",
+      "actual_conflict_or_not": "NOT_CONFLICT_IF_STRICTER_LOCAL_SCOPE_PROVEN",
+      "resolution": "Apply current local rule pack within its jurisdiction; retain both provenance chains.",
+      "reason": "M4 scope clauses direct outside-parcel urban matters to approved plans and recognize stricter local constraints.",
+      "human_review_required": true
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-006",
+      "rule_a": "ARCH-RES-VENTILATION-002",
+      "rule_b": "Mechanical exhaust design",
+      "authority_a": "IR-M4",
+      "authority_b": "MEP_PROJECT_AUTHORITY",
+      "jurisdiction": "PROJECT",
+      "scope": "Kitchen hood path/reservation versus airflow/system design",
+      "actual_conflict_or_not": "INTERFACE_NOT_DUPLICATE_RULE",
+      "resolution": "Architecture reserves source-supported route/space; MEP owns airflow, equipment and system calculations.",
+      "reason": "Architecture must not absorb MEP engineering calculations.",
+      "human_review_required": false
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-007",
+      "rule_a": "Architectural shafts/openings",
+      "rule_b": "Structural prohibited zones",
+      "authority_a": "ARCHITECTURE_PROJECT_INPUT",
+      "authority_b": "STRUCTURAL_PROJECT_INPUT",
+      "jurisdiction": "PROJECT",
+      "scope": "Shafts, openings, columns and shear walls",
+      "actual_conflict_or_not": "PROJECT_COORDINATION_REQUIRED",
+      "resolution": "Missing structural model remains INPUT_REQUIRED; architecture cannot invent openings.",
+      "reason": "No national default can substitute project structure.",
+      "human_review_required": true
+    },
+    {
+      "conflict_id": "AUTH-CONFLICT-008",
+      "rule_a": "National parking interface",
+      "rule_b": "Municipal parking count/ramp/fire rules",
+      "authority_a": "IR-M4_IR-M3",
+      "authority_b": "IR-LOCAL_FIRE_AUTHORITY",
+      "jurisdiction": "PROJECT_CITY_PARCEL_DATE",
+      "scope": "Parking count, ramp, maneuvering, fire access",
+      "actual_conflict_or_not": "LOCAL_PACK_REQUIRED",
+      "resolution": "Keep national and local layers separate; project cannot validate parking without the current local pack.",
+      "reason": "Count, zoning and some geometry/fire requirements are jurisdiction-specific.",
+      "human_review_required": true
+    }
+  ]
+}

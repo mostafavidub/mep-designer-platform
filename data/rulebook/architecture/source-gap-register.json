@@ -1,6 +1,6 @@
 {
   "schema_version": "architecture-source-gaps/1.0",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "gaps": [
     {
       "gap_id": "ARCH-SG-001",
@@ -18,7 +18,9 @@
       "remaining_uncertainty": "signed survey and parcel evidence",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-002",
@@ -36,7 +38,9 @@
       "remaining_uncertainty": "jurisdiction package required per parcel",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-003",
@@ -54,7 +58,9 @@
       "remaining_uncertainty": "approved planning constraints",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-004",
@@ -72,7 +78,9 @@
       "remaining_uncertainty": "M4 plus official accessibility source",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-005",
@@ -92,7 +100,9 @@
       "remaining_uncertainty": "M3 1395 clause extraction",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-006",
@@ -110,7 +120,9 @@
       "remaining_uncertainty": "M15 1392 clause extraction",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "OPEN",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-007",
@@ -128,7 +140,9 @@
       "remaining_uncertainty": "municipality and project instruction",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-008",
@@ -146,7 +160,9 @@
       "remaining_uncertainty": "M4/M3 applicability review",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-009",
@@ -164,7 +180,9 @@
       "remaining_uncertainty": "owner program; hard spatial rules still apply",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-010",
@@ -184,7 +202,9 @@
       "remaining_uncertainty": "owner program",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-011",
@@ -202,7 +222,9 @@
       "remaining_uncertainty": "owner program and MEP reservations",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-012",
@@ -220,7 +242,9 @@
       "remaining_uncertainty": "owner program",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-013",
@@ -240,7 +264,9 @@
       "remaining_uncertainty": "M4 extraction exists; local and safety conditions incomplete",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-014",
@@ -258,7 +284,9 @@
       "remaining_uncertainty": "M18 1396 clause extraction",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "OPEN",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-015",
@@ -276,7 +304,9 @@
       "remaining_uncertainty": "project must select complete M19 edition during transition",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-016",
@@ -302,7 +332,9 @@
       "remaining_uncertainty": "M4 extraction exists; envelope and M19 coordination incomplete",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "PARTIALLY_RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-017",
@@ -320,7 +352,9 @@
       "remaining_uncertainty": "MEP and fire coordination reservations",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-018",
@@ -338,7 +372,9 @@
       "remaining_uncertainty": "coordination heuristic; never a legal minimum",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Classification/interface resolved; this does not grant numeric or geometry authority."
     },
     {
       "gap_id": "ARCH-SG-019",
@@ -356,7 +392,9 @@
       "remaining_uncertainty": "exact official appendix required",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "OPEN",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-020",
@@ -374,7 +412,9 @@
       "remaining_uncertainty": "ergonomic and product evidence model defined; ranges incomplete",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-021",
@@ -392,7 +432,9 @@
       "remaining_uncertainty": "versioned shaft/service reservation contract",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-022",
@@ -410,7 +452,9 @@
       "remaining_uncertainty": "structural grid and prohibited zones",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-023",
@@ -428,7 +472,9 @@
       "remaining_uncertainty": "office/authority issue standard",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": true,
-      "status": "OPEN"
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Material source or project evidence remains required."
     },
     {
       "gap_id": "ARCH-SG-024",
@@ -446,7 +492,17 @@
       "remaining_uncertainty": "structured Owner Program; cannot override law",
       "recommended_action": "Obtain the current authoritative document/parcel input and perform clause-level independent review.",
       "human_required": false,
-      "status": "OPEN"
+      "status": "RESOLVED",
+      "transition_evidence": "2026-10-07 primary-authority closure audit; see sources.authority_assessments and conflict-matrix.json.",
+      "closure_note": "Classification/interface resolved; this does not grant numeric or geometry authority."
     }
-  ]
+  ],
+  "summary": {
+    "OPEN": 3,
+    "PARTIALLY_RESOLVED": 7,
+    "RESOLVED": 2,
+    "HUMAN_REVIEW_REQUIRED": 12,
+    "NOT_APPLICABLE": 0,
+    "total": 24
+  }
 }

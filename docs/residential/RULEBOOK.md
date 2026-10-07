@@ -46,3 +46,11 @@
 - City and parcel rules require an identified jurisdiction package and never inherit a national default.
 - Empirical patterns remain optimization evidence and cannot override law or source geometry.
 - Missing material inputs return `INPUT_REQUIRED`; `NOT_APPLICABLE` is distinct from `PASS`.
+
+## Primary-authority closure status
+
+The M4 clauses are traceable to the local third-edition 1396 document, while
+current official lifecycle, M3 amendment currency and the applicable accessibility
+instrument remain unresolved. See `PRIMARY_AUTHORITY_CLOSURE.md`. All hard rules
+remain `SOURCE_GAP`, release-disabled and subject to human architect review; the
+Architecture Generator remains disabled.

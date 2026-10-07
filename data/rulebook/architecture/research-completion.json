@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-research-completion/1.0",
-  "version": "0.3.0",
-  "status": "ARCHITECTURE_RULEBOOK_BLOCKED",
+  "version": "0.4.0",
+  "status": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
   "authority_boundary": {
     "design_knowledge_only": true,
     "canonical_architecture_version": "3.1",
@@ -374,7 +374,7 @@
     "engine_output_may_create_truth": false
   },
   "readiness": {
-    "current": "ARCHITECTURE_RULEBOOK_BLOCKED",
+    "current": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
     "levels": [
       {
         "status": "ARCHITECTURE_FOUNDATION_PARTIAL",
@@ -401,5 +401,15 @@
     "customer_generation_enabled": false,
     "staging_required": false,
     "production_authorized": false
+  },
+  "primary_authority_closure": {
+    "retrieved_date": "2026-10-07",
+    "final_status": "PRIMARY_AUTHORITY_CLOSURE_BLOCKED",
+    "m4": "CLAUSE_VERIFIED_AUTHORITY_LIFECYCLE_UNRESOLVED",
+    "m3": "EDITION_VERIFIED_AUTHORITY_LIFECYCLE_UNRESOLVED",
+    "accessibility": "PRIMARY_INSTRUMENT_AND_APPLICABILITY_UNRESOLVED",
+    "release_ready_rules": 0,
+    "human_architect_review_required_rules": 32,
+    "generator_gate": "NOT_AUTHORIZED_FOR_GOLDEN_VALIDATION"
   }
 }

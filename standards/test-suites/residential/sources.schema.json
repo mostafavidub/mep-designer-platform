@@ -3,7 +3,7 @@
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": "architecture-sources/1.0"
+      "const": "architecture-sources/1.1"
     },
     "sources": {
       "type": "array",
@@ -89,6 +89,21 @@
           },
           "may_solo_support_release_block": {
             "type": "boolean"
+          },
+          "document_status": {
+            "type": "string"
+          },
+          "source_class": {
+            "type": "string"
+          },
+          "official_url_or_identifier": {
+            "type": "string"
+          },
+          "amendment_chain": {
+            "type": "array"
+          },
+          "verification_status": {
+            "type": "string"
           }
         },
         "required": [
@@ -102,13 +117,48 @@
           "permitted_use",
           "may_solo_support_release_block"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source_id": {
+                  "enum": [
+                    "IR-M3",
+                    "IR-M4",
+                    "IR-ACCESS"
+                  ]
+                }
+              },
+              "required": [
+                "source_id"
+              ]
+            },
+            "then": {
+              "required": [
+                "document_status",
+                "source_class",
+                "official_url_or_identifier",
+                "amendment_chain",
+                "verification_status"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "authority_assessments": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object"
       }
     }
   },
   "required": [
     "schema_version",
-    "sources"
+    "sources",
+    "authority_assessments"
   ],
   "additionalProperties": false
 }

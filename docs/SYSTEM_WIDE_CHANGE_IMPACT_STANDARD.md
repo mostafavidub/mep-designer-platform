@@ -249,3 +249,14 @@ No waiver, filter bypass, history deletion or partial closure is permitted.
 ## Architecture rulebook qualification gate
 
 Every architectural hard-rule candidate must keep legal classification, enforcement, applicability, evidence strength and release status as separate fields. A candidate extracted from a primary regulation copy remains release-disabled when the current edition, amendments, exceptions, jurisdiction or cross-authority conflicts are unresolved. Local requirements require a parcel/date/jurisdiction package and never become national defaults. Empirical patterns cannot block. Owner decisions have no hidden defaults. Generator readiness requires independently qualified release rules and Human Golden evidence; planned scenarios or source-gap guards do not substitute for those gates.
+
+## Iranian primary-authority lifecycle gate
+
+SWCIS 5.5.0 separates clause extraction from proof that a legal instrument is
+currently applicable. A residential `BLOCK` rule remains release-disabled until
+its official edition, effective date, amendment/corrigendum chain, applicability,
+exceptions and cross-authority conflicts are verified. Official-source access
+failure is recorded as an authority gap, never filled from a mirror. National and
+local rule layers retain independent provenance. Human architect review may close
+professional interpretation, but cannot substitute for missing primary legal
+currency or activate a generator.
