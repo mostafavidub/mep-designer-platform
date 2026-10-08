@@ -7,6 +7,7 @@ polygons are only accepted when a closed polyline actually contains the room
 label point.
 """
 from collections import Counter
+from copy import deepcopy
 import math
 import re
 
@@ -298,6 +299,7 @@ def enrich_auto(auto, analysis):
         "primitive_count": sum(sum(x["counts"].values()) for x in level_rows),
     }
     if canonical_models:
+        canonical_sources = [model.get("source") for model in canonical_models if isinstance(model.get("source"), dict)]
         physical_spaces = [space for model in canonical_models for space in model.get("physical_spaces") or []]
         functional_zones = [zone for model in canonical_models for zone in model.get("functional_zones") or []]
         issues = [issue for model in canonical_models for issue in (model.get("completeness") or {}).get("issues") or []]
@@ -308,6 +310,10 @@ def enrich_auto(auto, analysis):
                                                                         if s.get("level_id") in {None, profile.get("name")} ]})
         auto["architecture_model"] = {
             "schema": "canonical-architectural-model/1.0", "version": "canonical-architectural-model/1.0",
+            # A single parsed DXF retains its exact source identity. Multi-file
+            # architecture remains fail-closed until an aggregate source
+            # contract is explicitly governed; no arbitrary member is chosen.
+            "source": deepcopy(canonical_sources[0]) if len(canonical_sources) == 1 else {},
             "levels": canonical_levels, "level_count": len(canonical_levels), "physical_spaces": physical_spaces,
             "functional_zones": functional_zones,
             "architectural_objects": [obj for model in canonical_models for obj in model.get("architectural_objects") or []],

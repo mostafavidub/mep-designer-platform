@@ -22,6 +22,9 @@ from sqlalchemy import Integer, String, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import mechanical_workflow
+from .architecture_authority_gate import (
+    architecture_authority_report, materialize_architecture_preflight,
+)
 from .design_progress import set_project_progress
 
 
@@ -74,6 +77,25 @@ def unresolved_questions(project):
         if value is None or not str(value).strip() or mechanical_workflow._basis_answer_error(key, str(value)):
             missing.append(_present_question(question))
     return missing
+
+
+def architecture_input_response(project):
+    """Persist and expose only the bounded, server-authoritative gate summary."""
+    analysis, changed = materialize_architecture_preflight(project.analysis or {})
+    if changed:
+        project.analysis = analysis
+    report = architecture_authority_report(project.analysis or {})
+    if not report.get("blocking"):
+        return None
+    return {
+        "status": "architecture_input_required",
+        "architecture_state": report.get("state"),
+        "error": "معماری برای شروع طراحی تأیید نشده است؛ موارد بررسی معماری را تکمیل یا فایل منبع را اصلاح کنید.",
+        "review_item_count": report.get("review_item_count", 0),
+        "source_requirement_count": report.get("source_requirement_count", 0),
+        "engine_payment_recorded": False,
+        "design_job_created": False,
+    }
 
 
 def register_panel_checkout(app, legacy, Job, Link, status_payload, project_token):
@@ -524,6 +546,11 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                 if missing:
                     db.commit()
                     return JSONResponse({"status": "asking", "questions": missing, "question_count": len(missing), "error": "اطلاعات پروژه را تکمیل کنید."}, status_code=409)
+                architecture_block = (architecture_input_response(project)
+                                      if (project.answers or {}).get("discipline") == "mechanical" else None)
+                if architecture_block:
+                    db.commit()
+                    return JSONResponse(architecture_block, status_code=409)
                 try:
                     area = float(body.get("area", 0))
                 except (ValueError, TypeError):
@@ -557,6 +584,11 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             missing = unresolved_questions(project)
             if missing:
                 raise HTTPException(409, "اطلاعات پروژه تغییر کرده است؛ دوباره قیمت را تأیید کنید.")
+            architecture_block = (architecture_input_response(project)
+                                  if (project.answers or {}).get("discipline") == "mechanical" else None)
+            if architecture_block:
+                db.commit()
+                return JSONResponse(architecture_block, status_code=409)
             wallet = db.query(Wallet).filter(Wallet.user_id == uid).with_for_update().first()
             if not wallet or (not demo and wallet.balance < order.amount):
                 raise HTTPException(409, "موجودی کیف پول کافی نیست؛ هیچ مبلغی کسر نشد.")

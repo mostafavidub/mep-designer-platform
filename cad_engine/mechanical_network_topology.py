@@ -432,6 +432,9 @@ def build_authoritative_topology_from_evidence(pmm, architecture, recognition, l
     """Build one deterministic graph from PMM levels and installed DXF evidence."""
     if (pmm or {}).get("schema") != "project-mechanical-model/v3":
         return {"status": "INPUT_REQUIRED", "missing_inputs": ["PROJECT_MECHANICAL_MODEL_V3"], "network": None}
+    architecture_completeness = (pmm or {}).get("architecture_completeness") or {}
+    if (pmm or {}).get("valid") is False or architecture_completeness.get("downstream_engineering_allowed") is False:
+        return {"status": "INPUT_REQUIRED", "missing_inputs": ["ARCHITECTURE_PREFLIGHT_REQUIRED"], "network": None}
     levels, level_errors = _level_registry(pmm or {})
     if level_errors or not levels:
         return {"status": "INPUT_REQUIRED", "missing_inputs": level_errors or ["TYPED_ARCHITECTURAL_LEVELS"], "network": None}
