@@ -446,6 +446,16 @@ def _ingest(path):
                  "metres_per_unit": declared_scale}
 
 
+def _source_backed_dimension_measurement(dimtype, reported, stored, witness_distance):
+    """Select a dimension value without concealing conflicting source facts."""
+    measurement, basis = reported, "EZDXF_GET_MEASUREMENT"
+    if (dimtype & 7) in {0, 1} and abs(reported) <= 1e-9 and stored > 1e-9 and witness_distance > 1e-9:
+        allowed=max(1e-6, abs(stored)*.005)
+        if abs(stored-witness_distance) <= allowed:
+            measurement, basis = stored, "SOURCE_ACTUAL_MEASUREMENT_AND_WITNESSES"
+    return measurement, basis
+
+
 def _extract(doc, source_sha256=None):
     primitives, texts, objects, dimensions, boundary_lines, boundary_meta, boundary_rejections = [], [], [], [], [], [], []
     counts = Counter(); seen_nested = set()
@@ -502,13 +512,30 @@ def _extract(doc, source_sha256=None):
             if value and p: record.update(text=value, point=p); texts.append(record); primitives.append(record)
         elif kind == "DIMENSION":
             try:
-                measurement = float(entity.get_measurement())
                 role_points={name:_point(entity,name) for name in ("defpoint","defpoint2","defpoint3","defpoint4")}
                 role_points={name:p for name,p in role_points.items() if p and Point(p).distance(Point(0,0))>1e-9}
                 witnesses=[role_points[name] for name in ("defpoint2","defpoint3") if name in role_points]
+                dimtype=int(getattr(entity.dxf,"dimtype",0) or 0)
+                reported=float(entity.get_measurement())
+                stored=float(getattr(entity.dxf,"actual_measurement",0) or 0)
+                witness_distance=(LineString(witnesses).length if len(witnesses)==2 else 0.0)
+                measurement,measurement_basis=_source_backed_dimension_measurement(
+                    dimtype,reported,stored,witness_distance)
+                # Some consultant drawings use DIMTYPE bit flags (for example
+                # 32 + linear).  ezdxf can then return zero from
+                # get_measurement() even though the source stores a valid
+                # associative measurement and two consistent witness points.
+                # Recover only linear dimensions, and only from mutually
+                # consistent source geometry; never turn a disagreement into
+                # authoritative dimension evidence.
                 row = {**record, "measurement": measurement, "definition_points": list(role_points.values()),
                        "dimension_points":role_points,"witness_points":witnesses,
-                       "dimension_type":int(getattr(entity.dxf,"dimtype",0) or 0)&15,
+                       "dimension_type":dimtype&15,
+                       "raw_dimension_type":dimtype,
+                       "measurement_basis":measurement_basis,
+                       "reported_measurement":reported,
+                       "source_actual_measurement":stored,
+                       "witness_distance":witness_distance,
                        "text_override": str(getattr(entity.dxf, "text", "") or "")}
                 dimensions.append(row); primitives.append(row)
             except Exception: primitives.append(record)

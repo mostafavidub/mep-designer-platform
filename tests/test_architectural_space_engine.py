@@ -7,7 +7,7 @@ from cad_engine.architectural_space_engine import (
     SCHEMA, _completeness, _exclude_inset_sheet_border_segments, _recover_supported_partitions,
     _associate_dimensions, _dimension_reconciliation, _semantic_segment_classification,
     _pre_envelope_opening_evidence, _bind_openings, _architectural_void_candidates, normalize_text,
-    reconstruct_architecture, require_complete_architecture,
+    _source_backed_dimension_measurement, reconstruct_architecture, require_complete_architecture,
 )
 
 
@@ -224,6 +224,18 @@ def test_dimension_conflict_is_never_silently_resolved(tmp_path):
     assert model["dimension_reconciliation"]["status"] in {"PASS","CONFLICT","INPUT_REQUIRED"}
     assert all("annotated_measurement_m" in row and "geometric_measurement_m" in row
                for row in model["dimension_reconciliation"]["rows"])
+
+
+def test_flagged_linear_dimension_uses_consistent_source_measurement_not_false_zero():
+    measurement,basis=_source_backed_dimension_measurement(33,0.0,1.396687329881387,1.396687329881387)
+    assert measurement==1.396687329881387
+    assert basis=="SOURCE_ACTUAL_MEASUREMENT_AND_WITNESSES"
+
+
+def test_flagged_linear_dimension_does_not_hide_conflicting_source_measurements():
+    measurement,basis=_source_backed_dimension_measurement(33,0.0,1.4,2.0)
+    assert measurement==0.0
+    assert basis=="EZDXF_GET_MEASUREMENT"
 
 
 def test_dimension_requires_two_boundary_witnesses_crossing_space_interior():

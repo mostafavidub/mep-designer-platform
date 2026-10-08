@@ -1,0 +1,23 @@
+{
+  "change_id": "SWCIS-2026-0309",
+  "summary": "Remove false architecture dimension conflicts caused by flagged linear DXF dimensions while preserving fail-closed conflict handling.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "bugfix", "test", "documentation"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["architecture", "qa", "docs", "governance"],
+  "impact_notes": {
+    "architecture": "Uses a stored linear source measurement only when it agrees with two source witness points; disagreement remains unresolved.",
+    "qa": "Adds focused positive and conflicting-evidence tests and an isolated unchanged-source replay.",
+    "docs": "Records the private-safe 19-candidate audit and blocker ownership without committing customer bytes or names.",
+    "governance": "No authority threshold, downstream release gate, production route, or deployment behavior changes."
+  },
+  "evidence": {
+    "tests": ["PYTHONPATH=. pytest -q tests/test_architectural_space_engine.py -k dimension"],
+    "docs": ["docs/ARCHITECTURE_REAL_DXF_RECOGNITION_RECOVERY.md"],
+    "version_bump": ["not required; bounded extraction bugfix with no contract vocabulary or production integration change"],
+    "deployment_plan": ["No deployment in this task."],
+    "rollback_plan": ["Revert this change; architecture remains fail-closed with the prior false dimension conflict."]
+  },
+  "risk": {"likelihood": 1, "severity": 3, "detectability": 1, "score": 3, "rationale": "The fallback is limited to linear dimensions with two agreeing source facts and is covered by a disagreement regression test."},
+  "waiver": null
+}
