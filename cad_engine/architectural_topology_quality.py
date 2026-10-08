@@ -64,7 +64,7 @@ def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels
         cid=_sid("ENVCAND",[frame_id,[list(p) for p in poly.exterior.coords]])
         closure_ids=[row["closure_id"] for row,line in zip(eligible_closures,closure_lines)
                      if line.distance(poly.boundary)<=tol*4]
-        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
+        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"interior_rings":[[list(p) for p in ring.coords] for ring in poly.interiors],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
     return {"frame_id":frame_id,"candidates":rows,"runtime_seconds":round(time.perf_counter()-started,6)}
 
 
@@ -79,8 +79,8 @@ def classify_plan_regions(candidate_diagnostic):
         elif semi: role,status,reason="SEMI_EXTERIOR","HIGH_CONFIDENCE","ONTOLOGY_SEMI_EXTERIOR_LABEL"
         elif interior: role,status,reason="BUILDING_INTERIOR","HIGH_CONFIDENCE","ONTOLOGY_INTERIOR_LABEL"
         else: role,status,reason="UNKNOWN","INPUT_REQUIRED","INSUFFICIENT_INDEPENDENT_EVIDENCE"
-        regions.append({"region_id":_sid("REGION",candidate["candidate_id"]),"candidate_id":candidate["candidate_id"],"frame_id":candidate["frame_id"],"geometry":candidate["polygon"],"area":candidate["area"],"role":role,"status":status,"reason":reason,"semantic_evidence":sorted(categories),"wall_ids":candidate["wall_ids"],"adjacent_region_ids":[],"exterior_exposure":"UNKNOWN"})
-    geoms=[Polygon(row["geometry"]) for row in regions]
+        regions.append({"region_id":_sid("REGION",candidate["candidate_id"]),"candidate_id":candidate["candidate_id"],"frame_id":candidate["frame_id"],"geometry":candidate["polygon"],"interior_rings":candidate.get("interior_rings") or [],"area":candidate["area"],"role":role,"status":status,"reason":reason,"semantic_evidence":sorted(categories),"wall_ids":candidate["wall_ids"],"adjacent_region_ids":[],"exterior_exposure":"UNKNOWN"})
+    geoms=[Polygon(row["geometry"],row.get("interior_rings") or []) for row in regions]
     for i,left in enumerate(geoms):
         for j in range(i+1,len(geoms)):
             if left.boundary.intersection(geoms[j].boundary).length>0:
@@ -88,10 +88,81 @@ def classify_plan_regions(candidate_diagnostic):
     return regions
 
 
+def _source_supported_geometric_shell(candidate_diagnostic, regions):
+    """Return one independently source-supported dominant building shell.
+
+    Semantics may classify contained regions but cannot veto a geometrically
+    proven shell merely because an interior void label is also inside it.  The
+    proof deliberately requires source lineage, repeated double-face wall
+    support and internal partition topology; a closed site outline or sheet
+    border therefore cannot qualify by area alone.
+    """
+    region_by_candidate={row["candidate_id"]:row for row in regions}
+    eligible=[]
+    for row in candidate_diagnostic.get("candidates") or []:
+        semantics=set(row.get("semantic_categories") or [])
+        if semantics & (_SITE_EXTERIOR_SEMANTICS | _SEMI_EXTERIOR_SEMANTICS):
+            continue
+        if not row.get("source_handles") or len(row.get("wall_ids") or [])<4:
+            continue
+        if int(row.get("internal_partition_count") or 0)<1 or float(row.get("internal_wall_length") or 0)<=0:
+            continue
+        if float(row.get("boundary_double_face_ratio") or 0)<=0:
+            continue
+        if float(row.get("boundary_known_thickness_ratio") or 0)<=0:
+            continue
+        poly=Polygon(row["polygon"],row.get("interior_rings") or [])
+        if not poly.is_valid or poly.area<=0:
+            continue
+        eligible.append((poly.area,row,region_by_candidate.get(row["candidate_id"])))
+    eligible.sort(key=lambda item:(-item[0],item[1]["candidate_id"]))
+    if not eligible:
+        return None
+    # More than one independently supported shell is a real selection
+    # ambiguity. Do not rank it away by area or a percentage threshold.
+    if len(eligible)>1:
+        return None
+    return eligible[0][1]
+
+
 def evidence_based_building_envelope(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=(), enclosure_closures=()):
     diagnostic=enumerate_envelope_candidates(walls,frame_id=frame_id,tolerance=tolerance,semantic_labels=semantic_labels,objects=objects,junctions=junctions,enclosure_closures=enclosure_closures)
     regions=classify_plan_regions(diagnostic); conflicts=[row for row in regions if row["status"]=="CONFLICT"]
-    interior=[Polygon(row["geometry"]) for row in regions if row["role"]=="BUILDING_INTERIOR"]
+    geometric_shell=_source_supported_geometric_shell(diagnostic,regions)
+    if geometric_shell is not None:
+        shell=Polygon(geometric_shell["polygon"],geometric_shell.get("interior_rings") or [])
+        contained_voids=[]
+        for region in regions:
+            if region["role"] not in {"LIGHTWELL","VOID"} or region["status"] not in {"HIGH_CONFIDENCE","VERIFIED"}:
+                continue
+            candidate=Polygon(region["geometry"],region.get("interior_rings") or [])
+            if candidate.is_valid and candidate.area>0 and candidate.within(shell):
+                contained_voids.append(candidate)
+        source_holes=[list(ring.coords) for ring in shell.interiors]
+        classified_holes=[list(poly.exterior.coords) for poly in sorted(contained_voids,key=lambda poly:(poly.area,poly.bounds))]
+        holes=source_holes+classified_holes
+        effective=Polygon(shell.exterior.coords,holes)
+        boundary_ids=geometric_shell.get("wall_ids") or []
+        envelope={"building_envelope_id":_sid("ENV",[frame_id,[list(p) for p in shell.exterior.coords],holes]),
+                  "frame_id":frame_id,"outer_ring":[list(p) for p in shell.exterior.coords],
+                  "interior_voids":[[list(p) for p in ring] for ring in holes],
+                  "components":[{"outer_ring":[list(p) for p in shell.exterior.coords],
+                                 "interior_voids":[[list(p) for p in ring] for ring in holes]}],
+                  "exterior_wall_ids":sorted(boundary_ids),
+                  "source_handles":sorted(geometric_shell.get("source_handles") or []),
+                  "area":effective.area,"perimeter":effective.length,"confidence":.9,
+                  "status":"HIGH_CONFIDENCE","reason":"SOURCE_SUPPORTED_DOMINANT_GEOMETRIC_SHELL",
+                  "evidence":[{"class":"SOURCE_SUPPORTED_GEOMETRIC_SHELL",
+                               "candidate_id":geometric_shell["candidate_id"],
+                               "internal_partition_count":geometric_shell["internal_partition_count"],
+                               "boundary_double_face_ratio":geometric_shell["boundary_double_face_ratio"],
+                               "boundary_known_thickness_ratio":geometric_shell["boundary_known_thickness_ratio"],
+                               "source_ring_count":len(source_holes),
+                               "contained_source_void_count":len(classified_holes),
+                               "semantic_authority":False}],
+                  "schema":"canonical-building-envelope/2.0"}
+        return envelope,diagnostic,regions
+    interior=[Polygon(row["geometry"],row.get("interior_rings") or []) for row in regions if row["role"]=="BUILDING_INTERIOR"]
     interior_semantics={semantic for row in regions if row["role"]=="BUILDING_INTERIOR" for semantic in row["semantic_evidence"]}
     insufficient=len(interior_semantics)<2
     if conflicts or not interior or insufficient:

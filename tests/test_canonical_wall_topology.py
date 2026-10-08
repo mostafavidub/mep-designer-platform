@@ -264,6 +264,50 @@ def test_conflicting_site_and_interior_labels_fail_closed():
     assert regions[0]["status"] == "CONFLICT"
 
 
+def test_source_supported_shell_survives_nested_interior_void_semantics():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),
+           _topology_wall("P1",(2,3),(8,3)),_topology_wall("P2",(2,7),(8,7))]
+    labels=[{"point":[2,2],"semantic_candidate":"elevator"},
+            {"point":[5,5],"semantic_candidate":"lightwell"}]
+    envelope,diagnostic,regions=evidence_based_building_envelope(
+        walls,frame_id="F1",tolerance=.001,semantic_labels=labels)
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+    assert envelope["reason"]=="SOURCE_SUPPORTED_DOMINANT_GEOMETRIC_SHELL"
+    assert envelope["area"]==100
+    assert envelope["evidence"][0]["semantic_authority"] is False
+    assert diagnostic["candidates"][0]["internal_partition_count"]==2
+    assert regions[0]["status"]=="CONFLICT"
+
+
+def test_geometric_shell_preserves_source_polygon_interior_rings():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),
+           _topology_wall("IA",(3,3),(7,3)),_topology_wall("IB",(7,3),(7,7)),
+           _topology_wall("IC",(7,7),(3,7)),_topology_wall("ID",(3,7),(3,3))]
+    envelope,diagnostic,_=evidence_based_building_envelope(
+        walls,frame_id="F1",tolerance=.001,
+        semantic_labels=[{"point":[5,5],"semantic_candidate":"lightwell"}])
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    assert len(shell["interior_rings"])==1
+    assert shell["area"]==84
+    assert envelope["status"]=="INPUT_REQUIRED"
+
+
+def test_competing_comparable_geometric_shells_remain_fail_closed():
+    walls=[]
+    for prefix,x in (("L",0),("R",20)):
+        walls.extend([_topology_wall(prefix+"A",(x,0),(x+10,0)),
+                      _topology_wall(prefix+"B",(x+10,0),(x+10,10)),
+                      _topology_wall(prefix+"C",(x+10,10),(x,10)),
+                      _topology_wall(prefix+"D",(x,10),(x,0)),
+                      _topology_wall(prefix+"P1",(x+2,3),(x+8,3)),
+                      _topology_wall(prefix+"P2",(x+2,7),(x+8,7))])
+    envelope,_,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    assert envelope["status"]=="INPUT_REQUIRED"
+    assert envelope["reason"]=="INSUFFICIENT_INDEPENDENT_INTERIOR_EVIDENCE"
+
+
 def test_balcony_is_preserved_but_excluded_from_interior_area():
     labels=[{"point":[2,5],"semantic_candidate":"bedroom"},{"point":[7,5],"semantic_candidate":"kitchen"},
             {"point":[15,5],"semantic_candidate":"balcony"}]
