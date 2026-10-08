@@ -71,7 +71,10 @@ class PrimaryAuthorityClosureTests(unittest.TestCase):
         self.assertEqual(package["reviewer_decisions"], [])
         self.assertEqual(len(package["items"]), 32)
         self.assertEqual(len({x["rule_id"] for x in package["items"]}), 32)
-        self.assertTrue(all(x["human_review_status"] == "REQUIRED" for x in package["items"]))
+        self.assertTrue(all(x["reviewer_decision"] is None for x in package["items"]))
+        self.assertTrue(all(x["post_review_status"] == "NOT_REVIEWED" for x in package["items"]))
+        self.assertTrue(all(x["reviewer_name"] is None for x in package["items"]))
+        self.assertTrue(all(x["professional_license_or_registration"] is None for x in package["items"]))
 
     def test_generator_and_golden_validation_remain_unauthorized(self):
         report = load("qualification-report")

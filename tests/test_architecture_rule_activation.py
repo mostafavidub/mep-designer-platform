@@ -1,5 +1,6 @@
 import json
 import hashlib
+import csv
 from collections import Counter
 from pathlib import Path
 
@@ -60,9 +61,28 @@ def test_every_rule_has_minimum_eight_case_qa_specification():
 
 def test_human_review_is_not_fabricated():
     package = load("human-architect-review-package")
+    assert package["status"] == "AWAITING_LICENSED_ARCHITECT_REVIEW"
     assert package["reviewer_decisions"] == []
     assert len(package["items"]) == 32
-    assert all(x["human_review_status"] == "REQUIRED" for x in package["items"])
+    assert all(x["reviewer_decision"] is None for x in package["items"])
+    assert all(x["post_review_status"] == "NOT_REVIEWED" for x in package["items"])
+    assert all(x["proposed_reviewer_decision"] is None for x in package["items"])
+    assert all(x["reviewer_name"] is None and x["professional_license_or_registration"] is None for x in package["items"])
+    assert package["dedicated_decisions"]["code246_five_percent"]["decision"] is None
+    assert package["dedicated_decisions"]["m3_m4_group8_stair"]["decision"] is None
+
+def test_shareable_human_review_artifacts_cover_all_rules():
+    review_dir = ROOT / "docs/residential/review"
+    docx = review_dir / "planha-licensed-architect-rule-review-book.docx"
+    pdf = review_dir / "planha-licensed-architect-rule-review-book.pdf"
+    sheet = review_dir / "architecture-rule-review-decision-sheet.csv"
+    assert docx.stat().st_size > 50_000
+    assert pdf.stat().st_size > 500_000
+    with sheet.open(encoding="utf-8-sig", newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    assert len(rows) == 32
+    assert len({row["Rule ID"] for row in rows}) == 32
+    assert all(row["Decision"] == "" and row["Reviewer Name"] == "" for row in rows)
 
 def test_golden_matrix_has_accessibility_diversity_but_is_not_authorized():
     matrix = load("golden-matrix")

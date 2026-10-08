@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0305",
-  "summary": "Close the final two residential rule dependency blockers using the exact Code 246 primary file and bounded M3 Group-8 stair/egress mapping; prepare all 32 rules for consolidated human review without runtime activation.",
+  "summary": "Prepare one decision-neutral licensed-architect review package for all 32 qualified residential rules, including dedicated Code 246 and M3/M4 cards, without fabricating professional approval or enabling runtime/Golden behavior.",
   "requester": "project-owner",
   "change_types": [
     "rule",
@@ -10,8 +10,38 @@
     "governance"
   ],
   "changed_rule_ids": [
+    "ARCH-RES-LIVING-001",
+    "ARCH-RES-LIVING-002",
+    "ARCH-RES-BEDROOM-001",
+    "ARCH-RES-LIVING-003",
+    "ARCH-RES-CIRCULATION-001",
+    "ARCH-RES-STAIRS-001",
+    "ARCH-RES-STAIRS-002",
     "ARCH-RES-STAIRS-003",
-    "ARCH-RES-ACCESSIBILITY-001"
+    "ARCH-RES-KITCHEN-001",
+    "ARCH-RES-KITCHEN-002",
+    "ARCH-RES-KITCHEN-003",
+    "ARCH-RES-KITCHEN-004",
+    "ARCH-RES-DAYLIGHT-001",
+    "ARCH-RES-VENTILATION-001",
+    "ARCH-RES-WC-001",
+    "ARCH-RES-BATHROOM-001",
+    "ARCH-RES-BATHROOM-002",
+    "ARCH-RES-ACCESSIBILITY-001",
+    "ARCH-RES-PRIVACY-001",
+    "ARCH-RES-PRIVACY-002",
+    "ARCH-RES-PRIVACY-003",
+    "ARCH-RES-BALCONY-001",
+    "ARCH-RES-DAYLIGHT-002",
+    "ARCH-RES-DAYLIGHT-003",
+    "ARCH-RES-DAYLIGHT-004",
+    "ARCH-RES-DAYLIGHT-005",
+    "ARCH-RES-DOOR-001",
+    "ARCH-RES-EGRESS-001",
+    "ARCH-RES-KITCHEN-005",
+    "ARCH-RES-VENTILATION-002",
+    "ARCH-RES-DAYLIGHT-006",
+    "ARCH-RES-DAYLIGHT-007"
   ],
   "impacted_modules": [
     "cad_designer",
@@ -34,13 +64,13 @@
     "versioning"
   ],
   "impact_notes": {
-    "rule_book": "changed: exact Code 246 residential applicability and bounded M3 Group-8 stair/egress interface; 32 ready for human review, 0 dependency-blocked, 0 runtime-enabled",
+    "rule_book": "verified-not-affected: 32 rules remain READY_FOR_HUMAN_REVIEW, release_enabled=false; no threshold, applicability or machine logic changed",
     "questionnaire": "verified: 58 owner-intent questions re-audited; no regulatory fact is hidden as owner preference",
-    "qa": "added: static boundary, missing-input and cross-code specifications for the two formerly blocked rules; immutable digest protects the other 30",
-    "docs": "changed: exact PDF identity, clause/page mapping, conditional accessibility and M3/M4 interface",
-    "governance": "changed: SWCIS 5.7.0 traceability and additive source-identity migration evidence",
-    "versioning": "changed: additive architecture-sources/1.3 exact file identity fields",
-    "migration": "added: offline 1.2-to-1.3 source-identity and two-rule gate migration; no production migration",
+    "qa": "added: decision-null, attribution-null, 32-card and shareable artifact integrity guards",
+    "docs": "added: shareable 72-page licensed-architect Review Book, PDF and blank decision sheet",
+    "governance": "changed: SWCIS 5.8.0 and human-review-package 1.1 decision contract",
+    "versioning": "changed: architecture-human-rule-review/1.1",
+    "migration": "added: offline decision-neutral human-review package migration; no production migration",
     "cad_designer": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
     "deployment": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
     "detail_riser": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
@@ -66,7 +96,10 @@
     "docs": [
       "docs/residential/RULEBOOK.md",
       "docs/residential/RULEBOOK_QUALIFICATION.md",
-      "docs/residential/PRIMARY_AUTHORITY_CLOSURE.md"
+      "docs/residential/PRIMARY_AUTHORITY_CLOSURE.md",
+      "docs/residential/review/planha-licensed-architect-rule-review-book.docx",
+      "docs/residential/review/planha-licensed-architect-rule-review-book.pdf",
+      "docs/residential/review/architecture-rule-review-decision-sheet.csv"
     ],
     "version_bump": [
       "standards/swcis/version_manifest.yaml"
@@ -75,22 +108,23 @@
       "standards/swcis/migrations/residential-rulebook-qualification.json",
       "standards/swcis/migrations/residential-primary-authority-closure.json",
       "standards/swcis/migrations/residential-rule-activation.json",
-      "standards/swcis/migrations/residential-final-two-blocker-closure.json"
+      "standards/swcis/migrations/residential-final-two-blocker-closure.json",
+      "standards/swcis/migrations/residential-human-review-package-1.1.json"
     ],
     "golden_regression": [
       "data/rulebook/architecture/golden-matrix.json"
     ],
     "semantic_diff": [
-      "ARCH-RES-STAIRS-003 and ARCH-RES-ACCESSIBILITY-001 advance from dependency-blocked to READY_FOR_HUMAN_REVIEW; 30 existing rules are byte-semantically protected; no human or runtime authority granted"
+      "All 32 qualified rules receive individual decision-neutral review cards; every decision and reviewer credential remains blank/NOT_REVIEWED; runtime and Golden gates remain closed"
     ],
     "artifact_diff": [
-      "Exact 122-page Code 246 identity; conditional residential branches; M3 Group-8 egress interface; 410 static QA specifications"
+      "One 72-page Review Book in DOCX/PDF, one 32-row decision sheet, one high-risk sheet, and dedicated Code 246 five-percent and M3/M4 Group-8 cross-code cards"
     ],
     "numeric_diff": [
-      "Code 246 5-percent raw calculation recorded without an invented integer conversion; M3/M4 thresholds retain exact sourced operators; no unrelated regulatory value changed"
+      "No regulatory threshold or machine interpretation changed; Code 246 integer conversion remains pending human decision"
     ],
     "contract_diff": [
-      "Additive source identity fields (page count, byte size, Drive file ID, content verification) and two-rule qualification metadata; runtime contracts unchanged"
+      "architecture-human-rule-review/1.1 replaces coordinator recommendations with nullable reviewer decisions, explicit attribution and deterministic post-review result mapping"
     ],
     "deployment_plan": [
       "No deployment; stacked draft PR only"
@@ -104,7 +138,7 @@
     "severity": 5,
     "detectability": 2,
     "score": 20,
-    "rationale": "Incorrect accessibility or egress interpretation is high severity; human, Golden and runtime gates remain closed, missing local inputs fail closed, and the unsourced five-percent integer conversion is isolated for licensed review."
+    "rationale": "Misattributed professional approval is high severity; all decisions and credentials are null, blank means NOT_REVIEWED, and no runtime or Golden authority follows from package preparation."
   },
   "waiver": null
 }

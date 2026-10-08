@@ -5,19 +5,31 @@
     "schema_version",
     "version",
     "status",
+    "decision_contract",
+    "reviewer_attribution",
+    "dedicated_decisions",
     "reviewer_decisions",
     "items"
   ],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "architecture-human-rule-review/1.0"
+      "const": "architecture-human-rule-review/1.1"
     },
     "version": {
       "type": "string"
     },
     "status": {
-      "type": "string"
+      "const": "AWAITING_LICENSED_ARCHITECT_REVIEW"
+    },
+    "decision_contract": {
+      "type": "object"
+    },
+    "reviewer_attribution": {
+      "type": "object"
+    },
+    "dedicated_decisions": {
+      "type": "object"
     },
     "reviewer_decisions": {
       "type": "array",
@@ -36,6 +48,35 @@
           "rule_id": {
             "type": "string"
           },
+          "persian_title": {
+            "type": "string"
+          },
+          "plain_language_rule": {
+            "type": "string"
+          },
+          "classification": {
+            "type": "string"
+          },
+          "enforcement_consequence": {
+            "type": "string"
+          },
+          "risk": {
+            "enum": [
+              "CRITICAL",
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ]
+          },
+          "applicable_conditions": {
+            "type": "string"
+          },
+          "required_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "source": {
             "type": "string"
           },
@@ -48,67 +89,104 @@
           "page": {
             "type": "object"
           },
-          "applicability": {
+          "source_summary": {
             "type": "string"
           },
           "exceptions": {
             "type": "array"
           },
-          "machine_logic": {},
+          "cross_code_dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "machine_interpretation": {},
           "pass_example": {
             "type": "string"
           },
           "fail_example": {
             "type": "string"
           },
-          "open_question": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "rule_summary_fa": {
-            "type": "string"
-          },
           "boundary_example": {
             "type": "string"
           },
-          "recommended_decision": {
+          "not_applicable_example": {
             "type": "string"
           },
-          "human_review_status": {
+          "input_required_behavior": {
             "type": "string"
           },
-          "open_issue": {
+          "current_unresolved_interpretation": {
             "type": "string"
           },
-          "cross_code_interaction": {
+          "proposed_reviewer_decision": {
+            "type": "null"
+          },
+          "reviewer_decision": {
+            "type": "null"
+          },
+          "reviewer_comments": {
+            "type": "null"
+          },
+          "reviewer_name": {
+            "type": "null"
+          },
+          "professional_role": {
+            "type": "null"
+          },
+          "professional_license_or_registration": {
+            "type": "null"
+          },
+          "review_date": {
+            "type": "null"
+          },
+          "allowed_decisions": {
             "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "const": [
+              "APPROVED",
+              "APPROVED_WITH_CHANGE",
+              "REJECTED",
+              "NEEDS_MORE_EVIDENCE"
+            ]
+          },
+          "post_review_status": {
+            "const": "NOT_REVIEWED"
           }
         },
         "required": [
           "review_item_id",
           "rule_id",
+          "persian_title",
+          "plain_language_rule",
+          "classification",
+          "enforcement_consequence",
+          "risk",
+          "applicable_conditions",
+          "required_inputs",
           "source",
           "edition",
           "clause",
           "page",
-          "applicability",
+          "source_summary",
           "exceptions",
-          "machine_logic",
+          "cross_code_dependencies",
+          "machine_interpretation",
           "pass_example",
           "fail_example",
-          "open_question",
-          "status",
-          "rule_summary_fa",
           "boundary_example",
-          "recommended_decision",
-          "human_review_status",
-          "open_issue",
-          "cross_code_interaction"
+          "not_applicable_example",
+          "input_required_behavior",
+          "current_unresolved_interpretation",
+          "proposed_reviewer_decision",
+          "reviewer_decision",
+          "reviewer_comments",
+          "reviewer_name",
+          "professional_role",
+          "professional_license_or_registration",
+          "review_date",
+          "allowed_decisions",
+          "post_review_status"
         ],
         "additionalProperties": false
       }

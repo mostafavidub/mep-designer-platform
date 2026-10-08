@@ -1,6 +1,6 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.7.0",
+  "standard_version": "5.8.0",
   "schema_version": "1.0.0",
   "effective_date": "2026-10-08",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.8.0",
+      "date": "2026-10-08",
+      "summary": "Add a decision-neutral 32-rule licensed-architect review contract and shareable Review Book, dedicated Code 246 and M3/M4 cards, blank attribution, and deterministic post-review states without granting runtime or Golden authority."
+    },
     {
       "version": "5.7.0",
       "date": "2026-10-08",

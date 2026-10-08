@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.7.0
+**Canonical version:** 5.8.0
 
 **Status:** LOCKED
 
@@ -283,3 +283,14 @@ static-QA, human-review and Golden gates separate. A missing local rule returns
 remains a bounded human-review sub-gate. Closing a dependency blocker may prepare
 a rule for professional review, but cannot activate runtime, Generator, Golden or
 production authority.
+
+
+## Licensed architect review decision integrity
+
+SWCIS 5.8.0 requires every professional rule decision to remain null until an
+attributable licensed reviewer selects an allowed outcome. Coordinator proposals,
+AI confidence and prepared evidence cannot become professional approval. Blank
+means `NOT_REVIEWED`; missing credentials remain `UNKNOWN` and cannot support a
+licensed-review completion claim. `APPROVED_WITH_CHANGE` and
+`NEEDS_MORE_EVIDENCE` retain their required rationale and source basis. Human
+review never activates runtime, Generator, Golden execution, merge or deployment.
