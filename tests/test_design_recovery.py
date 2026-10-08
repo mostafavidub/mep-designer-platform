@@ -21,6 +21,15 @@ def test_engineering_input_and_retry_budget_fail_closed():
     assert not unknown.recoverable
 
 
+def test_architecture_preflight_input_required_never_retries_unchanged_cad():
+    decision = classify_recovery(
+        "INPUT_REQUIRED[ARCHITECTURE_PREFLIGHT_REQUIRED]:state=ARCHITECTURE_INPUT_REQUIRED",
+        attempt=1, max_attempts=3,
+    )
+    assert decision.recoverable is False
+    assert decision.strategy == "request_user_input"
+
+
 def test_missing_durable_input_requests_reupload_after_retry_budget():
     decision=classify_recovery('فایل معماری پروژه در فضای ذخیره‌سازی پیدا نشد.',attempt=3,max_attempts=3)
     assert not decision.recoverable

@@ -9,8 +9,22 @@ from sqlalchemy import event
 
 from app.main_health import app, main_auto, DesignJob
 from app.panel_checkout import digest
+from app.architecture_preflight_ui import PERSISTENCE_KEY
+from cad_engine.architecture_review_engine import empty_review_registry
+from tests.test_architecture_preflight_ui import model as preflight_model
 
 legacy = main_auto.legacy
+
+
+def verified_preflight_state():
+    canonical = preflight_model(True)
+    return {PERSISTENCE_KEY: {
+        'canonical_model': canonical,
+        'review_registry': empty_review_registry(),
+        'source_sha256': canonical['source']['source_sha256'],
+        'canonical_model_hash': canonical['canonical_model_hash'],
+        'created_at': '2026-10-08T00:00:00Z',
+    }}
 
 
 @pytest.fixture
@@ -30,7 +44,8 @@ def flow(monkeypatch):
         project.status = 'ready_to_design'
         project.questions = [{'key': 'location', 'question': 'شهر پروژه'}]
         project.answers = {'discipline': 'electrical', 'location': 'گنبد', 'water_inlet_pressure': '2.5', 'gas_pressure': '17.8'}
-        project.analysis = {'geometry_area_m2': 100, 'architectural_auto': {'geometry_area_m2': 100}}
+        project.analysis = {'geometry_area_m2': 100, 'architectural_auto': {'geometry_area_m2': 100},
+                            **verified_preflight_state()}
         db.commit()
     handoff = browser.post(f'/projects/{pid}/panel-handoff')
     assert handoff.status_code == 200, handoff.text
@@ -87,6 +102,7 @@ def site_shaped_mechanical_order(flow):
                 'level_profiles': profiles,
                 'roof_scope_reliable': False,
             },
+            **verified_preflight_state(),
         }
         db.commit()
     quote = browser.post(
@@ -431,6 +447,38 @@ def test_site_shaped_mechanical_demo_bank_is_atomic_and_idempotent(flow, monkeyp
         assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 1
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
         assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+
+
+def test_source_insufficient_architecture_blocks_quote_before_payment_or_job(flow):
+    browser, auth, uid, pid, token, _order = site_shaped_mechanical_order(flow)
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.analysis = {
+            'geometry_area_m2': 100,
+            'architectural_auto': {'geometry_area_m2': 100, 'architecture_model': {
+                'schema': 'canonical-architectural-model/1.0',
+                'source': {'source_sha256': '9' * 64, 'insunits': 'METERS', 'metres_per_unit': 1.0},
+                'levels': [], 'frames': [], 'physical_spaces': [], 'functional_zones': [],
+                'architectural_objects': [], 'dimensions': [],
+                'completeness': {'status': 'INPUT_REQUIRED', 'release_allowed': False,
+                    'downstream_engineering_allowed': False,
+                    'issues': [{'code': 'NO_PHYSICAL_SPACES_RECONSTRUCTED'}]},
+            }},
+        }
+        db.commit()
+
+    response = browser.post('/internal/panel/customer/quote', headers=auth,
+                            json={'engineProjectId': pid, 'area': 100})
+
+    assert response.status_code == 409
+    assert response.json()['status'] == 'architecture_input_required'
+    assert response.json()['engine_payment_recorded'] is False
+    assert response.json()['design_job_created'] is False
+    with legacy.Session() as db:
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid == 0
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 0
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+        assert PERSISTENCE_KEY in (db.get(legacy.Project, pid).analysis or {})
 
 
 def test_mechanical_proposal_failure_returns_json_and_commits_nothing(flow, monkeypatch):

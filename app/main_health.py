@@ -35,6 +35,7 @@ from .gsc_api import register_gsc_routes
 from .commercial_flow import register_commercial_flow
 from .panel_bridge import register_panel_bridge
 from .architecture_preflight_ui import register_architecture_preflight_ui
+from .architecture_authority_gate import install as install_architecture_authority_gate
 from .questionnaire_jobs import register_questionnaire_jobs
 
 app = main_auto.app
@@ -56,6 +57,7 @@ install_system_typical_v1(mechanical_workflow, mechanical_drawing_set)
 install_manifest_contract_v2(mechanical_workflow, mechanical_drawing_set, dxf_output)
 install_project_mechanical_model(mechanical_workflow)
 mechanical_workflow.register_mechanical_workflow(app, main_auto.legacy)
+install_architecture_authority_gate(main_auto)
 install_mechanical_site_manifest(mechanical_review_fix)
 mechanical_review_fix.register_mechanical_review_fix(app, main_auto.legacy)
 register_seo_articles(app, main_auto.legacy)

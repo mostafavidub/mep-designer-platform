@@ -19,6 +19,9 @@ from . import artifact_storage
 from . import mechanical_workflow
 from .design_progress import get_project_progress, set_project_progress
 from .design_recovery import classify_recovery, get_recovery, record_recovery
+from .architecture_authority_gate import (
+    architecture_authority_report, architecture_input_error, materialize_architecture_preflight,
+)
 
 
 POLL_SECONDS = float(os.getenv('JOB_QUEUE_POLL_SECONDS', '2'))
@@ -379,6 +382,17 @@ def register_job_queue(app, legacy):
                             revision=db.get(legacy.Revision,job.revision_id)
                             if revision: revision.status='input_required';revision.error=''
                         db.commit();return
+                    if 'ARCHITECTURE_PREFLIGHT_REQUIRED' in missing:
+                        job.status = 'input_required'
+                        project.status = 'input_required'
+                        project.last_error = error or 'معماری پروژه برای طراحی تأیید نشده است.'
+                        record_recovery(project,decision,attempt=job.attempts,max_attempts=job.max_attempts,error=error)
+                        if job.revision_id:
+                            revision = db.get(legacy.Revision, job.revision_id)
+                            if revision:
+                                revision.status = 'input_required'
+                                revision.error = project.last_error
+                        db.commit(); return
                 job.status = 'failed'
                 if project:
                     project.status = 'failed'
@@ -431,6 +445,17 @@ def register_job_queue(app, legacy):
         db = legacy.Session(); job = db.get(Job, job_id)
         project_id, revision_id = job.project_id, job.revision_id
         project = db.get(legacy.Project, project_id)
+        if project and (project.answers or {}).get('discipline', 'mechanical') == 'mechanical':
+            analysis, changed = materialize_architecture_preflight(project.analysis or {})
+            if changed:
+                project.analysis = analysis
+            architecture_report = architecture_authority_report(project.analysis or {})
+            if changed:
+                db.commit()
+            if architecture_report.get('blocking'):
+                db.close()
+                _finish(job_id, False, architecture_input_error(architecture_report))
+                return
         if project and _recover_legacy_basis_failure(db, project):
             revision = db.get(legacy.Revision, revision_id)
             if revision:

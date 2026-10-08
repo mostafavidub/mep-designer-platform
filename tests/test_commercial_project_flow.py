@@ -5,6 +5,9 @@ from fastapi.testclient import TestClient
 
 from app.main_health import app
 from app import main as legacy
+from app.architecture_preflight_ui import PERSISTENCE_KEY
+from cad_engine.architecture_review_engine import empty_review_registry
+from tests.test_architecture_preflight_ui import model as preflight_model
 
 
 class CommercialProjectFlowTests(unittest.TestCase):
@@ -25,7 +28,13 @@ class CommercialProjectFlowTests(unittest.TestCase):
         project = db.get(legacy.Project, pid)
         project.status = 'ready_to_design'
         project.answers = {'discipline': discipline}
-        project.analysis = {'discipline': discipline, 'file_count': 1}
+        canonical = preflight_model(True)
+        project.analysis = {'discipline': discipline, 'file_count': 1, PERSISTENCE_KEY: {
+            'canonical_model': canonical, 'review_registry': empty_review_registry(),
+            'source_sha256': canonical['source']['source_sha256'],
+            'canonical_model_hash': canonical['canonical_model_hash'],
+            'created_at': '2026-10-08T00:00:00Z',
+        }}
         db.commit(); db.close()
         return pid
 

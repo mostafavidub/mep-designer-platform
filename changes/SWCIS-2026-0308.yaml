@@ -1,0 +1,43 @@
+{
+  "change_id": "SWCIS-2026-0308",
+  "summary": "Fail closed before Mechanical checkout and design when persisted canonical architecture is not independently validated, and materialize the Architecture Preflight state for real analyzer output.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "documentation", "drawing_output", "governance", "pmm", "questionnaire", "routing", "test", "ui_api"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001"],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "pmm", "qa", "questionnaire", "routing", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "architecture": "Persist the existing Canonical Architecture 3.1 adapter/preflight result after deterministic RAW DXF reconstruction; unresolved geometry remains INPUT_REQUIRED and no authority is promoted.",
+    "pmm": "Mechanical proposal/checkout/design cannot consume a PMM when canonical architecture release or downstream authority is false; stable source-backed identities and typed-level evidence are unchanged.",
+    "questionnaire": "Bounded architecture review remains distinct from ordinary Mechanical design-basis questions; source-insufficient geometry is not converted into a questionnaire answer.",
+    "ui_api": "Customer quote/payment returns an actionable architecture_input_required response before payment or queue creation; existing authenticated ownership and payment atomicity remain unchanged.",
+    "qa": "Adds analyzer-to-preflight persistence, checkout fail-closed, PMM validity, typed-level preservation, and source-insufficient negative coverage.",
+    "versioning": "SWCIS 5.2.0 remains unchanged because this is a backward-compatible authority-gate defect correction without schema vocabulary changes.",
+    "governance": "Closes the production integration gap between MEP-ARCH-RECOG-001 and customer-panel checkout/design transports.",
+    "deployment": "No Staging or Production deployment; qualification is Local Staging only.",
+    "docs": "Documents the canonical architecture-to-PMM gate and recovery semantics for input-required projects.",
+    "migration": "No database migration; existing analyses are lazily and deterministically materialized from their persisted canonical v1 evidence."
+  },
+  "evidence": {
+    "tests": [
+      "python -m pytest -q tests/test_architecture_pmm_gate.py",
+      "python -m pytest -q tests/test_project_mechanical_model.py tests/test_panel_checkout.py",
+      "python tools/validate_swcis.py"
+    ],
+    "docs": ["docs/ARCHITECTURE_PMM_FAIL_CLOSED_GATE.md"],
+    "version_bump": ["not required: backward-compatible correctness fix under SWCIS 5.2.0"],
+    "golden_regression": ["No private drawing is committed; synthetic authoritative and source-insufficient canonical fixtures cover both branches."],
+    "semantic_diff": ["Missing preflight persistence no longer means architecture is clear; canonical release authority is evaluated directly and fail-closed."],
+    "artifact_diff": ["No CAD geometry or drawing artifact is modified; blocked projects create no new design artifact."],
+    "contract_diff": ["Customer checkout adds a fail-closed architecture_input_required outcome before payment and design queue authority."],
+    "deployment_plan": ["No deployment; replay the two existing Local Staging records without a second payment after focused tests pass."],
+    "rollback_plan": ["Revert this change; existing persisted project/source data remains unchanged and no migration rollback is needed."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "The change affects the payment-to-engineering authority boundary; negative checkout and adapter-chain tests make unauthorized downstream progression directly detectable."
+  },
+  "waiver": null
+}

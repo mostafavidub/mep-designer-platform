@@ -15,12 +15,14 @@ import secrets
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from cad_engine.architecture_review_engine import execute_preflight, plan_preflight
+from cad_engine.architecture_review_engine import execute_preflight
 from cad_engine.build_identity import build_identity
 from cad_engine.architecture_contract import content_hash
+from .architecture_authority_gate import (
+    PERSISTENCE_KEY, architecture_authority_report, materialize_architecture_preflight,
+)
 
 
-PERSISTENCE_KEY = "architecture_preflight_ui"
 CLIENT_FIELDS = {"review_item_id", "decision", "review_fingerprint", "request_id"}
 
 ANSWER_LABELS = {
@@ -210,12 +212,7 @@ def _csrf_token(request):
 
 
 def architecture_preflight_blocking(project):
-    stored = (project.analysis or {}).get(PERSISTENCE_KEY) or {}
-    canonical = stored.get("canonical_model")
-    if not isinstance(canonical, dict):
-        return False
-    plan = plan_preflight(canonical, review_registry=stored.get("review_registry"))
-    return plan.get("primary_state") != "AUTO_VALIDATED"
+    return architecture_authority_report(project.analysis or {}).get("blocking") is True
 
 
 def register_architecture_preflight_ui(app, legacy):
@@ -226,6 +223,9 @@ def register_architecture_preflight_ui(app, legacy):
         if not project:
             raise HTTPException(404)
         try:
+            analysis, changed = materialize_architecture_preflight(project.analysis or {})
+            if changed:
+                project.analysis = analysis; db.commit(); db.refresh(project)
             _stored, canonical, _registry, result, view = _load_state(project)
             response = legacy.templates.TemplateResponse("architecture_preflight.html", {
                 "request": request, "p": project, "preflight": view,
@@ -243,6 +243,9 @@ def register_architecture_preflight_ui(app, legacy):
         if not project:
             raise HTTPException(404)
         try:
+            analysis, changed = materialize_architecture_preflight(project.analysis or {})
+            if changed:
+                project.analysis = analysis; db.commit(); db.refresh(project)
             _stored, _canonical, _registry, _result, view = _load_state(project)
             return JSONResponse(view)
         finally:
