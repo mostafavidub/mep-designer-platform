@@ -22,6 +22,7 @@
     "version_bump": ["not required; internal deterministic geometry and lineage correction with unchanged release contract"],
     "semantic_diff": ["Only occupied source-material intervals or separately governed continuity may polygonize an envelope; full canonical axes have no material authority."],
     "artifact_diff": ["No customer drawing or generated CAD artifact is committed."],
+    "golden_regression": ["Frozen-source replay preserved 257 Wall IDs and 19 Physical Space IDs in order, 4 verified spaces, 37 input requirements, 15 review decisions, Dimension PASS with zero conflicts, Vision calls 0, and release false."],
     "deployment_plan": ["No deployment in this task."],
     "rollback_plan": ["Revert this change; no stored data migration is required."]
   },
