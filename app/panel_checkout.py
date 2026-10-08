@@ -561,10 +561,21 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             if not wallet or (not demo and wallet.balance < order.amount):
                 raise HTTPException(409, "موجودی کیف پول کافی نیست؛ هیچ مبلغی کسر نشد.")
             if (project.answers or {}).get("discipline") == "mechanical":
-                proposal = mechanical_workflow.create_proposal(project)
-                analysis = dict(project.analysis or {})
-                analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
-                project.analysis = analysis
+                try:
+                    proposal = mechanical_workflow.create_proposal(project)
+                    analysis = dict(project.analysis or {})
+                    analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
+                    project.analysis = analysis
+                except (TypeError, ValueError) as exc:
+                    # Proposal approval is an engineering authority gate.  A
+                    # rejected proposal must stay a safe JSON checkout failure
+                    # and must roll back before any payment or queue authority
+                    # is written.
+                    db.rollback()
+                    raise HTTPException(
+                        422,
+                        "پیشنهاد طراحی مکانیکی تأیید نشد؛ هیچ پرداختی ثبت نشد. وضعیت پروژه را به‌روزرسانی کنید.",
+                    ) from exc
             if not demo:
                 wallet.balance -= order.amount
             order.paid = 1

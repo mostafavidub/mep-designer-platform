@@ -55,6 +55,48 @@ def pay(browser, auth, pid, order, **extra):
                         json={'engineProjectId': pid, 'quoteToken': order['quoteToken'], 'method': 'wallet', **extra})
 
 
+def site_shaped_mechanical_order(flow):
+    """Convert the ordinary checkout fixture to the multi-level Site shape."""
+    browser, auth, uid, pid, token, _ = flow
+    answers = {
+        'discipline': 'mechanical', 'location': 'تهران', 'city': 'تهران',
+        'cooling': 'اسپلیت دیواری', 'cooling_system': 'wall_mounted_split_ac',
+        'heating': 'پکیج دیواری و رادیاتور', 'heating_system': 'package_radiator',
+        'gas': 'ساختمان گاز ندارد', 'water_inlet_pressure': '2.5',
+        'mechanical_shaft_route': 'propose_near_wet_core',
+    }
+    profiles = [
+        {'name': 'بام', 'roof': True},
+        {
+            'name': 'تیپ طبقات اول تا پنجم', 'roof': False,
+            'conditioned_candidate': True, 'wet_fixture_candidate': True,
+            'sanitary_candidate': True, 'ventilation_candidate': True,
+        },
+        {'name': 'پشت بام', 'roof': True},
+    ]
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.status = 'ready_to_design'
+        project.questions = [{'key': 'location', 'question': 'شهر پروژه'}]
+        project.answers = answers
+        project.analysis = {
+            'geometry_area_m2': 100,
+            'architectural_auto': {
+                'geometry_area_m2': 100,
+                'levels': [row['name'] for row in profiles],
+                'level_profiles': profiles,
+                'roof_scope_reliable': False,
+            },
+        }
+        db.commit()
+    quote = browser.post(
+        '/internal/panel/customer/quote', headers=auth,
+        json={'engineProjectId': pid, 'area': 100, 'answers': {}},
+    )
+    assert quote.status_code == 200, quote.text
+    return browser, auth, uid, pid, token, quote.json()['project']
+
+
 def test_phone_login_starts_with_zero_not_demo_credit(flow):
     browser, auth, uid, pid, token, order = flow
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
@@ -367,6 +409,66 @@ def test_demo_bank_queues_once_without_wallet_debit(flow, monkeypatch):
     with legacy.Session() as db:
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
         assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+
+
+def test_site_shaped_mechanical_demo_bank_is_atomic_and_idempotent(flow, monkeypatch):
+    browser, auth, uid, pid, token, order = site_shaped_mechanical_order(flow)
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+
+    first = pay(browser, auth, pid, order, method='gateway')
+    second = pay(browser, auth, pid, order, method='gateway')
+
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    assert first.json()['project']['paid'] is True
+    assert first.json()['balance'] == second.json()['balance'] == 0
+    with legacy.Session() as db:
+        checkout = db.get(app.state.panel_checkout.Checkout, pid)
+        wallet = db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one()
+        assert checkout.paid == 1
+        assert wallet.balance == 0
+        assert db.query(app.state.panel_checkout.Activity).filter_by(id=f'DEMO-PAY-{pid}').count() == 1
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 1
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
+        assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+
+
+def test_mechanical_proposal_failure_returns_json_and_commits_nothing(flow, monkeypatch):
+    browser, auth, uid, pid, token, order = site_shaped_mechanical_order(flow)
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+    monkeypatch.setattr(
+        'app.panel_checkout.mechanical_workflow.approve_drawing_set',
+        lambda _proposal: (_ for _ in ()).throw(ValueError('synthetic rejected proposal')),
+    )
+
+    response = pay(browser, auth, pid, order, method='gateway')
+
+    assert response.status_code == 422
+    assert response.headers['content-type'].startswith('application/json')
+    assert 'هیچ پرداختی ثبت نشد' in response.json()['detail']
+    with legacy.Session() as db:
+        checkout = db.get(app.state.panel_checkout.Checkout, pid)
+        project = db.get(legacy.Project, pid)
+        wallet = db.query(app.state.commercial['Wallet']).filter_by(user_id=uid).one()
+        assert checkout.paid == 0
+        assert project.status == 'ready_to_design'
+        assert wallet.balance == 0
+        assert db.query(app.state.panel_checkout.Activity).filter_by(id=f'DEMO-PAY-{pid}').count() == 0
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 0
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+
+
+def test_gateway_stays_disabled_without_explicit_demo_flag(flow, monkeypatch):
+    browser, auth, uid, pid, token, order = site_shaped_mechanical_order(flow)
+    monkeypatch.delenv('PANEL_DEMO_PAYMENTS', raising=False)
+
+    response = pay(browser, auth, pid, order, method='gateway')
+
+    assert response.status_code == 503
+    with legacy.Session() as db:
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid == 0
+        assert db.query(app.state.panel_checkout.Activity).filter_by(id=f'DEMO-PAY-{pid}').count() == 0
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
 
 
 def test_handoff_preserves_answers_and_replay_same_account(flow):
