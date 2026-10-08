@@ -79,7 +79,7 @@ the candidate-boundary proof to reconcile these intervals safely.
 
 | Physical Space | Evidence-backed taxonomy after replay |
 |---|---|
-| `PS-19C780D56F3802FE` | `SITE_EXTERIOR`; removed from Physical Space authority by the Roof envelope |
+| `PS-19C780D56F3802FE` | `SITE_EXTERIOR` evidence exists, but the strengthened Roof-envelope proof remains `INPUT_REQUIRED`; retained as an unresolved legacy Physical Space candidate without promoted authority |
 | `PS-A96199E13045BD8B` | `SITE_EXTERIOR`, but retained as unresolved legacy candidate because Typical envelope remains unproven |
 | `PS-1F939EAE61E6F73A`, `PS-B9A4B5B46459232D` | `VERTICAL_SERVICE_SPACE` (elevator) |
 | `PS-E02E763AAE77D0EA` | `VERTICAL_SERVICE_SPACE` (duct) |
