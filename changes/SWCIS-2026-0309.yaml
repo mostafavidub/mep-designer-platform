@@ -17,11 +17,11 @@
     "versioning": "No contract vocabulary or production integration change; version remains unchanged."
   },
   "evidence": {
-    "tests": ["PYTHONPATH=. pytest -q tests/test_architectural_space_engine.py -k dimension"],
+    "tests": ["PYTHONPATH=. pytest -q tests/test_architectural_space_engine.py -k dimension", "Extraction-boundary DIMTYPE=33 positive and conflicting-source test doubles", "Exact Vision assertion A/B at base and head: identical PRE_EXISTING_CONFIG_SENSITIVE_FAILURE"],
     "docs": ["docs/ARCHITECTURE_REAL_DXF_RECOGNITION_RECOVERY.md"],
     "version_bump": ["not required; bounded extraction bugfix with no contract vocabulary or production integration change"],
     "golden_regression": ["Private bytes remain uncommitted; the exact unchanged source was replayed in isolation and preserved 19 candidate IDs and 257 walls while dimension reconciliation changed from CONFLICT to PASS."],
-    "semantic_diff": ["Only false near-zero linear dimension measurements change, and only when source actual_measurement agrees with the two source witness points; disagreement remains fail-closed."],
+    "semantic_diff": ["Only false near-zero linear dimension measurements change, and only when source actual_measurement agrees with the two source witness points at absolute source-coordinate epsilon 1e-9 with zero relative tolerance; disagreement remains fail-closed."],
     "artifact_diff": ["No output drawing is generated or changed; canonical geometry, walls, portals, voids, levels and access authority remain unchanged."],
     "deployment_plan": ["No deployment in this task."],
     "rollback_plan": ["Revert this change; architecture remains fail-closed with the prior false dimension conflict."]

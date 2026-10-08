@@ -79,6 +79,9 @@ FRAME_TYPES = {"PRIMARY_FLOOR", "ROOF", "SITE", "FURNITURE_PLAN", "SECTION", "EL
 NON_BOUNDARY_TOKENS = ("dim", "dimension", "اندازه", "text", "anno", "hatch", "furn", "furniture", "مبلمان", "grid", "axis", "محور",
                        "door", "درب", "window", "پنجره", "opening")
 WALL_TOKENS = ("wall", "a-wall", "دیوار", "partition")
+# Binary-float round-off allowance at the DXF source-coordinate comparison
+# boundary. This is intentionally not a percentage or engineering tolerance.
+SOURCE_COORDINATE_EPSILON = 1e-9
 
 
 def normalize_text(value):
@@ -449,9 +452,12 @@ def _ingest(path):
 def _source_backed_dimension_measurement(dimtype, reported, stored, witness_distance):
     """Select a dimension value without concealing conflicting source facts."""
     measurement, basis = reported, "EZDXF_GET_MEASUREMENT"
-    if (dimtype & 7) in {0, 1} and abs(reported) <= 1e-9 and stored > 1e-9 and witness_distance > 1e-9:
-        allowed=max(1e-6, abs(stored)*.005)
-        if abs(stored-witness_distance) <= allowed:
+    if ((dimtype & 7) in {0, 1}
+            and abs(reported) <= SOURCE_COORDINATE_EPSILON
+            and stored > SOURCE_COORDINATE_EPSILON
+            and witness_distance > SOURCE_COORDINATE_EPSILON):
+        if math.isclose(stored, witness_distance, rel_tol=0.0,
+                        abs_tol=SOURCE_COORDINATE_EPSILON):
             measurement, basis = stored, "SOURCE_ACTUAL_MEASUREMENT_AND_WITNESSES"
     return measurement, basis
 

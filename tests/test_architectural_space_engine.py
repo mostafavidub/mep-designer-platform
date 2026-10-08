@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import ezdxf
 from shapely.geometry import LineString, Polygon
@@ -7,7 +8,7 @@ from cad_engine.architectural_space_engine import (
     SCHEMA, _completeness, _exclude_inset_sheet_border_segments, _recover_supported_partitions,
     _associate_dimensions, _dimension_reconciliation, _semantic_segment_classification,
     _pre_envelope_opening_evidence, _bind_openings, _architectural_void_candidates, normalize_text,
-    _source_backed_dimension_measurement, reconstruct_architecture, require_complete_architecture,
+    _extract, _source_backed_dimension_measurement, reconstruct_architecture, require_complete_architecture,
 )
 
 
@@ -236,6 +237,51 @@ def test_flagged_linear_dimension_does_not_hide_conflicting_source_measurements(
     measurement,basis=_source_backed_dimension_measurement(33,0.0,1.4,2.0)
     assert measurement==0.0
     assert basis=="EZDXF_GET_MEASUREMENT"
+
+
+class _DimensionEntityDouble:
+    def __init__(self, *, stored, witness=10.0):
+        point=lambda x,y: SimpleNamespace(x=x,y=y)
+        self.dxf=SimpleNamespace(handle="D33",layer="DIM",dimtype=33,
+                                 actual_measurement=stored,text="",
+                                 defpoint=point(0,4),defpoint2=point(0,3),
+                                 defpoint3=point(witness,3),defpoint4=point(0,0))
+
+    def dxftype(self): return "DIMENSION"
+    def get_measurement(self): return 0.0
+
+
+class _DimensionDocumentDouble:
+    def __init__(self, entity): self.entity=entity; self.blocks=[]
+    def modelspace(self): return [self.entity]
+
+
+def test_extract_flagged_linear_dimension_recovers_matching_source_witnesses():
+    extracted=_extract(_DimensionDocumentDouble(_DimensionEntityDouble(stored=10.0)))
+    row=extracted["dimensions"][0]
+    assert row["raw_dimension_type"]==33
+    assert row["reported_measurement"]==0.0
+    assert row["source_actual_measurement"]==10.0
+    assert row["witness_distance"]==10.0
+    assert row["measurement_basis"]=="SOURCE_ACTUAL_MEASUREMENT_AND_WITNESSES"
+    assert row["measurement"]==10.0
+    poly=Polygon(((0,0),(10,0),(10,6),(0,6)))
+    associated=_associate_dimensions(poly,extracted["dimensions"],1.0)
+    space={"physical_space_id":"S1","polygon":list(poly.exterior.coords),
+           "interior_rings":[],"dimensions":associated}
+    assert _dimension_reconciliation([space],1.0,.001,extracted["dimensions"])["status"]=="PASS"
+
+
+def test_extract_flagged_linear_dimension_keeps_disagreement_fail_closed():
+    extracted=_extract(_DimensionDocumentDouble(_DimensionEntityDouble(stored=9.0)))
+    row=extracted["dimensions"][0]
+    assert row["measurement"]==0.0
+    assert row["measurement_basis"]=="EZDXF_GET_MEASUREMENT"
+    poly=Polygon(((0,0),(10,0),(10,6),(0,6)))
+    associated=_associate_dimensions(poly,extracted["dimensions"],1.0)
+    space={"physical_space_id":"S1","polygon":list(poly.exterior.coords),
+           "interior_rings":[],"dimensions":associated}
+    assert _dimension_reconciliation([space],1.0,.001,extracted["dimensions"])["status"]=="CONFLICT"
 
 
 def test_dimension_requires_two_boundary_witnesses_crossing_space_interior():

@@ -55,10 +55,29 @@ wall, room, portal, void, level, or access edge was synthesized.
 
 For linear/aligned dimensions only, a near-zero library measurement may be
 replaced by the source `actual_measurement` when both are non-zero and agree
-with the two source witness points within the governed tolerance.  A mismatch
-remains unresolved; it is never averaged or silently accepted.  The record
-retains raw type, raw measurement, source measurement, witness distance, and
-the selected measurement basis.
+with the two source witness points to the source-coordinate binary-float
+epsilon: `math.isclose(..., rel_tol=0, abs_tol=1e-9)`. This is not an
+engineering or percentage tolerance. The earlier unexplained 0.5% allowance
+was removed. A mismatch remains unresolved; it is never averaged or silently
+accepted. The record retains raw type, raw measurement, source measurement,
+witness distance, and the selected measurement basis.
+
+An extraction-boundary test double exercises the production entity path with
+`DIMTYPE=33`, a false zero `get_measurement()`, stored source measurement, and
+two witness points. A paired negative case proves disagreement retains the
+zero report and produces downstream reconciliation `CONFLICT`.
+
+## Config-sensitive Vision test A/B
+
+The exact test
+`test_coverage_and_review_contract_expose_only_unresolved_regions` was run
+against dependency SHA `3da0e1d` and this PR with the same environment. The
+relevant environment selected provider `deepseek` and model
+`deepseek-flash`; a credential was present but is intentionally not recorded.
+Both revisions failed the unchanged assertion identically: actual `FAILED`,
+expected `CONFIG_REQUIRED`. This is classified
+`PRE_EXISTING_CONFIG_SENSITIVE_FAILURE`; PR #326 changes no Vision code or
+assertion.
 
 The unchanged source replay moves dimension reconciliation from `CONFLICT` to
 `PASS`.  Physical-space count (19), stable IDs, wall count (257), and all
