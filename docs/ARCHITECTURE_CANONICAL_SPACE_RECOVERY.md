@@ -22,16 +22,33 @@ The former rejection occurred because all labels covered by the dominant
 cycle were flattened into one semantic set (`elevator`, `lightwell`). The
 semantic conflict then vetoed the independently source-supported shell.
 
-The corrected rule permits a shell only when exactly one candidate has source
-handles, at least four boundary walls, positive internal-partition topology,
-positive double-face boundary evidence and positive known-thickness evidence.
-No percentage or area-dominance threshold is used. Site/semi-exterior
-semantics disqualify the candidate, and any second qualifying shell leaves the
-frame ambiguous. Semantics grant no geometry authority. Existing source
-polygon interior rings are preserved explicitly.
+The corrected rule permits a shell only when exactly one candidate has every
+exterior interval covered by either an occupied source-backed canonical-wall
+material interval or an explicitly governed non-material continuity closure,
+source-backed internal partition topology, and double-face plus known-thickness support distributed
+over at least two non-parallel boundary directions. A single strong fragment
+cannot authorize an otherwise weak perimeter. No percentage or area-dominance
+threshold is used. Closure evidence remains separately identified and never
+becomes wall material or geometry authority. Site/semi-exterior semantics disqualify the candidate, and
+any second qualifying shell leaves the frame ambiguous. Semantics grant no
+geometry authority.
 
-Result: the Roof envelope becomes `HIGH_CONFIDENCE`, canonical subdivision is
-selected, and the disjoint backyard diagnostic is no longer a Physical Space.
+Source polygon rings and independently classified source void candidates are
+then composed under a separate fail-closed contract. Equivalent rings are
+deduplicated with both provenances retained; invalid, exterior-crossing,
+overlapping or touching holes reject the composition. The combined polygon
+must itself be valid, non-empty and positive-area. No snap, buffer or
+`make_valid` repair changes the authoritative geometry.
+
+Result under the strengthened contract: the candidate remains
+`INPUT_REQUIRED`. All 52 boundary walls are source-backed; 34 have DOUBLE_FACE
+and known-thickness evidence distributed over both orthogonal directions, and
+21 governed non-material closures remain explicitly separate. Six critical
+exterior intervals are still unsupported by either material or governed
+continuity. The 21 source rings and one classified void also conflict rather
+than forming a valid deduplicated hole set. Correct fail-closed behavior
+therefore restores the Roof legacy candidate path; no shell authority is
+granted merely to preserve the earlier recovery result.
 
 ### Typical — `FRAME-1B3A64CDA62034FE`
 
@@ -85,17 +102,20 @@ change: material aperture, host wall and two-side binding remain mandatory.
 
 ## Authority diff
 
-Only `PS-19C780D56F3802FE` changes: it was an `INPUT_REQUIRED` backyard
-Physical Space candidate and becomes a retained `SITE_EXTERIOR` diagnostic
-outside the source-supported Roof envelope. No geometry, semantic or topology
-authority is promoted on that object. The remaining 18 Physical Space IDs and
-all 257 wall IDs are preserved. Mechanical release remains blocked.
+The earlier provisional promotion of the Roof shell is withdrawn by the
+strengthened proof. `PS-19C780D56F3802FE` therefore remains an
+`INPUT_REQUIRED` legacy Physical Space candidate instead of being removed as a
+site diagnostic. The result returns from 18 to 19 Physical Spaces, while the 4
+verified spaces and all 257 wall IDs remain unchanged. No geometry, semantic
+or topology authority is promoted. Mechanical release remains blocked.
 
 ## Deferred independent defects
 
-1. carry exact source primitive/transform lineage into boundary-interval proof;
-2. qualify Typical envelope or prove source insufficiency;
-3. classify the sliver through wall-material topology rather than area;
-4. filter reference arcs and preserve nested opening provenance without
+1. resolve or explicitly govern the six Roof exterior intervals and the
+   overlapping classified-void/source-ring topology;
+2. carry exact source primitive/transform lineage into boundary-interval proof;
+3. qualify Typical envelope or prove source insufficiency;
+4. classify the sliver through wall-material topology rather than area;
+5. filter reference arcs and preserve nested opening provenance without
    granting Portal authority;
-5. regenerate/group human review only after those deterministic fixes.
+6. regenerate/group human review only after those deterministic fixes.

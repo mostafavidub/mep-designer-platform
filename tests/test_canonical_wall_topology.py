@@ -1,6 +1,7 @@
 from shapely.geometry import LineString, Polygon
 
 from cad_engine.architectural_topology_quality import (
+    _compose_shell_holes,
     building_envelope_from_walls,
     canonical_space_subdivision,
     canonical_enclosure_continuity,
@@ -278,6 +279,82 @@ def test_source_supported_shell_survives_nested_interior_void_semantics():
     assert envelope["evidence"][0]["semantic_authority"] is False
     assert diagnostic["candidates"][0]["internal_partition_count"]==2
     assert regions[0]["status"]=="CONFLICT"
+
+
+def test_sparse_double_face_fragment_cannot_authorize_whole_shell():
+    walls=[_topology_wall("A1",(0,0),(1,0)),
+           _topology_wall("A2",(1,0),(10,0),representation="SINGLE_LINE"),
+           _topology_wall("B",(10,0),(10,10),representation="SINGLE_LINE"),
+           _topology_wall("C",(10,10),(0,10),representation="SINGLE_LINE"),
+           _topology_wall("D",(0,10),(0,0),representation="SINGLE_LINE"),
+           _topology_wall("P",(2,3),(8,3),representation="SINGLE_LINE")]
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    assert shell["source_boundary_proof"]["double_face_boundary_wall_count"]==1
+    assert shell["source_boundary_proof"]["status"]=="INPUT_REQUIRED"
+    assert "DOUBLE_FACE_SUPPORT_NOT_DISTRIBUTED" in shell["source_boundary_proof"]["reasons"]
+    assert envelope["status"]=="INPUT_REQUIRED"
+
+
+def test_distributed_material_boundary_proof_authorizes_shell_without_ratios():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),
+           _topology_wall("P",(2,3),(8,3),representation="SINGLE_LINE")]
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    proof=max(diagnostic["candidates"],key=lambda row:row["area"])["source_boundary_proof"]
+    assert proof["status"]=="SUPPORTED"
+    assert proof["unsupported_interval_count"]==0
+    assert proof["double_face_direction_classes"]==[0.0,90.0]
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+
+
+def test_identical_classified_void_is_deduplicated_against_source_ring():
+    shell=Polygon([(0,0),(10,0),(10,10),(0,10)],holes=[[(3,3),(7,3),(7,7),(3,7)]])
+    result=_compose_shell_holes(shell,[{"candidate_id":"VOID-1","geometry":[[3,3],[7,3],[7,7],[3,7],[3,3]]}])
+    assert result["status"]=="SUPPORTED"
+    assert len(result["holes"])==1
+    assert result["provenance"][0]["authority"]=="SOURCE_INTERIOR_RING"
+    assert result["provenance"][0]["classified_void_ids"]==["VOID-1"]
+
+
+def test_overlapping_classified_voids_fail_closed():
+    shell=Polygon([(0,0),(10,0),(10,10),(0,10)])
+    result=_compose_shell_holes(shell,[
+        {"candidate_id":"VOID-A","geometry":[[2,2],[6,2],[6,6],[2,6],[2,2]]},
+        {"candidate_id":"VOID-B","geometry":[[5,5],[8,5],[8,8],[5,8],[5,5]]},
+    ])
+    assert result["status"]=="CONFLICT"
+    assert result["reason"]=="HOLES_OVERLAP_OR_TOUCH"
+
+
+def test_classified_void_crossing_exterior_fails_closed():
+    shell=Polygon([(0,0),(10,0),(10,10),(0,10)])
+    result=_compose_shell_holes(shell,[
+        {"candidate_id":"VOID-A","geometry":[[8,2],[12,2],[12,6],[8,6],[8,2]]},
+    ])
+    assert result["status"]=="CONFLICT"
+    assert result["reason"]=="HOLE_NOT_STRICTLY_CONTAINED"
+
+
+def test_valid_disjoint_source_backed_voids_compose_deterministically():
+    shell=Polygon([(0,0),(10,0),(10,10),(0,10)])
+    voids=[{"candidate_id":"VOID-B","geometry":[[6,6],[8,6],[8,8],[6,8],[6,6]]},
+           {"candidate_id":"VOID-A","geometry":[[2,2],[4,2],[4,4],[2,4],[2,2]]}]
+    first=_compose_shell_holes(shell,voids)
+    second=_compose_shell_holes(shell,list(reversed(voids)))
+    assert first==second
+    assert first["status"]=="SUPPORTED"
+    assert len(first["holes"])==2
+    assert first["geometry"].area==92
+
+
+def test_invalid_source_hole_never_repaired_into_authority():
+    # A hole touching the outer shell makes the source polygon invalid.  The
+    # composer must reject it, not snap, buffer, or make_valid it.
+    shell=Polygon([(0,0),(10,0),(10,10),(0,10)],holes=[[(0,2),(3,2),(3,4),(0,4)]])
+    result=_compose_shell_holes(shell,[])
+    assert result["status"]=="CONFLICT"
+    assert result["reason"] in {"INVALID_HOLE_GEOMETRY","HOLE_NOT_STRICTLY_CONTAINED"}
 
 
 def test_geometric_shell_preserves_source_polygon_interior_rings():
