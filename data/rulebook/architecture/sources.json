@@ -1,5 +1,5 @@
 {
-  "schema_version": "architecture-sources/1.2",
+  "schema_version": "architecture-sources/1.3",
   "sources": [
     {
       "source_id": "IR-M3-OLD",
@@ -118,7 +118,7 @@
       "cover_verified": true,
       "access_date": "2026-10-05",
       "copyright_note": "Previously supplied project source; not redistributed",
-      "notes": "Third edition1395 cover visually verified; current amendments and plan-clause extraction unresolved.",
+      "notes": "Third edition 1395 cover and bounded Architecture-consumed stair/egress clauses verified; specialized fire-system engineering remains outside Architecture.",
       "evidence_grade": "A",
       "qualification_status": "SOURCE_GAP",
       "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
@@ -194,34 +194,47 @@
     {
       "source_id": "IR-ACCESS",
       "title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت — تجدیدنظر اول — ضابطه 246",
-      "issuer": "شورای عالی شهرسازی و معماری / مرکز تحقیقات",
+      "issuer": "سازمان برنامه و بودجه کشور / شورای عالی شهرسازی و معماری ایران",
       "edition_year": 1399,
-      "status": "UNKNOWN_CURRENT_STATUS",
-      "notes": "Third-edition candidate from request; exact source and current status pending.",
-      "evidence_grade": "E",
-      "qualification_status": "SOURCE_GAP",
-      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
-      "may_solo_support_release_block": false,
-      "document_status": "AUTHORITY_STATUS_UNRESOLVED",
-      "source_class": "UNVERIFIED_DISCOVERY",
-      "official_url_or_identifier": "No exact official instrument, approval identifier or current amendment chain was retrievable from primary endpoints.",
+      "status": "PROJECT_PRIMARY_BASELINE_VERIFIED",
+      "notes": "Exact owner-supplied Code 246 first-revision PDF inspected; residential clauses and cross-references mapped. Five-percent integer conversion is not stated and remains a bounded human-interpretation sub-gate.",
+      "evidence_grade": "A",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_APPLICABLE",
+      "may_solo_support_release_block": true,
+      "document_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_class": "PRIMARY_OFFICIAL_OWNER_SUPPLIED_FILE",
+      "official_url_or_identifier": "Google Drive file 1RjFUXNXTbOlpnZOt5ZbsHepzMS6rpGEg; exact bytes verified locally; PDF excluded from Git.",
       "amendment_chain": [],
-      "verification_status": "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING",
+      "verification_status": "DOCUMENT_HASH_PAGE_AND_RESIDENTIAL_CLAUSES_VERIFIED",
       "authority": "شورای عالی شهرسازی و معماری ایران",
       "edition": "تجدیدنظر اول ۱۳۹۹",
       "document_type": "NATIONAL_ACCESSIBILITY_REGULATION",
       "primary_source": true,
       "owner_supplied": true,
-      "document_verified": false,
-      "current_source_basis": "OWNER_CONFIRMED_PRIMARY_BASELINE_FILE_NOT_AVAILABLE",
+      "document_verified": true,
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "approval_date": "1398-08-20",
       "circular_number": "99/129340",
       "circular_date": "1399-03-24",
       "mandatory_from": "1399-07-01",
       "document_date": "1399-02-20",
       "expected_filename": "895917_Code0246-r1-13990324.pdf",
-      "local_hash": null,
-      "qualification": "SOURCE_GAP"
+      "local_hash": "1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751",
+      "qualification": "SOURCE_QUALIFIED_FOR_PROJECT_BASELINE",
+      "owner_confirmed_current_baseline": true,
+      "independent_government_registry_currentness_verified": false,
+      "project_baseline_date": "2026-10-08",
+      "local_filename": "895917_Code0246-r1-13990324.pdf",
+      "sha256": "1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751",
+      "page_count": 122,
+      "file_size_bytes": 5843208,
+      "drive_file_id": "1RjFUXNXTbOlpnZOt5ZbsHepzMS6rpGEg",
+      "content_identity_verified": true,
+      "cover_verified": true,
+      "access_date": "2026-10-08",
+      "copyright_note": "Owner-supplied primary PDF; only hash, metadata and concise clause mappings are committed.",
+      "scope": "Code 246 residential architecture applicability and referenced accessible-space requirements"
     },
     {
       "source_id": "IR-LOCAL",
@@ -308,7 +321,7 @@
       "evidence_strength": "A",
       "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "unresolved": [
-        "Architecture-only clause extraction and applicability tables"
+        "Licensed-architect review of the mapped architecture-only stair/egress interface."
       ]
     },
     {
@@ -329,18 +342,15 @@
       "transition_rules": [],
       "superseded_documents": [],
       "superseding_documents": [],
-      "current_status": "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING",
+      "current_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "applicability_scope": "Public and residential buildings; residential conditions require exact sections 3-2, 3-2-2 and 3-2-3 mapping.",
-      "official_reference": "Owner supplied metadata for 895917_Code0246-r1-13990324.pdf; bytes were not available in the qualification workspace on 2026-10-08.",
+      "official_reference": "Exact owner-supplied 895917_Code0246-r1-13990324.pdf; SHA-256 1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751; 122 pages; Drive ID 1RjFUXNXTbOlpnZOt5ZbsHepzMS6rpGEg.",
       "retrieved_date": "2026-10-08",
-      "source_class": "PRIMARY_OFFICIAL_OWNER_SUPPLIED_METADATA",
-      "evidence_strength": "B",
-      "verification_status": "FILE_BYTES_HASH_CLAUSE_PAGE_REQUIRED",
+      "source_class": "PRIMARY_OFFICIAL_OWNER_SUPPLIED_FILE",
+      "evidence_strength": "A",
+      "verification_status": "DOCUMENT_HASH_PAGE_AND_RESIDENTIAL_CLAUSES_VERIFIED",
       "unresolved": [
-        "Local file hash",
-        "Exact clause/page extraction",
-        "Five-percent rounding behavior",
-        "Residential/common-area/elevator/parking applicability branches"
+        "Clause 3-2-2-1 does not state how the five-percent result is converted to an integer number of units; licensed-architect interpretation is required."
       ]
     }
   ]

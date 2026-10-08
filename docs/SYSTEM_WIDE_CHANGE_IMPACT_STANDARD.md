@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.6.0
+**Canonical version:** 5.7.0
 
 **Status:** LOCKED
 
@@ -271,3 +271,15 @@ project regulatory baseline only when labelled as owner provenance; it cannot be
 reported as independent government-registry verification. `READY_FOR_HUMAN_REVIEW`
 grants no runtime, Generator, Golden or production authority. Missing source bytes,
 clause mappings or cross-code branches remain fail-closed at the affected rule only.
+
+
+## Exact primary-source blocker closure
+
+SWCIS 5.7.0 requires claims about an owner-supplied primary file to bind the exact
+content hash, byte size and page count before clause logic advances. Conditional
+accessibility and fire/egress branches keep their source, applicability, logic,
+static-QA, human-review and Golden gates separate. A missing local rule returns
+`LOCAL_RULE_REQUIRED` or `INPUT_REQUIRED`; a missing statutory interpretation
+remains a bounded human-review sub-gate. Closing a dependency blocker may prepare
+a rule for professional review, but cannot activate runtime, Generator, Golden or
+production authority.

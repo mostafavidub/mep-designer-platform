@@ -1463,7 +1463,7 @@
       "rule_id": "ARCH-RES-STAIRS-003",
       "title": "پلهٔ ساختمان مسکونی گروه ۸",
       "status": "LOCKED",
-      "qualification": "DEPENDENCY_BLOCKED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1477,7 +1477,8 @@
       "qa_rules": [
         "source_hash_applicability_qualification",
         "classification_enforcement_release_status_contract",
-        "no_release_authority"
+        "no_release_authority",
+        "m3_group8_stair_egress_interface"
       ],
       "regression_tests": [
         "tests/test_residential_foundation.py",
@@ -1743,7 +1744,7 @@
       "rule_id": "ARCH-RES-ACCESSIBILITY-001",
       "title": "فضای بهداشتی قابل استفاده معلول",
       "status": "LOCKED",
-      "qualification": "DEPENDENCY_BLOCKED",
+      "qualification": "READY_FOR_HUMAN_REVIEW",
       "pmm_fields": [
         "residential_generation_input.authority",
         "residential_generation_input.program; no PMM write"
@@ -1757,7 +1758,8 @@
       "qa_rules": [
         "source_hash_applicability_qualification",
         "classification_enforcement_release_status_contract",
-        "no_release_authority"
+        "no_release_authority",
+        "code246_residential_accessibility_applicability"
       ],
       "regression_tests": [
         "tests/test_residential_foundation.py",

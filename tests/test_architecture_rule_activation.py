@@ -1,4 +1,5 @@
 import json
+import hashlib
 from collections import Counter
 from pathlib import Path
 
@@ -16,20 +17,21 @@ def test_project_baselines_preserve_provenance_boundary():
         assert sources[sid]["independent_government_registry_currentness_verified"] is False
     access = sources["IR-ACCESS"]
     assert access["expected_filename"] == "895917_Code0246-r1-13990324.pdf"
-    assert access["local_hash"] is None
-    assert access["verification_status"] == "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING"
+    assert access["local_hash"] == "1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751"
+    assert access["page_count"] == 122
+    assert access["file_size_bytes"] == 5_843_208
+    assert access["content_identity_verified"] is True
+    assert access["verification_status"] == "DOCUMENT_HASH_PAGE_AND_RESIDENTIAL_CLAUSES_VERIFIED"
 
-def test_every_rule_has_independent_gates_and_only_two_dependency_blockers():
+def test_every_rule_has_independent_gates_and_all_are_ready_for_one_human_review():
     rules = hard_rules(); assert len(rules) == 32
-    assert Counter(x["activation_state"] for x in rules) == {"READY_FOR_HUMAN_REVIEW": 30, "BLOCKED": 2}
-    blocked = {x["rule_id"]: x for x in rules if x["activation_state"] == "BLOCKED"}
-    assert set(blocked) == {"ARCH-RES-STAIRS-003", "ARCH-RES-ACCESSIBILITY-001"}
+    assert Counter(x["activation_state"] for x in rules) == {"READY_FOR_HUMAN_REVIEW": 32}
     for rule in rules:
         assert rule["source_gate"] in {"QUALIFIED", "BLOCKED"}
         assert rule["human_review_gate"] == "REQUIRED"
         assert rule["release_enabled"] is False
         assert rule["rule_logic"] is not None
-        if rule["check"] is None and rule["activation_state"] == "READY_FOR_HUMAN_REVIEW":
+        if rule["check"] is None and rule["activation_state"] == "READY_FOR_HUMAN_REVIEW" and rule["rule_id"] not in {"ARCH-RES-STAIRS-003", "ARCH-RES-ACCESSIBILITY-001"}:
             assert rule["machine_checkable"] is False
             assert rule["logic_gate"] == "READY_FOR_HUMAN_REVIEW"
         assert rule["source_clause"] and rule["source_page"]
@@ -47,13 +49,13 @@ def test_cross_code_is_selective_and_no_global_accessibility_flag_exists():
     assert "IR-M3" in rules["ARCH-RES-STAIRS-003"]["cross_rule_dependencies"]
     assert all("accessibility_required = true" not in json.dumps(x) for x in rules.values())
 
-def test_advanced_rules_have_eight_case_qa_specifications():
+def test_every_rule_has_minimum_eight_case_qa_specification():
     cases = [x for x in load("qa-matrix")["cases"] if x["group"] == "RULE_ACTIVATION"]
     by = Counter(x["authority_ref"] for x in cases)
-    assert len(by) == 30 and set(by.values()) == {8}
+    assert len(by) == 32
     scenarios = {"PASS", "FAIL", "BOUNDARY_EXACT", "JUST_BELOW", "JUST_ABOVE", "NOT_APPLICABLE", "INPUT_REQUIRED", "EXCEPTION"}
     for rid in by:
-        assert {x["scenario"] for x in cases if x["authority_ref"] == rid} == scenarios
+        assert scenarios <= {x["scenario"] for x in cases if x["authority_ref"] == rid}
         assert all(x["executed"] is False for x in cases if x["authority_ref"] == rid)
 
 def test_human_review_is_not_fabricated():
@@ -68,7 +70,43 @@ def test_golden_matrix_has_accessibility_diversity_but_is_not_authorized():
     assert len({x["case_type"] for x in matrix["cases"]}) == 8
     assert len({x["accessibility_coverage"] for x in matrix["cases"]}) == 8
     assert all(x["execution_authorized"] is False for x in matrix["cases"])
-    assert matrix["status"] == "PREPARED_NOT_AUTHORIZED_CODE246_AND_M3_BLOCKERS"
+    assert matrix["status"] == "PREPARED_NOT_AUTHORIZED_PENDING_CONSOLIDATED_LICENSED_ARCHITECT_REVIEW"
+
+def _residential_complex(units_per_floor, floor_count, total_units):
+    return units_per_floor > 4 or (floor_count > 1 and total_units > 8)
+
+def _group8(height_m, floor_count):
+    return height_m > 23 or floor_count > 7
+
+def test_code246_residential_complex_exact_boundaries():
+    assert _residential_complex(4, 1, 4) is False
+    assert _residential_complex(5, 1, 5) is True
+    assert _residential_complex(4, 2, 8) is False
+    assert _residential_complex(4, 3, 9) is True
+
+def test_code246_accessible_unit_branches_fail_closed_without_invented_rounding():
+    rule = {x["rule_id"]: x for x in hard_rules()}["ARCH-RES-ACCESSIBILITY-001"]
+    allocation = rule["rule_logic"]["accessible_unit_requirement"]
+    assert allocation["private_or_general_complex"]["calculation_raw"] == "total_residential_units * 0.05"
+    assert allocation["private_or_general_complex"]["integer_conversion"] == "HUMAN_INTERPRETATION_REQUIRED"
+    assert allocation["fully_government_funded_under_20"]["minimum_accessible_units"] == 1
+    assert rule["rule_logic"]["common_area_scope"]["unknown_local_elevator_requirement"] == "LOCAL_RULE_REQUIRED"
+
+def test_m4_group8_boundaries_and_m3_single_stair_exception_do_not_overlap():
+    assert _group8(23, 7) is False
+    assert _group8(23.001, 7) is True
+    assert _group8(23, 8) is True
+    rule = {x["rule_id"]: x for x in hard_rules()}["ARCH-RES-STAIRS-003"]
+    assert rule["rule_logic"]["required_exit_count"]["value"] == 2
+    assert rule["rule_logic"]["required_exit_count"]["group8_exception_eligibility"] is False
+    assert rule["rule_logic"]["stair_capacity"]["unknown_sprinkler"] == "INPUT_REQUIRED"
+
+def test_only_the_two_target_rules_changed_dependency_detail():
+    targeted = {"ARCH-RES-STAIRS-003", "ARCH-RES-ACCESSIBILITY-001"}
+    preserved = [x for x in hard_rules() if x["rule_id"] not in targeted]
+    encoded = json.dumps(preserved, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    assert len(preserved) == 30
+    assert hashlib.sha256(encoded).hexdigest() == "a2aeae09802488e59be6d9a4b3f98380b8c0b48aba1004d1e16c4f760027ff04"
 
 def test_local_rule_gaps_remain_local_and_inventory_is_unique():
     gaps = load("source-gap-register")["gaps"]

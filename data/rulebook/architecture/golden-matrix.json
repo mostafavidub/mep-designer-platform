@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-golden-matrix/1.0",
-  "version": "0.2.0",
-  "status": "PREPARED_NOT_AUTHORIZED_CODE246_AND_M3_BLOCKERS",
+  "version": "0.3.0",
+  "status": "PREPARED_NOT_AUTHORIZED_PENDING_CONSOLIDATED_LICENSED_ARCHITECT_REVIEW",
   "engine_output_may_create_truth": false,
   "cases": [
     {

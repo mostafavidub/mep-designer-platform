@@ -1,6 +1,6 @@
 {
   "schema_version": "architecture-source-gaps/1.0",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "gaps": [
     {
       "gap_id": "ARCH-SG-001",
@@ -64,7 +64,9 @@
     },
     {
       "gap_id": "ARCH-SG-004",
-      "related_rule_ids": [],
+      "related_rule_ids": [
+        "ARCH-RES-ACCESSIBILITY-001"
+      ],
       "missing_information": "access",
       "why_it_matters": "M4 plus official accessibility source",
       "risk_if_wrong": "False compliance authority or invalid design applicability.",
@@ -74,18 +76,19 @@
         "Owner-supplied official-document copies",
         "Official public-source discovery"
       ],
-      "best_evidence_found": "OWNER_METADATA_CODE_246_FILE_BYTES_UNAVAILABLE",
-      "remaining_uncertainty": "Code 246 hash, clause/page mapping, applicability branches and rounding",
-      "recommended_action": "Provide 895917_Code0246-r1-13990324.pdf for exact ingestion.",
-      "human_required": false,
-      "status": "OPEN",
-      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
-      "closure_note": "Material source or project evidence remains required."
+      "best_evidence_found": "CODE246_EXACT_PRIMARY_FILE_HASH_AND_RESIDENTIAL_CLAUSES_VERIFIED",
+      "remaining_uncertainty": "Five-percent integer conversion is not stated in clause 3-2-2-1 and requires licensed-architect interpretation.",
+      "recommended_action": "Resolve only the integer-conversion sub-gate in consolidated licensed-architect review.",
+      "human_required": true,
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-08 exact Code 246 SHA-256 1604a568...57a751; PDF pages 25 and 109-111 visually inspected.",
+      "closure_note": "Primary source/file/applicability gap closed; bounded professional interpretation remains."
     },
     {
       "gap_id": "ARCH-SG-005",
       "related_rule_ids": [
-        "ARCH-RES-EGRESS-001"
+        "ARCH-RES-EGRESS-001",
+        "ARCH-RES-STAIRS-003"
       ],
       "missing_information": "fire/egress",
       "why_it_matters": "M3 1395 clause extraction",
@@ -96,13 +99,13 @@
         "Owner-supplied official-document copies",
         "Official public-source discovery"
       ],
-      "best_evidence_found": "M3_1395_OWNER_CONFIRMED_PROJECT_BASELINE",
-      "remaining_uncertainty": "Architecture-relevant M3 clause/table mapping and cross-code QA",
-      "recommended_action": "Map M3 architectural egress clauses without importing fire-system engineering.",
-      "human_required": false,
-      "status": "PARTIALLY_RESOLVED",
-      "transition_evidence": "2026-10-08 ARCH-P0.3 project baseline and per-rule gate audit.",
-      "closure_note": "Material source or project evidence remains required."
+      "best_evidence_found": "M3_1395_ARCHITECTURE_STAIR_EGRESS_INTERFACE_MAPPED",
+      "remaining_uncertainty": "Licensed-architect review of combined M4/M3 applicability and exceptions.",
+      "recommended_action": "Review the mapped interface once in the consolidated licensed-architect package.",
+      "human_required": true,
+      "status": "HUMAN_REVIEW_REQUIRED",
+      "transition_evidence": "2026-10-08 M3 clauses 3-6-4-3, 3-6-5, 3-6-6 and 3-6-11-2 mapped to ARCH-RES-STAIRS-003.",
+      "closure_note": "Source and machine-logic dependency closed; professional sign-off remains."
     },
     {
       "gap_id": "ARCH-SG-006",
@@ -500,10 +503,10 @@
   "summary": {
     "total": 24,
     "RESOLVED": 2,
-    "PARTIALLY_RESOLVED": 4,
-    "HUMAN_REVIEW_REQUIRED": 11,
+    "PARTIALLY_RESOLVED": 3,
+    "HUMAN_REVIEW_REQUIRED": 13,
     "LOCAL_RULE_REQUIRED": 3,
     "NOT_APPLICABLE": 0,
-    "OPEN": 4
+    "OPEN": 3
   }
 }

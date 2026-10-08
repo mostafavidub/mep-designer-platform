@@ -85,7 +85,7 @@ class ArchitectureRulebookQualificationTests(unittest.TestCase):
 
     def test_generator_readiness_remains_blocked(self):
         report = load("qualification-report")
-        self.assertEqual(report["status"], "ARCH_RULE_ACTIVATION_PARTIAL")
+        self.assertEqual(report["status"], "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW")
         self.assertEqual(report["generator_readiness"], "NOT_READY")
         self.assertEqual(report["metrics"]["release_ready_count"], 0)
 

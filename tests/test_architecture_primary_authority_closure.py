@@ -21,8 +21,8 @@ class PrimaryAuthorityClosureTests(unittest.TestCase):
                     "applicability_scope", "official_reference", "retrieved_date", "evidence_strength"}
         for item in assessments.values():
             self.assertTrue(required <= item.keys())
-            self.assertIn(item["current_status"], {"OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE", "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING"})
-        self.assertEqual(assessments["IR-ACCESS"]["verification_status"], "FILE_BYTES_HASH_CLAUSE_PAGE_REQUIRED")
+            self.assertEqual(item["current_status"], "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE")
+        self.assertEqual(assessments["IR-ACCESS"]["verification_status"], "DOCUMENT_HASH_PAGE_AND_RESIDENTIAL_CLAUSES_VERIFIED")
 
     def test_all_numerical_candidates_remain_release_disabled(self):
         rules = [r for r in load("rulebook")["rules"] if r["authority_type"] == "HARD_RULE"]
@@ -76,10 +76,10 @@ class PrimaryAuthorityClosureTests(unittest.TestCase):
     def test_generator_and_golden_validation_remain_unauthorized(self):
         report = load("qualification-report")
         completion = load("research-completion")
-        self.assertEqual(report["status"], "ARCH_RULE_ACTIVATION_PARTIAL")
+        self.assertEqual(report["status"], "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW")
         self.assertEqual(report["generator_readiness"], "NOT_READY")
         self.assertEqual(report["metrics"]["release_ready_count"], 0)
-        self.assertEqual(completion["primary_authority_closure"]["generator_gate"], "NOT_AUTHORIZED_FOR_HUMAN_GOLDEN_VALIDATION")
+        self.assertEqual(completion["primary_authority_closure"]["generator_gate"], "NOT_AUTHORIZED_PENDING_CONSOLIDATED_LICENSED_ARCHITECT_REVIEW")
         self.assertFalse(completion["readiness"]["generator_implemented"])
 
 

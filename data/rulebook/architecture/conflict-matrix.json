@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-authority-conflicts/1.0",
-  "version": "0.2.0",
-  "status": "PARTIALLY_QUALIFIED",
+  "version": "0.3.0",
+  "status": "QUALIFIED_FOR_HUMAN_REVIEW",
   "conflicts": [
     {
       "conflict_id": "AUTH-CONFLICT-001",
@@ -9,7 +9,7 @@
       "rule_b": "M3 egress width/exit requirements",
       "jurisdiction": "IR_NATIONAL",
       "scope": "Stairs used as required egress",
-      "reason": "M4 expressly defers group-8/egress conditions to M3.",
+      "reason": "M4 4-7-1-1-5 expressly defers group-8 stair dimensions to occupant population and M3 means-of-egress requirements.",
       "human_review_required": true,
       "rule_ids": [
         "ARCH-RES-STAIRS-001",
@@ -20,10 +20,10 @@
       "source_b": "IR-M3",
       "applicability_a": "Evaluate source-specific applicability using complete required inputs.",
       "applicability_b": "Evaluate source-specific applicability independently; missing inputs do not become PASS.",
-      "true_conflict": null,
-      "combined_requirement": "All simultaneously applicable requirements must pass; one rule PASS cannot satisfy another source.",
-      "precedence_basis": "No implicit numeric max/min. Explicit exception or supersession is required; otherwise BOTH_APPLY.",
-      "result": "HUMAN_REVIEW_REQUIRED"
+      "true_conflict": false,
+      "combined_requirement": "M4 group-8 geometry and M3 occupant-load, capacity, exit-count, enclosure and continuity conditions are evaluated independently; all applicable conditions must pass.",
+      "precedence_basis": "BOTH_APPLY by explicit M4 cross-reference; no automatic numeric max/min except within comparable M3 width requirements.",
+      "result": "BOTH_APPLY"
     },
     {
       "conflict_id": "AUTH-CONFLICT-002",
@@ -52,7 +52,7 @@
       "rule_b": "Current accessibility instrument",
       "jurisdiction": "IR_NATIONAL",
       "scope": "Accessible sanitary spaces and routes",
-      "reason": "M4 expressly incorporates the latest Council-approved accessibility rules when applicable.",
+      "reason": "M4 sanitary minimum and Code 246 residential/accessibility scope are independently applicable.",
       "human_review_required": true,
       "rule_ids": [
         "ARCH-RES-ACCESSIBILITY-001"
@@ -61,10 +61,10 @@
       "source_b": "IR-ACCESS",
       "applicability_a": "Evaluate source-specific applicability using complete required inputs.",
       "applicability_b": "Evaluate source-specific applicability independently; missing inputs do not become PASS.",
-      "true_conflict": null,
-      "combined_requirement": "All simultaneously applicable requirements must pass; one rule PASS cannot satisfy another source.",
-      "precedence_basis": "No implicit numeric max/min. Explicit exception or supersession is required; otherwise BOTH_APPLY.",
-      "result": "HUMAN_REVIEW_REQUIRED"
+      "true_conflict": false,
+      "combined_requirement": "When an accessible residential unit is established, both the M4 minimum sanitary geometry and Code 246 clause 3-2-3-8/3-1-1-12 must pass.",
+      "precedence_basis": "BOTH_APPLY; Code 246 supplies conditional accessibility scope and referenced accessible-space requirements.",
+      "result": "BOTH_APPLY"
     },
     {
       "conflict_id": "AUTH-CONFLICT-004",
@@ -72,7 +72,7 @@
       "rule_b": "Accessibility route/refuge requirements",
       "jurisdiction": "IR_NATIONAL",
       "scope": "Evacuation of mobility-impaired occupants",
-      "reason": "Exact current accessibility and M3 lifecycle/applicability are unresolved.",
+      "reason": "Code 246 accessible routes and stairs reference the architectural egress safety interface governed by M3.",
       "human_review_required": true,
       "rule_ids": [
         "ARCH-RES-STAIRS-003",
@@ -82,10 +82,10 @@
       "source_b": "IR-ACCESS",
       "applicability_a": "Evaluate source-specific applicability using complete required inputs.",
       "applicability_b": "Evaluate source-specific applicability independently; missing inputs do not become PASS.",
-      "true_conflict": null,
-      "combined_requirement": "All simultaneously applicable requirements must pass; one rule PASS cannot satisfy another source.",
-      "precedence_basis": "No implicit numeric max/min. Explicit exception or supersession is required; otherwise BOTH_APPLY.",
-      "result": "HUMAN_REVIEW_REQUIRED"
+      "true_conflict": false,
+      "combined_requirement": "M3 egress safety and Code 246 accessible-route conditions are separate mandatory dimensions and both apply when the accessibility branch is active.",
+      "precedence_basis": "BOTH_APPLY; specialist fire-system engineering remains outside Architecture.",
+      "result": "BOTH_APPLY"
     },
     {
       "conflict_id": "AUTH-CONFLICT-005",

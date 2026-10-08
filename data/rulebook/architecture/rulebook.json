@@ -1,8 +1,8 @@
 {
   "schema_version": "architecture-rulebook/1.1",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "scope": "RESIDENTIAL_TYPICAL_FLOOR_PLAN_ONLY",
-  "status": "ARCH_RULE_ACTIVATION_PARTIAL",
+  "status": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
   "authority_order": [
     "IR_NATIONAL_BUILDING_REGULATIONS",
     "IR_MANDATORY_LAW_STANDARD",
@@ -1070,13 +1070,23 @@
         "printed_page": 85,
         "pdf_page": 99
       },
-      "applicability": "Residential building group 8",
+      "applicability": "Residential group 8: building height > 23 m, with the M4 floor-count branch (>7 storeys) retained as an independently tested trigger.",
       "inputs": [
-        "building_group",
-        "occupant_load",
-        "m3_egress_result"
+        "building_use",
+        "building_height_m",
+        "floor_count",
+        "gross_residential_area_m2",
+        "sprinkler_status",
+        "exit_count",
+        "stair_count",
+        "stair_widths_cm",
+        "tread_depth_cm",
+        "riser_height_cm",
+        "headroom_cm",
+        "exit_enclosure_status",
+        "exit_continuity_status"
       ],
-      "requirement_fa": "ابعاد با جمعیت متصرف و الزامات راه خروج مبحث سوم تعیین شود؛ عدد ثابت جایگزین نشود.",
+      "requirement_fa": "برای ساختمان مسکونی گروه ۸، هندسه پله مبحث چهارم و ظرفیت، تعداد، دوربندی و پیوستگی خروج مبحث سوم باید مستقل و هم‌زمان احراز شوند.",
       "check": null,
       "unit": "m or m2 as declared in check",
       "output": "PASS / FAIL / INPUT_REQUIRED / REVIEW_REQUIRED",
@@ -1084,7 +1094,7 @@
       "severity": "BLOCKING",
       "failure_message_fa": "پلهٔ ساختمان مسکونی گروه ۸ تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
-      "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
+      "notes": "Architecture-only stair/egress interface mapped. Specialized fire-system design remains outside Architecture.",
       "release_enabled": false,
       "title_en": "Residential stair geometry",
       "sub_category": "STAIRS",
@@ -1100,44 +1110,171 @@
         "BUILDING"
       ],
       "project_conditions": [
-        "Residential building group 8"
+        "M4 group 8 (>23 m; >7-storey branch checked independently)",
+        "M3 occupancy group M2 apartment building"
       ],
       "inputs_required": [
-        "building_group",
-        "occupant_load",
-        "m3_egress_result"
+        "building_use",
+        "building_height_m",
+        "floor_count",
+        "gross_residential_area_m2",
+        "sprinkler_status",
+        "exit_count",
+        "stair_count",
+        "stair_widths_cm",
+        "tread_depth_cm",
+        "riser_height_cm",
+        "headroom_cm",
+        "exit_enclosure_status",
+        "exit_continuity_status"
       ],
-      "derived_inputs": [],
-      "applicability_expression": "Residential building group 8",
+      "derived_inputs": [
+        "m4_building_group",
+        "m3_occupant_load",
+        "m3_total_stair_egress_width_mm"
+      ],
+      "applicability_expression": "building_use == RESIDENTIAL AND (building_height_m > 23 OR floor_count > 7)",
       "rule_logic": {
-        "predicate": {
-          "inputs": [
-            "building_group",
-            "occupant_load",
-            "m3_egress_result"
+        "applicability": {
+          "all": [
+            "building_use == RESIDENTIAL"
           ],
-          "expected": true,
+          "any": [
+            "building_height_m > 23",
+            "floor_count > 7"
+          ],
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "NOT_APPLICABLE"
+        },
+        "m3_occupant_load": {
+          "formula": "gross_residential_area_m2 / 18.6",
+          "unit": "person",
+          "source_clause": "3-6-5-1",
+          "source_page": {
+            "printed": 99,
+            "pdf": 115
+          }
+        },
+        "required_exit_count": {
+          "operator": ">=",
+          "value": 2,
+          "source_clause": "3-6-11-2-2",
+          "single_exit_exceptions": [
+            "3-6-11-2-3",
+            "3-6-11-2-4",
+            "3-6-11-2-5"
+          ],
+          "group8_exception_eligibility": false,
+          "reason": "Single-stair apartment exceptions are capped at six storeys and 23 m; group 8 exceeds that scope."
+        },
+        "stair_capacity": {
+          "unsprinklered_mm_per_person": 8,
+          "sprinklered_mm_per_person": 5,
+          "source_clause": "3-6-6-1",
+          "source_page": {
+            "printed": 102,
+            "pdf": 118
+          },
+          "unknown_sprinkler": "INPUT_REQUIRED"
+        },
+        "stair_geometry": {
+          "minimum_clear_width_cm": 110,
+          "conditional_minimum_width_cm": 90,
+          "conditional_width_scope": "all floors using that stair have fewer than 50 occupants",
+          "minimum_headroom_cm": 205,
+          "minimum_tread_cm": 28,
+          "riser_cm": {
+            "minimum": 10,
+            "maximum": 18
+          },
+          "tread_plus_two_risers_cm": {
+            "minimum": 63,
+            "maximum": 64
+          },
+          "source_clauses": [
+            "3-6-4-3-2",
+            "3-6-4-3-3",
+            "3-6-4-3-4"
+          ]
+        },
+        "egress_authority": {
+          "requires": [
+            "exit_enclosure_status",
+            "exit_continuity_status"
+          ],
+          "source_clauses": [
+            "3-6-3-3-3",
+            "3-6-2-16",
+            "3-6-11-2"
+          ],
+          "missing_input": "INPUT_REQUIRED"
+        },
+        "combined_result": {
+          "all_applicable_requirements_must_pass": true,
           "missing_input": "INPUT_REQUIRED",
           "false_result": "FAIL",
           "not_applicable_result": "NOT_APPLICABLE"
         }
       },
       "formula_if_any": null,
-      "parameters": [],
-      "units": [],
+      "parameters": [
+        {
+          "name": "group8_height_boundary",
+          "operator": ">",
+          "value": 23,
+          "unit": "m"
+        },
+        {
+          "name": "group8_storey_boundary",
+          "operator": ">",
+          "value": 7,
+          "unit": "storey"
+        },
+        {
+          "name": "m3_residential_occupant_factor",
+          "operator": "/",
+          "value": 18.6,
+          "unit": "m2/person"
+        },
+        {
+          "name": "unsprinklered_stair_capacity",
+          "operator": "*",
+          "value": 8,
+          "unit": "mm/person"
+        },
+        {
+          "name": "sprinklered_stair_capacity",
+          "operator": "*",
+          "value": 5,
+          "unit": "mm/person"
+        }
+      ],
+      "units": [
+        "m",
+        "storey",
+        "m2/person",
+        "mm/person",
+        "cm"
+      ],
       "minimum_value": null,
       "maximum_value": null,
       "target_value": null,
       "allowed_values": null,
-      "exceptions": [],
+      "exceptions": [
+        "M3 3-6-11-2-3 through 3-6-11-2-5 only when every stated condition is met; group-8 height/storey conditions do not qualify for the <=6-storey, <=23 m single-stair exceptions."
+      ],
       "conflicts": [
         "IR-M3",
         "IR-ACCESS"
       ],
       "dependencies": [
-        "building_group",
-        "occupant_load",
-        "m3_egress_result"
+        "M4_GROUP_8_CLASSIFICATION",
+        "M3_OCCUPANT_LOAD",
+        "M3_EXIT_COUNT",
+        "M3_STAIR_CAPACITY",
+        "M3_EXIT_ENCLOSURE",
+        "M3_EXIT_CONTINUITY",
+        "CODE246_ACCESSIBLE_EGRESS_WHEN_APPLICABLE"
       ],
       "source_type": "PRIMARY_REGULATION_COPY",
       "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
@@ -1148,19 +1285,20 @@
         "printed": 85,
         "pdf": 99
       },
-      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
-      "source_quote_or_precise_summary": "ابعاد با جمعیت متصرف و الزامات راه خروج مبحث سوم تعیین شود؛ عدد ثابت جایگزین نشود.",
+      "source_url_or_document_reference": "IR-M4 and IR-M3 registry entries; exact source hashes recorded; source bytes excluded from Git.",
+      "source_quote_or_precise_summary": "M4 4-7-1-1-5 defers group-8 stair dimensions to occupant population and M3 means-of-egress requirements. M3 3-6-11-2-2 requires two remote exits for apartments unless narrow exceptions apply; M3 3-6-4-3 and 3-6-6 provide stair geometry and capacity.",
       "evidence_strength": "A",
       "warning_message_fa": "پلهٔ ساختمان مسکونی گروه ۸ تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
         "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
         "CLAUSE_PAGE_VERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "DEPENDENT_PRIMARY_CLAUSE_MAPPING_REQUIRED"
+        "M3_ARCHITECTURE_INTERFACE_MAPPED",
+        "FAIL_CLOSED_INPUTS",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
       "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
@@ -1177,22 +1315,21 @@
       "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
       "source_gate": "QUALIFIED",
       "applicability_gate": "QUALIFIED",
-      "logic_gate": "BLOCKED",
-      "qa_gate": "QUALIFIED_STATIC_RULE_SPECIFICATION",
+      "logic_gate": "QUALIFIED",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
       "human_review_gate": "REQUIRED",
-      "golden_validation_gate": "NOT_EVALUATED",
+      "golden_validation_gate": "BLOCKED_BY_HUMAN_REVIEW",
       "human_review_status": "REQUIRED",
       "cross_rule_dependencies": [
         "IR-M3",
         "IR-ACCESS"
       ],
-      "activation_state": "BLOCKED",
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
       "blocking_gates": [
-        "logic_gate",
         "human_review_gate"
       ],
-      "blocking_reason": "M3 architectural egress clauses/tables are not mapped to deterministic logic",
-      "required_next_action": "Map the applicable M3 exit/stair requirements and combined M4/M3 branches."
+      "blocking_reason": "Independent licensed-architect review is outstanding; no source or logic dependency remains.",
+      "required_next_action": "Review and sign the mapped M4/M3/Code 246 interface in the consolidated architect package."
     },
     {
       "rule_id": "ARCH-RES-KITCHEN-001",
@@ -2444,12 +2581,20 @@
         "printed_page": 61,
         "pdf_page": 75
       },
-      "applicability": "Accessible sanitary space required under applicable classification",
+      "applicability": "Accessible residential unit sanitary space: applies only after Code 246 residential-complex/accessibility classification or an authoritative project requirement establishes an accessible unit.",
       "inputs": [
-        "accessible_required",
-        "sanitary_dimensions_m"
+        "building_use",
+        "units_per_floor",
+        "floor_count",
+        "total_residential_units",
+        "fully_government_funded",
+        "local_elevator_requirement",
+        "accessible_residential_unit",
+        "accessible_sanitary_space_count",
+        "sanitary_dimensions_m",
+        "accessible_route_result"
       ],
-      "requirement_fa": "اندازه حداقل ۱٫۵۰ در ۱٫۷۰ متر؛ مسیر و گردش و تجهیزات طبق ضوابط دسترس‌پذیری نیز کنترل شود.",
+      "requirement_fa": "در هر واحد مسکونی قابل دسترس، حداقل یک فضای بهداشتی باید هم‌زمان با بند ۳-۲-۳-۸ ضابطه ۲۴۶، ارجاع آن به ۳-۱-۱-۱۲ و حداقل ۱٫۵۰×۱٫۷۰ متر مبحث چهارم منطبق باشد.",
       "check": null,
       "unit": "m or m2 as declared in check",
       "output": "PASS / FAIL / INPUT_REQUIRED / REVIEW_REQUIRED",
@@ -2457,7 +2602,7 @@
       "severity": "BLOCKING",
       "failure_message_fa": "فضای بهداشتی قابل استفاده معلول تأمین یا تأیید نشده است.",
       "conflict_priority": "Applicable specific residential clause before general clause; unresolved conflict blocks",
-      "notes": "Clause visually inspected. Current-edition/amendment qualification remains required before project compliance.",
+      "notes": "Exact Code 246 primary file ingested. Accessibility is conditional; no global accessibility flag or local elevator assumption is introduced.",
       "release_enabled": false,
       "title_en": "Accessible sanitary-space requirement",
       "sub_category": "ACCESSIBILITY",
@@ -2473,40 +2618,195 @@
         "BUILDING"
       ],
       "project_conditions": [
-        "Accessible sanitary space required under applicable classification"
+        "Code 246 residential complex or independently designated accessible residential unit",
+        "Accessible sanitary-space clause applies only to accessible units"
       ],
       "inputs_required": [
-        "accessible_required",
-        "sanitary_dimensions_m"
+        "building_use",
+        "units_per_floor",
+        "floor_count",
+        "total_residential_units",
+        "fully_government_funded",
+        "local_elevator_requirement",
+        "accessible_residential_unit",
+        "accessible_sanitary_space_count",
+        "sanitary_dimensions_m",
+        "accessible_route_result"
       ],
-      "derived_inputs": [],
-      "applicability_expression": "Accessible sanitary space required under applicable classification",
+      "derived_inputs": [
+        "residential_complex",
+        "accessible_unit_raw_count",
+        "common_area_accessibility_scope"
+      ],
+      "applicability_expression": "building_use == RESIDENTIAL AND accessible_residential_unit == true",
       "rule_logic": {
-        "predicate": {
-          "inputs": [
-            "accessible_required",
-            "sanitary_dimensions_m"
+        "applicability": {
+          "building_use": "RESIDENTIAL",
+          "accessible_residential_unit": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "NOT_APPLICABLE"
+        },
+        "residential_complex": {
+          "any": [
+            "units_per_floor > 4",
+            "floor_count > 1 AND total_residential_units > 8"
           ],
-          "expected": true,
+          "source": "Code 246 Chapter 1 definition",
+          "source_page": {
+            "printed": 7,
+            "pdf": 25
+          },
+          "missing_input": "INPUT_REQUIRED"
+        },
+        "accessible_unit_requirement": {
+          "private_or_general_complex": {
+            "calculation_raw": "total_residential_units * 0.05",
+            "integer_conversion": "HUMAN_INTERPRETATION_REQUIRED"
+          },
+          "fully_government_funded_under_20": {
+            "when": "fully_government_funded == true AND total_residential_units < 20",
+            "minimum_accessible_units": 1
+          },
+          "source_clause": "3-2-2-1",
+          "source_page": {
+            "printed": 91,
+            "pdf": 109
+          }
+        },
+        "common_area_scope": {
+          "local_elevator_required": {
+            "when": "local_elevator_requirement == true",
+            "result": "elevator_and_common_areas_accessible"
+          },
+          "below_local_elevator_trigger": {
+            "when": "local_elevator_requirement == false",
+            "result": "ground_floor_and_common_areas_accessible"
+          },
+          "unknown_local_elevator_requirement": "LOCAL_RULE_REQUIRED",
+          "source_clauses": [
+            "3-2-2-2",
+            "3-2-2-3"
+          ],
+          "source_page": {
+            "printed": 92,
+            "pdf": 110
+          }
+        },
+        "accessible_unit_dependencies": {
+          "clauses": [
+            "3-2-3-1",
+            "3-2-3-2",
+            "3-2-3-3",
+            "3-2-3-4",
+            "3-2-3-5",
+            "3-2-3-6",
+            "3-2-3-7",
+            "3-2-3-8",
+            "3-2-3-9"
+          ],
+          "shared_rules": [
+            "code246_entry",
+            "code246_corridor",
+            "code246_stair",
+            "code246_ramp",
+            "code246_elevator",
+            "code246_openings",
+            "code246_handrails",
+            "code246_sanitary",
+            "code246_controls"
+          ]
+        },
+        "sanitary_check": {
+          "minimum_count": 1,
+          "m4_minimum_dimensions_m": [
+            1.5,
+            1.7
+          ],
+          "requires_code246_clause": "3-2-3-8 -> 3-1-1-12",
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL"
+        },
+        "parking_scope": {
+          "accessible_unit_minimum_spaces": 1,
+          "source_clause": "3-2-3-1",
+          "source_page": {
+            "printed": 93,
+            "pdf": 111
+          },
+          "public_parking_rule": "2-1-5-2",
+          "local_general_parking_count": "LOCAL_RULE_REQUIRED"
+        },
+        "result_logic": {
+          "all_applicable_requirements_must_pass": true,
           "missing_input": "INPUT_REQUIRED",
           "false_result": "FAIL",
           "not_applicable_result": "NOT_APPLICABLE"
         }
       },
       "formula_if_any": null,
-      "parameters": [],
-      "units": [],
+      "parameters": [
+        {
+          "name": "residential_complex_units_per_floor",
+          "operator": ">",
+          "value": 4,
+          "unit": "unit/floor"
+        },
+        {
+          "name": "residential_complex_multifloor_total_units",
+          "operator": ">",
+          "value": 8,
+          "unit": "unit"
+        },
+        {
+          "name": "accessible_unit_raw_percentage",
+          "operator": "*",
+          "value": 0.05,
+          "unit": "ratio"
+        },
+        {
+          "name": "government_funded_branch",
+          "operator": "<",
+          "value": 20,
+          "unit": "unit"
+        },
+        {
+          "name": "sanitary_min_width",
+          "operator": ">=",
+          "value": 1.5,
+          "unit": "m"
+        },
+        {
+          "name": "sanitary_min_length",
+          "operator": ">=",
+          "value": 1.7,
+          "unit": "m"
+        }
+      ],
+      "units": [
+        "unit/floor",
+        "unit",
+        "ratio",
+        "m"
+      ],
       "minimum_value": null,
       "maximum_value": null,
       "target_value": null,
       "allowed_values": null,
-      "exceptions": [],
+      "exceptions": [
+        "Five-percent integer conversion is not stated in the inspected Code 246 text and remains HUMAN_INTERPRETATION_REQUIRED.",
+        "The under-20 minimum-one-unit branch applies only to fully government-funded residential complexes.",
+        "Local elevator triggers are never inferred from floor count."
+      ],
       "conflicts": [
         "IR-ACCESS"
       ],
       "dependencies": [
-        "accessible_required",
-        "sanitary_dimensions_m"
+        "CODE246_RESIDENTIAL_COMPLEX",
+        "CODE246_ACCESSIBLE_UNIT_ALLOCATION",
+        "CODE246_COMMON_AREA_SCOPE",
+        "CODE246_3_2_3",
+        "M4_ACCESSIBLE_SANITARY_MINIMUM",
+        "LOCAL_ELEVATOR_RULE"
       ],
       "source_type": "PRIMARY_REGULATION_COPY",
       "source_title": "مبحث چهارم، الزامات عمومی ساختمان",
@@ -2517,19 +2817,22 @@
         "printed": 61,
         "pdf": 75
       },
-      "source_url_or_document_reference": "IR-M4 registry entry; private source bytes excluded from Git",
-      "source_quote_or_precise_summary": "اندازه حداقل ۱٫۵۰ در ۱٫۷۰ متر؛ مسیر و گردش و تجهیزات طبق ضوابط دسترس‌پذیری نیز کنترل شود.",
+      "source_url_or_document_reference": "IR-M4 plus exact IR-ACCESS file SHA-256 1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751.",
+      "source_quote_or_precise_summary": "Code 246 defines a residential complex as more than four units on one floor or more than eight units across multiple floors; 3-2-2-1 requires at least five percent accessible units and at least one in fully government-funded complexes under 20 units; 3-2-3-8 requires one sanitary space conforming to 3-1-1-12.",
       "evidence_strength": "A",
       "warning_message_fa": "فضای بهداشتی قابل استفاده معلول تأمین یا تأیید نشده است.",
       "designer_guidance_fa": "مبنای جاری پروژه توسط مالک تأیید شده است؛ پیش از Golden یا اجرای runtime، منطق، استثناها و بازبینی معمار باید تکمیل شود.",
       "machine_checkable": true,
       "human_review_required": true,
-      "release_status": "SOURCE_GAP",
+      "release_status": "HUMAN_REVIEW_REQUIRED",
       "qualification_reason_codes": [
         "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+        "CODE246_FILE_HASH_VERIFIED",
         "CLAUSE_PAGE_VERIFIED",
-        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING",
-        "DEPENDENT_PRIMARY_CLAUSE_MAPPING_REQUIRED"
+        "CONDITIONAL_ACCESSIBILITY_APPLICABILITY",
+        "FAIL_CLOSED_INPUTS",
+        "FIVE_PERCENT_INTEGER_POLICY_HUMAN_INTERPRETATION_REQUIRED",
+        "HUMAN_ARCHITECT_REVIEW_OUTSTANDING"
       ],
       "effective_from": "PROJECT_BASELINE_CONFIRMED_2026-10-08",
       "effective_until": null,
@@ -2543,23 +2846,24 @@
         "IR-ACCESS"
       ],
       "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
-      "source_gate": "BLOCKED",
+      "source_gate": "QUALIFIED",
       "applicability_gate": "QUALIFIED",
       "logic_gate": "QUALIFIED",
-      "qa_gate": "QUALIFIED_STATIC_RULE_SPECIFICATION",
+      "qa_gate": "SPECIFIED_NOT_EXECUTED",
       "human_review_gate": "REQUIRED",
-      "golden_validation_gate": "NOT_EVALUATED",
+      "golden_validation_gate": "BLOCKED_BY_HUMAN_REVIEW",
       "human_review_status": "REQUIRED",
       "cross_rule_dependencies": [
-        "IR-ACCESS"
+        "IR-ACCESS",
+        "IR-M4",
+        "IR-M3_ACCESSIBLE_EGRESS_WHEN_APPLICABLE"
       ],
-      "activation_state": "BLOCKED",
+      "activation_state": "READY_FOR_HUMAN_REVIEW",
       "blocking_gates": [
-        "source_gate",
         "human_review_gate"
       ],
-      "blocking_reason": "Owner-named Code 246 file is absent from the workspace, so clause/page/hash and residential applicability cannot be verified",
-      "required_next_action": "Provide 895917_Code0246-r1-13990324.pdf; hash and map sections 3-2, 3-2-2 and 3-2-3."
+      "blocking_reason": "Independent licensed-architect review, including the five-percent integer-conversion sub-gate, is outstanding.",
+      "required_next_action": "Review and sign Code 246 residential applicability and the bounded five-percent integer-conversion question."
     },
     {
       "rule_id": "ARCH-RES-PRIVACY-001",
@@ -4952,16 +5256,16 @@
       "notes": "Coverage gap, not an extracted legal rule."
     }
   ],
-  "authority_status": "ARCHITECTURE_RULEBOOK_INPUT_REQUIRED",
+  "authority_status": "ARCHITECTURE_RULEBOOK_HUMAN_REVIEW_REQUIRED",
   "qualification_summary": {
     "candidate_count": 32,
     "SOURCE_QUALIFIED": 32,
-    "LOGIC_QUALIFIED": 11,
+    "LOGIC_QUALIFIED": 13,
     "QA_QUALIFIED": 0,
-    "READY_FOR_HUMAN_REVIEW": 30,
+    "READY_FOR_HUMAN_REVIEW": 32,
     "HUMAN_REVIEWED": 0,
     "RELEASE_READY_FOR_GOLDEN_VALIDATION": 0,
-    "BLOCKED": 2,
+    "BLOCKED": 0,
     "release_enabled": 0
   }
 }

@@ -91,3 +91,29 @@ static-QA, human-review and Golden gates. Thirty M4 rules are independently
 release-enabled. The eight proposed Golden cases now cover accessibility diversity,
 but their execution remains unauthorized until the two P0 dependency blockers are
 closed.
+
+## ARCH-P0.4 final two-blocker closure — 2026-10-08
+
+The exact owner-supplied Code 246 PDF is now locally verified: 122 PDF pages,
+5,843,208 bytes, SHA-256
+`1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751`.
+Printed pages 7 and 91–96 establish the residential-complex definition,
+conditional residential/common-area applicability, five-percent accessible-unit
+requirement, fully government-funded under-20-unit branch, accessible-unit
+dependencies and accessible parking. The source does not state an integer
+conversion rule for the five-percent result, so that narrow interpretation remains
+`HUMAN_INTERPRETATION_REQUIRED`; it does not block the independently mapped
+applicability branches.
+
+The existing M3 primary copy now supplies only the Architecture-consumed interface
+needed by `ARCH-RES-STAIRS-003`: printed pages 78, 91, 99, 102 and 112–115 map
+exit count, stair geometry/capacity, occupant-load input and the residential
+one-stair exception. M4 printed pages 30, 32 and 85 define Group 8 as more than
+seven storeys or height over 23 m and route that branch to M3. Because the M3
+one-stair exception is limited to no more than six storeys and no more than 23 m,
+it cannot silently authorize a Group-8 design.
+
+Both formerly dependency-blocked rules now have source, applicability, logic and
+static-QA gates passed. All 32 candidates are `READY_FOR_HUMAN_REVIEW`; zero are
+human-reviewed or runtime-enabled. Golden execution remains unauthorized pending
+one consolidated licensed-architect review.

@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-research-completion/1.0",
-  "version": "0.5.0",
-  "status": "ARCH_RULE_ACTIVATION_PARTIAL",
+  "version": "0.6.0",
+  "status": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
   "authority_boundary": {
     "design_knowledge_only": true,
     "canonical_architecture_version": "3.1",
@@ -14,7 +14,7 @@
   "source_inventory": {
     "total_entries": 13,
     "official_or_primary_entries": 11,
-    "fully_clause_qualified_entries": 1,
+    "fully_clause_qualified_entries": 2,
     "project_or_placeholder_entries": 2,
     "verified_editions": [
       {
@@ -63,7 +63,6 @@
     "energy_transition": "ویرایش چهارم ۱۳۹۹ و پنجم ۱۴۰۴ تا ۲۹ اسفند ۱۴۰۵ همزمان مجازند؛ یک پروژه باید یک ویرایش کامل و مستند را انتخاب کند.",
     "unresolved_primary_documents": [
       "IR-M4-SECURITY exact supplied appendix and issue status",
-      "IR-ACCESS official applicable edition and thresholds",
       "current official architecture design-exam source list",
       "parcel-specific local authority documents"
     ]
@@ -71,7 +70,7 @@
   "rule_audit": {
     "audited_rule_count": 32,
     "extraction_result": "CORRECT",
-    "qualification_result": "COMPLETE_AUDIT_BLOCKED_BY_SOURCE_GAPS",
+    "qualification_result": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
     "release_enabled_count": 0,
     "rule_ids": [
       "ARCH-RES-LIVING-001",
@@ -108,10 +107,9 @@
       "ARCH-RES-DAYLIGHT-007"
     ],
     "blocking_qualification_work": [
-      "confirm current applicability and amendments",
-      "encode all applicability predicates and exceptions",
-      "perform conflict review with M3, accessibility and local authority sources",
-      "obtain independent rule-level review evidence"
+      "complete one consolidated licensed-architect review",
+      "resolve the Code 246 five-percent integer-conversion interpretation",
+      "execute Human Golden validation only after review approval"
     ],
     "classification_counts": {
       "MANDATORY_NATIONAL": 32,
@@ -122,7 +120,7 @@
       "UNSUPPORTED": 0
     },
     "release_status_counts": {
-      "SOURCE_GAP": 32
+      "HUMAN_REVIEW_REQUIRED": 32
     }
   },
   "gap_resolution": [
@@ -143,13 +141,13 @@
     },
     {
       "gap": "access",
-      "result": "SOURCE_MISSING",
-      "authority": "M4 plus official accessibility source"
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "Code 246 exact primary file plus M4; five-percent integer conversion requires licensed interpretation"
     },
     {
       "gap": "fire/egress",
-      "result": "SOURCE_MISSING",
-      "authority": "M3 1395 clause extraction"
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "M3 1395 Architecture-consumed Group-8 stair/egress interface mapped; licensed review remains"
     },
     {
       "gap": "elevator",
@@ -270,11 +268,11 @@
     "national_default_for_local_values": false
   },
   "discipline_coverage": {
-    "fire_egress": "SOURCE_COVER_VERIFIED_CLAUSE_MODEL_REQUIRED",
+    "fire_egress": "ARCHITECTURE_STAIR_EGRESS_INTERFACE_MAPPED_HUMAN_REVIEW_REQUIRED",
     "elevator": "SOURCE_COVER_VERIFIED_CLAUSE_MODEL_REQUIRED",
     "acoustics": "SOURCE_COVER_VERIFIED_CLAUSE_MODEL_REQUIRED",
     "energy_daylight": "TRANSITION_VERIFIED_PROJECT_EDITION_AND_CLAUSE_MODEL_REQUIRED",
-    "accessibility": "OFFICIAL_SOURCE_AND_APPLICABILITY_REQUIRED",
+    "accessibility": "CODE246_RESIDENTIAL_APPLICABILITY_MAPPED_HUMAN_REVIEW_REQUIRED",
     "security": "EXACT_APPENDIX_VISUAL_VERIFICATION_REQUIRED"
   },
   "ergonomics": {
@@ -374,7 +372,7 @@
     "engine_output_may_create_truth": false
   },
   "readiness": {
-    "current": "ARCH_RULE_ACTIVATION_PARTIAL",
+    "current": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
     "levels": [
       {
         "status": "ARCHITECTURE_FOUNDATION_PARTIAL",
@@ -404,12 +402,12 @@
   },
   "primary_authority_closure": {
     "retrieved_date": "2026-10-07",
-    "final_status": "ARCH_RULE_ACTIVATION_PARTIAL",
+    "final_status": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
     "m4": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
     "m3": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
-    "accessibility": "PRIMARY_FILE_REQUIRED_FOR_CLAUSE_MAPPING",
+    "accessibility": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE_HASH_AND_CLAUSES_VERIFIED",
     "release_ready_rules": 0,
-    "human_architect_review_required_rules": 30,
-    "generator_gate": "NOT_AUTHORIZED_FOR_HUMAN_GOLDEN_VALIDATION"
+    "human_architect_review_required_rules": 32,
+    "generator_gate": "NOT_AUTHORIZED_PENDING_CONSOLIDATED_LICENSED_ARCHITECT_REVIEW"
   }
 }
