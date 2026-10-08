@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "version",
+    "status",
+    "generator_readiness",
+    "metrics",
+    "critical_findings",
+    "root_causes",
+    "release_decision"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "architecture-rulebook-qualification/1.0"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "generator_readiness": {
+      "enum": [
+        "READY_FOR_GENERATOR",
+        "PARTIALLY_READY",
+        "NOT_READY"
+      ]
+    },
+    "metrics": {
+      "type": "object"
+    },
+    "critical_findings": {
+      "type": "array"
+    },
+    "root_causes": {
+      "type": "array"
+    },
+    "release_decision": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

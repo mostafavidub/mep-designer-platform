@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-human-review-package-1.1",
+  "from": "architecture-human-rule-review/1.0 with coordinator recommendation fields",
+  "to": "architecture-human-rule-review/1.1 with decision-neutral cards, reviewer attribution, dedicated cross-code decisions and deterministic post-review states",
+  "compatibility": "Offline review-package contract only. No regulatory approval, runtime compliance, Generator, Golden, geometry, API, database, MEP or deployment authority is created.",
+  "forward": [
+    "Create exactly 32 source-bound cards in dependency-aware order",
+    "Set every proposed and reviewer decision to null",
+    "Require one of APPROVED, APPROVED_WITH_CHANGE, REJECTED or NEEDS_MORE_EVIDENCE from a real reviewer",
+    "Bind the Code 246 five-percent and M3/M4 Group-8 decisions separately",
+    "Keep runtime_enabled=false and Golden execution unauthorized"
+  ],
+  "validation": [
+    "tests/test_architecture_rule_activation.py",
+    "tests/test_architecture_primary_authority_closure.py",
+    "rendered DOCX/PDF visual QA",
+    "SWCIS"
+  ],
+  "consumers": [
+    "licensed architect offline review and later deterministic decision recording"
+  ],
+  "deprecation_window": "Version 1.0 remains historical evidence; it cannot be treated as completed human review.",
+  "deployment": "Not authorized.",
+  "rollback": "Revert the package-preparation commit; retain all rules at READY_FOR_HUMAN_REVIEW."
+}

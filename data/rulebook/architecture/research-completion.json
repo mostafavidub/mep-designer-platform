@@ -1,7 +1,7 @@
 {
   "schema_version": "architecture-research-completion/1.0",
-  "version": "0.2.0",
-  "status": "ARCHITECTURE_FOUNDATION_RESEARCH_REQUIRED",
+  "version": "0.6.0",
+  "status": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
   "authority_boundary": {
     "design_knowledge_only": true,
     "canonical_architecture_version": "3.1",
@@ -14,21 +14,55 @@
   "source_inventory": {
     "total_entries": 13,
     "official_or_primary_entries": 11,
-    "fully_clause_qualified_entries": 1,
+    "fully_clause_qualified_entries": 2,
     "project_or_placeholder_entries": 2,
     "verified_editions": [
-      {"source_id": "IR-M3-OLD", "edition": "ویرایش دوم ۱۳۹۲", "method": "VISUAL_COVER_REVIEW", "use": "SUPERSEDED_REFERENCE_ONLY"},
-      {"source_id": "IR-M3", "edition": "ویرایش سوم ۱۳۹۵", "method": "VISUAL_COVER_REVIEW", "use": "CLAUSE_EXTRACTION_REQUIRED"},
-      {"source_id": "IR-M4", "edition": "ویرایش سوم ۱۳۹۶", "method": "VISUAL_COVER_AND_RELEVANT_PAGE_REVIEW", "use": "32_EXTRACTED_CANDIDATES_RELEASE_DISABLED"},
-      {"source_id": "IR-M15", "edition": "ویرایش سوم ۱۳۹۲", "method": "VISUAL_COVER_REVIEW", "use": "CLAUSE_EXTRACTION_REQUIRED"},
-      {"source_id": "IR-M18", "edition": "ویرایش سوم ۱۳۹۶", "method": "VISUAL_COVER_REVIEW", "use": "CLAUSE_EXTRACTION_REQUIRED"},
-      {"source_id": "IR-M19-4", "edition": "ویرایش چهارم ۱۳۹۹", "method": "VISUAL_COVER_REVIEW", "use": "PROJECT_EDITION_DECISION_REQUIRED"},
-      {"source_id": "IR-M19-5", "edition": "ویرایش پنجم ۱۴۰۴", "method": "OFFICIAL_PUBLICATION_NOTICE", "use": "FULL_TEXT_AND_PROJECT_EDITION_DECISION_REQUIRED"}
+      {
+        "source_id": "IR-M3-OLD",
+        "edition": "ویرایش دوم ۱۳۹۲",
+        "method": "VISUAL_COVER_REVIEW",
+        "use": "SUPERSEDED_REFERENCE_ONLY"
+      },
+      {
+        "source_id": "IR-M3",
+        "edition": "ویرایش سوم ۱۳۹۵",
+        "method": "VISUAL_COVER_REVIEW",
+        "use": "CLAUSE_EXTRACTION_REQUIRED"
+      },
+      {
+        "source_id": "IR-M4",
+        "edition": "ویرایش سوم ۱۳۹۶",
+        "method": "VISUAL_COVER_AND_RELEVANT_PAGE_REVIEW",
+        "use": "32_EXTRACTED_CANDIDATES_RELEASE_DISABLED"
+      },
+      {
+        "source_id": "IR-M15",
+        "edition": "ویرایش سوم ۱۳۹۲",
+        "method": "VISUAL_COVER_REVIEW",
+        "use": "CLAUSE_EXTRACTION_REQUIRED"
+      },
+      {
+        "source_id": "IR-M18",
+        "edition": "ویرایش سوم ۱۳۹۶",
+        "method": "VISUAL_COVER_REVIEW",
+        "use": "CLAUSE_EXTRACTION_REQUIRED"
+      },
+      {
+        "source_id": "IR-M19-4",
+        "edition": "ویرایش چهارم ۱۳۹۹",
+        "method": "VISUAL_COVER_REVIEW",
+        "use": "PROJECT_EDITION_DECISION_REQUIRED"
+      },
+      {
+        "source_id": "IR-M19-5",
+        "edition": "ویرایش پنجم ۱۴۰۴",
+        "method": "OFFICIAL_PUBLICATION_NOTICE",
+        "use": "FULL_TEXT_AND_PROJECT_EDITION_DECISION_REQUIRED"
+      }
     ],
     "energy_transition": "ویرایش چهارم ۱۳۹۹ و پنجم ۱۴۰۴ تا ۲۹ اسفند ۱۴۰۵ همزمان مجازند؛ یک پروژه باید یک ویرایش کامل و مستند را انتخاب کند.",
     "unresolved_primary_documents": [
       "IR-M4-SECURITY exact supplied appendix and issue status",
-      "IR-ACCESS official applicable edition and thresholds",
       "current official architecture design-exam source list",
       "parcel-specific local authority documents"
     ]
@@ -36,77 +70,263 @@
   "rule_audit": {
     "audited_rule_count": 32,
     "extraction_result": "CORRECT",
-    "qualification_result": "INCOMPLETE",
+    "qualification_result": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
     "release_enabled_count": 0,
     "rule_ids": [
-      "ARCH-RES-LIVING-001", "ARCH-RES-LIVING-002", "ARCH-RES-BEDROOM-001", "ARCH-RES-LIVING-003",
-      "ARCH-RES-CIRCULATION-001", "ARCH-RES-STAIRS-001", "ARCH-RES-STAIRS-002", "ARCH-RES-STAIRS-003",
-      "ARCH-RES-KITCHEN-001", "ARCH-RES-KITCHEN-002", "ARCH-RES-KITCHEN-003", "ARCH-RES-KITCHEN-004",
-      "ARCH-RES-DAYLIGHT-001", "ARCH-RES-VENTILATION-001", "ARCH-RES-WC-001", "ARCH-RES-BATHROOM-001",
-      "ARCH-RES-BATHROOM-002", "ARCH-RES-ACCESSIBILITY-001", "ARCH-RES-PRIVACY-001", "ARCH-RES-PRIVACY-002",
-      "ARCH-RES-PRIVACY-003", "ARCH-RES-BALCONY-001", "ARCH-RES-DAYLIGHT-002", "ARCH-RES-DAYLIGHT-003",
-      "ARCH-RES-DAYLIGHT-004", "ARCH-RES-DAYLIGHT-005", "ARCH-RES-DOOR-001", "ARCH-RES-EGRESS-001",
-      "ARCH-RES-KITCHEN-005", "ARCH-RES-VENTILATION-002", "ARCH-RES-DAYLIGHT-006", "ARCH-RES-DAYLIGHT-007"
+      "ARCH-RES-LIVING-001",
+      "ARCH-RES-LIVING-002",
+      "ARCH-RES-BEDROOM-001",
+      "ARCH-RES-LIVING-003",
+      "ARCH-RES-CIRCULATION-001",
+      "ARCH-RES-STAIRS-001",
+      "ARCH-RES-STAIRS-002",
+      "ARCH-RES-STAIRS-003",
+      "ARCH-RES-KITCHEN-001",
+      "ARCH-RES-KITCHEN-002",
+      "ARCH-RES-KITCHEN-003",
+      "ARCH-RES-KITCHEN-004",
+      "ARCH-RES-DAYLIGHT-001",
+      "ARCH-RES-VENTILATION-001",
+      "ARCH-RES-WC-001",
+      "ARCH-RES-BATHROOM-001",
+      "ARCH-RES-BATHROOM-002",
+      "ARCH-RES-ACCESSIBILITY-001",
+      "ARCH-RES-PRIVACY-001",
+      "ARCH-RES-PRIVACY-002",
+      "ARCH-RES-PRIVACY-003",
+      "ARCH-RES-BALCONY-001",
+      "ARCH-RES-DAYLIGHT-002",
+      "ARCH-RES-DAYLIGHT-003",
+      "ARCH-RES-DAYLIGHT-004",
+      "ARCH-RES-DAYLIGHT-005",
+      "ARCH-RES-DOOR-001",
+      "ARCH-RES-EGRESS-001",
+      "ARCH-RES-KITCHEN-005",
+      "ARCH-RES-VENTILATION-002",
+      "ARCH-RES-DAYLIGHT-006",
+      "ARCH-RES-DAYLIGHT-007"
     ],
     "blocking_qualification_work": [
-      "confirm current applicability and amendments",
-      "encode all applicability predicates and exceptions",
-      "perform conflict review with M3, accessibility and local authority sources",
-      "obtain independent rule-level review evidence"
-    ]
+      "complete one consolidated licensed-architect review",
+      "resolve the Code 246 five-percent integer-conversion interpretation",
+      "execute Human Golden validation only after review approval"
+    ],
+    "classification_counts": {
+      "MANDATORY_NATIONAL": 32,
+      "MANDATORY_LOCAL": 0,
+      "RECOMMENDED": 0,
+      "EMPIRICAL_PATTERN": 0,
+      "OWNER_DECISION": 0,
+      "UNSUPPORTED": 0
+    },
+    "release_status_counts": {
+      "HUMAN_REVIEW_REQUIRED": 32
+    }
   },
   "gap_resolution": [
-    {"gap": "site inputs", "result": "PROJECT_INPUT_REQUIRED", "authority": "signed survey and parcel evidence"},
-    {"gap": "urban/local planning rules", "result": "RESOLVED_LOCAL_RULE_MODEL", "authority": "jurisdiction package required per parcel"},
-    {"gap": "buildable envelope", "result": "PROJECT_INPUT_REQUIRED", "authority": "approved planning constraints"},
-    {"gap": "access", "result": "SOURCE_MISSING", "authority": "M4 plus official accessibility source"},
-    {"gap": "fire/egress", "result": "SOURCE_MISSING", "authority": "M3 1395 clause extraction"},
-    {"gap": "elevator", "result": "SOURCE_MISSING", "authority": "M15 1392 clause extraction"},
-    {"gap": "parking", "result": "RESOLVED_LOCAL_RULE_MODEL", "authority": "municipality and project instruction"},
-    {"gap": "unit entry", "result": "HUMAN_EXPERT_REVIEW_REQUIRED", "authority": "M4/M3 applicability review"},
-    {"gap": "dining", "result": "OWNER_INPUT_REQUIRED", "authority": "owner program; hard spatial rules still apply"},
-    {"gap": "master bedroom", "result": "OWNER_INPUT_REQUIRED", "authority": "owner program"},
-    {"gap": "laundry", "result": "OWNER_INPUT_REQUIRED", "authority": "owner program and MEP reservations"},
-    {"gap": "storage", "result": "OWNER_INPUT_REQUIRED", "authority": "owner program"},
-    {"gap": "terrace/balcony", "result": "HUMAN_EXPERT_REVIEW_REQUIRED", "authority": "M4 extraction exists; local and safety conditions incomplete"},
-    {"gap": "acoustics", "result": "SOURCE_MISSING", "authority": "M18 1396 clause extraction"},
-    {"gap": "energy", "result": "PROJECT_INPUT_REQUIRED", "authority": "project must select complete M19 edition during transition"},
-    {"gap": "windows/daylight", "result": "HUMAN_EXPERT_REVIEW_REQUIRED", "authority": "M4 extraction exists; envelope and M19 coordination incomplete"},
-    {"gap": "shafts", "result": "PROJECT_INPUT_REQUIRED", "authority": "MEP and fire coordination reservations"},
-    {"gap": "wet-core coordination", "result": "RESOLVED_HEURISTIC", "authority": "coordination heuristic; never a legal minimum"},
-    {"gap": "security/protective requirements", "result": "SOURCE_MISSING", "authority": "exact official appendix required"},
-    {"gap": "furniture fit", "result": "HUMAN_EXPERT_REVIEW_REQUIRED", "authority": "ergonomic and product evidence model defined; ranges incomplete"},
-    {"gap": "MEP coordination", "result": "PROJECT_INPUT_REQUIRED", "authority": "versioned shaft/service reservation contract"},
-    {"gap": "structural coordination", "result": "PROJECT_INPUT_REQUIRED", "authority": "structural grid and prohibited zones"},
-    {"gap": "drawing conventions", "result": "HUMAN_EXPERT_REVIEW_REQUIRED", "authority": "office/authority issue standard"},
-    {"gap": "owner preference", "result": "RESOLVED_HEURISTIC", "authority": "structured Owner Program; cannot override law"}
+    {
+      "gap": "site inputs",
+      "result": "PROJECT_INPUT_REQUIRED",
+      "authority": "signed survey and parcel evidence"
+    },
+    {
+      "gap": "urban/local planning rules",
+      "result": "RESOLVED_LOCAL_RULE_MODEL",
+      "authority": "jurisdiction package required per parcel"
+    },
+    {
+      "gap": "buildable envelope",
+      "result": "PROJECT_INPUT_REQUIRED",
+      "authority": "approved planning constraints"
+    },
+    {
+      "gap": "access",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "Code 246 exact primary file plus M4; five-percent integer conversion requires licensed interpretation"
+    },
+    {
+      "gap": "fire/egress",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "M3 1395 Architecture-consumed Group-8 stair/egress interface mapped; licensed review remains"
+    },
+    {
+      "gap": "elevator",
+      "result": "SOURCE_MISSING",
+      "authority": "M15 1392 clause extraction"
+    },
+    {
+      "gap": "parking",
+      "result": "RESOLVED_LOCAL_RULE_MODEL",
+      "authority": "municipality and project instruction"
+    },
+    {
+      "gap": "unit entry",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "M4/M3 applicability review"
+    },
+    {
+      "gap": "dining",
+      "result": "OWNER_INPUT_REQUIRED",
+      "authority": "owner program; hard spatial rules still apply"
+    },
+    {
+      "gap": "master bedroom",
+      "result": "OWNER_INPUT_REQUIRED",
+      "authority": "owner program"
+    },
+    {
+      "gap": "laundry",
+      "result": "OWNER_INPUT_REQUIRED",
+      "authority": "owner program and MEP reservations"
+    },
+    {
+      "gap": "storage",
+      "result": "OWNER_INPUT_REQUIRED",
+      "authority": "owner program"
+    },
+    {
+      "gap": "terrace/balcony",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "M4 extraction exists; local and safety conditions incomplete"
+    },
+    {
+      "gap": "acoustics",
+      "result": "SOURCE_MISSING",
+      "authority": "M18 1396 clause extraction"
+    },
+    {
+      "gap": "energy",
+      "result": "PROJECT_INPUT_REQUIRED",
+      "authority": "project must select complete M19 edition during transition"
+    },
+    {
+      "gap": "windows/daylight",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "M4 extraction exists; envelope and M19 coordination incomplete"
+    },
+    {
+      "gap": "shafts",
+      "result": "PROJECT_INPUT_REQUIRED",
+      "authority": "MEP and fire coordination reservations"
+    },
+    {
+      "gap": "wet-core coordination",
+      "result": "RESOLVED_HEURISTIC",
+      "authority": "coordination heuristic; never a legal minimum"
+    },
+    {
+      "gap": "security/protective requirements",
+      "result": "SOURCE_MISSING",
+      "authority": "exact official appendix required"
+    },
+    {
+      "gap": "furniture fit",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "ergonomic and product evidence model defined; ranges incomplete"
+    },
+    {
+      "gap": "MEP coordination",
+      "result": "PROJECT_INPUT_REQUIRED",
+      "authority": "versioned shaft/service reservation contract"
+    },
+    {
+      "gap": "structural coordination",
+      "result": "PROJECT_INPUT_REQUIRED",
+      "authority": "structural grid and prohibited zones"
+    },
+    {
+      "gap": "drawing conventions",
+      "result": "HUMAN_EXPERT_REVIEW_REQUIRED",
+      "authority": "office/authority issue standard"
+    },
+    {
+      "gap": "owner preference",
+      "result": "RESOLVED_HEURISTIC",
+      "authority": "structured Owner Program; cannot override law"
+    }
   ],
   "local_authority_contract": {
     "status": "INTERFACE_DEFINED_INGESTION_NOT_IMPLEMENTED",
-    "required_identity": ["city", "jurisdiction", "parcel_id", "permit_or_instruction_date", "source_document_hash", "reviewer"],
-    "required_topics": ["setback", "coverage", "FAR_or_density", "building_line", "height", "parking", "special_district"],
+    "required_identity": [
+      "city",
+      "jurisdiction",
+      "parcel_id",
+      "permit_or_instruction_date",
+      "source_document_hash",
+      "reviewer"
+    ],
+    "required_topics": [
+      "setback",
+      "coverage",
+      "FAR_or_density",
+      "building_line",
+      "height",
+      "parking",
+      "special_district"
+    ],
     "missing_behavior": "INPUT_REQUIRED",
     "national_default_for_local_values": false
   },
   "discipline_coverage": {
-    "fire_egress": "SOURCE_COVER_VERIFIED_CLAUSE_MODEL_REQUIRED",
+    "fire_egress": "ARCHITECTURE_STAIR_EGRESS_INTERFACE_MAPPED_HUMAN_REVIEW_REQUIRED",
     "elevator": "SOURCE_COVER_VERIFIED_CLAUSE_MODEL_REQUIRED",
     "acoustics": "SOURCE_COVER_VERIFIED_CLAUSE_MODEL_REQUIRED",
     "energy_daylight": "TRANSITION_VERIFIED_PROJECT_EDITION_AND_CLAUSE_MODEL_REQUIRED",
-    "accessibility": "OFFICIAL_SOURCE_AND_APPLICABILITY_REQUIRED",
+    "accessibility": "CODE246_RESIDENTIAL_APPLICABILITY_MAPPED_HUMAN_REVIEW_REQUIRED",
     "security": "EXACT_APPENDIX_VISUAL_VERIFICATION_REQUIRED"
   },
   "ergonomics": {
     "status": "MODEL_DEFINED_NUMERIC_COVERAGE_INCOMPLETE",
-    "clearance_classes": ["OBJECT_FOOTPRINT", "USAGE_CLEARANCE", "ACCESS_CLEARANCE", "MAINTENANCE_CLEARANCE", "CODE_REQUIRED_CLEARANCE"],
-    "objects": ["single_bed", "double_bed", "wardrobe", "sofa", "dining_table_chairs", "refrigerator", "kitchen_counter", "sink", "cooktop", "washing_machine", "toilet", "washbasin", "shower", "door", "parking_vehicle_envelope"],
-    "authority_order": ["Iranian mandatory requirement", "product manufacturer", "labelled design-reference range", "owner-measured object"],
+    "clearance_classes": [
+      "OBJECT_FOOTPRINT",
+      "USAGE_CLEARANCE",
+      "ACCESS_CLEARANCE",
+      "MAINTENANCE_CLEARANCE",
+      "CODE_REQUIRED_CLEARANCE"
+    ],
+    "objects": [
+      "single_bed",
+      "double_bed",
+      "wardrobe",
+      "sofa",
+      "dining_table_chairs",
+      "refrigerator",
+      "kitchen_counter",
+      "sink",
+      "cooktop",
+      "washing_machine",
+      "toilet",
+      "washbasin",
+      "shower",
+      "door",
+      "parking_vehicle_envelope"
+    ],
+    "authority_order": [
+      "Iranian mandatory requirement",
+      "product manufacturer",
+      "labelled design-reference range",
+      "owner-measured object"
+    ],
     "unknown_clearance_behavior": "FIT_INPUT_REQUIRED",
     "heuristic_may_be_code": false
   },
   "owner_program": {
     "status": "STRUCTURE_DEFINED_VALIDATION_PARTIAL",
-    "machine_fields": ["required_spaces", "optional_spaces", "minimum_counts", "preferred_counts", "adjacency_preferences", "avoid_adjacency", "privacy_tiers", "day_night_zoning", "guest_family_zoning", "service_zoning", "furniture_expectations", "accessibility_needs", "priority_weights"],
+    "machine_fields": [
+      "required_spaces",
+      "optional_spaces",
+      "minimum_counts",
+      "preferred_counts",
+      "adjacency_preferences",
+      "avoid_adjacency",
+      "privacy_tiers",
+      "day_night_zoning",
+      "guest_family_zoning",
+      "service_zoning",
+      "furniture_expectations",
+      "accessibility_needs",
+      "priority_weights"
+    ],
     "free_text_generation_authority": false,
     "law_override_allowed": false
   },
@@ -114,22 +334,80 @@
     "status": "HUMAN_ARCHITECTURE_GOLDEN_REQUIRED",
     "available_cases": 0,
     "minimum_required_cases": 8,
-    "required_case_types": ["narrow_urban_lot", "wide_lot", "one_unit_floor", "two_unit_floor", "different_bedroom_counts", "difficult_wet_core_core", "corner_or_lightwell", "typical_floor"],
-    "required_fields": ["project_identity", "city_jurisdiction", "building_type", "site_dimensions", "buildable_envelope", "floor_identity", "unit_count", "unit_program", "human_architect_plan", "space_inventory", "room_polygons_areas", "adjacency_graph", "doors_windows", "core", "shafts", "wet_core", "daylight_faces", "furniture_fit", "rule_decisions", "intent_notes", "human_reviewer", "review_date", "source_provenance"],
+    "required_case_types": [
+      "narrow_urban_lot",
+      "wide_lot",
+      "one_unit_floor",
+      "two_unit_floor",
+      "different_bedroom_counts",
+      "difficult_wet_core_core",
+      "corner_or_lightwell",
+      "typical_floor"
+    ],
+    "required_fields": [
+      "project_identity",
+      "city_jurisdiction",
+      "building_type",
+      "site_dimensions",
+      "buildable_envelope",
+      "floor_identity",
+      "unit_count",
+      "unit_program",
+      "human_architect_plan",
+      "space_inventory",
+      "room_polygons_areas",
+      "adjacency_graph",
+      "doors_windows",
+      "core",
+      "shafts",
+      "wet_core",
+      "daylight_faces",
+      "furniture_fit",
+      "rule_decisions",
+      "intent_notes",
+      "human_reviewer",
+      "review_date",
+      "source_provenance"
+    ],
     "engine_output_may_create_truth": false
   },
   "readiness": {
-    "current": "ARCHITECTURE_FOUNDATION_RESEARCH_REQUIRED",
+    "current": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
     "levels": [
-      {"status": "ARCHITECTURE_FOUNDATION_PARTIAL", "requires": "catalogs and explicit gaps"},
-      {"status": "ARCHITECTURE_FOUNDATION_RESEARCH_QUALIFIED", "requires": "primary-source coverage and audited ergonomics/owner model"},
-      {"status": "ARCHITECTURE_RULEBOOK_QUALIFIED", "requires": "release rules independently qualified with conflicts and exceptions"},
-      {"status": "ARCHITECTURE_GOLDEN_REQUIRED", "requires": "independent human Golden collection"},
-      {"status": "ARCHITECTURE_GENERATOR_INPUT_READY", "requires": "qualified rulebook, complete input model and Golden acceptance"}
+      {
+        "status": "ARCHITECTURE_FOUNDATION_PARTIAL",
+        "requires": "catalogs and explicit gaps"
+      },
+      {
+        "status": "ARCHITECTURE_FOUNDATION_RESEARCH_QUALIFIED",
+        "requires": "primary-source coverage and audited ergonomics/owner model"
+      },
+      {
+        "status": "ARCHITECTURE_RULEBOOK_QUALIFIED",
+        "requires": "release rules independently qualified with conflicts and exceptions"
+      },
+      {
+        "status": "ARCHITECTURE_GOLDEN_REQUIRED",
+        "requires": "independent human Golden collection"
+      },
+      {
+        "status": "ARCHITECTURE_GENERATOR_INPUT_READY",
+        "requires": "qualified rulebook, complete input model and Golden acceptance"
+      }
     ],
     "generator_implemented": false,
     "customer_generation_enabled": false,
     "staging_required": false,
     "production_authorized": false
+  },
+  "primary_authority_closure": {
+    "retrieved_date": "2026-10-07",
+    "final_status": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
+    "m4": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+    "m3": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+    "accessibility": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE_HASH_AND_CLAUSES_VERIFIED",
+    "release_ready_rules": 0,
+    "human_architect_review_required_rules": 32,
+    "generator_gate": "NOT_AUTHORIZED_PENDING_CONSOLIDATED_LICENSED_ARCHITECT_REVIEW"
   }
 }

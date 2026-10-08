@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.3.0",
+  "standard_version": "5.8.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-10-05",
+  "effective_date": "2026-10-08",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,31 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.8.0",
+      "date": "2026-10-08",
+      "summary": "Add a decision-neutral 32-rule licensed-architect review contract and shareable Review Book, dedicated Code 246 and M3/M4 cards, blank attribution, and deterministic post-review states without granting runtime or Golden authority."
+    },
+    {
+      "version": "5.7.0",
+      "date": "2026-10-08",
+      "summary": "Close the final two residential rulebook dependency blockers with exact Code 246 file identity, conditional residential accessibility, bounded M3 Group-8 stair/egress logic, isolated human interpretation, and no runtime activation."
+    },
+    {
+      "version": "5.6.0",
+      "date": "2026-10-08",
+      "summary": "Replace aggregate Architecture rule blocking with independent source, applicability, logic, QA, human-review and Golden gates while preserving owner-baseline provenance and fail-closed Code 246/M3 dependencies."
+    },
+    {
+      "version": "5.5.0",
+      "date": "2026-10-07",
+      "summary": "Record clause-level Iranian M4 evidence separately from unresolved legal lifecycle, add M3/accessibility authority assessments, conflict and architect-review gates, and keep every residential rule release-disabled."
+    },
+    {
+      "version": "5.4.0",
+      "date": "2026-10-07",
+      "summary": "Qualify every residential hard-rule candidate with separate authority, enforcement, applicability, source-gap, owner-decision and QA metadata while retaining fail-closed generator readiness."
+    },
     {
       "version": "5.3.0",
       "date": "2026-10-06",

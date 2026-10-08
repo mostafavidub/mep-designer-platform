@@ -1,0 +1,2205 @@
+{
+  "schema_version": "architecture-human-rule-review/1.1",
+  "version": "0.4.0",
+  "status": "AWAITING_LICENSED_ARCHITECT_REVIEW",
+  "decision_contract": {
+    "allowed": [
+      "APPROVED",
+      "APPROVED_WITH_CHANGE",
+      "REJECTED",
+      "NEEDS_MORE_EVIDENCE"
+    ],
+    "blank_means": "NOT_REVIEWED",
+    "credentials_missing_value": "UNKNOWN",
+    "runtime_activation": false,
+    "approved_with_change_required_fields": [
+      "requested_change",
+      "reason",
+      "affected_logic",
+      "affected_threshold",
+      "affected_applicability",
+      "affected_exception",
+      "source_basis"
+    ],
+    "needs_more_evidence_required_fields": [
+      "missing_evidence",
+      "source_needed",
+      "why_material",
+      "risk_if_assumed"
+    ]
+  },
+  "reviewer_attribution": {
+    "reviewer_name": null,
+    "professional_role": null,
+    "professional_license_or_registration": null,
+    "review_date": null
+  },
+  "dedicated_decisions": {
+    "code246_five_percent": {
+      "decision": null,
+      "allowed": [
+        "CEILING_TO_NEXT_INTEGER",
+        "ANOTHER_AUTHORITY_BASED_METHOD",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "authority_basis": null,
+      "comments": null,
+      "status": "NOT_REVIEWED"
+    },
+    "m3_m4_group8_stair": {
+      "decision": null,
+      "allowed": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "confirmation": "Group-8 routing cannot inherit an inapplicable lower-group one-stair exception.",
+      "comments": null,
+      "status": "NOT_REVIEWED"
+    }
+  },
+  "reviewer_decisions": [],
+  "items": [
+    {
+      "review_item_id": "HAR-ARCH-RES-CIRCULATION-001",
+      "rule_id": "ARCH-RES-CIRCULATION-001",
+      "persian_title": "عرض راهروی داخلی واحد",
+      "plain_language_rule": "پهنای الزامی حداقل ۰٫۹۰ متر؛ الزامات خروج و دسترس‌پذیری جداگانه کنترل شوند.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Residential internal corridor or straight internal stair",
+      "required_inputs": [
+        "corridor_width_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-6",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "پهنای الزامی حداقل ۰٫۹۰ متر؛ الزامات خروج و دسترس‌پذیری جداگانه کنترل شوند.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "machine_interpretation": {
+        "field": "corridor_width_m",
+        "op": ">=",
+        "value": 0.9,
+        "unit": "m"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 0.9 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 0.9 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential internal corridor or straight internal stair; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: corridor_width_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-STAIRS-001",
+      "rule_id": "ARCH-RES-STAIRS-001",
+      "persian_title": "پلهٔ ساختمان مسکونی گروه ۱ تا ۳",
+      "plain_language_rule": "عرض مفید پله مستقیم حداقل ۰٫۹۰ و پله دارای گردش یا پاگرد حداقل ۱٫۱۰ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "CRITICAL",
+      "applicable_conditions": "Residential building group 1,2,3 established by authority",
+      "required_inputs": [
+        "building_group",
+        "stair_type",
+        "stair_clear_width_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-3",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "عرض مفید پله مستقیم حداقل ۰٫۹۰ و پله دارای گردش یا پاگرد حداقل ۱٫۱۰ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "building_group",
+            "stair_type",
+            "stair_clear_width_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential building group 1,2,3 established by authority; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: building_group, stair_type, stair_clear_width_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-STAIRS-002",
+      "rule_id": "ARCH-RES-STAIRS-002",
+      "persian_title": "پلهٔ ساختمان مسکونی گروه ۴ تا ۷",
+      "plain_language_rule": "عرض مفید پله مستقیم حداقل ۱٫۱۰ و عرض قفسهٔ پلکان دارای پاگرد حداقل ۲٫۴۰ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "CRITICAL",
+      "applicable_conditions": "Residential building group 4,5,6,7 established by authority",
+      "required_inputs": [
+        "building_group",
+        "stair_type",
+        "stair_clear_width_m",
+        "stair_enclosure_width_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-4",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "عرض مفید پله مستقیم حداقل ۱٫۱۰ و عرض قفسهٔ پلکان دارای پاگرد حداقل ۲٫۴۰ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "building_group",
+            "stair_type",
+            "stair_clear_width_m",
+            "stair_enclosure_width_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential building group 4,5,6,7 established by authority; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: building_group, stair_type, stair_clear_width_m, stair_enclosure_width_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-STAIRS-003",
+      "rule_id": "ARCH-RES-STAIRS-003",
+      "persian_title": "پلهٔ ساختمان مسکونی گروه ۸",
+      "plain_language_rule": "برای ساختمان مسکونی گروه ۸، هندسه پله مبحث چهارم و ظرفیت، تعداد، دوربندی و پیوستگی خروج مبحث سوم باید مستقل و هم‌زمان احراز شوند.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "CRITICAL",
+      "applicable_conditions": "building_use == RESIDENTIAL AND (building_height_m > 23 OR floor_count > 7)",
+      "required_inputs": [
+        "building_use",
+        "building_height_m",
+        "floor_count",
+        "gross_residential_area_m2",
+        "sprinkler_status",
+        "exit_count",
+        "stair_count",
+        "stair_widths_cm",
+        "tread_depth_cm",
+        "riser_height_cm",
+        "headroom_cm",
+        "exit_enclosure_status",
+        "exit_continuity_status"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-5",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "M4 4-7-1-1-5 defers group-8 stair dimensions to occupant population and M3 means-of-egress requirements. M3 3-6-11-2-2 requires two remote exits for apartments unless narrow exceptions apply; M3 3-6-4-3 and 3-6-6 provide stair geometry and capacity.",
+      "exceptions": [
+        "M3 3-6-11-2-3 through 3-6-11-2-5 only when every stated condition is met; group-8 height/storey conditions do not qualify for the <=6-storey, <=23 m single-stair exceptions."
+      ],
+      "cross_code_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "machine_interpretation": {
+        "applicability": {
+          "all": [
+            "building_use == RESIDENTIAL"
+          ],
+          "any": [
+            "building_height_m > 23",
+            "floor_count > 7"
+          ],
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "NOT_APPLICABLE"
+        },
+        "m3_occupant_load": {
+          "formula": "gross_residential_area_m2 / 18.6",
+          "unit": "person",
+          "source_clause": "3-6-5-1",
+          "source_page": {
+            "printed": 99,
+            "pdf": 115
+          }
+        },
+        "required_exit_count": {
+          "operator": ">=",
+          "value": 2,
+          "source_clause": "3-6-11-2-2",
+          "single_exit_exceptions": [
+            "3-6-11-2-3",
+            "3-6-11-2-4",
+            "3-6-11-2-5"
+          ],
+          "group8_exception_eligibility": false,
+          "reason": "Single-stair apartment exceptions are capped at six storeys and 23 m; group 8 exceeds that scope."
+        },
+        "stair_capacity": {
+          "unsprinklered_mm_per_person": 8,
+          "sprinklered_mm_per_person": 5,
+          "source_clause": "3-6-6-1",
+          "source_page": {
+            "printed": 102,
+            "pdf": 118
+          },
+          "unknown_sprinkler": "INPUT_REQUIRED"
+        },
+        "stair_geometry": {
+          "minimum_clear_width_cm": 110,
+          "conditional_minimum_width_cm": 90,
+          "conditional_width_scope": "all floors using that stair have fewer than 50 occupants",
+          "minimum_headroom_cm": 205,
+          "minimum_tread_cm": 28,
+          "riser_cm": {
+            "minimum": 10,
+            "maximum": 18
+          },
+          "tread_plus_two_risers_cm": {
+            "minimum": 63,
+            "maximum": 64
+          },
+          "source_clauses": [
+            "3-6-4-3-2",
+            "3-6-4-3-3",
+            "3-6-4-3-4"
+          ]
+        },
+        "egress_authority": {
+          "requires": [
+            "exit_enclosure_status",
+            "exit_continuity_status"
+          ],
+          "source_clauses": [
+            "3-6-3-3-3",
+            "3-6-2-16",
+            "3-6-11-2"
+          ],
+          "missing_input": "INPUT_REQUIRED"
+        },
+        "combined_result": {
+          "all_applicable_requirements_must_pass": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Group-8 apartment building with complete occupant/load/fire inputs, at least two independent exits, sufficient stair capacity, compliant stair geometry, enclosure and continuity.",
+      "fail_example": "Applicable group-8 building with one exit or insufficient stair width/geometry.",
+      "boundary_example": "23.00 m / 7 storeys remains below group-8 trigger; >23.00 m or >7 storeys enters the group-8 branch.",
+      "not_applicable_example": "Project/object does not satisfy: Residential group 8: building height > 23 m, with the M4 floor-count branch (>7 storeys) retained as an independently tested trigger.; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: building_use, building_height_m, floor_count, gross_residential_area_m2, sprinkler_status, exit_count, stair_count, stair_widths_cm, tread_depth_cm, riser_height_cm, headroom_cm, exit_enclosure_status, exit_continuity_status.",
+      "current_unresolved_interpretation": "Confirm the combined M4/M3/Code 246 interface and exclusion of lower-group one-stair exceptions.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-EGRESS-001",
+      "rule_id": "ARCH-RES-EGRESS-001",
+      "persian_title": "بازشدن در خروج از داخل",
+      "plain_language_rule": "بازکردن در از داخل ساده و فوری باشد؛ قفل یا مانع نباید خروج به‌موقع را مختل کند.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "CRITICAL",
+      "applicable_conditions": "Doors on access/egress paths; explicit listed exceptions apply",
+      "required_inputs": [
+        "door_hardware",
+        "egress_path",
+        "exception_authority"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-1-5-4",
+      "page": {
+        "printed": 47,
+        "pdf": 61
+      },
+      "source_summary": "بازکردن در از داخل ساده و فوری باشد؛ قفل یا مانع نباید خروج به‌موقع را مختل کند.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "IR-M3"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "door_hardware",
+            "egress_path",
+            "exception_authority"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Doors on access/egress paths; explicit listed exceptions apply; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: door_hardware, egress_path, exception_authority.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DOOR-001",
+      "rule_id": "ARCH-RES-DOOR-001",
+      "persian_title": "در ورودی اتاق اقامت",
+      "plain_language_rule": "پهنای مفید حداقل۰٫۸۰ متر و ارتفاع مفید۲٫۰۵ متر؛ لنگه فعال در دولنگه نیز حداقل۰٫۸۰ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Habitable room entry; specific accessible/egress provisions also apply",
+      "required_inputs": [
+        "door_clear_width_m",
+        "door_clear_height_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-8-2",
+      "page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "source_summary": "پهنای مفید حداقل۰٫۸۰ متر و ارتفاع مفید۲٫۰۵ متر؛ لنگه فعال در دولنگه نیز حداقل۰٫۸۰ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "IR-M3",
+        "IR-ACCESS"
+      ],
+      "machine_interpretation": {
+        "all": [
+          {
+            "field": "door_clear_width_m",
+            "op": ">=",
+            "value": 0.8,
+            "unit": "m"
+          },
+          {
+            "field": "door_clear_height_m",
+            "op": ">=",
+            "value": 2.05,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 0.8 m, >= 2.05 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 0.8 m, >= 2.05 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Habitable room entry; specific accessible/egress provisions also apply; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: door_clear_width_m, door_clear_height_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-LIVING-001",
+      "rule_id": "ARCH-RES-LIVING-001",
+      "persian_title": "اندازهٔ حداقل یک فضای اقامت اصلی",
+      "plain_language_rule": "حداقل یک فضای اقامت با مساحت ۱۲ مترمربع و عرض ۲٫۷۰ متر لازم است.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Residential unit area >=75m2",
+      "required_inputs": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-8",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "حداقل یک فضای اقامت با مساحت ۱۲ مترمربع و عرض ۲٫۷۰ متر لازم است.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "machine_interpretation": {
+        "all": [
+          {
+            "field": "largest_habitable_area_m2",
+            "op": ">=",
+            "value": 12,
+            "unit": "m2"
+          },
+          {
+            "field": "largest_habitable_width_m",
+            "op": ">=",
+            "value": 2.7,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 12 m2, >= 2.7 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 12 m2, >= 2.7 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential unit area >=75m2; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: unit_area_m2, largest_habitable_area_m2, largest_habitable_width_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-LIVING-002",
+      "rule_id": "ARCH-RES-LIVING-002",
+      "persian_title": "فضای اقامت واحد کوچک",
+      "plain_language_rule": "حداقل یک اتاق ۹ مترمربع و هیچ‌یک از ابعاد افقی آن کمتر از ۲٫۵ متر نباشد.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Residential unit area <75m2",
+      "required_inputs": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-8",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "حداقل یک اتاق ۹ مترمربع و هیچ‌یک از ابعاد افقی آن کمتر از ۲٫۵ متر نباشد.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "unit_area_m2",
+        "largest_habitable_area_m2",
+        "largest_habitable_width_m"
+      ],
+      "machine_interpretation": {
+        "all": [
+          {
+            "field": "largest_habitable_area_m2",
+            "op": ">=",
+            "value": 9,
+            "unit": "m2"
+          },
+          {
+            "field": "largest_habitable_width_m",
+            "op": ">=",
+            "value": 2.5,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 9 m2, >= 2.5 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 9 m2, >= 2.5 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential unit area <75m2; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: unit_area_m2, largest_habitable_area_m2, largest_habitable_width_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-LIVING-003",
+      "rule_id": "ARCH-RES-LIVING-003",
+      "persian_title": "مساحت عمومی اتاق اقامت",
+      "plain_language_rule": "حداقل مساحت ۶٫۵ مترمربع؛ حکم اختصاصی تصرف مقدم است.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Habitable room unless specific occupancy provisions supersede",
+      "required_inputs": [
+        "room_area_m2"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-2-1",
+      "page": {
+        "printed": 52,
+        "pdf": 66
+      },
+      "source_summary": "حداقل مساحت ۶٫۵ مترمربع؛ حکم اختصاصی تصرف مقدم است.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "room_area_m2"
+      ],
+      "machine_interpretation": {
+        "field": "room_area_m2",
+        "op": ">=",
+        "value": 6.5,
+        "unit": "m2"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 6.5 m2",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 6.5 m2",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Habitable room unless specific occupancy provisions supersede; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: room_area_m2.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BEDROOM-001",
+      "rule_id": "ARCH-RES-BEDROOM-001",
+      "persian_title": "عرض سایر اتاق‌های اقامت مسکونی",
+      "plain_language_rule": "حداقل عرض سایر فضاهای اقامت ۲٫۴۰ متر است؛ مساحت طبق نوع استفاده کنترل شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Other habitable rooms in residential units; use-specific dimensions also apply",
+      "required_inputs": [
+        "room_width_m",
+        "room_use"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-8",
+      "page": {
+        "printed": 85,
+        "pdf": 99
+      },
+      "source_summary": "حداقل عرض سایر فضاهای اقامت ۲٫۴۰ متر است؛ مساحت طبق نوع استفاده کنترل شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "room_width_m",
+        "room_use"
+      ],
+      "machine_interpretation": {
+        "field": "room_width_m",
+        "op": ">=",
+        "value": 2.4,
+        "unit": "m"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 2.4 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 2.4 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Other habitable rooms in residential units; use-specific dimensions also apply; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: room_width_m, room_use.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-001",
+      "rule_id": "ARCH-RES-KITCHEN-001",
+      "persian_title": "آشپزخانهٔ مستقل یا باز برای پخت‌وپز",
+      "plain_language_rule": "مساحت حداقل ۵٫۵۰ مترمربع؛ سطح آزاد خارج از قفسه‌بندی حداقل ۲٫۷۵ مترمربع.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Independent or open residential kitchen used only for cooking",
+      "required_inputs": [
+        "kitchen_area_m2",
+        "kitchen_free_area_m2"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-10",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "مساحت حداقل ۵٫۵۰ مترمربع؛ سطح آزاد خارج از قفسه‌بندی حداقل ۲٫۷۵ مترمربع.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "kitchen_area_m2",
+        "kitchen_free_area_m2"
+      ],
+      "machine_interpretation": {
+        "all": [
+          {
+            "field": "kitchen_area_m2",
+            "op": ">=",
+            "value": 5.5,
+            "unit": "m2"
+          },
+          {
+            "field": "kitchen_free_area_m2",
+            "op": ">=",
+            "value": 2.75,
+            "unit": "m2"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 5.5 m2, >= 2.75 m2",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 5.5 m2, >= 2.75 m2",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Independent or open residential kitchen used only for cooking; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: kitchen_area_m2, kitchen_free_area_m2.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-002",
+      "rule_id": "ARCH-RES-KITCHEN-002",
+      "persian_title": "آشپزخانه همراه محل صرف غذا",
+      "plain_language_rule": "حداقل مساحت ۷٫۵۰ مترمربع.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Residential independent/open kitchen for cooking and eating",
+      "required_inputs": [
+        "kitchen_area_m2"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-11",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "حداقل مساحت ۷٫۵۰ مترمربع.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "kitchen_area_m2"
+      ],
+      "machine_interpretation": {
+        "field": "kitchen_area_m2",
+        "op": ">=",
+        "value": 7.5,
+        "unit": "m2"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 7.5 m2",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 7.5 m2",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential independent/open kitchen for cooking and eating; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: kitchen_area_m2.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-003",
+      "rule_id": "ARCH-RES-KITCHEN-003",
+      "persian_title": "عرض آشپزخانه",
+      "plain_language_rule": "حداقل عرض ۱٫۸۰ متر؛ برای پخت‌وپز همراه صرف غذا ۲٫۱۵ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Independent/open residential kitchen",
+      "required_inputs": [
+        "kitchen_use",
+        "kitchen_width_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-12",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "حداقل عرض ۱٫۸۰ متر؛ برای پخت‌وپز همراه صرف غذا ۲٫۱۵ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "kitchen_use",
+        "kitchen_width_m"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "kitchen_use",
+            "kitchen_width_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Independent/open residential kitchen; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: kitchen_use, kitchen_width_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-004",
+      "rule_id": "ARCH-RES-KITCHEN-004",
+      "persian_title": "فضای کار آشپزخانه دیواری",
+      "plain_language_rule": "فضای کار آزاد در تمام طول از لبه قفسه‌ها حداقل ۱٫۱۰ متر و طول آشپزخانه حداقل ۳ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Wall kitchen in residential unit",
+      "required_inputs": [
+        "work_aisle_width_m",
+        "wall_kitchen_length_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-13",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "فضای کار آزاد در تمام طول از لبه قفسه‌ها حداقل ۱٫۱۰ متر و طول آشپزخانه حداقل ۳ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "work_aisle_width_m",
+        "wall_kitchen_length_m"
+      ],
+      "machine_interpretation": {
+        "all": [
+          {
+            "field": "work_aisle_width_m",
+            "op": ">=",
+            "value": 1.1,
+            "unit": "m"
+          },
+          {
+            "field": "wall_kitchen_length_m",
+            "op": ">=",
+            "value": 3,
+            "unit": "m"
+          }
+        ]
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying >= 1.1 m, >= 3 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating >= 1.1 m, >= 3 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Wall kitchen in residential unit; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: work_aisle_width_m, wall_kitchen_length_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-KITCHEN-005",
+      "rule_id": "ARCH-RES-KITCHEN-005",
+      "persian_title": "ممنوعیت عبور الزامی از آشپزخانه",
+      "plain_language_rule": "دسترسی فضای اقامت از آشپزخانه نباشد؛ استثنای واحد دو فضایی فقط با ورودی فعال و نور و تهویه مستقل بررسی شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Access to workplace/habitable room",
+      "required_inputs": [
+        "access_graph",
+        "habitable_count",
+        "independent_openings"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-5-1-2",
+      "page": {
+        "printed": 58,
+        "pdf": 72
+      },
+      "source_summary": "دسترسی فضای اقامت از آشپزخانه نباشد؛ استثنای واحد دو فضایی فقط با ورودی فعال و نور و تهویه مستقل بررسی شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "access_graph",
+        "habitable_count",
+        "independent_openings"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "access_graph",
+            "habitable_count",
+            "independent_openings"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Access to workplace/habitable room; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: access_graph, habitable_count, independent_openings.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BATHROOM-001",
+      "rule_id": "ARCH-RES-BATHROOM-001",
+      "persian_title": "ابعاد فضای بهداشتی مسکونی معمول",
+      "plain_language_rule": "حداقل عرض ۱ متر و طول ۱٫۲۰ متر؛ برای دوش مستقل با رختکن داخل فضا حداقل یکی از ابعاد ۱٫۵۰ متر. ادامه و استثنای سرویس ترکیبی در صفحه بعد بررسی شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Separate residential sanitary space without mandatory accessible designation",
+      "required_inputs": [
+        "accessible_required",
+        "sanitary_width_m",
+        "sanitary_length_m",
+        "shower_dressing_inside"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-18",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "حداقل عرض ۱ متر و طول ۱٫۲۰ متر؛ برای دوش مستقل با رختکن داخل فضا حداقل یکی از ابعاد ۱٫۵۰ متر. ادامه و استثنای سرویس ترکیبی در صفحه بعد بررسی شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "accessible_required",
+        "sanitary_width_m",
+        "sanitary_length_m",
+        "shower_dressing_inside"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "accessible_required",
+            "sanitary_width_m",
+            "sanitary_length_m",
+            "shower_dressing_inside"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Separate residential sanitary space without mandatory accessible designation; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: accessible_required, sanitary_width_m, sanitary_length_m, shower_dressing_inside.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BATHROOM-002",
+      "rule_id": "ARCH-RES-BATHROOM-002",
+      "persian_title": "ارتفاع فضای بهداشتی مسکونی",
+      "plain_language_rule": "ارتفاع حداقل ۲٫۲۰ متر در ۸۰ درصد سطح الزامی؛ زیر سقف شیب‌دار کوتاه‌ترین قسمت حداقل ۲٫۰۵ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Residential sanitary space",
+      "required_inputs": [
+        "clear_height_m",
+        "height_coverage_fraction",
+        "sloped_roof_min_height_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-19",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_summary": "ارتفاع حداقل ۲٫۲۰ متر در ۸۰ درصد سطح الزامی؛ زیر سقف شیب‌دار کوتاه‌ترین قسمت حداقل ۲٫۰۵ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "clear_height_m",
+        "height_coverage_fraction",
+        "sloped_roof_min_height_m"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "clear_height_m",
+            "height_coverage_fraction",
+            "sloped_roof_min_height_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential sanitary space; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: clear_height_m, height_coverage_fraction, sloped_roof_min_height_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-WC-001",
+      "rule_id": "ARCH-RES-WC-001",
+      "persian_title": "پیش‌بینی توالت فرنگی برای واحد بزرگ",
+      "plain_language_rule": "فضا و تأسیسات آب و فاضلاب لازم برای نصب حداقل یک توالت فرنگی فراهم شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Residential unit area >=75m2",
+      "required_inputs": [
+        "unit_area_m2",
+        "wc_reservation",
+        "water_port",
+        "waste_port"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-17",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "فضا و تأسیسات آب و فاضلاب لازم برای نصب حداقل یک توالت فرنگی فراهم شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "unit_area_m2",
+        "wc_reservation",
+        "water_port",
+        "waste_port"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "unit_area_m2",
+            "wc_reservation",
+            "water_port",
+            "waste_port"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential unit area >=75m2; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: unit_area_m2, wc_reservation, water_port, waste_port.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-001",
+      "rule_id": "ARCH-RES-DAYLIGHT-001",
+      "persian_title": "نور و هوای آشپزخانه مستقل",
+      "plain_language_rule": "نور و تهویه طبیعی مستقل؛ در واحد زیر ۷۵ مترمربع اگر دورترین نقطه آشپزخانه از پنجره فضای مجاور کمتر از ۷ متر باشد استثنا بررسی شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Independent residential kitchen",
+      "required_inputs": [
+        "unit_area_m2",
+        "kitchen_type",
+        "distance_to_adjacent_window_m",
+        "natural_light",
+        "natural_ventilation"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-14",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "نور و تهویه طبیعی مستقل؛ در واحد زیر ۷۵ مترمربع اگر دورترین نقطه آشپزخانه از پنجره فضای مجاور کمتر از ۷ متر باشد استثنا بررسی شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "unit_area_m2",
+        "kitchen_type",
+        "distance_to_adjacent_window_m",
+        "natural_light",
+        "natural_ventilation"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "unit_area_m2",
+            "kitchen_type",
+            "distance_to_adjacent_window_m",
+            "natural_light",
+            "natural_ventilation"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Independent residential kitchen; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: unit_area_m2, kitchen_type, distance_to_adjacent_window_m, natural_light, natural_ventilation.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-002",
+      "rule_id": "ARCH-RES-DAYLIGHT-002",
+      "persian_title": "سطح شیشه اتاق اقامت",
+      "plain_language_rule": "حداقل نسبت شیشه به کف ۱/۸؛ اگر پنجره‌ها تنها در یک دیوار و عمق بیش از ۴٫۵۰ متر باشد ۱/۷.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Habitable room; chapter4-6 and window-head exception3 apply",
+      "required_inputs": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "single_window_wall",
+        "room_depth_m",
+        "window_head_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-3-2",
+      "page": {
+        "printed": 53,
+        "pdf": 67
+      },
+      "source_summary": "حداقل نسبت شیشه به کف ۱/۸؛ اگر پنجره‌ها تنها در یک دیوار و عمق بیش از ۴٫۵۰ متر باشد ۱/۷.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "single_window_wall",
+        "room_depth_m",
+        "window_head_m"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "floor_area_m2",
+            "glazing_area_m2",
+            "single_window_wall",
+            "room_depth_m",
+            "window_head_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Habitable room; chapter4-6 and window-head exception3 apply; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: floor_area_m2, glazing_area_m2, single_window_wall, room_depth_m, window_head_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-003",
+      "rule_id": "ARCH-RES-DAYLIGHT-003",
+      "persian_title": "پنجره با لبه بالایی کوتاه",
+      "plain_language_rule": "نسبت شیشه شفاف به کف حداقل ۱/۶؛ برای پنجره‌های یک‌طرفه و عمق بیش از۴٫۵۰ متر حداقل۱/۵.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Window head below2.10m excluding sloped-roof light",
+      "required_inputs": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "window_head_m",
+        "single_window_wall",
+        "room_depth_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-3-3",
+      "page": {
+        "printed": 53,
+        "pdf": 67
+      },
+      "source_summary": "نسبت شیشه شفاف به کف حداقل ۱/۶؛ برای پنجره‌های یک‌طرفه و عمق بیش از۴٫۵۰ متر حداقل۱/۵.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "floor_area_m2",
+        "glazing_area_m2",
+        "window_head_m",
+        "single_window_wall",
+        "room_depth_m"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "floor_area_m2",
+            "glazing_area_m2",
+            "window_head_m",
+            "single_window_wall",
+            "room_depth_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Window head below2.10m excluding sloped-roof light; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: floor_area_m2, glazing_area_m2, window_head_m, single_window_wall, room_depth_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-004",
+      "rule_id": "ARCH-RES-DAYLIGHT-004",
+      "persian_title": "عمق قابل قبول نورگیری",
+      "plain_language_rule": "حداکثر عمق قابل قبول نورگیری از یک پنجره ۷ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Habitable room served by a window",
+      "required_inputs": [
+        "daylight_depth_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-8-3",
+      "page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "source_summary": "حداکثر عمق قابل قبول نورگیری از یک پنجره ۷ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "daylight_depth_m"
+      ],
+      "machine_interpretation": {
+        "field": "daylight_depth_m",
+        "op": "<=",
+        "value": 7,
+        "unit": "m"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying <= 7 m",
+      "fail_example": "Applicable project with complete authoritative inputs violating <= 7 m",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Habitable room served by a window; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: daylight_depth_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-005",
+      "rule_id": "ARCH-RES-DAYLIGHT-005",
+      "persian_title": "نورگیری زیر ایوان",
+      "plain_language_rule": "عمق نورگیری از لبه خارجی ایوان محسوب شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Window below balcony/terrace projection",
+      "required_inputs": [
+        "balcony_outer_edge",
+        "room_daylight_geometry"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-2-8-4",
+      "page": {
+        "printed": 55,
+        "pdf": 69
+      },
+      "source_summary": "عمق نورگیری از لبه خارجی ایوان محسوب شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "balcony_outer_edge",
+        "room_daylight_geometry"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "balcony_outer_edge",
+            "room_daylight_geometry"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Window below balcony/terrace projection; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: balcony_outer_edge, room_daylight_geometry.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-006",
+      "rule_id": "ARCH-RES-DAYLIGHT-006",
+      "persian_title": "حیاط بین دو تصرف مسکونی",
+      "plain_language_rule": "فاصله دیوارهای پنجره‌های مقابل حداقل۶ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Land area >200m2; main habitable rooms of two independent units use same internal court",
+      "required_inputs": [
+        "land_area_m2",
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-24",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۶ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "land_area_m2",
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "land_area_m2",
+            "shared_court",
+            "opposing_room_uses",
+            "window_wall_distance_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Land area >200m2; main habitable rooms of two independent units use same internal court; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: land_area_m2, shared_court, opposing_room_uses, window_wall_distance_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-DAYLIGHT-007",
+      "rule_id": "ARCH-RES-DAYLIGHT-007",
+      "persian_title": "حیاط مشترک آشپزخانه و اقامت",
+      "plain_language_rule": "فاصله دیوارهای پنجره‌های مقابل حداقل۴ متر.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Independent units: kitchen/habitable or two kitchens use same internal court",
+      "required_inputs": [
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-25",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_summary": "فاصله دیوارهای پنجره‌های مقابل حداقل۴ متر.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "shared_court",
+        "opposing_room_uses",
+        "window_wall_distance_m"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "shared_court",
+            "opposing_room_uses",
+            "window_wall_distance_m"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Independent units: kitchen/habitable or two kitchens use same internal court; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: shared_court, opposing_room_uses, window_wall_distance_m.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-VENTILATION-001",
+      "rule_id": "ARCH-RES-VENTILATION-001",
+      "persian_title": "بازشوی تهویه آشپزخانه",
+      "plain_language_rule": "حداقل سطح بازشوی تهویه یک شانزدهم مساحت کف آشپزخانه.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Kitchen serving habitable rooms",
+      "required_inputs": [
+        "kitchen_area_m2",
+        "vent_opening_area_m2"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-15",
+      "page": {
+        "printed": 86,
+        "pdf": 100
+      },
+      "source_summary": "حداقل سطح بازشوی تهویه یک شانزدهم مساحت کف آشپزخانه.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "kitchen_area_m2",
+        "vent_opening_area_m2"
+      ],
+      "machine_interpretation": {
+        "field": "vent_opening_area_m2",
+        "op": ">=",
+        "rhs_field": "kitchen_area_m2",
+        "factor": 0.0625,
+        "unit": "m2"
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying factor 0.0625 ",
+      "fail_example": "Applicable project with complete authoritative inputs violating factor 0.0625 ",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Kitchen serving habitable rooms; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: kitchen_area_m2, vent_opening_area_m2.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-VENTILATION-002",
+      "rule_id": "ARCH-RES-VENTILATION-002",
+      "persian_title": "هود به هوای آزاد",
+      "plain_language_rule": "هود با کانال مستقل مکش به خارج ساختمان مرتبط شود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "HIGH",
+      "applicable_conditions": "Kitchen ventilation requires over-cooktop extraction",
+      "required_inputs": [
+        "extract_required",
+        "hood_port",
+        "independent_exhaust_route"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-5-3-3",
+      "page": {
+        "printed": 59,
+        "pdf": 73
+      },
+      "source_summary": "هود با کانال مستقل مکش به خارج ساختمان مرتبط شود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "extract_required",
+        "hood_port",
+        "independent_exhaust_route"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "extract_required",
+            "hood_port",
+            "independent_exhaust_route"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Kitchen ventilation requires over-cooktop extraction; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: extract_required, hood_port, independent_exhaust_route.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-BALCONY-001",
+      "rule_id": "ARCH-RES-BALCONY-001",
+      "persian_title": "فضای نیمه‌باز اختصاصی",
+      "plain_language_rule": "حداقل یک فضای نیمه‌باز اختصاصی مطابق ۴-۵-۷ لازم است؛ اندازه بدون منبع فرض نشود.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "MEDIUM",
+      "applicable_conditions": "Apartment/unit without direct adjacency and access to open space",
+      "required_inputs": [
+        "direct_open_space_access",
+        "private_semiopen_space",
+        "m4_5_7_result"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-22",
+      "page": {
+        "printed": 87,
+        "pdf": 101
+      },
+      "source_summary": "حداقل یک فضای نیمه‌باز اختصاصی مطابق ۴-۵-۷ لازم است؛ اندازه بدون منبع فرض نشود.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "direct_open_space_access",
+        "private_semiopen_space",
+        "m4_5_7_result"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "direct_open_space_access",
+            "private_semiopen_space",
+            "m4_5_7_result"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Apartment/unit without direct adjacency and access to open space; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: direct_open_space_access, private_semiopen_space, m4_5_7_result.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-PRIVACY-001",
+      "rule_id": "ARCH-RES-PRIVACY-001",
+      "persian_title": "دسترسی مستقل اتاق‌ها",
+      "plain_language_rule": "دسترسی اتاق اقامت مستقیماً از اتاق دیگر یا نشیمن عمومی نباشد مگر استثناهای صریح همین بند؛ دید مستقیم از نشیمن عمومی به خواب در هر حال مجاز نیست.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "MEDIUM",
+      "applicable_conditions": "Residential habitable rooms; apply listed exceptions a-1,a-2,a-3",
+      "required_inputs": [
+        "access_graph",
+        "unit_area_m2",
+        "habitable_count",
+        "entry_buffer",
+        "sightlines"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-2.a",
+      "page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "source_summary": "دسترسی اتاق اقامت مستقیماً از اتاق دیگر یا نشیمن عمومی نباشد مگر استثناهای صریح همین بند؛ دید مستقیم از نشیمن عمومی به خواب در هر حال مجاز نیست.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "access_graph",
+        "unit_area_m2",
+        "habitable_count",
+        "entry_buffer",
+        "sightlines"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "access_graph",
+            "unit_area_m2",
+            "habitable_count",
+            "entry_buffer",
+            "sightlines"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential habitable rooms; apply listed exceptions a-1,a-2,a-3; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: access_graph, unit_area_m2, habitable_count, entry_buffer, sightlines.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-PRIVACY-002",
+      "rule_id": "ARCH-RES-PRIVACY-002",
+      "persian_title": "دید به سرویس بهداشتی",
+      "plain_language_rule": "دید به داخل سرویس ممنوع؛ پیش‌ورودی دارای روشویی فقط با حفظ حرکت و دسترسی به سایر تجهیزات مجاز است.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "MEDIUM",
+      "applicable_conditions": "Combined sanitary facility visible from living/hall",
+      "required_inputs": [
+        "sanitary_sightlines",
+        "ante_room",
+        "fixture_access"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-2.p",
+      "page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "source_summary": "دید به داخل سرویس ممنوع؛ پیش‌ورودی دارای روشویی فقط با حفظ حرکت و دسترسی به سایر تجهیزات مجاز است.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "sanitary_sightlines",
+        "ante_room",
+        "fixture_access"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "sanitary_sightlines",
+            "ante_room",
+            "fixture_access"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Combined sanitary facility visible from living/hall; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: sanitary_sightlines, ante_room, fixture_access.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-PRIVACY-003",
+      "rule_id": "ARCH-RES-PRIVACY-003",
+      "persian_title": "دید به محل کار آشپزخانه",
+      "plain_language_rule": "از نشیمن عمومی یا سالن دید مستقیم به قسمت‌های اصلی پخت‌وپز و کار آشپزخانه نباشد.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "MEDIUM",
+      "applicable_conditions": "Residential unit area >=75m2, wall/open kitchen",
+      "required_inputs": [
+        "unit_area_m2",
+        "kitchen_type",
+        "living_kitchen_sightlines"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-7-1-1-2.th",
+      "page": {
+        "printed": 84,
+        "pdf": 98
+      },
+      "source_summary": "از نشیمن عمومی یا سالن دید مستقیم به قسمت‌های اصلی پخت‌وپز و کار آشپزخانه نباشد.",
+      "exceptions": [],
+      "cross_code_dependencies": [
+        "unit_area_m2",
+        "kitchen_type",
+        "living_kitchen_sightlines"
+      ],
+      "machine_interpretation": {
+        "review_predicate": {
+          "inputs": [
+            "unit_area_m2",
+            "kitchen_type",
+            "living_kitchen_sightlines"
+          ],
+          "expected": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "Applicable project with complete authoritative inputs satisfying qualitative predicate",
+      "fail_example": "Applicable project with complete authoritative inputs violating qualitative predicate",
+      "boundary_example": "Evaluate exact threshold and immediately below/above values where numeric; otherwise exact predicate boundary.",
+      "not_applicable_example": "Project/object does not satisfy: Residential unit area >=75m2, wall/open kitchen; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: unit_area_m2, kitchen_type, living_kitchen_sightlines.",
+      "current_unresolved_interpretation": "None beyond licensed professional confirmation of the prepared interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    },
+    {
+      "review_item_id": "HAR-ARCH-RES-ACCESSIBILITY-001",
+      "rule_id": "ARCH-RES-ACCESSIBILITY-001",
+      "persian_title": "فضای بهداشتی قابل استفاده معلول",
+      "plain_language_rule": "در هر واحد مسکونی قابل دسترس، حداقل یک فضای بهداشتی باید هم‌زمان با بند ۳-۲-۳-۸ ضابطه ۲۴۶، ارجاع آن به ۳-۱-۱-۱۲ و حداقل ۱٫۵۰×۱٫۷۰ متر مبحث چهارم منطبق باشد.",
+      "classification": "MANDATORY_NATIONAL",
+      "enforcement_consequence": "BLOCK",
+      "risk": "CRITICAL",
+      "applicable_conditions": "building_use == RESIDENTIAL AND accessible_residential_unit == true",
+      "required_inputs": [
+        "building_use",
+        "units_per_floor",
+        "floor_count",
+        "total_residential_units",
+        "fully_government_funded",
+        "local_elevator_requirement",
+        "accessible_residential_unit",
+        "accessible_sanitary_space_count",
+        "sanitary_dimensions_m",
+        "accessible_route_result"
+      ],
+      "source": "مبحث چهارم، الزامات عمومی ساختمان",
+      "edition": "1396",
+      "clause": "4-5-6-2-2",
+      "page": {
+        "printed": 61,
+        "pdf": 75
+      },
+      "source_summary": "Code 246 defines a residential complex as more than four units on one floor or more than eight units across multiple floors; 3-2-2-1 requires at least five percent accessible units and at least one in fully government-funded complexes under 20 units; 3-2-3-8 requires one sanitary space conforming to 3-1-1-12.",
+      "exceptions": [
+        "Five-percent integer conversion is not stated in the inspected Code 246 text and remains HUMAN_INTERPRETATION_REQUIRED.",
+        "The under-20 minimum-one-unit branch applies only to fully government-funded residential complexes.",
+        "Local elevator triggers are never inferred from floor count."
+      ],
+      "cross_code_dependencies": [
+        "IR-ACCESS",
+        "IR-M4",
+        "IR-M3_ACCESSIBLE_EGRESS_WHEN_APPLICABLE"
+      ],
+      "machine_interpretation": {
+        "applicability": {
+          "building_use": "RESIDENTIAL",
+          "accessible_residential_unit": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "NOT_APPLICABLE"
+        },
+        "residential_complex": {
+          "any": [
+            "units_per_floor > 4",
+            "floor_count > 1 AND total_residential_units > 8"
+          ],
+          "source": "Code 246 Chapter 1 definition",
+          "source_page": {
+            "printed": 7,
+            "pdf": 25
+          },
+          "missing_input": "INPUT_REQUIRED"
+        },
+        "accessible_unit_requirement": {
+          "private_or_general_complex": {
+            "calculation_raw": "total_residential_units * 0.05",
+            "integer_conversion": "HUMAN_INTERPRETATION_REQUIRED"
+          },
+          "fully_government_funded_under_20": {
+            "when": "fully_government_funded == true AND total_residential_units < 20",
+            "minimum_accessible_units": 1
+          },
+          "source_clause": "3-2-2-1",
+          "source_page": {
+            "printed": 91,
+            "pdf": 109
+          }
+        },
+        "common_area_scope": {
+          "local_elevator_required": {
+            "when": "local_elevator_requirement == true",
+            "result": "elevator_and_common_areas_accessible"
+          },
+          "below_local_elevator_trigger": {
+            "when": "local_elevator_requirement == false",
+            "result": "ground_floor_and_common_areas_accessible"
+          },
+          "unknown_local_elevator_requirement": "LOCAL_RULE_REQUIRED",
+          "source_clauses": [
+            "3-2-2-2",
+            "3-2-2-3"
+          ],
+          "source_page": {
+            "printed": 92,
+            "pdf": 110
+          }
+        },
+        "accessible_unit_dependencies": {
+          "clauses": [
+            "3-2-3-1",
+            "3-2-3-2",
+            "3-2-3-3",
+            "3-2-3-4",
+            "3-2-3-5",
+            "3-2-3-6",
+            "3-2-3-7",
+            "3-2-3-8",
+            "3-2-3-9"
+          ],
+          "shared_rules": [
+            "code246_entry",
+            "code246_corridor",
+            "code246_stair",
+            "code246_ramp",
+            "code246_elevator",
+            "code246_openings",
+            "code246_handrails",
+            "code246_sanitary",
+            "code246_controls"
+          ]
+        },
+        "sanitary_check": {
+          "minimum_count": 1,
+          "m4_minimum_dimensions_m": [
+            1.5,
+            1.7
+          ],
+          "requires_code246_clause": "3-2-3-8 -> 3-1-1-12",
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL"
+        },
+        "parking_scope": {
+          "accessible_unit_minimum_spaces": 1,
+          "source_clause": "3-2-3-1",
+          "source_page": {
+            "printed": 93,
+            "pdf": 111
+          },
+          "public_parking_rule": "2-1-5-2",
+          "local_general_parking_count": "LOCAL_RULE_REQUIRED"
+        },
+        "result_logic": {
+          "all_applicable_requirements_must_pass": true,
+          "missing_input": "INPUT_REQUIRED",
+          "false_result": "FAIL",
+          "not_applicable_result": "NOT_APPLICABLE"
+        }
+      },
+      "pass_example": "An independently classified accessible residential unit contains at least one sanitary space meeting M4 dimensions and Code 246 clause 3-1-1-12.",
+      "fail_example": "An applicable accessible unit lacks a compliant sanitary space or route.",
+      "boundary_example": "4 units on one floor is not a residential complex; 5 is. Eight units across multiple floors is not; 9 is. Five-percent integer conversion remains a bounded interpretation question.",
+      "not_applicable_example": "Project/object does not satisfy: Accessible residential unit sanitary space: applies only after Code 246 residential-complex/accessibility classification or an authoritative project requirement establishes an accessible unit.; result must be NOT_APPLICABLE, never PASS.",
+      "input_required_behavior": "If any material applicability or evaluation input is absent, return INPUT_REQUIRED. Required inputs: building_use, units_per_floor, floor_count, total_residential_units, fully_government_funded, local_elevator_requirement, accessible_residential_unit, accessible_sanitary_space_count, sanitary_dimensions_m, accessible_route_result.",
+      "current_unresolved_interpretation": "Code 246 five-percent integer conversion requires licensed interpretation.",
+      "proposed_reviewer_decision": null,
+      "reviewer_decision": null,
+      "reviewer_comments": null,
+      "reviewer_name": null,
+      "professional_role": null,
+      "professional_license_or_registration": null,
+      "review_date": null,
+      "allowed_decisions": [
+        "APPROVED",
+        "APPROVED_WITH_CHANGE",
+        "REJECTED",
+        "NEEDS_MORE_EVIDENCE"
+      ],
+      "post_review_status": "NOT_REVIEWED"
+    }
+  ]
+}

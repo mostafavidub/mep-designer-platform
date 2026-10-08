@@ -1,5 +1,5 @@
 {
-  "schema_version": "architecture-sources/1.0",
+  "schema_version": "architecture-sources/1.3",
   "sources": [
     {
       "source_id": "IR-M3-OLD",
@@ -14,7 +14,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M4",
@@ -29,7 +33,22 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false,
+      "document_status": "AUTHORITY_STATUS_UNRESOLVED",
+      "source_class": "PRIMARY_OFFICIAL",
+      "official_url_or_identifier": "Local source bearing inbr.ir identity; SHA-256 ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6. Official public index returned HTTP 403 during retrieval.",
+      "amendment_chain": [],
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "document_verified": true,
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "owner_confirmed_current_baseline": true,
+      "independent_government_registry_currentness_verified": false,
+      "project_baseline_date": "2026-10-08",
+      "qualification": "SOURCE_QUALIFIED_FOR_PROJECT_BASELINE"
     },
     {
       "source_id": "IR-M15",
@@ -44,7 +63,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M18",
@@ -59,7 +82,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "Full current official edition/amendment register not yet verified",
-      "notes": "Filename 1402 is not edition evidence; cover states 1396."
+      "notes": "Filename 1402 is not edition evidence; cover states 1396.",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M19-4",
@@ -74,7 +101,11 @@
       "access_date": "2026-10-05",
       "copyright_note": "Owner-supplied copy; PDF and extracts excluded from Git",
       "current_status_basis": "IR-ENERGY-TRANSITION",
-      "notes": ""
+      "notes": "",
+      "evidence_grade": "A",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": true
     },
     {
       "source_id": "IR-M3",
@@ -87,7 +118,24 @@
       "cover_verified": true,
       "access_date": "2026-10-05",
       "copyright_note": "Previously supplied project source; not redistributed",
-      "notes": "Third edition1395 cover visually verified; current amendments and plan-clause extraction unresolved."
+      "notes": "Third edition 1395 cover and bounded Architecture-consumed stair/egress clauses verified; specialized fire-system engineering remains outside Architecture.",
+      "evidence_grade": "A",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": false,
+      "document_status": "AUTHORITY_STATUS_UNRESOLVED",
+      "source_class": "PRIMARY_OFFICIAL",
+      "official_url_or_identifier": "Local ministry/Research Center copy; SHA-256 b06648469e73785f101f3c4735db6454eb6b41ec2f00fc2793e3f6153db3473d. Complete official amendment register unavailable.",
+      "amendment_chain": [
+        "A 1397 professional/administrative single-stair corrigendum was located only through secondary discovery and is not imported as authority."
+      ],
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "document_verified": true,
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "owner_confirmed_current_baseline": true,
+      "independent_government_registry_currentness_verified": false,
+      "project_baseline_date": "2026-10-08",
+      "qualification": "SOURCE_QUALIFIED_FOR_PROJECT_BASELINE"
     },
     {
       "source_id": "IR-ENERGY-TRANSITION",
@@ -97,7 +145,11 @@
       "status": "CURRENT_MANDATORY",
       "access_date": "2026-10-05",
       "publication_date": null,
-      "notes": "Both editions permitted from 1404-10-20 through 1405-12-29. Record project permit date and selected complete edition; do not mix convenient clauses."
+      "notes": "Both editions permitted from 1404-10-20 through 1405-12-29. Record project permit date and selected complete edition; do not mix convenient clauses.",
+      "evidence_grade": "B",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": true
     },
     {
       "source_id": "IR-M19-5",
@@ -108,7 +160,11 @@
       "status": "CURRENT_MANDATORY",
       "access_date": "2026-10-05",
       "publication_date": null,
-      "notes": "Fifth edition officially published; full clause-level migration still required. Concurrent fourth edition permitted under IR-ENERGY-TRANSITION."
+      "notes": "Fifth edition officially published; full clause-level migration still required. Concurrent fourth edition permitted under IR-ENERGY-TRANSITION.",
+      "evidence_grade": "B",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_CURRENT_AND_APPLICABLE",
+      "may_solo_support_release_block": true
     },
     {
       "source_id": "IR-EXAM",
@@ -117,7 +173,11 @@
       "url": "https://inbr.ir",
       "status": "UNKNOWN_CURRENT_STATUS",
       "access_date": "2026-10-05",
-      "notes": "Official endpoint inaccessible. Secondary exam lists are discovery leads only, not authority."
+      "notes": "Official endpoint inaccessible. Secondary exam lists are discovery leads only, not authority.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-M4-SECURITY",
@@ -125,29 +185,173 @@
       "issuer": "وزارت راه و شهرسازی",
       "edition_year": null,
       "status": "UNKNOWN_CURRENT_STATUS",
-      "notes": "Owner mentions 1402; discovered ministry-authored PDF cover lead says 1403. Exact supplied file and official amendment/issue pending."
+      "notes": "Owner mentions 1402; discovered ministry-authored PDF cover lead says 1403. Exact supplied file and official amendment/issue pending.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "IR-ACCESS",
-      "title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت",
-      "issuer": "شورای عالی شهرسازی و معماری / مرکز تحقیقات",
+      "title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت — تجدیدنظر اول — ضابطه 246",
+      "issuer": "سازمان برنامه و بودجه کشور / شورای عالی شهرسازی و معماری ایران",
       "edition_year": 1399,
-      "status": "UNKNOWN_CURRENT_STATUS",
-      "notes": "Third-edition candidate from request; exact source and current status pending."
+      "status": "PROJECT_PRIMARY_BASELINE_VERIFIED",
+      "notes": "Exact owner-supplied Code 246 first-revision PDF inspected; residential clauses and cross-references mapped. Five-percent integer conversion is not stated and remains a bounded human-interpretation sub-gate.",
+      "evidence_grade": "A",
+      "qualification_status": "QUALIFIED_REFERENCE",
+      "permitted_use": "MANDATORY_RULE_EVIDENCE_WHEN_APPLICABLE",
+      "may_solo_support_release_block": true,
+      "document_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "source_class": "PRIMARY_OFFICIAL_OWNER_SUPPLIED_FILE",
+      "official_url_or_identifier": "Google Drive file 1RjFUXNXTbOlpnZOt5ZbsHepzMS6rpGEg; exact bytes verified locally; PDF excluded from Git.",
+      "amendment_chain": [],
+      "verification_status": "DOCUMENT_HASH_PAGE_AND_RESIDENTIAL_CLAUSES_VERIFIED",
+      "authority": "شورای عالی شهرسازی و معماری ایران",
+      "edition": "تجدیدنظر اول ۱۳۹۹",
+      "document_type": "NATIONAL_ACCESSIBILITY_REGULATION",
+      "primary_source": true,
+      "owner_supplied": true,
+      "document_verified": true,
+      "current_source_basis": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "approval_date": "1398-08-20",
+      "circular_number": "99/129340",
+      "circular_date": "1399-03-24",
+      "mandatory_from": "1399-07-01",
+      "document_date": "1399-02-20",
+      "expected_filename": "895917_Code0246-r1-13990324.pdf",
+      "local_hash": "1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751",
+      "qualification": "SOURCE_QUALIFIED_FOR_PROJECT_BASELINE",
+      "owner_confirmed_current_baseline": true,
+      "independent_government_registry_currentness_verified": false,
+      "project_baseline_date": "2026-10-08",
+      "local_filename": "895917_Code0246-r1-13990324.pdf",
+      "sha256": "1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751",
+      "page_count": 122,
+      "file_size_bytes": 5843208,
+      "drive_file_id": "1RjFUXNXTbOlpnZOt5ZbsHepzMS6rpGEg",
+      "content_identity_verified": true,
+      "cover_verified": true,
+      "access_date": "2026-10-08",
+      "copyright_note": "Owner-supplied primary PDF; only hash, metadata and concise clause mappings are committed.",
+      "scope": "Code 246 residential architecture applicability and referenced accessible-space requirements"
     },
     {
       "source_id": "IR-LOCAL",
       "title": "ضوابط مصوب محلی و دستور نقشه پلاک",
       "issuer": null,
       "status": "MANDATORY_BUT_LOCAL",
-      "notes": "Must be supplied or fetched per parcel/city/date; no Tehran default."
+      "notes": "Must be supplied or fetched per parcel/city/date; no Tehran default.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "DISCOVERY_OR_PROJECT_INPUT_ONLY",
+      "may_solo_support_release_block": false
     },
     {
       "source_id": "PLANHA-CONTRACT",
       "title": "Owner-authorized typical residential floor-plan scope",
       "issuer": "Project owner",
       "status": "GUIDANCE",
-      "notes": "Product contract only; not legal authority."
+      "notes": "Product contract only; not legal authority.",
+      "evidence_grade": "E",
+      "qualification_status": "SOURCE_GAP",
+      "permitted_use": "OWNER_PROGRAM_ONLY",
+      "may_solo_support_release_block": false
+    }
+  ],
+  "authority_assessments": [
+    {
+      "assessment_id": "AUTH-IR-M4-2026-10-07",
+      "source_id": "IR-M4",
+      "document_title": "مبحث چهارم مقررات ملی ساختمان — الزامات عمومی ساختمان",
+      "issuing_authority": "وزارت راه و شهرسازی / دفتر تدوین مقررات ملی ساختمان",
+      "approval_authority": "وزارت راه و شهرسازی",
+      "publication_date": "1396-10-10",
+      "effective_date": null,
+      "edition": "ویرایش سوم ۱۳۹۶",
+      "revision": "THIRD_EDITION",
+      "printing": null,
+      "amendments": [],
+      "corrigenda": [],
+      "annexes": [
+        "پیوست حفاظتی–انتظامی referenced but exact lifecycle unresolved"
+      ],
+      "supplements": [],
+      "transition_rules": [],
+      "superseded_documents": [
+        "Earlier M4 editions"
+      ],
+      "superseding_documents": [],
+      "current_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "applicability_scope": "Buildings subject to the Engineering and Building Control Law; local stricter approved rules may govern within their scope.",
+      "official_reference": "Local source bearing inbr.ir identity; SHA-256 ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6. Official public index returned HTTP 403 during retrieval. Current project applicability baseline confirmed by owner on 2026-10-08; not independent government-registry verification.",
+      "retrieved_date": "2026-10-07",
+      "source_class": "PRIMARY_OFFICIAL",
+      "evidence_strength": "A",
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "unresolved": []
+    },
+    {
+      "assessment_id": "AUTH-IR-M3-2026-10-07",
+      "source_id": "IR-M3",
+      "document_title": "مبحث سوم مقررات ملی ساختمان — حفاظت ساختمان‌ها در مقابل حریق",
+      "issuing_authority": "وزارت راه و شهرسازی / دفتر تدوین مقررات ملی ساختمان",
+      "approval_authority": "وزارت راه و شهرسازی",
+      "publication_date": null,
+      "effective_date": null,
+      "edition": "ویرایش سوم ۱۳۹۵",
+      "revision": "THIRD_EDITION",
+      "printing": "Local copy metadata identifies edition, not authoritative printing currency",
+      "amendments": [],
+      "corrigenda": [
+        "A 1397 professional/administrative single-stair corrigendum was located only through secondary discovery and is not imported as authority."
+      ],
+      "annexes": [],
+      "supplements": [],
+      "transition_rules": [],
+      "superseded_documents": [
+        "IR-M3-OLD — second edition 1392"
+      ],
+      "superseding_documents": [],
+      "current_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "applicability_scope": "Fire/life-safety requirements depend on occupancy, height, storeys, occupant load and other M3 conditions.",
+      "official_reference": "Local ministry/Research Center copy; SHA-256 b06648469e73785f101f3c4735db6454eb6b41ec2f00fc2793e3f6153db3473d. Complete official amendment register unavailable. Current project applicability baseline confirmed by owner on 2026-10-08; not independent government-registry verification.",
+      "retrieved_date": "2026-10-07",
+      "source_class": "PRIMARY_OFFICIAL",
+      "evidence_strength": "A",
+      "verification_status": "DOCUMENT_VERIFIED_OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "unresolved": [
+        "Licensed-architect review of the mapped architecture-only stair/egress interface."
+      ]
+    },
+    {
+      "assessment_id": "AUTH-IR-ACCESS-2026-10-07",
+      "source_id": "IR-ACCESS",
+      "document_title": "ضوابط و مقررات شهرسازی و معماری برای افراد دارای معلولیت — تجدیدنظر اول — ضابطه 246",
+      "issuing_authority": "شورای عالی شهرسازی و معماری ایران",
+      "approval_authority": "شورای عالی شهرسازی و معماری ایران",
+      "publication_date": "1399-03-24",
+      "effective_date": "1399-07-01",
+      "edition": "تجدیدنظر اول ۱۳۹۹",
+      "revision": "FIRST_REVISION_CODE_246",
+      "printing": null,
+      "amendments": [],
+      "corrigenda": [],
+      "annexes": [],
+      "supplements": [],
+      "transition_rules": [],
+      "superseded_documents": [],
+      "superseding_documents": [],
+      "current_status": "OWNER_CONFIRMED_CURRENT_PRIMARY_BASELINE",
+      "applicability_scope": "Public and residential buildings; residential conditions require exact sections 3-2, 3-2-2 and 3-2-3 mapping.",
+      "official_reference": "Exact owner-supplied 895917_Code0246-r1-13990324.pdf; SHA-256 1604a568abd5ac8d1066a181f0d5ce7aa4755fd27c3a4786ac098232ce57a751; 122 pages; Drive ID 1RjFUXNXTbOlpnZOt5ZbsHepzMS6rpGEg.",
+      "retrieved_date": "2026-10-08",
+      "source_class": "PRIMARY_OFFICIAL_OWNER_SUPPLIED_FILE",
+      "evidence_strength": "A",
+      "verification_status": "DOCUMENT_HASH_PAGE_AND_RESIDENTIAL_CLAUSES_VERIFIED",
+      "unresolved": [
+        "Clause 3-2-2-1 does not state how the five-percent result is converted to an integer number of units; licensed-architect interpretation is required."
+      ]
     }
   ]
 }

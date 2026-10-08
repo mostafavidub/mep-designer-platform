@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.3.0
+**Canonical version:** 5.8.0
 
 **Status:** LOCKED
 
@@ -244,3 +244,53 @@ unlisted requests. The current CR must independently declare and validate the
 entire cumulative change-type and dependency closure. Historical PASS statements
 never replace current tests or official CI. Ordinary changes still require one CR.
 No waiver, filter bypass, history deletion or partial closure is permitted.
+
+
+## Architecture rulebook qualification gate
+
+Every architectural hard-rule candidate must keep legal classification, enforcement, applicability, evidence strength and release status as separate fields. A candidate extracted from a primary regulation copy remains release-disabled when the current edition, amendments, exceptions, jurisdiction or cross-authority conflicts are unresolved. Local requirements require a parcel/date/jurisdiction package and never become national defaults. Empirical patterns cannot block. Owner decisions have no hidden defaults. Generator readiness requires independently qualified release rules and Human Golden evidence; planned scenarios or source-gap guards do not substitute for those gates.
+
+## Iranian primary-authority lifecycle gate
+
+SWCIS 5.5.0 separates clause extraction from proof that a legal instrument is
+currently applicable. A residential `BLOCK` rule remains release-disabled until
+its official edition, effective date, amendment/corrigendum chain, applicability,
+exceptions and cross-authority conflicts are verified. Official-source access
+failure is recorded as an authority gap, never filled from a mirror. National and
+local rule layers retain independent provenance. Human architect review may close
+professional interpretation, but cannot substitute for missing primary legal
+currency or activate a generator.
+
+
+## Independent architecture rule-activation gate
+
+SWCIS 5.6.0 prohibits aggregate source status from blocking or authorizing unrelated
+architecture rules. Each mandatory candidate carries distinct source, applicability,
+logic, QA, human-review and Golden gates. Owner confirmation may establish the
+project regulatory baseline only when labelled as owner provenance; it cannot be
+reported as independent government-registry verification. `READY_FOR_HUMAN_REVIEW`
+grants no runtime, Generator, Golden or production authority. Missing source bytes,
+clause mappings or cross-code branches remain fail-closed at the affected rule only.
+
+
+## Exact primary-source blocker closure
+
+SWCIS 5.7.0 requires claims about an owner-supplied primary file to bind the exact
+content hash, byte size and page count before clause logic advances. Conditional
+accessibility and fire/egress branches keep their source, applicability, logic,
+static-QA, human-review and Golden gates separate. A missing local rule returns
+`LOCAL_RULE_REQUIRED` or `INPUT_REQUIRED`; a missing statutory interpretation
+remains a bounded human-review sub-gate. Closing a dependency blocker may prepare
+a rule for professional review, but cannot activate runtime, Generator, Golden or
+production authority.
+
+
+## Licensed architect review decision integrity
+
+SWCIS 5.8.0 requires every professional rule decision to remain null until an
+attributable licensed reviewer selects an allowed outcome. Coordinator proposals,
+AI confidence and prepared evidence cannot become professional approval. Blank
+means `NOT_REVIEWED`; missing credentials remain `UNKNOWN` and cannot support a
+licensed-review completion claim. `APPROVED_WITH_CHANGE` and
+`NEEDS_MORE_EVIDENCE` retain their required rationale and source basis. Human
+review never activates runtime, Generator, Golden execution, merge or deployment.

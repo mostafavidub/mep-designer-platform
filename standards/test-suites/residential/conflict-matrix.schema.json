@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "version",
+    "status",
+    "conflicts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "architecture-authority-conflicts/1.0"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "conflicts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "conflict_id": {
+            "type": "string"
+          },
+          "rule_a": {
+            "type": "string"
+          },
+          "rule_b": {
+            "type": "string"
+          },
+          "rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_a": {
+            "type": "string"
+          },
+          "source_b": {
+            "type": "string"
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          },
+          "applicability_a": {
+            "type": "string"
+          },
+          "applicability_b": {
+            "type": "string"
+          },
+          "true_conflict": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "combined_requirement": {
+            "type": "string"
+          },
+          "precedence_basis": {
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "NO_CONFLICT",
+              "BOTH_APPLY",
+              "MORE_RESTRICTIVE_RESULT",
+              "SOURCE_SPECIFIC_EXCEPTION",
+              "LOCAL_SUPPLEMENT",
+              "HUMAN_REVIEW_REQUIRED"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "human_review_required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "conflict_id",
+          "rule_a",
+          "rule_b",
+          "rule_ids",
+          "source_a",
+          "source_b",
+          "jurisdiction",
+          "scope",
+          "applicability_a",
+          "applicability_b",
+          "true_conflict",
+          "combined_requirement",
+          "precedence_basis",
+          "result",
+          "reason",
+          "human_review_required"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

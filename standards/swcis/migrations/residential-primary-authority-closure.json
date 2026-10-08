@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-primary-authority-closure-additive",
+  "from": "architecture-rulebook/1.1 qualification metadata",
+  "to": "architecture-rulebook/1.1 plus authority lifecycle registries",
+  "compatibility": "Additive offline qualification metadata; no runtime, geometry, API, database or generator contract changes.",
+  "forward": [
+    "Validate authority assessments, conflict matrix and architect-review package",
+    "Treat unresolved authority lifecycle as SOURCE_GAP",
+    "Keep every numerical rule release-disabled"
+  ],
+  "validation": [
+    "tests/test_architecture_primary_authority_closure.py",
+    "tests/test_architecture_rulebook_qualification.py",
+    "SWCIS"
+  ],
+  "consumers": [
+    "offline residential authority audit"
+  ],
+  "deprecation_window": "No existing field removed.",
+  "deployment": "Not authorized.",
+  "rollback": "Revert the authority-closure metadata; retain prior blocked rulebook qualification."
+}

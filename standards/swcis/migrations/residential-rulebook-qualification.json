@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-rulebook-qualification-additive",
+  "from": "architecture-rulebook/1.0",
+  "to": "architecture-rulebook/1.1",
+  "compatibility": "Backward-compatible offline metadata extension. No runtime consumer, database, API, Canonical Architecture, PMM or geometry contract is changed.",
+  "forward": [
+    "Validate new authority, enforcement, applicability and release-status fields",
+    "Consume the source-gap and qualification registries only in offline qualification tooling",
+    "Keep all rules release-disabled until independent authority qualification"
+  ],
+  "validation": [
+    "tests/test_architecture_rulebook_qualification.py",
+    "tests/test_residential_foundation.py",
+    "SWCIS"
+  ],
+  "consumers": ["offline residential foundation audit"],
+  "deprecation_window": "No existing field removed.",
+  "deployment": "Not authorized.",
+  "rollback": "Revert the qualification commit; do not reinterpret 1.1 metadata as runtime authority."
+}

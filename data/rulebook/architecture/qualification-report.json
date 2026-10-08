@@ -1,0 +1,53 @@
+{
+  "schema_version": "architecture-rulebook-qualification/1.0",
+  "version": "0.4.0",
+  "status": "READY_FOR_CONSOLIDATED_HUMAN_ARCHITECT_REVIEW",
+  "generator_readiness": "NOT_READY",
+  "metrics": {
+    "candidate_count": 32,
+    "audited_count": 32,
+    "release_ready_count": 0,
+    "mandatory_national_count": 32,
+    "mandatory_local_count": 0,
+    "recommended_count": 0,
+    "empirical_pattern_count": 0,
+    "owner_decision_count": 0,
+    "rejected_count": 0,
+    "blocking_reason": "All 32 rules are structurally ready for one consolidated licensed-architect review; no human approval or Golden execution exists.",
+    "source_gap_register_count": 24,
+    "owner_question_count": 58,
+    "qa_case_count": 410,
+    "golden_available": 0,
+    "golden_required": 8,
+    "still_source_gap": 0,
+    "human_review_required": 32,
+    "source_gap_statuses": {
+      "total": 24,
+      "RESOLVED": 2,
+      "PARTIALLY_RESOLVED": 3,
+      "HUMAN_REVIEW_REQUIRED": 13,
+      "LOCAL_RULE_REQUIRED": 3,
+      "NOT_APPLICABLE": 0,
+      "OPEN": 3
+    },
+    "SOURCE_QUALIFIED": 32,
+    "LOGIC_QUALIFIED": 13,
+    "QA_QUALIFIED": 0,
+    "READY_FOR_HUMAN_REVIEW": 32,
+    "HUMAN_REVIEWED": 0,
+    "RELEASE_READY_FOR_GOLDEN_VALIDATION": 0,
+    "BLOCKED": 0,
+    "release_enabled": 0
+  },
+  "critical_findings": [
+    "M4 1396 and M3 1395 remain owner-confirmed current primary project baselines, distinct from independent registry currency verification.",
+    "Exact Code 246 file identity and residential clauses are verified; clause 3-2-2-1 does not state integer conversion for five percent.",
+    "M3 architecture-only group-8 stair/egress dependencies are mapped; specialist fire-system design remains outside Architecture."
+  ],
+  "root_causes": [
+    "Code 246 exact file had not previously been available",
+    "M3 architecture-consumed stair/egress interface had not been decomposed from specialized fire engineering",
+    "per-rule dependency gates now prevent unrelated rules from being blocked"
+  ],
+  "release_decision": "All 32 rules are READY_FOR_HUMAN_REVIEW. Human Golden Validation and runtime activation remain unauthorized until consolidated licensed-architect review is completed."
+}

@@ -187,6 +187,249 @@
           },
           "validation": {
             "type": "string"
+          },
+          "title_en": {
+            "type": "string"
+          },
+          "sub_category": {
+            "type": "string"
+          },
+          "classification": {
+            "enum": [
+              "MANDATORY_NATIONAL",
+              "MANDATORY_LOCAL",
+              "RECOMMENDED",
+              "EMPIRICAL_PATTERN",
+              "OWNER_DECISION",
+              "UNSUPPORTED"
+            ]
+          },
+          "enforcement_level": {
+            "enum": [
+              "BLOCK",
+              "HARD_WARNING",
+              "SOFT_WARNING",
+              "SCORE",
+              "OPTIMIZE",
+              "ASK_USER",
+              "INFORMATIONAL"
+            ]
+          },
+          "jurisdiction": {
+            "type": "string"
+          },
+          "applicable_country": {
+            "type": "string"
+          },
+          "applicable_city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "building_use": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "building_type": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "project_conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputs_required": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "derived_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "applicability_expression": {
+            "type": "string"
+          },
+          "rule_logic": {},
+          "formula_if_any": {},
+          "parameters": {
+            "type": "array"
+          },
+          "units": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minimum_value": {},
+          "maximum_value": {},
+          "target_value": {},
+          "allowed_values": {},
+          "exceptions": {
+            "type": "array"
+          },
+          "conflicts": {
+            "type": "array"
+          },
+          "dependencies": {
+            "type": "array"
+          },
+          "source_type": {
+            "type": "string"
+          },
+          "source_title": {
+            "type": "string"
+          },
+          "source_authority": {
+            "type": "string"
+          },
+          "source_edition": {
+            "type": "string"
+          },
+          "source_clause": {
+            "type": "string"
+          },
+          "source_page": {
+            "type": "object"
+          },
+          "source_url_or_document_reference": {
+            "type": "string"
+          },
+          "source_quote_or_precise_summary": {
+            "type": "string"
+          },
+          "evidence_strength": {
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E"
+            ]
+          },
+          "warning_message_fa": {
+            "type": "string"
+          },
+          "designer_guidance_fa": {
+            "type": "string"
+          },
+          "machine_checkable": {
+            "type": "boolean"
+          },
+          "human_review_required": {
+            "type": "boolean"
+          },
+          "release_status": {
+            "enum": [
+              "RELEASE_READY",
+              "RESEARCH_REQUIRED",
+              "HUMAN_REVIEW_REQUIRED",
+              "OWNER_DECISION_REQUIRED",
+              "SOURCE_GAP",
+              "REJECTED",
+              "READY_FOR_HUMAN_REVIEW",
+              "RELEASE_READY_FOR_GOLDEN_VALIDATION"
+            ]
+          },
+          "qualification_reason_codes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "effective_from": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "effective_until": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transition_start": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transition_end": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "supersedes": {
+            "type": "array"
+          },
+          "superseded_by": {
+            "type": "array"
+          },
+          "amendment_state": {
+            "type": "string"
+          },
+          "legal_strength": {
+            "type": "string"
+          },
+          "cross_references": {
+            "type": "array"
+          },
+          "current_source_basis": {
+            "type": "string"
+          },
+          "source_gate": {
+            "type": "string"
+          },
+          "applicability_gate": {
+            "type": "string"
+          },
+          "logic_gate": {
+            "type": "string"
+          },
+          "qa_gate": {
+            "type": "string"
+          },
+          "human_review_gate": {
+            "type": "string"
+          },
+          "golden_validation_gate": {
+            "type": "string"
+          },
+          "human_review_status": {
+            "type": "string"
+          },
+          "activation_state": {
+            "type": "string"
+          },
+          "blocking_reason": {
+            "type": "string"
+          },
+          "required_next_action": {
+            "type": "string"
+          },
+          "cross_rule_dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocking_gates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -209,11 +452,90 @@
           "unit",
           "validation"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "authority_type": {
+                  "const": "HARD_RULE"
+                }
+              },
+              "required": [
+                "authority_type"
+              ]
+            },
+            "then": {
+              "required": [
+                "title_en",
+                "sub_category",
+                "classification",
+                "enforcement_level",
+                "jurisdiction",
+                "applicable_country",
+                "applicable_city",
+                "building_use",
+                "building_type",
+                "project_conditions",
+                "inputs_required",
+                "derived_inputs",
+                "applicability_expression",
+                "rule_logic",
+                "formula_if_any",
+                "parameters",
+                "units",
+                "minimum_value",
+                "maximum_value",
+                "target_value",
+                "allowed_values",
+                "exceptions",
+                "conflicts",
+                "dependencies",
+                "source_type",
+                "source_title",
+                "source_authority",
+                "source_edition",
+                "source_clause",
+                "source_page",
+                "source_url_or_document_reference",
+                "source_quote_or_precise_summary",
+                "evidence_strength",
+                "warning_message_fa",
+                "designer_guidance_fa",
+                "machine_checkable",
+                "human_review_required",
+                "release_status",
+                "qualification_reason_codes",
+                "effective_from",
+                "effective_until",
+                "transition_start",
+                "transition_end",
+                "supersedes",
+                "superseded_by",
+                "amendment_state",
+                "legal_strength",
+                "cross_references",
+                "current_source_basis",
+                "source_gate",
+                "applicability_gate",
+                "logic_gate",
+                "qa_gate",
+                "human_review_gate",
+                "golden_validation_gate",
+                "human_review_status",
+                "activation_state",
+                "blocking_gates",
+                "blocking_reason",
+                "required_next_action",
+                "cross_rule_dependencies"
+              ]
+            }
+          }
+        ]
       }
     },
     "schema_version": {
-      "const": "architecture-rulebook/1.0"
+      "const": "architecture-rulebook/1.1"
     },
     "scope": {
       "type": "string"
@@ -223,6 +545,9 @@
     },
     "version": {
       "type": "string"
+    },
+    "qualification_summary": {
+      "type": "object"
     }
   },
   "required": [
@@ -233,7 +558,8 @@
     "schema_version",
     "scope",
     "status",
-    "version"
+    "version",
+    "qualification_summary"
   ],
   "additionalProperties": false
 }

@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-final-two-blocker-closure",
+  "from": "architecture-sources/1.2 with two dependency-blocked residential rules",
+  "to": "architecture-sources/1.3 with exact primary-file identity and 32 READY_FOR_HUMAN_REVIEW rules",
+  "compatibility": "Additive offline qualification metadata. Existing source records remain readable; no runtime compliance, Generator, geometry, API, database, MEP or deployment consumer is activated.",
+  "forward": [
+    "Bind Code 246 to exact SHA-256, byte size, page count and owner-supplied Drive identity",
+    "Map conditional residential accessibility without a global accessibility flag or local elevator default",
+    "Map only the M3 stair/egress interface consumed by the Group-8 Architecture rule",
+    "Preserve the five-percent integer conversion as HUMAN_INTERPRETATION_REQUIRED",
+    "Keep every rule release_enabled=false pending licensed review and Golden qualification"
+  ],
+  "validation": [
+    "tests/test_architecture_rule_activation.py",
+    "tests/test_architecture_rulebook_qualification.py",
+    "tests/test_architecture_primary_authority_closure.py",
+    "tests/test_residential_foundation.py",
+    "SWCIS"
+  ],
+  "consumers": [
+    "offline residential rule qualification and consolidated human-review planning"
+  ],
+  "deprecation_window": "architecture-sources/1.2 remains historical evidence; exact file-identity claims require 1.3 regeneration.",
+  "deployment": "Not authorized.",
+  "rollback": "Revert the qualification commit; do not reinterpret READY_FOR_HUMAN_REVIEW as runtime authority."
+}

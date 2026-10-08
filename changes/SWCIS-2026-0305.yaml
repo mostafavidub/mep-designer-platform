@@ -1,0 +1,144 @@
+{
+  "change_id": "SWCIS-2026-0305",
+  "summary": "Prepare one decision-neutral licensed-architect review package for all 32 qualified residential rules, including dedicated Code 246 and M3/M4 cards, without fabricating professional approval or enabling runtime/Golden behavior.",
+  "requester": "project-owner",
+  "change_types": [
+    "rule",
+    "schema",
+    "test",
+    "documentation",
+    "governance"
+  ],
+  "changed_rule_ids": [
+    "ARCH-RES-LIVING-001",
+    "ARCH-RES-LIVING-002",
+    "ARCH-RES-BEDROOM-001",
+    "ARCH-RES-LIVING-003",
+    "ARCH-RES-CIRCULATION-001",
+    "ARCH-RES-STAIRS-001",
+    "ARCH-RES-STAIRS-002",
+    "ARCH-RES-STAIRS-003",
+    "ARCH-RES-KITCHEN-001",
+    "ARCH-RES-KITCHEN-002",
+    "ARCH-RES-KITCHEN-003",
+    "ARCH-RES-KITCHEN-004",
+    "ARCH-RES-DAYLIGHT-001",
+    "ARCH-RES-VENTILATION-001",
+    "ARCH-RES-WC-001",
+    "ARCH-RES-BATHROOM-001",
+    "ARCH-RES-BATHROOM-002",
+    "ARCH-RES-ACCESSIBILITY-001",
+    "ARCH-RES-PRIVACY-001",
+    "ARCH-RES-PRIVACY-002",
+    "ARCH-RES-PRIVACY-003",
+    "ARCH-RES-BALCONY-001",
+    "ARCH-RES-DAYLIGHT-002",
+    "ARCH-RES-DAYLIGHT-003",
+    "ARCH-RES-DAYLIGHT-004",
+    "ARCH-RES-DAYLIGHT-005",
+    "ARCH-RES-DOOR-001",
+    "ARCH-RES-EGRESS-001",
+    "ARCH-RES-KITCHEN-005",
+    "ARCH-RES-VENTILATION-002",
+    "ARCH-RES-DAYLIGHT-006",
+    "ARCH-RES-DAYLIGHT-007"
+  ],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "pmm",
+    "qa",
+    "questionnaire",
+    "routing",
+    "rule_book",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "rule_book": "verified-not-affected: 32 rules remain READY_FOR_HUMAN_REVIEW, release_enabled=false; no threshold, applicability or machine logic changed",
+    "questionnaire": "verified: 58 owner-intent questions re-audited; no regulatory fact is hidden as owner preference",
+    "qa": "added: decision-null, attribution-null, 32-card and shareable artifact integrity guards",
+    "docs": "added: shareable 72-page licensed-architect Review Book, PDF and blank decision sheet",
+    "governance": "changed: SWCIS 5.8.0 and human-review-package 1.1 decision contract",
+    "versioning": "changed: architecture-human-rule-review/1.1",
+    "migration": "added: offline decision-neutral human-review package migration; no production migration",
+    "cad_designer": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "deployment": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "detail_riser": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "equipment": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "manifest": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "manufacturer_selector": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "planner": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "pmm": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "routing": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "sizing": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed",
+    "ui_api": "verified-not-affected: offline qualification metadata only; no runtime import, geometry, calculations, API, database or deployment behavior changed"
+  },
+  "evidence": {
+    "traceability": [
+      "standards/swcis/rule_traceability_matrix.yaml"
+    ],
+    "tests": [
+      "tests/test_architecture_rule_activation.py",
+      "tests/test_architecture_rulebook_qualification.py",
+      "tests/test_architecture_primary_authority_closure.py",
+      "tests/test_residential_foundation.py"
+    ],
+    "docs": [
+      "docs/residential/RULEBOOK.md",
+      "docs/residential/RULEBOOK_QUALIFICATION.md",
+      "docs/residential/PRIMARY_AUTHORITY_CLOSURE.md",
+      "docs/residential/review/planha-licensed-architect-rule-review-book.docx",
+      "docs/residential/review/planha-licensed-architect-rule-review-book.pdf",
+      "docs/residential/review/architecture-rule-review-decision-sheet.csv"
+    ],
+    "version_bump": [
+      "standards/swcis/version_manifest.yaml"
+    ],
+    "migration": [
+      "standards/swcis/migrations/residential-rulebook-qualification.json",
+      "standards/swcis/migrations/residential-primary-authority-closure.json",
+      "standards/swcis/migrations/residential-rule-activation.json",
+      "standards/swcis/migrations/residential-final-two-blocker-closure.json",
+      "standards/swcis/migrations/residential-human-review-package-1.1.json"
+    ],
+    "golden_regression": [
+      "data/rulebook/architecture/golden-matrix.json"
+    ],
+    "semantic_diff": [
+      "All 32 qualified rules receive individual decision-neutral review cards; every decision and reviewer credential remains blank/NOT_REVIEWED; runtime and Golden gates remain closed"
+    ],
+    "artifact_diff": [
+      "One 72-page Review Book in DOCX/PDF, one 32-row decision sheet, one high-risk sheet, and dedicated Code 246 five-percent and M3/M4 Group-8 cross-code cards"
+    ],
+    "numeric_diff": [
+      "No regulatory threshold or machine interpretation changed; Code 246 integer conversion remains pending human decision"
+    ],
+    "contract_diff": [
+      "architecture-human-rule-review/1.1 replaces coordinator recommendations with nullable reviewer decisions, explicit attribution and deterministic post-review result mapping"
+    ],
+    "deployment_plan": [
+      "No deployment; stacked draft PR only"
+    ],
+    "rollback_plan": [
+      "Revert the qualification commit; parent foundation remains unchanged"
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Misattributed professional approval is high severity; all decisions and credentials are null, blank means NOT_REVIEWED, and no runtime or Golden authority follows from package preparation."
+  },
+  "waiver": null
+}

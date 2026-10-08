@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "version",
+    "status",
+    "decision_contract",
+    "reviewer_attribution",
+    "dedicated_decisions",
+    "reviewer_decisions",
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "architecture-human-rule-review/1.1"
+    },
+    "version": {
+      "type": "string"
+    },
+    "status": {
+      "const": "AWAITING_LICENSED_ARCHITECT_REVIEW"
+    },
+    "decision_contract": {
+      "type": "object"
+    },
+    "reviewer_attribution": {
+      "type": "object"
+    },
+    "dedicated_decisions": {
+      "type": "object"
+    },
+    "reviewer_decisions": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "items": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "properties": {
+          "review_item_id": {
+            "type": "string"
+          },
+          "rule_id": {
+            "type": "string"
+          },
+          "persian_title": {
+            "type": "string"
+          },
+          "plain_language_rule": {
+            "type": "string"
+          },
+          "classification": {
+            "type": "string"
+          },
+          "enforcement_consequence": {
+            "type": "string"
+          },
+          "risk": {
+            "enum": [
+              "CRITICAL",
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ]
+          },
+          "applicable_conditions": {
+            "type": "string"
+          },
+          "required_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source": {
+            "type": "string"
+          },
+          "edition": {
+            "type": "string"
+          },
+          "clause": {
+            "type": "string"
+          },
+          "page": {
+            "type": "object"
+          },
+          "source_summary": {
+            "type": "string"
+          },
+          "exceptions": {
+            "type": "array"
+          },
+          "cross_code_dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "machine_interpretation": {},
+          "pass_example": {
+            "type": "string"
+          },
+          "fail_example": {
+            "type": "string"
+          },
+          "boundary_example": {
+            "type": "string"
+          },
+          "not_applicable_example": {
+            "type": "string"
+          },
+          "input_required_behavior": {
+            "type": "string"
+          },
+          "current_unresolved_interpretation": {
+            "type": "string"
+          },
+          "proposed_reviewer_decision": {
+            "type": "null"
+          },
+          "reviewer_decision": {
+            "type": "null"
+          },
+          "reviewer_comments": {
+            "type": "null"
+          },
+          "reviewer_name": {
+            "type": "null"
+          },
+          "professional_role": {
+            "type": "null"
+          },
+          "professional_license_or_registration": {
+            "type": "null"
+          },
+          "review_date": {
+            "type": "null"
+          },
+          "allowed_decisions": {
+            "type": "array",
+            "const": [
+              "APPROVED",
+              "APPROVED_WITH_CHANGE",
+              "REJECTED",
+              "NEEDS_MORE_EVIDENCE"
+            ]
+          },
+          "post_review_status": {
+            "const": "NOT_REVIEWED"
+          }
+        },
+        "required": [
+          "review_item_id",
+          "rule_id",
+          "persian_title",
+          "plain_language_rule",
+          "classification",
+          "enforcement_consequence",
+          "risk",
+          "applicable_conditions",
+          "required_inputs",
+          "source",
+          "edition",
+          "clause",
+          "page",
+          "source_summary",
+          "exceptions",
+          "cross_code_dependencies",
+          "machine_interpretation",
+          "pass_example",
+          "fail_example",
+          "boundary_example",
+          "not_applicable_example",
+          "input_required_behavior",
+          "current_unresolved_interpretation",
+          "proposed_reviewer_decision",
+          "reviewer_decision",
+          "reviewer_comments",
+          "reviewer_name",
+          "professional_role",
+          "professional_license_or_registration",
+          "review_date",
+          "allowed_decisions",
+          "post_review_status"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}
