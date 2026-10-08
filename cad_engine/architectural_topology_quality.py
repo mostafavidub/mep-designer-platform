@@ -64,7 +64,7 @@ def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels
         cid=_sid("ENVCAND",[frame_id,[list(p) for p in poly.exterior.coords]])
         closure_ids=[row["closure_id"] for row,line in zip(eligible_closures,closure_lines)
                      if line.distance(poly.boundary)<=tol*4]
-        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
+        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"interior_rings":[[list(p) for p in ring.coords] for ring in poly.interiors],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
     return {"frame_id":frame_id,"candidates":rows,"runtime_seconds":round(time.perf_counter()-started,6)}
 
 
@@ -79,8 +79,8 @@ def classify_plan_regions(candidate_diagnostic):
         elif semi: role,status,reason="SEMI_EXTERIOR","HIGH_CONFIDENCE","ONTOLOGY_SEMI_EXTERIOR_LABEL"
         elif interior: role,status,reason="BUILDING_INTERIOR","HIGH_CONFIDENCE","ONTOLOGY_INTERIOR_LABEL"
         else: role,status,reason="UNKNOWN","INPUT_REQUIRED","INSUFFICIENT_INDEPENDENT_EVIDENCE"
-        regions.append({"region_id":_sid("REGION",candidate["candidate_id"]),"candidate_id":candidate["candidate_id"],"frame_id":candidate["frame_id"],"geometry":candidate["polygon"],"area":candidate["area"],"role":role,"status":status,"reason":reason,"semantic_evidence":sorted(categories),"wall_ids":candidate["wall_ids"],"adjacent_region_ids":[],"exterior_exposure":"UNKNOWN"})
-    geoms=[Polygon(row["geometry"]) for row in regions]
+        regions.append({"region_id":_sid("REGION",candidate["candidate_id"]),"candidate_id":candidate["candidate_id"],"frame_id":candidate["frame_id"],"geometry":candidate["polygon"],"interior_rings":candidate.get("interior_rings") or [],"area":candidate["area"],"role":role,"status":status,"reason":reason,"semantic_evidence":sorted(categories),"wall_ids":candidate["wall_ids"],"adjacent_region_ids":[],"exterior_exposure":"UNKNOWN"})
+    geoms=[Polygon(row["geometry"],row.get("interior_rings") or []) for row in regions]
     for i,left in enumerate(geoms):
         for j in range(i+1,len(geoms)):
             if left.boundary.intersection(geoms[j].boundary).length>0:
@@ -88,10 +88,218 @@ def classify_plan_regions(candidate_diagnostic):
     return regions
 
 
+def _material_interval_lines(wall):
+    """Return only occupied, source-backed wall intervals as material evidence."""
+    if not (wall.get("source_handles") or wall.get("source_fragments")):
+        return []
+    solid=wall.get("wall_solid") or {}; origin=solid.get("axis_origin"); direction=solid.get("axis_direction")
+    if not origin or not direction:
+        return []
+    rows=[]
+    for low,high in solid.get("occupied_intervals") or []:
+        if not (math.isfinite(float(low)) and math.isfinite(float(high))) or high<=low:
+            continue
+        a=(origin[0]+low*direction[0],origin[1]+low*direction[1])
+        b=(origin[0]+high*direction[0],origin[1]+high*direction[1])
+        line=LineString((a,b))
+        if line.length>0:
+            rows.append(line)
+    return rows
+
+
+def _direction_classes(lines, angular_tolerance=2.0):
+    """Deterministically group supporting directions without using evidence ratios."""
+    angles=[]
+    for line in lines:
+        angle=_axis(line)[2]
+        if not any(min(abs(angle-other),180-abs(angle-other))<=angular_tolerance for other in angles):
+            angles.append(angle)
+    return sorted(round(value,6) for value in angles)
+
+
+def _shell_boundary_proof(candidate, walls, tolerance, enclosure_closures=()):
+    """Prove the complete exterior from source-backed material wall intervals.
+
+    Buffers are used only as a governed tolerance predicate.  They never alter
+    or repair the candidate geometry returned to downstream consumers.
+    """
+    tol=max(float(tolerance or .001),1e-8)
+    shell=Polygon(candidate["polygon"],candidate.get("interior_rings") or [])
+    wall_by_id={row["wall_id"]:row for row in walls}
+    boundary_walls=[wall_by_id[wall_id] for wall_id in candidate.get("wall_ids") or [] if wall_id in wall_by_id]
+    material=[]; strong=[]; known=[]
+    for wall in boundary_walls:
+        lines=_material_interval_lines(wall)
+        material.extend(lines)
+        if wall.get("representation")=="DOUBLE_FACE": strong.extend(lines)
+        if wall.get("thickness") is not None and float(wall["thickness"])>0: known.extend(lines)
+    governed_closures={row.get("closure_id"):row for row in enclosure_closures
+                       if row.get("continuity_status") in {"PROVEN_WALL_CONTINUITY","SUPPORTED_WALL_CONTINUITY"}
+                       and "ENVELOPE_SUPPORT" in (row.get("roles") or [])
+                       and row.get("material") is False
+                       and row.get("wall_authority")=="NONE"}
+    unresolved_closure_ids=sorted(set(candidate.get("closure_ids") or [])-set(governed_closures))
+    closure_lines=[LineString(governed_closures[closure_id]["geometry"])
+                   for closure_id in candidate.get("closure_ids") or [] if closure_id in governed_closures]
+    # Keep material and governed non-material continuity distinct in evidence;
+    # their union is used only to test complete boundary support.
+    support=unary_union(material+closure_lines) if material or closure_lines else None
+    unsupported=shell.exterior if support is None else shell.exterior.difference(support.buffer(tol))
+    unsupported_parts=[]
+    if not unsupported.is_empty:
+        geoms=list(getattr(unsupported,"geoms",[unsupported]))
+        unsupported_parts=sorted(
+            ([list(point) for point in geom.coords] for geom in geoms if hasattr(geom,"coords") and geom.length>tol),
+            key=lambda points:(points[0],points[-1],len(points)))
+    strong_directions=_direction_classes(strong)
+    known_directions=_direction_classes(known)
+    internal_source_walls=[]
+    boundary_ids=set(candidate.get("wall_ids") or [])
+    for wall in walls:
+        if wall.get("wall_id") in boundary_ids or not _material_interval_lines(wall):
+            continue
+        line=_wall_line(wall)
+        if shell.buffer(tol).covers(line.representative_point()):
+            internal_source_walls.append(wall["wall_id"])
+    reasons=[]
+    if not shell.is_valid or shell.area<=0: reasons.append("INVALID_SHELL_GEOMETRY")
+    if unresolved_closure_ids: reasons.append("UNGOVERNED_EXTERIOR_CLOSURE")
+    if unsupported_parts: reasons.append("UNSUPPORTED_EXTERIOR_INTERVAL")
+    if len(strong_directions)<2: reasons.append("DOUBLE_FACE_SUPPORT_NOT_DISTRIBUTED")
+    if len(known_directions)<2: reasons.append("KNOWN_THICKNESS_SUPPORT_NOT_DISTRIBUTED")
+    if not internal_source_walls: reasons.append("SOURCE_BACKED_INTERNAL_PARTITION_REQUIRED")
+    return {
+        "status":"SUPPORTED" if not reasons else "INPUT_REQUIRED",
+        "reasons":reasons,
+        "boundary_wall_count":len(boundary_walls),
+        "source_backed_boundary_wall_count":sum(bool(_material_interval_lines(wall)) for wall in boundary_walls),
+        "double_face_boundary_wall_count":sum(wall.get("representation")=="DOUBLE_FACE" for wall in boundary_walls),
+        "known_thickness_boundary_wall_count":sum(wall.get("thickness") is not None and float(wall["thickness"])>0 for wall in boundary_walls),
+        "unsupported_interval_count":len(unsupported_parts),
+        "unsupported_intervals":unsupported_parts,
+        "governed_nonmaterial_closure_count":len(closure_lines),
+        "unresolved_closure_ids":unresolved_closure_ids,
+        "double_face_direction_classes":strong_directions,
+        "known_thickness_direction_classes":known_directions,
+        "source_backed_internal_wall_ids":sorted(internal_source_walls),
+        "closure_ids":sorted(candidate.get("closure_ids") or []),
+    }
+
+
+def _source_supported_geometric_shell(candidate_diagnostic, regions, walls, tolerance, enclosure_closures=()):
+    """Return one independently source-supported dominant building shell.
+
+    Semantics may classify contained regions but cannot veto a geometrically
+    proven shell merely because an interior void label is also inside it.  The
+    proof deliberately requires source lineage, repeated double-face wall
+    support and internal partition topology; a closed site outline or sheet
+    border therefore cannot qualify by area alone.
+    """
+    region_by_candidate={row["candidate_id"]:row for row in regions}
+    eligible=[]
+    for row in candidate_diagnostic.get("candidates") or []:
+        semantics=set(row.get("semantic_categories") or [])
+        if semantics & (_SITE_EXTERIOR_SEMANTICS | _SEMI_EXTERIOR_SEMANTICS):
+            continue
+        proof=_shell_boundary_proof(row,walls,tolerance,enclosure_closures)
+        row["source_boundary_proof"]=proof
+        if proof["status"]!="SUPPORTED":
+            continue
+        poly=Polygon(row["polygon"],row.get("interior_rings") or [])
+        if not poly.is_valid or poly.area<=0:
+            continue
+        eligible.append((poly.area,row,region_by_candidate.get(row["candidate_id"])))
+    eligible.sort(key=lambda item:(-item[0],item[1]["candidate_id"]))
+    if not eligible:
+        return None
+    # More than one independently supported shell is a real selection
+    # ambiguity. Do not rank it away by area or a percentage threshold.
+    if len(eligible)>1:
+        return None
+    return eligible[0][1]
+
+
+def _compose_shell_holes(shell, classified_voids):
+    """Compose source rings and classified source geometry without repair."""
+    outer=Polygon(shell.exterior)
+    if not outer.is_valid or outer.is_empty or outer.area<=0:
+        return {"status":"CONFLICT","reason":"INVALID_OUTER_SHELL","holes":[],"provenance":[]}
+    entries=[]
+    for index,ring in enumerate(shell.interiors):
+        hole=Polygon(ring)
+        entries.append((hole,{"authority":"SOURCE_INTERIOR_RING","source_ring_index":index,"classified_void_ids":[]}))
+    for row in sorted(classified_voids,key=lambda item:(item.get("candidate_id") or item.get("region_id") or "")):
+        hole=Polygon(row["geometry"],row.get("interior_rings") or [])
+        if hole.interiors:
+            return {"status":"CONFLICT","reason":"INVALID_HOLE_GEOMETRY","holes":[],"provenance":[]}
+        duplicate=next((index for index,(existing,_) in enumerate(entries) if existing.equals(hole)),None)
+        if duplicate is not None:
+            entries[duplicate][1]["classified_void_ids"].append(row.get("candidate_id") or row.get("region_id"))
+        else:
+            entries.append((hole,{"authority":"CLASSIFIED_SOURCE_CANDIDATE","source_ring_index":None,
+                                  "classified_void_ids":[row.get("candidate_id") or row.get("region_id")]}))
+    for hole,_ in entries:
+        if hole.is_empty or not hole.is_valid or hole.area<=0:
+            return {"status":"CONFLICT","reason":"INVALID_HOLE_GEOMETRY","holes":[],"provenance":[]}
+        if not outer.contains(hole) or outer.boundary.intersects(hole):
+            return {"status":"CONFLICT","reason":"HOLE_NOT_STRICTLY_CONTAINED","holes":[],"provenance":[]}
+    for index,(left,_) in enumerate(entries):
+        for right,_ in entries[index+1:]:
+            if left.intersects(right):
+                return {"status":"CONFLICT","reason":"HOLES_OVERLAP_OR_TOUCH","holes":[],"provenance":[]}
+    entries.sort(key=lambda item:(item[0].bounds,item[0].area,item[0].wkb_hex))
+    holes=[[list(point) for point in hole.exterior.coords] for hole,_ in entries]
+    effective=Polygon(shell.exterior.coords,holes)
+    if effective.is_empty or not effective.is_valid or effective.area<=0:
+        return {"status":"CONFLICT","reason":"INVALID_COMBINED_SHELL","holes":[],"provenance":[]}
+    return {"status":"SUPPORTED","reason":"SOURCE_HOLES_COMPOSED","holes":holes,
+            "provenance":[provenance for _,provenance in entries],"geometry":effective}
+
+
 def evidence_based_building_envelope(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=(), enclosure_closures=()):
     diagnostic=enumerate_envelope_candidates(walls,frame_id=frame_id,tolerance=tolerance,semantic_labels=semantic_labels,objects=objects,junctions=junctions,enclosure_closures=enclosure_closures)
     regions=classify_plan_regions(diagnostic); conflicts=[row for row in regions if row["status"]=="CONFLICT"]
-    interior=[Polygon(row["geometry"]) for row in regions if row["role"]=="BUILDING_INTERIOR"]
+    geometric_shell=_source_supported_geometric_shell(diagnostic,regions,walls,tolerance,enclosure_closures)
+    if geometric_shell is not None:
+        shell=Polygon(geometric_shell["polygon"],geometric_shell.get("interior_rings") or [])
+        classified_voids=[]
+        for region in regions:
+            if region["role"] not in {"LIGHTWELL","VOID"} or region["status"] not in {"HIGH_CONFIDENCE","VERIFIED"}:
+                continue
+            candidate=Polygon(region["geometry"],region.get("interior_rings") or [])
+            if candidate.is_valid and candidate.area>0 and (candidate.within(Polygon(shell.exterior)) or any(candidate.equals(Polygon(ring)) for ring in shell.interiors)):
+                classified_voids.append(region)
+        composition=_compose_shell_holes(shell,classified_voids)
+        if composition["status"]!="SUPPORTED":
+            return ({"building_envelope_id":_sid("ENV",[frame_id,"UNKNOWN",composition["reason"]]),
+                     "frame_id":frame_id,"outer_ring":[],"interior_voids":[],"components":[],
+                     "exterior_wall_ids":[],"source_handles":[],"area":0.0,"perimeter":0.0,
+                     "confidence":0.0,"status":"INPUT_REQUIRED","reason":composition["reason"],
+                     "evidence":[{"class":"SOURCE_HOLE_COMPOSITION","status":"CONFLICT"}],
+                     "schema":"canonical-building-envelope/2.0"},diagnostic,regions)
+        holes=composition["holes"]; effective=composition["geometry"]
+        boundary_ids=geometric_shell.get("wall_ids") or []
+        envelope={"building_envelope_id":_sid("ENV",[frame_id,[list(p) for p in shell.exterior.coords],holes]),
+                  "frame_id":frame_id,"outer_ring":[list(p) for p in shell.exterior.coords],
+                  "interior_voids":[[list(p) for p in ring] for ring in holes],
+                  "components":[{"outer_ring":[list(p) for p in shell.exterior.coords],
+                                 "interior_voids":[[list(p) for p in ring] for ring in holes]}],
+                  "exterior_wall_ids":sorted(boundary_ids),
+                  "source_handles":sorted(geometric_shell.get("source_handles") or []),
+                  "area":effective.area,"perimeter":effective.length,"confidence":.9,
+                  "status":"HIGH_CONFIDENCE","reason":"SOURCE_SUPPORTED_DOMINANT_GEOMETRIC_SHELL",
+                  "evidence":[{"class":"SOURCE_SUPPORTED_GEOMETRIC_SHELL",
+                               "candidate_id":geometric_shell["candidate_id"],
+                               "internal_partition_count":geometric_shell["internal_partition_count"],
+                               "boundary_proof":geometric_shell["source_boundary_proof"],
+                               "source_ring_count":len(shell.interiors),
+                               "classified_source_void_count":len(classified_voids),
+                               "effective_hole_count":len(holes),
+                               "hole_provenance":composition["provenance"],
+                               "semantic_authority":False}],
+                  "schema":"canonical-building-envelope/2.0"}
+        return envelope,diagnostic,regions
+    interior=[Polygon(row["geometry"],row.get("interior_rings") or []) for row in regions if row["role"]=="BUILDING_INTERIOR"]
     interior_semantics={semantic for row in regions if row["role"]=="BUILDING_INTERIOR" for semantic in row["semantic_evidence"]}
     insufficient=len(interior_semantics)<2
     if conflicts or not interior or insufficient:
