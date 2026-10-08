@@ -118,11 +118,19 @@ def evaluate_drawing_scope(scope, sheets):
 
     expected = {family: set(_unique(scope.get(key))) for family, key in SYSTEM_LEVEL_KEYS.items()}
     expected["roof_rainwater"] = {str(scope.get("roof_level_name") or "Roof")} if scope.get("roof_exists") else set()
-    floor_types = {"floor_plan", "roof_plan"}
     actual = {family: set() for family in SUPPORTED_FAMILIES}
     for row in sheets:
         family = str(row.get("family") or "")
-        if family in actual and str(row.get("drawing_type") or "") in floor_types:
+        drawing_type = str(row.get("drawing_type") or "")
+        # Only ordinary floor plans and the canonical roof-rainwater plan carry
+        # level/system coverage authority.  Special detail sheets may use a
+        # roof-plan presentation (for example M-S-RAIN) without claiming that
+        # sanitary fixtures exist on every displayed coordination level.
+        authoritative_plan = (
+            drawing_type == "floor_plan"
+            or (drawing_type == "roof_plan" and family == "roof_rainwater" and not row.get("special"))
+        )
+        if family in actual and authoritative_plan:
             actual[family].update(_unique(row.get("levels")))
     evidence = scope.get("system_evidence") or {family: "scope-field" for family in SUPPORTED_FAMILIES}
     system_evidence_ok = all(bool(evidence.get(family)) for family, required in expected.items() if required)

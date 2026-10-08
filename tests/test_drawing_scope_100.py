@@ -59,6 +59,36 @@ def test_missing_required_floor_and_unsupported_extra_system_are_detected():
     assert "unsupported_system_zero" in qa["failures"]
 
 
+def test_special_sanitary_rain_detail_does_not_claim_fixture_level_authority():
+    value = scope(
+        all_levels=["Roof label", "Typical occupied", "Penthouse label"],
+        conditioned_levels=["Typical occupied"],
+        heated_levels=["Typical occupied"],
+        wet_fixture_levels=["Typical occupied"],
+        sanitary_fixture_levels=["Typical occupied"],
+        ventilation_required_levels=["Typical occupied"],
+        gas_consumer_levels=[],
+        roof_exists=False,
+        roof_level_name="Roof label",
+        vertical_systems=False,
+        level_types={
+            "Roof label": "occupied",
+            "Typical occupied": "occupied",
+            "Penthouse label": "occupied",
+        },
+    )
+
+    proposal = predict_drawing_set(value)
+    rain_detail = next(row for row in proposal["deliverable_sheets"] if row["code"] == "M-S-RAIN")
+
+    assert rain_detail["family"] == "sanitary_vent"
+    assert rain_detail["drawing_type"] == "roof_plan"
+    assert rain_detail["special"] is True
+    assert proposal["drawing_manifest"]["scope_contract"]["status"] == "PASS"
+    assert "unsupported_system_zero" not in proposal["drawing_manifest"]["scope_contract"]["failures"]
+    assert approve_drawing_set(proposal)["approved"] is True
+
+
 def test_typical_groups_must_be_explicit_disjoint_and_level_bound():
     bad = scope(typical_groups=[
         {"name":"Typical A", "levels":["First", "Second"]},
