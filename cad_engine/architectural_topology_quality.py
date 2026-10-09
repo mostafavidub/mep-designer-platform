@@ -730,11 +730,12 @@ def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
 
 
 def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001):
-    """Close bounded drafting gaps between source-backed material intervals.
+    """Enumerate endpoint relations and select only independently proven closures.
 
     The maximum join distance is derived from local double-face thicknesses.
-    These records are enclosure topology only: they never claim material,
-    routing, portal or access authority.
+    Proximity and orthogonality define candidate-search scope only.  Every
+    plausible relation is retained; endpoint exclusivity applies only to the
+    independently proven closure layer.
     """
     tol=max(float(tolerance or .001),1e-9)
     proven=[wall for wall in walls if wall.get("status")=="HIGH_CONFIDENCE"
@@ -766,14 +767,17 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
             other_material_index,other_point=endpoints[other_endpoint_index]
             right_material=materials[other_material_index]; right=right_material["wall"]
             if right["wall_id"]==left["wall_id"]:continue
+            if left_material["line"].intersection(right_material["line"]).length>tol:continue
             (_,_,right_angle,_)=_axis(right_material["line"])
             delta=min(abs(left_angle-right_angle),180-abs(left_angle-right_angle))
             distance=point.distance(other_point)
             if distance<=tol:continue
-            relation=None; limit=corner_limit; proven_continuity=False
+            relation=None; limit=corner_limit; proven_continuity=False; proof_class=None
             shared_source=bool(
                 set(left.get("source_fragments") or []).intersection(right.get("source_fragments") or [])
                 or set(left.get("source_handles") or []).intersection(right.get("source_handles") or []))
+            shared_junction_ids=sorted(set(left.get("junctions") or [])
+                                       & set(right.get("junctions") or []))
             if delta<=3.0:
                 # Collinear proximity is not an aperture or continuity proof.
                 # Exact shared lineage may prove bounded drafting fragmentation;
@@ -782,15 +786,34 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
                 if perpendicular_offset>max(tol*4,typical*.35):continue
                 if shared_source:
                     relation="GOVERNED_DRAFTING_FRAGMENTATION"; proven_continuity=True
+                    proof_class="SHARED_SOURCE_LINEAGE"
                     limit=corner_limit
                 else:
                     relation="COLLINEAR_GAP_REQUIRES_OPENING_OR_LINEAGE"
                     limit=opening_limit if left in proven and right in proven else corner_limit
             elif abs(delta-90)<=3.0:
-                if left in proven and right in proven:
+                face_intersections=[]
+                for left_face in (left.get("face_a"),left.get("face_b")):
+                    if not left_face or len(left_face)<2: continue
+                    for right_face in (right.get("face_a"),right.get("face_b")):
+                        if not right_face or len(right_face)<2: continue
+                        intersection=LineString(left_face).intersection(LineString(right_face))
+                        candidates_for_intersection=[]
+                        if intersection.geom_type=="Point": candidates_for_intersection=[intersection]
+                        elif intersection.geom_type=="MultiPoint": candidates_for_intersection=list(intersection.geoms)
+                        elif intersection.geom_type in {"LineString","MultiLineString"} and not intersection.is_empty:
+                            lines=[intersection] if intersection.geom_type=="LineString" else list(intersection.geoms)
+                            candidates_for_intersection=[Point(value) for line in lines
+                                                         for value in (line.coords[0],line.coords[-1])]
+                        for witness in candidates_for_intersection:
+                            if witness.distance(point)<=corner_limit and witness.distance(other_point)<=corner_limit:
+                                face_intersections.append([witness.x,witness.y])
+                if shared_source:
                     relation="PROVEN_CORNER_CONTINUITY"; proven_continuity=True
-                elif shared_source:
-                    relation="GOVERNED_DRAFTING_FRAGMENTATION"; proven_continuity=True
+                    proof_class="SHARED_SOURCE_LINEAGE"
+                elif face_intersections:
+                    relation="PROVEN_CORNER_CONTINUITY"; proven_continuity=True
+                    proof_class="SOURCE_FACE_GEOMETRIC_INTERSECTION"
                 else:
                     relation="UNRESOLVED_ENDPOINT_RELATION"
             else:continue
@@ -799,33 +822,54 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
             host_wall_ids=sorted([left["wall_id"],right["wall_id"]])
             host_material_interval_ids=sorted([left_material["material_interval_id"],
                                                right_material["material_interval_id"]])
-            closure_id=_sid("ENDCLOSE",[host_wall_ids,host_material_interval_ids,geometry])
-            proposals[closure_id]={"closure_id":closure_id,"frame_id":frame_id or left.get("frame_id"),
+            candidate_id=_sid("ENDREL",[host_wall_ids,host_material_interval_ids,geometry])
+            proposals[candidate_id]={"candidate_relation_id":candidate_id,"closure_id":None,
+                "frame_id":frame_id or left.get("frame_id"),
                 "host_wall_ids":host_wall_ids,"host_material_interval_ids":host_material_interval_ids,
                 "geometry":geometry,
-                "continuity_status":"PROVEN_WALL_CONTINUITY" if proven_continuity else "INSUFFICIENT_CONTINUITY",
-                "status":"PROVEN" if proven_continuity else "INPUT_REQUIRED",
+                "continuity_status":"CANDIDATE_RELATION","status":"CANDIDATE",
                 "material":False,"material_geometry":"NONE","wall_authority":"NONE",
                 "routing_authority":"NONE","portal_authority":"NONE","access_authority":"NONE",
-                "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"] if proven_continuity else [],"reason":relation,
+                "roles":[],"reason":relation,"proof_class":proof_class,
+                "proof_sufficient":proven_continuity,"selected_as_governed_closure":False,
                 "gap_width":distance,"derived_join_limit":limit,
                 "_endpoint_indexes":[endpoint_index,other_endpoint_index],
                 "source_handles":sorted(set((left.get("source_handles") or [])+(right.get("source_handles") or []))),
                 "source_evidence":sorted(set((left.get("source_fragments") or [])+(right.get("source_fragments") or []))),
                 "source_lineage":sorted((left.get("source_lineage") or [])+(right.get("source_lineage") or []),
                                         key=lambda row:json.dumps(row,sort_keys=True)),
-                "evidence":[{"class":relation,"wall_angle_delta":delta,"local_wall_thickness":typical,
+                "host_material_geometry":{
+                    left_material["material_interval_id"]:[list(value) for value in left_material["line"].coords],
+                    right_material["material_interval_id"]:[list(value) for value in right_material["line"].coords]},
+                "evidence":[{"class":relation,"proof_class":proof_class,
+                             "source_face_intersections":face_intersections if abs(delta-90)<=3.0 else [],
+                             "canonical_junction_ids":shared_junction_ids,
+                             "wall_angle_delta":delta,"local_wall_thickness":typical,
                              "host_material_interval_ids":host_material_interval_ids}]}
-    selected=[]; used_endpoints=set()
-    for row in sorted(proposals.values(),key=lambda item:(item["status"]!="PROVEN",item["gap_width"],item["closure_id"])):
+    used_endpoints=set()
+    for row in sorted(proposals.values(),key=lambda item:(not item["proof_sufficient"],item["gap_width"],
+                                                          item["candidate_relation_id"])):
         indexes=set(row.pop("_endpoint_indexes"))
-        if indexes & used_endpoints: continue
-        used_endpoints.update(indexes); selected.append(row)
-    return sorted(selected,key=lambda row:row["closure_id"])
+        if not row["proof_sufficient"]: continue
+        if indexes & used_endpoints:
+            row["selection_status"]="PROVEN_NOT_SELECTED_ENDPOINT_CONFLICT"
+            continue
+        used_endpoints.update(indexes)
+        row["selected_as_governed_closure"]=True
+        row["selection_status"]="SELECTED_PROVEN_CLOSURE"
+        row["closure_id"]=_sid("ENDCLOSE",[row["candidate_relation_id"]])
+        row["continuity_status"]="PROVEN_WALL_CONTINUITY"; row["status"]="PROVEN"
+        row["roles"]=["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    for row in proposals.values():
+        if not row.get("selection_status"):
+            row["selection_status"]="DIAGNOSTIC_ONLY"
+            row["continuity_status"]="INSUFFICIENT_CONTINUITY"
+            row["status"]="INPUT_REQUIRED"
+    return sorted(proposals.values(),key=lambda row:row["candidate_relation_id"])
 
 
 def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.001):
-    """Describe source material connectivity without granting envelope authority."""
+    """Describe a properly noded source-material network without adding authority."""
     tol=max(float(tolerance or .001),1e-9)
     material_edges=[]; material_by_id={}
     for wall in sorted(walls,key=lambda row:row["wall_id"]):
@@ -834,6 +878,41 @@ def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.0
                   "wall_id":wall["wall_id"],"source_handles":sorted(wall.get("source_handles") or []),
                   "source_lineage":wall.get("source_lineage") or [],"line":material["line"]}
             material_edges.append(edge); material_by_id[edge["edge_id"]]=edge
+    # Node every actual material intersection and endpoint-on-material event.
+    split_distances={edge["edge_id"]:{0.0,edge["line"].length} for edge in material_edges}
+    material_tree=STRtree([edge["line"] for edge in material_edges]) if material_edges else None
+    for index,left in enumerate(material_edges):
+        for raw in material_tree.query(left["line"].buffer(tol)) if material_tree is not None else []:
+            other_index=int(raw)
+            if other_index<=index: continue
+            right=material_edges[other_index]
+            intersection=left["line"].intersection(right["line"])
+            witnesses=[]
+            if intersection.geom_type=="Point": witnesses=[intersection]
+            elif intersection.geom_type=="MultiPoint": witnesses=list(intersection.geoms)
+            elif intersection.geom_type in {"LineString","MultiLineString"} and not intersection.is_empty:
+                lines=[intersection] if intersection.geom_type=="LineString" else list(intersection.geoms)
+                witnesses=[Point(value) for line in lines for value in (line.coords[0],line.coords[-1])]
+            for endpoint in (Point(left["line"].coords[0]),Point(left["line"].coords[-1])):
+                if endpoint.distance(right["line"])<=tol: witnesses.append(endpoint)
+            for endpoint in (Point(right["line"].coords[0]),Point(right["line"].coords[-1])):
+                if endpoint.distance(left["line"])<=tol: witnesses.append(endpoint)
+            for witness in witnesses:
+                if witness.distance(left["line"])<=tol:
+                    split_distances[left["edge_id"]].add(left["line"].project(witness))
+                if witness.distance(right["line"])<=tol:
+                    split_distances[right["edge_id"]].add(right["line"].project(witness))
+    graph_material_edges=[]
+    for edge in material_edges:
+        distances=sorted(split_distances[edge["edge_id"]])
+        for low,high in zip(distances,distances[1:]):
+            if high-low<=1e-12: continue
+            a=edge["line"].interpolate(low); b=edge["line"].interpolate(high)
+            segment_id=_sid("MATSEG",[edge["edge_id"],round(low,9),round(high,9),
+                                       [a.x,a.y],[b.x,b.y]])
+            graph_material_edges.append({**edge,"edge_id":segment_id,
+                                         "material_interval_id":edge["edge_id"],
+                                         "edge_type":"SOURCE_MATERIAL","line":LineString((a,b))})
     closure_edges=[]
     for closure in sorted(closures,key=lambda row:row.get("closure_id") or ""):
         host_ids=closure.get("host_material_interval_ids") or []
@@ -854,7 +933,7 @@ def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.0
                               "wall_id":None,"source_handles":sorted(closure.get("source_handles") or []),
                               "source_lineage":closure.get("source_lineage") or [],"line":line,
                               "host_material_interval_ids":sorted(host_ids)})
-    edges=material_edges+closure_edges
+    edges=graph_material_edges+closure_edges
     points=[tuple(point) for edge in edges for point in (edge["line"].coords[0],edge["line"].coords[-1])]
     parent=list(range(len(points)))
     def find(index):
@@ -888,11 +967,14 @@ def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.0
         point_indexes=sorted({index*2+offset for index,_ in members for offset in (0,1)})
         node_groups={}
         for point_index in point_indexes: node_groups.setdefault(find(point_index),[]).append(point_index)
-        degrees={node:0 for node in node_groups}; incident={node:[] for node in node_groups}
+        degrees={node:0 for node in node_groups}; material_degrees={node:0 for node in node_groups}
+        incident={node:[] for node in node_groups}
         for index,edge in members:
             for node in (find(index*2),find(index*2+1)):
                 degrees[node]+=1; incident[node].append(edge["edge_id"])
-        material_ids=sorted(edge["edge_id"] for _,edge in members if edge["edge_type"]=="SOURCE_MATERIAL")
+                if edge["edge_type"]=="SOURCE_MATERIAL": material_degrees[node]+=1
+        material_ids=sorted({edge["material_interval_id"] for _,edge in members
+                             if edge["edge_type"]=="SOURCE_MATERIAL"})
         closure_ids=sorted(edge["edge_id"] for _,edge in members if edge["edge_type"]!="SOURCE_MATERIAL")
         component_id=_sid("MATCOMP",[frame_id,material_ids,closure_ids])
         coordinates=[points[index] for index in point_indexes]
@@ -910,14 +992,17 @@ def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.0
                       "component_id":component_id,"coordinates":list(coordinate),
                       "incident_edge_ids":sorted(incident[node]),
                       "wall_id":source_edge.get("wall_id") if source_edge else None,
-                      "material_interval_id":source_edge.get("edge_id") if source_edge else None,
+                      "material_interval_id":source_edge.get("material_interval_id") if source_edge else None,
                       "source_handles":source_edge.get("source_handles",[]) if source_edge else [],
                       "source_lineage":source_edge.get("source_lineage",[]) if source_edge else [],
                       "orientation_degrees":orientation}
             open_nodes.append(endpoint); open_endpoints.append(endpoint)
         edge_count=len(members); node_count=len(node_groups); cycle_rank=max(0,edge_count-node_count+1)
+        material_junction_count=sum(degree>=3 for degree in material_degrees.values())
         components.append({"component_id":component_id,"frame_id":frame_id,
                            "material_interval_ids":material_ids,"matint_count":len(material_ids),
+                           "graph_segment_count":sum(edge["edge_type"]=="SOURCE_MATERIAL" for _,edge in members),
+                           "material_junction_count":material_junction_count,
                            "wall_ids":wall_ids,"source_handles":handles,
                            "total_material_length":sum(edge["line"].length for _,edge in members
                                                        if edge["edge_type"]=="SOURCE_MATERIAL"),
@@ -944,8 +1029,15 @@ def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.0
                                                & set(other["source_handles"]))})
         endpoint["nearest_material_endpoints"]=sorted(
             nearest,key=lambda row:(row["distance"],row["endpoint_id"]))[:5]
+    serialized_edges=[]
+    for edge in edges:
+        serialized_edges.append({key:value for key,value in edge.items() if key not in {"line"}} | {
+            "geometry":[list(point) for point in edge["line"].coords]})
     return {"schema":"material-continuity-graph/1.0","frame_id":frame_id,
-            "components":components,"open_endpoints":sorted(open_endpoints,key=lambda row:row["endpoint_id"])}
+            "components":components,"open_endpoints":sorted(open_endpoints,key=lambda row:row["endpoint_id"]),
+            "edges":serialized_edges,
+            "graph_segment_count":len(graph_material_edges),
+            "material_junction_count":sum(row["material_junction_count"] for row in components)}
 
 
 def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=None, tolerance=.001):
@@ -996,9 +1088,11 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
             classification,status="PROVEN_DOOR_APERTURE","SUPPORTED"
         elif "WINDOW" in portal_types:
             classification,status="PROVEN_WINDOW_APERTURE","SUPPORTED"
-        elif reason=="PROVEN_CORNER_CONTINUITY":
+        elif (reason=="PROVEN_CORNER_CONTINUITY"
+              and closure.get("selected_as_governed_closure",True)):
             classification,status="PROVEN_CORNER_CONTINUITY","PROVEN"
-        elif reason=="GOVERNED_DRAFTING_FRAGMENTATION":
+        elif (reason=="GOVERNED_DRAFTING_FRAGMENTATION"
+              and closure.get("selected_as_governed_closure",True)):
             classification,status="GOVERNED_DRAFTING_FRAGMENTATION","PROVEN"
         elif (reason=="UNRESOLVED_ENDPOINT_RELATION"
               and any(wall_by_id[wall_id].get("status")=="SUPPORTED_PARTITION"
@@ -1014,9 +1108,26 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
                 and closure.get("host_material_interval_ids")):
             closure.update({"continuity_status":"PROVEN_WALL_CONTINUITY","status":"SUPPORTED",
                             "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]})
+        if classification=="SOURCE_ROLE_CLASSIFICATION_REQUIRED":
+            ownership="SOURCE_ROLE_REVIEWABLE"
+        elif classification!="UNRESOLVED":
+            ownership=None
+        elif reason=="COLLINEAR_GAP_REQUIRES_OPENING_OR_LINEAGE":
+            ownership="OPENING_EVIDENCE_REQUIRED"
+        elif reason=="UNMATCHED_OR_DRAFTING_FRAGMENTATION":
+            ownership="ENGINE_DETECTOR_LIMITATION"
+        elif reason=="PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP":
+            ownership="GENUINE_AMBIGUITY"
+        elif reason in {"PROVEN_CORNER_CONTINUITY","GOVERNED_DRAFTING_FRAGMENTATION"}:
+            ownership="GENUINE_AMBIGUITY"
+        elif reason=="UNRESOLVED_ENDPOINT_RELATION":
+            ownership="GENUINE_AMBIGUITY"
+        else:
+            ownership="OTHER"
         gap_id=_sid("GAP",[frame_id,sorted(host_ids),closure.get("geometry")])
         closure.update({"gap_id":gap_id,"gap_classification":classification,
-                        "gap_status":status,"portal_evidence_ids":sorted(
+                        "gap_status":status,"unresolved_ownership":ownership,
+                        "portal_evidence_ids":sorted(
                             row["opening_evidence_id"] for row in matching),
                         "opening_locality_matches":sorted(opening_matches,key=lambda row:row["opening_evidence_id"]),
                         "portal_ref":None,"local_wall_thickness":local_thickness})
@@ -1027,6 +1138,8 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
                      "portal_evidence_ids":closure["portal_evidence_ids"],
                      "opening_locality_matches":closure["opening_locality_matches"],
                      "closure_id":closure.get("closure_id"),
+                     "candidate_relation_id":closure.get("candidate_relation_id"),
+                     "unresolved_ownership":ownership,
                      "material_geometry":"NONE","wall_authority":"NONE",
                      "routing_authority":"NONE","portal_authority":"NONE"})
     return sorted(rows,key=lambda row:row["gap_id"])

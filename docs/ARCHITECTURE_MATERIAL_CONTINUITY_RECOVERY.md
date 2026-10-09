@@ -19,11 +19,12 @@ from the nearest occupied `MATINT-*` interval. The corrected detector compares
 only occupied material-interval endpoints and binds every closure to its host
 Wall IDs, MATINT IDs, source handles, and source lineage.
 
-The old endpoint rule also treated aligned proximity as sufficient continuity.
-The corrected rule requires exact shared source lineage for governed drafting
-fragmentation, proven double-face material on both orthogonal sides for corner
-continuity, or independently localized opening evidence for an aperture. A
-nearby endpoint by itself remains unresolved.
+The old endpoint rule also treated aligned proximity as sufficient continuity,
+and treated orthogonality plus double-face confidence as sufficient corner
+authority. The corrected rule requires exact shared source lineage or an
+actual localized source-face intersection for corner continuity, exact shared
+lineage for drafting fragmentation, or independently localized opening
+evidence for an aperture. A nearby endpoint by itself remains unresolved.
 
 Wall-interruption closures now require material on both sides of the
 interruption. They retain their MATINT bindings and explicitly carry
@@ -33,12 +34,21 @@ Access authority `NONE`.
 ## Deterministic material graph
 
 The architecture output now contains a diagnostic
-`material-continuity-graph/1.0` for every relevant frame. Source material and
-governed non-material continuity remain distinct edge types. Components expose
+`material-continuity-graph/1.0` for every relevant frame. Source material is
+noded at actual intersections and endpoint-on-material events within the
+existing geometry tolerance. Every diagnostic `MATSEG-*` retains its original
+MATINT, Wall, handle, lineage and geometry identity. A near miss is not snapped.
+Source material and governed non-material continuity remain distinct edge types. Components expose
 MATINT count, Wall/source identity, length, bounds, node/open-endpoint count,
 closure count, cycle rank, and closed-cycle status. Open endpoints preserve
 MATINT/Wall/handle/lineage/orientation identity and list nearest endpoints only
 as diagnostics. Nearest endpoints never create graph edges.
+
+Candidate endpoint relations and selected governed closures are separate
+layers. All deterministic candidates remain visible even when they share an
+endpoint. Endpoint exclusivity applies only to selected proof-bearing closures;
+an `INPUT_REQUIRED` alternative is never consumed or hidden by another
+candidate.
 
 ## Gap taxonomy and authority
 
@@ -64,13 +74,11 @@ legends, north arrows, and unclassified curves never prove an aperture.
 ## Private-source conclusion
 
 The frozen source contains no independently qualified opening-evidence record
-for the critical Roof or Typical discontinuities. The larger material graph is
-distributed across many components; the closed components are local/detail
-cycles rather than a defensible building shell. Several short relations join a
-high-confidence double-face Wall to recovered single-line geometry and are
-bounded source-role questions. Other aligned gaps lack shared lineage or
-opening proof and remain unresolved. No transform or nested-lineage loss was
-found in the critical witnesses.
+for the currently identified Roof or Typical discontinuities. Several short
+relations join high-confidence double-face Walls to recovered single-line
+geometry and are bounded source-role candidates. Other relations require
+opening evidence or a detector extension. Absence of currently qualified
+evidence is not classified as proof that source geometry is absent.
 
 The engine therefore remains fail-closed. Human review may classify an existing
 stable source segment as separator/non-separator/unknown, but may not draw a
@@ -79,21 +87,41 @@ source-supported shell is independently qualified.
 
 ## Final frozen-source replay
 
-The final implementation was replayed once after targeted tests passed. Roof
-contains 105 MATINT edges across 69 components after 31 governed closures, with
-124 open endpoints, seven closed local components, and aggregate cycle rank
-eight. Its largest connected component contains six MATINTs, 41.547 m of source
-material, five closures, two open endpoints, and no cycle. Typical contains 169
-MATINT edges across 101 components after 49 governed closures, with 178 open
-endpoints, eleven closed local components, and aggregate cycle rank thirteen.
-Its largest component contains seven MATINTs, 14.496 m of material, five
-closures, two open endpoints, and no cycle. Neither frame has a defensible
-canonical envelope or canonical cell.
+The final noded replay ran once after all focused graph, false-corner,
+candidate-preservation, architecture and governance regressions passed.
 
-Across both frames there are 79 proven corner relations, 45 bounded
-`SOURCE_ROLE_CLASSIFICATION_REQUIRED` relations, and 31 unresolved relations.
-There are zero qualified opening-evidence records and therefore zero proven
-Door or Window aperture closures. The replay preserved all 257 Wall IDs and all
-19 Physical Space IDs in order, four verified spaces, 37 input requirements,
-15 review decisions, Dimension reconciliation `PASS` with zero conflicts,
-zero Vision calls, and disabled Architecture and Mechanical release.
+Roof retains 105 MATINTs represented by 153 noded graph segments and 31 source
+material junctions. After 23 qualified closures it has 53 components, 125 open
+endpoints, aggregate cycle rank 17, and four closed local components. The
+largest component has seven MATINTs, twelve graph segments, three junctions,
+51.507 m of source material, seven open endpoints, three closures, and no
+cycle.
+
+Typical retains 169 MATINTs represented by 270 graph segments and 69 source
+material junctions. After 43 qualified closures it has 62 components, 151 open
+endpoints, aggregate cycle rank 47, and nine closed local components. The
+largest component has sixteen MATINTs, 42 graph segments, fourteen junctions,
+18.817 m of source material, seventeen open endpoints, three closures, and
+cycle rank seven; it is not a closed component.
+
+All 326 deterministic endpoint candidates are retained: 65 selected proven
+closures and 261 diagnostic alternatives. The selected proof classes are 64
+exact localized source-face intersections and one shared-source-lineage proof.
+Of the 79 corners previously called proven, 62 remain selected/proven, one has
+source proof but loses selection to an endpoint conflict, and sixteen are
+demoted to unresolved. Orthogonality plus proximity proves none.
+
+The previous 31 unresolved relations remain unresolved: six require opening
+evidence, 24 expose a remaining deterministic detector limitation, and one is
+genuinely ambiguous. Across the complete preserved candidate set, 113 raw
+source-role relations reduce deterministically to 41 bounded source-object
+groups; those questions are not exposed yet. Qualified opening evidence remains
+zero, and no absence is classified `TRUE_SOURCE_GEOMETRY_GAP` merely because a
+detector found no evidence.
+
+The replay preserves all 257 Wall IDs and 19 Physical Space IDs in order, four
+verified spaces, 37 input requirements, 15 review decisions, Dimension
+reconciliation `PASS` with zero conflicts, and zero Vision calls. Both frames
+retain zero canonical cells and `INPUT_REQUIRED` envelopes. Architecture and
+Mechanical release remain disabled. Because 24 known detector limitations
+remain, the correct current status is `BLOCKED_BY_ENGINE_DEFECT`.

@@ -181,9 +181,25 @@ def test_source_supported_endpoint_closure_is_nonmaterial_and_deterministic():
 
 def test_source_supported_endpoint_closure_joins_small_orthogonal_corner():
     walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    walls[0]["source_fragments"]=["SHARED-CORNER"]
+    walls[1]["source_fragments"]=["SHARED-CORNER"]
     rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
     assert len(rows) == 1
     assert rows[0]["reason"] == "PROVEN_CORNER_CONTINUITY"
+    assert rows[0]["proof_class"]=="SHARED_SOURCE_LINEAGE"
+    assert rows[0]["selected_as_governed_closure"] is True
+
+
+def test_orthogonal_proximity_and_double_face_confidence_do_not_prove_corner():
+    walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    relation=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)[0]
+    assert relation["reason"]=="UNRESOLVED_ENDPOINT_RELATION"
+    assert relation["selected_as_governed_closure"] is False
+    assert relation["roles"]==[]
+    assert relation["continuity_status"]=="INSUFFICIENT_CONTINUITY"
+    gap=classify_internal_wall_gaps(walls,[relation],[],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert gap["unresolved_ownership"]=="GENUINE_AMBIGUITY"
 
 
 def test_source_supported_endpoint_closure_rejects_unproven_or_oversized_gap():
@@ -265,8 +281,10 @@ def test_endpoint_closure_never_reuses_one_endpoint_for_multiple_synthetic_joins
     walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(4.2,0),(8,0)),
            _proven_wall("C",(4.3,0),(9,0))]
     rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
-    endpoints=[tuple(point) for row in rows for point in row["geometry"]]
-    assert len(endpoints)==len(set(endpoints))
+    assert len(rows)==2
+    assert all(row["selection_status"]=="DIAGNOSTIC_ONLY" for row in rows)
+    assert all(row["roles"]==[] for row in rows)
+    assert len({row["candidate_relation_id"] for row in rows})==2
 
 
 def test_axis_endpoint_proximity_cannot_create_material_continuity():
@@ -316,6 +334,51 @@ def test_material_continuity_graph_does_not_join_nearest_disconnected_components
     assert all(endpoint["nearest_material_endpoints"] for endpoint in graph["open_endpoints"])
     assert all("distance" in endpoint["nearest_material_endpoints"][0]
                for endpoint in graph["open_endpoints"])
+
+
+def test_material_graph_nodes_a_source_material_t_junction():
+    walls=[_topology_wall("H",(0,0),(10,0)),_topology_wall("V",(5,0),(5,5))]
+    graph=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==1
+    assert graph["graph_segment_count"]==3
+    assert graph["material_junction_count"]==1
+    assert graph["components"][0]["open_endpoint_count"]==3
+    assert not any(edge["edge_type"]=="GOVERNED_NONMATERIAL_CONTINUITY" for edge in graph["edges"])
+
+
+def test_material_graph_nodes_an_interior_crossing_deterministically():
+    walls=[_topology_wall("H",(0,0),(10,0)),_topology_wall("V",(5,-5),(5,5))]
+    first=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    second=material_continuity_graph(list(reversed(walls)),[],frame_id="F1",tolerance=.001)
+    assert first==second
+    assert len(first["components"])==1
+    assert first["graph_segment_count"]==4
+    assert first["material_junction_count"]==1
+    assert first["components"][0]["open_endpoint_count"]==4
+
+
+def test_material_graph_does_not_node_a_near_miss():
+    walls=[_topology_wall("H",(0,0),(10,0)),_topology_wall("V",(5,.05),(5,5))]
+    graph=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==2
+    assert graph["graph_segment_count"]==2
+    assert graph["material_junction_count"]==0
+
+
+def test_governed_closure_stays_distinct_when_material_is_noded():
+    walls=[_proven_wall("H1",(0,0),(4,0)),_proven_wall("H2",(4.5,0),(10,0)),
+           _proven_wall("V",(5,0),(5,5))]
+    walls[0]["source_fragments"]=["SHARED-H"]
+    walls[1]["source_fragments"]=["SHARED-H"]
+    relation=next(row for row in source_supported_endpoint_closures(
+        walls,frame_id="F1",tolerance=.001) if row["selected_as_governed_closure"])
+    graph=material_continuity_graph(walls,[relation],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==1
+    assert {edge["edge_type"] for edge in graph["edges"]}=={
+        "SOURCE_MATERIAL","GOVERNED_NONMATERIAL_CONTINUITY"}
+    assert relation["material"] is False
+    assert {relation[key] for key in ("wall_authority","portal_authority",
+                                      "routing_authority","access_authority")}=={"NONE"}
 
 
 
