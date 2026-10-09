@@ -394,6 +394,121 @@ def _project_interval(line, origin, direction):
     return min(values),max(values)
 
 
+def _internal_material_interruption(interruption, occupied, tol):
+    """Return true only when paired material exists on both gap boundaries."""
+    low,high=interruption["interval"]
+    before=any(abs(float(end)-float(low))<=tol for _,end in occupied)
+    after=any(abs(float(start)-float(high))<=tol for start,_ in occupied)
+    return before and after
+
+
+def _interruption_source_line(wall, interruption):
+    """Map an interruption interval onto the source face that contains it."""
+    solid=wall["wall_solid"]; origin=solid["axis_origin"]; u=solid["axis_direction"]
+    n=(-u[1],u[0]); face_key=("face_a" if interruption.get("face_a_gap") else
+                             "face_b" if interruption.get("face_b_gap") else None)
+    face=LineString(wall[face_key]) if face_key and wall.get(face_key) else None
+    offset=0.0
+    if face is not None:
+        point=face.interpolate(.5,normalized=True)
+        offset=(point.x-origin[0])*n[0]+(point.y-origin[1])*n[1]
+    low,high=interruption["interval"]
+    return LineString(((origin[0]+low*u[0]+offset*n[0],origin[1]+low*u[1]+offset*n[1]),
+                       (origin[0]+high*u[0]+offset*n[0],origin[1]+high*u[1]+offset*n[1])))
+
+
+def _govern_source_backed_junction_interruptions(walls, tol, source_segments=()):
+    """Classify exact wall-junction trimming without inventing continuity."""
+    for wall in walls:
+        _,_,angle,_=_axis(LineString(wall["centerline"]))
+        for interruption in wall.get("interruptions") or []:
+            if interruption.get("kind")!="UNKNOWN_FRAGMENTATION":
+                continue
+            gap_line=_interruption_source_line(wall,interruption)
+            gap_points=[Point(point) for point in gap_line.coords]
+            candidates=[]
+            for other in walls:
+                if other["wall_id"]==wall["wall_id"] or other.get("representation")!="DOUBLE_FACE":
+                    continue
+                if not (other.get("source_handles") and other.get("source_lineage")
+                        and other.get("face_a") and other.get("face_b") and other.get("thickness")):
+                    continue
+                _,_,other_angle,_=_axis(LineString(other["centerline"]))
+                delta=min(abs(angle-other_angle),180-abs(angle-other_angle))
+                if abs(delta-90)>2:
+                    continue
+                thickness=float(other["thickness"]); width=gap_line.length
+                if abs(width-thickness)>max(tol*4,thickness*.05):
+                    continue
+                faces=[LineString(other["face_a"]),LineString(other["face_b"])]
+                direct=max(gap_points[0].distance(faces[0]),gap_points[1].distance(faces[1]))
+                reverse=max(gap_points[0].distance(faces[1]),gap_points[1].distance(faces[0]))
+                binding=min(direct,reverse)
+                if binding>tol*2:
+                    continue
+                candidates.append((binding,other["wall_id"],other))
+            # A face may have been consumed by another canonical pair.  Retain
+            # the accepted source faces as the earlier authority layer and
+            # recover only an exact two-face junction binding.
+            source_faces=[]
+            for row in (() if candidates else (source_segments or [])):
+                if (row.get("status")!="ACCEPTED"
+                        or row.get("wall_evidence_state")!="CONFIRMED_WALL"
+                        or not row.get("source_handle")):
+                    continue
+                line=LineString(row["geometry"])
+                if line.distance(gap_line)>max(gap_line.length,tol*4):
+                    continue
+                _,_,source_angle,_=_axis(line)
+                delta=min(abs(angle-source_angle),180-abs(angle-source_angle))
+                if abs(delta-90)<=2:
+                    source_faces.append((row,line,source_angle))
+            for index,(left,left_line,left_angle) in enumerate(source_faces):
+                for right,right_line,right_angle in source_faces[index+1:]:
+                    delta=min(abs(left_angle-right_angle),180-abs(left_angle-right_angle))
+                    if delta>2:
+                        continue
+                    distance=left_line.distance(right_line); width=gap_line.length
+                    if abs(distance-width)>max(tol*4,width*.05):
+                        continue
+                    direct=max(gap_points[0].distance(left_line),gap_points[1].distance(right_line))
+                    reverse=max(gap_points[0].distance(right_line),gap_points[1].distance(left_line))
+                    binding=min(direct,reverse)
+                    if binding>tol*2:
+                        continue
+                    handles=sorted([left["source_handle"],right["source_handle"]])
+                    candidates.append((binding,"SOURCE-FACES:"+":".join(handles),{
+                        "wall_id":None,"source_handles":handles,
+                        "source_lineage":[{
+                            "segment_id":row.get("segment_id"),
+                            "source_handle":row.get("source_handle"),
+                            "source_insert_handle":row.get("source_insert_handle"),
+                            "source_block_path":row.get("source_block_path") or [],
+                            "source_transform":row.get("source_transform"),
+                        } for row in (left,right)],
+                        "proof_class":"EXACT_ORTHOGONAL_SOURCE_FACE_BOUNDARY",
+                    }))
+            if not candidates:
+                continue
+            candidates.sort(key=lambda row:(row[0],row[1]))
+            best=candidates[0]
+            if len(candidates)>1 and abs(candidates[1][0]-best[0])<=tol:
+                continue
+            other=best[2]
+            interruption.update({
+                "kind":"GOVERNED_DRAFTING_FRAGMENTATION",
+                "classification":"SOURCE_BACKED_WALL_JUNCTION",
+                "confidence":.95,"status":"PROVEN",
+                "junction_proof_status":"PROVEN",
+                "junction_wall_id":other["wall_id"],
+                "junction_source_handles":sorted(other.get("source_handles") or []),
+                "junction_source_lineage":other.get("source_lineage") or [],
+                "junction_face_binding_distance":best[0],
+                "proof_class":other.get("proof_class") or "EXACT_ORTHOGONAL_DOUBLE_FACE_BOUNDARY",
+            })
+    return walls
+
+
 def _pair_wall_faces(walls, clusters, tol):
     """Greedily form local double-face walls without a global thickness default."""
     if not walls or not clusters:
@@ -444,7 +559,10 @@ def _pair_wall_faces(walls, clusters, tol):
             matches=[right for right in gb if min(left[1],right[1])-max(left[0],right[0])>tol*2]
             if matches:
                 right=max(matches,key=lambda row:min(left[1],row[1])-max(left[0],row[0]))
-                interval=[max(left[0],right[0]),min(left[1],right[1])]
+                # Paired material exists only where both faces exist.  The
+                # material interruption is therefore the union of the two
+                # overlapping face gaps, not merely their overlap.
+                interval=[min(left[0],right[0]),max(left[1],right[1])]
                 interruptions.append({"interval":interval,"kind":"SUPPORTED_OPENING","face_a_gap":left,"face_b_gap":right,
                                       "classification":"UNKNOWN_OPENING","confidence":.8,"status":"HIGH_CONFIDENCE"})
             else:
@@ -477,6 +595,14 @@ def _pair_wall_faces(walls, clusters, tol):
             # No resolvable common material: preserve both original walls and
             # their source traces rather than granting an empty paired solid.
             continue
+        discarded_interruptions=[]; retained_interruptions=[]
+        for interruption in interruptions:
+            if _internal_material_interruption(interruption,occupied,tol):
+                retained_interruptions.append(interruption)
+            else:
+                discarded_interruptions.append(
+                    dict(interruption,discard_reason="OUTSIDE_PAIRED_MATERIAL_INTERVAL"))
+        interruptions=retained_interruptions
         used.update((i,j))
         handles=sorted(set(a.get("source_handles",[])+b.get("source_handles",[])))
         center_points=_canonical_points(center.coords)
@@ -492,7 +618,9 @@ def _pair_wall_faces(walls, clusters, tol):
                        "source_handles":handles,"junction_start":None,"junction_end":None,"junctions":[],
                        "source_lineage":sorted(a.get("source_lineage",[])+b.get("source_lineage",[]),
                                                key=lambda row:json.dumps(row,sort_keys=True)),
-                       "interruptions":interruptions,"candidate_openings":[],"confidence":.9,"status":"HIGH_CONFIDENCE",
+                       "interruptions":interruptions,
+                       "discarded_interruptions":discarded_interruptions,
+                       "candidate_openings":[],"confidence":.9,"status":"HIGH_CONFIDENCE",
                        "evidence":[{"class":"PAIRED_WALL_FACES","face_wall_ids":[a["wall_id"],b["wall_id"]],
                                     "measured_thickness":distance,"local_cluster":cluster}],
                        "derived_geometry_provenance":{"method":"LOCAL_FACE_PAIRING","tolerance":tol},
@@ -604,6 +732,7 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
                           "derived_geometry_provenance":{"method":"ORIENTATION_OFFSET_BUCKET_AND_PROJECTED_INTERVALS","tolerance":tol},
                           "_identity_sort_key":legacy_wid})
     walls=_pair_wall_faces(walls,clusters,tol)
+    _govern_source_backed_junction_interruptions(walls,tol,rows)
     # Junction graph from wall axes.
     axes=[LineString(w["centerline"]) for w in walls]; atree=STRtree(axes) if axes else None;junctions=[]
     for i,line in enumerate(axes):
@@ -694,7 +823,13 @@ def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
             material_on_both_sides=(
                 any(abs(row["interval"][1]-low)<=tol for row in materials)
                 and any(abs(row["interval"][0]-high)<=tol for row in materials))
-            if (double and both_faces and material_on_both_sides
+            if (kind == "GOVERNED_DRAFTING_FRAGMENTATION"
+                    and opening.get("junction_proof_status")=="PROVEN"
+                    and material_on_both_sides):
+                continuity,status,confidence,reason=("PROVEN_WALL_CONTINUITY","PROVEN",.95,
+                                                     "GOVERNED_DRAFTING_FRAGMENTATION")
+                roles=["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+            elif (double and both_faces and material_on_both_sides
                     and kind == "PROVEN_OPENING"):
                 continuity,status,confidence,reason=("PROVEN_WALL_CONTINUITY","PROVEN",.95,
                                                      "PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP")
@@ -723,6 +858,10 @@ def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
                          "junction_support":False,"source_handles":wall.get("source_handles") or [],
                          "source_evidence":wall.get("source_fragments") or [],
                          "source_lineage":wall.get("source_lineage") or [],"gap_width":high-low,
+                         "junction_wall_id":opening.get("junction_wall_id"),
+                         "junction_source_handles":opening.get("junction_source_handles") or [],
+                         "junction_source_lineage":opening.get("junction_source_lineage") or [],
+                         "proof_class":opening.get("proof_class"),
                          "material":False,"roles":roles,"possible_opening_type":"UNKNOWN",
                          "material_geometry":"NONE","wall_authority":"NONE",
                          "routing_authority":"NONE","portal_authority":"NONE","access_authority":"NONE",

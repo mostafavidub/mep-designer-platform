@@ -85,6 +85,7 @@ def test_interrupted_faces_only_share_intersected_material():
     result = _pair_wall_faces([first, second], [{'median_thickness': .2}], .001)[0]
     assert _material_world_intervals(result) == [[0, 3], [6, 10]]
     assert any(row['kind'] == 'SUPPORTED_OPENING' for row in result['interruptions'])
+    assert result['interruptions'][0]['interval'] == [3, 6]
 
 
 def test_subprecision_face_overlap_creates_no_long_material_strip():

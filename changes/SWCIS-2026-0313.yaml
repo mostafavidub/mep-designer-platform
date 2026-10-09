@@ -1,0 +1,28 @@
+{
+  "change_id": "SWCIS-2026-0313",
+  "summary": "Recover exact source-backed wall-junction interruptions and discard projected gaps outside paired material without granting material or Portal authority.",
+  "requester": "project-owner",
+  "change_types": ["architecture", "documentation", "governance", "test"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "docs", "governance", "manifest", "qa", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Internal interruptions require paired material on both boundaries; exact orthogonal two-face source junctions may govern non-material drafting continuity; unequal paired-face gaps use the complete material-absence union.",
+    "docs": "Records the private-safe 24-record root-cause classification, proof contract, authority boundary and fail-closed replay result.",
+    "governance": "Distance and orthogonality remain search predicates only; two exact accepted source faces, lineage, width agreement and unambiguous binding are mandatory.",
+    "manifest": "Adds discarded-interruption and junction-proof diagnostics to the internal architecture model only; no public consumer migration.",
+    "qa": "Adds out-of-material interruption, exact canonical/source-face junction, wrong parallel face, rejected reference face, one-face ambiguity, gap-union and deterministic authority regressions.",
+    "versioning": "Internal fail-closed detector correction; no public version bump required."
+  },
+  "evidence": {
+    "tests": ["67 canonical-wall topology tests", "24 wall-face-pairing integrity tests", "259 affected architecture tests", "67 identity/semantic/Vision integration tests", "19 SWCIS governance tests", "one frozen-source final replay", "official GitHub checks"],
+    "docs": ["docs/ARCHITECTURE_INTERRUPTION_DETECTOR_RECOVERY.md"],
+    "version_bump": ["not required; internal detector recovery with no production consumer migration"],
+    "semantic_diff": ["Eight non-internal pairing artifacts are no longer emitted as material interruptions; sixteen exact source-backed junction trims become governed non-material continuity; zero Portal or Access authority is introduced."],
+    "artifact_diff": ["No private source, filename, crop, screenshot or raw diagnostic JSON is committed."],
+    "golden_regression": ["Frozen-source replay preserves 257 Walls, 19 Physical Spaces, four verified spaces, 37 input requirements, 15 review decisions, Dimension PASS, zero Vision calls and blocked Architecture/Mechanical release; the tracked detector-limitation count becomes zero."],
+    "deployment_plan": ["No deployment in this task."],
+    "rollback_plan": ["Revert this change; no stored data migration is required."]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "Exact two-face binding and negative one-face/reference/parallel regressions prevent proximity authority; frozen-source identity and release gates expose unintended promotion."},
+  "waiver": null
+}
