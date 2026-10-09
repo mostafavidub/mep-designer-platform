@@ -1,3 +1,5 @@
+import pytest
+
 from shapely.geometry import LineString, Polygon
 
 from cad_engine.architectural_topology_quality import (
@@ -189,12 +191,14 @@ def test_exact_accepted_source_faces_recover_junction_when_canonical_pair_is_una
     host,_=_junction_fragmentation_fixture()
     left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
     for row in (left,right): row["wall_evidence_state"]="CONFIRMED_WALL"
-    _govern_source_backed_junction_interruptions([host],.001,[left,right])
+    _govern_source_backed_junction_interruptions(
+        [host],.001,[left,right],[{"median_thickness":1.0}])
     interruption=host["interruptions"][0]
     assert interruption["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
     assert interruption["junction_wall_id"] is None
     assert interruption["junction_source_handles"]==["SOURCE-A","SOURCE-B"]
-    assert interruption["proof_class"]=="EXACT_ORTHOGONAL_SOURCE_FACE_BOUNDARY"
+    assert interruption["proof_class"]=="INDEPENDENT_THICKNESS_CLUSTER_SOURCE_FACE_PAIR"
+    assert interruption["face_pair_thickness_cluster"]==1.0
 
 
 def test_reference_source_faces_cannot_recover_wall_junction():
@@ -202,8 +206,94 @@ def test_reference_source_faces_cannot_recover_wall_junction():
     left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
     left["wall_evidence_state"]="REFERENCE_REJECTED"
     right["wall_evidence_state"]="CONFIRMED_WALL"
-    _govern_source_backed_junction_interruptions([host],.001,[left,right])
+    _govern_source_backed_junction_interruptions(
+        [host],.001,[left,right],[{"median_thickness":1.0}])
     assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+def test_raw_faces_matching_only_host_gap_without_thickness_proof_are_rejected():
+    host,_=_junction_fragmentation_fixture()
+    left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
+    for row in (left,right): row["wall_evidence_state"]="CONFIRMED_WALL"
+    _govern_source_backed_junction_interruptions([host],.001,[left,right],
+                                                  [{"median_thickness":.2}])
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+@pytest.mark.parametrize("reverse",[False,True])
+def test_equal_competing_raw_face_pairs_remain_unresolved(reverse):
+    host,_=_junction_fragmentation_fixture()
+    rows=[_row("LEFT-A",(4,-2),(4,2)),_row("LEFT-B",(4,-3),(4,3)),
+          _row("RIGHT",(5,-2),(5,2))]
+    for row in rows: row["wall_evidence_state"]="CONFIRMED_WALL"
+    if reverse: rows.reverse()
+    _govern_source_backed_junction_interruptions([host],.001,rows,
+                                                  [{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="AMBIGUOUS_FACE_PAIRING"
+    assert host["interruptions"][0]["proof_class"]=="EQUAL_FACE_PAIR_BINDINGS"
+
+
+@pytest.mark.parametrize("reverse",[False,True])
+def test_raw_pair_conflicting_with_canonical_pair_remains_unresolved(reverse):
+    host,_=_junction_fragmentation_fixture()
+    left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
+    competing=_row("SOURCE-C",(4.2,-2),(4.2,2))
+    for row in (left,right,competing): row["wall_evidence_state"]="CONFIRMED_WALL"
+    canonical=_wall("CANONICAL",(4.1,-2),(4.1,2),[[0,4]])
+    canonical.update({"representation":"DOUBLE_FACE","face_a":left["geometry"],
+                      "face_b":competing["geometry"],"thickness":.2,
+                      "source_handles":["SOURCE-A","SOURCE-C"],
+                      "source_lineage":[{"source_handle":"SOURCE-A"},
+                                        {"source_handle":"SOURCE-C"}]})
+    rows=[left,right,competing]; walls=[host,canonical]
+    if reverse: rows.reverse(); walls.reverse()
+    _govern_source_backed_junction_interruptions(
+        walls,.001,rows,
+        [{"median_thickness":.2},{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="AMBIGUOUS_FACE_PAIRING"
+    closure=canonical_enclosure_continuity([host],frame_id="F1")[0]
+    assert closure["reason"]=="MULTIPLE_VALID_FACE_PAIRINGS"
+    assert closure["roles"]==[]
+
+
+def test_unrelated_parallel_walls_cannot_become_a_raw_face_pair():
+    host,_=_junction_fragmentation_fixture()
+    left=_row("LEFT",(4,-2),(4,2)); right=_row("RIGHT",(5,-2),(5,2))
+    left_other=_row("LEFT-OTHER",(3.8,-2),(3.8,2))
+    right_other=_row("RIGHT-OTHER",(5.2,-2),(5.2,2))
+    rows=[left,right,left_other,right_other]
+    for row in rows: row["wall_evidence_state"]="CONFIRMED_WALL"
+    wall_left=_wall("WALL-LEFT",(3.9,-2),(3.9,2),[[0,4]])
+    wall_left.update({"representation":"DOUBLE_FACE","face_a":left["geometry"],
+                      "face_b":left_other["geometry"],"thickness":.2,
+                      "source_handles":["LEFT","LEFT-OTHER"],
+                      "source_lineage":[{"source_handle":"LEFT"},
+                                        {"source_handle":"LEFT-OTHER"}]})
+    wall_right=_wall("WALL-RIGHT",(5.1,-2),(5.1,2),[[0,4]])
+    wall_right.update({"representation":"DOUBLE_FACE","face_a":right["geometry"],
+                       "face_b":right_other["geometry"],"thickness":.2,
+                       "source_handles":["RIGHT","RIGHT-OTHER"],
+                       "source_lineage":[{"source_handle":"RIGHT"},
+                                         {"source_handle":"RIGHT-OTHER"}]})
+    _govern_source_backed_junction_interruptions(
+        [host,wall_left,wall_right],.001,rows,
+        [{"median_thickness":.2},{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="AMBIGUOUS_FACE_PAIRING"
+
+
+def test_raw_pair_governance_is_input_order_deterministic():
+    def result(reverse):
+        host,_=_junction_fragmentation_fixture()
+        rows=[_row("SOURCE-A",(4,-2),(4,2)),_row("SOURCE-B",(5,-2),(5,2))]
+        for row in rows: row["wall_evidence_state"]="CONFIRMED_WALL"
+        if reverse: rows.reverse()
+        _govern_source_backed_junction_interruptions(
+            [host],.001,rows,[{"median_thickness":1.0}])
+        return host["interruptions"][0]
+    forward=result(False); reverse=result(True)
+    assert forward["kind"]==reverse["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert forward["junction_source_handles"]==reverse["junction_source_handles"]
+    assert forward["proof_class"]==reverse["proof_class"]
 
 
 def test_drafting_fragmentation_is_diagnostic_not_promoted():

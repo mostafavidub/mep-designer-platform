@@ -417,7 +417,8 @@ def _interruption_source_line(wall, interruption):
                        (origin[0]+high*u[0]+offset*n[0],origin[1]+high*u[1]+offset*n[1])))
 
 
-def _govern_source_backed_junction_interruptions(walls, tol, source_segments=()):
+def _govern_source_backed_junction_interruptions(walls, tol, source_segments=(),
+                                                  thickness_clusters=()):
     """Classify exact wall-junction trimming without inventing continuity."""
     for wall in walls:
         _,_,angle,_=_axis(LineString(wall["centerline"]))
@@ -463,12 +464,50 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=())
                 delta=min(abs(angle-source_angle),180-abs(angle-source_angle))
                 if abs(delta-90)<=2:
                     source_faces.append((row,line,source_angle))
+            cluster_values=sorted(float(row["median_thickness"])
+                                  for row in (thickness_clusters or [])
+                                  if float(row.get("median_thickness") or 0)>0)
+            canonical_pairs={
+                frozenset(str(handle) for handle in other.get("source_handles") or [])
+                for other in walls if other.get("representation")=="DOUBLE_FACE"
+            }
+            canonical_pair_conflict=False
             for index,(left,left_line,left_angle) in enumerate(source_faces):
                 for right,right_line,right_angle in source_faces[index+1:]:
                     delta=min(abs(left_angle-right_angle),180-abs(left_angle-right_angle))
                     if delta>2:
                         continue
-                    distance=left_line.distance(right_line); width=gap_line.length
+                    distance=left_line.distance(right_line)
+                    # Establish the raw face pair independently of this host
+                    # interruption.  Host-gap width is deliberately absent
+                    # from this proof: parallel faces must overlap like a
+                    # normal face-pair and match an already-observed local
+                    # thickness family.
+                    origin=list(left_line.coords)[0]
+                    left_axis,_,_,left_length=_axis(left_line)
+                    left_interval=_project_interval(left_line,origin,left_axis)
+                    right_interval=_project_interval(right_line,origin,left_axis)
+                    overlap=max(0,min(left_interval[1],right_interval[1])-
+                                  max(left_interval[0],right_interval[0]))
+                    right_length=right_line.length
+                    if overlap/max(min(left_length,right_length),1e-9)<.55:
+                        continue
+                    if not cluster_values:
+                        continue
+                    cluster=min(cluster_values,key=lambda value:abs(value-distance))
+                    if abs(distance-cluster)>max(cluster*.3,tol*4):
+                        continue
+                    handles=frozenset((str(left["source_handle"]),
+                                       str(right["source_handle"])))
+                    # Reusing either source face from an incompatible
+                    # canonical DOUBLE_FACE wall would assert two mutually
+                    # exclusive physical pairings.  Such a case is ambiguous,
+                    # not a downstream recovery opportunity.
+                    if any(handles & pair and not handles.issubset(pair)
+                           for pair in canonical_pairs):
+                        canonical_pair_conflict=True
+                        continue
+                    width=gap_line.length
                     if abs(distance-width)>tol*4:
                         continue
                     direct=max(gap_points[0].distance(left_line),gap_points[1].distance(right_line))
@@ -476,9 +515,9 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=())
                     binding=min(direct,reverse)
                     if binding>tol*2:
                         continue
-                    handles=sorted([left["source_handle"],right["source_handle"]])
-                    candidates.append((binding,"SOURCE-FACES:"+":".join(handles),{
-                        "wall_id":None,"source_handles":handles,
+                    sorted_handles=sorted(handles)
+                    candidates.append((binding,"SOURCE-FACES:"+":".join(sorted_handles),{
+                        "wall_id":None,"source_handles":sorted_handles,
                         "source_lineage":[{
                             "segment_id":row.get("segment_id"),
                             "source_handle":row.get("source_handle"),
@@ -486,13 +525,30 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=())
                             "source_block_path":row.get("source_block_path") or [],
                             "source_transform":row.get("source_transform"),
                         } for row in (left,right)],
-                        "proof_class":"EXACT_ORTHOGONAL_SOURCE_FACE_BOUNDARY",
+                        "proof_class":"INDEPENDENT_THICKNESS_CLUSTER_SOURCE_FACE_PAIR",
+                        "face_pair_thickness_cluster":cluster,
+                        "face_pair_projection_overlap":overlap,
                     }))
             if not candidates:
+                if canonical_pair_conflict:
+                    interruption.update({
+                        "kind":"AMBIGUOUS_FACE_PAIRING",
+                        "classification":"MULTIPLE_VALID_FACE_PAIRINGS",
+                        "confidence":0.0,"status":"INPUT_REQUIRED",
+                        "junction_proof_status":"CONFLICT",
+                        "proof_class":"CANONICAL_VS_RAW_FACE_PAIR_CONFLICT",
+                    })
                 continue
             candidates.sort(key=lambda row:(row[0],row[1]))
             best=candidates[0]
             if len(candidates)>1 and abs(candidates[1][0]-best[0])<=tol:
+                interruption.update({
+                    "kind":"AMBIGUOUS_FACE_PAIRING",
+                    "classification":"MULTIPLE_VALID_FACE_PAIRINGS",
+                    "confidence":0.0,"status":"INPUT_REQUIRED",
+                    "junction_proof_status":"CONFLICT",
+                    "proof_class":"EQUAL_FACE_PAIR_BINDINGS",
+                })
                 continue
             other=best[2]
             interruption.update({
@@ -506,6 +562,9 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=())
                 "junction_face_binding_distance":best[0],
                 "proof_class":other.get("proof_class") or "EXACT_ORTHOGONAL_DOUBLE_FACE_BOUNDARY",
             })
+            if other.get("face_pair_thickness_cluster") is not None:
+                interruption["face_pair_thickness_cluster"]=other["face_pair_thickness_cluster"]
+                interruption["face_pair_projection_overlap"]=other["face_pair_projection_overlap"]
     return walls
 
 
@@ -732,7 +791,7 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
                           "derived_geometry_provenance":{"method":"ORIENTATION_OFFSET_BUCKET_AND_PROJECTED_INTERVALS","tolerance":tol},
                           "_identity_sort_key":legacy_wid})
     walls=_pair_wall_faces(walls,clusters,tol)
-    _govern_source_backed_junction_interruptions(walls,tol,rows)
+    _govern_source_backed_junction_interruptions(walls,tol,rows,clusters)
     # Junction graph from wall axes.
     axes=[LineString(w["centerline"]) for w in walls]; atree=STRtree(axes) if axes else None;junctions=[]
     for i,line in enumerate(axes):
@@ -841,6 +900,10 @@ def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
             elif kind == "LIKELY_OPENING":
                 continuity,status,confidence,reason=("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED",.4,
                                                      "LIKELY_OPENING_REQUIRES_CORROBORATION")
+                roles=[]
+            elif kind == "AMBIGUOUS_FACE_PAIRING":
+                continuity,status,confidence,reason=("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED",0.0,
+                                                     "MULTIPLE_VALID_FACE_PAIRINGS")
                 roles=[]
             else:
                 continuity,status,confidence,reason=("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED",.25,
@@ -1316,7 +1379,8 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
             ownership="OPENING_EVIDENCE_REQUIRED"
         elif reason=="UNMATCHED_OR_DRAFTING_FRAGMENTATION":
             ownership="ENGINE_DETECTOR_LIMITATION"
-        elif reason=="PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP":
+        elif reason in {"PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP",
+                        "MULTIPLE_VALID_FACE_PAIRINGS"}:
             ownership="GENUINE_AMBIGUITY"
         elif reason in {"PROVEN_CORNER_CONTINUITY","GOVERNED_DRAFTING_FRAGMENTATION"}:
             ownership="GENUINE_AMBIGUITY"

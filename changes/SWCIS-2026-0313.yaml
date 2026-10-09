@@ -6,26 +6,26 @@
   "changed_rule_ids": [],
   "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
   "impact_notes": {
-    "cad_designer": "Internal interruptions require paired material on both boundaries; exact orthogonal two-face source junctions may govern non-material drafting continuity; unequal paired-face gaps use the complete material-absence union.",
+    "cad_designer": "Internal interruptions require paired material on both boundaries; canonical junctions may govern non-material drafting continuity; raw faces additionally require independent thickness/overlap proof and no incompatible canonical pairing; unequal paired-face gaps use the complete material-absence union.",
     "deployment": "No deployment or runtime configuration change.",
     "docs": "Records the private-safe 24-record root-cause classification, proof contract, authority boundary and fail-closed replay result.",
-    "governance": "Distance and orthogonality remain search predicates only; two exact accepted source faces, lineage, width agreement and unambiguous binding are mandatory.",
+    "governance": "Distance, host-gap width and orthogonality remain binding/search predicates only; raw face-pair authority independently requires accepted confirmed faces, projection overlap, an observed thickness cluster and absence of canonical pairing conflict.",
     "manifest": "Adds discarded-interruption and junction-proof diagnostics to the internal architecture model only; no public consumer migration.",
     "migration": "No database or persisted-record migration.",
-    "qa": "Adds out-of-material interruption, exact canonical/source-face junction, wrong parallel face, rejected reference face, one-face ambiguity, gap-union and deterministic authority regressions.",
+    "qa": "Adds out-of-material interruption, exact canonical/source-face junction, wrong-thickness, equal competing pair, unrelated parallel wall, canonical/raw conflict, rejected reference face, one-face ambiguity, gap-union and order-determinism regressions.",
     "ui_api": "No API or UI behavior change.",
     "versioning": "Internal fail-closed detector correction; no public version bump required."
   },
   "evidence": {
-    "tests": ["67 canonical-wall topology tests", "24 wall-face-pairing integrity tests", "259 affected architecture tests", "67 identity/semantic/Vision integration tests", "19 SWCIS governance tests", "one frozen-source final replay", "official GitHub checks"],
+    "tests": ["74 canonical-wall topology tests", "24 wall-face-pairing integrity tests", "243 combined affected architecture tests", "19 SWCIS governance tests", "three-case private qualification", "one frozen-source final replay", "official GitHub checks"],
     "docs": ["docs/ARCHITECTURE_INTERRUPTION_DETECTOR_RECOVERY.md"],
     "version_bump": ["not required; internal detector recovery with no production consumer migration"],
-    "semantic_diff": ["Eight non-internal pairing artifacts are no longer emitted as material interruptions; sixteen exact source-backed junction trims become governed non-material continuity; zero Portal or Access authority is introduced."],
+    "semantic_diff": ["Eight non-internal pairing artifacts are discarded; thirteen canonical junction trims become governed non-material continuity; three canonical/raw conflicts remain explicit face-pair ambiguities; zero Portal or Access authority is introduced."],
     "artifact_diff": ["No private source, filename, crop, screenshot or raw diagnostic JSON is committed."],
-    "golden_regression": ["Frozen-source replay preserves 257 Walls, 19 Physical Spaces, four verified spaces, 37 input requirements, 15 review decisions, Dimension PASS, zero Vision calls and blocked Architecture/Mechanical release; the tracked detector-limitation count becomes zero."],
+    "golden_regression": ["Frozen-source replay records eight discarded interruptions, thirteen canonical governed junctions and three fail-closed face-pair ambiguities while preserving zero Vision authority and blocked Architecture/Mechanical release."],
     "deployment_plan": ["No deployment in this task."],
     "rollback_plan": ["Revert this change; no stored data migration is required."]
   },
-  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "Exact two-face binding and negative one-face/reference/parallel regressions prevent proximity authority; frozen-source identity and release gates expose unintended promotion."},
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "Independent thickness/overlap proof, canonical-conflict rejection and negative ambiguity/reference/parallel regressions prevent circular host-gap authority; frozen-source identity and release gates expose unintended promotion."},
   "waiver": null
 }
