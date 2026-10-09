@@ -308,6 +308,136 @@ def test_distributed_material_boundary_proof_authorizes_shell_without_ratios():
     assert envelope["status"]=="HIGH_CONFIDENCE"
 
 
+def test_nested_source_lineage_survives_into_canonical_wall_evidence():
+    rows=[_row("A",(0,0),(10,0)),_row("B",(10,0),(10,6)),
+          _row("C",(10,6),(0,6)),_row("D",(0,6),(0,0))]
+    for row in rows:
+        row.update({"source_insert_handle":"INSERT-1","source_block_path":["UNIT","WALLS"],
+                    "source_transform":{"fingerprint":"TX-1"}})
+    result=reconstruct_canonical_walls(rows,frame_id="F1",tolerance=.001)
+    assert result["walls"]
+    for wall in result["walls"]:
+        assert wall["source_lineage"]
+        assert all(item["source_insert_handle"]=="INSERT-1" for item in wall["source_lineage"])
+        assert all(item["source_block_path"]==["UNIT","WALLS"] for item in wall["source_lineage"])
+        assert all(item["source_transform"]=={"fingerprint":"TX-1"} for item in wall["source_lineage"])
+        assert all(item["primitive_geometry_fingerprint"].startswith("PRIM-") for item in wall["source_lineage"])
+
+
+def test_short_parallel_face_axis_extension_is_not_envelope_material():
+    rows=[_row("LONG",(0,0),(10,0)),_row("SHORT",(0,.2),(2,.2)),
+          _row("PAIR-A",(0,3),(10,3)),_row("PAIR-B",(0,3.2),(10,3.2))]
+    result=reconstruct_canonical_walls(rows,frame_id="F1",tolerance=.001)
+    mixed=next(wall for wall in result["walls"] if set(wall["source_handles"])=={"LONG","SHORT"})
+    assert mixed["representation"]=="DOUBLE_FACE"
+    assert LineString(mixed["centerline"]).length==10
+    assert sum(end-start for start,end in mixed["wall_solid"]["occupied_intervals"])==2
+    assert any(set(wall["source_handles"])=={"PAIR-A","PAIR-B"} and wall["representation"]=="DOUBLE_FACE"
+               for wall in result["walls"])
+    diagnostic=enumerate_envelope_candidates(result["walls"],frame_id="F1",tolerance=.001)
+    assert not any(row["area"]>1 for row in diagnostic["candidates"])
+
+
+def test_full_axis_inside_shell_cannot_prove_internal_partition_when_material_is_outside():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    partition=_topology_wall("P",(5,5),(25,5))
+    partition["wall_solid"]["occupied_intervals"]=[[10,12]]
+    partition["source_lineage"]=[{"segment_id":"SEG-P","source_handle":"P"}]
+    walls.append(partition)
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    proof=shell["source_boundary_proof"]
+    assert LineString(partition["centerline"]).representative_point().within(Polygon(shell["polygon"]))
+    assert proof["internal_partition_evidence"]==[]
+    assert "SOURCE_BACKED_INTERNAL_PARTITION_REQUIRED" in proof["reasons"]
+    assert envelope["status"]=="INPUT_REQUIRED"
+
+
+def test_short_material_interval_inside_shell_proves_partition_with_matint_lineage():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    partition=_topology_wall("P",(5,5),(25,5))
+    partition["wall_solid"]["occupied_intervals"]=[[0,2]]
+    partition["source_lineage"]=[{"segment_id":"SEG-P","source_handle":"P",
+                                  "source_block_path":["UNIT"],"source_transform":{"id":"TX-P"}}]
+    walls.append(partition)
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    proof=shell["source_boundary_proof"]
+    evidence=proof["internal_partition_evidence"]
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+    assert proof["source_backed_internal_wall_ids"]==["P"]
+    assert len(evidence)==1
+    assert evidence[0]["material_interval_id"].startswith("MATINT-")
+    assert evidence[0]["source_handles"]==["P"]
+    assert evidence[0]["source_lineage"]==partition["source_lineage"]
+    assert evidence[0]["material_geometry"]==[[5.0,5.0],[7.0,5.0]]
+    assert evidence[0]["applicable_material_length"]==2.0
+    assert shell["internal_wall_length"]==2.0
+
+
+def test_semantic_union_exterior_wall_ids_require_material_at_boundary():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    stray=_topology_wall("STRAY",(0,0),(0,30))
+    stray["wall_solid"]["occupied_intervals"]=[[20,22]]
+    walls.append(stray)
+    labels=[{"point":[2,2],"semantic_candidate":"bedroom"},
+            {"point":[8,8],"semantic_candidate":"kitchen"}]
+    envelope,_,_=evidence_based_building_envelope(
+        walls,frame_id="F1",tolerance=.001,semantic_labels=labels)
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+    assert "STRAY" not in envelope["exterior_wall_ids"]
+    assert set(envelope["exterior_wall_ids"])=={"A","B","C","D"}
+
+
+def test_fragmented_shell_requires_material_or_governed_continuity_for_every_interval():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),
+           _topology_wall("P",(2,3),(8,3))]
+    walls[0]["wall_solid"]["occupied_intervals"]=[[0,4],[6,10]]
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    assert envelope["status"]=="INPUT_REQUIRED"
+    assert not any(row.get("area")==100 for row in diagnostic["candidates"])
+
+
+def test_governed_nonmaterial_closure_supports_enclosure_but_never_wall_material():
+    walls=[_proven_wall("A1",(0,0),(4,0)),_proven_wall("A2",(5,0),(10,0)),
+           _proven_wall("B",(10,0),(10,10)),_proven_wall("C",(10,10),(0,10)),
+           _proven_wall("D",(0,10),(0,0)),_proven_wall("P",(2,3),(8,3))]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    gap_closure=next(row for row in closures if row["reason"]=="COLLINEAR_WALL_GAP")
+    envelope,diagnostic,_=evidence_based_building_envelope(
+        walls,frame_id="F1",tolerance=.001,enclosure_closures=closures)
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+    assert shell["source_boundary_proof"]["governed_nonmaterial_closure_count"]>=1
+    assert gap_closure["material"] is False
+    assert gap_closure["wall_authority"]=="NONE"
+
+
+def test_nearby_wrong_source_line_cannot_fill_material_boundary_gap():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),
+           _topology_wall("P",(2,3),(8,3)),_topology_wall("WRONG",(4,.02),(6,.02))]
+    walls[0]["wall_solid"]["occupied_intervals"]=[[0,4],[6,10]]
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    assert envelope["status"]=="INPUT_REQUIRED"
+    assert not any(row.get("area")==100 for row in diagnostic["candidates"])
+
+
+def test_candidate_containment_graph_is_diagnostic_and_deterministic():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),
+           _topology_wall("IA",(3,3),(7,3)),_topology_wall("IB",(7,3),(7,7)),
+           _topology_wall("IC",(7,7),(3,7)),_topology_wall("ID",(3,7),(3,3))]
+    first=enumerate_envelope_candidates(walls,frame_id="F1",tolerance=.001)
+    second=enumerate_envelope_candidates(list(reversed(walls)),frame_id="F1",tolerance=.001)
+    assert first["candidate_relationships"]==second["candidate_relationships"]
+    assert {row["relation"] for row in first["candidate_relationships"]}<={"CONTAINS","WITHIN","OVERLAPS","TOUCHES","DISJOINT"}
+
+
 def test_identical_classified_void_is_deduplicated_against_source_ring():
     shell=Polygon([(0,0),(10,0),(10,10),(0,10)],holes=[[(3,3),(7,3),(7,7),(3,7)]])
     result=_compose_shell_holes(shell,[{"candidate_id":"VOID-1","geometry":[[3,3],[7,3],[7,7],[3,7],[3,3]]}])

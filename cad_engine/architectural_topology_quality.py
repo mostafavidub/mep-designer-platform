@@ -26,6 +26,20 @@ def _canonical_points(points, precision=9):
     return clean if clean<=reverse else reverse
 
 
+def _canonical_ring(points, precision=9):
+    """Canonicalize a closed ring across start vertex and direction."""
+    clean=[(round(float(x),precision),round(float(y),precision)) for x,y,*_ in points]
+    if clean and clean[0]==clean[-1]: clean=clean[:-1]
+    if not clean: return []
+    variants=[]
+    for sequence in (clean,list(reversed(clean))):
+        for index in range(len(sequence)):
+            rotated=sequence[index:]+sequence[:index]
+            variants.append(rotated)
+    best=min(variants)
+    return best+[best[0]]
+
+
 REGION_ROLES = {"BUILDING_INTERIOR", "SEMI_EXTERIOR", "SITE_EXTERIOR", "COURTYARD", "LIGHTWELL", "VOID", "UNBOUNDED_EXTERIOR", "UNKNOWN"}
 _INTERIOR_SEMANTICS = {"bedroom", "master_bedroom", "living", "reception", "dining", "kitchen", "kitchenette", "bathroom", "shower", "toilet", "entrance", "vestibule", "shoe_area", "corridor", "lobby", "closet", "storage", "laundry", "utility", "stair", "stair_landing", "elevator", "elevator_lobby", "shaft", "duct", "pipe_shaft", "mechanical_shaft", "electrical_shaft", "office", "shop", "commercial", "mechanical_room", "electrical_room", "boiler_room", "janitor", "common_room"}
 _WET_SERVICE_SEMANTICS = {"bathroom", "shower", "toilet", "kitchen", "kitchenette", "laundry", "utility", "shaft", "duct", "pipe_shaft", "mechanical_shaft", "electrical_shaft"}
@@ -41,7 +55,11 @@ def _wall_line(wall):
 def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels=(), objects=(), junctions=(), enclosure_closures=()):
     """Enumerate closed cycles before any envelope selection is attempted."""
     started=time.perf_counter(); tol=max(float(tolerance or .001),1e-8)
-    axes=[_wall_line(wall) for wall in walls]
+    # A canonical wall axis may span source fragmentation or a locally paired
+    # face extent.  It is topology identity, not material.  Polygonization may
+    # therefore consume occupied source-backed intervals only.
+    material_by_wall=[_material_interval_lines(wall) for wall in walls]
+    axes=[line for lines in material_by_wall for line in lines]
     eligible_closures=[row for row in enclosure_closures
                        if row.get("continuity_status") in {"PROVEN_WALL_CONTINUITY", "SUPPORTED_WALL_CONTINUITY"}
                        and "ENVELOPE_SUPPORT" in (row.get("roles") or [])]
@@ -51,21 +69,34 @@ def enumerate_envelope_candidates(walls, *, frame_id, tolerance, semantic_labels
     rows=[]
     for poly in sorted(polygons,key=lambda item:(-item.area,item.bounds)):
         boundary_ids=[]; internal_ids=[]; source_handles=set(); double=known=0
-        for wall,line in zip(walls,axes):
-            if line.distance(poly.boundary)<=tol*4:
+        internal_material_length=0.0
+        for wall,material_lines in zip(walls,material_by_wall):
+            if any(line.distance(poly.boundary)<=tol*4 for line in material_lines):
                 boundary_ids.append(wall["wall_id"]); source_handles.update(wall.get("source_handles") or [])
                 double+=wall.get("representation")=="DOUBLE_FACE"; known+=wall.get("thickness") is not None
-            elif poly.buffer(tol).covers(line.representative_point()): internal_ids.append(wall["wall_id"])
+            elif any(poly.buffer(tol).covers(line.representative_point()) for line in material_lines):
+                internal_ids.append(wall["wall_id"])
+                internal_material_length+=sum(line.intersection(poly).length for line in material_lines)
         hosted=[row for row in semantic_labels if row.get("point") and poly.covers(Point(row["point"]))]
         categories=[row.get("semantic_candidate") or row.get("category") for row in hosted]
         obj_count=sum(bool(row.get("point")) and poly.covers(Point(row["point"])) for row in objects)
         jcount=sum(bool(row.get("point")) and poly.buffer(tol).covers(Point(row["point"])) for row in junctions)
         terminating=sum(1 for line in axes for point in (Point(line.coords[0]),Point(line.coords[-1])) if poly.boundary.distance(point)<=tol*4 and poly.buffer(tol).covers(line.representative_point()))
-        cid=_sid("ENVCAND",[frame_id,[list(p) for p in poly.exterior.coords]])
+        cid=_sid("ENVCAND",[frame_id,_canonical_ring(poly.exterior.coords)])
         closure_ids=[row["closure_id"] for row,line in zip(eligible_closures,closure_lines)
                      if line.distance(poly.boundary)<=tol*4]
-        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"interior_rings":[[list(p) for p in ring.coords] for ring in poly.interiors],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":sum(_wall_line(w).length for w in walls if w["wall_id"] in internal_ids),"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
-    return {"frame_id":frame_id,"candidates":rows,"runtime_seconds":round(time.perf_counter()-started,6)}
+        rows.append({"candidate_id":cid,"frame_id":frame_id,"polygon":[list(p) for p in poly.exterior.coords],"interior_rings":[[list(p) for p in ring.coords] for ring in poly.interiors],"area":poly.area,"perimeter":poly.length,"wall_ids":sorted(boundary_ids),"closure_ids":sorted(closure_ids),"source_handles":sorted(source_handles),"architectural_label_count":len(categories),"habitable_label_count":sum(c in _INTERIOR_SEMANTICS-_WET_SERVICE_SEMANTICS for c in categories),"wet_service_label_count":sum(c in _WET_SERVICE_SEMANTICS for c in categories),"stair_shaft_evidence_count":sum(c in {"stair","stair_landing","elevator","shaft","duct","pipe_shaft"} for c in categories),"exterior_site_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS for c in categories),"yard_terrace_balcony_parking_label_count":sum(c in _SITE_EXTERIOR_SEMANTICS|_SEMI_EXTERIOR_SEMANTICS for c in categories),"semantic_categories":sorted(set(c for c in categories if c)),"internal_wall_length":internal_material_length,"internal_partition_count":len(internal_ids),"junction_density":jcount/max(poly.area,1e-12),"fixture_density":obj_count/max(poly.area,1e-12),"boundary_double_face_ratio":double/max(len(boundary_ids),1),"boundary_known_thickness_ratio":known/max(len(boundary_ids),1),"interior_walls_terminating_at_boundary":terminating,"boundary_opening_candidate_count":sum(len(w.get("interruptions") or []) for w in walls if w["wall_id"] in boundary_ids),"cross_level_relation":"NOT_EVALUATED","previously_selected":bool(old_selected and poly.equals(old_selected)),"selection_status":"UNASSESSED"})
+    relationships=[]
+    candidate_polygons=[Polygon(row["polygon"],row.get("interior_rings") or []) for row in rows]
+    for index,left in enumerate(candidate_polygons):
+        for other_index in range(index+1,len(candidate_polygons)):
+            right=candidate_polygons[other_index]
+            relation=("CONTAINS" if left.contains(right) else "WITHIN" if left.within(right) else
+                      "OVERLAPS" if left.overlaps(right) else "TOUCHES" if left.touches(right) else "DISJOINT")
+            relationships.append({"candidate_a_id":rows[index]["candidate_id"],
+                                  "candidate_b_id":rows[other_index]["candidate_id"],"relation":relation})
+    return {"frame_id":frame_id,"candidates":rows,"candidate_relationships":relationships,
+            "runtime_seconds":round(time.perf_counter()-started,6)}
 
 
 def classify_plan_regions(candidate_diagnostic):
@@ -88,23 +119,29 @@ def classify_plan_regions(candidate_diagnostic):
     return regions
 
 
-def _material_interval_lines(wall):
-    """Return only occupied, source-backed wall intervals as material evidence."""
+def _material_interval_records(wall):
+    """Return identified occupied, source-backed wall material intervals."""
     if not (wall.get("source_handles") or wall.get("source_fragments")):
         return []
     solid=wall.get("wall_solid") or {}; origin=solid.get("axis_origin"); direction=solid.get("axis_direction")
     if not origin or not direction:
         return []
     rows=[]
-    for low,high in solid.get("occupied_intervals") or []:
+    for index,(low,high) in enumerate(solid.get("occupied_intervals") or []):
         if not (math.isfinite(float(low)) and math.isfinite(float(high))) or high<=low:
             continue
         a=(origin[0]+low*direction[0],origin[1]+low*direction[1])
         b=(origin[0]+high*direction[0],origin[1]+high*direction[1])
         line=LineString((a,b))
         if line.length>0:
-            rows.append(line)
+            rows.append({"material_interval_id":_sid("MATINT",[wall["wall_id"],index,low,high]),
+                         "interval":[low,high],"line":line})
     return rows
+
+
+def _material_interval_lines(wall):
+    """Return only occupied, source-backed wall intervals as material evidence."""
+    return [row["line"] for row in _material_interval_records(wall)]
 
 
 def _direction_classes(lines, angular_tolerance=2.0):
@@ -153,14 +190,25 @@ def _shell_boundary_proof(candidate, walls, tolerance, enclosure_closures=()):
             key=lambda points:(points[0],points[-1],len(points)))
     strong_directions=_direction_classes(strong)
     known_directions=_direction_classes(known)
-    internal_source_walls=[]
+    internal_partition_evidence=[]
     boundary_ids=set(candidate.get("wall_ids") or [])
     for wall in walls:
-        if wall.get("wall_id") in boundary_ids or not _material_interval_lines(wall):
+        if wall.get("wall_id") in boundary_ids:
             continue
-        line=_wall_line(wall)
-        if shell.buffer(tol).covers(line.representative_point()):
-            internal_source_walls.append(wall["wall_id"])
+        for material in _material_interval_records(wall):
+            applicable=material["line"].intersection(shell)
+            if applicable.is_empty or applicable.length<=tol:
+                continue
+            internal_partition_evidence.append({
+                "wall_id":wall["wall_id"],
+                "material_interval_id":material["material_interval_id"],
+                "source_handles":sorted(wall.get("source_handles") or []),
+                "source_lineage":wall.get("source_lineage") or [],
+                "material_geometry":[list(point) for point in material["line"].coords],
+                "applicable_material_length":applicable.length,
+                "relationship_to_candidate_shell":"INTERSECTS_SHELL_INTERIOR",
+            })
+    internal_source_walls=sorted({row["wall_id"] for row in internal_partition_evidence})
     reasons=[]
     if not shell.is_valid or shell.area<=0: reasons.append("INVALID_SHELL_GEOMETRY")
     if unresolved_closure_ids: reasons.append("UNGOVERNED_EXTERIOR_CLOSURE")
@@ -168,6 +216,18 @@ def _shell_boundary_proof(candidate, walls, tolerance, enclosure_closures=()):
     if len(strong_directions)<2: reasons.append("DOUBLE_FACE_SUPPORT_NOT_DISTRIBUTED")
     if len(known_directions)<2: reasons.append("KNOWN_THICKNESS_SUPPORT_NOT_DISTRIBUTED")
     if not internal_source_walls: reasons.append("SOURCE_BACKED_INTERNAL_PARTITION_REQUIRED")
+    boundary_evidence=[]
+    for wall in sorted(boundary_walls,key=lambda row:row["wall_id"]):
+        intervals=[]
+        for index,(low,high) in enumerate((wall.get("wall_solid") or {}).get("occupied_intervals") or []):
+            intervals.append({"material_interval_id":_sid("MATINT",[wall["wall_id"],index,low,high]),
+                              "interval":[low,high]})
+        boundary_evidence.append({"wall_id":wall["wall_id"],"representation":wall.get("representation"),
+                                  "source_handles":sorted(wall.get("source_handles") or []),
+                                  "source_fragments":sorted(wall.get("source_fragments") or []),
+                                  "source_lineage":wall.get("source_lineage") or [],
+                                  "known_thickness":wall.get("thickness"),
+                                  "material_intervals":intervals})
     return {
         "status":"SUPPORTED" if not reasons else "INPUT_REQUIRED",
         "reasons":reasons,
@@ -182,7 +242,10 @@ def _shell_boundary_proof(candidate, walls, tolerance, enclosure_closures=()):
         "double_face_direction_classes":strong_directions,
         "known_thickness_direction_classes":known_directions,
         "source_backed_internal_wall_ids":sorted(internal_source_walls),
+        "internal_partition_evidence":sorted(internal_partition_evidence,
+                                             key=lambda row:(row["wall_id"],row["material_interval_id"])),
         "closure_ids":sorted(candidate.get("closure_ids") or []),
+        "boundary_evidence":boundary_evidence,
     }
 
 
@@ -309,7 +372,9 @@ def evidence_based_building_envelope(walls, *, frame_id, tolerance, semantic_lab
         return ({"building_envelope_id":_sid("ENV",[frame_id,"UNKNOWN",reason]),"frame_id":frame_id,"outer_ring":[],"interior_voids":[],"components":[],"exterior_wall_ids":[],"source_handles":[],"area":0.0,"perimeter":0.0,"confidence":0.0,"status":"INPUT_REQUIRED","reason":reason,"evidence":[{"class":"EVIDENCE_BASED_REGION_CLASSIFICATION","conflict_count":len(conflicts),"interior_region_count":len(interior)}],"schema":"canonical-building-envelope/2.0"},diagnostic,regions)
     merged=unary_union(interior); components=list(merged.geoms) if merged.geom_type=="MultiPolygon" else [merged]; primary=max(components,key=lambda poly:poly.area)
     status="HIGH_CONFIDENCE" if len(components)==1 else "INPUT_REQUIRED"
-    boundary_ids=[wall["wall_id"] for wall in walls if _wall_line(wall).distance(merged.boundary)<=max(tolerance*4,1e-7)]
+    boundary_ids=[wall["wall_id"] for wall in walls
+                  if any(line.distance(merged.boundary)<=max(tolerance*4,1e-7)
+                         for line in _material_interval_lines(wall))]
     handles=sorted({handle for wall in walls if wall["wall_id"] in boundary_ids for handle in wall.get("source_handles") or []})
     envelope={"building_envelope_id":_sid("ENV",[frame_id,[list(p) for p in primary.exterior.coords]]),"frame_id":frame_id,"outer_ring":[list(p) for p in primary.exterior.coords],"interior_voids":[[list(p) for p in ring.coords] for ring in primary.interiors],"components":[{"outer_ring":[list(p) for p in poly.exterior.coords],"interior_voids":[[list(p) for p in ring.coords] for ring in poly.interiors]} for poly in components],"exterior_wall_ids":boundary_ids,"source_handles":handles,"area":merged.area,"perimeter":merged.length,"confidence":.85 if status=="HIGH_CONFIDENCE" else .4,"status":status,"reason":"EVIDENCE_SUPPORTED_INTERIOR_UNION" if status=="HIGH_CONFIDENCE" else "DISCONNECTED_INTERIOR_COMPONENTS","evidence":[{"class":"EVIDENCE_BASED_REGION_CLASSIFICATION","interior_region_count":len(interior),"site_region_count":sum(r["role"]=="SITE_EXTERIOR" for r in regions),"semi_exterior_region_count":sum(r["role"]=="SEMI_EXTERIOR" for r in regions)}],"schema":"canonical-building-envelope/2.0"}
     return envelope,diagnostic,regions
@@ -425,6 +490,8 @@ def _pair_wall_faces(walls, clusters, tol):
                        "thickness":distance,"thickness_status":"INFERRED_LOCAL_CLUSTER","orientation":angle,
                        "length":center.length,"source_fragments":sorted(set(a["source_fragments"]+b["source_fragments"])),
                        "source_handles":handles,"junction_start":None,"junction_end":None,"junctions":[],
+                       "source_lineage":sorted(a.get("source_lineage",[])+b.get("source_lineage",[]),
+                                               key=lambda row:json.dumps(row,sort_keys=True)),
                        "interruptions":interruptions,"candidate_openings":[],"confidence":.9,"status":"HIGH_CONFIDENCE",
                        "evidence":[{"class":"PAIRED_WALL_FACES","face_wall_ids":[a["wall_id"],b["wall_id"]],
                                     "measured_thickness":distance,"local_cluster":cluster}],
@@ -520,6 +587,13 @@ def reconstruct_canonical_walls(segment_records, *, frame_id, tolerance, metres_
                           "thickness":None,"thickness_status":"UNKNOWN",
                           "orientation":angle,"length":center.length,"source_fragments":[rows[i]["segment_id"] for i in group],
                           "source_handles":handles,"junction_start":None,"junction_end":None,"junctions":[],
+                          "source_lineage":[{"segment_id":rows[i]["segment_id"],
+                                             "source_handle":rows[i].get("source_handle"),
+                                             "source_insert_handle":rows[i].get("source_insert_handle"),
+                                             "source_block_path":rows[i].get("source_block_path") or [],
+                                             "source_transform":rows[i].get("source_transform"),
+                                             "primitive_geometry_fingerprint":_sid("PRIM",_canonical_points(rows[i]["geometry"]))}
+                                            for i in sorted(group)],
                           "interruptions":[{"interval":g,"kind":"UNKNOWN_FRAGMENTATION","classification":"FRAGMENTATION_GAP",
                                             "confidence":.25,"status":"AMBIGUOUS"} for g in gaps],"candidate_openings":[],
                           "confidence":.8 if len(group)>1 else (.72 if recovered else .65),
