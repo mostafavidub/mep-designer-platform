@@ -65,12 +65,12 @@ def test_rejected_annotation_never_enters_wall_objects():
     assert all("SEG-NOTE" not in wall["source_fragments"] for wall in result["walls"])
 
 
-def _wall(wall_id, a, b, occupied, interruptions=()):
+def _wall(wall_id, a, b, occupied, interruptions=(), *, interruption_kind="SUPPORTED_OPENING"):
     line=LineString((a,b)); length=line.length
     ux=(b[0]-a[0])/length; uy=(b[1]-a[1])/length
     return {"wall_id":wall_id,"frame_id":"F1","centerline":[a,b],"face_a":None,"face_b":None,
             "wall_solid":{"axis_origin":list(a),"axis_direction":[ux,uy],"occupied_intervals":occupied},
-            "interruptions":[{"interval":list(row),"kind":"SUPPORTED_OPENING"} for row in interruptions],
+            "interruptions":[{"interval":list(row),"kind":interruption_kind} for row in interruptions],
             "source_fragments":[],"source_handles":[],"thickness":None}
 
 
@@ -80,7 +80,8 @@ def _envelope():
 
 
 def test_canonical_subdivision_uses_envelope_wall_material_and_virtual_closure():
-    walls=[_wall("PART",(5,0),(5,6),[[0,2.5],[3.5,6]],[(2.5,3.5)])]
+    walls=[_wall("PART",(5,0),(5,6),[[0,2.5],[3.5,6]],[(2.5,3.5)],
+                 interruption_kind="PROVEN_OPENING")]
     walls[0].update({"representation":"DOUBLE_FACE","face_a":[[4.9,0],[4.9,6]],
                      "face_b":[[5.1,0],[5.1,6]],"source_handles":["PART-A","PART-B"]})
     walls[0]["interruptions"][0].update({"face_a_gap":[2.5,3.5],"face_b_gap":[2.5,3.5]})
@@ -92,7 +93,8 @@ def test_canonical_subdivision_uses_envelope_wall_material_and_virtual_closure()
 
 
 def test_double_face_door_gap_closes_enclosure_without_becoming_material():
-    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)],
+               interruption_kind="PROVEN_OPENING")
     wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
                  "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"]})
     wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
@@ -109,6 +111,20 @@ def test_single_line_gap_is_not_promoted_without_independent_support():
     rows=canonical_enclosure_continuity([wall],frame_id="F1")
     assert rows[0]["continuity_status"]=="SUPPORTED_WALL_CONTINUITY"
     assert rows[0]["roles"]==[]
+
+
+def test_supported_and_likely_interruptions_do_not_gain_proven_continuity():
+    expected={"SUPPORTED_OPENING":("SUPPORTED_WALL_CONTINUITY","SUPPORTED"),
+              "LIKELY_OPENING":("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED")}
+    for kind,(continuity,status) in expected.items():
+        wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)],interruption_kind=kind)
+        wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
+                     "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"],
+                     "source_lineage":["LINEAGE-A","LINEAGE-B"]})
+        wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
+        row=canonical_enclosure_continuity([wall],frame_id="F1")[0]
+        assert (row["continuity_status"],row["status"])==(continuity,status)
+        assert row["roles"]==[]
 
 
 def test_drafting_fragmentation_is_diagnostic_not_promoted():
@@ -234,18 +250,86 @@ def test_opening_evidence_on_same_wall_cannot_classify_a_distant_gap():
     assert gaps[0]["portal_evidence_ids"]==[]
 
 
-def test_opening_evidence_locally_overlapping_gap_may_classify_that_gap_only():
+def test_strong_door_or_window_symbol_without_material_gap_cannot_classify_endpoint_relation():
     walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
     closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
     host_ids=closures[0]["host_wall_ids"]
-    evidence=[{"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
-               "candidate_type":"door","candidate_host_wall_ids":host_ids,
-               "geometry":{"points":[[4.0,0.0],[5.0,0.0]]}}]
-    gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
-    assert gaps[0]["classification"]=="PROVEN_DOOR_APERTURE"
-    assert closures[0]["roles"]==["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
-    assert closures[0]["portal_authority"]=="NONE"
-    assert gaps[0]["portal_evidence_ids"]==["OPENEV-A"]
+    for candidate_type in ("door","window"):
+        evidence=[{"opening_evidence_id":f"OPENEV-{candidate_type}",
+                   "status":"OPENING_EVIDENCE_PRESENT",
+                   "candidate_type":candidate_type,"candidate_host_wall_ids":host_ids,
+                   "geometry":{"points":[[4.0,0.0],[5.0,0.0]]}}]
+        gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
+        assert gaps[0]["classification"]=="UNRESOLVED"
+        assert closures[0]["roles"]==[]
+        assert closures[0]["portal_authority"]=="NONE"
+        assert gaps[0]["portal_evidence_ids"]==[]
+        assert gaps[0]["opening_locality_matches"][0]["material_aperture_reason"]=="MATERIAL_GAP_UNPROVEN"
+
+
+def _material_aperture_fixture(candidate_type="door", *, host="W", interval=(4,5),
+                               evidence_interval=None, orientation="PARALLEL_OR_PERPENDICULAR"):
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
+                 "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"],
+                 "source_fragments":["SEG-A","SEG-B"],
+                 "source_lineage":["LINEAGE-A","LINEAGE-B"],"thickness":.2})
+    wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
+    closure=canonical_enclosure_continuity([wall],frame_id="F1")[0]
+    exact=list(evidence_interval or interval)
+    evidence={"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
+              "candidate_type":candidate_type,"candidate_host_wall_ids":[host],
+              "source_handles":["OPENING-SOURCE"],
+              "material_gap_status":"UNPROVEN",
+              "geometry":{"points":[[interval[0],0.0],[interval[1],0.0]]},
+              "host_evaluations":[{"wall_id":host,"orientation_agreement":orientation,
+                                   "wall_material_before":True,"wall_material_after":True,
+                                   "nearby_interruptions":[{"interval":exact}]}]}
+    return wall,closure,evidence
+
+
+def test_source_backed_material_gap_and_exact_door_binding_prove_aperture_only():
+    wall,closure,evidence=_material_aperture_fixture("door")
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="PROVEN_DOOR_APERTURE"
+    assert gap["material_gap_status"]=="SOURCE_BACKED_PROVEN"
+    assert closure["roles"]==["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    assert closure["material"] is False
+    assert {closure[key] for key in ("material_geometry","wall_authority","portal_authority",
+                                     "routing_authority","access_authority")}=={"NONE"}
+
+
+def test_source_backed_material_gap_and_exact_window_binding_prove_aperture_only():
+    wall,closure,evidence=_material_aperture_fixture("window")
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="PROVEN_WINDOW_APERTURE"
+    assert closure["portal_authority"]=="NONE"
+    assert closure["access_authority"]=="NONE"
+
+
+def test_orthogonal_endpoint_relation_cannot_become_door_from_nearby_symbol():
+    walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    closure=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)[0]
+    evidence={"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
+              "candidate_type":"door","candidate_host_wall_ids":["A","B"],
+              "geometry":{"points":closure["geometry"]}}
+    gap=classify_internal_wall_gaps(walls,[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert closure["roles"]==[]
+
+
+def test_opening_mapped_only_to_unrelated_host_cannot_prove_aperture():
+    wall,closure,evidence=_material_aperture_fixture("door",host="UNRELATED")
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert gap["portal_evidence_ids"]==[]
+
+
+def test_door_symbol_at_other_gap_cannot_prove_this_aperture():
+    wall,closure,evidence=_material_aperture_fixture("door",evidence_interval=(7,8))
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert gap["opening_locality_matches"][0]["material_aperture_reason"]=="EXACT_INTERRUPTION_MISMATCH"
 
 
 def test_reference_arc_cannot_promote_an_envelope_gap():

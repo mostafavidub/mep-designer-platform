@@ -31,6 +31,24 @@ interruption. They retain their MATINT bindings and explicitly carry
 `material = false`, `material_geometry = NONE`, and Wall, Portal, Routing and
 Access authority `NONE`.
 
+Opening motifs are `SUPPORTING_ONLY`. A Door or Window block, swing arc, leaf,
+layer symbol, or other localized motif cannot prove that wall material is
+absent and cannot grant `ENVELOPE_SUPPORT`. Aperture classification requires a
+canonical interruption on one exact host Wall, two source-backed MATINT
+boundaries, paired-face gap evidence, material on both sides, retained source
+lineage, exact interruption binding, and compatible orientation. Only after
+that independent material-gap contract is satisfied may a localized motif
+classify the existing gap as `PROVEN_DOOR_APERTURE` or
+`PROVEN_WINDOW_APERTURE`.
+
+`PROVEN_OPENING` is safe for direct enclosure continuity only when the same
+double-face and material-on-both-sides checks pass. `SUPPORTED_OPENING` remains
+supporting-only until independently corroborated, and `LIKELY_OPENING` remains
+`INPUT_REQUIRED`. An orthogonal endpoint relation, a nearby symbol on another
+Wall, or a symbol associated with another interruption cannot be converted to
+an aperture by proximity. Even a qualified aperture remains non-material and
+grants no Wall, Portal, Routing, or Access authority.
+
 ## Deterministic material graph
 
 The architecture output now contains a diagnostic

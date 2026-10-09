@@ -695,13 +695,17 @@ def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
                 any(abs(row["interval"][1]-low)<=tol for row in materials)
                 and any(abs(row["interval"][0]-high)<=tol for row in materials))
             if (double and both_faces and material_on_both_sides
-                    and kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}):
+                    and kind == "PROVEN_OPENING"):
                 continuity,status,confidence,reason=("PROVEN_WALL_CONTINUITY","PROVEN",.95,
                                                      "PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP")
                 roles=["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
-            elif kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}:
+            elif kind == "SUPPORTED_OPENING":
                 continuity,status,confidence,reason=("SUPPORTED_WALL_CONTINUITY","SUPPORTED",.65,
                                                      "COLLINEAR_WALL_INTERRUPTION_REQUIRES_CORROBORATION")
+                roles=[]
+            elif kind == "LIKELY_OPENING":
+                continuity,status,confidence,reason=("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED",.4,
+                                                     "LIKELY_OPENING_REQUIRES_CORROBORATION")
                 roles=[]
             else:
                 continuity,status,confidence,reason=("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED",.25,
@@ -1040,6 +1044,58 @@ def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.0
             "material_junction_count":sum(row["material_junction_count"] for row in components)}
 
 
+def _same_interval(left, right, tolerance):
+    return (isinstance(left,(list,tuple)) and isinstance(right,(list,tuple))
+            and len(left)==2 and len(right)==2
+            and abs(float(left[0])-float(right[0]))<=tolerance
+            and abs(float(left[1])-float(right[1]))<=tolerance)
+
+
+def _proven_material_aperture_match(closure, opening, *, tolerance):
+    """Bind a supporting motif to an independently proven material gap.
+
+    A symbol never proves the gap.  The gap must already be a canonical
+    interruption of one exact host Wall, bounded by two source-material
+    intervals with paired-face and lineage evidence.  Endpoint relations are
+    deliberately ineligible: proximity between separate Walls is not an
+    aperture contract.
+    """
+    host_wall_id=closure.get("host_wall_id")
+    axis_interval=closure.get("axis_interval")
+    evidence=next((row for row in closure.get("evidence") or []
+                   if row.get("class")=="WALL_INTERRUPTION_CONTINUITY"),{})
+    material_ids=closure.get("host_material_interval_ids") or []
+    source_backed=bool(closure.get("source_handles")) and bool(
+        closure.get("source_lineage") or closure.get("source_evidence"))
+    gap_proven=(host_wall_id and axis_interval and len(material_ids)>=2
+                and evidence.get("paired_face_gap") is True
+                and evidence.get("material_on_both_sides") is True
+                and source_backed)
+    if not gap_proven:
+        return False,"MATERIAL_GAP_UNPROVEN"
+    if not any(opening.get("source_handles") or []):
+        return False,"OPENING_SOURCE_PROVENANCE_MISSING"
+    candidate_hosts=set(opening.get("candidate_host_wall_ids") or [])
+    if host_wall_id not in candidate_hosts:
+        return False,"EXACT_HOST_WALL_MISMATCH"
+    host_evaluation=next((row for row in opening.get("host_evaluations") or []
+                          if row.get("wall_id")==host_wall_id),None)
+    if not host_evaluation:
+        return False,"EXACT_HOST_EVALUATION_MISSING"
+    if host_evaluation.get("orientation_agreement") != "PARALLEL_OR_PERPENDICULAR":
+        return False,"OPENING_ORIENTATION_CONFLICT"
+    if not (host_evaluation.get("wall_material_before") is True
+            and host_evaluation.get("wall_material_after") is True):
+        return False,"HOST_MATERIAL_SIDES_UNPROVEN"
+    exact_gap=any(_same_interval(row.get("interval"),axis_interval,tolerance)
+                  for row in host_evaluation.get("nearby_interruptions") or [])
+    if not exact_gap:
+        return False,"EXACT_INTERRUPTION_MISMATCH"
+    if opening.get("material_gap_status") not in {None,"UNPROVEN","SOURCE_BACKED_PROVEN"}:
+        return False,"MATERIAL_GAP_STATUS_CONFLICT"
+    return True,"SOURCE_BACKED_MATERIAL_APERTURE"
+
+
 def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=None, tolerance=.001):
     """Classify discontinuities before they may enter subdivision topology.
 
@@ -1078,10 +1134,15 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
                                (local_thickness or 0.0)*1.5,
                                min(gap_width,opening_width)*.5)
             if distance>locality_limit: continue
-            matching.append(opening)
+            material_match,material_reason=_proven_material_aperture_match(
+                closure,opening,tolerance=max(float(tolerance or .001),1e-9))
+            if material_match:
+                matching.append(opening)
             opening_matches.append({"opening_evidence_id":opening["opening_evidence_id"],
                                     "distance_to_gap":distance,
-                                    "derived_locality_limit":locality_limit})
+                                    "derived_locality_limit":locality_limit,
+                                    "material_aperture_match":material_match,
+                                    "material_aperture_reason":material_reason})
         portal_types=sorted({str(row.get("candidate_type") or "").upper() for row in matching})
         reason=closure.get("reason")
         if "DOOR" in portal_types:
@@ -1127,6 +1188,10 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
         gap_id=_sid("GAP",[frame_id,sorted(host_ids),closure.get("geometry")])
         closure.update({"gap_id":gap_id,"gap_classification":classification,
                         "gap_status":status,"unresolved_ownership":ownership,
+                        "material_gap_status":("SOURCE_BACKED_PROVEN"
+                                               if classification in {"PROVEN_DOOR_APERTURE",
+                                                                     "PROVEN_WINDOW_APERTURE"}
+                                               else "UNPROVEN"),
                         "portal_evidence_ids":sorted(
                             row["opening_evidence_id"] for row in matching),
                         "opening_locality_matches":sorted(opening_matches,key=lambda row:row["opening_evidence_id"]),
@@ -1140,6 +1205,7 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
                      "closure_id":closure.get("closure_id"),
                      "candidate_relation_id":closure.get("candidate_relation_id"),
                      "unresolved_ownership":ownership,
+                     "material_gap_status":closure["material_gap_status"],
                      "material_geometry":"NONE","wall_authority":"NONE",
                      "routing_authority":"NONE","portal_authority":"NONE"})
     return sorted(rows,key=lambda row:row["gap_id"])
