@@ -438,7 +438,7 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=())
                 if abs(delta-90)>2:
                     continue
                 thickness=float(other["thickness"]); width=gap_line.length
-                if abs(width-thickness)>max(tol*4,thickness*.05):
+                if abs(width-thickness)>tol*4:
                     continue
                 faces=[LineString(other["face_a"]),LineString(other["face_b"])]
                 direct=max(gap_points[0].distance(faces[0]),gap_points[1].distance(faces[1]))
@@ -469,7 +469,7 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=())
                     if delta>2:
                         continue
                     distance=left_line.distance(right_line); width=gap_line.length
-                    if abs(distance-width)>max(tol*4,width*.05):
+                    if abs(distance-width)>tol*4:
                         continue
                     direct=max(gap_points[0].distance(left_line),gap_points[1].distance(right_line))
                     reverse=max(gap_points[0].distance(right_line),gap_points[1].distance(left_line))
