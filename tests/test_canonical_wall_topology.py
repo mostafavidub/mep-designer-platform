@@ -338,6 +338,60 @@ def test_short_parallel_face_axis_extension_is_not_envelope_material():
     assert not any(row["area"]>1 for row in diagnostic["candidates"])
 
 
+def test_full_axis_inside_shell_cannot_prove_internal_partition_when_material_is_outside():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    partition=_topology_wall("P",(5,5),(25,5))
+    partition["wall_solid"]["occupied_intervals"]=[[10,12]]
+    partition["source_lineage"]=[{"segment_id":"SEG-P","source_handle":"P"}]
+    walls.append(partition)
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    proof=shell["source_boundary_proof"]
+    assert LineString(partition["centerline"]).representative_point().within(Polygon(shell["polygon"]))
+    assert proof["internal_partition_evidence"]==[]
+    assert "SOURCE_BACKED_INTERNAL_PARTITION_REQUIRED" in proof["reasons"]
+    assert envelope["status"]=="INPUT_REQUIRED"
+
+
+def test_short_material_interval_inside_shell_proves_partition_with_matint_lineage():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    partition=_topology_wall("P",(5,5),(25,5))
+    partition["wall_solid"]["occupied_intervals"]=[[0,2]]
+    partition["source_lineage"]=[{"segment_id":"SEG-P","source_handle":"P",
+                                  "source_block_path":["UNIT"],"source_transform":{"id":"TX-P"}}]
+    walls.append(partition)
+    envelope,diagnostic,_=evidence_based_building_envelope(walls,frame_id="F1",tolerance=.001)
+    shell=max(diagnostic["candidates"],key=lambda row:row["area"])
+    proof=shell["source_boundary_proof"]
+    evidence=proof["internal_partition_evidence"]
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+    assert proof["source_backed_internal_wall_ids"]==["P"]
+    assert len(evidence)==1
+    assert evidence[0]["material_interval_id"].startswith("MATINT-")
+    assert evidence[0]["source_handles"]==["P"]
+    assert evidence[0]["source_lineage"]==partition["source_lineage"]
+    assert evidence[0]["material_geometry"]==[[5.0,5.0],[7.0,5.0]]
+    assert evidence[0]["applicable_material_length"]==2.0
+    assert shell["internal_wall_length"]==2.0
+
+
+def test_semantic_union_exterior_wall_ids_require_material_at_boundary():
+    walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
+           _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0))]
+    stray=_topology_wall("STRAY",(0,0),(0,30))
+    stray["wall_solid"]["occupied_intervals"]=[[20,22]]
+    walls.append(stray)
+    labels=[{"point":[2,2],"semantic_candidate":"bedroom"},
+            {"point":[8,8],"semantic_candidate":"kitchen"}]
+    envelope,_,_=evidence_based_building_envelope(
+        walls,frame_id="F1",tolerance=.001,semantic_labels=labels)
+    assert envelope["status"]=="HIGH_CONFIDENCE"
+    assert "STRAY" not in envelope["exterior_wall_ids"]
+    assert set(envelope["exterior_wall_ids"])=={"A","B","C","D"}
+
+
 def test_fragmented_shell_requires_material_or_governed_continuity_for_every_interval():
     walls=[_topology_wall("A",(0,0),(10,0)),_topology_wall("B",(10,0),(10,10)),
            _topology_wall("C",(10,10),(0,10)),_topology_wall("D",(0,10),(0,0)),

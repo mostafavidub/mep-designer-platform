@@ -31,6 +31,19 @@ path, source transform when available, and primitive-geometry fingerprint.
 Candidate relationships (`CONTAINS`, `WITHIN`, `OVERLAPS`, `TOUCHES`, and
 `DISJOINT`) are emitted as diagnostics only and grant no authority.
 
+Internal-partition proof and its reported length follow the same contract.
+Only the portion of an identified `MATINT-*` interval applicable to the shell
+may prove an internal source partition or contribute to
+`internal_wall_length`. Each proof record retains the Wall ID, MATINT ID,
+source handles and lineage, material geometry, applicable material length, and
+its relationship to the candidate shell. A full-axis representative point has
+no material authority.
+
+The semantic-interior-union fallback likewise associates exterior Wall IDs
+only when occupied material is at the resulting boundary. Full axes remain
+permitted solely for topology-only endpoint-closure discovery; those closures
+are explicitly non-material and retain `wall_authority = NONE`.
+
 ## Roof interval classification
 
 All six former unsupported intervals are classified
@@ -78,3 +91,11 @@ The rejected intermediate hypothesis of narrowing canonical face pairing was
 also replayed during diagnosis. It changed Wall/Space authority and introduced
 a Dimension conflict, so it was reverted and is not part of this change. The
 final replay above validates the narrower material-polygonization correction.
+
+The follow-up internal-partition authority audit was replayed once after its
+targeted regressions passed. Relative to the prior qualified artifact it
+preserved candidate counts (Roof 5, Typical 19), zero canonical cells for both
+frames, every Wall and Physical Space ID in order, and every global authority
+metric listed above. Maximum candidate internal material length remained zero
+for both frames. Both envelopes therefore remain `INPUT_REQUIRED` without any
+new or withdrawn architectural authority.
