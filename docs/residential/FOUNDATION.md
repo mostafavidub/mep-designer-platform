@@ -10,7 +10,7 @@ Status: **ARCHITECTURE_FOUNDATION_RESEARCH_REQUIRED**. The original catalogs rem
 | Exam source coverage | `exam-coverage.json`, `sources.json` | Ten candidate topics; current official list not verified, denominator unknown, percentage null. |
 | Public-plan study | `plan-study.json`, `heuristics.json` | 122 visually inspected distinct floor/layout records, 74 projects; 22 context-only/partial/multilevel examples. Qualitative, not dimensional certification. |
 | Original symbols | `symbols.json`, `cad_engine/residential_symbols.py` | 41 parametric references; four manufacturer footprint examples; most normative/ergonomic dimensions and operating clearances unresolved. |
-| Owner requirements | `owner-questionnaire.json`, `owner-program.schema.json` | 58 Persian questions:13 mandatory,8 conditional,37 optional;13 auto facts. Typed future Owner Program fields are defined; complete cross-field validation still requires implementation. |
+| Owner requirements | `owner-questionnaire.json`, `owner-program.schema.json`, additive v2 draft/resolved schemas | 58 Persian questions:13 mandatory,8 conditional,37 optional;13 auto facts. V1 remains unchanged. Offline Owner Program 2.0 adds per-field provenance, deterministic conflicts, migration findings and fail-closed authority bindings without runtime activation. |
 | QA matrix | `qa-matrix.json` | 104 planned engine scenarios, not 104 executed tests. Actual foundation regressions separately reported. |
 | Generation contract | `generation-contract.json`, input/output schemas | Version0.2.0;15-stage constraint-first workflow. Input preflight and ranking guards are implemented; candidate search and complete independent layout validator are not implemented. |
 
@@ -63,6 +63,19 @@ CAD strategy: metre-native original blocks on object/usage/port layers; explicit
 The master questionnaire separates purpose, unit mix, required room counts, reception/kitchen style, sanitary program, privacy, accessibility, storage, laundry, furniture, balcony and equipment reservations. City/parcel/climate/permit facts are not asked redundantly when supported by authoritative project input. Owner preference cannot override law.
 
 V1 asks13 essentials first, then8 conditional branches only when activated, then37 optional refinements. Answers need project/revision/scope/owner confirmation and a stable hash; changes invalidate dependent candidates, metrics and review. Mandatory unknowns block. Optional unknowns remain unscored; no hidden defaults. Unit counts/types/ranges have cross-checks. Other complex structured preferences currently require manual contract review; this is not a complete deployable questionnaire service.
+
+Owner Program 2.0 is an additive offline contract. `OwnerProgramDraft` can preserve a
+valid incomplete brief before site or local authority is available; `DRAFT_VALID` does
+not mean generator-ready or geometrically feasible. The draft owns the one canonical
+unit program and records the exact value and provenance for every material field.
+`ResolvedGenerationInput` stores the draft and unit-program hashes and binds exact
+site, national-ruleset and local-profile identities, versions, source references and
+hashes. Missing local authority returns `LOCAL_RULE_REQUIRED`; changed bindings return
+`STALE_BINDING`; geometry not yet checked returns
+`NEEDS_GEOMETRIC_FEASIBILITY_CHECK`. V1 read/write and questionnaire behavior remain
+unchanged. The migration adapter preserves the complete v1 payload and marks unknown
+legacy provenance explicitly. Neither v2 contract is imported by the production
+runtime or enables the Generator.
 
 ## Generation and validation design
 

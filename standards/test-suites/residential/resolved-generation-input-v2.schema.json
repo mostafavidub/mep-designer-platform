@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-resolved-generation-input/2.0",
+  "title": "Planha ResolvedGenerationInput 2.0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "resolved_id",
+    "project_id",
+    "program_id",
+    "program_revision",
+    "owner_program_hash",
+    "canonical_unit_program_hash",
+    "site_binding",
+    "national_ruleset_binding",
+    "local_profile_binding",
+    "derived_project_facts",
+    "geometry_feasibility",
+    "runtime_enabled",
+    "resolution_status",
+    "resolution_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "architecture-resolved-generation-input/2.0"
+    },
+    "resolved_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "program_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "owner_program_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "canonical_unit_program_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "site_binding": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "source_reference",
+        "source_hash",
+        "verification_status"
+      ],
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "verification_status": {
+          "enum": [
+            "VERIFIED",
+            "INPUT_REQUIRED",
+            "STALE",
+            "UNKNOWN"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "national_ruleset_binding": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "source_reference",
+        "source_hash",
+        "verification_status"
+      ],
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "verification_status": {
+          "enum": [
+            "VERIFIED",
+            "INPUT_REQUIRED",
+            "STALE",
+            "UNKNOWN"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "local_profile_binding": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "source_reference",
+        "source_hash",
+        "verification_status"
+      ],
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_reference": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "verification_status": {
+          "enum": [
+            "VERIFIED",
+            "INPUT_REQUIRED",
+            "STALE",
+            "UNKNOWN"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "derived_project_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field_id",
+          "value",
+          "unit",
+          "source_type",
+          "source_reference",
+          "source_hash",
+          "authority_type",
+          "verification_status",
+          "revision",
+          "dependencies"
+        ],
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {},
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_reference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "authority_type": {
+            "enum": [
+              "OWNER_REQUIREMENT",
+              "OWNER_PREFERENCE",
+              "SITE_EVIDENCE",
+              "NATIONAL_CODE",
+              "LOCAL_CODE",
+              "DERIVED_GEOMETRY",
+              "SYSTEM_CALCULATION",
+              "HUMAN_DECISION",
+              "UNKNOWN_LEGACY_SOURCE"
+            ]
+          },
+          "verification_status": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "INPUT_REQUIRED",
+              "STALE",
+              "UNKNOWN"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "geometry_feasibility": {
+      "enum": [
+        "NOT_EXECUTED",
+        "INPUT_REQUIRED",
+        "VERIFIED"
+      ]
+    },
+    "runtime_enabled": {
+      "const": false
+    },
+    "resolution_status": {
+      "enum": [
+        "DEFINITELY_INVALID",
+        "VALIDATED_INPUT",
+        "INPUT_REQUIRED",
+        "LOCAL_RULE_REQUIRED",
+        "STALE_BINDING",
+        "NEEDS_GEOMETRIC_FEASIBILITY_CHECK"
+      ]
+    },
+    "resolution_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "additionalProperties": false
+}

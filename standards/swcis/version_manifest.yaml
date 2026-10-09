@@ -1,8 +1,8 @@
 {
   "standard": "SWCIS",
-  "standard_version": "5.8.0",
+  "standard_version": "5.9.0",
   "schema_version": "1.0.0",
-  "effective_date": "2026-10-08",
+  "effective_date": "2026-10-10",
   "canonical_document": "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
   "machine_contracts": [
     "standards/swcis/system_dependency_graph.yaml",
@@ -20,6 +20,11 @@
     "golden inventory changes"
   ],
   "history": [
+    {
+      "version": "5.9.0",
+      "date": "2026-10-10",
+      "summary": "Add offline, backward-compatible Owner Program 2.0 draft and resolved-input contracts with one canonical unit program, per-field provenance, deterministic migration/loss reporting, stale authority binding and fail-closed validation without runtime activation."
+    },
     {
       "version": "5.8.0",
       "date": "2026-10-08",

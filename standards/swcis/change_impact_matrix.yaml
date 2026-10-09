@@ -25,10 +25,12 @@
         "app/*contract*.py",
         "standards/projects/**",
         "cad_engine/architecture_contract.py",
-        "standards/test-suites/planha-canonical-architecture-v3.schema.json"
+        "standards/test-suites/planha-canonical-architecture-v3.schema.json",
+        "cad_engine/owner_program.py"
       ],
       "seed_modules": [
-        "pmm"
+        "pmm",
+        "questionnaire"
       ],
       "required_evidence": [
         "migration",

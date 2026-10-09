@@ -1766,6 +1766,32 @@
         "forward": "Adopt planha-canonical-identity/2.1, regenerate corrected entity identity, mark identity-bound reviews stale and snapshots superseded only when governed meaning changes; production activation remains a separate decision.",
         "rollback": "Revert the stacked branch before activation; never preserve a collision-prone legacy ID as canonical authority."
       }
+    },
+    {
+      "id": "GOV-2026-049",
+      "status": "APPROVED_FOR_OFFLINE_IMPLEMENTATION",
+      "summary": "Add backward-compatible Architecture Owner Program 2.0 draft and resolved-input contracts with provenance, migration findings and stale-safe authority bindings; retain v1 and keep runtime disabled.",
+      "affected_capabilities": [
+        "residential_foundation_fail_closed"
+      ],
+      "affected_projects": [
+        "offline architecture R&D only"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "Explicit project-owner authorization for offline Owner Program 2.0 implementation with v1 backward compatibility and no runtime activation."
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "migration_test": "must_pass",
+        "v1_compatibility": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Use the explicit non-destructive v1-to-v2 adapter, preserve the complete v1 payload and mark unknown provenance UNKNOWN_LEGACY_SOURCE.",
+        "rollback": "Revert the additive branch; v1 remains unchanged and active."
+      }
     }
   ]
 }
