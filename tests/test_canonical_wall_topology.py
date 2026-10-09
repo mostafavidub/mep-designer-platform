@@ -9,6 +9,7 @@ from cad_engine.architectural_topology_quality import (
     evidence_based_building_envelope,
     enumerate_envelope_candidates,
     host_portal_on_walls,
+    material_continuity_graph,
     reconstruct_canonical_walls,
     source_supported_endpoint_closures,
 )
@@ -64,12 +65,12 @@ def test_rejected_annotation_never_enters_wall_objects():
     assert all("SEG-NOTE" not in wall["source_fragments"] for wall in result["walls"])
 
 
-def _wall(wall_id, a, b, occupied, interruptions=()):
+def _wall(wall_id, a, b, occupied, interruptions=(), *, interruption_kind="SUPPORTED_OPENING"):
     line=LineString((a,b)); length=line.length
     ux=(b[0]-a[0])/length; uy=(b[1]-a[1])/length
     return {"wall_id":wall_id,"frame_id":"F1","centerline":[a,b],"face_a":None,"face_b":None,
             "wall_solid":{"axis_origin":list(a),"axis_direction":[ux,uy],"occupied_intervals":occupied},
-            "interruptions":[{"interval":list(row),"kind":"SUPPORTED_OPENING"} for row in interruptions],
+            "interruptions":[{"interval":list(row),"kind":interruption_kind} for row in interruptions],
             "source_fragments":[],"source_handles":[],"thickness":None}
 
 
@@ -79,9 +80,10 @@ def _envelope():
 
 
 def test_canonical_subdivision_uses_envelope_wall_material_and_virtual_closure():
-    walls=[_wall("PART",(5,0),(5,6),[[0,2.5],[3.5,6]],[(2.5,3.5)])]
+    walls=[_wall("PART",(5,0),(5,6),[[0,2.5],[3.5,6]],[(2.5,3.5)],
+                 interruption_kind="PROVEN_OPENING")]
     walls[0].update({"representation":"DOUBLE_FACE","face_a":[[4.9,0],[4.9,6]],
-                     "face_b":[[5.1,0],[5.1,6]]})
+                     "face_b":[[5.1,0],[5.1,6]],"source_handles":["PART-A","PART-B"]})
     walls[0]["interruptions"][0].update({"face_a_gap":[2.5,3.5],"face_b_gap":[2.5,3.5]})
     result=canonical_space_subdivision(walls,_envelope(),frame_id="F1",tolerance=.001)
     assert result["authority"]=="CANONICAL"
@@ -91,7 +93,8 @@ def test_canonical_subdivision_uses_envelope_wall_material_and_virtual_closure()
 
 
 def test_double_face_door_gap_closes_enclosure_without_becoming_material():
-    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)],
+               interruption_kind="PROVEN_OPENING")
     wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
                  "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"]})
     wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
@@ -108,6 +111,20 @@ def test_single_line_gap_is_not_promoted_without_independent_support():
     rows=canonical_enclosure_continuity([wall],frame_id="F1")
     assert rows[0]["continuity_status"]=="SUPPORTED_WALL_CONTINUITY"
     assert rows[0]["roles"]==[]
+
+
+def test_supported_and_likely_interruptions_do_not_gain_proven_continuity():
+    expected={"SUPPORTED_OPENING":("SUPPORTED_WALL_CONTINUITY","SUPPORTED"),
+              "LIKELY_OPENING":("INSUFFICIENT_CONTINUITY","INPUT_REQUIRED")}
+    for kind,(continuity,status) in expected.items():
+        wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)],interruption_kind=kind)
+        wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
+                     "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"],
+                     "source_lineage":["LINEAGE-A","LINEAGE-B"]})
+        wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
+        row=canonical_enclosure_continuity([wall],frame_id="F1")[0]
+        assert (row["continuity_status"],row["status"])==(continuity,status)
+        assert row["roles"]==[]
 
 
 def test_drafting_fragmentation_is_diagnostic_not_promoted():
@@ -171,17 +188,34 @@ def test_source_supported_endpoint_closure_is_nonmaterial_and_deterministic():
     repeat=source_supported_endpoint_closures(list(reversed(walls)),frame_id="F1",tolerance=.001)
     assert first == repeat
     assert len(first) == 1
-    assert first[0]["reason"] == "COLLINEAR_WALL_GAP"
-    assert first[0]["roles"] == ["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    assert first[0]["reason"] == "COLLINEAR_GAP_REQUIRES_OPENING_OR_LINEAGE"
+    assert first[0]["roles"] == []
+    assert first[0]["continuity_status"] == "INSUFFICIENT_CONTINUITY"
     assert first[0]["material"] is False
     assert {first[0][key] for key in ("wall_authority","routing_authority","portal_authority","access_authority")} == {"NONE"}
 
 
 def test_source_supported_endpoint_closure_joins_small_orthogonal_corner():
     walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    walls[0]["source_fragments"]=["SHARED-CORNER"]
+    walls[1]["source_fragments"]=["SHARED-CORNER"]
     rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
     assert len(rows) == 1
-    assert rows[0]["reason"] == "EXTERIOR_CORNER_JOIN"
+    assert rows[0]["reason"] == "PROVEN_CORNER_CONTINUITY"
+    assert rows[0]["proof_class"]=="SHARED_SOURCE_LINEAGE"
+    assert rows[0]["selected_as_governed_closure"] is True
+
+
+def test_orthogonal_proximity_and_double_face_confidence_do_not_prove_corner():
+    walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    relation=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)[0]
+    assert relation["reason"]=="UNRESOLVED_ENDPOINT_RELATION"
+    assert relation["selected_as_governed_closure"] is False
+    assert relation["roles"]==[]
+    assert relation["continuity_status"]=="INSUFFICIENT_CONTINUITY"
+    gap=classify_internal_wall_gaps(walls,[relation],[],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert gap["unresolved_ownership"]=="GENUINE_AMBIGUITY"
 
 
 def test_source_supported_endpoint_closure_rejects_unproven_or_oversized_gap():
@@ -199,7 +233,7 @@ def test_gap_classification_precedes_closure_and_fails_closed_without_portal_evi
     walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
     closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
     gaps=classify_internal_wall_gaps(walls,closures,[],frame_id="F1",tolerance=.001)
-    assert gaps[0]["classification"]=="AMBIGUOUS_GAP"
+    assert gaps[0]["classification"]=="UNRESOLVED"
     assert gaps[0]["status"]=="INPUT_REQUIRED"
     assert closures[0]["portal_authority"]=="NONE"
 
@@ -212,28 +246,223 @@ def test_opening_evidence_on_same_wall_cannot_classify_a_distant_gap():
                "candidate_type":"door","candidate_host_wall_ids":host_ids,
                "geometry":{"point":[9.0,0.0]}}]
     gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
-    assert gaps[0]["classification"]=="AMBIGUOUS_GAP"
+    assert gaps[0]["classification"]=="UNRESOLVED"
     assert gaps[0]["portal_evidence_ids"]==[]
 
 
-def test_opening_evidence_locally_overlapping_gap_may_classify_that_gap_only():
+def test_strong_door_or_window_symbol_without_material_gap_cannot_classify_endpoint_relation():
     walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
     closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
     host_ids=closures[0]["host_wall_ids"]
-    evidence=[{"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
-               "candidate_type":"door","candidate_host_wall_ids":host_ids,
+    for candidate_type in ("door","window"):
+        evidence=[{"opening_evidence_id":f"OPENEV-{candidate_type}",
+                   "status":"OPENING_EVIDENCE_PRESENT",
+                   "candidate_type":candidate_type,"candidate_host_wall_ids":host_ids,
+                   "geometry":{"points":[[4.0,0.0],[5.0,0.0]]}}]
+        gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
+        assert gaps[0]["classification"]=="UNRESOLVED"
+        assert closures[0]["roles"]==[]
+        assert closures[0]["portal_authority"]=="NONE"
+        assert gaps[0]["portal_evidence_ids"]==[]
+        assert gaps[0]["opening_locality_matches"][0]["material_aperture_reason"]=="MATERIAL_GAP_UNPROVEN"
+
+
+def _material_aperture_fixture(candidate_type="door", *, host="W", interval=(4,5),
+                               evidence_interval=None, orientation="PARALLEL_OR_PERPENDICULAR"):
+    wall=_wall("W",(0,0),(10,0),[[0,4],[5,10]],[(4,5)])
+    wall.update({"representation":"DOUBLE_FACE","face_a":[[0,-.1],[10,-.1]],
+                 "face_b":[[0,.1],[10,.1]],"source_handles":["A","B"],
+                 "source_fragments":["SEG-A","SEG-B"],
+                 "source_lineage":["LINEAGE-A","LINEAGE-B"],"thickness":.2})
+    wall["interruptions"][0].update({"face_a_gap":[4,5],"face_b_gap":[4,5]})
+    closure=canonical_enclosure_continuity([wall],frame_id="F1")[0]
+    exact=list(evidence_interval or interval)
+    evidence={"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
+              "candidate_type":candidate_type,"candidate_host_wall_ids":[host],
+              "source_handles":["OPENING-SOURCE"],
+              "material_gap_status":"UNPROVEN",
+              "geometry":{"points":[[interval[0],0.0],[interval[1],0.0]]},
+              "host_evaluations":[{"wall_id":host,"orientation_agreement":orientation,
+                                   "wall_material_before":True,"wall_material_after":True,
+                                   "nearby_interruptions":[{"interval":exact}]}]}
+    return wall,closure,evidence
+
+
+def test_source_backed_material_gap_and_exact_door_binding_prove_aperture_only():
+    wall,closure,evidence=_material_aperture_fixture("door")
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="PROVEN_DOOR_APERTURE"
+    assert gap["material_gap_status"]=="SOURCE_BACKED_PROVEN"
+    assert closure["roles"]==["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    assert closure["material"] is False
+    assert {closure[key] for key in ("material_geometry","wall_authority","portal_authority",
+                                     "routing_authority","access_authority")}=={"NONE"}
+
+
+def test_source_backed_material_gap_and_exact_window_binding_prove_aperture_only():
+    wall,closure,evidence=_material_aperture_fixture("window")
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="PROVEN_WINDOW_APERTURE"
+    assert closure["portal_authority"]=="NONE"
+    assert closure["access_authority"]=="NONE"
+
+
+def test_orthogonal_endpoint_relation_cannot_become_door_from_nearby_symbol():
+    walls=[_proven_wall("A",(0,0),(4.8,0)),_proven_wall("B",(5,.2),(5,5))]
+    closure=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)[0]
+    evidence={"opening_evidence_id":"OPENEV-A","status":"OPENING_EVIDENCE_PRESENT",
+              "candidate_type":"door","candidate_host_wall_ids":["A","B"],
+              "geometry":{"points":closure["geometry"]}}
+    gap=classify_internal_wall_gaps(walls,[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert closure["roles"]==[]
+
+
+def test_opening_mapped_only_to_unrelated_host_cannot_prove_aperture():
+    wall,closure,evidence=_material_aperture_fixture("door",host="UNRELATED")
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert gap["portal_evidence_ids"]==[]
+
+
+def test_door_symbol_at_other_gap_cannot_prove_this_aperture():
+    wall,closure,evidence=_material_aperture_fixture("door",evidence_interval=(7,8))
+    gap=classify_internal_wall_gaps([wall],[closure],[evidence],frame_id="F1",tolerance=.001)[0]
+    assert gap["classification"]=="UNRESOLVED"
+    assert gap["opening_locality_matches"][0]["material_aperture_reason"]=="EXACT_INTERRUPTION_MISMATCH"
+
+
+def test_reference_arc_cannot_promote_an_envelope_gap():
+    walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(5,0),(10,0))]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    evidence=[{"opening_evidence_id":"OPENEV-REFERENCE","status":"OPENING_EVIDENCE_PRESENT",
+               "candidate_type":"REFERENCE_ARC",
+               "candidate_host_wall_ids":closures[0]["host_wall_ids"],
                "geometry":{"points":[[4.0,0.0],[5.0,0.0]]}}]
     gaps=classify_internal_wall_gaps(walls,closures,evidence,frame_id="F1",tolerance=.001)
-    assert gaps[0]["classification"]=="DOOR_GAP"
-    assert gaps[0]["portal_evidence_ids"]==["OPENEV-A"]
+    assert gaps[0]["classification"]=="UNRESOLVED"
+    assert closures[0]["roles"]==[]
+    assert closures[0]["portal_authority"]=="NONE"
+
+
+def test_supported_single_line_endpoint_requires_source_role_classification():
+    proven=_proven_wall("PROVEN",(0,0),(4.8,0))
+    unrelated=_proven_wall("UNRELATED",(20,20),(25,20))
+    supported=_topology_wall("SUPPORTED",(5,.2),(5,5),representation="SINGLE_LINE")
+    supported.update({"status":"SUPPORTED_PARTITION","evidence":[
+        {"class":"SOURCE_WALL_ADMISSION","iteratively_recovered":True}]})
+    walls=[proven,unrelated,supported]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    assert len(closures)==1
+    gaps=classify_internal_wall_gaps(walls,closures,[],frame_id="F1",tolerance=.001)
+    assert gaps[0]["classification"]=="SOURCE_ROLE_CLASSIFICATION_REQUIRED"
+    assert gaps[0]["status"]=="INPUT_REQUIRED"
+    assert closures[0]["roles"]==[]
+    assert closures[0]["wall_authority"]=="NONE"
 
 
 def test_endpoint_closure_never_reuses_one_endpoint_for_multiple_synthetic_joins():
     walls=[_proven_wall("A",(0,0),(4,0)),_proven_wall("B",(4.2,0),(8,0)),
            _proven_wall("C",(4.3,0),(9,0))]
     rows=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
-    endpoints=[tuple(point) for row in rows for point in row["geometry"]]
-    assert len(endpoints)==len(set(endpoints))
+    assert len(rows)==2
+    assert all(row["selection_status"]=="DIAGNOSTIC_ONLY" for row in rows)
+    assert all(row["roles"]==[] for row in rows)
+    assert len({row["candidate_relation_id"] for row in rows})==2
+
+
+def test_axis_endpoint_proximity_cannot_create_material_continuity():
+    left=_proven_wall("LEFT",(0,0),(10,0)); left["wall_solid"]["occupied_intervals"]=[[0,2]]
+    right=_proven_wall("RIGHT",(10.1,0),(20.1,0)); right["wall_solid"]["occupied_intervals"]=[[8,10]]
+    assert source_supported_endpoint_closures([left,right],frame_id="F1",tolerance=.001)==[]
+
+
+def test_endpoint_closure_binds_matint_lineage_and_keeps_all_authority_none():
+    left=_proven_wall("LEFT",(0,0),(4,0)); right=_proven_wall("RIGHT",(4.5,0),(10,0))
+    left["source_lineage"]=[{"segment_id":"SEG-L","source_insert_handle":"INSERT-L"}]
+    right["source_lineage"]=[{"segment_id":"SEG-R","source_insert_handle":"INSERT-R"}]
+    closure=source_supported_endpoint_closures([left,right],frame_id="F1",tolerance=.001)[0]
+    assert len(closure["host_material_interval_ids"])==2
+    assert all(value.startswith("MATINT-") for value in closure["host_material_interval_ids"])
+    assert {row["source_insert_handle"] for row in closure["source_lineage"]}=={"INSERT-L","INSERT-R"}
+    assert closure["material"] is False
+    assert {closure[key] for key in ("wall_authority","portal_authority","routing_authority","access_authority")}=={"NONE"}
+
+
+def test_material_continuity_graph_keeps_edge_types_distinct_and_reports_closed_cycle():
+    walls=[_proven_wall("A1",(0,0),(4,0)),_proven_wall("A2",(4.5,0),(10,0)),
+           _proven_wall("B",(10,0),(10,10)),_proven_wall("C",(10,10),(0,10)),
+           _proven_wall("D",(0,10),(0,0))]
+    walls[0]["source_fragments"]=["SHARED-BOTTOM"]
+    walls[1]["source_fragments"]=["SHARED-BOTTOM"]
+    closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
+    gap=next(row for row in closures if row["reason"]=="GOVERNED_DRAFTING_FRAGMENTATION")
+    graph=material_continuity_graph(walls,[gap],frame_id="F1",tolerance=.001)
+    assert graph==material_continuity_graph(list(reversed(walls)),[gap],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==1
+    component=graph["components"][0]
+    assert component["matint_count"]==5
+    assert component["closure_count"]==1
+    assert component["closure_ids"]==[gap["closure_id"]]
+    assert component["open_endpoint_count"]==0
+    assert component["cycle_rank"]==1
+    assert component["closed_cycle"] is True
+
+
+def test_material_continuity_graph_does_not_join_nearest_disconnected_components():
+    walls=[_topology_wall("A",(0,0),(1,0)),_topology_wall("B",(1.1,0),(2.1,0))]
+    graph=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==2
+    assert all(component["open_endpoint_count"]==2 for component in graph["components"])
+    assert all(endpoint["material_interval_id"].startswith("MATINT-") for endpoint in graph["open_endpoints"])
+    assert all(endpoint["nearest_material_endpoints"] for endpoint in graph["open_endpoints"])
+    assert all("distance" in endpoint["nearest_material_endpoints"][0]
+               for endpoint in graph["open_endpoints"])
+
+
+def test_material_graph_nodes_a_source_material_t_junction():
+    walls=[_topology_wall("H",(0,0),(10,0)),_topology_wall("V",(5,0),(5,5))]
+    graph=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==1
+    assert graph["graph_segment_count"]==3
+    assert graph["material_junction_count"]==1
+    assert graph["components"][0]["open_endpoint_count"]==3
+    assert not any(edge["edge_type"]=="GOVERNED_NONMATERIAL_CONTINUITY" for edge in graph["edges"])
+
+
+def test_material_graph_nodes_an_interior_crossing_deterministically():
+    walls=[_topology_wall("H",(0,0),(10,0)),_topology_wall("V",(5,-5),(5,5))]
+    first=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    second=material_continuity_graph(list(reversed(walls)),[],frame_id="F1",tolerance=.001)
+    assert first==second
+    assert len(first["components"])==1
+    assert first["graph_segment_count"]==4
+    assert first["material_junction_count"]==1
+    assert first["components"][0]["open_endpoint_count"]==4
+
+
+def test_material_graph_does_not_node_a_near_miss():
+    walls=[_topology_wall("H",(0,0),(10,0)),_topology_wall("V",(5,.05),(5,5))]
+    graph=material_continuity_graph(walls,[],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==2
+    assert graph["graph_segment_count"]==2
+    assert graph["material_junction_count"]==0
+
+
+def test_governed_closure_stays_distinct_when_material_is_noded():
+    walls=[_proven_wall("H1",(0,0),(4,0)),_proven_wall("H2",(4.5,0),(10,0)),
+           _proven_wall("V",(5,0),(5,5))]
+    walls[0]["source_fragments"]=["SHARED-H"]
+    walls[1]["source_fragments"]=["SHARED-H"]
+    relation=next(row for row in source_supported_endpoint_closures(
+        walls,frame_id="F1",tolerance=.001) if row["selected_as_governed_closure"])
+    graph=material_continuity_graph(walls,[relation],frame_id="F1",tolerance=.001)
+    assert len(graph["components"])==1
+    assert {edge["edge_type"] for edge in graph["edges"]}=={
+        "SOURCE_MATERIAL","GOVERNED_NONMATERIAL_CONTINUITY"}
+    assert relation["material"] is False
+    assert {relation[key] for key in ("wall_authority","portal_authority",
+                                      "routing_authority","access_authority")}=={"NONE"}
 
 
 
@@ -403,11 +632,13 @@ def test_fragmented_shell_requires_material_or_governed_continuity_for_every_int
 
 
 def test_governed_nonmaterial_closure_supports_enclosure_but_never_wall_material():
-    walls=[_proven_wall("A1",(0,0),(4,0)),_proven_wall("A2",(5,0),(10,0)),
+    walls=[_proven_wall("A1",(0,0),(4,0)),_proven_wall("A2",(4.5,0),(10,0)),
            _proven_wall("B",(10,0),(10,10)),_proven_wall("C",(10,10),(0,10)),
            _proven_wall("D",(0,10),(0,0)),_proven_wall("P",(2,3),(8,3))]
+    walls[0]["source_fragments"]=["SHARED-BOTTOM"]
+    walls[1]["source_fragments"]=["SHARED-BOTTOM"]
     closures=source_supported_endpoint_closures(walls,frame_id="F1",tolerance=.001)
-    gap_closure=next(row for row in closures if row["reason"]=="COLLINEAR_WALL_GAP")
+    gap_closure=next(row for row in closures if row["reason"]=="GOVERNED_DRAFTING_FRAGMENTATION")
     envelope,diagnostic,_=evidence_based_building_envelope(
         walls,frame_id="F1",tolerance=.001,enclosure_closures=closures)
     shell=max(diagnostic["candidates"],key=lambda row:row["area"])

@@ -29,6 +29,7 @@ from .architectural_topology_quality import (
     canonical_space_subdivision,
     classify_internal_wall_gaps,
     evidence_based_building_envelope,
+    material_continuity_graph,
     reconstruct_canonical_walls,
     source_supported_endpoint_closures,
     virtual_opening_closures,
@@ -1366,7 +1367,8 @@ def _bind_openings(openings, spaces, wall_lines, source_hash, tolerance, canonic
         # A nearby symbol is not a Portal.  It must coincide with a classified
         # interruption in the same host wall topology; this keeps furniture
         # arcs and symbols drawn over continuous walls diagnostic-only.
-        compatible={"door":{"DOOR_GAP"},"window":{"WINDOW_GAP"},
+        compatible={"door":{"DOOR_GAP","PROVEN_DOOR_APERTURE"},
+                    "window":{"WINDOW_GAP","PROVEN_WINDOW_APERTURE"},
                     "open_passage":{"OPEN_PASSAGE"}}.get(row.get("kind"),set())
         gap_matches=[]
         for gap in internal_wall_gaps or []:
@@ -1552,7 +1554,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     envelope_candidate_diagnostics=[]; plan_regions=[]
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
-    internal_wall_gaps=[]
+    internal_wall_gaps=[]; material_continuity_graphs=[]; material_endpoint_relations=[]
+    source_role_review_groups={}
     source_role_diagnostics=annotate_source_roles(extracted,frames,source["metres_per_unit"],tolerance)
     pre_topology_objects=standardize_source_records(extracted["primitives"])
     architectural_voids=_architectural_void_candidates(extracted,frames,source["source_sha256"],tolerance,metres_per_unit=source["metres_per_unit"])
@@ -1643,10 +1646,31 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
         endpoint_closures=source_supported_endpoint_closures(
             frame_walls,frame_id=frame["frame_id"],tolerance=tolerance)
         all_closures=continuity+endpoint_closures
+        material_endpoint_relations.extend(endpoint_closures)
         frame_gaps=classify_internal_wall_gaps(
             frame_walls,all_closures,frame_opening_evidence,
             frame_id=frame["frame_id"],tolerance=tolerance)
         internal_wall_gaps.extend(frame_gaps)
+        frame_wall_by_id={row["wall_id"]:row for row in frame_walls}
+        for gap in frame_gaps:
+            if gap.get("classification")!="SOURCE_ROLE_CLASSIFICATION_REQUIRED": continue
+            source_role_walls=[frame_wall_by_id[wall_id] for wall_id in gap.get("host_wall_ids") or []
+                               if wall_id in frame_wall_by_id
+                               and frame_wall_by_id[wall_id].get("status")=="SUPPORTED_PARTITION"]
+            handles=sorted({handle for wall in source_role_walls
+                            for handle in wall.get("source_handles") or []})
+            lineage=sorted({row.get("primitive_geometry_fingerprint") for wall in source_role_walls
+                            for row in wall.get("source_lineage") or []
+                            if row.get("primitive_geometry_fingerprint")})
+            key=(frame["frame_id"],tuple(handles),tuple(lineage))
+            group=source_role_review_groups.setdefault(key,{"review_group_id":_stable_id(
+                "SRCROLE",[frame["frame_id"],handles,lineage]),"frame_id":frame["frame_id"],
+                "source_handles":handles,"source_lineage_fingerprints":lineage,
+                "candidate_relation_ids":[],"gap_ids":[],"allowed_answers":[
+                    "PHYSICAL_SEPARATOR","NON_SEPARATOR","UNKNOWN"],
+                "geometry_creation_allowed":False})
+            group["candidate_relation_ids"].append(gap.get("candidate_relation_id"))
+            group["gap_ids"].append(gap["gap_id"])
         if gap_review_manifest and gap_review_manifest.get("frame_id")==frame["frame_id"]:
             reviewed_gap_ids={row.get("gap_id") for row in gap_review_manifest.get("questions") or []}
             current_review=build_review_manifest(
@@ -1659,11 +1683,14 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
             gap_review_validation["review_application_status"]=validation["review_application_status"]
             applied_gap_reviews.extend(apply_review_decisions(frame_gaps,all_closures,validation))
         promoted=[row for row in all_closures if "ENVELOPE_SUPPORT" in row.get("roles",[])]
+        material_continuity_graphs.append(material_continuity_graph(
+            frame_walls,promoted,frame_id=frame["frame_id"],tolerance=tolerance))
         subdivision_promoted=[row for row in all_closures
                               if "ENCLOSURE_BARRIER" in row.get("roles",[])
                               if row.get("gap_classification") in
-                                 {"DOOR_GAP","WINDOW_GAP","OPEN_PASSAGE","MISSING_WALL_GEOMETRY",
-                                  "DRAFTING_BREAK","HUMAN_CONFIRMED_CONTINUITY"}
+                                 {"PROVEN_DOOR_APERTURE","PROVEN_WINDOW_APERTURE","OPEN_PASSAGE",
+                                  "PROVEN_CORNER_CONTINUITY","GOVERNED_DRAFTING_FRAGMENTATION",
+                                  "HUMAN_CONFIRMED_CONTINUITY"}
                               and row.get("gap_status") in {"PROVEN","SUPPORTED","HUMAN_CONFIRMED"}]
         continuity_results.extend(all_closures)
         envelope,envelope_diagnostic,frame_regions=evidence_based_building_envelope(
@@ -1897,6 +1924,21 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "internal_wall_gaps":{"schema":"canonical-internal-wall-gap/1.0",
                                     "items":internal_wall_gaps,
                                     "classification_precedes_closure":True},
+             "material_endpoint_relations":{"schema":"material-endpoint-relation-candidates/1.0",
+                                             "items":material_endpoint_relations,
+                                             "candidate_search_grants_authority":False,
+                                             "selected_closures_require_independent_proof":True},
+             "source_role_review_groups":{"schema":"source-role-review-groups/1.0",
+                                          "items":[{**row,
+                                                    "candidate_relation_ids":sorted(set(row["candidate_relation_ids"])),
+                                                    "gap_ids":sorted(set(row["gap_ids"]))}
+                                                   for row in sorted(source_role_review_groups.values(),
+                                                                     key=lambda item:item["review_group_id"])],
+                                          "questions_exposed":False},
+             "material_continuity_graphs":{"schema":"material-continuity-graph-collection/1.0",
+                                            "items":material_continuity_graphs,
+                                            "material_and_continuity_edges_distinct":True,
+                                            "authority":"DIAGNOSTIC_ONLY"},
              "gap_human_review":{"schema":"architectural-human-gap-review-result/1.0",
                                  **gap_review_validation,"applied_decisions":applied_gap_reviews,
                                  "authority":"TOPOLOGY_CLASSIFICATION_ONLY"},
