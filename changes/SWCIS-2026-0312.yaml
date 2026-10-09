@@ -17,7 +17,7 @@
     "versioning": "Internal diagnostic and authority correction; no public version bump required."
   },
   "evidence": {
-    "tests": ["55 canonical-wall topology tests", "affected architecture regression", "identity/semantic regression", "SWCIS governance tests", "one frozen-source final replay"],
+    "tests": ["61 canonical-wall topology tests", "253 affected architecture tests", "67 identity/semantic/Vision integration tests", "19 SWCIS governance tests", "5/5 official GitHub checks", "one frozen-source final replay"],
     "docs": ["docs/ARCHITECTURE_MATERIAL_CONTINUITY_RECOVERY.md"],
     "version_bump": ["not required; internal fail-closed material-continuity correction with no production consumer migration"],
     "semantic_diff": ["Material intersections are noded without creating geometry authority; collinear or orthogonal proximity alone remains unresolved; proof-bearing closures are selected separately from complete diagnostic candidates; recovered single-line relations require bounded source-role classification; opening motifs and reference arcs remain supporting-only; exact host/gap binding plus independent paired-face MATINT proof is required for Door/Window aperture classification; aperture classification grants no Portal or Access authority."],
