@@ -1,0 +1,31 @@
+{
+  "change_id": "SWCIS-2026-0312",
+  "summary": "Bind enclosure continuity to source material intervals and publish deterministic material-connectivity diagnostics without granting geometry, Portal, or release authority.",
+  "requester": "project-owner",
+  "change_types": ["documentation", "drawing_output", "governance", "test"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Endpoint and interruption closures bind actual occupied MATINT endpoints; deterministic material graphs keep source material and governed non-material continuity distinct.",
+    "deployment": "No deployment or runtime configuration change.",
+    "docs": "Records private-safe material graph, gap taxonomy, authority, and bounded-review findings.",
+    "governance": "Nearest proximity and canonical axis endpoints cannot grant continuity; release and downstream gates remain fail-closed.",
+    "manifest": "Adds internal diagnostic material-continuity graph fields only; no public manifest activation.",
+    "migration": "No database or persisted-record migration.",
+    "qa": "Adds MATINT endpoint, lineage, reference-arc, source-role, nearest-component, closure-authority, and graph determinism regressions.",
+    "ui_api": "No API or UI behavior change.",
+    "versioning": "Internal diagnostic and authority correction; no public version bump required."
+  },
+  "evidence": {
+    "tests": ["50 canonical-wall topology tests", "affected architecture regression", "SWCIS governance tests", "one frozen-source final replay"],
+    "docs": ["docs/ARCHITECTURE_MATERIAL_CONTINUITY_RECOVERY.md"],
+    "version_bump": ["not required; internal fail-closed material-continuity correction with no production consumer migration"],
+    "semantic_diff": ["Only occupied MATINT endpoints participate in endpoint continuity; collinear proximity alone remains unresolved; recovered single-line relations require bounded source-role classification; reference arcs cannot prove an aperture."],
+    "artifact_diff": ["No private source or customer artifact is committed."],
+    "golden_regression": ["The frozen-source replay is required to preserve stable Wall/Space authority, Dimension reconciliation, zero Vision calls, and fail-closed Architecture/Mechanical release while publishing material graph diagnostics."],
+    "deployment_plan": ["No deployment in this task."],
+    "rollback_plan": ["Revert this change; no stored data migration is required."]
+  },
+  "risk": {"likelihood": 2, "severity": 4, "detectability": 1, "score": 8, "rationale": "The change removes false continuity and only adds diagnostic graph output; targeted closure and source replay evidence detect authority regressions."},
+  "waiver": null
+}

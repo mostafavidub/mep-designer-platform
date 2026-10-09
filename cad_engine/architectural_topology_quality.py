@@ -669,7 +669,7 @@ def host_portal_on_walls(portal_line, walls, *, tolerance, pixel_tolerance):
     return wall,"WALL_OBJECT_GAP_SUPPORT",[x[2]["wall_id"] for x in candidates]
 
 
-def canonical_enclosure_continuity(walls, *, frame_id=None):
+def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
     """Classify wall interruptions before envelope inference.
 
     A closure expresses continuity of enclosure topology, never wall material
@@ -677,8 +677,10 @@ def canonical_enclosure_continuity(walls, *, frame_id=None):
     promoted automatically; supported/insufficient rows remain diagnostic.
     """
     rows=[]
+    tol=max(float(tolerance or .001),1e-9)
     for wall in walls:
         origin=wall["wall_solid"]["axis_origin"]; direction=wall["wall_solid"]["axis_direction"]
+        materials=_material_interval_records(wall)
         for index,opening in enumerate(wall.get("interruptions") or []):
             low,high=opening["interval"]
             geometry=[[origin[0]+low*direction[0],origin[1]+low*direction[1]],
@@ -686,7 +688,14 @@ def canonical_enclosure_continuity(walls, *, frame_id=None):
             both_faces=bool(opening.get("face_a_gap") and opening.get("face_b_gap"))
             double=wall.get("representation")=="DOUBLE_FACE"
             kind=opening.get("kind")
-            if double and both_faces and kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}:
+            host_materials=sorted(
+                row["material_interval_id"] for row in materials
+                if abs(row["interval"][1]-low)<=tol or abs(row["interval"][0]-high)<=tol)
+            material_on_both_sides=(
+                any(abs(row["interval"][1]-low)<=tol for row in materials)
+                and any(abs(row["interval"][0]-high)<=tol for row in materials))
+            if (double and both_faces and material_on_both_sides
+                    and kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"}):
                 continuity,status,confidence,reason=("PROVEN_WALL_CONTINUITY","PROVEN",.95,
                                                      "PAIRED_FACES_CONTINUE_ACROSS_MATCHED_GAP")
                 roles=["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
@@ -700,6 +709,7 @@ def canonical_enclosure_continuity(walls, *, frame_id=None):
                 roles=[]
             rows.append({"closure_id":_sid("CLOSURE",[wall["wall_id"],index,geometry]),
                          "frame_id":frame_id or wall.get("frame_id"),"host_wall_id":wall["wall_id"],
+                         "host_material_interval_ids":host_materials,
                          "axis_interval":[low,high],"geometry":geometry,
                          "continuity_status":continuity,"status":status,
                          "wall_representation":wall.get("representation"),
@@ -707,15 +717,20 @@ def canonical_enclosure_continuity(walls, *, frame_id=None):
                          "face_b_support":bool(opening.get("face_b_gap")),
                          "collinear_support":kind in {"PROVEN_OPENING","SUPPORTED_OPENING","LIKELY_OPENING"},
                          "junction_support":False,"source_handles":wall.get("source_handles") or [],
-                         "source_evidence":wall.get("source_fragments") or [],"gap_width":high-low,
+                         "source_evidence":wall.get("source_fragments") or [],
+                         "source_lineage":wall.get("source_lineage") or [],"gap_width":high-low,
                          "material":False,"roles":roles,"possible_opening_type":"UNKNOWN",
+                         "material_geometry":"NONE","wall_authority":"NONE",
+                         "routing_authority":"NONE","portal_authority":"NONE","access_authority":"NONE",
                          "confidence":confidence,"evidence":[{"class":"WALL_INTERRUPTION_CONTINUITY","kind":kind,
-                                                               "paired_face_gap":both_faces}],"reason":reason})
+                                                               "paired_face_gap":both_faces,
+                                                               "material_on_both_sides":material_on_both_sides,
+                                                               "host_material_interval_ids":host_materials}],"reason":reason})
     return rows
 
 
 def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001):
-    """Close bounded drafting gaps between independently proven wall axes.
+    """Close bounded drafting gaps between source-backed material intervals.
 
     The maximum join distance is derived from local double-face thicknesses.
     These records are enclosure topology only: they never claim material,
@@ -733,54 +748,204 @@ def source_supported_endpoint_closures(walls, *, frame_id=None, tolerance=0.001)
                and any(e.get("class")=="SOURCE_WALL_ADMISSION" and e.get("iteratively_recovered")
                        for e in wall.get("evidence") or [])]
     candidates=proven+supported
-    axes=[_wall_line(wall) for wall in candidates]; endpoints=[]
-    for index,line in enumerate(axes):
+    materials=[]
+    for wall in candidates:
+        for material in _material_interval_records(wall):
+            materials.append({"wall":wall,**material})
+    endpoints=[]
+    for index,material in enumerate(materials):
+        line=material["line"]
         endpoints.extend([(index,Point(line.coords[0])),(index,Point(line.coords[-1]))])
     tree=STRtree([point for _,point in endpoints]); proposals={}
-    for endpoint_index,(wall_index,point) in enumerate(endpoints):
-        left=candidates[wall_index]; (left_u,left_n,left_angle,_)=_axis(axes[wall_index])
+    for endpoint_index,(material_index,point) in enumerate(endpoints):
+        left_material=materials[material_index]; left=left_material["wall"]
+        (left_u,left_n,left_angle,_)=_axis(left_material["line"])
         for raw in tree.query(point.buffer(opening_limit)):
             other_endpoint_index=int(raw)
             if other_endpoint_index<=endpoint_index:continue
-            other_wall_index,other_point=endpoints[other_endpoint_index]
-            if other_wall_index==wall_index:continue
-            right=candidates[other_wall_index]; (_,_,right_angle,_)=_axis(axes[other_wall_index])
+            other_material_index,other_point=endpoints[other_endpoint_index]
+            right_material=materials[other_material_index]; right=right_material["wall"]
+            if right["wall_id"]==left["wall_id"]:continue
+            (_,_,right_angle,_)=_axis(right_material["line"])
             delta=min(abs(left_angle-right_angle),180-abs(left_angle-right_angle))
             distance=point.distance(other_point)
             if distance<=tol:continue
-            relation=None; limit=corner_limit
+            relation=None; limit=corner_limit; proven_continuity=False
+            shared_source=bool(
+                set(left.get("source_fragments") or []).intersection(right.get("source_fragments") or [])
+                or set(left.get("source_handles") or []).intersection(right.get("source_handles") or []))
             if delta<=3.0:
-                # Collinear separated wall spans support a bounded opening gap.
+                # Collinear proximity is not an aperture or continuity proof.
+                # Exact shared lineage may prove bounded drafting fragmentation;
+                # otherwise independent opening evidence is required later.
                 perpendicular_offset=abs((other_point.x-point.x)*left_n[0]+(other_point.y-point.y)*left_n[1])
                 if perpendicular_offset>max(tol*4,typical*.35):continue
-                both_material=left in proven and right in proven
-                relation="COLLINEAR_WALL_GAP" if both_material else "SUPPORTED_PARTITION_ENDPOINT_JOIN"
-                limit=opening_limit if both_material else corner_limit
+                if shared_source:
+                    relation="GOVERNED_DRAFTING_FRAGMENTATION"; proven_continuity=True
+                    limit=corner_limit
+                else:
+                    relation="COLLINEAR_GAP_REQUIRES_OPENING_OR_LINEAGE"
+                    limit=opening_limit if left in proven and right in proven else corner_limit
             elif abs(delta-90)<=3.0:
-                relation=("EXTERIOR_CORNER_JOIN" if left in proven and right in proven
-                          else "SUPPORTED_PARTITION_ENDPOINT_JOIN")
+                if left in proven and right in proven:
+                    relation="PROVEN_CORNER_CONTINUITY"; proven_continuity=True
+                elif shared_source:
+                    relation="GOVERNED_DRAFTING_FRAGMENTATION"; proven_continuity=True
+                else:
+                    relation="UNRESOLVED_ENDPOINT_RELATION"
             else:continue
             if distance>limit:continue
             geometry=sorted([[point.x,point.y],[other_point.x,other_point.y]])
             host_wall_ids=sorted([left["wall_id"],right["wall_id"]])
-            closure_id=_sid("ENDCLOSE",[host_wall_ids,geometry])
+            host_material_interval_ids=sorted([left_material["material_interval_id"],
+                                               right_material["material_interval_id"]])
+            closure_id=_sid("ENDCLOSE",[host_wall_ids,host_material_interval_ids,geometry])
             proposals[closure_id]={"closure_id":closure_id,"frame_id":frame_id or left.get("frame_id"),
-                "host_wall_ids":host_wall_ids,"geometry":geometry,
-                "continuity_status":"PROVEN_WALL_CONTINUITY","status":"PROVEN",
+                "host_wall_ids":host_wall_ids,"host_material_interval_ids":host_material_interval_ids,
+                "geometry":geometry,
+                "continuity_status":"PROVEN_WALL_CONTINUITY" if proven_continuity else "INSUFFICIENT_CONTINUITY",
+                "status":"PROVEN" if proven_continuity else "INPUT_REQUIRED",
                 "material":False,"material_geometry":"NONE","wall_authority":"NONE",
                 "routing_authority":"NONE","portal_authority":"NONE","access_authority":"NONE",
-                "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"],"reason":relation,
+                "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"] if proven_continuity else [],"reason":relation,
                 "gap_width":distance,"derived_join_limit":limit,
                 "_endpoint_indexes":[endpoint_index,other_endpoint_index],
                 "source_handles":sorted(set((left.get("source_handles") or [])+(right.get("source_handles") or []))),
                 "source_evidence":sorted(set((left.get("source_fragments") or [])+(right.get("source_fragments") or []))),
-                "evidence":[{"class":relation,"wall_angle_delta":delta,"local_wall_thickness":typical}]}
+                "source_lineage":sorted((left.get("source_lineage") or [])+(right.get("source_lineage") or []),
+                                        key=lambda row:json.dumps(row,sort_keys=True)),
+                "evidence":[{"class":relation,"wall_angle_delta":delta,"local_wall_thickness":typical,
+                             "host_material_interval_ids":host_material_interval_ids}]}
     selected=[]; used_endpoints=set()
-    for row in sorted(proposals.values(),key=lambda item:(item["gap_width"],item["closure_id"])):
+    for row in sorted(proposals.values(),key=lambda item:(item["status"]!="PROVEN",item["gap_width"],item["closure_id"])):
         indexes=set(row.pop("_endpoint_indexes"))
         if indexes & used_endpoints: continue
         used_endpoints.update(indexes); selected.append(row)
     return sorted(selected,key=lambda row:row["closure_id"])
+
+
+def material_continuity_graph(walls, closures=(), *, frame_id=None, tolerance=.001):
+    """Describe source material connectivity without granting envelope authority."""
+    tol=max(float(tolerance or .001),1e-9)
+    material_edges=[]; material_by_id={}
+    for wall in sorted(walls,key=lambda row:row["wall_id"]):
+        for material in _material_interval_records(wall):
+            edge={"edge_id":material["material_interval_id"],"edge_type":"SOURCE_MATERIAL",
+                  "wall_id":wall["wall_id"],"source_handles":sorted(wall.get("source_handles") or []),
+                  "source_lineage":wall.get("source_lineage") or [],"line":material["line"]}
+            material_edges.append(edge); material_by_id[edge["edge_id"]]=edge
+    closure_edges=[]
+    for closure in sorted(closures,key=lambda row:row.get("closure_id") or ""):
+        host_ids=closure.get("host_material_interval_ids") or []
+        if not (closure.get("continuity_status") in {"PROVEN_WALL_CONTINUITY","SUPPORTED_WALL_CONTINUITY"}
+                and "ENVELOPE_SUPPORT" in (closure.get("roles") or [])
+                and closure.get("material") is False
+                and closure.get("wall_authority")=="NONE"
+                and closure.get("portal_authority")=="NONE"
+                and closure.get("routing_authority")=="NONE"
+                and host_ids and all(mid in material_by_id for mid in host_ids)):
+            continue
+        line=LineString(closure["geometry"])
+        host_endpoints=[Point(point) for mid in host_ids for point in material_by_id[mid]["line"].coords]
+        if any(min((Point(point).distance(host) for host in host_endpoints),default=float("inf"))>tol
+               for point in line.coords):
+            continue
+        closure_edges.append({"edge_id":closure["closure_id"],"edge_type":"GOVERNED_NONMATERIAL_CONTINUITY",
+                              "wall_id":None,"source_handles":sorted(closure.get("source_handles") or []),
+                              "source_lineage":closure.get("source_lineage") or [],"line":line,
+                              "host_material_interval_ids":sorted(host_ids)})
+    edges=material_edges+closure_edges
+    points=[tuple(point) for edge in edges for point in (edge["line"].coords[0],edge["line"].coords[-1])]
+    parent=list(range(len(points)))
+    def find(index):
+        while parent[index]!=index:
+            parent[index]=parent[parent[index]]; index=parent[index]
+        return index
+    def union(left,right):
+        left,right=find(left),find(right)
+        if left!=right: parent[max(left,right)]=min(left,right)
+    for index,point in enumerate(points):
+        for other in range(index):
+            if math.dist(point,points[other])<=tol: union(index,other)
+    edge_parent=list(range(len(edges)))
+    def edge_find(index):
+        while edge_parent[index]!=index:
+            edge_parent[index]=edge_parent[edge_parent[index]]; index=edge_parent[index]
+        return index
+    def edge_union(left,right):
+        left,right=edge_find(left),edge_find(right)
+        if left!=right: edge_parent[max(left,right)]=min(left,right)
+    node_edges={}
+    for index in range(len(edges)):
+        node_edges.setdefault(find(index*2),[]).append(index)
+        node_edges.setdefault(find(index*2+1),[]).append(index)
+    for indexes in node_edges.values():
+        for index in indexes[1:]: edge_union(indexes[0],index)
+    component_edges={}
+    for index,edge in enumerate(edges): component_edges.setdefault(edge_find(index),[]).append((index,edge))
+    components=[]; open_endpoints=[]
+    for _,members in sorted(component_edges.items(),key=lambda item:min(row[1]["edge_id"] for row in item[1])):
+        point_indexes=sorted({index*2+offset for index,_ in members for offset in (0,1)})
+        node_groups={}
+        for point_index in point_indexes: node_groups.setdefault(find(point_index),[]).append(point_index)
+        degrees={node:0 for node in node_groups}; incident={node:[] for node in node_groups}
+        for index,edge in members:
+            for node in (find(index*2),find(index*2+1)):
+                degrees[node]+=1; incident[node].append(edge["edge_id"])
+        material_ids=sorted(edge["edge_id"] for _,edge in members if edge["edge_type"]=="SOURCE_MATERIAL")
+        closure_ids=sorted(edge["edge_id"] for _,edge in members if edge["edge_type"]!="SOURCE_MATERIAL")
+        component_id=_sid("MATCOMP",[frame_id,material_ids,closure_ids])
+        coordinates=[points[index] for index in point_indexes]
+        wall_ids=sorted({edge["wall_id"] for _,edge in members if edge.get("wall_id")})
+        handles=sorted({handle for _,edge in members for handle in edge.get("source_handles") or []})
+        open_nodes=[]
+        for node,indexes in sorted(node_groups.items(),key=lambda item:min(points[index] for index in item[1])):
+            if degrees[node]!=1: continue
+            coordinate=min(points[index] for index in indexes)
+            incident_edges=[edge for _,edge in members if edge["edge_id"] in incident[node]]
+            source_edges=[edge for edge in incident_edges if edge["edge_type"]=="SOURCE_MATERIAL"]
+            source_edge=source_edges[0] if source_edges else None
+            orientation=round(_axis(source_edge["line"])[2],6) if source_edge else None
+            endpoint={"endpoint_id":_sid("MATEND",[frame_id,component_id,coordinate]),
+                      "component_id":component_id,"coordinates":list(coordinate),
+                      "incident_edge_ids":sorted(incident[node]),
+                      "wall_id":source_edge.get("wall_id") if source_edge else None,
+                      "material_interval_id":source_edge.get("edge_id") if source_edge else None,
+                      "source_handles":source_edge.get("source_handles",[]) if source_edge else [],
+                      "source_lineage":source_edge.get("source_lineage",[]) if source_edge else [],
+                      "orientation_degrees":orientation}
+            open_nodes.append(endpoint); open_endpoints.append(endpoint)
+        edge_count=len(members); node_count=len(node_groups); cycle_rank=max(0,edge_count-node_count+1)
+        components.append({"component_id":component_id,"frame_id":frame_id,
+                           "material_interval_ids":material_ids,"matint_count":len(material_ids),
+                           "wall_ids":wall_ids,"source_handles":handles,
+                           "total_material_length":sum(edge["line"].length for _,edge in members
+                                                       if edge["edge_type"]=="SOURCE_MATERIAL"),
+                           "bounds":[min(x for x,_ in coordinates),min(y for _,y in coordinates),
+                                     max(x for x,_ in coordinates),max(y for _,y in coordinates)],
+                           "endpoint_count":node_count,"open_endpoint_count":len(open_nodes),
+                           "closure_count":len(closure_ids),"closure_ids":closure_ids,
+                           "cycle_rank":cycle_rank,"closed_cycle":cycle_rank>0 and not open_nodes})
+    # Nearest endpoints are diagnostic only.  They are deliberately computed
+    # after connectivity and never feed an edge-selection rule.
+    for endpoint in open_endpoints:
+        nearest=[]
+        for other in open_endpoints:
+            if other["endpoint_id"]==endpoint["endpoint_id"]: continue
+            angle_delta=None
+            if endpoint["orientation_degrees"] is not None and other["orientation_degrees"] is not None:
+                raw=abs(endpoint["orientation_degrees"]-other["orientation_degrees"])
+                angle_delta=min(raw,180-raw)
+            nearest.append({"endpoint_id":other["endpoint_id"],
+                            "component_id":other["component_id"],
+                            "distance":math.dist(endpoint["coordinates"],other["coordinates"]),
+                            "angle_relationship_degrees":angle_delta,
+                            "same_source":bool(set(endpoint["source_handles"])
+                                               & set(other["source_handles"]))})
+        endpoint["nearest_material_endpoints"]=sorted(
+            nearest,key=lambda row:(row["distance"],row["endpoint_id"]))[:5]
+    return {"schema":"material-continuity-graph/1.0","frame_id":frame_id,
+            "components":components,"open_endpoints":sorted(open_endpoints,key=lambda row:row["endpoint_id"])}
 
 
 def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=None, tolerance=.001):
@@ -828,19 +993,27 @@ def classify_internal_wall_gaps(walls, closures, opening_evidence, *, frame_id=N
         portal_types=sorted({str(row.get("candidate_type") or "").upper() for row in matching})
         reason=closure.get("reason")
         if "DOOR" in portal_types:
-            classification,status="DOOR_GAP","SUPPORTED"
+            classification,status="PROVEN_DOOR_APERTURE","SUPPORTED"
         elif "WINDOW" in portal_types:
-            classification,status="WINDOW_GAP","SUPPORTED"
-        elif reason=="EXTERIOR_CORNER_JOIN":
-            classification,status="DRAFTING_BREAK","PROVEN"
-        elif (reason=="COLLINEAR_WALL_GAP" and local_thickness
-              and gap_width<=local_thickness*1.5):
-            classification,status="MISSING_WALL_GEOMETRY","SUPPORTED"
-        elif (reason=="SUPPORTED_PARTITION_ENDPOINT_JOIN" and local_thickness
-              and gap_width<=local_thickness):
-            classification,status="DRAFTING_BREAK","SUPPORTED"
+            classification,status="PROVEN_WINDOW_APERTURE","SUPPORTED"
+        elif reason=="PROVEN_CORNER_CONTINUITY":
+            classification,status="PROVEN_CORNER_CONTINUITY","PROVEN"
+        elif reason=="GOVERNED_DRAFTING_FRAGMENTATION":
+            classification,status="GOVERNED_DRAFTING_FRAGMENTATION","PROVEN"
+        elif (reason=="UNRESOLVED_ENDPOINT_RELATION"
+              and any(wall_by_id[wall_id].get("status")=="SUPPORTED_PARTITION"
+                      and wall_by_id[wall_id].get("representation")=="SINGLE_LINE"
+                      for wall_id in host_ids if wall_id in wall_by_id)):
+            # The source material exists, but the architectural role of a
+            # recovered single line is not independently authoritative.  This
+            # is a bounded source-role question, never continuity authority.
+            classification,status="SOURCE_ROLE_CLASSIFICATION_REQUIRED","INPUT_REQUIRED"
         else:
-            classification,status="AMBIGUOUS_GAP","INPUT_REQUIRED"
+            classification,status="UNRESOLVED","INPUT_REQUIRED"
+        if (classification in {"PROVEN_DOOR_APERTURE","PROVEN_WINDOW_APERTURE"}
+                and closure.get("host_material_interval_ids")):
+            closure.update({"continuity_status":"PROVEN_WALL_CONTINUITY","status":"SUPPORTED",
+                            "roles":["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]})
         gap_id=_sid("GAP",[frame_id,sorted(host_ids),closure.get("geometry")])
         closure.update({"gap_id":gap_id,"gap_classification":classification,
                         "gap_status":status,"portal_evidence_ids":sorted(
