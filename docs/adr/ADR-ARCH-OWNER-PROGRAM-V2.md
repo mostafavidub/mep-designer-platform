@@ -25,6 +25,17 @@ Planha separates two contracts:
    versions and source hashes. Missing authority fails closed; changed authority yields
    `STALE_BINDING`.
 
+Draft validity and resolution readiness are separate gates. An incomplete migrated
+unit program remains saveable as `DRAFT_VALID`, but resolution requires a complete
+canonical unit program, verified field-level material provenance with compatible
+authority, independently supplied current binding records, and evidence-backed geometry
+feasibility. A caller-supplied `VERIFIED` flag is never sufficient by itself.
+
+Resolved project/program identity is compared directly with the source draft. Stored
+resolution status is compared with an independently recomputed result, and questionnaire
+answers are bound to their content hash. Both public validators apply the additive JSON
+contract and return structured fail-closed findings for malformed payloads.
+
 Owner Program 1.0 remains unchanged. Its adapter preserves the complete source payload,
 uses `UNKNOWN_LEGACY_SOURCE` rather than invented provenance, and reports absent unit
 program evidence. The v1 Generation Input may supply the unit program only through the
@@ -53,6 +64,8 @@ hash and original payload, and emits structured findings. No database migration 
 - Stale authority: identity, version and hash are all compared.
 - False approval: runtime remains disabled and structural validation does not prove
   feasibility, regulatory approval or professional review.
+- Self-attested authority: current binding records and geometry evidence are required
+  independently from the flags embedded in the candidate payload.
 
 ## Rollback
 

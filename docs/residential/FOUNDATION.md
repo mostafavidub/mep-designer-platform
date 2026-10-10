@@ -70,7 +70,11 @@ not mean generator-ready or geometrically feasible. The draft owns the one canon
 unit program and records the exact value and provenance for every material field.
 `ResolvedGenerationInput` stores the draft and unit-program hashes and binds exact
 site, national-ruleset and local-profile identities, versions, source references and
-hashes. Missing local authority returns `LOCAL_RULE_REQUIRED`; changed bindings return
+hashes. Resolution separately requires a complete unit program, verified compatible
+material provenance, an independent current-binding snapshot and evidence-backed
+geometry feasibility; embedded `VERIFIED` flags alone grant no authority. Resolved
+project/program identity and stored status are recomputed against the source draft.
+Missing local authority returns `LOCAL_RULE_REQUIRED`; changed bindings return
 `STALE_BINDING`; geometry not yet checked returns
 `NEEDS_GEOMETRIC_FEASIBILITY_CHECK`. V1 read/write and questionnaire behavior remain
 unchanged. The migration adapter preserves the complete v1 payload and marks unknown

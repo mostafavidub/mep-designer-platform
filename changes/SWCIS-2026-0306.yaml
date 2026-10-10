@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0306",
-  "summary": "Add an offline provenance-aware Owner Program 2.0 draft and resolved-generation-input contract with deterministic v1 compatibility, migration reporting, stale binding validation, and no runtime activation.",
+  "summary": "Add and harden an offline provenance-aware Owner Program 2.0 draft and resolved-generation-input contract with deterministic v1 compatibility, migration reporting, independent authority checks, stale binding validation, and no runtime activation.",
   "requester": "project-owner",
   "change_types": [
     "schema",
@@ -32,7 +32,7 @@
     "planner": "verified-not-affected: v2 is offline-only and not imported by the active planner/runtime",
     "rule_book": "verified-not-affected: national/local rule values and all 32 release-disabled rules remain unchanged",
     "migration": "added: deterministic non-destructive v1-to-v2 adapter with explicit unknown legacy provenance and loss findings",
-    "qa": "added: focused schema, migration, provenance, conflict, stale-binding, determinism and fail-closed tests",
+    "qa": "added: focused schema, migration, provenance, authority-integrity, identity/status tamper, malformed-input, stale-binding, determinism and fail-closed tests",
     "docs": "added: Owner Program 2.0 ADR and Foundation contract documentation",
     "governance": "changed: register the new offline owner-program module and migration contract",
     "versioning": "changed: coordinated SWCIS minor bump for graph and migration-contract additions",
@@ -68,7 +68,7 @@
       "No Golden execution; six fixtures are NON_GOLDEN synthetic inputs and active runtime remains unchanged"
     ],
     "semantic_diff": [
-      "OwnerProgramDraft can be DRAFT_VALID without site/local bindings; ResolvedGenerationInput fails closed on missing or stale authority"
+      "OwnerProgramDraft can be DRAFT_VALID while incomplete; ResolvedGenerationInput separately requires complete units, verified provenance, current bindings and evidence-backed geometry, and fails closed on identity/status tampering"
     ],
     "artifact_diff": [
       "Two additive v2 JSON Schemas, one offline module, six synthetic fixtures, migration contract, ADR and focused tests"

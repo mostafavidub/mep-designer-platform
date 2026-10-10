@@ -406,7 +406,20 @@
       "source_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "verification_status": "VERIFIED"
     },
-    "derived_project_facts": [],
+    "derived_project_facts": [
+      {
+        "field_id": "geometry_feasibility",
+        "value": "VERIFIED",
+        "unit": null,
+        "source_type": "SYNTHETIC_GEOMETRY_VALIDATOR",
+        "source_reference": "SYNTHETIC_NON_GOLDEN_GEOMETRY",
+        "source_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "authority_type": "DERIVED_GEOMETRY",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      }
+    ],
     "geometry_feasibility": "VERIFIED",
     "expected_status": "VALIDATED_INPUT"
   }

@@ -28,6 +28,43 @@ def binding(source_hash="b" * 64):
     }
 
 
+def authoritative_bindings(site=None, national=None, local=None):
+    return {
+        "site_binding": copy.deepcopy(site or binding()),
+        "national_ruleset_binding": copy.deepcopy(national or binding()),
+        "local_profile_binding": copy.deepcopy(local or binding()),
+    }
+
+
+def geometry_fact():
+    return {
+        "field_id": "geometry_feasibility",
+        "value": "VERIFIED",
+        "unit": None,
+        "source_type": "SYNTHETIC_GEOMETRY_VALIDATOR",
+        "source_reference": "SYNTHETIC_NON_GOLDEN_GEOMETRY",
+        "source_hash": "e" * 64,
+        "authority_type": "DERIVED_GEOMETRY",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": [],
+    }
+
+
+def rehash_resolved(payload):
+    basis = {
+        key: payload[key]
+        for key in (
+            "project_id", "program_id", "program_revision", "owner_program_hash",
+            "canonical_unit_program_hash", "site_binding", "national_ruleset_binding",
+            "local_profile_binding", "derived_project_facts", "geometry_feasibility",
+        )
+    }
+    payload["resolved_id"] = f"resolved-{foundation.stable_hash(basis)[:20]}"
+    payload.pop("resolution_hash", None)
+    payload["resolution_hash"] = op._json_hash(payload)
+
+
 def legacy_program():
     return {
         "program_id": "legacy-program",
@@ -98,6 +135,9 @@ class OwnerProgramV2FixtureTests(unittest.TestCase):
                     local_profile_binding=spec["local_profile_binding"],
                     derived_project_facts=spec["derived_project_facts"],
                     geometry_feasibility=spec["geometry_feasibility"],
+                    current_bindings=authoritative_bindings(
+                        spec["site_binding"], spec["national_ruleset_binding"], spec["local_profile_binding"]
+                    ),
                 )["resolved_input"]
                 resolved_validator.validate(resolved)
 
@@ -124,6 +164,9 @@ class OwnerProgramV2FixtureTests(unittest.TestCase):
                         local_profile_binding=spec["local_profile_binding"],
                         derived_project_facts=spec["derived_project_facts"],
                         geometry_feasibility=spec["geometry_feasibility"],
+                        current_bindings=authoritative_bindings(
+                            spec["site_binding"], spec["national_ruleset_binding"], spec["local_profile_binding"]
+                        ),
                     )
                     self.assertEqual(resolved["validation"]["status"], spec["expected_status"])
                     self.assertFalse(resolved["resolved_input"]["runtime_enabled"])
@@ -181,6 +224,113 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
         self.assertEqual(migrated["validation"]["status"], "DRAFT_VALID")
         self.assertNotIn("site_binding", migrated["draft"])
 
+    def test_incomplete_draft_cannot_be_promoted_by_verified_flags(self):
+        migrated = op.migrate_v1_owner_program(legacy_program(), project_id="project")
+        result = op.resolve_generation_input(
+            migrated["draft"],
+            site_binding=binding(),
+            national_ruleset_binding=binding(),
+            local_profile_binding=binding(),
+            geometry_feasibility="VERIFIED",
+            current_bindings=authoritative_bindings(),
+        )
+        self.assertEqual(migrated["validation"]["status"], "DRAFT_VALID")
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        codes = {item["code"] for item in result["validation"]["findings"]}
+        self.assertIn("INCOMPLETE_UNIT_PROGRAM", codes)
+        self.assertIn("UNVERIFIED_MATERIAL_PROVENANCE", codes)
+
+    def test_material_provenance_requires_integrity_and_compatible_authority(self):
+        draft = fixture("valid_residential_program")["draft"]
+        bad = copy.deepcopy(draft)
+        bad["provenance"][0]["source_hash"] = "not-a-hash"
+        bad["provenance"][0]["revision"] = 0
+        bad["provenance"][0]["source_reference"] = ""
+        bad["provenance"][0]["authority_type"] = "DERIVED_GEOMETRY"
+        validation = op.validate_owner_program_draft(bad)
+        self.assertEqual(validation["status"], "INPUT_REQUIRED")
+        codes = {item["code"] for item in validation["findings"]}
+        self.assertIn("INVALID_PROVENANCE", codes)
+        resolved = op.resolve_generation_input(
+            bad, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            geometry_feasibility="VERIFIED", current_bindings=authoritative_bindings(),
+        )
+        self.assertEqual(resolved["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIn("INVALID_FIELD_AUTHORITY", {item["code"] for item in resolved["validation"]["findings"]})
+
+    def test_questionnaire_answers_are_bound_to_content_hash(self):
+        draft = fixture("valid_residential_program")["draft"]
+        draft["questionnaire_answers"] = {}
+        result = op.validate_owner_program_draft(draft)
+        self.assertIn("STALE_QUESTIONNAIRE_ANSWERS", {item["code"] for item in result["findings"]})
+
+    def test_caller_verified_bindings_are_not_independent_proof(self):
+        draft = fixture("valid_residential_program")["draft"]
+        result = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            geometry_feasibility="VERIFIED",
+            derived_project_facts=[geometry_fact()],
+        )
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIn("CURRENT_BINDINGS_REQUIRED", {item["code"] for item in result["validation"]["findings"]})
+
+    def test_caller_geometry_verified_flag_requires_evidence_record(self):
+        draft = fixture("valid_residential_program")["draft"]
+        result = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            geometry_feasibility="VERIFIED", current_bindings=authoritative_bindings(),
+        )
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIn("GEOMETRY_PROOF_REQUIRED", {item["code"] for item in result["validation"]["findings"]})
+
+    def test_cross_project_identity_tamper_fails_even_when_rehashed(self):
+        draft = fixture("valid_residential_program")["draft"]
+        resolved = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            geometry_feasibility="VERIFIED", derived_project_facts=[geometry_fact()],
+            current_bindings=authoritative_bindings(),
+        )["resolved_input"]
+        resolved["project_id"] = "OTHER-PROJECT"
+        rehash_resolved(resolved)
+        result = op.validate_resolved_generation_input(resolved, draft=draft, current_bindings=authoritative_bindings())
+        self.assertEqual(result["status"], "STALE_BINDING")
+        self.assertIn("SOURCE_DRAFT_IDENTITY_MISMATCH", {item["code"] for item in result["findings"]})
+
+    def test_resolution_status_tamper_fails_even_when_rehashed(self):
+        draft = fixture("valid_residential_program")["draft"]
+        resolved = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(),
+        )["resolved_input"]
+        self.assertEqual(resolved["resolution_status"], "NEEDS_GEOMETRIC_FEASIBILITY_CHECK")
+        resolved["resolution_status"] = "VALIDATED_INPUT"
+        rehash_resolved(resolved)
+        result = op.validate_resolved_generation_input(resolved, draft=draft, current_bindings=authoritative_bindings())
+        self.assertEqual(result["status"], "STALE_BINDING")
+        self.assertIn("RESOLUTION_STATUS_MISMATCH", {item["code"] for item in result["findings"]})
+
+    def test_malformed_public_inputs_fail_closed_without_crashing(self):
+        for payload in (None, [], {"schema_version": op.SCHEMA_VERSION_DRAFT, "preferences": {"accessibility": []}}):
+            with self.subTest(payload=payload):
+                result = op.validate_owner_program_draft(payload)
+                self.assertIn(result["status"], {"INPUT_REQUIRED", "DEFINITELY_INVALID"})
+        result = op.validate_resolved_generation_input([], draft={})
+        self.assertEqual(result["status"], "INPUT_REQUIRED")
+        resolution = op.resolve_generation_input(
+            None, site_binding=None, national_ruleset_binding=None, local_profile_binding=None
+        )
+        self.assertIsNone(resolution["resolved_input"])
+        self.assertEqual(resolution["validation"]["status"], "INPUT_REQUIRED")
+        malformed = binding()
+        malformed["source_reference"] = {"not-json"}
+        resolution = op.resolve_generation_input(
+            fixture("valid_residential_program")["draft"], site_binding=malformed,
+            national_ruleset_binding=binding(), local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(malformed, binding(), binding()),
+        )
+        self.assertEqual(resolution["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIsNone(resolution["resolved_input"]["resolution_hash"])
+
     def test_provenance_is_required_and_must_match_canonical_value(self):
         draft = fixture("valid_residential_program")["draft"]
         missing = copy.deepcopy(draft)
@@ -209,6 +359,9 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
             site_binding=spec["site_binding"],
             national_ruleset_binding=spec["national_ruleset_binding"],
             local_profile_binding=spec["local_profile_binding"],
+            current_bindings=authoritative_bindings(
+                spec["site_binding"], spec["national_ruleset_binding"], spec["local_profile_binding"]
+            ),
         )
         self.assertEqual(result["validation"]["status"], "LOCAL_RULE_REQUIRED")
 
@@ -216,11 +369,13 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
         draft = fixture("valid_residential_program")["draft"]
         missing = {"id": None, "version": None, "source_reference": None, "source_hash": None, "verification_status": "INPUT_REQUIRED"}
         no_site = op.resolve_generation_input(
-            draft, site_binding=missing, national_ruleset_binding=binding(), local_profile_binding=binding()
+            draft, site_binding=missing, national_ruleset_binding=binding(), local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(missing, binding(), binding()),
         )
         self.assertEqual(no_site["validation"]["status"], "INPUT_REQUIRED")
         no_national = op.resolve_generation_input(
-            draft, site_binding=binding(), national_ruleset_binding=missing, local_profile_binding=binding()
+            draft, site_binding=binding(), national_ruleset_binding=missing, local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(binding(), missing, binding()),
         )
         self.assertEqual(no_national["validation"]["status"], "INPUT_REQUIRED")
 
@@ -231,6 +386,7 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
             site_binding=binding("1" * 64),
             national_ruleset_binding=binding("2" * 64),
             local_profile_binding=binding("3" * 64),
+            current_bindings=authoritative_bindings(binding("1" * 64), binding("2" * 64), binding("3" * 64)),
         )["resolved_input"]
         current = {
             "site_binding": binding("9" * 64),
@@ -243,10 +399,12 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
     def test_resolved_identity_is_bound_to_authority_snapshot(self):
         draft = fixture("valid_residential_program")["draft"]
         first = op.resolve_generation_input(
-            draft, site_binding=binding("1" * 64), national_ruleset_binding=binding("2" * 64), local_profile_binding=binding("3" * 64)
+            draft, site_binding=binding("1" * 64), national_ruleset_binding=binding("2" * 64), local_profile_binding=binding("3" * 64),
+            current_bindings=authoritative_bindings(binding("1" * 64), binding("2" * 64), binding("3" * 64)),
         )["resolved_input"]
         second = op.resolve_generation_input(
-            draft, site_binding=binding("9" * 64), national_ruleset_binding=binding("2" * 64), local_profile_binding=binding("3" * 64)
+            draft, site_binding=binding("9" * 64), national_ruleset_binding=binding("2" * 64), local_profile_binding=binding("3" * 64),
+            current_bindings=authoritative_bindings(binding("9" * 64), binding("2" * 64), binding("3" * 64)),
         )["resolved_input"]
         self.assertNotEqual(first["resolved_id"], second["resolved_id"])
         self.assertNotEqual(first["resolution_hash"], second["resolution_hash"])
@@ -254,7 +412,8 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
     def test_resolved_hash_rejects_post_resolution_mutation(self):
         draft = fixture("valid_residential_program")["draft"]
         resolved = op.resolve_generation_input(
-            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding()
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(),
         )["resolved_input"]
         resolved["derived_project_facts"].append({
             "field_id": "fabricated",
@@ -279,6 +438,7 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
             site_binding=binding(),
             national_ruleset_binding=binding(),
             local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(),
         )
         self.assertEqual(result["validation"]["status"], "NEEDS_GEOMETRIC_FEASIBILITY_CHECK")
         self.assertFalse(result["validation"]["geometry_feasibility_proven"])

@@ -10,7 +10,7 @@
     "Import unit types and units-per-floor only from an explicitly supplied v1 Generation Input",
     "Mark all migrated provenance UNKNOWN_LEGACY_SOURCE with verification_status UNKNOWN",
     "Report MATERIAL_INPUT_NOT_PRESENT when canonical unit-program data is absent",
-    "Require separate verified site, national-ruleset and local-profile bindings before resolved-input qualification"
+    "Require complete canonical units, verified compatible material provenance, independently supplied current site/national/local bindings and evidence-backed geometry before resolved-input qualification"
   ],
   "validation": [
     "tests/test_owner_program_v2.py",
@@ -21,7 +21,7 @@
     "offline Architecture Owner Program research and future explicitly approved adapters"
   ],
   "loss_policy": "Never discard or infer a legacy value. Preserve the original payload and emit structured findings for absent or ambiguous material inputs.",
-  "stale_policy": "Any changed owner-program, site, national-ruleset or local-profile identity/version/hash invalidates the resolved input with STALE_BINDING.",
+  "stale_policy": "Any changed owner-program identity, questionnaire content, resolution status, or site/national/local identity/version/reference/hash invalidates or fail-closes the resolved input.",
   "deprecation_window": "No v1 deprecation is scheduled. V1 remains readable and writable until a separately approved activation and consumer migration.",
   "deployment": "No staging or production deployment, database migration, runtime import or Generator activation is authorized.",
   "rollback": "Revert the additive v2 commit. V1 remains the unchanged active contract and no production data requires reversal."
