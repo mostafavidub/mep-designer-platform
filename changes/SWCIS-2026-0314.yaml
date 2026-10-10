@@ -18,7 +18,7 @@
   },
   "evidence": {
     "traceability": [],
-    "tests": ["106 focused boundary/enclosure/separator/validator tests", "172 canonical-wall/face-pairing/space/identity/foundation tests", "19 SWCIS governance tests"],
+    "tests": ["110 focused boundary/enclosure/separator/validator tests", "172 canonical-wall/face-pairing/space/identity/foundation tests", "19 SWCIS governance tests"],
     "docs": ["docs/ARCHITECTURE_LEGACY_MATERIAL_BOUNDARY_PROOF.md"],
     "version_bump": ["not required; no standards policy or public schema change"],
     "migration": ["none"],

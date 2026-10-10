@@ -58,11 +58,15 @@ def bind_boundary(space, source_sha):
             support_row = deepcopy(row)
             support_row['geometry'] = list(map(list, line.coords))
             entry = witness(support_row, source_sha, space.get('frame_id'),
-                            space.get('level_id'), interval=interval)
+                            space.get('level_id'))
             entry['payload']['original_source_geometry'] = deepcopy(row['geometry'])
+            entry['payload']['original_source_interval'] = interval
             entry['payload']['boundary_support_origin'] = row.get(
                 'boundary_support_origin', 'INDEPENDENT_SOURCE_GEOMETRY')
             payload = entry['payload']
+            # witness() canonicalizes endpoint order; bind intervals against
+            # that exact stored geometry so validator replay is orientation-safe.
+            line = LineString(payload['geometry'])
             for ring_index, ring in enumerate([polygon.exterior] + list(polygon.interiors)):
                 points = list(ring.coords)
                 for edge_index, (a, b) in enumerate(zip(points, points[1:])):

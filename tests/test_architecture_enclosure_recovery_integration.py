@@ -201,7 +201,8 @@ def test_separator_binding_cannot_restore_full_raw_face_from_clipped_witness():
     assert len(bottom) == 1
     assert bottom[0]['payload']['geometry'] == [[0.0, 0.0], [1.0, 0.0]]
     assert bottom[0]['payload']['original_source_geometry'] == [(0, 0), (4, 0)]
-    assert bottom[0]['payload']['interval'] == [0.0, .25]
+    assert bottom[0]['payload']['interval'] == [0.0, 1.0]
+    assert bottom[0]['payload']['original_source_interval'] == [0.0, .25]
     assert bottom[0]['payload']['boundary_support_origin'] == 'MATERIAL_LOCAL_SOURCE_FACE'
 
 
