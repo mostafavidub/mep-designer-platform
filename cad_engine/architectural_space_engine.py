@@ -1525,7 +1525,12 @@ def _completeness(frames, spaces, units_known, *, coverage=None, openings=None,
 def recognition_svg(model):
     frames = model.get("frames") or []; spaces = model.get("physical_spaces") or []
     columns = (model.get("structural_obstacles") or {}).get("items") or []
-    bounds = next((f["bounds"] for f in frames if f.get("bounds")), [0,0,1,1]); minx,miny,maxx,maxy=bounds
+    visible_bounds = [f["bounds"] for f in frames if f.get("bounds")]
+    if visible_bounds:
+        minx=min(row[0] for row in visible_bounds); miny=min(row[1] for row in visible_bounds)
+        maxx=max(row[2] for row in visible_bounds); maxy=max(row[3] for row in visible_bounds)
+    else:
+        minx,miny,maxx,maxy=[0,0,1,1]
     width=max(maxx-minx,1); height=max(maxy-miny,1)
     rows=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{minx} {-maxy} {width} {height}">',
           '<style>.s{fill-opacity:.22;stroke-width:.006;vector-effect:non-scaling-stroke}.c{fill:#f59e0b;fill-opacity:.3;stroke:#92400e;stroke-width:.012;vector-effect:non-scaling-stroke}.t{font-size:14px;paint-order:stroke;stroke:white;stroke-width:3px}</style>']

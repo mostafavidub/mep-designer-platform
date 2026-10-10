@@ -10,6 +10,7 @@ from shapely.ops import unary_union
 
 from .architecture_contract import ORIGINS, SCHEMA, STATUSES, canonical_model_hash, content_hash
 from .architecture_text_evidence import CONTRACT_VERSION as TEXT_CONTRACT_VERSION, validate_text_contract
+from .architecture_structural_obstacles import canonical_column_ring, column_content_fingerprint
 
 
 VALIDATOR_ID = "planha.architecture-validator"
@@ -363,10 +364,47 @@ def validate_architecture(model):
         polygon = _polygon(obstacle.get("footprint"))
         if polygon is None or not polygon.is_valid or polygon.area <= 0:
             _add(hard, "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID", structural_obstacle_id=oid)
-        if not obstacle.get("source_occurrence_id") or not obstacle.get("source_geometry_fingerprint"):
+        if (not obstacle.get("source_occurrence_id") or not obstacle.get("source_geometry_fingerprint") or
+                not isinstance(obstacle.get("source_lineage"), dict) or
+                not obstacle.get("world_coordinates")):
             _add(hard, "STRUCTURAL_OBSTACLE_SOURCE_IDENTITY_REQUIRED", structural_obstacle_id=oid)
-        if obstacle.get("frame_id") is not None and obstacle.get("frame_id") not in frame_ids:
+        footprint = canonical_column_ring(obstacle.get("footprint"))
+        world = canonical_column_ring(obstacle.get("world_coordinates"))
+        lineage = obstacle.get("source_lineage") or {}
+        lineage_footprint = canonical_column_ring(lineage.get("world_footprint")) if isinstance(lineage, dict) else None
+        if footprint is None or world != footprint or lineage_footprint != footprint:
+            _add(hard, "COLUMN_GEOMETRY_REPRESENTATION_MISMATCH", structural_obstacle_id=oid)
+        if footprint is not None:
+            expected_fingerprint = "COL-GEO-" + column_content_fingerprint(footprint)[:20].upper()
+            if obstacle.get("source_geometry_fingerprint") != expected_fingerprint:
+                _add(hard, "COLUMN_GEOMETRY_FINGERPRINT_INVALID", structural_obstacle_id=oid)
+        lineage_fields = {
+            "source_occurrence_id": obstacle.get("source_occurrence_id"),
+            "source_handle": obstacle.get("source_handle"),
+            "source_block_path": obstacle.get("source_block_path") or [],
+            "source_insert_handle": obstacle.get("source_insert_handle"),
+            "source_transform": obstacle.get("source_transform"),
+        }
+        if isinstance(lineage, dict) and all(key in lineage for key in
+                ("source_sha256", "source_occurrence_id", "source_handle", "source_block_path",
+                 "source_insert_handle", "source_transform", "world_footprint")):
+            if (lineage.get("source_sha256") != source_sha or
+                    any(lineage.get(key) != value for key, value in lineage_fields.items())):
+                _add(hard, "COLUMN_SOURCE_LINEAGE_MISMATCH", structural_obstacle_id=oid)
+            expected_identity = "COLUMN-" + column_content_fingerprint({
+                "source_sha256": lineage.get("source_sha256"), **lineage_fields,
+                "world_footprint": footprint,
+            })[:20].upper()
+            if oid != expected_identity:
+                _add(hard, "COLUMN_IDENTITY_INVALID", structural_obstacle_id=oid)
+        if obstacle.get("frame_id") not in frame_ids:
             _add(hard, "STRUCTURAL_OBSTACLE_FRAME_REFERENCE_INVALID", structural_obstacle_id=oid)
+        else:
+            obstacle_frame = next((row for row in frames if row.get("frame_id") == obstacle.get("frame_id")), {})
+            if (obstacle_frame.get("scope_relevance") == "REFERENCE_ONLY" or
+                    obstacle_frame.get("status") == "REFERENCE_ONLY"):
+                _add(hard, "COLUMN_FRAME_SCOPE_INVALID", structural_obstacle_id=oid,
+                     frame_id=obstacle.get("frame_id"))
         authority = obstacle.get("authority") or {}
         if any(authority.get(key) for key in
                ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope")):
