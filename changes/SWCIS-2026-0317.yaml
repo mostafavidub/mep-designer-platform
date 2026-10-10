@@ -1,0 +1,50 @@
+{
+  "change_id": "SWCIS-2026-0317",
+  "summary": "Eliminate the mechanical fixture-question loop by unifying question presentation and validation, returning explicit answer outcomes, and advancing the browser only after verified persistence.",
+  "requester": "project-owner",
+  "change_types": ["documentation", "test", "ui_api"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["docs", "qa", "ui_api"],
+  "impact_notes": {
+    "docs": "Documents the quantified fixture-answer contract and its authority limits.",
+    "qa": "Adds route-level presentation, rejection, preservation, idempotency, stale-form, legacy-form and owner-isolation regressions.",
+    "ui_api": "Unifies HTML and flow presentation; validation failures are 422, stale submissions are 409, persistence failures are 500, and browser success requires explicit persistence evidence."
+  },
+  "evidence": {
+    "traceability": [
+      "Base integration candidate 588de834924a5888aaa24ff32e1106aca0da9829 (PR #335).",
+      "Question 21 sequence: incompatible HTML option -> backend 200 with answer_error -> browser response.ok redirect -> unchanged question."
+    ],
+    "tests": [
+      "tests/test_mechanical_flow_e2e.py",
+      "tests/test_fixture_gate_v1.py",
+      "tests/test_mechanical_questionnaire_persistence.py"
+    ],
+    "docs": ["docs/QUESTIONNAIRE_FIXTURE_ANSWER_CONTRACT.md"],
+    "version_bump": ["Not required: no schema, calculation algorithm, or engineering authority version changes."],
+    "golden_regression": ["Mechanical fixture evidence remains fail-closed; architecture and roof classification are unchanged."],
+    "semantic_diff": ["Only quantified fixture schedules are accepted by both presentation paths; unscoped zero remains rejected."],
+    "artifact_diff": ["No drawing or engineering artifact changes."],
+    "numeric_diff": ["No fixture quantity is inferred or modified."],
+    "contract_diff": ["JSON answer outcomes now distinguish accepted, validation, stale, idempotent and persistence failure states."],
+    "migration": ["No database migration and no rewrite of existing project answers."],
+    "deployment_plan": ["Local validation and stacked PR only; no merge or online deployment authorized."],
+    "rollback_plan": ["Revert the isolated stacked PR; persisted valid answers remain compatible."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 4,
+    "detectability": 2,
+    "score": 16,
+    "rationale": "Questionnaire transport semantics affect user progress, but focused route tests cover rejection, persistence and replay while engineering authority remains unchanged."
+  },
+  "waiver": null,
+  "verification_status": {
+    "qualification": "FOCUSED_FIX_PENDING_CI",
+    "architecture_release": "UNCHANGED_FAIL_CLOSED",
+    "mechanical_release": "UNCHANGED_FAIL_CLOSED",
+    "staging": "NOT_AUTHORIZED",
+    "production": "NOT_AUTHORIZED",
+    "merge": "NOT_AUTHORIZED"
+  }
+}
