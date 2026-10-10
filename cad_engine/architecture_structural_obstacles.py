@@ -10,11 +10,22 @@ from shapely.geometry import Polygon
 
 
 SCHEMA = "planha-structural-obstacle/1.0"
+MANDATORY_COLUMN_LINEAGE_KEYS = (
+    "source_sha256", "source_occurrence_id", "source_handle", "source_block_path",
+    "source_insert_handle", "source_transform", "world_footprint",
+)
 
 
 def canonical_column_ring(points):
     """Return an orientation/start-point invariant open polygon ring."""
-    ring = [[float(point[0]), float(point[1])] for point in points or []]
+    try:
+        if not isinstance(points, (list, tuple)):
+            return None
+        if any(not isinstance(point, (list, tuple)) or len(point) != 2 for point in points):
+            return None
+        ring = [[float(point[0]), float(point[1])] for point in points]
+    except (TypeError, ValueError, OverflowError):
+        return None
     if len(ring) > 1 and ring[0] == ring[-1]:
         ring.pop()
     if len(ring) < 3 or any(not math.isfinite(value) for point in ring for value in point):

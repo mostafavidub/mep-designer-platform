@@ -46,6 +46,13 @@ reconstructs the stable identity when the complete canonical lineage is
 present. This detects contract tampering without claiming to reread the DXF.
 Any Wall, envelope, routing or release grant is a hard error.
 
+All Canonical Architecture 3.2 column-lineage keys are mandatory. A partial
+lineage produces `COLUMN_SOURCE_LINEAGE_KEYS_MISSING` with the exact missing
+keys; it cannot bypass identity reconciliation. Nonnumeric, malformed-point or
+nonfinite coordinates are never repaired: projection excludes them with an
+`invalid_geometry` diagnostic count, while independent validation returns a
+structured `STRUCTURAL_OBSTACLE_GEOMETRY_INVALID` hard error.
+
 ## Compatibility
 
 This is a reader-before-writer migration. Existing Wall admission exclusions,

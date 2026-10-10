@@ -192,6 +192,48 @@ def test_validator_rejects_column_on_reference_only_frame():
     assert "COLUMN_FRAME_SCOPE_INVALID" in codes(validate_architecture(model))
 
 
+def test_validator_rejects_partially_missing_column_source_lineage():
+    model = contract()
+    diagnostic = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+                  "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+                  "source_handle":"C1", "source_occurrence_id":"SRC-1111111111111111",
+                  "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+                  "source_block_path":[], "source_insert_handle":None,
+                  "source_transform":[1,0,0,1,0,0], "frame_ids":["F1"],
+                  "geometry":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]}
+    model["structural_obstacles"] = project_structural_obstacles(
+        {"items":[diagnostic]}, [{"frame_id":"F1", "status":"SUPPORTED"}], SHA)["items"]
+    del model["structural_obstacles"][0]["source_lineage"]["source_transform"]
+    rehash(model)
+    report = validate_architecture(model)
+    issue = next(row for row in report["hard_errors"]
+                 if row["code"] == "COLUMN_SOURCE_LINEAGE_KEYS_MISSING")
+    assert issue["missing_keys"] == ["source_transform"]
+
+
+@pytest.mark.parametrize("malformed", [
+    [[1,1],["not-a-number",1],[1.4,1.4],[1,1.4]],
+    [[1,1],[1.4],[1.4,1.4],[1,1.4]],
+    [[1,1],[float("inf"),1],[1.4,1.4],[1,1.4]],
+])
+def test_validator_returns_structured_errors_for_malformed_column_coordinates(malformed):
+    model = contract()
+    model["structural_obstacles"] = [{
+        "structural_obstacle_id":"COLUMN-" + "A"*20, "obstacle_type":"COLUMN", "frame_id":"F1",
+        "footprint":malformed, "world_coordinates":malformed,
+        "source_handle":"C1", "source_occurrence_id":"SRC-" + "1"*16,
+        "source_geometry_fingerprint":"COL-GEO-" + "2"*20,
+        "source_lineage":{"source_sha256":SHA, "source_occurrence_id":"SRC-" + "1"*16,
+                          "source_handle":"C1", "source_block_path":[], "source_insert_handle":None,
+                          "source_transform":None, "world_footprint":malformed},
+        "geometry_qualification":"SOURCE_BACKED", "obstacle_classification":"OBSTACLE_EVIDENCE_ONLY",
+        "authority":{"status":"SUPPORTED","origins":["SOURCE_GEOMETRIC"],
+                     "material_geometry":False,"wall":False,"portal":False,"access":False,
+                     "routing":False,"release":False,"envelope":False}
+    }]
+    assert "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID" in codes(validate_architecture(model))
+
+
 def test_validator_valid_model_is_read_only_and_no_score_masking():
     model = contract(); before = content_hash(model)
     report = validate_architecture(model)

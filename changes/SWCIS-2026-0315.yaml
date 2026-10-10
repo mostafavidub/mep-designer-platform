@@ -18,7 +18,7 @@
   },
   "evidence": {
     "traceability": ["standards/capability-registry.json", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/system_dependency_graph.yaml"],
-    "tests": ["Python 3.12 focused correction suite: 56 passed", "Python 3.12 affected architecture/downstream suite: 380 passed", "Governance/runtime focused suite: 30 passed", "Frozen-source replay: 12 Typical + 7 Roof canonical columns, 99 reference-only occurrences excluded, both corner occurrences retained, validator hard errors 0", "Updated GitHub evidence recorded on PR #334"],
+    "tests": ["Python 3.12 final focused destructive/validator suite: 63 passed", "Python 3.12 affected architecture/downstream suite: 380 passed", "Governance/runtime focused suite: 30 passed", "Frozen-source replay: 12 Typical + 7 Roof canonical columns, 99 reference-only occurrences excluded, both corner occurrences retained, validator hard errors 0", "Updated GitHub evidence recorded on PR #334"],
     "docs": ["docs/ARCHITECTURE_CANONICAL_COLUMNS.md", "docs/adr/ADR-ARCHITECTURAL-COLUMN-BOUNDARY-WITNESS.md"],
     "version_bump": ["SWCIS 5.3.0", "Canonical Architecture 3.2"],
     "migration": ["standards/swcis/migrations/architecture-canonical-columns-v32.json"],

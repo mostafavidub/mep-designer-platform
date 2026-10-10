@@ -217,3 +217,21 @@ def test_recognition_svg_union_viewbox_keeps_columns_from_all_frames_visible():
     assert 'viewBox="0 -70 120 70"' in svg
     assert svg.count('data-obstacle-type="COLUMN"') == 2
     assert "101,-51 102,-51 102,-52 101,-52" in svg
+
+
+@pytest.mark.parametrize("malformed", [
+    [[0,0],["bad",0],[.4,.4],[0,.4]],
+    [[0,0],[.4],[.4,.4],[0,.4]],
+    [[0,0],[float("nan"),0],[.4,.4],[0,.4]],
+])
+def test_malformed_column_coordinates_are_excluded_with_diagnostic_count(malformed):
+    diagnostic = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+                  "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+                  "source_handle":"A", "source_occurrence_id":"SRC-A",
+                  "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+                  "source_block_path":[], "source_transform":None,
+                  "frame_ids":["F1"], "geometry":malformed}
+    result = project_structural_obstacles(
+        {"items":[diagnostic]}, [{"frame_id":"F1", "status":"VERIFIED"}], "a"*64)
+    assert result["items"] == []
+    assert result["projection_diagnostics"]["excluded_counts"]["invalid_geometry"] == 1

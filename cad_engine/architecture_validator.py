@@ -10,7 +10,9 @@ from shapely.ops import unary_union
 
 from .architecture_contract import ORIGINS, SCHEMA, STATUSES, canonical_model_hash, content_hash
 from .architecture_text_evidence import CONTRACT_VERSION as TEXT_CONTRACT_VERSION, validate_text_contract
-from .architecture_structural_obstacles import canonical_column_ring, column_content_fingerprint
+from .architecture_structural_obstacles import (
+    MANDATORY_COLUMN_LINEAGE_KEYS, canonical_column_ring, column_content_fingerprint,
+)
 
 
 VALIDATOR_ID = "planha.architecture-validator"
@@ -166,6 +168,37 @@ def _review_overlay_valid(row, errors, entity_id, source_sha):
 
 def validate_architecture(model):
     """Validate without mutation; critical failures always dominate status."""
+    # Canonical hashing intentionally rejects non-finite semantic numbers. Run
+    # a bounded column-geometry preflight first so malformed untrusted geometry
+    # fails as a structured validator result instead of escaping as an exception.
+    malformed_columns = []
+    for obstacle in model.get("structural_obstacles") or []:
+        lineage = obstacle.get("source_lineage") or {}
+        if (canonical_column_ring(obstacle.get("footprint")) is None or
+                ("world_coordinates" in obstacle and
+                 canonical_column_ring(obstacle.get("world_coordinates")) is None) or
+                (isinstance(lineage, dict) and "world_footprint" in lineage and
+                 canonical_column_ring(lineage.get("world_footprint")) is None)):
+            malformed_columns.append(obstacle.get("structural_obstacle_id"))
+    if malformed_columns:
+        hard = [{"code": "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID",
+                 "structural_obstacle_id": oid} for oid in malformed_columns]
+        report = {"schema": "planha-architecture-validation-report/1.0",
+                  "validator_id": VALIDATOR_ID, "validator_version": VALIDATOR_VERSION,
+                  "status": "FAIL", "hard_errors": hard, "input_requirements": [],
+                  "warnings": [], "control_results": [],
+                  "metrics": {"physical_spaces": len(model.get("physical_spaces") or []),
+                              "walls": len(model.get("walls") or []),
+                              "portals": len(model.get("portals") or []),
+                              "structural_obstacles": len(model.get("structural_obstacles") or []),
+                              "voids": len(model.get("voids") or []),
+                              "illegal_overlap_area": 0.0,
+                              "hard_error_count": len(hard), "input_requirement_count": 0},
+                  "critical_score_masking": False,
+                  "input_hash_before": "INVALID_CANONICAL_REPRESENTATION",
+                  "input_hash_after": "INVALID_CANONICAL_REPRESENTATION"}
+        report["report_hash"] = content_hash(report)
+        return report
     before = canonical_model_hash(model)
     representation_before = content_hash(model)
     data = deepcopy(model)
@@ -372,6 +405,11 @@ def validate_architecture(model):
         world = canonical_column_ring(obstacle.get("world_coordinates"))
         lineage = obstacle.get("source_lineage") or {}
         lineage_footprint = canonical_column_ring(lineage.get("world_footprint")) if isinstance(lineage, dict) else None
+        missing_lineage_keys = ([key for key in MANDATORY_COLUMN_LINEAGE_KEYS if key not in lineage]
+                                if isinstance(lineage, dict) else list(MANDATORY_COLUMN_LINEAGE_KEYS))
+        if missing_lineage_keys:
+            _add(hard, "COLUMN_SOURCE_LINEAGE_KEYS_MISSING", structural_obstacle_id=oid,
+                 missing_keys=missing_lineage_keys)
         if footprint is None or world != footprint or lineage_footprint != footprint:
             _add(hard, "COLUMN_GEOMETRY_REPRESENTATION_MISMATCH", structural_obstacle_id=oid)
         if footprint is not None:
@@ -385,9 +423,7 @@ def validate_architecture(model):
             "source_insert_handle": obstacle.get("source_insert_handle"),
             "source_transform": obstacle.get("source_transform"),
         }
-        if isinstance(lineage, dict) and all(key in lineage for key in
-                ("source_sha256", "source_occurrence_id", "source_handle", "source_block_path",
-                 "source_insert_handle", "source_transform", "world_footprint")):
+        if isinstance(lineage, dict) and not missing_lineage_keys:
             if (lineage.get("source_sha256") != source_sha or
                     any(lineage.get(key) != value for key, value in lineage_fields.items())):
                 _add(hard, "COLUMN_SOURCE_LINEAGE_MISMATCH", structural_obstacle_id=oid)
