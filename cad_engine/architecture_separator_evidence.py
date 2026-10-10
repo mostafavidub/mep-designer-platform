@@ -47,28 +47,44 @@ def bind_boundary(space, source_sha):
     polygon = Polygon(space['polygon'], space.get('interior_rings') or [])
     tol = float(proof.get('tolerance') or 1e-7)
     for row in records:
-        entry = witness(row, source_sha, space.get('frame_id'), space.get('level_id'))
-        payload = entry['payload']; line = LineString(payload['geometry'])
-        if line.length <= 0:
-            continue
-        for ring_index, ring in enumerate([polygon.exterior] + list(polygon.interiors)):
-            points = list(ring.coords)
-            for edge_index, (a, b) in enumerate(zip(points, points[1:])):
-                edge = LineString([a, b]); covered = edge.intersection(line.buffer(tol))
-                parts = list(covered.geoms) if hasattr(covered, 'geoms') else [covered]
-                for part in parts:
-                    if part.geom_type != 'LineString' or part.length <= 1e-12:
-                        continue
-                    lo, hi = sorted(edge.project(Point(p), normalized=True)
-                                    for p in (part.coords[0], part.coords[-1]))
-                    source_range = sorted(line.project(Point(p), normalized=True)
-                                          for p in (part.coords[0], part.coords[-1]))
-                    if source_range[1] - source_range[0] <= 1e-12:
-                        continue
-                    refs.append({'evidence_id': entry['evidence_id'], 'ring': ring_index,
-                                 'edge': edge_index, 'boundary_interval': [lo, hi],
-                                 'source_interval': source_range, 'derivation': 'DIRECT'})
-                    registry[entry['evidence_id']] = entry
+        original = LineString(row['geometry'])
+        supports = row.get('boundary_support_segments', [row['geometry']])
+        for support in supports:
+            line = LineString(support)
+            if line.length <= 0:
+                continue
+            interval = sorted(original.project(Point(p), normalized=True)
+                              for p in (line.coords[0], line.coords[-1]))
+            support_row = deepcopy(row)
+            support_row['geometry'] = list(map(list, line.coords))
+            entry = witness(support_row, source_sha, space.get('frame_id'),
+                            space.get('level_id'))
+            entry['payload']['original_source_geometry'] = deepcopy(row['geometry'])
+            entry['payload']['original_source_interval'] = interval
+            entry['payload']['boundary_support_origin'] = row.get(
+                'boundary_support_origin', 'INDEPENDENT_SOURCE_GEOMETRY')
+            payload = entry['payload']
+            # witness() canonicalizes endpoint order; bind intervals against
+            # that exact stored geometry so validator replay is orientation-safe.
+            line = LineString(payload['geometry'])
+            for ring_index, ring in enumerate([polygon.exterior] + list(polygon.interiors)):
+                points = list(ring.coords)
+                for edge_index, (a, b) in enumerate(zip(points, points[1:])):
+                    edge = LineString([a, b]); covered = edge.intersection(line.buffer(tol))
+                    parts = list(covered.geoms) if hasattr(covered, 'geoms') else [covered]
+                    for part in parts:
+                        if part.geom_type != 'LineString' or part.length <= 1e-12:
+                            continue
+                        lo, hi = sorted(edge.project(Point(p), normalized=True)
+                                        for p in (part.coords[0], part.coords[-1]))
+                        support_range = sorted(line.project(Point(p), normalized=True)
+                                               for p in (part.coords[0], part.coords[-1]))
+                        if support_range[1] - support_range[0] <= 1e-12:
+                            continue
+                        refs.append({'evidence_id': entry['evidence_id'], 'ring': ring_index,
+                                     'edge': edge_index, 'boundary_interval': [lo, hi],
+                                     'source_interval': support_range, 'derivation': 'DIRECT'})
+                        registry[entry['evidence_id']] = entry
     proof['boundary_witnesses'] = sorted(refs, key=content_hash)
     proof['separator_status'] = 'AMBIGUOUS' if refs else 'INPUT_REQUIRED'
     proof['separator_policy'] = POLICY
