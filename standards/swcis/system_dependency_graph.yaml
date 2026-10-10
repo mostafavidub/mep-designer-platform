@@ -39,7 +39,10 @@
         "tests/test_questionnaire_choices.py",
         "cad_engine/owner_program.py",
         "standards/test-suites/residential/owner-program-v2.schema.json",
-        "standards/test-suites/residential/resolved-generation-input-v2.schema.json"
+        "standards/test-suites/residential/resolved-generation-input-v2.schema.json",
+        "cad_engine/local_code_basis.py",
+        "standards/test-suites/residential/local-rule-profile-v1.schema.json",
+        "standards/test-suites/residential/project-code-basis-v1.schema.json"
       ],
       "depends_on": [
         "pmm",

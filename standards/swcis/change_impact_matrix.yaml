@@ -26,7 +26,10 @@
         "standards/projects/**",
         "cad_engine/architecture_contract.py",
         "standards/test-suites/planha-canonical-architecture-v3.schema.json",
-        "cad_engine/owner_program.py"
+        "cad_engine/owner_program.py",
+        "cad_engine/local_code_basis.py",
+        "standards/test-suites/residential/local-rule-profile-v1.schema.json",
+        "standards/test-suites/residential/project-code-basis-v1.schema.json"
       ],
       "seed_modules": [
         "pmm",

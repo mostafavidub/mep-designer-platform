@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "architecture-local-code-basis-1.0",
+  "from": "architecture-generation-input/1.0 embedded location, authority and precomputed envelope",
+  "to": "architecture-local-rule-profile/1.0 plus architecture-project-code-basis/1.0",
+  "compatibility": "Additive offline contracts. Existing Generation Input and Owner Program contracts remain unchanged and active behavior is untouched.",
+  "forward": [
+    "Preserve every legacy payload without mutation",
+    "Record the legacy envelope as precomputed unqualified evidence",
+    "Require exact project, parcel, Site Model, source revisions and effective date",
+    "Re-derive or independently revalidate constraints before granting new contract status",
+    "Keep absent municipal and parcel evidence INPUT_REQUIRED or LOCAL_RULE_REQUIRED"
+  ],
+  "validation": ["tests/test_local_code_basis.py", "tests/test_owner_program_v2.py", "tests/test_residential_foundation.py", "SWCIS-2026-0307"],
+  "consumers": ["offline architecture R&D and future separately approved adapters"],
+  "loss_policy": "No legacy value is deleted, rewritten or promoted to authority.",
+  "stale_policy": "Relevant project, parcel, survey, source, profile, effective-date, rule, building-line or exception changes invalidate dependent constraints.",
+  "deployment": "No runtime import, database migration, Generator activation, staging or production action.",
+  "rollback": "Revert the additive branch; no stored production data requires reversal."
+}
