@@ -1,0 +1,117 @@
+{
+  "change_id": "SWCIS-2026-0318",
+  "summary": "Reseal the cumulative post-#312 integration candidate after the authorized PR #336 merge, preserving the exact questionnaire polling, READY finalization, isolated Local Staging, fixture-answer and shaft-replay source tree without granting new engineering authority.",
+  "requester": "project-owner",
+  "change_types": [
+    "deployment",
+    "documentation",
+    "governance",
+    "test",
+    "ui_api"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "deployment",
+    "docs",
+    "governance",
+    "manifest",
+    "migration",
+    "qa",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "deployment": "Preserves previously qualified opt-in Local Staging artifacts only. This reseal authorizes no online Staging, Production deployment or main merge; a later main merge may trigger Railway Production and requires separate owner approval.",
+    "docs": "Preserves the existing polling/resume, READY finalization, isolated Local Staging and questionnaire fixture-answer documentation. Adds only this cumulative SWCIS record.",
+    "governance": "One sealed cumulative integration manifest binds the exact main baseline, merged source commit/tree and immutable historical request blobs. No SWCIS policy or enforcement is weakened.",
+    "manifest": "Retains source-bound questionnaire job, completed-analysis identity and original approval evidence during idempotent shaft replay. No build-identity or project-manifest schema is changed by the reseal.",
+    "migration": "No database schema migration or existing project-answer rewrite. Legacy or incomplete engineering evidence remains fail-closed.",
+    "qa": "Carries forward the source-qualified polling, resume, finalization, fixture-answer, stale replay, idempotency and owner-isolation evidence. Official PR checks must qualify this exact resealed head.",
+    "ui_api": "Preserves owner-bound questionnaire job polling, READY artifact reuse, idempotent finalization and explicit answer outcomes. No public endpoint, pricing, access, geometry or engineering-authority expansion is introduced by this seal.",
+    "versioning": "SWCIS remains 5.2.0. This cumulative governance record does not change a runtime, schema or engineering contract version."
+  },
+  "evidence": {
+    "traceability": [
+      "Original main baseline 84cbdd007f2c5dca0f61989f778c6759ec0a34bc.",
+      "Authorized PR #336 merge source 8a2698ad5d0fa1e0a4e3f5c88039891c41e3450e; exact tree bd2c113c78eebf512a86505fbc0fa2917fc2372d.",
+      "Historical qualification records: SWCIS-2026-0303, SWCIS-2026-0305, SWCIS-2026-0306, SWCIS-2026-0316 and SWCIS-2026-0317, bound by exact Git blob identity.",
+      "PR #336 was merged only into integration/main-post312-runtime-seal-20261010 with a guarded GitHub merge commit; main remained unchanged."
+    ],
+    "tests": [
+      "Historical source checks for SWCIS-2026-0303, 0305 and 0306 remain immutable and are not re-claimed as newly executed.",
+      "PR #336 source evidence: 51 focused checks PASS, including fixture-answer presentation/validation and idempotent shaft replay; four exact-head GitHub checks PASS.",
+      "Post-merge PR #335 checks passed except the expected cumulative-manifest scope failure EXACTLY_ONE_GOVERNING_REQUEST_REQUIRED.",
+      "This exact resealed head must pass SWCIS scope, schema/semantic validation and all applicable official PR checks before any merge decision."
+    ],
+    "docs": [
+      "docs/PANEL_QUESTIONNAIRE_POLLING_RESUME.md",
+      "docs/PANEL_PROJECT_FINALIZATION_READY_REUSE.md",
+      "docs/LOCAL_STAGING.md",
+      "docs/QUESTIONNAIRE_FIXTURE_ANSWER_CONTRACT.md",
+      "README.md"
+    ],
+    "version_bump": [
+      "Not required: this is a cumulative governance reseal and does not alter SWCIS 5.2.0, runtime behavior, schema semantics or engineering authority."
+    ],
+    "golden_regression": [
+      "No architecture reconstruction, geometry, sizing or drawing-output algorithm is changed by this manifest. Architecture and Mechanical authority remain fail-closed."
+    ],
+    "semantic_diff": [
+      "No runtime semantic change: bind the exact already-merged integration source tree under one current cumulative governing request.",
+      "Preserve explicit questionnaire answer outcomes and original shaft approval evidence without resolving the separate unscoped fixture-schedule authority risk."
+    ],
+    "artifact_diff": [
+      "Adds only changes/SWCIS-2026-0318.yaml to the sealed source tree; no CAD, customer, database or deployment artifact changes."
+    ],
+    "numeric_diff": [
+      "None: no fixture quantity, pricing, load, sizing, architectural area or drainage calculation changes."
+    ],
+    "contract_diff": [
+      "Governance-only cumulative reseal. Existing owner-bound polling, READY reuse, answer transport, idempotency and stale-replay contracts are preserved unchanged.",
+      "Global fixture_schedule answers remain insufficiently scoped for multiple unresolved wet levels and receive no new authority."
+    ],
+    "migration": [
+      "No database migration, destructive transformation or historical SWCIS rewrite."
+    ],
+    "deployment_plan": [
+      "GOVERNANCE RESEAL ONLY. Do not merge PR #335, merge to main, deploy Railway Staging/Production, publish Cloudflare or modify databases under this authorization.",
+      "Keep PR #335 OPEN/DRAFT after CI. A later main merge and any deployment require separate explicit owner approval."
+    ],
+    "rollback_plan": [
+      "Revert only this isolated governance commit if the reseal is rejected; the underlying integration source commit remains unchanged.",
+      "Preserve main at 84cbdd007f2c5dca0f61989f778c6759ec0a34bc and do not alter online or dedicated-offline environments."
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "The change is governance-only, but PR #335 targets main and a later merge may trigger Production. Exact commit/tree/blob binding and separate owner gates remain mandatory."
+  },
+  "waiver": null,
+  "verification_status": {
+    "qualification": "CUMULATIVE_RESEAL_PENDING_CI",
+    "exact_source_tree": "VERIFIED",
+    "historical_blob_integrity": "VERIFIED",
+    "owner_approval": "CUMULATIVE_RESEAL_COMMIT_ONLY",
+    "official_pr_ci": "PENDING",
+    "architecture_release": "UNCHANGED_FAIL_CLOSED",
+    "mechanical_release": "UNCHANGED_FAIL_CLOSED",
+    "staging": "NOT_AUTHORIZED",
+    "production": "NOT_AUTHORIZED",
+    "merge": "NOT_AUTHORIZED"
+  },
+  "integration": {
+    "base_sha": "84cbdd007f2c5dca0f61989f778c6759ec0a34bc",
+    "source_sha": "8a2698ad5d0fa1e0a4e3f5c88039891c41e3450e",
+    "source_tree": "bd2c113c78eebf512a86505fbc0fa2917fc2372d",
+    "historical_requests": {
+      "changes/SWCIS-2026-0303.yaml": "a927c847ddb4a563efe42bd3d2ba9321d86565a4",
+      "changes/SWCIS-2026-0305.yaml": "927a82e0ea33914b9b59269ebe5702d29f26fde8",
+      "changes/SWCIS-2026-0306.yaml": "cd24c4de68f1d128f7b3fbf3e245cbe61363139e",
+      "changes/SWCIS-2026-0316.yaml": "b305ff7bdb8b2617eede5d3d138aacc33e8f5322",
+      "changes/SWCIS-2026-0317.yaml": "76d66d83eef7968b6e1603bd3c4170d29212c421"
+    }
+  }
+}
