@@ -133,6 +133,80 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         finally:
             db.close()
 
+    def test_shaft_answer_exact_replay_is_idempotent_and_preserves_approval_evidence(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'shaft-replay'})
+        pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'asking'
+            project.questions = [
+                {'key': 'mechanical_shaft_route', 'question': 'مسیر شفت را مشخص کنید.'},
+                {'key': 'gas', 'question': 'ساختمان گاز دارد؟'},
+            ]
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            db.commit()
+        finally:
+            db.close()
+
+        payload = {'answer': 'پیشنهاد نزدیک هسته فضاهای تر', 'expected_question_index': '0'}
+        accepted = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        self.assertEqual(accepted.status_code, 200)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            original = dict(project.answers['mechanical_shaft_approval'])
+            self.assertEqual(original['source'], 'explicit_user_answer')
+            self.assertTrue(original['recorded_at'])
+        finally:
+            db.close()
+
+        replay = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        self.assertEqual(replay.status_code, 200)
+        self.assertTrue(replay.json()['idempotent_replay'])
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 1)
+            self.assertEqual(project.answers['mechanical_shaft_approval'], original)
+        finally:
+            db.close()
+
+    def test_shaft_replay_with_changed_raw_or_strategy_is_stale(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'shaft-stale'})
+        pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'asking'
+            project.questions = [
+                {'key': 'mechanical_shaft_route', 'question': 'مسیر شفت را مشخص کنید.'},
+                {'key': 'gas', 'question': 'ساختمان گاز دارد؟'},
+            ]
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            db.commit()
+        finally:
+            db.close()
+
+        original_payload = {'answer': 'پیشنهاد نزدیک هسته فضاهای تر', 'expected_question_index': '0'}
+        self.assertEqual(self.client.post(f'/projects/{pid}/answer-json', data=original_payload).status_code, 200)
+        for changed in ('نزدیک هسته فضاهای تر', 'شفت کنار راه پله'):
+            response = self.client.post(
+                f'/projects/{pid}/answer-json',
+                data={'answer': changed, 'expected_question_index': '0'},
+            )
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.json()['error_code'], 'stale_question_index')
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 1)
+            self.assertEqual(project.answers['mechanical_shaft_approval']['raw_answer'], original_payload['answer'])
+        finally:
+            db.close()
+
     def test_project_answer_ui_retries_transient_gateway_failures(self):
         source = Path('app/templates/project.html').read_text(encoding='utf-8')
         self.assertIn("expected_question_index", source)

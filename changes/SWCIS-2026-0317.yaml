@@ -20,7 +20,7 @@
     "governance": "Adds this bounded SWCIS record without weakening enforcement.",
     "manifest": "Existing project answer persistence is preserved; no manifest schema changes.",
     "migration": "No database migration or existing-answer rewrite.",
-    "qa": "Adds route-level presentation, rejection, preservation, idempotency, stale-form, legacy-form and owner-isolation regressions.",
+    "qa": "Adds route-level presentation, rejection, preservation, idempotency, shaft-approval replay, stale-form, legacy-form and owner-isolation regressions.",
     "ui_api": "Unifies HTML and flow presentation; validation failures are 422, stale submissions are 409, persistence failures are 500, and browser success requires explicit persistence evidence.",
     "versioning": "No runtime, architecture, or calculation version bump; the answer transport is backward-compatible for valid submissions."
   },
@@ -40,7 +40,7 @@
     "semantic_diff": ["Only quantified fixture schedules are accepted by both presentation paths; unscoped zero remains rejected."],
     "artifact_diff": ["No drawing or engineering artifact changes."],
     "numeric_diff": ["No fixture quantity is inferred or modified."],
-    "contract_diff": ["JSON answer outcomes now distinguish accepted, validation, stale, idempotent and persistence failure states."],
+    "contract_diff": ["JSON answer outcomes distinguish accepted, validation, stale, idempotent and persistence failure states; exact shaft replay preserves its original approval evidence."],
     "migration": ["No database migration and no rewrite of existing project answers."],
     "deployment_plan": ["Local validation and stacked PR only; no merge or online deployment authorized."],
     "rollback_plan": ["Revert the isolated stacked PR; persisted valid answers remain compatible."]

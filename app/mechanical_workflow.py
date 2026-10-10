@@ -5,7 +5,7 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from .mechanical_drawing_set import approve_drawing_set, is_current_manifest, predict_drawing_set
-from .mechanical_basis_contract import canonical_city, canonical_cooling_system, canonical_heating_system, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
+from .mechanical_basis_contract import canonical_city, canonical_cooling_system, canonical_heating_system, canonical_shaft_strategy, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
 from .fixture_gate_v1 import fixture_schedule_quantified
 
 SYSTEM_LABELS = {
@@ -93,6 +93,22 @@ def _answer_payload(legacy, p, *, outcome, persisted=False, error=None, error_co
     if error_code:
         data['error_code'] = error_code
     return data
+
+
+def _answer_replay_matches(answers, key, raw_answer):
+    """Compare replay semantics without regenerating persisted authority evidence."""
+    before = normalize_answers(answers or {})
+    if key != 'mechanical_shaft_route':
+        return normalize_answers(before, answer_key=key, raw_answer=raw_answer) == before
+    existing = dict(before.get('mechanical_shaft_approval') or {})
+    candidate = normalize_answers({}, answer_key=key, raw_answer=raw_answer)
+    proposed = dict(candidate.get('mechanical_shaft_approval') or {})
+    return bool(
+        existing.get('status') == 'APPROVED'
+        and existing.get('source') == 'explicit_user_answer'
+        and canonical_shaft_strategy(existing.get('strategy')) == canonical_shaft_strategy(proposed.get('strategy'))
+        and str(existing.get('raw_answer') or '').strip() == str(proposed.get('raw_answer') or '').strip()
+    )
 
 
 def _enclosed_parking(value):
@@ -443,9 +459,7 @@ def register_mechanical_workflow(app, legacy):
         if replayed:
             if 0 <= expected < idx and expected < len(qs):
                 replay_key = qs[expected].get('key')
-                before = normalize_answers(p.answers or {})
-                candidate = normalize_answers(before, answer_key=replay_key, raw_answer=answer.strip())
-                if candidate == before:
+                if _answer_replay_matches(p.answers or {}, replay_key, answer.strip()):
                     data = _answer_payload(legacy, p, outcome='idempotent_replay', persisted=True)
                     data['idempotent_replay'] = True; db.close(); return JSONResponse(data)
             data = _answer_payload(

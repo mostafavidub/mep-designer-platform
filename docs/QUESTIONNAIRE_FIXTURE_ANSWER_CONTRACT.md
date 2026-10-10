@@ -35,3 +35,25 @@ original matching persisted evidence, changing frame/level authority would be
 unsafe. The questionnaire therefore remains fail-closed and the architectural
 level-assignment concern remains an independent investigation.
 
+## Known level-scope limitation
+
+The current predicate considers `سینک ۰` quantified because it contains both a
+recognized fixture name and a number. A single global `fixture_schedule` answer
+also resolves every `wet_level_without_detected_fixture` diagnostic associated
+with that project. Consequently, a quantified but unscoped answer can overstate
+resolution when multiple wet levels are unresolved. This bug-fix does not alter
+that mechanical authority contract: the UI no longer advertises a zero shortcut,
+but a future level-scoped schedule must bind quantities (including explicit
+zero) to stable level identities and reject contradictions before it can grant
+fixture-evidence resolution.
+
+## Replay integrity
+
+`mechanical_shaft_route` carries an approval object with its original raw answer,
+source and `recorded_at`. Normalizing a new explicit answer intentionally creates
+a new timestamp, so replay comparison must not compare a newly generated
+approval object with the persisted one. Exact replay is now checked against the
+persisted canonical strategy and original raw approval evidence. It is
+idempotent without rewriting the approval; changed raw evidence or strategy is a
+stale submission.
+
