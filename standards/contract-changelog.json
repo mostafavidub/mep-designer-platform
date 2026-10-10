@@ -1792,6 +1792,32 @@
         "forward": "Use the explicit non-destructive v1-to-v2 adapter, preserve the complete v1 payload and mark unknown provenance UNKNOWN_LEGACY_SOURCE.",
         "rollback": "Revert the additive branch; v1 remains unchanged and active."
       }
+    },
+    {
+      "id": "GOV-2026-050",
+      "status": "APPROVED_FOR_OFFLINE_IMPLEMENTATION",
+      "summary": "Add and harden offline LocalRuleProfile and ProjectCodeBasis contracts with optional fixture markers, non-self-assertable authority, exact current project/parcel/Owner Program/source/jurisdiction/temporal binding, fail-closed applicability, deterministic dependency fingerprints and bounded traceable envelope derivation.",
+      "affected_capabilities": [
+        "residential_foundation_fail_closed"
+      ],
+      "affected_projects": [
+        "offline architecture R&D only"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "Explicit project-owner authorization in ARCH-P0.5 for isolated offline implementation with no runtime, Generator, Golden, staging or production activation."
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "migration_test": "must_pass",
+        "v1_compatibility": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Create additive profiles/bases and revalidate draft 1.0 records and legacy embedded envelopes without rewriting prior inputs; self-asserted authority remains review-required.",
+        "rollback": "Revert the additive branch; prior contracts and production behavior remain unchanged."
+      }
     }
   ]
 }

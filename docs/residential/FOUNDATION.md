@@ -86,6 +86,17 @@ unchanged. The migration adapter preserves the complete v1 payload and marks unk
 legacy provenance explicitly. Neither v2 contract is imported by the production
 runtime or enables the Generator.
 
+Local jurisdiction qualification is also an additive offline contract. A
+`LocalRuleProfile` records exact official-document identities, temporal and
+jurisdiction scope, clause-level local rules and bounded review. A separate
+`ProjectCodeBasis` binds that profile to the exact project, parcel, Site Model,
+Owner Program, national profile and permit/design date. Synthetic profiles can prove
+contract behavior only and are capped at `STRUCTURALLY_VALID`. The bounded envelope
+calculator requires a valid convex metre parcel with an explicit CRS and a traceable
+setback for every edge; complex, incomplete, stale or conflicting inputs fail closed.
+See `LOCAL_RULE_PROJECT_CODE_BASIS.md` and the associated ADR. No real municipal source
+is qualified by these contracts and no runtime or Generator consumer is activated.
+
 ## Generation and validation design
 
 Input schema requires location/evidence, valid metre plot, access edges, north, source-bound authority/envelope, confirmed unit program, identical floor IDs, reservations, explicit seed/budget/strategy and weights. Preflight verifies structure, closed simple polygons, positive area, containment, access-edge references, unique reservations and unit totals. It still returns REVIEW_REQUIRED because legal authority and project signatures are not independently qualified.

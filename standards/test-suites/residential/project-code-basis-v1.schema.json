@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-project-code-basis/1.0",
+  "title": "Planha ProjectCodeBasis 1.0",
+  "type": "object",
+  "required": ["schema_version", "basis_id", "basis_revision", "project_id", "parcel_identity", "site_model_binding", "owner_program_binding", "national_ruleset_binding", "local_rule_profile_binding", "permit_or_design_effective_date", "applicability_decisions", "parcel_conditions", "derived_constraints", "conflicts", "review_bindings", "verification_status", "status", "basis_hash", "runtime_enabled"],
+  "properties": {
+    "schema_version": {"const": "architecture-project-code-basis/1.0"},
+    "basis_id": {"type": "string", "minLength": 1}, "basis_revision": {"type": "integer", "minimum": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "parcel_identity": {"type": "object", "required": ["parcel_id", "country", "province", "city", "municipality", "municipal_district", "planning_zone"], "properties": {"parcel_id": {"type": "string", "minLength": 1}, "country": {"const": "IR"}, "province": {"type": "string", "minLength": 1}, "city": {"type": "string", "minLength": 1}, "municipality": {"type": "string", "minLength": 1}, "municipal_district": {"type": ["string", "null"]}, "planning_zone": {"type": ["string", "null"]}}, "additionalProperties": false},
+    "site_model_binding": {"$ref": "#/$defs/binding"}, "owner_program_binding": {"$ref": "#/$defs/binding"},
+    "national_ruleset_binding": {"$ref": "#/$defs/binding"}, "local_rule_profile_binding": {"$ref": "#/$defs/binding"},
+    "permit_or_design_effective_date": {"type": "string", "format": "date"},
+    "applicability_decisions": {"type": "array", "items": {"$ref": "#/$defs/decision"}},
+    "parcel_conditions": {"type": "array", "items": {"type": "object"}},
+    "derived_constraints": {"type": "array", "items": {"$ref": "#/$defs/constraint"}},
+    "conflicts": {"type": "array", "items": {"type": "object", "required": ["conflict_id", "authority_references", "reason", "resolution"], "properties": {"conflict_id": {"type": "string"}, "authority_references": {"type": "array", "minItems": 2, "items": {"type": "string"}}, "reason": {"type": "string"}, "resolution": {"type": ["string", "null"]}}, "additionalProperties": false}},
+    "review_bindings": {"type": "array", "items": {"type": "object"}},
+    "verification_status": {"enum": ["UNVERIFIED", "AUTHORITY_REVIEW_REQUIRED", "AUTHORITY_QUALIFIED", "STALE"]},
+    "status": {"enum": ["INPUT_REQUIRED", "LOCAL_RULE_REQUIRED", "STALE_BINDING", "CONFLICT_REVIEW_REQUIRED", "STRUCTURALLY_VALID", "AUTHORITY_REVIEW_REQUIRED", "AUTHORITY_QUALIFIED"]},
+    "basis_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "runtime_enabled": {"const": false},
+    "markers": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"enum": ["NON_GOLDEN", "NON_REGULATORY_TEST_DATA", "NOT_PROFESSIONALLY_APPROVED"]}}
+  },
+  "$defs": {
+    "binding": {"type": "object", "required": ["id", "revision", "source_reference", "source_hash", "verification_status"], "properties": {"id": {"type": "string", "minLength": 1}, "revision": {"type": "string", "minLength": 1}, "source_reference": {"type": "string", "minLength": 1}, "source_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "verification_status": {"enum": ["UNVERIFIED", "AUTHORITY_REVIEW_REQUIRED", "AUTHORITY_QUALIFIED", "STALE"]}}, "additionalProperties": false},
+    "decision": {"type": "object", "required": ["decision_id", "topic", "decision", "authority_type", "source_references", "applicability", "verification_status"], "properties": {"decision_id": {"type": "string"}, "topic": {"type": "string"}, "decision": {"enum": ["APPLICABLE", "NOT_APPLICABLE", "UNKNOWN"]}, "authority_type": {"enum": ["NATIONAL_CODE", "LOCAL_CODE", "SITE_EVIDENCE", "OWNER_REQUIREMENT", "HUMAN_DECISION"]}, "source_references": {"type": "array", "items": {"type": "string"}}, "applicability": {"type": "object"}, "verification_status": {"enum": ["UNVERIFIED", "AUTHORITY_REVIEW_REQUIRED", "AUTHORITY_QUALIFIED", "STALE"]}}, "additionalProperties": false},
+    "constraint": {"type": "object", "required": ["constraint_id", "constraint_type", "input_references", "source_references", "applicability", "rule_or_formula", "calculated_value", "unit", "geometry_reference", "verification_status", "review_reference", "dependency_fingerprint"], "properties": {"constraint_id": {"type": "string"}, "constraint_type": {"type": "string"}, "input_references": {"type": "array", "items": {"type": "string"}}, "source_references": {"type": "array", "items": {"type": "string"}}, "applicability": {"type": "object"}, "rule_or_formula": {"type": "object"}, "calculated_value": {}, "unit": {"type": ["string", "null"]}, "geometry_reference": {"type": ["string", "null"]}, "verification_status": {"enum": ["UNVERIFIED", "CALCULATED", "INDEPENDENTLY_VALIDATED", "HUMAN_ACCEPTED", "STALE"]}, "review_reference": {"type": ["string", "null"]}, "dependency_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

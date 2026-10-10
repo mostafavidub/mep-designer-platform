@@ -843,7 +843,11 @@
         "owner_program_v1_remains_compatible",
         "owner_program_v2_requires_field_provenance",
         "resolved_input_requires_current_site_and_rule_bindings",
-        "owner_program_v2_runtime_disabled"
+        "owner_program_v2_runtime_disabled",
+        "local_rule_profile_requires_current_source_identity",
+        "project_code_basis_is_project_and_parcel_bound",
+        "calculated_envelope_never_implies_professional_approval",
+        "local_code_basis_runtime_disabled"
       ],
       "tests": [
         "test_source_qualification_and_stale_input",
@@ -853,7 +857,11 @@
         "test_v1_contract_and_questionnaire_behavior_remain_available",
         "test_v1_migration_preserves_payload_and_reports_missing_unit_program",
         "test_changed_source_hash_invalidates_resolution",
-        "test_no_hidden_defaults_or_runtime_activation"
+        "test_no_hidden_defaults_or_runtime_activation",
+        "test_t04_missing_local_regulatory_source",
+        "test_t08_two_parcels_within_one_city_do_not_share_basis",
+        "test_t13_owner_requirement_cannot_override_code",
+        "test_traceable_envelope_and_independent_polygon_checks"
       ]
     }
   ]
