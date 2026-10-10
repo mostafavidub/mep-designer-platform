@@ -42,6 +42,13 @@ An interruption may become `GOVERNED_DRAFTING_FRAGMENTATION` only when:
    geometry tolerance; and
 8. competing equal bindings do not exist.
 
+For a canonical Double Face junction, full face or centerline extent is not
+material authority. The midpoint of the physical connection must bind, under
+the existing geometry tolerance, to an identified source-backed
+`wall_solid.occupied_intervals` record. The supporting `MATINT` identity,
+interval and binding distance are retained in the interruption proof. A long
+canonical face with material elsewhere remains `INPUT_REQUIRED`.
+
 Canonical Double Face walls are preferred. Retained source faces may recover
 the proof only when both are `CONFIRMED_WALL` and accepted and they independently
 satisfy the same thickness/overlap contract. Host-gap width is never face-pair
@@ -78,3 +85,14 @@ Both building envelopes and both canonical subdivisions remain
 `INPUT_REQUIRED`. Architecture and Mechanical release remain blocked. This
 result removes known deterministic defects without treating ambiguity removal
 as a numerical target.
+
+## Human-review actionability
+
+The current 41 source-role groups are not yet an executable minimal envelope
+review. Both frames fail first on `INSUFFICIENT_INDEPENDENT_INTERIOR_EVIDENCE`:
+classifying endpoint source roles cannot by itself establish the independent
+interior semantics required by the envelope contract. The three canonical/raw
+pair conflicts remain expert ambiguities and the opening-evidence dependencies
+require independent aperture evidence; neither may be converted into geometry
+by review. No private review image or executable review manifest is generated
+until a bounded answer can affect the actual first envelope blocker.

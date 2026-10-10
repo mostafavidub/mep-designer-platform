@@ -161,12 +161,59 @@ def test_exact_orthogonal_double_face_junction_governs_drafting_fragmentation():
     assert interruption["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
     assert interruption["junction_wall_id"]=="JUNCTION"
     assert interruption["proof_class"]=="EXACT_ORTHOGONAL_DOUBLE_FACE_BOUNDARY"
+    assert len(interruption["junction_material_interval_ids"])==1
+    assert interruption["junction_material_intervals"]==[[0,4]]
     closure=canonical_enclosure_continuity(walls,frame_id="F1")[0]
     assert closure["reason"]=="GOVERNED_DRAFTING_FRAGMENTATION"
     assert closure["roles"]==["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    assert closure["junction_material_interval_ids"]==interruption["junction_material_interval_ids"]
+    assert closure["junction_material_intervals"]==[[0,4]]
+    assert closure["junction_material_binding_distance"]==0
     assert closure["material"] is False
     assert {closure[key] for key in ("material_geometry","wall_authority","portal_authority",
                                      "routing_authority","access_authority")}=={"NONE"}
+
+
+def test_extended_canonical_faces_without_local_material_cannot_govern_junction():
+    host,junction=_junction_fragmentation_fixture()
+    junction["wall_solid"]["occupied_intervals"]=[[0,.5]]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+    closure=canonical_enclosure_continuity([host],frame_id="F1")[0]
+    assert closure["continuity_status"]=="INSUFFICIENT_CONTINUITY"
+    assert closure["roles"]==[]
+
+
+def test_source_identity_without_local_material_cannot_govern_junction():
+    host,junction=_junction_fragmentation_fixture()
+    junction["wall_solid"]["occupied_intervals"]=[]
+    assert junction["source_handles"] and junction["source_lineage"]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+def test_material_terminating_exactly_at_junction_supports_canonical_binding():
+    host,junction=_junction_fragmentation_fixture()
+    # Junction centerline starts at y=-2 and the host crosses at y=0.
+    junction["wall_solid"]["occupied_intervals"]=[[0,2]]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    interruption=host["interruptions"][0]
+    assert interruption["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert interruption["junction_material_intervals"]==[[0,2]]
+    assert interruption["junction_material_binding_distance"]==0
+
+
+def test_canonical_junction_material_evidence_is_order_deterministic():
+    def result(reverse):
+        host,junction=_junction_fragmentation_fixture()
+        walls=[host,junction]
+        if reverse: walls.reverse()
+        _govern_source_backed_junction_interruptions(walls,.001)
+        return host["interruptions"][0]
+    forward=result(False); reverse=result(True)
+    for key in ("kind","junction_wall_id","junction_material_interval_ids",
+                "junction_material_intervals","proof_class"):
+        assert forward[key]==reverse[key]
 
 
 def test_one_face_break_without_exact_junction_remains_unresolved():

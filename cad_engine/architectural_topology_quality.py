@@ -447,7 +447,27 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=(),
                 binding=min(direct,reverse)
                 if binding>tol*2:
                     continue
-                candidates.append((binding,other["wall_id"],other))
+                # Canonical face extent is topology geometry, not material
+                # authority.  Require an occupied, source-backed interval of
+                # the perpendicular wall at the actual connection point.
+                junction_point=gap_line.interpolate(.5,normalized=True)
+                material_records=_material_interval_records(other)
+                local_material=[
+                    record for record in material_records
+                    if junction_point.distance(record["line"])<=tol*2
+                ]
+                if not local_material:
+                    continue
+                proof=dict(other)
+                proof["junction_material_interval_ids"]=sorted(
+                    record["material_interval_id"] for record in local_material)
+                proof["junction_material_intervals"]=[
+                    record["interval"] for record in sorted(
+                        local_material,key=lambda record:record["material_interval_id"])]
+                proof["junction_material_binding_distance"]=min(
+                    junction_point.distance(record["line"])
+                    for record in local_material)
+                candidates.append((binding,other["wall_id"],proof))
             # A face may have been consumed by another canonical pair.  Retain
             # the accepted source faces as the earlier authority layer and
             # recover only an exact two-face junction binding.
@@ -560,6 +580,9 @@ def _govern_source_backed_junction_interruptions(walls, tol, source_segments=(),
                 "junction_source_handles":sorted(other.get("source_handles") or []),
                 "junction_source_lineage":other.get("source_lineage") or [],
                 "junction_face_binding_distance":best[0],
+                "junction_material_interval_ids":other.get("junction_material_interval_ids") or [],
+                "junction_material_intervals":other.get("junction_material_intervals") or [],
+                "junction_material_binding_distance":other.get("junction_material_binding_distance"),
                 "proof_class":other.get("proof_class") or "EXACT_ORTHOGONAL_DOUBLE_FACE_BOUNDARY",
             })
             if other.get("face_pair_thickness_cluster") is not None:
@@ -924,6 +947,10 @@ def canonical_enclosure_continuity(walls, *, frame_id=None, tolerance=.001):
                          "junction_wall_id":opening.get("junction_wall_id"),
                          "junction_source_handles":opening.get("junction_source_handles") or [],
                          "junction_source_lineage":opening.get("junction_source_lineage") or [],
+                         "junction_material_interval_ids":opening.get("junction_material_interval_ids") or [],
+                         "junction_material_intervals":opening.get("junction_material_intervals") or [],
+                         "junction_material_binding_distance":opening.get("junction_material_binding_distance"),
+                         "junction_face_binding_distance":opening.get("junction_face_binding_distance"),
                          "proof_class":opening.get("proof_class"),
                          "material":False,"roles":roles,"possible_opening_type":"UNKNOWN",
                          "material_geometry":"NONE","wall_authority":"NONE",
