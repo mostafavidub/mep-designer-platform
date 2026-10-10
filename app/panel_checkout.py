@@ -302,12 +302,30 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
         now = datetime.utcnow().isoformat() + "Z"
         allowed = {"title", "service", "area", "amount", "status", "progress", "date", "answers",
                    "engineProjectId", "engineProjectToken", "quoteToken", "paid", "designStage",
-                   "designLabel", "designDetail", "designTimeline", "outputReady", "lastError"}
+                   "designLabel", "designDetail", "designTimeline", "outputReady", "lastError",
+                   "fileKey", "fileName", "analysisJobId", "analysis", "checkoutState",
+                   "resumeAction", "currentStep"}
         for item in rows:
             if not isinstance(item, dict) or not re.fullmatch(r"[A-Za-z0-9_-]{3,80}", str(item.get("id", ""))):
                 raise HTTPException(400, "یکی از پروژه‌ها معتبر نیست.")
             project_id = str(item["id"])
             payload = {key: item[key] for key in allowed if key in item}
+            file_key = str(payload.get("fileKey") or "")
+            if file_key and not file_key.startswith(f"projects/{account_id(uid)}/"):
+                raise HTTPException(403, "فایل ذخیره‌شده متعلق به این حساب نیست.")
+            if "fileName" in payload:
+                payload["fileName"] = str(payload["fileName"])[:255]
+            job_id = str(payload.get("analysisJobId") or "")
+            if job_id and not re.fullmatch(r"[0-9a-f]{32}", job_id):
+                raise HTTPException(400, "شناسه تحلیل فایل معتبر نیست.")
+            if payload.get("checkoutState") not in (None, "draft", "awaiting_payment", "paid"):
+                raise HTTPException(400, "وضعیت پیش‌نویس معتبر نیست.")
+            if payload.get("resumeAction") not in (None, "complete", "payment"):
+                raise HTTPException(400, "عملیات ادامه پروژه معتبر نیست.")
+            if "currentStep" in payload and payload["currentStep"] not in (1, 2, 3, 4):
+                raise HTTPException(400, "مرحله پروژه معتبر نیست.")
+            if "analysis" in payload and not isinstance(payload["analysis"], dict):
+                raise HTTPException(400, "تحلیل ذخیره‌شده معتبر نیست.")
             encoded = json.dumps(payload, ensure_ascii=False)
             if len(encoded.encode()) > 20000:
                 raise HTTPException(400, "حجم اطلاعات پروژه بیش از حد مجاز است.")
@@ -435,8 +453,13 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     async def customer(action: str, request: Request):
         uid = session_user(request)
         body = await request.json()
-        if action not in ("state", "import", "claim", "quote", "pay", "topup"):
+        if action not in ("identity", "state", "import", "claim", "quote", "pay", "topup"):
             raise HTTPException(404)
+        # Lightweight owner proof for stored-file resume. Do not load the full
+        # project/account snapshot merely to verify the signed panel session;
+        # CPU-heavy architecture analysis must not delay polling recovery.
+        if action == "identity":
+            return {"userId": account_id(uid)}
         with legacy.Session() as db:
             begin(db)
             require_account(db, uid)
