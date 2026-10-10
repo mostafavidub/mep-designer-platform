@@ -160,13 +160,15 @@ def test_material_supported_fragment_does_not_consume_unresolved_residual():
 
 def test_fully_paired_face_preserves_material_local_boundary_recall():
     from cad_engine.architecture_boundary_evidence import physical_boundary_evidence
-    records = _records(_edges(4, 2) + [((0, .2), (4, .2))])
-    records[0]['source_handle'] = 'BOTTOM'
-    records[4]['source_handle'] = 'PAIR'
+    records = _records([((0, .2), (4, .2)), ((4, .2), (4, 2)),
+                        ((4, 2), (0, 2)), ((0, 2), (0, .2)),
+                        ((0, 0), (4, 0)), ((0, .2), (4, .2))])
     wall = _partial_double_face_wall()
     wall['face_b'] = [[0, .2], [4, .2]]
+    wall['source_fragments'] = ['S4', 'S5']
+    wall['source_lineage'] = [{'segment_id': 'S4'}, {'segment_id': 'S5'}]
     wall['wall_solid']['occupied_intervals'] = [[0, 4]]
-    proof = physical_boundary_evidence(box(0, 0, 4, 2), records, [wall], [], .001)
+    proof = physical_boundary_evidence(box(0, .2, 4, 2), records, [wall], [], .001)
     assert proof['status'] == 'VERIFIED'
     assert proof['coverage_ratio'] == 1
     assert not proof['unsupported_face_extensions']
@@ -204,6 +206,81 @@ def test_separator_binding_cannot_restore_full_raw_face_from_clipped_witness():
     assert bottom[0]['payload']['interval'] == [0.0, 1.0]
     assert bottom[0]['payload']['original_source_interval'] == [0.0, .25]
     assert bottom[0]['payload']['boundary_support_origin'] == 'MATERIAL_LOCAL_SOURCE_FACE'
+
+
+def test_fully_material_supported_internal_wall_remains_unresolved():
+    from cad_engine.architecture_boundary_evidence import physical_boundary_evidence
+    records = _records(_edges(4, 2) + [((2, .5), (2, 1.5)),
+                                       ((2.2, .5), (2.2, 1.5))])
+    wall = {
+        'wall_id': 'W-INTERNAL', 'representation': 'DOUBLE_FACE',
+        'centerline': [[2.1, .5], [2.1, 1.5]],
+        'face_a': [[2, .5], [2, 1.5]],
+        'face_b': [[2.2, .5], [2.2, 1.5]],
+        'source_fragments': ['S4', 'S5'], 'source_handles': ['4', '5'],
+        'source_lineage': [{'segment_id': 'S4', 'source_handle': '4'},
+                           {'segment_id': 'S5', 'source_handle': '5'}],
+        'wall_solid': {'axis_origin': [2.1, .5], 'axis_direction': [0, 1],
+                       'occupied_intervals': [[0, 1]]},
+    }
+    proof = physical_boundary_evidence(box(0, 0, 4, 2), records, [wall], [], .001)
+    assert proof['coverage_ratio'] == 1
+    assert proof['status'] == 'INPUT_REQUIRED'
+    assert 'UNRESOLVED_INTERIOR_WALL_EVIDENCE' in proof['negative_evidence']
+    assert proof['unresolved_internal_segment_ids'] == ['S4', 'S5']
+
+
+def test_boundary_near_material_does_not_consume_interior_residual():
+    from cad_engine.architecture_boundary_evidence import physical_boundary_evidence
+    records = _records(_edges(4, 2) + [((2, -.1), (2, 1))])
+    wall = {
+        'wall_id': 'W-PARTIAL-INTERNAL', 'representation': 'DOUBLE_FACE',
+        'centerline': [[2.1, -.1], [2.1, 1]],
+        'face_a': [[2, -.1], [2, 1]], 'face_b': [[2.2, -.1], [2.2, .1]],
+        'source_fragments': ['S4'], 'source_handles': ['4'],
+        'source_lineage': [{'segment_id': 'S4', 'source_handle': '4'}],
+        'wall_solid': {'axis_origin': [2.1, -.1], 'axis_direction': [0, 1],
+                       'occupied_intervals': [[0, .2]]},
+    }
+    proof = physical_boundary_evidence(box(0, 0, 4, 2), records, [wall], [], .001)
+    assert proof['coverage_ratio'] == 1
+    assert proof['status'] == 'INPUT_REQUIRED'
+    assert proof['unresolved_internal_segment_ids'] == ['S4']
+    assert 'S4' not in proof['boundary_fragment_ids']
+    witness = next(row for row in proof['source_witness_records'] if row['segment_id'] == 'S4')
+    assert witness['boundary_support_segments']
+    assert witness['unsupported_geometry']
+
+
+def test_internal_fragment_authority_is_order_and_orientation_deterministic():
+    from copy import deepcopy
+    from cad_engine.architecture_boundary_evidence import physical_boundary_evidence
+    records = _records(_edges(4, 2) + [((2, .5), (2, 1.5)),
+                                       ((2.2, .5), (2.2, 1.5))])
+    wall = {
+        'wall_id': 'W-INTERNAL', 'representation': 'DOUBLE_FACE',
+        'face_a': [[2, .5], [2, 1.5]], 'face_b': [[2.2, .5], [2.2, 1.5]],
+        'source_fragments': ['S4', 'S5'], 'source_handles': ['4', '5'],
+        'source_lineage': [{'segment_id': 'S4'}, {'segment_id': 'S5'}],
+        'wall_solid': {'axis_origin': [2.1, .5], 'axis_direction': [0, 1],
+                       'occupied_intervals': [[0, 1]]},
+    }
+    unrelated_wall = {
+        'wall_id': 'W-UNRELATED', 'representation': 'DOUBLE_FACE',
+        'face_a': [[8, 0], [8, 1]], 'face_b': [[8.2, 0], [8.2, 1]],
+        'source_fragments': [], 'source_lineage': [],
+        'wall_solid': {'axis_origin': [8.1, 0], 'axis_direction': [0, 1],
+                       'occupied_intervals': [[0, 1]]},
+    }
+    first = physical_boundary_evidence(box(0, 0, 4, 2), records,
+                                       [wall, unrelated_wall], [], .001)
+    reversed_wall = deepcopy(wall)
+    reversed_wall['face_a'].reverse(); reversed_wall['face_b'].reverse()
+    second = physical_boundary_evidence(box(0, 0, 4, 2), list(reversed(records)),
+                                        [unrelated_wall, reversed_wall], [], .001)
+    assert first['status'] == second['status'] == 'INPUT_REQUIRED'
+    assert first['negative_evidence'] == second['negative_evidence']
+    assert first['unresolved_internal_segment_ids'] == second['unresolved_internal_segment_ids'] == ['S4', 'S5']
 
 
 def test_parent_with_two_proven_children_retains_both_children():

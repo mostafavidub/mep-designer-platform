@@ -44,13 +44,24 @@ Only a fully accounted mapped occurrence enters `boundary_fragment_ids`; partial
 support cannot consume the remaining source primitive. Separator evidence binds to
 qualified subsegments and cannot reconstruct coverage from the original full witness.
 
+Material support and candidate-boundary membership are independent facts. A fully
+material-supported face that lies in the resolvable interior remains interior wall
+evidence; it cannot enter `boundary_fragment_ids` merely because no unsupported
+residual exists. A mapped occurrence is accounted as a boundary fragment only when
+its qualified material-local geometry reaches the candidate boundary and does not
+extend into the candidate's resolvable interior. Boundary-near support with an
+interior residual remains unresolved and therefore fail-closed.
+
 ## Validation and rollback
 
 Negative tests cover long-face/short-material authority, raw-source laundering,
 handle-only aliasing, residual accounting, and centerline offset. Positive tests
 preserve fully and partially paired walls, independent source-only geometry, nested
-source occurrences, and input-order determinism. Private replay evidence is recorded
-only as hashes and aggregate authority results.
+source occurrences, and input-order determinism. Interior-fragment tests prove that
+fully supported internal walls remain negative evidence, legitimate boundary faces
+retain recall, partial interior residuals remain unresolved, and orientation/order do
+not change authority. Private replay evidence is recorded only as hashes and aggregate
+authority results.
 
 Rollback is a Git revert of this change. No schema, database, source-file, or stored
 review migration is required.

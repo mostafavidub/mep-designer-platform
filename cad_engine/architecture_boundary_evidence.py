@@ -109,7 +109,13 @@ def physical_boundary_evidence(poly, classified, walls, closures, tolerance):
             witness_support[row["segment_id"]] = qualified
             witness_unsupported[row["segment_id"]] = unsupported
             witness_origins[row["segment_id"]] = "MATERIAL_LOCAL_SOURCE_FACE"
-            if not unsupported:
+            qualified_lines = [LineString(points) for points in qualified]
+            boundary_length = sum(part.intersection(boundary.buffer(tol)).length
+                                  for part in qualified_lines)
+            interior_length = (0 if interior.is_empty else
+                               sum(part.intersection(interior).length
+                                   for part in qualified_lines))
+            if not unsupported and boundary_length > tol and interior_length <= tol * 2:
                 boundary_fragments.add(row["segment_id"])
             continue
         if len(mapped) > 1:
