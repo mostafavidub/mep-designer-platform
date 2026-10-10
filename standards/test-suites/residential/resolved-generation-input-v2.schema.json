@@ -11,6 +11,7 @@
     "program_revision",
     "owner_program_hash",
     "canonical_unit_program_hash",
+    "evidence_input_id",
     "site_binding",
     "national_ruleset_binding",
     "local_profile_binding",
@@ -47,6 +48,10 @@
     "canonical_unit_program_hash": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "evidence_input_id": {
+      "type": "string",
+      "pattern": "^evidence-input-[0-9a-f]{64}$"
     },
     "site_binding": {
       "type": "object",

@@ -361,7 +361,7 @@
     },
     "provenance": {
       "type": "array",
-      "minItems": 21,
+      "minItems": 23,
       "items": {
         "type": "object",
         "required": [

@@ -36,7 +36,7 @@ def authoritative_bindings(site=None, national=None, local=None):
     }
 
 
-def geometry_fact():
+def geometry_fact(evidence_input_id):
     return {
         "field_id": "geometry_feasibility",
         "value": "VERIFIED",
@@ -47,8 +47,18 @@ def geometry_fact():
         "authority_type": "DERIVED_GEOMETRY",
         "verification_status": "VERIFIED",
         "revision": 1,
-        "dependencies": [],
+        "dependencies": [evidence_input_id],
     }
+
+
+def geometry_evidence_for(draft, site=None, national=None, local=None):
+    site = site or binding()
+    national = national or binding()
+    local = local or binding()
+    evidence_id = op.evidence_input_identity(
+        draft, site_binding=site, national_ruleset_binding=national, local_profile_binding=local
+    )
+    return geometry_fact(evidence_id)
 
 
 def rehash_resolved(payload):
@@ -56,7 +66,7 @@ def rehash_resolved(payload):
         key: payload[key]
         for key in (
             "project_id", "program_id", "program_revision", "owner_program_hash",
-            "canonical_unit_program_hash", "site_binding", "national_ruleset_binding",
+            "canonical_unit_program_hash", "evidence_input_id", "site_binding", "national_ruleset_binding",
             "local_profile_binding", "derived_project_facts", "geometry_feasibility",
         )
     }
@@ -138,6 +148,11 @@ class OwnerProgramV2FixtureTests(unittest.TestCase):
                     current_bindings=authoritative_bindings(
                         spec["site_binding"], spec["national_ruleset_binding"], spec["local_profile_binding"]
                     ),
+                    current_geometry_evidence=(
+                        spec["derived_project_facts"][0]
+                        if spec["geometry_feasibility"] == "VERIFIED"
+                        else None
+                    ),
                 )["resolved_input"]
                 resolved_validator.validate(resolved)
 
@@ -166,6 +181,11 @@ class OwnerProgramV2FixtureTests(unittest.TestCase):
                         geometry_feasibility=spec["geometry_feasibility"],
                         current_bindings=authoritative_bindings(
                             spec["site_binding"], spec["national_ruleset_binding"], spec["local_profile_binding"]
+                        ),
+                        current_geometry_evidence=(
+                            spec["derived_project_facts"][0]
+                            if spec["geometry_feasibility"] == "VERIFIED"
+                            else None
                         ),
                     )
                     self.assertEqual(resolved["validation"]["status"], spec["expected_status"])
@@ -258,6 +278,111 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
         self.assertEqual(resolved["validation"]["status"], "INPUT_REQUIRED")
         self.assertIn("INVALID_FIELD_AUTHORITY", {item["code"] for item in resolved["validation"]["findings"]})
 
+    def test_owner_preference_cannot_authorize_code246_not_applicable(self):
+        draft = fixture("valid_residential_program")["draft"]
+        regulatory = next(
+            item for item in draft["provenance"]
+            if item["field_id"] == "preferences.accessibility.regulatory_obligation"
+        )
+        regulatory["authority_type"] = "OWNER_PREFERENCE"
+        result = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(),
+        )
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIn("INVALID_FIELD_AUTHORITY", {item["code"] for item in result["validation"]["findings"]})
+
+    def test_unknown_or_unverified_accessibility_applicability_fails_resolution_only(self):
+        draft = fixture("valid_residential_program")["draft"]
+        draft["preferences"]["accessibility"]["regulatory_obligation"] = "UNKNOWN"
+        regulatory = next(
+            item for item in draft["provenance"]
+            if item["field_id"] == "preferences.accessibility.regulatory_obligation"
+        )
+        regulatory["value"] = "UNKNOWN"
+        regulatory["verification_status"] = "UNVERIFIED"
+        self.assertEqual(op.validate_owner_program_draft(draft)["status"], "DRAFT_VALID")
+        result = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            current_bindings=authoritative_bindings(),
+        )
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        codes = {item["code"] for item in result["validation"]["findings"]}
+        self.assertIn("ACCESSIBILITY_APPLICABILITY_REQUIRED", codes)
+        self.assertIn("UNVERIFIED_MATERIAL_PROVENANCE", codes)
+
+    def test_mandatory_accessibility_overrides_conflicting_owner_preference(self):
+        draft = fixture("conditional_accessibility")["draft"]
+        draft["preferences"]["accessibility"]["owner_preference"] = "PROHIBIT"
+        owner = next(
+            item for item in draft["provenance"]
+            if item["field_id"] == "preferences.accessibility.owner_preference"
+        )
+        owner["value"] = "PROHIBIT"
+        result = op.validate_owner_program_draft(draft)
+        self.assertEqual(result["status"], "DEFINITELY_INVALID")
+        self.assertIn("ACCESSIBILITY_AUTHORITY_CONFLICT", {item["code"] for item in result["findings"]})
+
+    def test_geometry_evidence_requires_exact_input_dependency_and_independent_record(self):
+        draft = fixture("valid_residential_program")["draft"]
+        evidence = geometry_evidence_for(draft)
+        evidence["dependencies"] = []
+        result = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            derived_project_facts=[evidence], geometry_feasibility="VERIFIED",
+            current_bindings=authoritative_bindings(), current_geometry_evidence=evidence,
+        )
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIn("GEOMETRY_PROOF_REQUIRED", {item["code"] for item in result["validation"]["findings"]})
+
+    def test_geometry_evidence_from_another_project_is_rejected(self):
+        original = fixture("valid_residential_program")["draft"]
+        evidence = geometry_evidence_for(original)
+        other = copy.deepcopy(original)
+        other["project_id"] = "OTHER-PROJECT"
+        result = op.resolve_generation_input(
+            other, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            derived_project_facts=[evidence], geometry_feasibility="VERIFIED",
+            current_bindings=authoritative_bindings(), current_geometry_evidence=evidence,
+        )
+        self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+        self.assertIn("GEOMETRY_PROOF_REQUIRED", {item["code"] for item in result["validation"]["findings"]})
+
+    def test_program_or_unit_change_invalidates_previous_geometry_evidence(self):
+        draft = fixture("valid_residential_program")["draft"]
+        evidence = geometry_evidence_for(draft)
+        resolved = op.resolve_generation_input(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
+            derived_project_facts=[evidence], geometry_feasibility="VERIFIED",
+            current_bindings=authoritative_bindings(), current_geometry_evidence=evidence,
+        )["resolved_input"]
+        for mutation in ("program", "unit"):
+            changed = copy.deepcopy(draft)
+            if mutation == "program":
+                changed["program_revision"] += 1
+            else:
+                changed["unit_program"]["unit_types"][0]["bedrooms"] += 1
+            result = op.validate_resolved_generation_input(
+                resolved, draft=changed, current_bindings=authoritative_bindings(), current_geometry_evidence=evidence
+            )
+            self.assertEqual(result["status"], "STALE_BINDING")
+
+    def test_authority_snapshot_change_invalidates_previous_geometry_evidence(self):
+        draft = fixture("valid_residential_program")["draft"]
+        old = (binding("1" * 64), binding("2" * 64), binding("3" * 64))
+        evidence = geometry_evidence_for(draft, *old)
+        for index, name in enumerate(("site", "national", "local")):
+            changed = list(old)
+            changed[index] = binding("9" * 64)
+            result = op.resolve_generation_input(
+                draft, site_binding=changed[0], national_ruleset_binding=changed[1], local_profile_binding=changed[2],
+                derived_project_facts=[evidence], geometry_feasibility="VERIFIED",
+                current_bindings=authoritative_bindings(*changed), current_geometry_evidence=evidence,
+            )
+            with self.subTest(binding=name):
+                self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
+                self.assertIn("GEOMETRY_PROOF_REQUIRED", {item["code"] for item in result["validation"]["findings"]})
+
     def test_questionnaire_answers_are_bound_to_content_hash(self):
         draft = fixture("valid_residential_program")["draft"]
         draft["questionnaire_answers"] = {}
@@ -266,10 +391,14 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
 
     def test_caller_verified_bindings_are_not_independent_proof(self):
         draft = fixture("valid_residential_program")["draft"]
+        evidence_id = op.evidence_input_identity(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding()
+        )
         result = op.resolve_generation_input(
             draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
             geometry_feasibility="VERIFIED",
-            derived_project_facts=[geometry_fact()],
+            derived_project_facts=[geometry_fact(evidence_id)],
+            current_geometry_evidence=geometry_fact(evidence_id),
         )
         self.assertEqual(result["validation"]["status"], "INPUT_REQUIRED")
         self.assertIn("CURRENT_BINDINGS_REQUIRED", {item["code"] for item in result["validation"]["findings"]})
@@ -285,14 +414,21 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
 
     def test_cross_project_identity_tamper_fails_even_when_rehashed(self):
         draft = fixture("valid_residential_program")["draft"]
+        evidence_id = op.evidence_input_identity(
+            draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding()
+        )
+        evidence = geometry_fact(evidence_id)
         resolved = op.resolve_generation_input(
             draft, site_binding=binding(), national_ruleset_binding=binding(), local_profile_binding=binding(),
-            geometry_feasibility="VERIFIED", derived_project_facts=[geometry_fact()],
+            geometry_feasibility="VERIFIED", derived_project_facts=[evidence],
             current_bindings=authoritative_bindings(),
+            current_geometry_evidence=evidence,
         )["resolved_input"]
         resolved["project_id"] = "OTHER-PROJECT"
         rehash_resolved(resolved)
-        result = op.validate_resolved_generation_input(resolved, draft=draft, current_bindings=authoritative_bindings())
+        result = op.validate_resolved_generation_input(
+            resolved, draft=draft, current_bindings=authoritative_bindings(), current_geometry_evidence=evidence
+        )
         self.assertEqual(result["status"], "STALE_BINDING")
         self.assertIn("SOURCE_DRAFT_IDENTITY_MISMATCH", {item["code"] for item in result["findings"]})
 

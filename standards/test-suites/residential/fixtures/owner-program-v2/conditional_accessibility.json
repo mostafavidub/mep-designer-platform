@@ -91,20 +91,40 @@
     "questionnaire_answers": null,
     "provenance": [
       {
-        "field_id": "preferences.accessibility",
-        "value": {
-          "owner_preference": "ACCOMMODATE",
-          "regulatory_obligation": "REQUIRED",
-          "needs": [
-            "ENTRY",
-            "BATHROOM"
-          ]
-        },
+        "field_id": "preferences.accessibility.needs",
+        "value": [
+          "ENTRY",
+          "BATHROOM"
+        ],
         "unit": null,
         "source_type": "SYNTHETIC_FIXTURE",
         "source_reference": "NON_GOLDEN",
         "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.accessibility.owner_preference",
+        "value": "ACCOMMODATE",
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.accessibility.regulatory_obligation",
+        "value": "REQUIRED",
+        "unit": null,
+        "source_type": "SYNTHETIC_CODE_APPLICABILITY_TEST",
+        "source_reference": "NON_GOLDEN_NOT_PROFESSIONALLY_APPROVED",
+        "source_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "authority_type": "NATIONAL_CODE",
         "verification_status": "VERIFIED",
         "revision": 1,
         "dependencies": []

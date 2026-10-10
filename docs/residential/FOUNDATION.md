@@ -74,6 +74,11 @@ hashes. Resolution separately requires a complete unit program, verified compati
 material provenance, an independent current-binding snapshot and evidence-backed
 geometry feasibility; embedded `VERIFIED` flags alone grant no authority. Resolved
 project/program identity and stored status are recomputed against the source draft.
+Accessibility owner preference/needs and regulatory applicability have separate
+provenance; only national/local code evidence can establish applicability. Geometry
+evidence is bound to a deterministic fingerprint of the draft, canonical unit program,
+site and authority snapshots, and must match a separately supplied current evidence
+record. The trusted evidence registry remains a future integration gate.
 Missing local authority returns `LOCAL_RULE_REQUIRED`; changed bindings return
 `STALE_BINDING`; geometry not yet checked returns
 `NEEDS_GEOMETRIC_FEASIBILITY_CHECK`. V1 read/write and questionnaire behavior remain

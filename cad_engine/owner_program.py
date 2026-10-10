@@ -52,7 +52,9 @@ DRAFT_MATERIAL_FIELDS = {
     "preferences.zoning.guest_family",
     "preferences.zoning.service",
     "preferences.furniture_requirements",
-    "preferences.accessibility",
+    "preferences.accessibility.owner_preference",
+    "preferences.accessibility.regulatory_obligation",
+    "preferences.accessibility.needs",
     "preferences.priorities",
 }
 
@@ -213,10 +215,15 @@ def _provenance_map(draft: Mapping[str, Any]) -> tuple[dict[str, Mapping[str, An
 
 
 def _allowed_authorities(field_id: str) -> set[str]:
+    if field_id == "preferences.accessibility.regulatory_obligation":
+        return {"NATIONAL_CODE", "LOCAL_CODE"}
+    if field_id in {
+        "preferences.accessibility.owner_preference",
+        "preferences.accessibility.needs",
+    }:
+        return {"OWNER_PREFERENCE", "OWNER_REQUIREMENT", "HUMAN_DECISION"}
     if field_id.startswith("preferences."):
         allowed = {"OWNER_PREFERENCE", "OWNER_REQUIREMENT", "HUMAN_DECISION"}
-        if field_id == "preferences.accessibility":
-            allowed |= {"NATIONAL_CODE", "LOCAL_CODE"}
         return allowed
     if field_id.startswith("project_requirements."):
         return {"OWNER_REQUIREMENT", "SITE_EVIDENCE", "HUMAN_DECISION", "NATIONAL_CODE", "LOCAL_CODE"}
@@ -254,7 +261,40 @@ def _resolution_readiness_findings(draft: Mapping[str, Any]) -> list[dict[str, s
             findings.append(_finding("INVALID_FIELD_AUTHORITY", field_id, "Authority type cannot authorize this material field"))
         if entry.get("value") != _value_at_path(draft, field_id):
             findings.append(_finding("PROVENANCE_VALUE_MISMATCH", field_id, "Provenance value must equal the canonical field value"))
+    applicability = _value_at_path(draft, "preferences.accessibility.regulatory_obligation")
+    if applicability == "UNKNOWN":
+        findings.append(_finding(
+            "ACCESSIBILITY_APPLICABILITY_REQUIRED",
+            "preferences.accessibility.regulatory_obligation",
+            "Regulatory applicability requires independently supported national or local code evidence",
+        ))
     return findings
+
+
+def evidence_input_identity(
+    draft: Mapping[str, Any],
+    *,
+    site_binding: Mapping[str, Any] | None,
+    national_ruleset_binding: Mapping[str, Any] | None,
+    local_profile_binding: Mapping[str, Any] | None,
+) -> str | None:
+    """Fingerprint the exact inputs a geometry evidence artifact evaluates."""
+    if not isinstance(draft, Mapping):
+        return None
+    try:
+        basis = {
+            "project_id": draft.get("project_id"),
+            "program_id": draft.get("program_id"),
+            "program_revision": draft.get("program_revision"),
+            "owner_program_hash": _json_hash(draft),
+            "canonical_unit_program_hash": _json_hash(draft.get("unit_program")),
+            "site_binding": site_binding,
+            "national_ruleset_binding": national_ruleset_binding,
+            "local_profile_binding": local_profile_binding,
+        }
+        return f"evidence-input-{stable_hash(basis)}"
+    except (TypeError, ValueError):
+        return None
 
 
 def _binding_findings(
@@ -297,12 +337,15 @@ def _binding_findings(
     return findings
 
 
-def _derived_fact_findings(resolved: Mapping[str, Any]) -> list[dict[str, str]]:
+def _derived_fact_findings(
+    resolved: Mapping[str, Any],
+    current_geometry_evidence: Mapping[str, Any] | None,
+) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
     facts = resolved.get("derived_project_facts")
     if not isinstance(facts, list):
         return [_finding("INVALID_DERIVED_FACT", "derived_project_facts", "Derived facts must be an array")]
-    geometry_proof = False
+    geometry_proof: Mapping[str, Any] | None = None
     seen: set[str] = set()
     for index, fact in enumerate(facts):
         path = f"derived_project_facts[{index}]"
@@ -333,10 +376,34 @@ def _derived_fact_findings(resolved: Mapping[str, Any]) -> list[dict[str, str]]:
             and fact.get("authority_type") == "DERIVED_GEOMETRY"
             and fact.get("verification_status") == "VERIFIED"
             and _is_sha256(fact.get("source_hash"))
+            and fact.get("dependencies") == [resolved.get("evidence_input_id")]
         ):
-            geometry_proof = True
-    if resolved.get("geometry_feasibility") == "VERIFIED" and not geometry_proof:
-        findings.append(_finding("GEOMETRY_PROOF_REQUIRED", "geometry_feasibility", "A verified geometry evidence record is required"))
+            geometry_proof = fact
+    if resolved.get("geometry_feasibility") == "VERIFIED":
+        if geometry_proof is None:
+            findings.append(_finding(
+                "GEOMETRY_PROOF_REQUIRED",
+                "geometry_feasibility",
+                "Geometry evidence must depend on the exact evidence-input identity",
+            ))
+        elif not isinstance(current_geometry_evidence, Mapping):
+            findings.append(_finding(
+                "GEOMETRY_EVIDENCE_UNRESOLVED",
+                "current_geometry_evidence",
+                "Independent current geometry evidence is required",
+            ))
+        elif current_geometry_evidence.get("verification_status") != "VERIFIED" or any(
+            current_geometry_evidence.get(key) != geometry_proof.get(key)
+            for key in (
+                "field_id", "value", "source_type", "source_reference", "source_hash",
+                "authority_type", "revision", "dependencies",
+            )
+        ):
+            findings.append(_finding(
+                "STALE_GEOMETRY_EVIDENCE",
+                "current_geometry_evidence",
+                "Geometry evidence does not match the current independently verified artifact",
+            ))
     return findings
 
 
@@ -520,11 +587,9 @@ def migrate_v1_owner_program(
         "preferences.zoning.guest_family": copy.deepcopy(legacy_copy.get("guest_family_zoning", {})),
         "preferences.zoning.service": copy.deepcopy(legacy_copy.get("service_zoning", {})),
         "preferences.furniture_requirements": copy.deepcopy(legacy_copy.get("furniture_expectations", [])),
-        "preferences.accessibility": {
-            "owner_preference": "LEGACY_UNSTRUCTURED" if legacy_copy.get("accessibility_needs") else "UNKNOWN",
-            "regulatory_obligation": "UNKNOWN",
-            "needs": copy.deepcopy(legacy_copy.get("accessibility_needs", [])),
-        },
+        "preferences.accessibility.owner_preference": "LEGACY_UNSTRUCTURED" if legacy_copy.get("accessibility_needs") else "UNKNOWN",
+        "preferences.accessibility.regulatory_obligation": "UNKNOWN",
+        "preferences.accessibility.needs": copy.deepcopy(legacy_copy.get("accessibility_needs", [])),
         "preferences.priorities": copy.deepcopy(legacy_copy.get("priority_weights", {})),
     }
     provenance = []
@@ -575,7 +640,11 @@ def migrate_v1_owner_program(
                 "service": field_values["preferences.zoning.service"],
             },
             "furniture_requirements": field_values["preferences.furniture_requirements"],
-            "accessibility": field_values["preferences.accessibility"],
+            "accessibility": {
+                "owner_preference": field_values["preferences.accessibility.owner_preference"],
+                "regulatory_obligation": field_values["preferences.accessibility.regulatory_obligation"],
+                "needs": field_values["preferences.accessibility.needs"],
+            },
             "priorities": field_values["preferences.priorities"],
         },
         "questionnaire_answers": None,
@@ -608,6 +677,7 @@ def resolve_generation_input(
     derived_project_facts: list[Mapping[str, Any]] | None = None,
     geometry_feasibility: str = "NOT_EXECUTED",
     current_bindings: Mapping[str, Mapping[str, Any]] | None = None,
+    current_geometry_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Bind a valid draft to authority snapshots without activating generation."""
     if not isinstance(draft, Mapping):
@@ -619,12 +689,19 @@ def resolve_generation_input(
         canonical_unit_program_hash = _json_hash(draft.get("unit_program"))
     except (TypeError, ValueError):
         canonical_unit_program_hash = None
+    evidence_input_id = evidence_input_identity(
+        draft,
+        site_binding=site_binding,
+        national_ruleset_binding=national_ruleset_binding,
+        local_profile_binding=local_profile_binding,
+    )
     snapshot_basis = {
         "project_id": draft.get("project_id"),
         "program_id": draft.get("program_id"),
         "program_revision": draft.get("program_revision"),
         "owner_program_hash": owner_program_hash,
         "canonical_unit_program_hash": canonical_unit_program_hash,
+        "evidence_input_id": evidence_input_id,
         "site_binding": site_binding,
         "national_ruleset_binding": national_ruleset_binding,
         "local_profile_binding": local_profile_binding,
@@ -643,6 +720,7 @@ def resolve_generation_input(
         "program_revision": draft.get("program_revision"),
         "owner_program_hash": owner_program_hash,
         "canonical_unit_program_hash": canonical_unit_program_hash,
+        "evidence_input_id": evidence_input_id,
         "site_binding": copy.deepcopy(site_binding),
         "national_ruleset_binding": copy.deepcopy(national_ruleset_binding),
         "local_profile_binding": copy.deepcopy(local_profile_binding),
@@ -650,7 +728,12 @@ def resolve_generation_input(
         "geometry_feasibility": geometry_feasibility,
         "runtime_enabled": False,
     }
-    validation = validate_resolved_generation_input(payload, draft=draft, current_bindings=current_bindings)
+    validation = validate_resolved_generation_input(
+        payload,
+        draft=draft,
+        current_bindings=current_bindings,
+        current_geometry_evidence=current_geometry_evidence,
+    )
     payload["resolution_status"] = validation["status"]
     try:
         payload["resolution_hash"] = _json_hash(payload)
@@ -664,6 +747,7 @@ def validate_resolved_generation_input(
     *,
     draft: Mapping[str, Any],
     current_bindings: Mapping[str, Mapping[str, Any]] | None = None,
+    current_geometry_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     findings: list[dict[str, str]] = []
     if not isinstance(resolved, Mapping):
@@ -700,6 +784,14 @@ def validate_resolved_generation_input(
         unit_program_hash = None
     if resolved.get("canonical_unit_program_hash") != unit_program_hash:
         findings.append(_finding("STALE_UNIT_PROGRAM", "canonical_unit_program_hash", "Canonical unit program changed"))
+    expected_evidence_input_id = evidence_input_identity(
+        draft,
+        site_binding=resolved.get("site_binding"),
+        national_ruleset_binding=resolved.get("national_ruleset_binding"),
+        local_profile_binding=resolved.get("local_profile_binding"),
+    )
+    if resolved.get("evidence_input_id") != expected_evidence_input_id:
+        findings.append(_finding("STALE_EVIDENCE_INPUT", "evidence_input_id", "Evidence input identity no longer matches resolved sources"))
     for field in ("project_id", "program_id", "program_revision"):
         if resolved.get(field) != draft.get(field):
             findings.append(_finding("SOURCE_DRAFT_IDENTITY_MISMATCH", field, "Resolved identity must match its source draft"))
@@ -709,6 +801,7 @@ def validate_resolved_generation_input(
         "program_revision": resolved.get("program_revision"),
         "owner_program_hash": resolved.get("owner_program_hash"),
         "canonical_unit_program_hash": resolved.get("canonical_unit_program_hash"),
+        "evidence_input_id": resolved.get("evidence_input_id"),
         "site_binding": resolved.get("site_binding"),
         "national_ruleset_binding": resolved.get("national_ruleset_binding"),
         "local_profile_binding": resolved.get("local_profile_binding"),
@@ -732,7 +825,7 @@ def validate_resolved_generation_input(
         if supplied_hash != expected_resolution_hash:
             findings.append(_finding("INVALID_RESOLUTION_HASH", "resolution_hash", "Resolved payload changed after hashing"))
     findings.extend(_resolution_readiness_findings(draft))
-    findings.extend(_derived_fact_findings(resolved))
+    findings.extend(_derived_fact_findings(resolved, current_geometry_evidence))
     findings.extend(_binding_findings(resolved, current_bindings))
 
     codes = {finding["code"] for finding in findings}
@@ -745,6 +838,8 @@ def validate_resolved_generation_input(
         "INVALID_RESOLVED_ID",
         "INVALID_RESOLUTION_HASH",
         "SOURCE_DRAFT_IDENTITY_MISMATCH",
+        "STALE_EVIDENCE_INPUT",
+        "STALE_GEOMETRY_EVIDENCE",
     }:
         status = "STALE_BINDING"
     elif draft_validation["status"] != "DRAFT_VALID":

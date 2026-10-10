@@ -36,6 +36,17 @@ resolution status is compared with an independently recomputed result, and quest
 answers are bound to their content hash. Both public validators apply the additive JSON
 contract and return structured fail-closed findings for malformed payloads.
 
+Accessibility owner preference, owner needs and regulatory applicability use separate
+field-level provenance. Only verified national or local code evidence may establish a
+regulatory obligation; `UNKNOWN` remains saveable in a draft but blocks resolution.
+Owner preference cannot establish `NOT_APPLICABLE` or override a mandatory obligation.
+
+Geometry evidence depends on a deterministic evidence-input identity containing the
+exact draft, canonical unit program, site model and national/local authority snapshots.
+The validator also requires a separate current geometry-evidence record matching the
+artifact identity, hash, revision and dependency. This models the future trusted
+registry boundary without pretending that the offline contract implements that registry.
+
 Owner Program 1.0 remains unchanged. Its adapter preserves the complete source payload,
 uses `UNKNOWN_LEGACY_SOURCE` rather than invented provenance, and reports absent unit
 program evidence. The v1 Generation Input may supply the unit program only through the
@@ -66,6 +77,8 @@ hash and original payload, and emits structured findings. No database migration 
   feasibility, regulatory approval or professional review.
 - Self-attested authority: current binding records and geometry evidence are required
   independently from the flags embedded in the candidate payload.
+- Cross-project evidence reuse: geometry evidence carries the exact evidence-input
+  dependency and becomes stale when any bound program, site or authority source changes.
 
 ## Rollback
 

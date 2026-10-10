@@ -1770,7 +1770,7 @@
     {
       "id": "GOV-2026-049",
       "status": "APPROVED_FOR_OFFLINE_IMPLEMENTATION",
-      "summary": "Add backward-compatible Architecture Owner Program 2.0 draft and resolved-input contracts with provenance, migration findings and stale-safe authority bindings; retain v1 and keep runtime disabled.",
+      "summary": "Add backward-compatible Architecture Owner Program 2.0 contracts with split accessibility authority, exact-input geometry evidence binding, migration findings and stale-safe validation; retain v1 and keep runtime disabled.",
       "affected_capabilities": [
         "residential_foundation_fail_closed"
       ],
