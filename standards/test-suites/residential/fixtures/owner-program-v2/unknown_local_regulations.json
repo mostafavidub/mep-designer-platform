@@ -1,0 +1,433 @@
+{
+  "fixture_id": "unknown_local_regulations",
+  "markers": [
+    "NON_GOLDEN",
+    "SYNTHETIC_TEST_INPUT",
+    "NOT_PROFESSIONALLY_APPROVED"
+  ],
+  "draft": {
+    "schema_version": "architecture-owner-program-draft/2.0",
+    "program_id": "SYNTH-OP-001",
+    "project_id": "SYNTH-PROJECT",
+    "program_revision": 1,
+    "questionnaire_version": "0.5.0",
+    "answers_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "project_requirements": {
+      "building_use": "RESIDENTIAL",
+      "floor_count": 4,
+      "typical_floor_constraints": {
+        "identical_residential": true
+      }
+    },
+    "unit_program": {
+      "units_per_floor": 1,
+      "unit_types": [
+        {
+          "unit_type_id": "A",
+          "count": 1,
+          "bedrooms": 2,
+          "target_usable_area_min_m2": 70,
+          "target_usable_area_max_m2": 90,
+          "requirement_strength": "MANDATORY"
+        }
+      ]
+    },
+    "spaces": {
+      "required": [
+        "LIVING",
+        "KITCHEN",
+        "BEDROOM",
+        "BATHROOM"
+      ],
+      "optional": [
+        "BALCONY"
+      ],
+      "prohibited": [],
+      "minimum_counts": {
+        "BEDROOM": 2,
+        "BATHROOM": 1
+      },
+      "preferred_counts": {}
+    },
+    "relationships": {
+      "required_adjacencies": [
+        {
+          "from": "KITCHEN",
+          "to": "LIVING"
+        }
+      ],
+      "preferred_adjacencies": [],
+      "prohibited_adjacencies": [
+        {
+          "from": "BEDROOM",
+          "to": "ENTRY"
+        }
+      ],
+      "preferred_avoid_adjacencies": []
+    },
+    "preferences": {
+      "privacy_tiers": {
+        "BEDROOM": "PRIVATE"
+      },
+      "zoning": {
+        "day_night": {},
+        "guest_family": {},
+        "service": {}
+      },
+      "furniture_requirements": [],
+      "accessibility": {
+        "owner_preference": "NO_EXTRA",
+        "regulatory_obligation": "NOT_APPLICABLE",
+        "needs": []
+      },
+      "priorities": {
+        "DAYLIGHT": 1.0,
+        "PRIVACY": 0.8
+      }
+    },
+    "questionnaire_answers": null,
+    "provenance": [
+      {
+        "field_id": "preferences.accessibility.needs",
+        "value": [],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.accessibility.owner_preference",
+        "value": "NO_EXTRA",
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.accessibility.regulatory_obligation",
+        "value": "NOT_APPLICABLE",
+        "unit": null,
+        "source_type": "SYNTHETIC_CODE_APPLICABILITY_TEST",
+        "source_reference": "NON_GOLDEN_NOT_PROFESSIONALLY_APPROVED",
+        "source_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "authority_type": "NATIONAL_CODE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.furniture_requirements",
+        "value": [],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.priorities",
+        "value": {
+          "DAYLIGHT": 1.0,
+          "PRIVACY": 0.8
+        },
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.privacy_tiers",
+        "value": {
+          "BEDROOM": "PRIVATE"
+        },
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.zoning.day_night",
+        "value": {},
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.zoning.guest_family",
+        "value": {},
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "preferences.zoning.service",
+        "value": {},
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_PREFERENCE",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "project_requirements.building_use",
+        "value": "RESIDENTIAL",
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "project_requirements.floor_count",
+        "value": 4,
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "project_requirements.typical_floor_constraints",
+        "value": {
+          "identical_residential": true
+        },
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "relationships.preferred_adjacencies",
+        "value": [],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "relationships.preferred_avoid_adjacencies",
+        "value": [],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "relationships.prohibited_adjacencies",
+        "value": [
+          {
+            "from": "BEDROOM",
+            "to": "ENTRY"
+          }
+        ],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "relationships.required_adjacencies",
+        "value": [
+          {
+            "from": "KITCHEN",
+            "to": "LIVING"
+          }
+        ],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "spaces.minimum_counts",
+        "value": {
+          "BEDROOM": 2,
+          "BATHROOM": 1
+        },
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "spaces.optional",
+        "value": [
+          "BALCONY"
+        ],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "spaces.preferred_counts",
+        "value": {},
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "spaces.prohibited",
+        "value": [],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "spaces.required",
+        "value": [
+          "LIVING",
+          "KITCHEN",
+          "BEDROOM",
+          "BATHROOM"
+        ],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "unit_program.unit_types",
+        "value": [
+          {
+            "unit_type_id": "A",
+            "count": 1,
+            "bedrooms": 2,
+            "target_usable_area_min_m2": 70,
+            "target_usable_area_max_m2": 90,
+            "requirement_strength": "MANDATORY"
+          }
+        ],
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      },
+      {
+        "field_id": "unit_program.units_per_floor",
+        "value": 1,
+        "unit": null,
+        "source_type": "SYNTHETIC_FIXTURE",
+        "source_reference": "NON_GOLDEN",
+        "source_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "authority_type": "OWNER_REQUIREMENT",
+        "verification_status": "VERIFIED",
+        "revision": 1,
+        "dependencies": []
+      }
+    ],
+    "legacy": null,
+    "runtime_enabled": false
+  },
+  "expected_draft_status": "DRAFT_VALID",
+  "resolution": {
+    "site_binding": {
+      "id": "SYNTHETIC",
+      "version": "1",
+      "source_reference": "SYNTHETIC_NONREGULATORY",
+      "source_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "verification_status": "VERIFIED"
+    },
+    "national_ruleset_binding": {
+      "id": "SYNTHETIC",
+      "version": "1",
+      "source_reference": "SYNTHETIC_NONREGULATORY",
+      "source_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "verification_status": "VERIFIED"
+    },
+    "local_profile_binding": {
+      "id": "SYNTHETIC",
+      "version": "1",
+      "source_reference": "SYNTHETIC_NONREGULATORY",
+      "source_hash": null,
+      "verification_status": "INPUT_REQUIRED"
+    },
+    "derived_project_facts": [],
+    "geometry_feasibility": "NOT_EXECUTED",
+    "expected_status": "LOCAL_RULE_REQUIRED"
+  }
+}

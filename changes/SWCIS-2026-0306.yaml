@@ -1,0 +1,97 @@
+{
+  "change_id": "SWCIS-2026-0306",
+  "summary": "Add and harden an offline provenance-aware Owner Program 2.0 contract with separated accessibility authority, input-bound geometry evidence, deterministic v1 compatibility, migration reporting, stale validation, and no runtime activation.",
+  "requester": "project-owner",
+  "change_types": [
+    "schema",
+    "test",
+    "documentation",
+    "governance"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "cad_designer",
+    "deployment",
+    "detail_riser",
+    "docs",
+    "equipment",
+    "governance",
+    "manifest",
+    "manufacturer_selector",
+    "migration",
+    "planner",
+    "qa",
+    "questionnaire",
+    "routing",
+    "sizing",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "questionnaire": "changed: additive Owner Program 2.0 contracts and offline validation; v1 catalog and customer questionnaire remain unchanged",
+    "planner": "verified-not-affected: v2 is offline-only and not imported by the active planner/runtime",
+    "rule_book": "verified-not-affected: national/local rule values and all 32 release-disabled rules remain unchanged",
+    "migration": "added: deterministic non-destructive v1-to-v2 adapter with split accessibility provenance, explicit unknown regulatory applicability and loss findings",
+    "qa": "added: focused schema, migration, accessibility authority, evidence-input binding, cross-project reuse, identity/status tamper, missing-finalization, malformed-input, determinism and fail-closed tests",
+    "docs": "added: Owner Program 2.0 ADR and Foundation contract documentation",
+    "governance": "changed: register the new offline owner-program module and migration contract",
+    "versioning": "changed: coordinated SWCIS minor bump for graph and migration-contract additions",
+    "cad_designer": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "deployment": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "detail_riser": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "equipment": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "manifest": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "manufacturer_selector": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "routing": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "sizing": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed",
+    "ui_api": "verified-not-affected: additive offline contract only; no production import, active questionnaire behavior, geometry, MEP, API, database, deployment or runtime path changed"
+  },
+  "evidence": {
+    "traceability": [
+      "standards/swcis/system_dependency_graph.yaml"
+    ],
+    "tests": [
+      "tests/test_owner_program_v2.py",
+      "tests/test_residential_foundation.py"
+    ],
+    "docs": [
+      "docs/adr/ADR-ARCH-OWNER-PROGRAM-V2.md",
+      "docs/residential/FOUNDATION.md"
+    ],
+    "version_bump": [
+      "standards/swcis/version_manifest.yaml"
+    ],
+    "migration": [
+      "standards/swcis/migrations/architecture-owner-program-2.0.json"
+    ],
+    "golden_regression": [
+      "No Golden execution; six fixtures are NON_GOLDEN synthetic inputs and active runtime remains unchanged"
+    ],
+    "semantic_diff": [
+      "OwnerProgramDraft can remain incomplete; regulatory accessibility requires code provenance; geometry evidence must bind to the exact program/site/authority fingerprint plus a current independent evidence record; public resolved-snapshot validation requires final status and hash while only the constructor may validate its private pre-final payload"
+    ],
+    "artifact_diff": [
+      "Two additive v2 JSON Schemas, one offline module, six synthetic fixtures, migration contract, ADR and focused tests"
+    ],
+    "numeric_diff": [
+      "No regulatory numeric value, geometry threshold or optimization weight default added"
+    ],
+    "contract_diff": [
+      "Add architecture-owner-program-draft/2.0 and architecture-resolved-generation-input/2.0 while retaining architecture-owner-program/1.0 unchanged"
+    ],
+    "deployment_plan": [
+      "No deployment or runtime activation; stacked Draft PR only"
+    ],
+    "rollback_plan": [
+      "Revert the additive v2 commit; v1 schemas, catalog, reader/writer and runtime behavior remain intact"
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 4,
+    "detectability": 2,
+    "score": 16,
+    "rationale": "Canonical input identity is high-impact, but v2 is additive, offline-only, tested against v1 compatibility, and never grants generation or regulatory authority."
+  },
+  "waiver": null
+}

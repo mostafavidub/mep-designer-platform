@@ -839,13 +839,21 @@
         "public_patterns_never_become_code",
         "hard_gate_before_soft_rank",
         "unknown_clearance_blocks_fit",
-        "missing_golden_blocks_release"
+        "missing_golden_blocks_release",
+        "owner_program_v1_remains_compatible",
+        "owner_program_v2_requires_field_provenance",
+        "resolved_input_requires_current_site_and_rule_bindings",
+        "owner_program_v2_runtime_disabled"
       ],
       "tests": [
         "test_source_qualification_and_stale_input",
         "test_soft_score_never_compensates_hard_failure",
         "test_foundation_audit_cannot_claim_release",
-        "test_missing_clearance_and_invalid_dimensions"
+        "test_missing_clearance_and_invalid_dimensions",
+        "test_v1_contract_and_questionnaire_behavior_remain_available",
+        "test_v1_migration_preserves_payload_and_reports_missing_unit_program",
+        "test_changed_source_hash_invalidates_resolution",
+        "test_no_hidden_defaults_or_runtime_activation"
       ]
     }
   ]

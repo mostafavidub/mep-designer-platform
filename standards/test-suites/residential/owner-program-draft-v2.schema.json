@@ -1,0 +1,451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-owner-program-draft/2.0",
+  "title": "Planha OwnerProgramDraft 2.0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "program_id",
+    "project_id",
+    "program_revision",
+    "questionnaire_version",
+    "answers_hash",
+    "project_requirements",
+    "unit_program",
+    "spaces",
+    "relationships",
+    "preferences",
+    "questionnaire_answers",
+    "provenance",
+    "legacy",
+    "runtime_enabled"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "architecture-owner-program-draft/2.0"
+    },
+    "program_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "program_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "questionnaire_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "answers_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "project_requirements": {
+      "type": "object",
+      "required": [
+        "building_use",
+        "floor_count",
+        "typical_floor_constraints"
+      ],
+      "properties": {
+        "building_use": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "floor_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "typical_floor_constraints": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    "unit_program": {
+      "type": "object",
+      "required": [
+        "units_per_floor",
+        "unit_types"
+      ],
+      "properties": {
+        "units_per_floor": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "unit_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "unit_type_id",
+              "count",
+              "bedrooms",
+              "target_usable_area_min_m2",
+              "target_usable_area_max_m2",
+              "requirement_strength"
+            ],
+            "properties": {
+              "unit_type_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "bedrooms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "target_usable_area_min_m2": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "target_usable_area_max_m2": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "requirement_strength": {
+                "enum": [
+                  "MANDATORY",
+                  "PREFERRED"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "spaces": {
+      "type": "object",
+      "required": [
+        "required",
+        "optional",
+        "prohibited",
+        "minimum_counts",
+        "preferred_counts"
+      ],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "prohibited": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "minimum_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "preferred_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "relationships": {
+      "type": "object",
+      "required": [
+        "required_adjacencies",
+        "preferred_adjacencies",
+        "preferred_avoid_adjacencies",
+        "prohibited_adjacencies"
+      ],
+      "properties": {
+        "required_adjacencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "preferred_adjacencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "prohibited_adjacencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "preferred_avoid_adjacencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "preferences": {
+      "type": "object",
+      "required": [
+        "privacy_tiers",
+        "zoning",
+        "furniture_requirements",
+        "accessibility",
+        "priorities"
+      ],
+      "properties": {
+        "privacy_tiers": {
+          "type": "object"
+        },
+        "zoning": {
+          "type": "object",
+          "required": [
+            "day_night",
+            "guest_family",
+            "service"
+          ],
+          "properties": {
+            "day_night": {
+              "type": "object"
+            },
+            "guest_family": {
+              "type": "object"
+            },
+            "service": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false
+        },
+        "furniture_requirements": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "accessibility": {
+          "type": "object",
+          "required": [
+            "owner_preference",
+            "regulatory_obligation",
+            "needs"
+          ],
+          "properties": {
+            "owner_preference": {
+              "type": "string"
+            },
+            "regulatory_obligation": {
+              "enum": [
+                "REQUIRED",
+                "NOT_REQUIRED",
+                "NOT_APPLICABLE",
+                "UNKNOWN"
+              ]
+            },
+            "needs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "priorities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "questionnaire_answers": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "provenance": {
+      "type": "array",
+      "minItems": 23,
+      "items": {
+        "type": "object",
+        "required": [
+          "field_id",
+          "value",
+          "unit",
+          "source_type",
+          "source_reference",
+          "source_hash",
+          "authority_type",
+          "verification_status",
+          "revision",
+          "dependencies"
+        ],
+        "properties": {
+          "field_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {},
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_reference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "authority_type": {
+            "enum": [
+              "OWNER_REQUIREMENT",
+              "OWNER_PREFERENCE",
+              "SITE_EVIDENCE",
+              "NATIONAL_CODE",
+              "LOCAL_CODE",
+              "DERIVED_GEOMETRY",
+              "SYSTEM_CALCULATION",
+              "HUMAN_DECISION",
+              "UNKNOWN_LEGACY_SOURCE"
+            ]
+          },
+          "verification_status": {
+            "enum": [
+              "VERIFIED",
+              "UNVERIFIED",
+              "INPUT_REQUIRED",
+              "STALE",
+              "UNKNOWN"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "legacy": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "runtime_enabled": {
+      "const": false
+    }
+  },
+  "additionalProperties": false
+}

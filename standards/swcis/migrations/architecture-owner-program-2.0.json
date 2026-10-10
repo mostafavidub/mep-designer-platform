@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "architecture-owner-program-2.0",
+  "from": "architecture-owner-program/1.0 and architecture-generation-input/1.0 program view",
+  "to": "architecture-owner-program-draft/2.0 plus architecture-resolved-generation-input/2.0",
+  "compatibility": "Additive offline contract. Existing v1 schemas, questionnaire data, readers, writers and customer behavior remain unchanged. V2 is not imported by the active runtime.",
+  "forward": [
+    "Preserve the complete v1 Owner Program payload and its deterministic source hash",
+    "Map v1 space, relationship, zoning, furniture, accessibility and priority fields without deletion",
+    "Split migrated accessibility owner preference/needs from regulatory applicability provenance; keep applicability UNKNOWN",
+    "Import unit types and units-per-floor only from an explicitly supplied v1 Generation Input",
+    "Mark all migrated provenance UNKNOWN_LEGACY_SOURCE with verification_status UNKNOWN",
+    "Report MATERIAL_INPUT_NOT_PRESENT when canonical unit-program data is absent",
+    "Require complete canonical units, verified compatible material provenance, independently supplied current site/national/local bindings and evidence-backed geometry before resolved-input qualification",
+    "Bind geometry evidence to a deterministic identity of the exact program, unit program, site and authority snapshots"
+  ],
+  "validation": [
+    "tests/test_owner_program_v2.py",
+    "tests/test_residential_foundation.py",
+    "SWCIS-2026-0306"
+  ],
+  "consumers": [
+    "offline Architecture Owner Program research and future explicitly approved adapters"
+  ],
+  "loss_policy": "Never discard or infer a legacy value. Preserve the original payload and emit structured findings for absent or ambiguous material inputs.",
+  "stale_policy": "Any changed owner-program identity, unit program, questionnaire content, resolution status, site/national/local identity/version/reference/hash, or geometry evidence-input dependency invalidates or fail-closes the resolved input.",
+  "deprecation_window": "No v1 deprecation is scheduled. V1 remains readable and writable until a separately approved activation and consumer migration.",
+  "deployment": "No staging or production deployment, database migration, runtime import or Generator activation is authorized.",
+  "rollback": "Revert the additive v2 commit. V1 remains the unchanged active contract and no production data requires reversal."
+}

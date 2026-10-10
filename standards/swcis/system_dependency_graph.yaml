@@ -36,7 +36,10 @@
       "paths": [
         "templates/**",
         "static/**",
-        "tests/test_questionnaire_choices.py"
+        "tests/test_questionnaire_choices.py",
+        "cad_engine/owner_program.py",
+        "standards/test-suites/residential/owner-program-v2.schema.json",
+        "standards/test-suites/residential/resolved-generation-input-v2.schema.json"
       ],
       "depends_on": [
         "pmm",

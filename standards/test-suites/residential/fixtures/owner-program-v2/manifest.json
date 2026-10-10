@@ -1,0 +1,16 @@
+{
+  "schema": "planha-owner-program-v2-fixtures/1.0",
+  "markers": [
+    "NON_GOLDEN",
+    "SYNTHETIC_TEST_INPUT",
+    "NOT_PROFESSIONALLY_APPROVED"
+  ],
+  "fixtures": [
+    "conditional_accessibility.json",
+    "contradictory_program.json",
+    "missing_input_program.json",
+    "multi_unit_program.json",
+    "unknown_local_regulations.json",
+    "valid_residential_program.json"
+  ]
+}
