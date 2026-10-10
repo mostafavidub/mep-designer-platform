@@ -1,6 +1,10 @@
+import pytest
+
 from shapely.geometry import LineString, Polygon
 
 from cad_engine.architectural_topology_quality import (
+    _govern_source_backed_junction_interruptions,
+    _internal_material_interruption,
     _compose_shell_holes,
     building_envelope_from_walls,
     canonical_space_subdivision,
@@ -125,6 +129,218 @@ def test_supported_and_likely_interruptions_do_not_gain_proven_continuity():
         row=canonical_enclosure_continuity([wall],frame_id="F1")[0]
         assert (row["continuity_status"],row["status"])==(continuity,status)
         assert row["roles"]==[]
+
+
+def test_paired_face_interruption_outside_common_material_is_discarded():
+    interruption={"interval":[4,5]}
+    assert _internal_material_interruption(interruption,[[0,3]],.001) is False
+    assert _internal_material_interruption(interruption,[[0,4]],.001) is False
+    assert _internal_material_interruption(interruption,[[0,4],[5,8]],.001) is True
+
+
+def _junction_fragmentation_fixture():
+    host=_wall("HOST",(0,0),(10,0),[[0,4],[5,10]],[(4,5)],
+               interruption_kind="UNKNOWN_FRAGMENTATION")
+    host.update({"representation":"COMPOSITE","source_handles":["HOST-A","HOST-B"],
+                 "source_fragments":["SEG-HOST-A","SEG-HOST-B"],
+                 "source_lineage":[{"source_handle":"HOST-A"},{"source_handle":"HOST-B"}]})
+    junction=_wall("JUNCTION",(4.5,-2),(4.5,2),[[0,4]])
+    junction.update({"representation":"DOUBLE_FACE","face_a":[[4,-2],[4,2]],
+                     "face_b":[[5,-2],[5,2]],"thickness":1.0,
+                     "source_handles":["JUNCTION-A","JUNCTION-B"],
+                     "source_fragments":["SEG-JUNCTION-A","SEG-JUNCTION-B"],
+                     "source_lineage":[{"source_handle":"JUNCTION-A"},
+                                       {"source_handle":"JUNCTION-B"}]})
+    return host,junction
+
+
+def test_exact_orthogonal_double_face_junction_governs_drafting_fragmentation():
+    host,junction=_junction_fragmentation_fixture()
+    walls=_govern_source_backed_junction_interruptions([host,junction],.001)
+    interruption=host["interruptions"][0]
+    assert interruption["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert interruption["junction_wall_id"]=="JUNCTION"
+    assert interruption["proof_class"]=="EXACT_ORTHOGONAL_DOUBLE_FACE_BOUNDARY"
+    assert len(interruption["junction_material_interval_ids"])==1
+    assert interruption["junction_material_intervals"]==[[0,4]]
+    closure=canonical_enclosure_continuity(walls,frame_id="F1")[0]
+    assert closure["reason"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert closure["roles"]==["ENCLOSURE_BARRIER","ENVELOPE_SUPPORT"]
+    assert closure["junction_material_interval_ids"]==interruption["junction_material_interval_ids"]
+    assert closure["junction_material_intervals"]==[[0,4]]
+    assert closure["junction_material_binding_distance"]==0
+    assert closure["material"] is False
+    assert {closure[key] for key in ("material_geometry","wall_authority","portal_authority",
+                                     "routing_authority","access_authority")}=={"NONE"}
+
+
+def test_extended_canonical_faces_without_local_material_cannot_govern_junction():
+    host,junction=_junction_fragmentation_fixture()
+    junction["wall_solid"]["occupied_intervals"]=[[0,.5]]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+    closure=canonical_enclosure_continuity([host],frame_id="F1")[0]
+    assert closure["continuity_status"]=="INSUFFICIENT_CONTINUITY"
+    assert closure["roles"]==[]
+
+
+def test_source_identity_without_local_material_cannot_govern_junction():
+    host,junction=_junction_fragmentation_fixture()
+    junction["wall_solid"]["occupied_intervals"]=[]
+    assert junction["source_handles"] and junction["source_lineage"]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+def test_material_terminating_exactly_at_junction_supports_canonical_binding():
+    host,junction=_junction_fragmentation_fixture()
+    # Junction centerline starts at y=-2 and the host crosses at y=0.
+    junction["wall_solid"]["occupied_intervals"]=[[0,2]]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    interruption=host["interruptions"][0]
+    assert interruption["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert interruption["junction_material_intervals"]==[[0,2]]
+    assert interruption["junction_material_binding_distance"]==0
+
+
+def test_canonical_junction_material_evidence_is_order_deterministic():
+    def result(reverse):
+        host,junction=_junction_fragmentation_fixture()
+        walls=[host,junction]
+        if reverse: walls.reverse()
+        _govern_source_backed_junction_interruptions(walls,.001)
+        return host["interruptions"][0]
+    forward=result(False); reverse=result(True)
+    for key in ("kind","junction_wall_id","junction_material_interval_ids",
+                "junction_material_intervals","proof_class"):
+        assert forward[key]==reverse[key]
+
+
+def test_one_face_break_without_exact_junction_remains_unresolved():
+    host,junction=_junction_fragmentation_fixture()
+    junction["face_b"]=[[5.25,-2],[5.25,2]]
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+    row=canonical_enclosure_continuity([host],frame_id="F1")[0]
+    assert row["continuity_status"]=="INSUFFICIENT_CONTINUITY"
+    assert row["roles"]==[]
+
+
+def test_parallel_nearby_wall_cannot_govern_drafting_fragmentation():
+    host,junction=_junction_fragmentation_fixture()
+    junction.update({"centerline":[[0,.5],[10,.5]],"face_a":[[0,.4],[10,.4]],
+                     "face_b":[[0,.6],[10,.6]]})
+    _govern_source_backed_junction_interruptions([host,junction],.001)
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+def test_exact_accepted_source_faces_recover_junction_when_canonical_pair_is_unavailable():
+    host,_=_junction_fragmentation_fixture()
+    left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
+    for row in (left,right): row["wall_evidence_state"]="CONFIRMED_WALL"
+    _govern_source_backed_junction_interruptions(
+        [host],.001,[left,right],[{"median_thickness":1.0}])
+    interruption=host["interruptions"][0]
+    assert interruption["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert interruption["junction_wall_id"] is None
+    assert interruption["junction_source_handles"]==["SOURCE-A","SOURCE-B"]
+    assert interruption["proof_class"]=="INDEPENDENT_THICKNESS_CLUSTER_SOURCE_FACE_PAIR"
+    assert interruption["face_pair_thickness_cluster"]==1.0
+
+
+def test_reference_source_faces_cannot_recover_wall_junction():
+    host,_=_junction_fragmentation_fixture()
+    left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
+    left["wall_evidence_state"]="REFERENCE_REJECTED"
+    right["wall_evidence_state"]="CONFIRMED_WALL"
+    _govern_source_backed_junction_interruptions(
+        [host],.001,[left,right],[{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+def test_raw_faces_matching_only_host_gap_without_thickness_proof_are_rejected():
+    host,_=_junction_fragmentation_fixture()
+    left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
+    for row in (left,right): row["wall_evidence_state"]="CONFIRMED_WALL"
+    _govern_source_backed_junction_interruptions([host],.001,[left,right],
+                                                  [{"median_thickness":.2}])
+    assert host["interruptions"][0]["kind"]=="UNKNOWN_FRAGMENTATION"
+
+
+@pytest.mark.parametrize("reverse",[False,True])
+def test_equal_competing_raw_face_pairs_remain_unresolved(reverse):
+    host,_=_junction_fragmentation_fixture()
+    rows=[_row("LEFT-A",(4,-2),(4,2)),_row("LEFT-B",(4,-3),(4,3)),
+          _row("RIGHT",(5,-2),(5,2))]
+    for row in rows: row["wall_evidence_state"]="CONFIRMED_WALL"
+    if reverse: rows.reverse()
+    _govern_source_backed_junction_interruptions([host],.001,rows,
+                                                  [{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="AMBIGUOUS_FACE_PAIRING"
+    assert host["interruptions"][0]["proof_class"]=="EQUAL_FACE_PAIR_BINDINGS"
+
+
+@pytest.mark.parametrize("reverse",[False,True])
+def test_raw_pair_conflicting_with_canonical_pair_remains_unresolved(reverse):
+    host,_=_junction_fragmentation_fixture()
+    left=_row("SOURCE-A",(4,-2),(4,2)); right=_row("SOURCE-B",(5,-2),(5,2))
+    competing=_row("SOURCE-C",(4.2,-2),(4.2,2))
+    for row in (left,right,competing): row["wall_evidence_state"]="CONFIRMED_WALL"
+    canonical=_wall("CANONICAL",(4.1,-2),(4.1,2),[[0,4]])
+    canonical.update({"representation":"DOUBLE_FACE","face_a":left["geometry"],
+                      "face_b":competing["geometry"],"thickness":.2,
+                      "source_handles":["SOURCE-A","SOURCE-C"],
+                      "source_lineage":[{"source_handle":"SOURCE-A"},
+                                        {"source_handle":"SOURCE-C"}]})
+    rows=[left,right,competing]; walls=[host,canonical]
+    if reverse: rows.reverse(); walls.reverse()
+    _govern_source_backed_junction_interruptions(
+        walls,.001,rows,
+        [{"median_thickness":.2},{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="AMBIGUOUS_FACE_PAIRING"
+    closure=canonical_enclosure_continuity([host],frame_id="F1")[0]
+    assert closure["reason"]=="MULTIPLE_VALID_FACE_PAIRINGS"
+    assert closure["roles"]==[]
+
+
+def test_unrelated_parallel_walls_cannot_become_a_raw_face_pair():
+    host,_=_junction_fragmentation_fixture()
+    left=_row("LEFT",(4,-2),(4,2)); right=_row("RIGHT",(5,-2),(5,2))
+    left_other=_row("LEFT-OTHER",(3.8,-2),(3.8,2))
+    right_other=_row("RIGHT-OTHER",(5.2,-2),(5.2,2))
+    rows=[left,right,left_other,right_other]
+    for row in rows: row["wall_evidence_state"]="CONFIRMED_WALL"
+    wall_left=_wall("WALL-LEFT",(3.9,-2),(3.9,2),[[0,4]])
+    wall_left.update({"representation":"DOUBLE_FACE","face_a":left["geometry"],
+                      "face_b":left_other["geometry"],"thickness":.2,
+                      "source_handles":["LEFT","LEFT-OTHER"],
+                      "source_lineage":[{"source_handle":"LEFT"},
+                                        {"source_handle":"LEFT-OTHER"}]})
+    wall_right=_wall("WALL-RIGHT",(5.1,-2),(5.1,2),[[0,4]])
+    wall_right.update({"representation":"DOUBLE_FACE","face_a":right["geometry"],
+                       "face_b":right_other["geometry"],"thickness":.2,
+                       "source_handles":["RIGHT","RIGHT-OTHER"],
+                       "source_lineage":[{"source_handle":"RIGHT"},
+                                         {"source_handle":"RIGHT-OTHER"}]})
+    _govern_source_backed_junction_interruptions(
+        [host,wall_left,wall_right],.001,rows,
+        [{"median_thickness":.2},{"median_thickness":1.0}])
+    assert host["interruptions"][0]["kind"]=="AMBIGUOUS_FACE_PAIRING"
+
+
+def test_raw_pair_governance_is_input_order_deterministic():
+    def result(reverse):
+        host,_=_junction_fragmentation_fixture()
+        rows=[_row("SOURCE-A",(4,-2),(4,2)),_row("SOURCE-B",(5,-2),(5,2))]
+        for row in rows: row["wall_evidence_state"]="CONFIRMED_WALL"
+        if reverse: rows.reverse()
+        _govern_source_backed_junction_interruptions(
+            [host],.001,rows,[{"median_thickness":1.0}])
+        return host["interruptions"][0]
+    forward=result(False); reverse=result(True)
+    assert forward["kind"]==reverse["kind"]=="GOVERNED_DRAFTING_FRAGMENTATION"
+    assert forward["junction_source_handles"]==reverse["junction_source_handles"]
+    assert forward["proof_class"]==reverse["proof_class"]
 
 
 def test_drafting_fragmentation_is_diagnostic_not_promoted():
