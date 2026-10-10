@@ -17,6 +17,11 @@ independently governed provider, but supplies no trusted provider or qualificati
 entrypoint. Consequently, real-like records remain `AUTHORITY_REVIEW_REQUIRED`, and
 `AUTHORITY_QUALIFIED` is unreachable through self-asserted payload fields.
 
+Schema validation is mandatory and fail-closed: a missing JSON Schema validator or
+malformed root/nested input produces structured `INPUT_REQUIRED` findings before
+contract-specific traversal. Malformed independently supplied binding/source
+snapshots are not treated as trusted evidence.
+
 The three disclaimer markers are optional fixture annotations in the public schemas.
 Repository synthetic fixtures must contain exactly `NON_GOLDEN`,
 `NON_REGULATORY_TEST_DATA` and `NOT_PROFESSIONALLY_APPROVED`; marked records are capped

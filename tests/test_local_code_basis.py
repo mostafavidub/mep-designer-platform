@@ -405,5 +405,64 @@ class LocalCodeBasisContractTests(unittest.TestCase):
         self.assertIn("INVALID_DEPENDENCY_FINGERPRINT", {item["code"] for item in result["findings"]})
 
 
+    def test_missing_jsonschema_dependency_fails_closed(self):
+        import builtins
+        from unittest.mock import patch
+
+        original_import = builtins.__import__
+
+        def reject_jsonschema(name, *args, **kwargs):
+            if name == "jsonschema":
+                raise ImportError("simulated missing schema validator")
+            return original_import(name, *args, **kwargs)
+
+        local, project = profile(), basis()
+        s, current_local, national, owner = current_bindings()
+        with patch("builtins.__import__", side_effect=reject_jsonschema):
+            results = (
+                lcb.validate_local_rule_profile(local),
+                lcb.validate_project_code_basis(
+                    project, current_site=s, current_local_profile=current_local,
+                    current_national_binding=national, current_owner_program=owner,
+                ),
+            )
+        for result in results:
+            self.assertEqual(result["status"], "INPUT_REQUIRED", result)
+            self.assertIn("SCHEMA_UNAVAILABLE", {item["code"] for item in result["findings"]})
+
+    def test_schema_invalid_payloads_never_continue_as_valid(self):
+        for local in (profile(source_documents=None), profile(rules=None)):
+            result = lcb.validate_local_rule_profile(local)
+            self.assertEqual(result["status"], "INPUT_REQUIRED", result)
+            self.assertIn("SCHEMA_VALIDATION", {item["code"] for item in result["findings"]})
+
+        for payload in (
+            basis(applicability_decisions=None),
+            basis(applicability_decisions=[None]),
+            basis(derived_constraints=[{"invalid": True}]),
+        ):
+            result = self.assert_basis_status(payload, "INPUT_REQUIRED")
+            self.assertIn("SCHEMA_VALIDATION", {item["code"] for item in result["findings"]})
+
+    def test_malformed_external_evidence_returns_structured_input_error(self):
+        current = profile()
+        result = lcb.validate_local_rule_profile(current, current_sources={"SRC-1": "not a source record"})
+        self.assertEqual(result["status"], "INPUT_REQUIRED", result)
+
+        self.assert_basis_status(basis(), "INPUT_REQUIRED", owner="not an owner record")
+        s, _, national, owner = current_bindings()
+        national["source_ids"] = None
+        self.assert_basis_status(basis(), "INPUT_REQUIRED", national=national)
+
+        malformed_profile = profile(rules=None)
+        payload = basis_for_profile(malformed_profile)
+        result = lcb.validate_project_code_basis(
+            payload, current_site=s, current_local_profile=malformed_profile,
+            current_national_binding=national, current_owner_program=owner,
+        )
+        self.assertEqual(result["status"], "INPUT_REQUIRED", result)
+        self.assertIn("LOCAL_PROFILE_INVALID", {item["code"] for item in result["findings"]})
+
+
 if __name__ == "__main__":
     unittest.main()

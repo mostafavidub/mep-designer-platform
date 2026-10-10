@@ -89,13 +89,13 @@ def load_schema(name: str) -> dict[str, Any]:
 def _structural_findings(payload: Any, filename: str) -> list[dict[str, str]]:
     try:
         from jsonschema import Draft202012Validator
-        errors = sorted(Draft202012Validator(_load_schema(filename)).iter_errors(payload), key=lambda e: list(e.path))
+        errors = sorted(Draft202012Validator(_load_schema(filename)).iter_errors(payload), key=lambda e: tuple(str(part) for part in e.path))
         return [
             _finding("SCHEMA_VALIDATION", "$" + "".join(f"[{part}]" if isinstance(part, int) else f".{part}" for part in e.path), e.message)
             for e in errors
         ]
-    except ImportError:
-        return []
+    except ImportError as exc:
+        return [_finding("SCHEMA_UNAVAILABLE", "$", f"Required JSON Schema validator unavailable: {exc}")]
     except (OSError, ValueError) as exc:
         return [_finding("SCHEMA_UNAVAILABLE", "$", str(exc))]
 
@@ -137,6 +137,10 @@ def validate_local_rule_profile(profile: Any, *, current_sources: Mapping[str, M
         findings.append(_finding("SCHEMA_VERSION", "schema_version", "LocalRuleProfile 1.0 required"))
     if profile.get("runtime_enabled") is not False:
         findings.append(_finding("RUNTIME_ACTIVATION_FORBIDDEN", "runtime_enabled", "Offline contract only"))
+    if findings:
+        return {"status": "INPUT_REQUIRED", "findings": findings, "content_hash": None, "runtime_enabled": False}
+    if current_sources is not None and not isinstance(current_sources, Mapping):
+        return {"status": "INPUT_REQUIRED", "findings": [_finding("INVALID_CURRENT_SOURCES", "current_sources", "Source snapshot must be an object")], "content_hash": None, "runtime_enabled": False}
     for field in ("country", "province", "city", "municipality"):
         if not profile.get(field):
             findings.append(_finding("MISSING_JURISDICTION", field, f"{field} is required"))
@@ -175,8 +179,8 @@ def validate_local_rule_profile(profile: Any, *, current_sources: Mapping[str, M
             findings.append(_finding("SUPERSEDED_SOURCE", path, "Source declares a superseding document"))
         if current_sources is not None:
             current = current_sources.get(source_id)
-            if not current:
-                findings.append(_finding("CURRENT_SOURCE_REQUIRED", path, "Independent current source record missing"))
+            if not isinstance(current, Mapping) or not current:
+                findings.append(_finding("CURRENT_SOURCE_REQUIRED", path, "Independent current source record missing or malformed"))
             elif any(current.get(k) != document.get(k) for k in ("source_id", "document_revision", "content_hash")):
                 findings.append(_finding("STALE_SOURCE", path, "Source identity, revision, or hash changed"))
 
@@ -395,6 +399,8 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
         return {"status": "INPUT_REQUIRED", "findings": findings or [_finding("INVALID_PAYLOAD", "$", "Object required")]}
     if basis.get("runtime_enabled") is not False:
         findings.append(_finding("RUNTIME_ACTIVATION_FORBIDDEN", "runtime_enabled", "Offline contract only"))
+    if findings:
+        return {"status": "INPUT_REQUIRED", "findings": findings, "content_hash": None, "runtime_enabled": False}
     parcel = basis.get("parcel_identity") if isinstance(basis.get("parcel_identity"), Mapping) else {}
     if not basis.get("project_id") or not parcel.get("parcel_id"):
         findings.append(_finding("MISSING_PROJECT_OR_PARCEL", "parcel_identity", "Exact project and parcel required"))
@@ -408,8 +414,8 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
         binding = basis.get(binding_name)
         if not isinstance(binding, Mapping) or not all(binding.get(k) for k in ("id", "revision", "source_hash")):
             findings.append(_finding("MISSING_BINDING", binding_name, "Identity, revision and source hash required"))
-        elif current is None:
-            findings.append(_finding("CURRENT_BINDING_REQUIRED", binding_name, "Independent current binding required"))
+        elif not isinstance(current, Mapping):
+            findings.append(_finding("CURRENT_BINDING_REQUIRED", binding_name, "Independent current binding record required"))
         elif binding_name in {"local_rule_profile_binding", "owner_program_binding"} and any(
             (str(current.get(current_key)) if current_key in {"profile_revision", "program_revision"} else current.get(current_key)) != binding.get(binding_key)
             for current_key, binding_key in zip(current_keys, ("id", "revision", "source_hash"))
@@ -436,6 +442,10 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
             findings.append(_finding("STALE_BINDING", "local_rule_profile_binding", "Local profile is outside its current source or temporal scope"))
         elif profile_validation["status"] == "INPUT_REQUIRED":
             findings.append(_finding("LOCAL_PROFILE_INVALID", "local_rule_profile_binding", "Current LocalRuleProfile is incomplete"))
+            return {"status": "INPUT_REQUIRED", "findings": findings + [
+                _finding(f["code"], f"local_rule_profile_binding.{f['path']}", f["message"])
+                for f in profile_validation["findings"]
+            ], "content_hash": None, "runtime_enabled": False}
         jurisdiction_pairs = (
             ("country", parcel.get("country"), current_local_profile.get("country")),
             ("province", parcel.get("province"), current_local_profile.get("province")),
@@ -475,7 +485,8 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
             if not references or any(reference not in known for reference in references):
                 findings.append(_finding("UNRESOLVED_APPLICABILITY_REFERENCE", f"applicability_decisions[{index}]", "Local source/rule reference is not current"))
         if decision.get("authority_type") == "NATIONAL_CODE":
-            known = set(current_national_binding.get("source_ids", [])) if isinstance(current_national_binding, Mapping) else set()
+            source_ids = current_national_binding.get("source_ids") if isinstance(current_national_binding, Mapping) else None
+            known = set(source_ids) if isinstance(source_ids, list) and all(isinstance(value, str) for value in source_ids) else set()
             if not references or not known or any(reference not in known for reference in references):
                 findings.append(_finding("UNRESOLVED_APPLICABILITY_REFERENCE", f"applicability_decisions[{index}]", "National source reference is not current"))
     conflicts = basis.get("conflicts") if isinstance(basis.get("conflicts"), list) else []
