@@ -40,17 +40,19 @@ def test_panel_bridge_resumes_asking_project_with_new_answers():
     assert 'if project.status != "asking"' in BRIDGE
     assert 'answers = dict(project.answers or {})' in BRIDGE
     assert 'answers.update({str(k): v for k, v in supplied_answers.items()' in BRIDGE
-    assert 'project.status = "uploading"' in BRIDGE
+    assert 'project.status = "finalizing"' in BRIDGE
 
 
-def test_panel_bridge_restores_answers_after_analyzer_reset_before_advancing():
-    analyzer = BRIDGE.index('legacy.analyze_project_job(pid)')
-    restoration = BRIDGE.index('restored_answers.update(', analyzer)
+def test_panel_bridge_reuses_ready_questionnaire_authority_before_advancing():
+    assert 'legacy.analyze_project_job(pid)' not in BRIDGE
+    authority = BRIDGE.index('questionnaire_jobs.resolve_ready_analysis(')
+    restoration = BRIDGE.index('restored_answers.update(', authority)
     unresolved = BRIDGE.index('unresolved_by_key', restoration)
     advance = BRIDGE.index('project.status = "ready_to_design"', unresolved)
-    assert analyzer < restoration < unresolved < advance
+    assert authority < restoration < unresolved < advance
     assert 'restored_answers.get(question["key"], "")' in BRIDGE
     assert 'basis_missing = mechanical_workflow.required_basis_questions(project)' in BRIDGE
+    assert '"questionnaire_authority"' in BRIDGE
 
 
 def test_panel_bridge_golden_uses_persisted_design_progress():

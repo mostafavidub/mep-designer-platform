@@ -1,0 +1,117 @@
+{
+  "change_id": "SWCIS-2026-0316",
+  "summary": "Seal a cumulative main-based candidate for the already-reviewed post-#312 questionnaire polling/resume, READY analysis-authority finalization and opt-in Local Staging changes. Preserve their exact source tree; grant no new engineering authority.",
+  "requester": "project-owner",
+  "change_types": [
+    "deployment",
+    "documentation",
+    "governance",
+    "test",
+    "ui_api"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "deployment",
+    "docs",
+    "governance",
+    "manifest",
+    "migration",
+    "qa",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "deployment": "Adds only previously developed opt-in loopback Local Staging Compose/docs. This PR does not authorize any online Staging, Production deploy or merge; merging into main can automatically trigger Railway Production.",
+    "docs": "Preserves the previously documented polling/resume, owner-bound READY finalization and isolated Local Staging procedures. Adds only this cumulative SWCIS change record.",
+    "governance": "One sealed cumulative integration manifest binds exact main/source commits, source tree and immutable historical request blobs; no SWCIS enforcement rules are weakened.",
+    "manifest": "Retains source-bound questionnaire job and completed-analysis identity in persisted project state. No build identity/versioning logic is rewritten.",
+    "migration": "No database schema migration. Existing jobs lacking the new private analysis authority remain fail-closed and require reanalysis; local Compose database is isolated.",
+    "qa": "Reuses source-qualified positive/destructive panel, job-resume, finalization and local-environment tests, plus fresh official PR checks. No repeat DXF replay is warranted for this tree-identical integration.",
+    "ui_api": "Integrates existing owner-bound polling resume, READY artifact reuse and idempotent project finalization. No new public endpoints, pricing, access grants or architectural geometry are introduced by the seal.",
+    "versioning": "SWCIS policy remains 5.2.0 on this runtime branch; the seal is a new change record, not a runtime or schema-version increment."
+  },
+  "evidence": {
+    "traceability": [
+      "main baseline 84cbdd007f2c5dca0f61989f778c6759ec0a34bc; tree identical to merged PR #312 head 537e48d9aa55a5a557f65baf86adfb56d7079e38",
+      "qualified source branch feature/architecture-stack-integration at c6ca5848fc2a9eb40e268ae3209dcebb12dc4ee9; tree e185aafe0fdfd576b8890855c28ce4ad8cb730f5",
+      "integration source merge a52ad142ad2a29e6503c50338f02ff983e126d18 has main/source as parents and exactly the source tree",
+      "historical qualification: PR #318 (SWCIS-2026-0303), PR #320 (SWCIS-2026-0305), PR #322 (SWCIS-2026-0306)",
+      "overlap: open PR #319 repeats the 0303 polling/resume subset; #319 and this cumulative candidate are alternative merge paths and must not be merged independently"
+    ],
+    "tests": [
+      "Existing source PR #318: 31 focused panel/questionnaire tests PASS; SWCIS-2026-0303 PASS (historical evidence).",
+      "Existing source PR #320: 46 focused and 89 broader supported-runtime tests PASS, with 19 host-governance checks; Site 56/56 and build PASS (historical evidence).",
+      "Existing source PR #322: 4 local-staging contract tests PASS, isolated PostgreSQL/health and synthetic DXF workflow verified; SWCIS PASS (historical evidence).",
+      "Exact candidate PR checks and focused questionnaire/panel regression must be verified before any merge. No new tests are claimed passed by creating this manifest.",
+      "Relevant existing tests: tests/test_panel_checkout.py, tests/test_questionnaire_jobs.py, tests/test_panel_bridge_delivery.py, tests/test_panel_finalization_ready.py, tests/test_local_staging_environment.py, tests/test_swcis_integration_scope.py."
+    ],
+    "docs": [
+      "docs/PANEL_QUESTIONNAIRE_POLLING_RESUME.md",
+      "docs/PANEL_PROJECT_FINALIZATION_READY_REUSE.md",
+      "docs/LOCAL_STAGING.md",
+      "README.md"
+    ],
+    "version_bump": [
+      "Not required: cumulative governance seal does not alter the SWCIS 5.2.0 standard or runtime contract version."
+    ],
+    "golden_regression": [
+      "No architecture reconstruction, geometry, sizing or output-engine algorithm changes since the qualified source tree; no frozen DXF replay or new engineering authority granted by the integration commit."
+    ],
+    "semantic_diff": [
+      "Carry forward the already-qualified source state exactly, without new patch logic.",
+      "Persist owner-bound questionnaire resume and READY reuse; opt-in Local Staging remains isolated."
+    ],
+    "artifact_diff": [
+      "Adds only previously qualified local Compose/docs/test artifacts to main when separately approved; no architectural or mechanical drawing artifact change."
+    ],
+    "numeric_diff": [
+      "None: no pricing, load, sizing, architectural area or perimeter calculation change."
+    ],
+    "contract_diff": [
+      "Owner-bound questionnaire job identity and resume state preserved.",
+      "READY-authority result is validated and reused at finalization instead of repeating heavy analysis.",
+      "Local Staging remains opt-in with isolated PostgreSQL 18 and no cloud credentials."
+    ],
+    "migration": [
+      "No destructive data migration; reader/consumer revalidation is fail-closed for legacy READY jobs without private evidence."
+    ],
+    "deployment_plan": [
+      "PR PREPARATION ONLY. Do not merge or deploy Staging or Production under this authorization.",
+      "A merge to main may automatically trigger Railway Production; owner must separately approve main merge and Production consequences.",
+      "Any later Staging validation or coordinated Site publication also requires separate explicit owner approval."
+    ],
+    "rollback_plan": [
+      "Preserve prior main SHA 84cbdd007f2c5dca0f61989f778c6759ec0a34bc; revert only a separately authorized integration merge if rollback is needed.",
+      "Do not touch existing production or staging data; stop/remove only opt-in isolated local Compose resources when used."
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Main merges may trigger automatic Production deployment, and the existing runtime changes concern project finalization. Prepare only a draft candidate with closed CI/authority gates before separate owner authorization."
+  },
+  "waiver": null,
+  "verification_status": {
+    "qualification": "INTEGRATION_PREPARATION_ONLY",
+    "exact_source_tree": "VERIFIED_EQUAL",
+    "owner_approval": "BRANCH_COMMIT_AND_DRAFT_PR_ONLY",
+    "official_pr_ci": "PENDING",
+    "architecture_release": "UNCHANGED_FAIL_CLOSED",
+    "mechanical_release": "UNCHANGED_FAIL_CLOSED",
+    "staging": "NOT_AUTHORIZED",
+    "production": "NOT_AUTHORIZED",
+    "merge": "NOT_AUTHORIZED"
+  },
+  "integration": {
+    "base_sha": "84cbdd007f2c5dca0f61989f778c6759ec0a34bc",
+    "source_sha": "a52ad142ad2a29e6503c50338f02ff983e126d18",
+    "source_tree": "e185aafe0fdfd576b8890855c28ce4ad8cb730f5",
+    "historical_requests": {
+      "changes/SWCIS-2026-0303.yaml": "a927c847ddb4a563efe42bd3d2ba9321d86565a4",
+      "changes/SWCIS-2026-0305.yaml": "927a82e0ea33914b9b59269ebe5702d29f26fde8",
+      "changes/SWCIS-2026-0306.yaml": "cd24c4de68f1d128f7b3fbf3e245cbe61363139e"
+    }
+  }
+}

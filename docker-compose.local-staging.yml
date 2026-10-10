@@ -1,0 +1,54 @@
+name: planha-local-staging
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: planha_local_staging
+      POSTGRES_USER: planha_local
+      POSTGRES_PASSWORD: planha-local-only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planha_local -d planha_local_staging"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - planha-local-staging-postgres:/var/lib/postgresql
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://planha_local:planha-local-only@postgres:5432/planha_local_staging
+      DATA_DIR: /data
+      RULEBOOK_PATH: /data/rulebook/MEP_Design_Rulebook.docx
+      CAD_DESIGNER_URL: http://127.0.0.1:8081
+      COBUILT_CAD_IN_PROCESS: "1"
+      PUBLIC_SITE_URL: http://127.0.0.1:8080
+      PANEL_PUBLIC_URL: http://127.0.0.1:8080
+      CANONICAL_REDIRECT_HOSTS: ""
+      TEMPORARY_NOINDEX_HOSTS: 127.0.0.1,localhost
+      SESSION_SECRET: planha-local-staging-session-only
+      PANEL_BRIDGE_TOKEN: planha-local-staging-bridge-only
+      PANEL_DEMO_PAYMENTS: "1"
+      PORT: "8080"
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/system_health', timeout=5)"]
+      interval: 5s
+      timeout: 8s
+      retries: 30
+      start_period: 45s
+    volumes:
+      - planha-local-staging-data:/data
+    restart: unless-stopped
+
+volumes:
+  planha-local-staging-postgres:
+  planha-local-staging-data:

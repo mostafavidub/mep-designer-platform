@@ -397,19 +397,13 @@ def _present_question(item):
     question['input_type'] = 'text' if key in legacy.TEXT_QUESTION_KEYS else 'radio'
     options = list(legacy.QUESTION_OPTIONS.get(key, []))
     if key == 'fixture_schedule':
-        prompt = str(question.get('question') or '')
-        match = re.search(
-            r'پیشنهاد خودکار تجهیزات بر اساس فضاهای معماری:\\s*(.+?)\\.\\s*(?:پاسخ|$)',
-            prompt,
-        )
+        # This evidence gate requires quantities.  Do not offer legacy
+        # confirmations (or an unscoped zero-fixture answer) that the backend
+        # must reject.  The prompt already identifies the affected levels.
+        question['input_type'] = 'text'
         options = []
-        if match:
-            options.append(match.group(1).strip())
-        options.extend([
-            'sink 1; faucet 1; toilet 1; bath 1',
-            'sink 2; faucet 2; toilet 2; bath 2',
-            'بدون تجهیزات لوله‌کشی',
-        ])
+        question['answer_format'] = 'quantified_fixture_schedule'
+        question['placeholder'] = 'مثال: سینک ۲، روشویی ۲، توالت ۲، دوش ۰'
     question['options'] = list(dict.fromkeys(str(x).strip() for x in options if str(x).strip()))
     return question
 
@@ -444,6 +438,7 @@ legacy._original_flow_payload = legacy.flow_payload
 legacy.analyze_dxf = analyze_dxf_enhanced
 legacy.analyze_project_job = analyze_project_job
 legacy.flow_payload = flow_payload
+legacy.present_question = _present_question
 
 legacy.DISCIPLINES['electrical']['questions'] = [
     ('location', 'محل پروژه، فقط اگر از نقشه قابل تشخیص نباشد'),
@@ -568,6 +563,7 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
         from .mechanical_workflow import _question_payload
         return {
             'version': QUESTIONNAIRE_VERSION,
+            'identity': f'{QUESTIONNAIRE_VERSION}:{discipline}',
             'discipline': discipline,
             'source': 'engi-design-engine',
             'questions': [_present_question(q) for q in legacy.qlist(unresolved)],
