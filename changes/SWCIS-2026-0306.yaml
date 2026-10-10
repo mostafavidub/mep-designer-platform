@@ -32,7 +32,7 @@
     "planner": "verified-not-affected: v2 is offline-only and not imported by the active planner/runtime",
     "rule_book": "verified-not-affected: national/local rule values and all 32 release-disabled rules remain unchanged",
     "migration": "added: deterministic non-destructive v1-to-v2 adapter with split accessibility provenance, explicit unknown regulatory applicability and loss findings",
-    "qa": "added: focused schema, migration, accessibility authority, evidence-input binding, cross-project reuse, identity/status tamper, malformed-input, determinism and fail-closed tests",
+    "qa": "added: focused schema, migration, accessibility authority, evidence-input binding, cross-project reuse, identity/status tamper, missing-finalization, malformed-input, determinism and fail-closed tests",
     "docs": "added: Owner Program 2.0 ADR and Foundation contract documentation",
     "governance": "changed: register the new offline owner-program module and migration contract",
     "versioning": "changed: coordinated SWCIS minor bump for graph and migration-contract additions",
@@ -68,7 +68,7 @@
       "No Golden execution; six fixtures are NON_GOLDEN synthetic inputs and active runtime remains unchanged"
     ],
     "semantic_diff": [
-      "OwnerProgramDraft can remain incomplete; regulatory accessibility requires code provenance, and geometry evidence must bind to the exact program/site/authority fingerprint plus a current independent evidence record"
+      "OwnerProgramDraft can remain incomplete; regulatory accessibility requires code provenance; geometry evidence must bind to the exact program/site/authority fingerprint plus a current independent evidence record; public resolved-snapshot validation requires final status and hash while only the constructor may validate its private pre-final payload"
     ],
     "artifact_diff": [
       "Two additive v2 JSON Schemas, one offline module, six synthetic fixtures, migration contract, ADR and focused tests"

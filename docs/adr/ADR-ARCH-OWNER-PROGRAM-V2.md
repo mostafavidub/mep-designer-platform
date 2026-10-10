@@ -35,6 +35,9 @@ Resolved project/program identity is compared directly with the source draft. St
 resolution status is compared with an independently recomputed result, and questionnaire
 answers are bound to their content hash. Both public validators apply the additive JSON
 contract and return structured fail-closed findings for malformed payloads.
+The resolved-input constructor alone uses a private pre-finalization validation step;
+the public validator requires both derived finalization fields and rejects an incomplete
+snapshot rather than recreating constructor privileges for external callers.
 
 Accessibility owner preference, owner needs and regulatory applicability use separate
 field-level provenance. Only verified national or local code evidence may establish a

@@ -445,6 +445,41 @@ class OwnerProgramV2ValidationTests(unittest.TestCase):
         self.assertEqual(result["status"], "STALE_BINDING")
         self.assertIn("RESOLUTION_STATUS_MISMATCH", {item["code"] for item in result["findings"]})
 
+    def test_public_validator_rejects_snapshot_missing_finalization_fields(self):
+        row = fixture("valid_residential_program")
+        draft = row["draft"]
+        spec = row["resolution"]
+        current_bindings = authoritative_bindings(
+            spec["site_binding"], spec["national_ruleset_binding"], spec["local_profile_binding"]
+        )
+        evidence = spec["derived_project_facts"][0]
+        resolved = op.resolve_generation_input(
+            draft,
+            site_binding=spec["site_binding"],
+            national_ruleset_binding=spec["national_ruleset_binding"],
+            local_profile_binding=spec["local_profile_binding"],
+            derived_project_facts=spec["derived_project_facts"],
+            geometry_feasibility=spec["geometry_feasibility"],
+            current_bindings=current_bindings,
+            current_geometry_evidence=evidence,
+        )["resolved_input"]
+        self.assertEqual(resolved["resolution_status"], "VALIDATED_INPUT")
+
+        resolved.pop("resolution_status")
+        resolved.pop("resolution_hash")
+        result = op.validate_resolved_generation_input(
+            resolved,
+            draft=draft,
+            current_bindings=current_bindings,
+            current_geometry_evidence=evidence,
+        )
+
+        self.assertEqual(result["status"], "INPUT_REQUIRED")
+        self.assertTrue(
+            {"$.resolution_status", "$.resolution_hash"}
+            <= {item["path"] for item in result["findings"]}
+        )
+
     def test_malformed_public_inputs_fail_closed_without_crashing(self):
         for payload in (None, [], {"schema_version": op.SCHEMA_VERSION_DRAFT, "preferences": {"accessibility": []}}):
             with self.subTest(payload=payload):

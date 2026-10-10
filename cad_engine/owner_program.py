@@ -728,11 +728,12 @@ def resolve_generation_input(
         "geometry_feasibility": geometry_feasibility,
         "runtime_enabled": False,
     }
-    validation = validate_resolved_generation_input(
+    validation = _validate_resolved_generation_input(
         payload,
         draft=draft,
         current_bindings=current_bindings,
         current_geometry_evidence=current_geometry_evidence,
+        finalized=False,
     )
     payload["resolution_status"] = validation["status"]
     try:
@@ -749,6 +750,25 @@ def validate_resolved_generation_input(
     current_bindings: Mapping[str, Mapping[str, Any]] | None = None,
     current_geometry_evidence: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Strictly validate a finalized, externally supplied resolved snapshot."""
+    return _validate_resolved_generation_input(
+        resolved,
+        draft=draft,
+        current_bindings=current_bindings,
+        current_geometry_evidence=current_geometry_evidence,
+        finalized=True,
+    )
+
+
+def _validate_resolved_generation_input(
+    resolved: Mapping[str, Any],
+    *,
+    draft: Mapping[str, Any],
+    current_bindings: Mapping[str, Mapping[str, Any]] | None = None,
+    current_geometry_evidence: Mapping[str, Any] | None = None,
+    finalized: bool,
+) -> dict[str, Any]:
+    """Validate either the constructor's pre-final payload or a final snapshot."""
     findings: list[dict[str, str]] = []
     if not isinstance(resolved, Mapping):
         return _validation_result(
@@ -763,7 +783,7 @@ def validate_resolved_generation_input(
             resolved,
         )
     schema_findings = _contract_schema_findings(resolved, "resolved-generation-input-v2.schema.json")
-    if "resolution_status" not in resolved and "resolution_hash" not in resolved:
+    if not finalized:
         schema_findings = [
             item for item in schema_findings
             if item["path"] not in {"$.resolution_status", "$.resolution_hash"}
