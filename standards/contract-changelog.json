@@ -1796,7 +1796,7 @@
     {
       "id": "GOV-2026-050",
       "status": "APPROVED_FOR_OFFLINE_IMPLEMENTATION",
-      "summary": "Add offline LocalRuleProfile and ProjectCodeBasis contracts with exact project/parcel/source binding, fail-closed applicability, deterministic dependency fingerprints and bounded traceable envelope derivation.",
+      "summary": "Add and harden offline LocalRuleProfile and ProjectCodeBasis contracts with optional fixture markers, non-self-assertable authority, exact current project/parcel/Owner Program/source/jurisdiction/temporal binding, fail-closed applicability, deterministic dependency fingerprints and bounded traceable envelope derivation.",
       "affected_capabilities": [
         "residential_foundation_fail_closed"
       ],
@@ -1815,7 +1815,7 @@
         "required_ci": "must_pass before merge"
       },
       "migration": {
-        "forward": "Create additive profiles/bases and revalidate legacy embedded envelopes without rewriting prior inputs.",
+        "forward": "Create additive profiles/bases and revalidate draft 1.0 records and legacy embedded envelopes without rewriting prior inputs; self-asserted authority remains review-required.",
         "rollback": "Revert the additive branch; prior contracts and production behavior remain unchanged."
       }
     }

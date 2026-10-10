@@ -13,7 +13,7 @@ import math
 import re
 from datetime import date
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Protocol
 
 from shapely.geometry import Polygon
 
@@ -35,6 +35,26 @@ TOPICS = {
     "VEHICLE_ACCESS", "PEDESTRIAN_ACCESS", "SPECIAL_DISTRICT", "PARCEL_EXCEPTION",
     "ELEVATOR", "LOCAL_FIRE", "ACCESSIBILITY",
 }
+
+# Conservative result precedence, highest first. Malformed or missing inputs are
+# never hidden by a later conflict/review finding.
+STATUS_PRECEDENCE = (
+    "INPUT_REQUIRED", "LOCAL_RULE_REQUIRED", "STALE_BINDING",
+    "CONFLICT_REVIEW_REQUIRED", "AUTHORITY_REVIEW_REQUIRED", "STRUCTURALLY_VALID",
+)
+
+
+class AuthorityEvidenceResolver(Protocol):
+    """Future trust boundary; no production implementation exists in this PR.
+
+    Implementations must resolve records from independently governed source and
+    reviewer registries. Merely implementing this protocol never grants authority;
+    a separately approved qualification entrypoint is still required.
+    """
+
+    def resolve_source(self, source_id: str) -> Mapping[str, Any] | None: ...
+    def resolve_reviewer(self, reviewer_id: str) -> Mapping[str, Any] | None: ...
+    def resolve_review_decision(self, decision_id: str) -> Mapping[str, Any] | None: ...
 
 
 def stable_hash(value: Any) -> str:
@@ -151,6 +171,8 @@ def validate_local_rule_profile(profile: Any, *, current_sources: Mapping[str, M
             document.get("review"), source_id=source_id, source_revision=document.get("document_revision")
         ):
             findings.append(_finding("UNSUPPORTED_VERIFIED_SOURCE", path, "Qualified source requires scoped review"))
+        if document.get("superseded_by"):
+            findings.append(_finding("SUPERSEDED_SOURCE", path, "Source declares a superseding document"))
         if current_sources is not None:
             current = current_sources.get(source_id)
             if not current:
@@ -180,6 +202,22 @@ def validate_local_rule_profile(profile: Any, *, current_sources: Mapping[str, M
             if not _review_valid(rule.get("review"), source_id=rule.get("source_id"),
                                  source_revision=source.get("document_revision") if source else None):
                 findings.append(_finding("UNSUPPORTED_VERIFIED_RULE", path, "Qualified rule requires scoped review"))
+        scope = rule.get("jurisdiction_scope") if isinstance(rule.get("jurisdiction_scope"), Mapping) else {}
+        for field in ("country", "province", "city", "municipality", "municipal_district", "planning_zone"):
+            if field in scope and scope[field] != profile.get(field):
+                findings.append(_finding("RULE_JURISDICTION_MISMATCH", f"{path}.jurisdiction_scope.{field}", "Rule scope differs from profile jurisdiction"))
+        temporal = rule.get("temporal_scope") if isinstance(rule.get("temporal_scope"), Mapping) else {}
+        rule_from, rule_until = _date(temporal.get("effective_from")), _date(temporal.get("effective_until"))
+        if temporal.get("effective_from") is not None and rule_from is None:
+            findings.append(_finding("INVALID_RULE_TEMPORAL_SCOPE", f"{path}.temporal_scope.effective_from", "Valid date required"))
+        if temporal.get("effective_until") is not None and rule_until is None:
+            findings.append(_finding("INVALID_RULE_TEMPORAL_SCOPE", f"{path}.temporal_scope.effective_until", "Valid date required"))
+        if rule_from and rule_until and rule_until < rule_from:
+            findings.append(_finding("INVALID_RULE_TEMPORAL_SCOPE", f"{path}.temporal_scope", "Rule end precedes start"))
+        if evaluation_date and rule_from and evaluation_date < rule_from:
+            findings.append(_finding("RULE_OUTSIDE_EFFECTIVE_PERIOD", path, "Rule is not yet effective"))
+        if evaluation_date and rule_until and evaluation_date > rule_until:
+            findings.append(_finding("RULE_OUTSIDE_EFFECTIVE_PERIOD", path, "Rule expired"))
     try:
         expected_hash = stable_hash(profile_content(profile))
     except (TypeError, ValueError):
@@ -188,22 +226,18 @@ def validate_local_rule_profile(profile: Any, *, current_sources: Mapping[str, M
         findings.append(_finding("INVALID_PROFILE_HASH", "profile_hash", "Profile content hash mismatch"))
 
     codes = {f["code"] for f in findings}
-    if codes & {"STALE_SOURCE", "OUTSIDE_EFFECTIVE_PERIOD", "INVALID_PROFILE_HASH"}:
+    if codes & {"STALE_SOURCE", "SUPERSEDED_SOURCE", "OUTSIDE_EFFECTIVE_PERIOD", "RULE_OUTSIDE_EFFECTIVE_PERIOD", "INVALID_PROFILE_HASH"}:
         status = "STALE_BINDING"
     elif findings:
         status = "INPUT_REQUIRED"
     elif set(profile.get("markers", [])) == MARKERS:
         status = "STRUCTURALLY_VALID"
-    elif profile.get("verification_status") == "AUTHORITY_QUALIFIED" and all(
-        d.get("verification_status") == "AUTHORITY_QUALIFIED" for d in documents
-    ) and all(r.get("verification_status") == "AUTHORITY_QUALIFIED" for r in rules):
-        status = "AUTHORITY_QUALIFIED"
-    elif any(d.get("verification_status") == "AUTHORITY_REVIEW_REQUIRED" for d in documents) or any(
-        r.get("verification_status") == "AUTHORITY_REVIEW_REQUIRED" for r in rules
-    ):
-        status = "AUTHORITY_REVIEW_REQUIRED"
     else:
-        status = "STRUCTURALLY_VALID"
+        # Marker-free records represent real-like authority claims. Embedded
+        # reviews and caller-provided snapshots cannot prove independent source
+        # authenticity or professional qualification, regardless of the
+        # caller-supplied verification_status.
+        status = "AUTHORITY_REVIEW_REQUIRED"
     return {"status": status, "findings": findings, "content_hash": expected_hash, "runtime_enabled": False}
 
 
@@ -253,11 +287,27 @@ def derive_buildable_envelope(site_model: Mapping[str, Any], *, edge_constraints
                               dependency_id: str) -> dict[str, Any]:
     """Derive an envelope only for a valid convex polygon with explicit edge setbacks."""
     findings: list[dict[str, str]] = []
+    if not isinstance(site_model, Mapping):
+        return {"status": "INPUT_REQUIRED", "geometry": None, "findings": [_finding("INVALID_SITE_MODEL", "site_model", "Object required")]}
     boundary = site_model.get("parcel_boundary")
     if not isinstance(boundary, list) or len(boundary) < 4 or boundary[0] != boundary[-1]:
         return {"status": "INPUT_REQUIRED", "geometry": None, "findings": [_finding("INVALID_PARCEL", "parcel_boundary", "Closed polygon required")]}
     if site_model.get("units") != "m" or not site_model.get("coordinate_reference_system"):
         return {"status": "INPUT_REQUIRED", "geometry": None, "findings": [_finding("UNITS_OR_CRS_REQUIRED", "site_model", "Metres and CRS required")]}
+    if not _is_hash(dependency_id):
+        return {"status": "INPUT_REQUIRED", "geometry": None, "findings": [_finding("INVALID_DEPENDENCY_FINGERPRINT", "dependency_id", "Lowercase SHA-256 required")]}
+    for index, point in enumerate(boundary):
+        if not isinstance(point, (list, tuple)) or len(point) != 2 or any(
+            not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value) for value in point
+        ):
+            findings.append(_finding("NONFINITE_OR_INVALID_COORDINATE", f"parcel_boundary[{index}]", "Two finite real coordinates required"))
+    if findings:
+        return {"status": "INPUT_REQUIRED", "geometry": None, "findings": findings}
+    for index in range(len(boundary) - 1):
+        if boundary[index] == boundary[index + 1]:
+            findings.append(_finding("ZERO_LENGTH_PARCEL_EDGE", f"parcel_boundary[{index}]", "Consecutive duplicate vertices are forbidden"))
+    if findings:
+        return {"status": "INPUT_REQUIRED", "geometry": None, "findings": findings}
     try:
         polygon = Polygon(boundary)
     except (TypeError, ValueError):
@@ -273,21 +323,32 @@ def derive_buildable_envelope(site_model: Mapping[str, Any], *, edge_constraints
             signs.append(math.copysign(1, cross))
     if signs and len(set(signs)) > 1:
         return {"status": "AUTHORITY_REVIEW_REQUIRED", "geometry": None, "findings": [_finding("COMPLEX_PARCEL_REVIEW_REQUIRED", "parcel_boundary", "Concave parcel requires bounded professional geometry review")]}
+    if not isinstance(edge_constraints, list):
+        return {"status": "INPUT_REQUIRED", "geometry": None, "findings": [_finding("INVALID_EDGE_CONSTRAINTS", "edge_constraints", "Array required")]}
     by_edge: dict[int, Mapping[str, Any]] = {}
     for i, item in enumerate(edge_constraints):
+        if not isinstance(item, Mapping):
+            findings.append(_finding("INVALID_EDGE_BINDING", f"edge_constraints[{i}]", "Object required"))
+            continue
         edge = item.get("edge_index")
         if type(edge) is not int or edge < 0 or edge >= len(vertices) or edge in by_edge:
             findings.append(_finding("INVALID_EDGE_BINDING", f"edge_constraints[{i}]", "Unique parcel edge required"))
-        elif not isinstance(item.get("distance_m"), (int, float)) or isinstance(item.get("distance_m"), bool) or item["distance_m"] < 0:
+        elif not isinstance(item.get("distance_m"), (int, float)) or isinstance(item.get("distance_m"), bool) or not math.isfinite(item["distance_m"]) or item["distance_m"] < 0:
             findings.append(_finding("INVALID_SETBACK", f"edge_constraints[{i}].distance_m", "Nonnegative metres required"))
-        elif not item.get("source_references") or not item.get("rule_ids"):
+        elif not isinstance(item.get("source_references"), list) or not item["source_references"] or not all(
+            isinstance(value, str) and value for value in item["source_references"]
+        ) or not isinstance(item.get("rule_ids"), list) or not item["rule_ids"] or not all(
+            isinstance(value, str) and value for value in item["rule_ids"]
+        ):
             findings.append(_finding("UNTRACEABLE_SETBACK", f"edge_constraints[{i}]", "Source and rule references required"))
         else:
             by_edge[edge] = item
     if len(by_edge) != len(vertices):
         findings.append(_finding("MISSING_EDGE_CONSTRAINT", "edge_constraints", "Every parcel edge requires an explicit applicable setback"))
     if findings:
-        return {"status": "LOCAL_RULE_REQUIRED", "geometry": None, "findings": findings}
+        malformed = {"INVALID_EDGE_BINDING", "INVALID_SETBACK"}
+        status = "INPUT_REQUIRED" if {finding["code"] for finding in findings} & malformed else "LOCAL_RULE_REQUIRED"
+        return {"status": status, "geometry": None, "findings": findings}
     orientation = 1.0 if _signed_area(boundary) > 0 else -1.0
     output = [(float(x), float(y)) for x, y in vertices]
     for edge in range(len(vertices)):
@@ -327,7 +388,8 @@ def basis_content(basis: Mapping[str, Any]) -> dict[str, Any]:
 
 def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] | None = None,
                                 current_local_profile: Mapping[str, Any] | None = None,
-                                current_national_binding: Mapping[str, Any] | None = None) -> dict[str, Any]:
+                                current_national_binding: Mapping[str, Any] | None = None,
+                                current_owner_program: Mapping[str, Any] | None = None) -> dict[str, Any]:
     findings = _structural_findings(basis, "project-code-basis-v1.schema.json")
     if not isinstance(basis, Mapping):
         return {"status": "INPUT_REQUIRED", "findings": findings or [_finding("INVALID_PAYLOAD", "$", "Object required")]}
@@ -336,14 +398,24 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
     parcel = basis.get("parcel_identity") if isinstance(basis.get("parcel_identity"), Mapping) else {}
     if not basis.get("project_id") or not parcel.get("parcel_id"):
         findings.append(_finding("MISSING_PROJECT_OR_PARCEL", "parcel_identity", "Exact project and parcel required"))
-    for binding_name, current in (("site_model_binding", current_site), ("local_rule_profile_binding", current_local_profile),
-                                  ("national_ruleset_binding", current_national_binding)):
+    resolved_bindings = (
+        ("site_model_binding", current_site, ("id", "revision", "source_hash")),
+        ("local_rule_profile_binding", current_local_profile, ("profile_id", "profile_revision", "profile_hash")),
+        ("national_ruleset_binding", current_national_binding, ("id", "revision", "source_hash")),
+        ("owner_program_binding", current_owner_program, ("program_id", "program_revision", "content_hash")),
+    )
+    for binding_name, current, current_keys in resolved_bindings:
         binding = basis.get(binding_name)
         if not isinstance(binding, Mapping) or not all(binding.get(k) for k in ("id", "revision", "source_hash")):
             findings.append(_finding("MISSING_BINDING", binding_name, "Identity, revision and source hash required"))
         elif current is None:
             findings.append(_finding("CURRENT_BINDING_REQUIRED", binding_name, "Independent current binding required"))
-        elif any(current.get(k) != binding.get(k) for k in ("id", "revision", "source_hash")):
+        elif binding_name in {"local_rule_profile_binding", "owner_program_binding"} and any(
+            (str(current.get(current_key)) if current_key in {"profile_revision", "program_revision"} else current.get(current_key)) != binding.get(binding_key)
+            for current_key, binding_key in zip(current_keys, ("id", "revision", "source_hash"))
+        ):
+            findings.append(_finding("STALE_BINDING", binding_name, "Current binding differs"))
+        elif binding_name not in {"local_rule_profile_binding", "owner_program_binding"} and any(current.get(k) != binding.get(k) for k in current_keys):
             findings.append(_finding("STALE_BINDING", binding_name, "Current binding differs"))
     if isinstance(current_site, Mapping):
         required_site_fields = ("survey_id", "survey_revision", "survey_hash", "coordinate_reference_system", "units", "parcel_boundary")
@@ -353,9 +425,35 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
             findings.append(_finding("PARCEL_BINDING_MISMATCH", "site_model_binding", "Site belongs to another parcel"))
         if current_site.get("project_id") != basis.get("project_id"):
             findings.append(_finding("PROJECT_BINDING_MISMATCH", "site_model_binding", "Site belongs to another project"))
+    if isinstance(current_owner_program, Mapping) and current_owner_program.get("project_id") != basis.get("project_id"):
+        findings.append(_finding("PROJECT_BINDING_MISMATCH", "owner_program_binding", "Owner Program belongs to another project"))
     project_date = _date(basis.get("permit_or_design_effective_date"))
     if project_date is None:
         findings.append(_finding("EFFECTIVE_DATE_REQUIRED", "permit_or_design_effective_date", "Project date required"))
+    if isinstance(current_local_profile, Mapping):
+        profile_validation = validate_local_rule_profile(current_local_profile, as_of=basis.get("permit_or_design_effective_date"))
+        if profile_validation["status"] == "STALE_BINDING":
+            findings.append(_finding("STALE_BINDING", "local_rule_profile_binding", "Local profile is outside its current source or temporal scope"))
+        elif profile_validation["status"] == "INPUT_REQUIRED":
+            findings.append(_finding("LOCAL_PROFILE_INVALID", "local_rule_profile_binding", "Current LocalRuleProfile is incomplete"))
+        jurisdiction_pairs = (
+            ("country", parcel.get("country"), current_local_profile.get("country")),
+            ("province", parcel.get("province"), current_local_profile.get("province")),
+            ("city", parcel.get("city"), current_local_profile.get("city")),
+            ("municipality", parcel.get("municipality"), current_local_profile.get("municipality")),
+        )
+        for field, parcel_value, profile_value in jurisdiction_pairs:
+            if not parcel_value or not profile_value:
+                findings.append(_finding("JURISDICTION_INPUT_REQUIRED", f"parcel_identity.{field}", "Material jurisdiction value required"))
+            elif parcel_value != profile_value:
+                findings.append(_finding("JURISDICTION_CONFLICT", f"parcel_identity.{field}", "Parcel and LocalRuleProfile disagree"))
+        for field in ("municipal_district", "planning_zone"):
+            parcel_value, profile_value = parcel.get(field), current_local_profile.get(field)
+            material = any(field in rule.get("required_inputs", []) for rule in current_local_profile.get("rules", []) if isinstance(rule, Mapping))
+            if material and (parcel_value is None or profile_value is None):
+                findings.append(_finding("JURISDICTION_INPUT_REQUIRED", f"parcel_identity.{field}", "Rule applicability requires this jurisdiction value"))
+            elif parcel_value is not None and profile_value is not None and parcel_value != profile_value:
+                findings.append(_finding("JURISDICTION_CONFLICT", f"parcel_identity.{field}", "Parcel and LocalRuleProfile disagree"))
     accessibility = [d for d in basis.get("applicability_decisions", []) if isinstance(d, Mapping) and d.get("topic") == "ACCESSIBILITY"]
     if not accessibility or any(d.get("decision") == "UNKNOWN" for d in accessibility):
         findings.append(_finding("ACCESSIBILITY_APPLICABILITY_REQUIRED", "applicability_decisions", "Code 246 applicability must be independently established"))
@@ -369,6 +467,17 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
             findings.append(_finding("OWNER_CANNOT_ASSERT_CODE", f"applicability_decisions[{index}]", "Owner requirements cannot establish regulatory applicability"))
         if decision.get("decision") in {"APPLICABLE", "NOT_APPLICABLE"} and decision.get("authority_type") not in {"NATIONAL_CODE", "LOCAL_CODE", "HUMAN_DECISION"}:
             findings.append(_finding("INVALID_APPLICABILITY_AUTHORITY", f"applicability_decisions[{index}]", "Independent code or scoped review required"))
+        references = decision.get("source_references") if isinstance(decision.get("source_references"), list) else []
+        if decision.get("authority_type") == "LOCAL_CODE" and isinstance(current_local_profile, Mapping):
+            known = {d.get("source_id") for d in current_local_profile.get("source_documents", []) if isinstance(d, Mapping)} | {
+                r.get("rule_id") for r in current_local_profile.get("rules", []) if isinstance(r, Mapping)
+            }
+            if not references or any(reference not in known for reference in references):
+                findings.append(_finding("UNRESOLVED_APPLICABILITY_REFERENCE", f"applicability_decisions[{index}]", "Local source/rule reference is not current"))
+        if decision.get("authority_type") == "NATIONAL_CODE":
+            known = set(current_national_binding.get("source_ids", [])) if isinstance(current_national_binding, Mapping) else set()
+            if not references or not known or any(reference not in known for reference in references):
+                findings.append(_finding("UNRESOLVED_APPLICABILITY_REFERENCE", f"applicability_decisions[{index}]", "National source reference is not current"))
     conflicts = basis.get("conflicts") if isinstance(basis.get("conflicts"), list) else []
     if any(c.get("resolution") in {None, "UNRESOLVED"} for c in conflicts if isinstance(c, Mapping)):
         findings.append(_finding("UNRESOLVED_REGULATORY_CONFLICT", "conflicts", "Professional conflict review required"))
@@ -379,24 +488,28 @@ def validate_project_code_basis(basis: Any, *, current_site: Mapping[str, Any] |
     if basis.get("basis_hash") != expected_hash:
         findings.append(_finding("INVALID_BASIS_HASH", "basis_hash", "Basis content hash mismatch"))
     codes = {f["code"] for f in findings}
-    if codes & {"MISSING_PROJECT_OR_PARCEL", "SITE_SURVEY_REQUIRED"}:
+    binding_input = any(
+        finding["code"] in {"MISSING_BINDING", "CURRENT_BINDING_REQUIRED"}
+        and "local_rule_profile" not in finding["path"]
+        for finding in findings
+    )
+    local_input = any(
+        finding["code"] in {"MISSING_BINDING", "CURRENT_BINDING_REQUIRED"}
+        and "local_rule_profile" in finding["path"]
+        for finding in findings
+    )
+    if binding_input or codes & {"MISSING_PROJECT_OR_PARCEL", "SITE_SURVEY_REQUIRED", "JURISDICTION_INPUT_REQUIRED", "EFFECTIVE_DATE_REQUIRED", "ACCESSIBILITY_APPLICABILITY_REQUIRED", "PARKING_AUTHORITY_REQUIRED", "UNRESOLVED_APPLICABILITY_REFERENCE"}:
         status = "INPUT_REQUIRED"
+    elif local_input:
+        status = "LOCAL_RULE_REQUIRED"
     elif codes & {"STALE_BINDING", "INVALID_BASIS_HASH", "PARCEL_BINDING_MISMATCH", "PROJECT_BINDING_MISMATCH"}:
         status = "STALE_BINDING"
-    elif "UNRESOLVED_REGULATORY_CONFLICT" in codes:
+    elif codes & {"UNRESOLVED_REGULATORY_CONFLICT", "JURISDICTION_CONFLICT"}:
         status = "CONFLICT_REVIEW_REQUIRED"
-    elif codes & {"MISSING_BINDING", "CURRENT_BINDING_REQUIRED"} and any("local_rule_profile" in f["path"] for f in findings):
-        status = "LOCAL_RULE_REQUIRED"
     elif findings:
         status = "INPUT_REQUIRED"
     elif set(basis.get("markers", [])) == MARKERS:
         status = "STRUCTURALLY_VALID"
-    elif basis.get("verification_status") == "AUTHORITY_QUALIFIED" and all(
-        _review_valid(r, project_id=basis.get("project_id")) for r in basis.get("review_bindings", [])
-    ) and basis.get("review_bindings"):
-        status = "AUTHORITY_QUALIFIED"
-    elif basis.get("verification_status") == "AUTHORITY_REVIEW_REQUIRED":
-        status = "AUTHORITY_REVIEW_REQUIRED"
     else:
-        status = "STRUCTURALLY_VALID"
+        status = "AUTHORITY_REVIEW_REQUIRED"
     return {"status": status, "findings": findings, "content_hash": expected_hash, "runtime_enabled": False}

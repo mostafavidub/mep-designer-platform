@@ -81,10 +81,11 @@ def basis(**updates):
     row = {
         "schema_version": lcb.PROJECT_BASIS_SCHEMA, "basis_id": "BASIS-1", "basis_revision": 1,
         "project_id": "PROJECT-1",
-        "parcel_identity": {"parcel_id": "PARCEL-1", "city": "SYNTHETIC-CITY",
+        "parcel_identity": {"parcel_id": "PARCEL-1", "country": "IR", "province": "SYNTHETIC-PROVINCE", "city": "SYNTHETIC-CITY",
                             "municipality": "SYNTHETIC-MUNI", "municipal_district": None, "planning_zone": None},
         "site_model_binding": binding("SITE-1"), "owner_program_binding": binding("OWNER-1"),
-        "national_ruleset_binding": binding("NATIONAL-1"), "local_rule_profile_binding": binding("LOCAL-SYNTHETIC"),
+        "national_ruleset_binding": binding("NATIONAL-1"),
+        "local_rule_profile_binding": binding("LOCAL-SYNTHETIC", revision="1", source_hash=profile()["profile_hash"]),
         "permit_or_design_effective_date": "2026-01-01",
         "applicability_decisions": [{
             "decision_id": "ACCESS-1", "topic": "ACCESSIBILITY", "decision": "APPLICABLE",
@@ -101,15 +102,27 @@ def basis(**updates):
 
 
 def current_bindings(parcel="PARCEL-1", project="PROJECT-1"):
-    return site(project, parcel), binding("LOCAL-SYNTHETIC"), binding("NATIONAL-1")
+    national = binding("NATIONAL-1")
+    national["source_ids"] = ["IR-ACCESS"]
+    owner = {"program_id": "OWNER-1", "program_revision": 1, "content_hash": H, "project_id": project}
+    return site(project, parcel), profile(), national, owner
+
+
+def basis_for_profile(profile_row, **updates):
+    updates.setdefault("local_rule_profile_binding", binding(
+        profile_row["profile_id"], revision=str(profile_row["profile_revision"]),
+        source_hash=profile_row["profile_hash"],
+    ))
+    return basis(**updates)
 
 
 class LocalCodeBasisContractTests(unittest.TestCase):
-    def assert_basis_status(self, payload, expected, *, site_row=None, local=None, national=None):
-        s, l, n = current_bindings()
+    def assert_basis_status(self, payload, expected, *, site_row=None, local=None, national=None, owner=None):
+        s, l, n, o = current_bindings()
         result = lcb.validate_project_code_basis(payload, current_site=s if site_row is None else site_row,
                                                  current_local_profile=local or l,
-                                                 current_national_binding=national or n)
+                                                 current_national_binding=national or n,
+                                                 current_owner_program=owner or o)
         self.assertEqual(result["status"], expected, result["findings"])
         self.assertFalse(result["runtime_enabled"])
         return result
@@ -127,7 +140,7 @@ class LocalCodeBasisContractTests(unittest.TestCase):
             self.assertEqual(lcb.validate_local_rule_profile(row)["status"], "INPUT_REQUIRED")
 
     def test_t02_missing_parcel_identity(self):
-        row = basis(parcel_identity={"parcel_id": "", "city": "SYNTHETIC-CITY", "municipality": "SYNTHETIC-MUNI", "municipal_district": None, "planning_zone": None})
+        row = basis(parcel_identity={"parcel_id": "", "country": "IR", "province": "SYNTHETIC-PROVINCE", "city": "SYNTHETIC-CITY", "municipality": "SYNTHETIC-MUNI", "municipal_district": None, "planning_zone": None})
         self.assert_basis_status(row, "INPUT_REQUIRED")
 
     def test_t03_missing_site_survey(self):
@@ -136,8 +149,9 @@ class LocalCodeBasisContractTests(unittest.TestCase):
 
     def test_t04_missing_local_regulatory_source(self):
         row = basis()
+        _, _, national, owner = current_bindings()
         result = lcb.validate_project_code_basis(row, current_site=site(), current_local_profile=None,
-                                                 current_national_binding=binding("NATIONAL-1"))
+                                                 current_national_binding=national, current_owner_program=owner)
         self.assertEqual(result["status"], "LOCAL_RULE_REQUIRED")
 
     def test_t05_valid_synthetic_profile_structure(self):
@@ -272,6 +286,123 @@ class LocalCodeBasisContractTests(unittest.TestCase):
         self.assertEqual(original["status"], reversed_result["status"])
         self.assertAlmostEqual(original["area_m2"], translated["area_m2"])
         self.assertAlmostEqual(original["area_m2"], reversed_result["area_m2"])
+
+    def test_real_like_records_without_fixture_markers_are_schema_valid_but_not_authority_qualified(self):
+        local = profile()
+        local.pop("markers")
+        local["profile_hash"] = lcb.profile_hash(local)
+        Draft202012Validator(lcb.load_schema("local-rule-profile")).validate(local)
+        result = lcb.validate_local_rule_profile(local, current_sources={"SRC-1": source()}, as_of="2026-01-01")
+        self.assertEqual(result["status"], "AUTHORITY_REVIEW_REQUIRED", result["findings"])
+
+        row = basis_for_profile(local, verification_status="AUTHORITY_QUALIFIED", status="AUTHORITY_QUALIFIED",
+                                review_bindings=[review(project="PROJECT-1")])
+        row.pop("markers")
+        row["basis_hash"] = lcb.stable_hash(lcb.basis_content(row))
+        Draft202012Validator(lcb.load_schema("project-code-basis")).validate(row)
+        site_row, _, national, owner = current_bindings()
+        result = lcb.validate_project_code_basis(row, current_site=site_row, current_local_profile=local,
+                                                  current_national_binding=national, current_owner_program=owner)
+        self.assertEqual(result["status"], "AUTHORITY_REVIEW_REQUIRED", result["findings"])
+
+    def test_synthetic_marker_contract_is_exact_and_non_authoritative(self):
+        for payload, schema_name in ((profile(), "local-rule-profile"), (basis(), "project-code-basis")):
+            self.assertEqual(set(payload["markers"]), lcb.MARKERS)
+            Draft202012Validator(lcb.load_schema(schema_name)).validate(payload)
+        self.assertEqual(lcb.validate_local_rule_profile(profile())["status"], "STRUCTURALLY_VALID")
+        self.assert_basis_status(basis(), "STRUCTURALLY_VALID")
+
+    def test_self_asserted_review_and_caller_source_snapshot_cannot_qualify(self):
+        local = profile()
+        local.pop("markers")
+        local["source_documents"][0]["review"] = review()
+        local["rules"][0]["review"] = review()
+        local["profile_hash"] = lcb.profile_hash(local)
+        self.assertEqual(
+            lcb.validate_local_rule_profile(local, current_sources={"SRC-1": copy.deepcopy(local["source_documents"][0])})["status"],
+            "AUTHORITY_REVIEW_REQUIRED",
+        )
+
+    def test_missing_independent_authority_provider_fails_closed_for_unmarked_records(self):
+        local = profile(verification_status="UNVERIFIED")
+        local.pop("markers")
+        local["profile_hash"] = lcb.profile_hash(local)
+        self.assertEqual(lcb.validate_local_rule_profile(local)["status"], "AUTHORITY_REVIEW_REQUIRED")
+
+        row = basis_for_profile(local, verification_status="UNVERIFIED", status="STRUCTURALLY_VALID")
+        row.pop("markers")
+        row["basis_hash"] = lcb.stable_hash(lcb.basis_content(row))
+        site_row, _, national, owner = current_bindings()
+        self.assertEqual(lcb.validate_project_code_basis(
+            row, current_site=site_row, current_local_profile=local,
+            current_national_binding=national, current_owner_program=owner,
+        )["status"], "AUTHORITY_REVIEW_REQUIRED")
+
+    def test_jurisdiction_mismatches_fail_closed(self):
+        for field, value in (("city", "OTHER-CITY"), ("municipality", "OTHER-MUNI")):
+            parcel = copy.deepcopy(basis()["parcel_identity"])
+            parcel[field] = value
+            result = self.assert_basis_status(basis(parcel_identity=parcel), "CONFLICT_REVIEW_REQUIRED")
+            self.assertIn("JURISDICTION_CONFLICT", {item["code"] for item in result["findings"]})
+
+        for field, value in (("municipal_district", "D-2"), ("planning_zone", "Z-2")):
+            local = profile(rules=[rule(required_inputs=["parcel_id", field])], **{field: "EXPECTED"})
+            local["profile_hash"] = lcb.profile_hash(local)
+            parcel = copy.deepcopy(basis()["parcel_identity"])
+            parcel[field] = value
+            self.assert_basis_status(basis_for_profile(local, parcel_identity=parcel), "CONFLICT_REVIEW_REQUIRED", local=local)
+
+    def test_profile_and_rule_temporal_scope_fail_closed(self):
+        for project_date in ("2024-12-31", "2027-01-01"):
+            local = profile(effective_from="2025-01-01", effective_until="2026-12-31")
+            local["profile_hash"] = lcb.profile_hash(local)
+            self.assert_basis_status(basis_for_profile(local, permit_or_design_effective_date=project_date), "STALE_BINDING", local=local)
+        local = profile(rules=[rule(temporal_scope={"effective_from": "2026-02-01"})])
+        local["profile_hash"] = lcb.profile_hash(local)
+        self.assert_basis_status(basis_for_profile(local), "STALE_BINDING", local=local)
+
+    def test_owner_program_binding_is_required_and_fresh(self):
+        s, local, national, owner = current_bindings()
+        result = lcb.validate_project_code_basis(basis(), current_site=s, current_local_profile=local,
+                                                  current_national_binding=national, current_owner_program=None)
+        self.assertEqual(result["status"], "INPUT_REQUIRED")
+        for field, value in (("content_hash", "b" * 64), ("program_revision", 2)):
+            changed = copy.deepcopy(owner)
+            changed[field] = value
+            self.assert_basis_status(basis(), "STALE_BINDING", owner=changed)
+
+    def test_unresolved_applicability_reference_is_input_required(self):
+        decisions = copy.deepcopy(basis()["applicability_decisions"])
+        decisions[0]["source_references"] = ["UNKNOWN-SOURCE"]
+        result = self.assert_basis_status(basis(applicability_decisions=decisions), "INPUT_REQUIRED")
+        self.assertIn("UNRESOLVED_APPLICABILITY_REFERENCE", {item["code"] for item in result["findings"]})
+
+    def test_malformed_geometry_and_nonfinite_setbacks_return_structured_input_required(self):
+        constraints = [{"edge_index": i, "distance_m": 1, "source_references": ["SRC-1"], "rule_ids": ["SETBACK-1"]} for i in range(4)]
+        boundaries = (
+            [[0, 0], [10, 0], [10, 0], [0, 10], [0, 0]],
+            [[0, 0], [10, 0], [10, 10], [0, 0], [0, 0]],
+            [[0, 0], [float("nan"), 0], [10, 10], [0, 10], [0, 0]],
+            [[0, 0], [float("inf"), 0], [10, 10], [0, 10], [0, 0]],
+        )
+        for boundary in boundaries:
+            site_row = site()
+            site_row["parcel_boundary"] = boundary
+            result = lcb.derive_buildable_envelope(site_row, edge_constraints=constraints, dependency_id=H)
+            self.assertEqual(result["status"], "INPUT_REQUIRED", result)
+            self.assertIsNone(result["geometry"])
+        for distance in (float("nan"), float("inf"), -1):
+            invalid = copy.deepcopy(constraints)
+            invalid[0]["distance_m"] = distance
+            result = lcb.derive_buildable_envelope(site(), edge_constraints=invalid, dependency_id=H)
+            self.assertEqual(result["status"], "INPUT_REQUIRED", result)
+            self.assertIsNone(result["geometry"])
+
+    def test_invalid_envelope_dependency_fingerprint_fails_closed(self):
+        constraints = [{"edge_index": i, "distance_m": 1, "source_references": ["SRC-1"], "rule_ids": ["SETBACK-1"]} for i in range(4)]
+        result = lcb.derive_buildable_envelope(site(), edge_constraints=constraints, dependency_id="caller-value")
+        self.assertEqual(result["status"], "INPUT_REQUIRED")
+        self.assertIn("INVALID_DEPENDENCY_FINGERPRINT", {item["code"] for item in result["findings"]})
 
 
 if __name__ == "__main__":
