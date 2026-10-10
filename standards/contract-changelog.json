@@ -2,6 +2,27 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-054",
+      "status": "IMPLEMENTED_PENDING_FINAL_VERIFICATION",
+      "summary": "Add Canonical Architecture 3.2 source-backed structural columns with diagnostic-only authority; design but do not activate Column/Wall exterior-boundary witnesses.",
+      "affected_capabilities": ["architecture_input_foundation_v2", "architectural_space_understanding"],
+      "approval": {
+        "status": "OWNER_AUTHORIZED_IMPLEMENTATION",
+        "basis": "Explicit owner approval for Column Phase 1 implementation and Phase 2 contract design."
+      },
+      "verification": {
+        "positive_test": "PASS_PYTHON_3_12",
+        "destructive_test": "PASS_COLUMN_AUTHORITY_AND_INVALID_GEOMETRY_REJECTED",
+        "architecture_regression": "PASS_423_ARCHITECTURE_AND_DOWNSTREAM_PLUS_FROZEN_REPLAY",
+        "frozen_source": "PASS_12_TYPICAL_COLUMNS_118_TOTAL_HARD_ERRORS_0_RELEASE_BLOCKED",
+        "required_ci": "REQUIRED_5_EXECUTED_SUCCESS"
+      },
+      "migration": {
+        "forward": "Re-adapt source-backed models to Canonical Architecture 3.2 and independently validate structural_obstacles.",
+        "rollback": "Use the approved prior Git commit; legacy columns remains empty and no routing authority is removed."
+      }
+    },
+    {
       "id": "GOV-2026-053",
       "status": "IMPLEMENTED_QUALIFIED",
       "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",

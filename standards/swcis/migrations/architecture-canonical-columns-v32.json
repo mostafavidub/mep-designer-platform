@@ -1,0 +1,16 @@
+{
+  "schema": "swcis-migration-contract/1.0",
+  "migration_id": "architecture-canonical-columns-v32",
+  "from_contract": "planha-canonical-architecture/3.1",
+  "to_contract": "planha-canonical-architecture/3.2",
+  "strategy": "reader-before-writer",
+  "detection": "schema equals planha-canonical-architecture/3.2 and structural_obstacles is present",
+  "forward": "Re-run the deterministic RAW DXF adapter; retain qualified source-backed columns as diagnostic structural obstacles.",
+  "backward": "Use the previous Git build; legacy columns remains empty and no downstream authority is lost.",
+  "authority_invariants": [
+    "COLUMN does not grant Wall material authority",
+    "COLUMN does not grant envelope or routing authority",
+    "COLUMN does not create Rooms, Voids, Portals or Access edges"
+  ],
+  "rollback": "Deploy the approved prior Git commit; do not copy or rename runtime modules."
+}

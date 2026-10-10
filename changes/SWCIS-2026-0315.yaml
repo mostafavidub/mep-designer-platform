@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0315",
+  "summary": "Persist source-backed canonical structural columns with obstacle-only authority and diagnostic visualization while designing, but not activating, a future column-boundary witness contract.",
+  "requester": "project-owner",
+  "change_types": ["drawing_output", "documentation", "governance", "rule", "schema", "test"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "pmm", "qa", "questionnaire", "routing", "rule_book", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Retains exact source column footprints and provenance as canonical structural obstacles without Wall, enclosure or release authority; preview renders diagnostic column outlines.",
+    "deployment": "No deployment or runtime configuration change.",
+    "docs": "Documents the column geometry contract, authority limits, downstream compatibility and design-only Column/Wall boundary-witness proposal.",
+    "governance": "Adds validator and destructive-test controls prohibiting column-derived Wall, Room, Void, Portal, Access or Envelope authority.",
+    "manifest": "Adds deterministic structural-obstacle identities to Canonical Architecture semantic hashing and snapshots through the canonical model hash.",
+    "migration": "Canonical Architecture 3.1 candidates require explicit re-adaptation to additive 3.2; no database migration and no production consumer activation.",
+    "qa": "Adds native, transformed, determinism, multi-frame visibility, qualified-frame projection, adapter, independent geometry/identity validation and false-authority column regressions.",
+    "ui_api": "No public API change; internal recognition preview gains diagnostic-only column outlines.",
+    "versioning": "Backward-compatible Canonical Architecture capability addition requires schema minor revision and coordinated SWCIS manifest update."
+  },
+  "evidence": {
+    "traceability": ["standards/capability-registry.json", "standards/swcis/rule_traceability_matrix.yaml", "standards/swcis/system_dependency_graph.yaml"],
+    "tests": ["Python 3.12 final focused destructive/validator suite: 63 passed", "Python 3.12 affected architecture/downstream suite: 380 passed", "Governance/runtime focused suite: 30 passed", "Frozen-source replay: 12 Typical + 7 Roof canonical columns, 99 reference-only occurrences excluded, both corner occurrences retained, validator hard errors 0", "Updated GitHub evidence recorded on PR #334"],
+    "docs": ["docs/ARCHITECTURE_CANONICAL_COLUMNS.md", "docs/adr/ADR-ARCHITECTURAL-COLUMN-BOUNDARY-WITNESS.md"],
+    "version_bump": ["SWCIS 5.3.0", "Canonical Architecture 3.2"],
+    "migration": ["standards/swcis/migrations/architecture-canonical-columns-v32.json"],
+    "golden_regression": ["Frozen private source hash only; no private drawing committed", "Architecture/Mechanical release remained false"],
+    "semantic_diff": ["Adds diagnostic structural_obstacles; legacy columns remains empty; no Wall, Envelope, routing or release grant"],
+    "artifact_diff": ["Recognition preview uses the union of frame bounds and emits 19 qualified-frame column polygons; 99 reference-only recognized occurrences remain diagnostic and no legacy column projection is enabled."],
+    "numeric_diff": [],
+    "contract_diff": ["planha-canonical-architecture/3.1 -> 3.2 additive source-backed structural obstacle collection"],
+    "deployment_plan": ["No deployment in this task."],
+    "rollback_plan": ["Revert the focused commit; no database or persisted production-data migration is required."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 4,
+    "detectability": 2,
+    "score": 16,
+    "rationale": "Additive geometry identity is bounded by exact source lineage, independent validation and destructive authority tests; runtime envelope and Mechanical release remain disabled."
+  },
+  "waiver": null
+}

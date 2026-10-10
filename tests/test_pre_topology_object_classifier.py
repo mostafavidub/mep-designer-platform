@@ -17,6 +17,8 @@ from cad_engine.pre_topology_object_classifier import (
     standardize_source_records,
     repeated_compact_column_handles,
 )
+from cad_engine.architecture_structural_obstacles import project_structural_obstacles
+from cad_engine.architectural_space_engine import recognition_svg
 
 
 @pytest.mark.parametrize(
@@ -133,3 +135,103 @@ def test_column_footprint_does_not_create_a_physical_space(tmp_path):
     assert len(column_segments) == 4
     assert all(row["status"] == "REJECTED" for row in column_segments)
     assert any(row["object_class"] == "COLUMN" for row in model["pre_topology_object_standardization"]["items"])
+    assert model["structural_obstacles"]["items"] == []
+
+
+def test_repeated_native_columns_are_persistent_but_not_legacy_routing_authority(tmp_path):
+    path = tmp_path / "repeated-columns.dxf"
+    doc = ezdxf.new("R2018")
+    doc.header["$INSUNITS"] = 6
+    msp = doc.modelspace()
+    msp.add_lwpolyline([(0,0),(8,0),(8,6),(0,6)], close=True, dxfattribs={"layer":"A-WALL"})
+    for x in (1, 3, 5):
+        msp.add_lwpolyline([(x,1),(x+.4,1),(x+.4,1.4),(x,1.4)], close=True)
+    doc.saveas(path)
+    model = reconstruct_architecture(path)
+    rows = model["structural_obstacles"]["items"]
+    assert len(rows) == 3
+    assert len({row["structural_obstacle_id"] for row in rows}) == 3
+    assert all(row["footprint"] == row["world_coordinates"] for row in rows)
+    assert all(row["source_occurrence_id"] and row["source_geometry_fingerprint"] for row in rows)
+    assert all(not any(row["authority"][key] for key in
+                       ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope"))
+               for row in rows)
+    assert model["columns"] == []
+    assert model["recognition_preview_svg"].count('data-obstacle-type="COLUMN"') == 3
+    assert all(segment["status"] == "REJECTED" for segment in model["architectural_segments"]
+               if segment["semantic_class"] == "COLUMN")
+
+
+def test_column_identity_uses_occurrence_and_orientation_normalized_geometry():
+    base = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+            "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+            "source_handle":"10", "entity_type":"LWPOLYLINE", "source_layer":"0",
+            "source_block_path":["C"], "source_insert_handle":"I", "source_transform":[1,0,0,1,0,0],
+            "frame_ids":["F1"]}
+    ring = [[0,0],[.4,0],[.4,.4],[0,.4]]
+    diagnostics = {"items":[{**base,"source_occurrence_id":"SRC-1111111111111111","geometry":ring},
+                              {**base,"source_occurrence_id":"SRC-2222222222222222",
+                               "geometry":[[2,0],[2.4,0],[2.4,.4],[2,.4]]}]}
+    frames = [{"frame_id":"F1","bounds":[-1,-1,4,2],"level_candidate":"L1"}]
+    first = project_structural_obstacles(diagnostics, frames, "a"*64)
+    reversed_diagnostics = {"items":list(reversed(diagnostics["items"]))}
+    reversed_diagnostics["items"][1] = {**reversed_diagnostics["items"][1], "geometry":list(reversed(ring))}
+    second = project_structural_obstacles(reversed_diagnostics, frames, "a"*64)
+    assert first == second
+    assert len({row["structural_obstacle_id"] for row in first["items"]}) == 2
+
+
+def test_column_projection_excludes_reference_unassigned_and_multiply_assigned_frames():
+    base = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+            "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+            "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+            "source_block_path":[], "source_transform":[1,0,0,1,0,0],
+            "geometry":[[0,0],[.4,0],[.4,.4],[0,.4]]}
+    diagnostics = {"items":[
+        {**base,"source_handle":"A","source_occurrence_id":"SRC-A","frame_ids":["F-ARCH"]},
+        {**base,"source_handle":"R","source_occurrence_id":"SRC-R","frame_ids":["F-REF"]},
+        {**base,"source_handle":"U","source_occurrence_id":"SRC-U","frame_ids":[]},
+        {**base,"source_handle":"M","source_occurrence_id":"SRC-M","frame_ids":["F-ARCH","F-REF"]},
+    ]}
+    frames = [
+        {"frame_id":"F-ARCH","bounds":[-1,-1,1,1],"status":"VERIFIED",
+         "scope_relevance":"MECHANICAL_AUTHORITY"},
+        {"frame_id":"F-REF","bounds":[2,-1,4,1],"status":"REFERENCE_ONLY",
+         "scope_relevance":"REFERENCE_ONLY"},
+    ]
+    result = project_structural_obstacles(diagnostics, frames, "a"*64)
+    assert [row["source_handle"] for row in result["items"]] == ["A"]
+    assert result["projection_diagnostics"]["excluded_counts"] == {
+        "reference_only":1, "unassigned":1, "multiply_assigned":1, "invalid_geometry":0}
+
+
+def test_recognition_svg_union_viewbox_keeps_columns_from_all_frames_visible():
+    model = {"frames":[{"frame_id":"F1","bounds":[0,0,10,10]},
+                       {"frame_id":"F2","bounds":[100,50,120,70]}],
+             "physical_spaces":[],
+             "structural_obstacles":{"items":[
+                 {"frame_id":"F1","footprint":[[1,1],[2,1],[2,2],[1,2]]},
+                 {"frame_id":"F2","footprint":[[101,51],[102,51],[102,52],[101,52]]},
+             ]}}
+    svg = recognition_svg(model)
+    assert 'viewBox="0 -70 120 70"' in svg
+    assert svg.count('data-obstacle-type="COLUMN"') == 2
+    assert "101,-51 102,-51 102,-52 101,-52" in svg
+
+
+@pytest.mark.parametrize("malformed", [
+    [[0,0],["bad",0],[.4,.4],[0,.4]],
+    [[0,0],[.4],[.4,.4],[0,.4]],
+    [[0,0],[float("nan"),0],[.4,.4],[0,.4]],
+])
+def test_malformed_column_coordinates_are_excluded_with_diagnostic_count(malformed):
+    diagnostic = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+                  "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+                  "source_handle":"A", "source_occurrence_id":"SRC-A",
+                  "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+                  "source_block_path":[], "source_transform":None,
+                  "frame_ids":["F1"], "geometry":malformed}
+    result = project_structural_obstacles(
+        {"items":[diagnostic]}, [{"frame_id":"F1", "status":"VERIFIED"}], "a"*64)
+    assert result["items"] == []
+    assert result["projection_diagnostics"]["excluded_counts"]["invalid_geometry"] == 1

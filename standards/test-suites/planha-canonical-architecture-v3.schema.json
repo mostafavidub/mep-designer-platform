@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "planha-canonical-architecture/3.1",
-  "title": "Planha Canonical Architecture v3.1: separator and text evidence authority",
+  "$id": "planha-canonical-architecture/3.2",
+  "title": "Planha Canonical Architecture v3.2: source-backed structural obstacles",
   "type": "object",
   "required": [
     "schema",
@@ -15,6 +15,7 @@
     "portals",
     "voids",
     "dimensions",
+    "structural_obstacles",
     "graphs",
     "unresolved_items",
     "traceability",
@@ -26,7 +27,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "planha-canonical-architecture/3.1"
+      "const": "planha-canonical-architecture/3.2"
     },
     "contract_status": {
       "const": "EXPERIMENTAL_INTERNAL"
@@ -267,6 +268,52 @@
     "dimensions": {
       "type": "array"
     },
+    "structural_obstacles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "structural_obstacle_id",
+          "obstacle_type",
+          "footprint",
+          "world_coordinates",
+          "source_occurrence_id",
+          "source_geometry_fingerprint",
+          "source_lineage",
+          "geometry_qualification",
+          "obstacle_classification",
+          "authority"
+        ],
+        "properties": {
+          "structural_obstacle_id": {"type": "string", "pattern": "^COLUMN-[0-9A-F]{20}$"},
+          "obstacle_type": {"const": "COLUMN"},
+          "frame_id": {"type": "string"},
+          "level_id": {"type": ["string", "null"]},
+          "footprint": {"$ref": "#/$defs/ring"},
+          "world_coordinates": {"$ref": "#/$defs/ring"},
+          "source_occurrence_id": {"type": "string", "pattern": "^SRC-[0-9A-F]{16}$"},
+          "source_geometry_fingerprint": {"type": "string", "pattern": "^COL-GEO-[0-9A-F]{20}$"},
+          "source_lineage": {
+            "type": "object",
+            "required": ["source_sha256", "source_occurrence_id", "source_handle",
+                         "source_block_path", "source_insert_handle", "source_transform",
+                         "world_footprint"],
+            "properties": {
+              "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "source_occurrence_id": {"type": "string"},
+              "source_handle": {"type": ["string", "null"]},
+              "source_block_path": {"type": "array", "items": {"type": "string"}},
+              "source_insert_handle": {"type": ["string", "null"]},
+              "source_transform": {},
+              "world_footprint": {"$ref": "#/$defs/ring"}
+            }
+          },
+          "geometry_qualification": {"const": "SOURCE_BACKED"},
+          "obstacle_classification": {"const": "OBSTACLE_EVIDENCE_ONLY"},
+          "authority": {"$ref": "#/$defs/authority"}
+        }
+      }
+    },
     "graphs": {
       "type": "object",
       "required": [
@@ -340,7 +387,7 @@
           "const": "planha-architectural-text-evidence/1.0"
         },
         "contract_version": {
-          "const": "planha-canonical-architecture/3.1"
+          "const": "planha-canonical-architecture/3.2"
         },
         "items": {
           "type": "array",

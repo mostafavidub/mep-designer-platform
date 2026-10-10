@@ -10,6 +10,9 @@ from shapely.ops import unary_union
 
 from .architecture_contract import ORIGINS, SCHEMA, STATUSES, canonical_model_hash, content_hash
 from .architecture_text_evidence import CONTRACT_VERSION as TEXT_CONTRACT_VERSION, validate_text_contract
+from .architecture_structural_obstacles import (
+    MANDATORY_COLUMN_LINEAGE_KEYS, canonical_column_ring, column_content_fingerprint,
+)
 
 
 VALIDATOR_ID = "planha.architecture-validator"
@@ -165,6 +168,37 @@ def _review_overlay_valid(row, errors, entity_id, source_sha):
 
 def validate_architecture(model):
     """Validate without mutation; critical failures always dominate status."""
+    # Canonical hashing intentionally rejects non-finite semantic numbers. Run
+    # a bounded column-geometry preflight first so malformed untrusted geometry
+    # fails as a structured validator result instead of escaping as an exception.
+    malformed_columns = []
+    for obstacle in model.get("structural_obstacles") or []:
+        lineage = obstacle.get("source_lineage") or {}
+        if (canonical_column_ring(obstacle.get("footprint")) is None or
+                ("world_coordinates" in obstacle and
+                 canonical_column_ring(obstacle.get("world_coordinates")) is None) or
+                (isinstance(lineage, dict) and "world_footprint" in lineage and
+                 canonical_column_ring(lineage.get("world_footprint")) is None)):
+            malformed_columns.append(obstacle.get("structural_obstacle_id"))
+    if malformed_columns:
+        hard = [{"code": "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID",
+                 "structural_obstacle_id": oid} for oid in malformed_columns]
+        report = {"schema": "planha-architecture-validation-report/1.0",
+                  "validator_id": VALIDATOR_ID, "validator_version": VALIDATOR_VERSION,
+                  "status": "FAIL", "hard_errors": hard, "input_requirements": [],
+                  "warnings": [], "control_results": [],
+                  "metrics": {"physical_spaces": len(model.get("physical_spaces") or []),
+                              "walls": len(model.get("walls") or []),
+                              "portals": len(model.get("portals") or []),
+                              "structural_obstacles": len(model.get("structural_obstacles") or []),
+                              "voids": len(model.get("voids") or []),
+                              "illegal_overlap_area": 0.0,
+                              "hard_error_count": len(hard), "input_requirement_count": 0},
+                  "critical_score_masking": False,
+                  "input_hash_before": "INVALID_CANONICAL_REPRESENTATION",
+                  "input_hash_after": "INVALID_CANONICAL_REPRESENTATION"}
+        report["report_hash"] = content_hash(report)
+        return report
     before = canonical_model_hash(model)
     representation_before = content_hash(model)
     data = deepcopy(model)
@@ -217,7 +251,7 @@ def validate_architecture(model):
     walls = data.get("walls") or []; spaces = data.get("physical_spaces") or []
     zones = data.get("functional_zones") or []; apertures = data.get("apertures") or []
     portals = data.get("portals") or []; voids = data.get("voids") or []
-    dimensions = data.get("dimensions") or []
+    dimensions = data.get("dimensions") or []; structural_obstacles = data.get("structural_obstacles") or []
     frame_ids = _unique(frames, "frame_id", hard, "DUPLICATE_FRAME_ID")
     level_ids = _unique(levels, "level_id", hard, "DUPLICATE_LEVEL_ID")
     wall_ids = _unique(walls, "wall_id", hard, "DUPLICATE_WALL_ID")
@@ -228,6 +262,8 @@ def validate_architecture(model):
     opening_ids = _unique(portals, "opening_id", hard, "DUPLICATE_OPENING_ID")
     portal_ids = _unique([row for row in portals if row.get("portal_id")], "portal_id", hard, "DUPLICATE_PORTAL_ID")
     dimension_ids = _unique(dimensions, "dimension_id", hard, "DUPLICATE_DIMENSION_ID")
+    obstacle_ids = _unique(structural_obstacles, "structural_obstacle_id", hard,
+                           "DUPLICATE_STRUCTURAL_OBSTACLE_ID")
     evidence_ids = _unique(data.get("evidence_registry") or [], "evidence_id", hard, "DUPLICATE_EVIDENCE_ID")
     _unique(data.get("unresolved_items") or [], "unresolved_item_id", hard, "DUPLICATE_UNRESOLVED_ITEM_ID")
     verified_portal_ids = {p.get("portal_id") for p in portals if p.get("status") == "VERIFIED" and p.get("portal_id")}
@@ -353,6 +389,65 @@ def validate_architecture(model):
             if area > overlap_tolerance:
                 _add(hard, "VOID_OCCUPIED_SPACE_OVERLAP", void_id=vid, physical_space_id=sid, area=area)
 
+    for obstacle in structural_obstacles:
+        oid = obstacle.get("structural_obstacle_id")
+        _authority_valid(obstacle, hard, oid)
+        if obstacle.get("obstacle_type") != "COLUMN":
+            _add(hard, "STRUCTURAL_OBSTACLE_TYPE_INVALID", structural_obstacle_id=oid)
+        polygon = _polygon(obstacle.get("footprint"))
+        if polygon is None or not polygon.is_valid or polygon.area <= 0:
+            _add(hard, "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID", structural_obstacle_id=oid)
+        if (not obstacle.get("source_occurrence_id") or not obstacle.get("source_geometry_fingerprint") or
+                not isinstance(obstacle.get("source_lineage"), dict) or
+                not obstacle.get("world_coordinates")):
+            _add(hard, "STRUCTURAL_OBSTACLE_SOURCE_IDENTITY_REQUIRED", structural_obstacle_id=oid)
+        footprint = canonical_column_ring(obstacle.get("footprint"))
+        world = canonical_column_ring(obstacle.get("world_coordinates"))
+        lineage = obstacle.get("source_lineage") or {}
+        lineage_footprint = canonical_column_ring(lineage.get("world_footprint")) if isinstance(lineage, dict) else None
+        missing_lineage_keys = ([key for key in MANDATORY_COLUMN_LINEAGE_KEYS if key not in lineage]
+                                if isinstance(lineage, dict) else list(MANDATORY_COLUMN_LINEAGE_KEYS))
+        if missing_lineage_keys:
+            _add(hard, "COLUMN_SOURCE_LINEAGE_KEYS_MISSING", structural_obstacle_id=oid,
+                 missing_keys=missing_lineage_keys)
+        if footprint is None or world != footprint or lineage_footprint != footprint:
+            _add(hard, "COLUMN_GEOMETRY_REPRESENTATION_MISMATCH", structural_obstacle_id=oid)
+        if footprint is not None:
+            expected_fingerprint = "COL-GEO-" + column_content_fingerprint(footprint)[:20].upper()
+            if obstacle.get("source_geometry_fingerprint") != expected_fingerprint:
+                _add(hard, "COLUMN_GEOMETRY_FINGERPRINT_INVALID", structural_obstacle_id=oid)
+        lineage_fields = {
+            "source_occurrence_id": obstacle.get("source_occurrence_id"),
+            "source_handle": obstacle.get("source_handle"),
+            "source_block_path": obstacle.get("source_block_path") or [],
+            "source_insert_handle": obstacle.get("source_insert_handle"),
+            "source_transform": obstacle.get("source_transform"),
+        }
+        if isinstance(lineage, dict) and not missing_lineage_keys:
+            if (lineage.get("source_sha256") != source_sha or
+                    any(lineage.get(key) != value for key, value in lineage_fields.items())):
+                _add(hard, "COLUMN_SOURCE_LINEAGE_MISMATCH", structural_obstacle_id=oid)
+            expected_identity = "COLUMN-" + column_content_fingerprint({
+                "source_sha256": lineage.get("source_sha256"), **lineage_fields,
+                "world_footprint": footprint,
+            })[:20].upper()
+            if oid != expected_identity:
+                _add(hard, "COLUMN_IDENTITY_INVALID", structural_obstacle_id=oid)
+        if obstacle.get("frame_id") not in frame_ids:
+            _add(hard, "STRUCTURAL_OBSTACLE_FRAME_REFERENCE_INVALID", structural_obstacle_id=oid)
+        else:
+            obstacle_frame = next((row for row in frames if row.get("frame_id") == obstacle.get("frame_id")), {})
+            if (obstacle_frame.get("scope_relevance") == "REFERENCE_ONLY" or
+                    obstacle_frame.get("status") == "REFERENCE_ONLY"):
+                _add(hard, "COLUMN_FRAME_SCOPE_INVALID", structural_obstacle_id=oid,
+                     frame_id=obstacle.get("frame_id"))
+        authority = obstacle.get("authority") or {}
+        if any(authority.get(key) for key in
+               ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope")):
+            _add(hard, "COLUMN_ENGINEERING_AUTHORITY_FORBIDDEN", structural_obstacle_id=oid)
+        if obstacle.get("obstacle_classification") != "OBSTACLE_EVIDENCE_ONLY":
+            _add(hard, "COLUMN_OBSTACLE_CLASSIFICATION_INVALID", structural_obstacle_id=oid)
+
     access_edges = (data.get("graphs") or {}).get("access") or []
     for edge in access_edges:
         pid = edge.get("portal_id") if isinstance(edge, dict) else None
@@ -413,6 +508,7 @@ def validate_architecture(model):
             "status": status, "hard_errors": hard, "input_requirements": required,
             "warnings": warnings, "control_results": controls,
             "metrics": {"physical_spaces": len(spaces), "walls": len(walls), "portals": len(portals),
+                        "structural_obstacles": len(structural_obstacles),
                         "voids": len(voids), "illegal_overlap_area": overlap,
                         "hard_error_count": len(hard), "input_requirement_count": len(required)},
             "critical_score_masking": False, "input_hash_before": before, "input_hash_after": canonical_model_hash(model)}

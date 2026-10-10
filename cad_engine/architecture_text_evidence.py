@@ -17,7 +17,7 @@ from shapely.geometry import Point, Polygon, box
 
 
 SCHEMA = "planha-architectural-text-evidence/1.0"
-CONTRACT_VERSION = "planha-canonical-architecture/3.1"
+CONTRACT_VERSION = "planha-canonical-architecture/3.2"
 EXACT_TYPES = {"TEXT", "MTEXT", "ATTRIB"}
 TEMPLATE_TYPES = {"ATTDEF"}
 

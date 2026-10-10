@@ -850,9 +850,13 @@
         "text_host_binding",
         "text_review_fingerprint",
         "functional_composition"
+        ,"structural_obstacles"
+        ,"structural_obstacle_id"
+        ,"source_geometry_fingerprint"
       ],
       "engines": [
         "cad_engine/architectural_source_roles.py",
+        "cad_engine/architecture_structural_obstacles.py",
         "cad_engine/architecture_boundary_evidence.py",
         "cad_engine/plan_segmentation.py",
         "cad_engine/architecture_reconstruction.py",

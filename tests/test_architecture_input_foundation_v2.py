@@ -11,6 +11,7 @@ from cad_engine.architecture_contract import adapt_current_architecture, assign_
 from cad_engine.architecture_review_contract import create_review_item, validate_review_decision
 from cad_engine.architecture_snapshot import create_snapshot, supersede_snapshot, validate_snapshot
 from cad_engine.architecture_validator import validate_architecture
+from cad_engine.architecture_structural_obstacles import project_structural_obstacles
 from cad_engine.planha_package import pack_planha, unpack_planha
 
 
@@ -97,6 +98,140 @@ def test_adapter_preserves_meaning_is_deterministic_and_does_not_mutate():
     assert first["graphs"]["access"] == current["access_graph"]["edges"]
     assert first["release"]["release_allowed"] is False
     assert all(origin != "VISION_SUPPORT_ONLY" for row in first["walls"] for origin in row["authority"]["origins"])
+
+
+def test_structural_obstacle_adapter_preserves_source_geometry_without_authority():
+    current = legacy_model()
+    current["structural_obstacles"] = {"items": [{
+        "structural_obstacle_id":"COLUMN-" + "A"*20, "obstacle_type":"COLUMN",
+        "frame_id":"F1", "level_id":"L1", "footprint":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]],
+        "world_coordinates":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]],
+        "source_handle":"C1", "source_occurrence_id":"SRC-" + "1"*16,
+        "source_geometry_fingerprint":"COL-GEO-" + "2"*20,
+        "geometry_qualification":"SOURCE_BACKED", "obstacle_classification":"OBSTACLE_EVIDENCE_ONLY",
+        "authority":{"status":"SUPPORTED","origins":["SOURCE_GEOMETRIC"],
+                     "material_geometry":True,"wall":True,"routing":True,"release":True}
+    }]}
+    adapted = adapt_current_architecture(current)
+    row = adapted["structural_obstacles"][0]
+    assert row["footprint"] == current["structural_obstacles"]["items"][0]["footprint"]
+    assert not any(row["authority"].get(key) for key in
+                   ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope"))
+
+
+def test_validator_rejects_column_authority_and_invalid_column_geometry():
+    model = contract()
+    model["structural_obstacles"] = [{
+        "structural_obstacle_id":"COLUMN-" + "A"*20, "obstacle_type":"COLUMN", "frame_id":"F1",
+        "footprint":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]],
+        "source_occurrence_id":"SRC-" + "1"*16,
+        "source_geometry_fingerprint":"COL-GEO-" + "2"*20,
+        "geometry_qualification":"SOURCE_BACKED", "obstacle_classification":"OBSTACLE_EVIDENCE_ONLY",
+        "authority":{"status":"SUPPORTED","origins":["SOURCE_GEOMETRIC"],
+                     "material_geometry":False,"wall":False,"portal":False,"access":False,
+                     "routing":True,"release":False,"envelope":False}
+    }]
+    rehash(model)
+    assert "COLUMN_ENGINEERING_AUTHORITY_FORBIDDEN" in codes(validate_architecture(model))
+    model["structural_obstacles"][0]["authority"]["routing"] = False
+    model["structural_obstacles"][0]["footprint"] = [[0,0],[1,1],[0,1],[1,0]]
+    rehash(model)
+    assert "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID" in codes(validate_architecture(model))
+
+
+@pytest.mark.parametrize("mutation, expected", [
+    (lambda row: row.update(source_geometry_fingerprint="COL-GEO-" + "0"*20),
+     "COLUMN_GEOMETRY_FINGERPRINT_INVALID"),
+    (lambda row: row.update(world_coordinates=[[1,1],[1.5,1],[1.5,1.4],[1,1.4]]),
+     "COLUMN_GEOMETRY_REPRESENTATION_MISMATCH"),
+    (lambda row: row["source_lineage"].update(world_footprint=[[1,1],[1.5,1],[1.5,1.4],[1,1.4]]),
+     "COLUMN_GEOMETRY_REPRESENTATION_MISMATCH"),
+    (lambda row: row.update(structural_obstacle_id="COLUMN-" + "0"*20),
+     "COLUMN_IDENTITY_INVALID"),
+    (lambda row: row["source_lineage"].update(source_handle="OTHER"),
+     "COLUMN_SOURCE_LINEAGE_MISMATCH"),
+    (lambda row: row["source_lineage"].update(source_sha256="b"*64),
+     "COLUMN_SOURCE_LINEAGE_MISMATCH"),
+])
+def test_validator_independently_reconciles_column_geometry_lineage_and_identity(mutation, expected):
+    model = contract()
+    diagnostic = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+                  "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+                  "source_handle":"C1", "source_occurrence_id":"SRC-1111111111111111",
+                  "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+                  "source_block_path":["C"], "source_insert_handle":"I",
+                  "source_transform":[1,0,0,1,0,0], "frame_ids":["F1"],
+                  "geometry":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]}
+    frames = [{"frame_id":"F1", "bounds":[0,0,12,10], "status":"SUPPORTED"}]
+    model["structural_obstacles"] = project_structural_obstacles(
+        {"items":[diagnostic]}, frames, SHA)["items"]
+    mutation(model["structural_obstacles"][0])
+    rehash(model)
+    assert expected in codes(validate_architecture(model))
+
+
+def test_validator_rejects_column_on_reference_only_frame():
+    model = contract()
+    model["frames"].append({"frame_id":"F-REF", "level_id":"LEVEL-UNRESOLVED-F-REF",
+                            "frame_type":"DETAIL", "bounds":[20,0,30,10],
+                            "scope_relevance":"REFERENCE_ONLY", "source_identity":SHA,
+                            "status":"REFERENCE_ONLY"})
+    diagnostic = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+                  "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+                  "source_handle":"C1", "source_occurrence_id":"SRC-1111111111111111",
+                  "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+                  "source_block_path":[], "source_insert_handle":None,
+                  "source_transform":[1,0,0,1,0,0], "frame_ids":["F-REF"],
+                  "geometry":[[21,1],[21.4,1],[21.4,1.4],[21,1.4]]}
+    # Construct a valid row against an otherwise qualified frame, then mutate
+    # only its governed frame scope to isolate the validator control.
+    qualified_frame = dict(model["frames"][-1], status="SUPPORTED", scope_relevance="MECHANICAL_AUTHORITY")
+    model["structural_obstacles"] = project_structural_obstacles(
+        {"items":[diagnostic]}, [qualified_frame], SHA)["items"]
+    rehash(model)
+    assert "COLUMN_FRAME_SCOPE_INVALID" in codes(validate_architecture(model))
+
+
+def test_validator_rejects_partially_missing_column_source_lineage():
+    model = contract()
+    diagnostic = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+                  "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+                  "source_handle":"C1", "source_occurrence_id":"SRC-1111111111111111",
+                  "entity_type":"LWPOLYLINE", "source_layer":"S-COLUMN",
+                  "source_block_path":[], "source_insert_handle":None,
+                  "source_transform":[1,0,0,1,0,0], "frame_ids":["F1"],
+                  "geometry":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]]}
+    model["structural_obstacles"] = project_structural_obstacles(
+        {"items":[diagnostic]}, [{"frame_id":"F1", "status":"SUPPORTED"}], SHA)["items"]
+    del model["structural_obstacles"][0]["source_lineage"]["source_transform"]
+    rehash(model)
+    report = validate_architecture(model)
+    issue = next(row for row in report["hard_errors"]
+                 if row["code"] == "COLUMN_SOURCE_LINEAGE_KEYS_MISSING")
+    assert issue["missing_keys"] == ["source_transform"]
+
+
+@pytest.mark.parametrize("malformed", [
+    [[1,1],["not-a-number",1],[1.4,1.4],[1,1.4]],
+    [[1,1],[1.4],[1.4,1.4],[1,1.4]],
+    [[1,1],[float("inf"),1],[1.4,1.4],[1,1.4]],
+])
+def test_validator_returns_structured_errors_for_malformed_column_coordinates(malformed):
+    model = contract()
+    model["structural_obstacles"] = [{
+        "structural_obstacle_id":"COLUMN-" + "A"*20, "obstacle_type":"COLUMN", "frame_id":"F1",
+        "footprint":malformed, "world_coordinates":malformed,
+        "source_handle":"C1", "source_occurrence_id":"SRC-" + "1"*16,
+        "source_geometry_fingerprint":"COL-GEO-" + "2"*20,
+        "source_lineage":{"source_sha256":SHA, "source_occurrence_id":"SRC-" + "1"*16,
+                          "source_handle":"C1", "source_block_path":[], "source_insert_handle":None,
+                          "source_transform":None, "world_footprint":malformed},
+        "geometry_qualification":"SOURCE_BACKED", "obstacle_classification":"OBSTACLE_EVIDENCE_ONLY",
+        "authority":{"status":"SUPPORTED","origins":["SOURCE_GEOMETRIC"],
+                     "material_geometry":False,"wall":False,"portal":False,"access":False,
+                     "routing":False,"release":False,"envelope":False}
+    }]
+    assert "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID" in codes(validate_architecture(model))
 
 
 def test_validator_valid_model_is_read_only_and_no_score_masking():

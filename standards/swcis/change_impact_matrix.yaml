@@ -25,6 +25,7 @@
         "app/*contract*.py",
         "standards/projects/**",
         "cad_engine/architecture_contract.py",
+        "cad_engine/architecture_structural_obstacles.py",
         "standards/test-suites/planha-canonical-architecture-v3.schema.json"
       ],
       "seed_modules": [
@@ -161,6 +162,7 @@
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
         "cad_engine/architecture_text_evidence.py"
+        ,"cad_engine/architecture_structural_obstacles.py"
       ],
       "seed_modules": [
         "cad_designer",

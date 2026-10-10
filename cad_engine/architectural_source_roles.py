@@ -52,7 +52,15 @@ def annotate_source_roles(extracted, frames, metres_per_unit, tolerance):
             # Block handles may repeat across world occurrences. Require geometry membership.
             if shape is not None and shape.buffer(tol).covers(lines[index]):
                 metas[index].update(fields)
+        containing_frames = sorted(frame['frame_id'] for frame in frames if frame.get('frame_id') and frame.get('bounds') and pts and
+                                   box(*frame['bounds']).covers(LineString(pts + ([pts[0]] if record.get('closed') else []))))
         diagnostics.append({'source_occurrence_id': occurrence, 'source_handle': record.get('handle'),
+                            'entity_type': record.get('entity_type'), 'source_layer': record.get('layer'),
+                            'source_block': record.get('source_block'),
+                            'source_block_path': list(record.get('source_block_path') or []),
+                            'source_insert_handle': record.get('source_insert_handle'),
+                            'source_transform': record.get('source_transform'),
+                            'closed': bool(record.get('closed')), 'frame_ids': containing_frames,
                             'object_class': kind, 'topology_role': role, 'evidence': list(evidence),
                             'geometry': pts, 'enclosure_authority': 'NONE'})
 

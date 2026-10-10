@@ -15,7 +15,7 @@ import math
 import unicodedata
 
 
-SCHEMA = "planha-canonical-architecture/3.1"
+SCHEMA = "planha-canonical-architecture/3.2"
 ADAPTER_ID = "planha.raw-dxf-current-model-adapter"
 ADAPTER_VERSION = "1.0.0"
 IDENTITY_VERSION = "planha-canonical-identity/2.1"
@@ -40,6 +40,7 @@ _ENTITY_COLLECTION_IDS = {
     "dimensions": "dimension_id", "unresolved_items": "unresolved_item_id",
     "evidence_registry": "evidence_id",
     "title_block_fields": "title_block_field_id",
+    "structural_obstacles": "structural_obstacle_id",
 }
 _SET_LIKE_LISTS = {"source_handles", "source_frame_ids", "represented_level_ids",
                    "evidence_ids", "host_wall_ids", "review_decision_ids", "origins",
@@ -48,7 +49,7 @@ _SEMANTIC_TOP_LEVEL = ("schema", "contract_status", "source", "levels", "frames"
                        "physical_spaces", "functional_zones", "apertures", "portals", "voids",
                        "dimensions", "graphs", "unresolved_items", "evidence_registry",
                        "text_evidence", "title_block_fields", "authority_model",
-                       "review_registry", "traceability", "release")
+                       "structural_obstacles", "review_registry", "traceability", "release")
 
 
 def _normalized_scalar(value):
@@ -353,6 +354,35 @@ def adapt_current_architecture(current_model, engine_identity=None):
                       "authority": _authority(row.get("status"), ["SOURCE_GEOMETRIC", "SOURCE_SEMANTIC", "DERIVED_DETERMINISTIC"],
                                               material_geometry=False, routing=False)})
 
+    structural_obstacles = []
+    for row in (model.get("structural_obstacles") or {}).get("items") or []:
+        authority = deepcopy(row.get("authority") or {})
+        # The adapter is deliberately incapable of promoting a recognized
+        # obstacle into wall, envelope, routing or release authority.
+        authority.update({"material_geometry": False, "wall": False, "portal": False,
+                          "access": False, "routing": False, "release": False,
+                          "envelope": False})
+        structural_obstacles.append({
+            "structural_obstacle_id": row.get("structural_obstacle_id"),
+            "obstacle_type": row.get("obstacle_type"),
+            "frame_id": row.get("frame_id"), "level_id": row.get("level_id"),
+            "footprint": deepcopy(row.get("footprint")),
+            "world_coordinates": deepcopy(row.get("world_coordinates")),
+            "source_handle": row.get("source_handle"),
+            "source_occurrence_id": row.get("source_occurrence_id"),
+            "entity_type": row.get("entity_type"), "source_layer": row.get("source_layer"),
+            "source_block": row.get("source_block"),
+            "source_block_path": deepcopy(row.get("source_block_path") or []),
+            "source_insert_handle": row.get("source_insert_handle"),
+            "source_transform": deepcopy(row.get("source_transform")),
+            "source_geometry_fingerprint": row.get("source_geometry_fingerprint"),
+            "source_classification_evidence": deepcopy(row.get("source_classification_evidence") or []),
+            "geometry_qualification": row.get("geometry_qualification"),
+            "obstacle_classification": row.get("obstacle_classification"),
+            "source_lineage": deepcopy(row.get("source_lineage") or {}),
+            "authority": authority,
+        })
+
     dimensions = []
     for row in model.get("dimensions") or []:
         association = row.get("association_status") or row.get("status") or "INPUT_REQUIRED"
@@ -400,6 +430,7 @@ def adapt_current_architecture(current_model, engine_identity=None):
                 "source": source_record, "levels": levels, "frames": frames, "walls": walls,
                 "physical_spaces": spaces, "functional_zones": zones, "apertures": apertures, "portals": portals,
                 "voids": voids, "dimensions": dimensions,
+                "structural_obstacles": structural_obstacles,
                 "text_evidence": deepcopy(model.get("text_evidence") or {
                     "schema": "planha-architectural-text-evidence/1.0",
                     "contract_version": SCHEMA, "items": [],

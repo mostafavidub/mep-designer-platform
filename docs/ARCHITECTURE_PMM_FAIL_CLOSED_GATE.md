@@ -5,7 +5,7 @@ validated canonical architecture is `AUTO_VALIDATED` and both canonical release
 flags are true. A missing persisted Preflight record is not evidence of a valid
 architecture.
 
-The RAW DXF path now materializes the existing Canonical Architecture 3.1 model
+The RAW DXF path now materializes the existing Canonical Architecture 3.2 model
 and Review Engine result after reconstruction. Existing projects are upgraded
 without a database migration by adapting their persisted
 `canonical-architectural-model/1.0` evidence on first access. This operation is

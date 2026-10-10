@@ -659,7 +659,9 @@
         "text_never_engineering_geometry_authority",
         "containment_only_space_label_hosting",
         "stale_safe_text_review_binding",
-        "canonical_30_claim_scoped_revalidation_to_31"
+    "canonical_30_claim_scoped_revalidation_to_31",
+    "source_backed_structural_column_identity",
+    "column_authority_separate_from_wall_envelope_and_routing"
       ],
       "tests": [
         "test_column_cannot_be_verified_void",
@@ -700,7 +702,11 @@
         "test_nested_attribute_preserves_world_transform_and_full_insert_path",
         "test_title_context_cannot_leak_room_semantics",
         "test_human_text_review_is_source_bound_and_cannot_create_geometry",
-        "test_canonical_30_is_not_silently_validated_as_31"
+    "test_canonical_30_is_not_silently_validated_as_31",
+    "test_repeated_native_columns_are_persistent_but_not_legacy_routing_authority",
+    "test_column_identity_uses_occurrence_and_orientation_normalized_geometry",
+    "test_structural_obstacle_adapter_preserves_source_geometry_without_authority",
+    "test_validator_rejects_column_authority_and_invalid_column_geometry"
       ]
     },
     {
