@@ -99,6 +99,45 @@ def test_adapter_preserves_meaning_is_deterministic_and_does_not_mutate():
     assert all(origin != "VISION_SUPPORT_ONLY" for row in first["walls"] for origin in row["authority"]["origins"])
 
 
+def test_structural_obstacle_adapter_preserves_source_geometry_without_authority():
+    current = legacy_model()
+    current["structural_obstacles"] = {"items": [{
+        "structural_obstacle_id":"COLUMN-" + "A"*20, "obstacle_type":"COLUMN",
+        "frame_id":"F1", "level_id":"L1", "footprint":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]],
+        "world_coordinates":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]],
+        "source_handle":"C1", "source_occurrence_id":"SRC-" + "1"*16,
+        "source_geometry_fingerprint":"COL-GEO-" + "2"*20,
+        "geometry_qualification":"SOURCE_BACKED", "obstacle_classification":"OBSTACLE_EVIDENCE_ONLY",
+        "authority":{"status":"SUPPORTED","origins":["SOURCE_GEOMETRIC"],
+                     "material_geometry":True,"wall":True,"routing":True,"release":True}
+    }]}
+    adapted = adapt_current_architecture(current)
+    row = adapted["structural_obstacles"][0]
+    assert row["footprint"] == current["structural_obstacles"]["items"][0]["footprint"]
+    assert not any(row["authority"].get(key) for key in
+                   ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope"))
+
+
+def test_validator_rejects_column_authority_and_invalid_column_geometry():
+    model = contract()
+    model["structural_obstacles"] = [{
+        "structural_obstacle_id":"COLUMN-" + "A"*20, "obstacle_type":"COLUMN", "frame_id":"F1",
+        "footprint":[[1,1],[1.4,1],[1.4,1.4],[1,1.4]],
+        "source_occurrence_id":"SRC-" + "1"*16,
+        "source_geometry_fingerprint":"COL-GEO-" + "2"*20,
+        "geometry_qualification":"SOURCE_BACKED", "obstacle_classification":"OBSTACLE_EVIDENCE_ONLY",
+        "authority":{"status":"SUPPORTED","origins":["SOURCE_GEOMETRIC"],
+                     "material_geometry":False,"wall":False,"portal":False,"access":False,
+                     "routing":True,"release":False,"envelope":False}
+    }]
+    rehash(model)
+    assert "COLUMN_ENGINEERING_AUTHORITY_FORBIDDEN" in codes(validate_architecture(model))
+    model["structural_obstacles"][0]["authority"]["routing"] = False
+    model["structural_obstacles"][0]["footprint"] = [[0,0],[1,1],[0,1],[1,0]]
+    rehash(model)
+    assert "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID" in codes(validate_architecture(model))
+
+
 def test_validator_valid_model_is_read_only_and_no_score_masking():
     model = contract(); before = content_hash(model)
     report = validate_architecture(model)

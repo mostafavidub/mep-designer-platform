@@ -1524,16 +1524,20 @@ def _completeness(frames, spaces, units_known, *, coverage=None, openings=None,
 
 def recognition_svg(model):
     frames = model.get("frames") or []; spaces = model.get("physical_spaces") or []
+    columns = (model.get("structural_obstacles") or {}).get("items") or []
     bounds = next((f["bounds"] for f in frames if f.get("bounds")), [0,0,1,1]); minx,miny,maxx,maxy=bounds
     width=max(maxx-minx,1); height=max(maxy-miny,1)
     rows=[f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{minx} {-maxy} {width} {height}">',
-          '<style>.s{fill-opacity:.22;stroke-width:.006;vector-effect:non-scaling-stroke}.t{font-size:14px;paint-order:stroke;stroke:white;stroke-width:3px}</style>']
+          '<style>.s{fill-opacity:.22;stroke-width:.006;vector-effect:non-scaling-stroke}.c{fill:#f59e0b;fill-opacity:.3;stroke:#92400e;stroke-width:.012;vector-effect:non-scaling-stroke}.t{font-size:14px;paint-order:stroke;stroke:white;stroke-width:3px}</style>']
     colors={"VERIFIED":"#159f74","HIGH_CONFIDENCE":"#2563eb","INPUT_REQUIRED":"#d89000","CONFLICT":"#d43f3a","AMBIGUOUS":"#a855f7"}
     for space in spaces:
         pts=" ".join(f"{x},{-y}" for x,y in space["polygon"]); color=colors.get(space["status"],"#6b7280")
         rows.append(f'<polygon class="s" points="{pts}" fill="{color}" stroke="{color}"/>')
         x,y=space["centroid"]; area="?" if space["area_m2"] is None else f'{space["area_m2"]:.2f} m²'
         rows.append(f'<text class="t" x="{x}" y="{-y}" fill="#111827">{space["physical_space_id"][-6:]} · {space["category"]} · {area}</text>')
+    for column in columns:
+        pts=" ".join(f"{x},{-y}" for x,y in column["footprint"])
+        rows.append(f'<polygon class="c" points="{pts}" data-obstacle-type="COLUMN" data-authority="DIAGNOSTIC_ONLY"/>')
     rows.append('</svg>'); return "".join(rows)
 
 
@@ -1557,6 +1561,8 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     internal_wall_gaps=[]; material_continuity_graphs=[]; material_endpoint_relations=[]
     source_role_review_groups={}
     source_role_diagnostics=annotate_source_roles(extracted,frames,source["metres_per_unit"],tolerance)
+    from .architecture_structural_obstacles import project_structural_obstacles
+    structural_obstacles=project_structural_obstacles(source_role_diagnostics,frames,source["source_sha256"])
     pre_topology_objects=standardize_source_records(extracted["primitives"])
     architectural_voids=_architectural_void_candidates(extracted,frames,source["source_sha256"],tolerance,metres_per_unit=source["metres_per_unit"])
     void_label_handles={str(row["label_evidence"]["source_handle"]) for row in architectural_voids
@@ -1908,6 +1914,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "text_evidence":text_evidence,
              "title_block_fields":title_block_fields,
              "source_role_diagnostics":source_role_diagnostics,
+             "structural_obstacles":structural_obstacles,
              "pre_topology_object_standardization":{"schema":"pre-topology-architectural-object-standardization/1.0",
                                                       "items":pre_topology_objects,
                                                       "enclosure_authority":"NONE",

@@ -217,7 +217,7 @@ def validate_architecture(model):
     walls = data.get("walls") or []; spaces = data.get("physical_spaces") or []
     zones = data.get("functional_zones") or []; apertures = data.get("apertures") or []
     portals = data.get("portals") or []; voids = data.get("voids") or []
-    dimensions = data.get("dimensions") or []
+    dimensions = data.get("dimensions") or []; structural_obstacles = data.get("structural_obstacles") or []
     frame_ids = _unique(frames, "frame_id", hard, "DUPLICATE_FRAME_ID")
     level_ids = _unique(levels, "level_id", hard, "DUPLICATE_LEVEL_ID")
     wall_ids = _unique(walls, "wall_id", hard, "DUPLICATE_WALL_ID")
@@ -228,6 +228,8 @@ def validate_architecture(model):
     opening_ids = _unique(portals, "opening_id", hard, "DUPLICATE_OPENING_ID")
     portal_ids = _unique([row for row in portals if row.get("portal_id")], "portal_id", hard, "DUPLICATE_PORTAL_ID")
     dimension_ids = _unique(dimensions, "dimension_id", hard, "DUPLICATE_DIMENSION_ID")
+    obstacle_ids = _unique(structural_obstacles, "structural_obstacle_id", hard,
+                           "DUPLICATE_STRUCTURAL_OBSTACLE_ID")
     evidence_ids = _unique(data.get("evidence_registry") or [], "evidence_id", hard, "DUPLICATE_EVIDENCE_ID")
     _unique(data.get("unresolved_items") or [], "unresolved_item_id", hard, "DUPLICATE_UNRESOLVED_ITEM_ID")
     verified_portal_ids = {p.get("portal_id") for p in portals if p.get("status") == "VERIFIED" and p.get("portal_id")}
@@ -353,6 +355,25 @@ def validate_architecture(model):
             if area > overlap_tolerance:
                 _add(hard, "VOID_OCCUPIED_SPACE_OVERLAP", void_id=vid, physical_space_id=sid, area=area)
 
+    for obstacle in structural_obstacles:
+        oid = obstacle.get("structural_obstacle_id")
+        _authority_valid(obstacle, hard, oid)
+        if obstacle.get("obstacle_type") != "COLUMN":
+            _add(hard, "STRUCTURAL_OBSTACLE_TYPE_INVALID", structural_obstacle_id=oid)
+        polygon = _polygon(obstacle.get("footprint"))
+        if polygon is None or not polygon.is_valid or polygon.area <= 0:
+            _add(hard, "STRUCTURAL_OBSTACLE_GEOMETRY_INVALID", structural_obstacle_id=oid)
+        if not obstacle.get("source_occurrence_id") or not obstacle.get("source_geometry_fingerprint"):
+            _add(hard, "STRUCTURAL_OBSTACLE_SOURCE_IDENTITY_REQUIRED", structural_obstacle_id=oid)
+        if obstacle.get("frame_id") is not None and obstacle.get("frame_id") not in frame_ids:
+            _add(hard, "STRUCTURAL_OBSTACLE_FRAME_REFERENCE_INVALID", structural_obstacle_id=oid)
+        authority = obstacle.get("authority") or {}
+        if any(authority.get(key) for key in
+               ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope")):
+            _add(hard, "COLUMN_ENGINEERING_AUTHORITY_FORBIDDEN", structural_obstacle_id=oid)
+        if obstacle.get("obstacle_classification") != "OBSTACLE_EVIDENCE_ONLY":
+            _add(hard, "COLUMN_OBSTACLE_CLASSIFICATION_INVALID", structural_obstacle_id=oid)
+
     access_edges = (data.get("graphs") or {}).get("access") or []
     for edge in access_edges:
         pid = edge.get("portal_id") if isinstance(edge, dict) else None
@@ -413,6 +434,7 @@ def validate_architecture(model):
             "status": status, "hard_errors": hard, "input_requirements": required,
             "warnings": warnings, "control_results": controls,
             "metrics": {"physical_spaces": len(spaces), "walls": len(walls), "portals": len(portals),
+                        "structural_obstacles": len(structural_obstacles),
                         "voids": len(voids), "illegal_overlap_area": overlap,
                         "hard_error_count": len(hard), "input_requirement_count": len(required)},
             "critical_score_masking": False, "input_hash_before": before, "input_hash_after": canonical_model_hash(model)}

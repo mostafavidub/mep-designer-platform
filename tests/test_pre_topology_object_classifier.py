@@ -17,6 +17,7 @@ from cad_engine.pre_topology_object_classifier import (
     standardize_source_records,
     repeated_compact_column_handles,
 )
+from cad_engine.architecture_structural_obstacles import project_structural_obstacles
 
 
 @pytest.mark.parametrize(
@@ -133,3 +134,47 @@ def test_column_footprint_does_not_create_a_physical_space(tmp_path):
     assert len(column_segments) == 4
     assert all(row["status"] == "REJECTED" for row in column_segments)
     assert any(row["object_class"] == "COLUMN" for row in model["pre_topology_object_standardization"]["items"])
+    assert model["structural_obstacles"]["items"] == []
+
+
+def test_repeated_native_columns_are_persistent_but_not_legacy_routing_authority(tmp_path):
+    path = tmp_path / "repeated-columns.dxf"
+    doc = ezdxf.new("R2018")
+    doc.header["$INSUNITS"] = 6
+    msp = doc.modelspace()
+    msp.add_lwpolyline([(0,0),(8,0),(8,6),(0,6)], close=True, dxfattribs={"layer":"A-WALL"})
+    for x in (1, 3, 5):
+        msp.add_lwpolyline([(x,1),(x+.4,1),(x+.4,1.4),(x,1.4)], close=True)
+    doc.saveas(path)
+    model = reconstruct_architecture(path)
+    rows = model["structural_obstacles"]["items"]
+    assert len(rows) == 3
+    assert len({row["structural_obstacle_id"] for row in rows}) == 3
+    assert all(row["footprint"] == row["world_coordinates"] for row in rows)
+    assert all(row["source_occurrence_id"] and row["source_geometry_fingerprint"] for row in rows)
+    assert all(not any(row["authority"][key] for key in
+                       ("material_geometry", "wall", "portal", "access", "routing", "release", "envelope"))
+               for row in rows)
+    assert model["columns"] == []
+    assert model["recognition_preview_svg"].count('data-obstacle-type="COLUMN"') == 3
+    assert all(segment["status"] == "REJECTED" for segment in model["architectural_segments"]
+               if segment["semantic_class"] == "COLUMN")
+
+
+def test_column_identity_uses_occurrence_and_orientation_normalized_geometry():
+    base = {"object_class":"COLUMN", "topology_role":"OBSTACLE_EVIDENCE_ONLY",
+            "evidence":["REPEATED_COMPACT_CLOSED_FOOTPRINT"], "closed":True,
+            "source_handle":"10", "entity_type":"LWPOLYLINE", "source_layer":"0",
+            "source_block_path":["C"], "source_insert_handle":"I", "source_transform":[1,0,0,1,0,0],
+            "frame_ids":["F1"]}
+    ring = [[0,0],[.4,0],[.4,.4],[0,.4]]
+    diagnostics = {"items":[{**base,"source_occurrence_id":"SRC-1111111111111111","geometry":ring},
+                              {**base,"source_occurrence_id":"SRC-2222222222222222",
+                               "geometry":[[2,0],[2.4,0],[2.4,.4],[2,.4]]}]}
+    frames = [{"frame_id":"F1","bounds":[-1,-1,4,2],"level_candidate":"L1"}]
+    first = project_structural_obstacles(diagnostics, frames, "a"*64)
+    reversed_diagnostics = {"items":list(reversed(diagnostics["items"]))}
+    reversed_diagnostics["items"][1] = {**reversed_diagnostics["items"][1], "geometry":list(reversed(ring))}
+    second = project_structural_obstacles(reversed_diagnostics, frames, "a"*64)
+    assert first == second
+    assert len({row["structural_obstacle_id"] for row in first["items"]}) == 2

@@ -83,6 +83,7 @@
         "cad_engine/architecture_reconstruction.py",
         "cad_engine/architectural_space_engine.py",
         "cad_engine/architectural_source_roles.py",
+        "cad_engine/architecture_structural_obstacles.py",
         "cad_engine/architecture_boundary_evidence.py",
         "cad_engine/architecture_enclosure_candidates.py",
         "cad_engine/pre_topology_object_classifier.py",
@@ -119,6 +120,8 @@
         "cad_engine/architecture_separator_evidence.py",
         "cad_engine/architecture_separator_validator.py",
         "cad_engine/architecture_text_evidence.py"
+        ,"docs/ARCHITECTURE_CANONICAL_COLUMNS.md"
+        ,"docs/adr/ADR-ARCHITECTURAL-COLUMN-BOUNDARY-WITNESS.md"
       ],
       "depends_on": [
         "planner"
