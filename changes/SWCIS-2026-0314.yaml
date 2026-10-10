@@ -1,0 +1,41 @@
+{
+  "change_id": "SWCIS-2026-0314",
+  "summary": "Restrict legacy physical-boundary authority to material-local canonical face intervals and prevent mapped raw source faces from laundering unsupported coverage.",
+  "requester": "project-owner",
+  "change_types": ["drawing_output", "documentation", "governance", "test"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "Legacy enclosure proof clips canonical faces to source-backed occupied material intervals and excludes the same mapped raw occurrence from unsupported coverage.",
+    "deployment": "No deployment or runtime configuration change.",
+    "docs": "Documents material-local face support, raw-source deduplication, provenance and fail-closed requalification.",
+    "governance": "A source face proves drawn geometry but not paired physical material outside occupied MATINT intervals.",
+    "manifest": "Adds interval-aware boundary-support diagnostics without changing public schemas.",
+    "migration": "No database or persisted-record migration.",
+    "qa": "Adds destructive long-face, raw-laundering, occurrence-identity and residual tests plus positive source-only, paired-wall, transformed and determinism regressions.",
+    "ui_api": "No API or UI contract change.",
+    "versioning": "Internal fail-closed authority correction; no standards version bump required."
+  },
+  "evidence": {
+    "traceability": [],
+    "tests": ["106 focused boundary/enclosure/separator/validator tests", "172 canonical-wall/face-pairing/space/identity/foundation tests", "19 SWCIS governance tests"],
+    "docs": ["docs/ARCHITECTURE_LEGACY_MATERIAL_BOUNDARY_PROOF.md"],
+    "version_bump": ["not required; no standards policy or public schema change"],
+    "migration": ["none"],
+    "golden_regression": ["One final frozen-source replay preserved 257 canonical Wall IDs and 19 Physical Space records, reduced overall VERIFIED spaces from four to one, retained the independently supported duct space, produced zero Vision calls, and kept Architecture and Mechanical release blocked."],
+    "semantic_diff": ["Unsupported full canonical faces and their mapped raw occurrences cease contributing physical boundary coverage; independent source-only recall remains."],
+    "artifact_diff": ["No private source, filename, crop, screenshot or diagnostic JSON is committed."],
+    "numeric_diff": ["Coverage may decrease only where prior support exceeded occupied material intervals."],
+    "contract_diff": ["VERIFIED boundary coverage requires material-local canonical face support, independently admissible source geometry, or an existing governed closure."],
+    "deployment_plan": ["No deployment in this task."],
+    "rollback_plan": ["Revert the commit; no stored-data migration is required."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 4,
+    "detectability": 1,
+    "score": 8,
+    "rationale": "Interval-aware destructive regressions detect authority leakage; positive recall tests protect legitimate independent source-only rooms."
+  },
+  "waiver": null
+}
