@@ -5,7 +5,8 @@ from fastapi import Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
 from .mechanical_drawing_set import approve_drawing_set, is_current_manifest, predict_drawing_set
-from .mechanical_basis_contract import canonical_city, canonical_cooling_system, canonical_heating_system, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
+from .mechanical_basis_contract import canonical_city, canonical_cooling_system, canonical_heating_system, canonical_shaft_strategy, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
+from .fixture_gate_v1 import fixture_schedule_quantified
 
 SYSTEM_LABELS = {
     'cooling': 'سرمایش', 'heating': 'گرمایش', 'water_supply': 'آب سرد و گرم',
@@ -70,9 +71,44 @@ def _numeric(value):
 
 
 def _fixture_schedule_quantified(value):
-    text = str(value or '').strip().translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789'))
-    aliases = ('sink','faucet','toilet','bath','shower','سینک','روشویی','روشويی','توالت','دوش','وان')
-    return bool(re.search(r'\d+', text)) and any(alias in text.lower() for alias in aliases)
+    return fixture_schedule_quantified(value)
+
+
+def _answer_validation_error(key, answer):
+    if key == 'fixture_schedule' and not _fixture_schedule_quantified(answer):
+        return (
+            'برای این سؤال باید تعداد عددی تجهیزات را وارد کنید؛ '
+            'مثال: سینک ۲، روشویی ۲، توالت ۲، دوش ۰.'
+        )
+    return _basis_answer_error(key, answer)
+
+
+def _answer_payload(legacy, p, *, outcome, persisted=False, error=None, error_code=None):
+    data = legacy.flow_payload(p)
+    data['drawing_set'] = (p.analysis or {}).get('drawing_set')
+    data['answer_outcome'] = outcome
+    data['answer_persisted'] = bool(persisted)
+    if error:
+        data['answer_error'] = error
+    if error_code:
+        data['error_code'] = error_code
+    return data
+
+
+def _answer_replay_matches(answers, key, raw_answer):
+    """Compare replay semantics without regenerating persisted authority evidence."""
+    before = normalize_answers(answers or {})
+    if key != 'mechanical_shaft_route':
+        return normalize_answers(before, answer_key=key, raw_answer=raw_answer) == before
+    existing = dict(before.get('mechanical_shaft_approval') or {})
+    candidate = normalize_answers({}, answer_key=key, raw_answer=raw_answer)
+    proposed = dict(candidate.get('mechanical_shaft_approval') or {})
+    return bool(
+        existing.get('status') == 'APPROVED'
+        and existing.get('source') == 'explicit_user_answer'
+        and canonical_shaft_strategy(existing.get('strategy')) == canonical_shaft_strategy(proposed.get('strategy'))
+        and str(existing.get('raw_answer') or '').strip() == str(proposed.get('raw_answer') or '').strip()
+    )
 
 
 def _enclosed_parking(value):
@@ -336,6 +372,7 @@ def _commit_and_verify_answer(db, p, key):
         p.analysis = analysis; db.commit()
         return False
     analysis = dict(p.analysis or {})
+    analysis.pop('answer_error', None)
     analysis['basis_persistence_qa'] = {'status':'PASS','key':key}
     p.analysis = analysis; db.commit(); db.refresh(p)
     return True
@@ -388,12 +425,14 @@ def register_mechanical_workflow(app, legacy):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
         qs = p.questions or []; idx = p.current_question
-        try: replayed = expected_question_index != '' and int(expected_question_index) != idx
-        except (TypeError, ValueError): replayed = False
+        try: expected = int(expected_question_index) if expected_question_index != '' else idx
+        except (TypeError, ValueError):
+            analysis = dict(p.analysis or {}); analysis['answer_error'] = 'شناسه سؤال معتبر نیست؛ صفحه را تازه‌سازی کنید.'; p.analysis = analysis; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
+        replayed = expected != idx
         if replayed:
             db.close(); return RedirectResponse(f'/projects/{pid}', 303)
         if idx < len(qs):
-            key = qs[idx]['key']; cleaned = answer.strip(); error = _basis_answer_error(key, cleaned)
+            key = qs[idx]['key']; cleaned = answer.strip(); error = _answer_validation_error(key, cleaned)
             if error:
                 analysis = dict(p.analysis or {}); analysis['answer_error'] = error; p.analysis = analysis; p.status = 'asking'; db.commit(); db.close(); return RedirectResponse(f'/projects/{pid}', 303)
             p.answers = normalize_answers(p.answers or {}, answer_key=key, raw_answer=cleaned); p.current_question = idx + 1
@@ -409,25 +448,48 @@ def register_mechanical_workflow(app, legacy):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)
         if not p: raise HTTPException(404)
         qs = p.questions or []; idx = p.current_question
-        try: replayed = expected_question_index != '' and int(expected_question_index) != idx
-        except (TypeError, ValueError): replayed = False
+        try: expected = int(expected_question_index) if expected_question_index != '' else idx
+        except (TypeError, ValueError):
+            data = _answer_payload(
+                legacy, p, outcome='stale_submission',
+                error='شناسه سؤال معتبر نیست؛ صفحه را تازه‌سازی کنید.',
+                error_code='invalid_question_index',
+            ); db.close(); return JSONResponse(data, status_code=409)
+        replayed = expected != idx
         if replayed:
-            data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); data['idempotent_replay'] = True; db.close(); return JSONResponse(data)
+            if 0 <= expected < idx and expected < len(qs):
+                replay_key = qs[expected].get('key')
+                if _answer_replay_matches(p.answers or {}, replay_key, answer.strip()):
+                    data = _answer_payload(legacy, p, outcome='idempotent_replay', persisted=True)
+                    data['idempotent_replay'] = True; db.close(); return JSONResponse(data)
+            data = _answer_payload(
+                legacy, p, outcome='stale_submission',
+                error='این فرم مربوط به سؤال فعلی نیست؛ صفحه را تازه‌سازی کنید.',
+                error_code='stale_question_index',
+            ); db.close(); return JSONResponse(data, status_code=409)
         if p.status != 'asking' or idx >= len(qs):
-            data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data)
+            data = _answer_payload(legacy, p, outcome='current_state', persisted=False); db.close(); return JSONResponse(data)
         current_question = qs[idx]; cleaned_answer = answer.strip(); key = current_question.get('key')
-        if key == 'fixture_schedule' and not _fixture_schedule_quantified(cleaned_answer):
-            data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); data['answer_error'] = 'برای این سؤال باید تعداد عددی تجهیزات را وارد کنید؛ مثال: سینک ۲، روشویی ۲، توالت ۲، دوش ۰.'; db.close(); return JSONResponse(data)
-        error = _basis_answer_error(key, cleaned_answer)
+        error = _answer_validation_error(key, cleaned_answer)
         if error:
-            data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); data['answer_error'] = error; db.close(); return JSONResponse(data)
+            data = _answer_payload(
+                legacy, p, outcome='validation_error', error=error,
+                error_code='invalid_answer',
+            ); db.close(); return JSONResponse(data, status_code=422)
         p.answers = normalize_answers(p.answers or {}, answer_key=key, raw_answer=cleaned_answer); p.current_question = idx + 1
         insert_gas_pressure_question(p, key, idx + 1); qs = p.questions or []
         if p.current_question >= len(qs):
             if _discipline(p) == 'mechanical': _advance_mechanical(p)
             else: p.status = 'ready_to_design'
         else: p.status = 'asking'
-        _commit_and_verify_answer(db, p, key); data = legacy.flow_payload(p); data['drawing_set'] = (p.analysis or {}).get('drawing_set'); db.close(); return JSONResponse(data)
+        if not _commit_and_verify_answer(db, p, key):
+            data = _answer_payload(
+                legacy, p, outcome='persistence_error',
+                error='پاسخ در قرارداد پروژه ذخیره نشد؛ لطفاً همان مورد را دوباره ثبت کنید.',
+                error_code='answer_persistence_failed',
+            ); db.close(); return JSONResponse(data, status_code=500)
+        data = _answer_payload(legacy, p, outcome='accepted', persisted=True)
+        db.close(); return JSONResponse(data)
 
     def drawing_set(pid: int, request: Request):
         u = legacy.current_user(request); db, p = legacy.own_project(pid, u.id)

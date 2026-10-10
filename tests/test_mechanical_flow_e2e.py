@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -65,7 +66,7 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         finally: db.close()
 
         invalid = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'نامشخص'})
-        self.assertEqual(invalid.status_code, 200); self.assertEqual(invalid.json()['status'], 'asking'); self.assertIn('answer_error', invalid.json())
+        self.assertEqual(invalid.status_code, 422); self.assertEqual(invalid.json()['status'], 'asking'); self.assertIn('answer_error', invalid.json())
 
         water = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '2.8 bar'})
         self.assertEqual(water.status_code, 200); self.assertEqual(water.json()['status'], 'asking')
@@ -132,11 +133,229 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         finally:
             db.close()
 
+    def test_shaft_answer_exact_replay_is_idempotent_and_preserves_approval_evidence(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'shaft-replay'})
+        pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'asking'
+            project.questions = [
+                {'key': 'mechanical_shaft_route', 'question': 'مسیر شفت را مشخص کنید.'},
+                {'key': 'gas', 'question': 'ساختمان گاز دارد؟'},
+            ]
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            db.commit()
+        finally:
+            db.close()
+
+        payload = {'answer': 'پیشنهاد نزدیک هسته فضاهای تر', 'expected_question_index': '0'}
+        accepted = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        self.assertEqual(accepted.status_code, 200)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            original = dict(project.answers['mechanical_shaft_approval'])
+            self.assertEqual(original['source'], 'explicit_user_answer')
+            self.assertTrue(original['recorded_at'])
+        finally:
+            db.close()
+
+        replay = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        self.assertEqual(replay.status_code, 200)
+        self.assertTrue(replay.json()['idempotent_replay'])
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 1)
+            self.assertEqual(project.answers['mechanical_shaft_approval'], original)
+        finally:
+            db.close()
+
+    def test_shaft_replay_with_changed_raw_or_strategy_is_stale(self):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': 'shaft-stale'})
+        pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'asking'
+            project.questions = [
+                {'key': 'mechanical_shaft_route', 'question': 'مسیر شفت را مشخص کنید.'},
+                {'key': 'gas', 'question': 'ساختمان گاز دارد؟'},
+            ]
+            project.current_question = 0
+            project.answers = {'discipline': 'mechanical'}
+            db.commit()
+        finally:
+            db.close()
+
+        original_payload = {'answer': 'پیشنهاد نزدیک هسته فضاهای تر', 'expected_question_index': '0'}
+        self.assertEqual(self.client.post(f'/projects/{pid}/answer-json', data=original_payload).status_code, 200)
+        for changed in ('نزدیک هسته فضاهای تر', 'شفت کنار راه پله'):
+            response = self.client.post(
+                f'/projects/{pid}/answer-json',
+                data={'answer': changed, 'expected_question_index': '0'},
+            )
+            self.assertEqual(response.status_code, 409)
+            self.assertEqual(response.json()['error_code'], 'stale_question_index')
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 1)
+            self.assertEqual(project.answers['mechanical_shaft_approval']['raw_answer'], original_payload['answer'])
+        finally:
+            db.close()
+
     def test_project_answer_ui_retries_transient_gateway_failures(self):
-        source = open('app/templates/project.html', encoding='utf-8').read()
+        source = Path('app/templates/project.html').read_text(encoding='utf-8')
         self.assertIn("expected_question_index", source)
         self.assertIn("for(let attempt=0;attempt<4;attempt++)", source)
         self.assertIn("X-Idempotent-Answer", source)
+        self.assertIn("data.answer_persisted===true", source)
+        self.assertIn("data.answer_error", source)
+        self.assertIn("if(submitting)return", source)
+
+    def _fixture_question_project(self, name='fixture-question-contract'):
+        init = self.client.post('/api/upload/init/mechanical', json={'name': name})
+        self.assertEqual(init.status_code, 200)
+        pid = init.json()['project_id']
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            project.status = 'asking'
+            project.questions = [
+                {'key': f'kept_{index}', 'question': f'پرسش قبلی {index}'}
+                for index in range(20)
+            ] + [{
+                'key': 'fixture_schedule',
+                'question': 'تعداد تجهیزات لوله‌کشی بام را مشخص کنید.',
+            }]
+            project.current_question = 20
+            project.answers = {
+                'discipline': 'mechanical',
+                **{f'kept_{index}': f'value-{index}' for index in range(20)},
+            }
+            project.analysis = {'discipline': 'mechanical'}
+            db.commit()
+        finally:
+            db.close()
+        return pid
+
+    def test_fixture_question_presentation_matches_flow_and_requires_quantities(self):
+        pid = self._fixture_question_project()
+        flow = self.client.get(f'/projects/{pid}/flow')
+        page = self.client.get(f'/projects/{pid}')
+        self.assertEqual(flow.status_code, 200)
+        self.assertEqual(page.status_code, 200)
+        question = flow.json()['question']
+        self.assertEqual(question['key'], 'fixture_schedule')
+        self.assertEqual(question['input_type'], 'text')
+        self.assertEqual(question['options'], [])
+        self.assertEqual(question['answer_format'], 'quantified_fixture_schedule')
+        self.assertIn(question['placeholder'], page.text)
+        self.assertNotIn('تأیید پیشنهاد خودکار تجهیزات', page.text)
+        self.assertNotIn('بدون تجهیزات لوله‌کشی', page.text)
+
+    def test_invalid_fixture_answer_is_422_and_preserves_all_prior_answers(self):
+        pid = self._fixture_question_project()
+        db = legacy.Session()
+        try:
+            before = dict(db.get(legacy.Project, pid).answers)
+        finally:
+            db.close()
+        response = self.client.post(
+            f'/projects/{pid}/answer-json',
+            data={'answer': 'تأیید پیشنهاد خودکار تجهیزات', 'expected_question_index': '20'},
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()['answer_outcome'], 'validation_error')
+        self.assertFalse(response.json()['answer_persisted'])
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 20)
+            self.assertEqual(project.answers, before)
+            self.assertNotIn('fixture_schedule', project.answers)
+        finally:
+            db.close()
+
+    def test_unscoped_zero_fixture_answer_is_rejected(self):
+        pid = self._fixture_question_project('fixture-zero-rejected')
+        response = self.client.post(
+            f'/projects/{pid}/answer-json',
+            data={'answer': 'بدون تجهیزات لوله‌کشی', 'expected_question_index': '20'},
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()['error_code'], 'invalid_answer')
+
+    def test_quantified_fixture_answer_advances_once_and_replay_is_idempotent(self):
+        pid = self._fixture_question_project('fixture-answer-idempotency')
+        payload = {
+            'answer': 'سینک ۲، روشویی ۲، توالت ۲، دوش ۰',
+            'expected_question_index': '20',
+        }
+        accepted = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        replay = self.client.post(f'/projects/{pid}/answer-json', data=payload)
+        stale = self.client.post(
+            f'/projects/{pid}/answer-json',
+            data={'answer': 'سینک ۳، روشویی ۲، توالت ۲، دوش ۰', 'expected_question_index': '20'},
+        )
+        self.assertEqual(accepted.status_code, 200)
+        self.assertTrue(accepted.json()['answer_persisted'])
+        self.assertEqual(replay.status_code, 200)
+        self.assertTrue(replay.json()['idempotent_replay'])
+        self.assertEqual(stale.status_code, 409)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 21)
+            self.assertEqual(project.answers['fixture_schedule'], payload['answer'])
+        finally:
+            db.close()
+
+    def test_malformed_question_index_is_rejected_without_advancing(self):
+        pid = self._fixture_question_project('fixture-bad-index')
+        response = self.client.post(
+            f'/projects/{pid}/answer-json',
+            data={'answer': 'سینک ۲، توالت ۲', 'expected_question_index': '../20'},
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['error_code'], 'invalid_question_index')
+        db = legacy.Session()
+        try:
+            self.assertEqual(db.get(legacy.Project, pid).current_question, 20)
+        finally:
+            db.close()
+
+    def test_legacy_html_fixture_validation_uses_same_contract(self):
+        pid = self._fixture_question_project('fixture-legacy-html')
+        rejected = self.client.post(
+            f'/projects/{pid}/answer',
+            data={'answer': 'تجهیزات مطابق سمبل‌های پلان معماری', 'expected_question_index': '20'},
+            follow_redirects=False,
+        )
+        self.assertEqual(rejected.status_code, 303)
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.current_question, 20)
+            self.assertIn('تعداد عددی', (project.analysis or {})['answer_error'])
+        finally:
+            db.close()
+
+    def test_wrong_owner_fixture_submission_remains_non_disclosing(self):
+        pid = self._fixture_question_project('fixture-owner-isolation')
+        other = TestClient(app)
+        self.assertEqual(
+            other.post('/api/upload/init/mechanical', json={'name': 'unrelated-owner'}).status_code,
+            200,
+        )
+        response = other.post(
+            f'/projects/{pid}/answer-json',
+            data={'answer': 'سینک ۲، توالت ۲', 'expected_question_index': '20'},
+        )
+        self.assertEqual(response.status_code, 404)
 
 
 if __name__ == '__main__': unittest.main()
