@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 import time
+import unicodedata
 from datetime import datetime
 from types import SimpleNamespace
 
@@ -74,6 +75,70 @@ def unresolved_questions(project):
         if value is None or not str(value).strip() or mechanical_workflow._basis_answer_error(key, str(value)):
             missing.append(_present_question(question))
     return missing
+
+
+def _level_identity(value):
+    """Normalize presentation-only Unicode/spacing without inventing aliases."""
+    if value is None:
+        return ""
+    return " ".join(unicodedata.normalize("NFC", str(value)).split())
+
+
+def _mechanical_level_identity_is_authoritative(project, scope):
+    """Reconcile payment scope with the existing architectural level evidence."""
+    auto = ((project.analysis or {}).get("architectural_auto") or {})
+    profiles = auto.get("level_profiles") or []
+    if not profiles or not all(isinstance(row, dict) for row in profiles):
+        return False
+
+    profile_names = [_level_identity(row.get("name")) for row in profiles]
+    if any(not name for name in profile_names) or len(profile_names) != len(set(profile_names)):
+        return False
+
+    profile_ids = [_level_identity(row.get("level_id") or row.get("id")) for row in profiles]
+    if any(profile_ids):
+        if any(not level_id for level_id in profile_ids) or len(profile_ids) != len(set(profile_ids)):
+            return False
+
+    source_levels = auto.get("levels") or []
+    if source_levels:
+        if not isinstance(source_levels, list):
+            return False
+        source_names = [
+            _level_identity(row.get("name") if isinstance(row, dict) else row)
+            for row in source_levels
+        ]
+        if any(not name for name in source_names) or len(source_names) != len(set(source_names)):
+            return False
+        source_ids = [
+            _level_identity((row.get("level_id") or row.get("id")) if isinstance(row, dict) else None)
+            for row in source_levels
+        ]
+        if any(profile_ids) or any(source_ids):
+            if any(not level_id for level_id in source_ids) or set(source_ids) != set(profile_ids):
+                return False
+        elif set(source_names) != set(profile_names):
+            return False
+
+    scoped_levels = [_level_identity(value) for value in scope.get("all_levels") or []]
+    if any(not name for name in scoped_levels) or len(scoped_levels) != len(set(scoped_levels)):
+        return False
+    if set(scoped_levels) != set(profile_names):
+        return False
+
+    profile_name_set = set(profile_names)
+    for key in (
+        "conditioned_levels", "heated_levels", "wet_fixture_levels",
+        "sanitary_fixture_levels", "ventilation_required_levels", "gas_consumer_levels",
+    ):
+        values = {_level_identity(value) for value in scope.get(key) or []}
+        if "" in values or not values.issubset(profile_name_set):
+            return False
+
+    roof_names = {_level_identity(row.get("name")) for row in profiles if row.get("roof") is True}
+    if scope.get("roof_exists") and _level_identity(scope.get("roof_level_name")) not in roof_names:
+        return False
+    return True
 
 
 def register_panel_checkout(app, legacy, Job, Link, status_payload, project_token):
@@ -566,11 +631,12 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
                     not scope.get("all_levels")
                     or scope.get("effective_level_source") != "architecture-level-profiles"
                     or scope.get("scope_ambiguities")
+                    or not _mechanical_level_identity_is_authoritative(project, scope)
                 ):
                     db.rollback()
                     return JSONResponse({
                         "error_code": "ENGINEERING_INPUT_REQUIRED",
-                        "error": "اطلاعات معتبر طبقات معماری برای تأیید نقشه‌های مکانیکی کافی نیست؛ هیچ پرداختی انجام نشد.",
+                        "error": "هویت طبقات معماری شناسایی‌شده نیاز به اصلاح یا تأیید دارد؛ هیچ پرداختی انجام نشد.",
                         "required_inputs": ["TYPED_ARCHITECTURAL_LEVELS"],
                     }, status_code=409)
                 try:

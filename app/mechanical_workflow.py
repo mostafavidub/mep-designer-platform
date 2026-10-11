@@ -1,4 +1,5 @@
 from pathlib import Path
+import unicodedata
 import re
 
 from fastapi import Form, HTTPException, Request
@@ -149,6 +150,19 @@ def _level_names(p):
         for f in analysis.get('files') or []:
             name = Path(str(f.get('file') or '')).stem.strip()
             if name and name not in levels: levels.append(name)
+    profiles = auto.get('level_profiles') or []
+    profile_names = [str(row.get('name') or '') for row in profiles if isinstance(row, dict) and row.get('name')]
+    normalized = lambda value: ' '.join(unicodedata.normalize('NFC', str(value)).split())
+    if levels and profile_names:
+        normalized_levels = [normalized(value) for value in levels]
+        normalized_profiles = [normalized(value) for value in profile_names]
+        if (len(normalized_levels) == len(set(normalized_levels))
+                and len(normalized_profiles) == len(set(normalized_profiles))
+                and set(normalized_levels) == set(normalized_profiles)):
+            # Preserve the authoritative profile spelling after proving a
+            # one-to-one presentation-only normalization.  No alias or level
+            # mapping is invented here.
+            return profile_names
     return levels or ['پلان معماری']
 
 

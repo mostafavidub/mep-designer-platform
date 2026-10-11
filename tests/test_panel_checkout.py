@@ -80,7 +80,14 @@ def prepare_mechanical_payment(flow, monkeypatch, scope):
         project = db.get(legacy.Project, pid)
         project.answers = {'discipline': 'mechanical', 'location': 'گنبد'}
         project.questions = []
-        project.analysis = {'architectural_auto': {}}
+        project.analysis = {'architectural_auto': {
+            'levels': [{'name': name} for name in scope.get('all_levels') or []],
+            'level_profiles': [
+                {'name': name, 'roof': scope.get('level_types', {}).get(name) == 'roof'}
+                for name in scope.get('all_levels') or []
+            ],
+            'roof_scope_reliable': True,
+        }}
         project.status = 'ready_to_design'
         db.commit()
     quote = browser.post('/internal/panel/customer/quote', headers=auth,
@@ -98,6 +105,23 @@ def assert_no_payment_side_effects(pid):
         ).count() == 0
         assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 0
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+
+
+def prepare_actual_level_payment(flow, monkeypatch, architectural_auto):
+    browser, auth, uid, pid, token, _order = flow
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.required_basis_questions', lambda _project: [])
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.answers = {'discipline': 'mechanical', 'location': 'گنبد'}
+        project.questions = []
+        project.analysis = {'geometry_area_m2': 100, 'architectural_auto': architectural_auto}
+        project.status = 'ready_to_design'
+        db.commit()
+    quote = browser.post('/internal/panel/customer/quote', headers=auth,
+                         json={'engineProjectId': pid, 'area': 100})
+    assert quote.status_code == 200, quote.text
+    return browser, auth, uid, pid, quote.json()['project']
 
 
 def test_phone_login_starts_with_zero_not_demo_credit(flow):
@@ -454,6 +478,81 @@ def test_fallback_presentation_level_cannot_authorize_payment(flow, monkeypatch)
     assert response.status_code == 409
     assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
     assert_no_payment_side_effects(pid)
+
+
+def test_contradictory_real_level_collections_return_input_required(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, {
+        'levels': [{'name': 'Fallback Ghost'}],
+        'level_profiles': [{'name': 'Authoritative L1', 'roof': False}],
+        'roof_scope_reliable': True,
+    })
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert response.json()['required_inputs'] == ['TYPED_ARCHITECTURAL_LEVELS']
+    assert 'اصلاح یا تأیید' in response.json()['error']
+    assert_no_payment_side_effects(pid)
+
+
+def test_consistent_real_level_collections_preserve_payment(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, {
+        'levels': [{'name': ' طبقه  اول '}],
+        'level_profiles': [{'name': 'طبقه اول', 'roof': False}],
+        'roof_scope_reliable': True,
+    })
+    first = pay(browser, auth, pid, order, method='gateway')
+    second = pay(browser, auth, pid, order, method='gateway')
+    assert first.status_code == second.status_code == 200
+    with legacy.Session() as db:
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid
+        assert db.query(app.state.panel_checkout.Activity).filter_by(id=f'DEMO-PAY-{pid}').count() == 1
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 1
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
+
+
+@pytest.mark.parametrize('architectural_auto', [
+    {'levels': [], 'level_profiles': []},
+    {'levels': [{'name': 'L1'}], 'level_profiles': [
+        {'name': 'L1', 'level_id': 'LEVEL-1', 'roof': False},
+        {'name': 'L1 copy', 'level_id': 'LEVEL-1', 'roof': False},
+    ]},
+    {'levels': [
+        {'name': 'L1', 'level_id': 'LEVEL-1'},
+        {'name': 'Roof', 'level_id': 'LEVEL-OTHER'},
+    ], 'level_profiles': [
+        {'name': 'L1', 'level_id': 'LEVEL-1', 'roof': False},
+        {'name': 'Roof', 'level_id': 'LEVEL-2', 'roof': False},
+    ], 'roof_scope_reliable': True},
+])
+def test_missing_duplicate_or_conflicting_level_identity_fails_closed(flow, monkeypatch, architectural_auto):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, architectural_auto)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert_no_payment_side_effects(pid)
+
+
+def test_canonical_level_ids_and_roof_scope_are_preserved(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, {
+        'levels': [
+            {'name': 'همکف', 'level_id': 'LEVEL-GROUND'},
+            {'name': 'بام', 'level_id': 'LEVEL-ROOF'},
+        ],
+        'level_profiles': [
+            {'name': 'همکف', 'level_id': 'LEVEL-GROUND', 'roof': False},
+            {'name': 'بام', 'level_id': 'LEVEL-ROOF', 'roof': True},
+        ],
+        'roof_scope_reliable': True,
+    })
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 200, response.text
+    with legacy.Session() as db:
+        drawing_set = (db.get(legacy.Project, pid).analysis or {})['drawing_set']
+        sheets = drawing_set['drawing_manifest']['sheets']
+        assert any(row['family'] == 'roof_rainwater' and row['drawing_type'] == 'roof_plan'
+                   and row['levels'] == ['بام'] for row in sheets)
+        assert all('بام' not in row['levels'] for row in sheets
+                   if row['family'] == 'sanitary_vent' and row['drawing_type'] == 'floor_plan')
 
 
 def test_corrupt_fresh_manifest_is_internal_error_and_never_charges(flow, monkeypatch):
