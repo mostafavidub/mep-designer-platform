@@ -262,6 +262,17 @@ def load_generated_articles():
                 "created_date": str(
                     item.get("created_date") or ""
                 ),
+                "date_modified": str(
+                    item.get("date_modified")
+                    or item.get("created_date")
+                    or ""
+                ),
+                "hero_image": str(
+                    item.get("hero_image") or ""
+                ),
+                "hero_alt": str(
+                    item.get("hero_alt") or ""
+                ),
                 "machine_score": item.get(
                     "machine_score"
                 ),

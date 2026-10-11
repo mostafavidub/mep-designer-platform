@@ -1,0 +1,55 @@
+{
+  "change_id": "SWCIS-2026-0314",
+  "summary": "Publish the owner-approved architecture prelaunch guide and revised sanitary-drainage and electrical-execution articles with accessible CTA, original conceptual images, internal links, and SEO regression coverage.",
+  "requester": "mostafavidub",
+  "change_types": ["ui_api", "governance", "test"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "governance", "deployment", "docs", "qa", "manifest", "migration", "versioning"],
+  "impact_notes": {
+    "ui_api": "Only /architect, /blog/sanitary-drainage-plan and /blog/electrical-execution-drawing-building plus their publication CSS and three original conceptual images change.",
+    "governance": "Owner-approved content remains bounded by prelaunch architecture claims and explicit engineering-review limitations.",
+    "deployment": "After protected-main merge and green checks, the existing Railway web-app source on main publishes the three pages; no infrastructure configuration changes.",
+    "qa": "Regression checks cover metadata, canonical URLs, robots state, assets, CTA counts, internal links and fragment destinations."
+  },
+  "evidence": {
+    "traceability": [
+      "Owner-approved Library drafts -> deterministic publication builder -> three existing canonical URLs -> public SEO regression tests"
+    ],
+    "tests": [
+      "python -m unittest tests.test_public_seo_contract tests.test_generated_seo_article_registry tests.test_web_landings",
+      "python tools/swcis_validate.py --base 84cbdd007f2c5dca0f61989f778c6759ec0a34bc --change-request changes/SWCIS-2026-0314.yaml",
+      "local desktop and mobile browser rendering without form submission"
+    ],
+    "docs": ["changes/SWCIS-2026-0314.yaml"],
+    "version_bump": ["not required: content, public presentation and tests only; engineering schemas and output contracts are unchanged"],
+    "migration": ["none: existing URLs and rendering paths are preserved"],
+    "golden_regression": ["not applicable to public editorial content; focused public-web regression remains mandatory"],
+    "semantic_diff": [
+      "/architect changes from speculative feature copy to an explicit no-order prelaunch preparation guide and becomes indexable in the sitemap for prelaunch SEO",
+      "sanitary drainage changes from generic design exposition to an evidence-oriented plan/riser/calculation review checklist",
+      "electrical execution changes from absolute execution claims to input, scope, review, revision and professional-responsibility guidance"
+    ],
+    "artifact_diff": ["three self-produced conceptual SVG images and one scoped responsive stylesheet are added"],
+    "numeric_diff": ["no engineering numeric defaults, code clauses, search volume or keyword difficulty values are introduced"],
+    "contract_diff": [
+      "Canonical URLs remain unchanged",
+      "/architect becomes index,follow and is added to the sitemap while retaining no ordering path",
+      "mechanical and electrical remain indexable with canonical and Article metadata",
+      "private panel/admin noindex behavior is unchanged"
+    ],
+    "deployment_plan": [
+      "Open a narrow PR from the exact production main SHA; merge only after swcis-governance and product tests pass; allow the existing Railway main-branch deployment; verify the three live URLs"
+    ],
+    "rollback_plan": [
+      "Revert the publication merge commit or redeploy the prior approved production commit 84cbdd007f2c5dca0f61989f778c6759ec0a34bc"
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "The change is limited to three public pages, static assets, article metadata and focused tests; engineering workflows, private routes and infrastructure configuration are untouched."
+  },
+  "waiver": null
+}

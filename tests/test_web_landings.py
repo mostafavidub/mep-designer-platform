@@ -206,11 +206,11 @@ class LandingSmokeTests(unittest.TestCase):
     def test_architect_is_transparent_and_links_active_services(self):
         r = self.client.get('/architect')
         self._assert_brand_shell(r)
-        self.assertIn('در دست ساخت', r.text)
-        self.assertIn('نقشه زمین', r.text)
-        self.assertIn('مجموعه پلان‌های معماری', r.text)
-        self.assertIn('/electrical', r.text)
-        self.assertIn('/mechanical', r.text)
+        self.assertIn('هنوز راه‌اندازی نشده', r.text)
+        self.assertIn('اطلاعات پایه زمین', r.text)
+        self.assertIn('برنامه فیزیکی', r.text)
+        self.assertIn('/blog/mep-input-guide', r.text)
+        self.assertNotIn('/architect#start', r.text)
 
 
 if __name__ == '__main__':
