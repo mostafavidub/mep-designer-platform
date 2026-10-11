@@ -1,0 +1,45 @@
+{
+  "change_id": "SWCIS-2026-0303",
+  "summary": "Require exact current Canonical provenance membership for active Architecture unresolved inventory while preserving historical identifiers as audit-only evidence.",
+  "requester": "project-owner",
+  "change_types": ["rule", "test", "documentation", "governance", "drawing_output"],
+  "changed_rule_ids": ["MEP-ARCH-RECOG-001"],
+  "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "pmm", "qa", "questionnaire", "routing", "rule_book", "ui_api", "versioning"],
+  "impact_notes": {
+    "cad_designer": "No reconstruction change; current Canonical evidence-registry membership is consumed read-only.",
+    "deployment": "No Staging or Production deployment is authorized by this inventory-integrity change.",
+    "docs": "Define the active unresolved membership and historical audit contract.",
+    "governance": "Add SWCIS-2026-0303 and validate the complete affected closure without waiver.",
+    "manifest": "No artifact identity change; inventory output records current source and evidence identities.",
+    "migration": "No stored Canonical migration; historical inventory entries are reconciled into explicit audit states.",
+    "pmm": "No authority or consumer change; unresolved material inputs remain fail-closed.",
+    "qa": "Add deterministic active-membership, rebind, stale, duplicate, validator and snapshot controls.",
+    "questionnaire": "Current Preflight review items are the only source of active human-review inventory.",
+    "routing": "No routing change; affected downstream workflows remain blocked by current unresolved material inputs.",
+    "rule_book": "MEP-ARCH-RECOG-001 inventory reporting now requires current Canonical provenance membership.",
+    "ui_api": "No endpoint change; future inventory presentation must use active records and retain audit history separately.",
+    "versioning": "Behavior-preserving integrity hardening; no Canonical or SWCIS policy version bump."
+  },
+  "evidence": {
+    "traceability": ["current Preflight review item -> current source SHA/frame -> Canonical evidence witness -> current validator issue -> unique active inventory identity"],
+    "tests": ["tests/test_architecture_unresolved_inventory.py", "focused Architecture validator, snapshot, review and identity regression suites"],
+    "docs": ["docs/ARCHITECTURE_UNRESOLVED_INVENTORY_INTEGRITY.md"],
+    "version_bump": ["not required: no Canonical schema, SWCIS policy or release-gate semantic change"],
+    "migration": ["none: historical inventory remains immutable audit input; current inventory is regenerated"],
+    "golden_regression": ["No Golden truth change; seven current sealed project replays are read-only inventory inputs and private geometry is not committed."],
+    "semantic_diff": ["Historical IDs can no longer establish ACTIVE status without exact current provenance."],
+    "artifact_diff": ["Inventory output separates current active items from audit-only historical records."],
+    "numeric_diff": ["No engineering numeric or geometry change."],
+    "contract_diff": ["ACTIVE requires current source, frame/level, evidence witness, fingerprints, exact source scope and current unresolved issue binding."],
+    "deployment_plan": ["No deployment authorized; deliver a reviewable branch and PR only after local qualification."],
+    "rollback_plan": ["Revert the inventory module, tests, documentation and this change request; Canonical models and source evidence are untouched."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Incorrect active membership can either preserve a retired blocker or hide a current material input; exact provenance checks and fail-closed integrity status contain the risk."
+  },
+  "waiver": null
+}
