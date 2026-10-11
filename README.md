@@ -1,5 +1,17 @@
 # MEP Designer Platform
 
+## Local Staging
+
+The normal release path uses the production Docker image with an isolated local
+PostgreSQL database before GitHub CI. Start it with:
+
+```bash
+docker compose -f docker-compose.local-staging.yml up --build -d --wait
+```
+
+See [Local Staging](docs/LOCAL_STAGING.md) for stop, reset, logs, tests, safety
+guards, limitations, and online-Staging recovery.
+
 Production is a **Single Living System** identified automatically by its Git
 commit and dependency hashes. The CAD service starts only from
 `cad_engine.main:app`; `/version` and `/system_health` publish the same immutable

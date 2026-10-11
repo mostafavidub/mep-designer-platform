@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 import time
+import unicodedata
 from datetime import datetime
 from types import SimpleNamespace
 
@@ -74,6 +75,70 @@ def unresolved_questions(project):
         if value is None or not str(value).strip() or mechanical_workflow._basis_answer_error(key, str(value)):
             missing.append(_present_question(question))
     return missing
+
+
+def _level_identity(value):
+    """Normalize presentation-only Unicode/spacing without inventing aliases."""
+    if value is None:
+        return ""
+    return " ".join(unicodedata.normalize("NFC", str(value)).split())
+
+
+def _mechanical_level_identity_is_authoritative(project, scope):
+    """Reconcile payment scope with the existing architectural level evidence."""
+    auto = ((project.analysis or {}).get("architectural_auto") or {})
+    profiles = auto.get("level_profiles") or []
+    if not profiles or not all(isinstance(row, dict) for row in profiles):
+        return False
+
+    profile_names = [_level_identity(row.get("name")) for row in profiles]
+    if any(not name for name in profile_names) or len(profile_names) != len(set(profile_names)):
+        return False
+
+    profile_ids = [_level_identity(row.get("level_id") or row.get("id")) for row in profiles]
+    if any(profile_ids):
+        if any(not level_id for level_id in profile_ids) or len(profile_ids) != len(set(profile_ids)):
+            return False
+
+    source_levels = auto.get("levels") or []
+    if source_levels:
+        if not isinstance(source_levels, list):
+            return False
+        source_names = [
+            _level_identity(row.get("name") if isinstance(row, dict) else row)
+            for row in source_levels
+        ]
+        if any(not name for name in source_names) or len(source_names) != len(set(source_names)):
+            return False
+        source_ids = [
+            _level_identity((row.get("level_id") or row.get("id")) if isinstance(row, dict) else None)
+            for row in source_levels
+        ]
+        if any(profile_ids) or any(source_ids):
+            if any(not level_id for level_id in source_ids) or set(source_ids) != set(profile_ids):
+                return False
+        elif set(source_names) != set(profile_names):
+            return False
+
+    scoped_levels = [_level_identity(value) for value in scope.get("all_levels") or []]
+    if any(not name for name in scoped_levels) or len(scoped_levels) != len(set(scoped_levels)):
+        return False
+    if set(scoped_levels) != set(profile_names):
+        return False
+
+    profile_name_set = set(profile_names)
+    for key in (
+        "conditioned_levels", "heated_levels", "wet_fixture_levels",
+        "sanitary_fixture_levels", "ventilation_required_levels", "gas_consumer_levels",
+    ):
+        values = {_level_identity(value) for value in scope.get(key) or []}
+        if "" in values or not values.issubset(profile_name_set):
+            return False
+
+    roof_names = {_level_identity(row.get("name")) for row in profiles if row.get("roof") is True}
+    if scope.get("roof_exists") and _level_identity(scope.get("roof_level_name")) not in roof_names:
+        return False
+    return True
 
 
 def register_panel_checkout(app, legacy, Job, Link, status_payload, project_token):
@@ -302,12 +367,30 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
         now = datetime.utcnow().isoformat() + "Z"
         allowed = {"title", "service", "area", "amount", "status", "progress", "date", "answers",
                    "engineProjectId", "engineProjectToken", "quoteToken", "paid", "designStage",
-                   "designLabel", "designDetail", "designTimeline", "outputReady", "lastError"}
+                   "designLabel", "designDetail", "designTimeline", "outputReady", "lastError",
+                   "fileKey", "fileName", "analysisJobId", "analysis", "checkoutState",
+                   "resumeAction", "currentStep"}
         for item in rows:
             if not isinstance(item, dict) or not re.fullmatch(r"[A-Za-z0-9_-]{3,80}", str(item.get("id", ""))):
                 raise HTTPException(400, "یکی از پروژه‌ها معتبر نیست.")
             project_id = str(item["id"])
             payload = {key: item[key] for key in allowed if key in item}
+            file_key = str(payload.get("fileKey") or "")
+            if file_key and not file_key.startswith(f"projects/{account_id(uid)}/"):
+                raise HTTPException(403, "فایل ذخیره‌شده متعلق به این حساب نیست.")
+            if "fileName" in payload:
+                payload["fileName"] = str(payload["fileName"])[:255]
+            job_id = str(payload.get("analysisJobId") or "")
+            if job_id and not re.fullmatch(r"[0-9a-f]{32}", job_id):
+                raise HTTPException(400, "شناسه تحلیل فایل معتبر نیست.")
+            if payload.get("checkoutState") not in (None, "draft", "awaiting_payment", "paid"):
+                raise HTTPException(400, "وضعیت پیش‌نویس معتبر نیست.")
+            if payload.get("resumeAction") not in (None, "complete", "payment"):
+                raise HTTPException(400, "عملیات ادامه پروژه معتبر نیست.")
+            if "currentStep" in payload and payload["currentStep"] not in (1, 2, 3, 4):
+                raise HTTPException(400, "مرحله پروژه معتبر نیست.")
+            if "analysis" in payload and not isinstance(payload["analysis"], dict):
+                raise HTTPException(400, "تحلیل ذخیره‌شده معتبر نیست.")
             encoded = json.dumps(payload, ensure_ascii=False)
             if len(encoded.encode()) > 20000:
                 raise HTTPException(400, "حجم اطلاعات پروژه بیش از حد مجاز است.")
@@ -435,8 +518,13 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
     async def customer(action: str, request: Request):
         uid = session_user(request)
         body = await request.json()
-        if action not in ("state", "import", "claim", "quote", "pay", "topup"):
+        if action not in ("identity", "state", "import", "claim", "quote", "pay", "topup"):
             raise HTTPException(404)
+        # Lightweight owner proof for stored-file resume. Do not load the full
+        # project/account snapshot merely to verify the signed panel session;
+        # CPU-heavy architecture analysis must not delay polling recovery.
+        if action == "identity":
+            return {"userId": account_id(uid)}
         with legacy.Session() as db:
             begin(db)
             require_account(db, uid)
@@ -538,10 +626,33 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             if not wallet or (not demo and wallet.balance < order.amount):
                 raise HTTPException(409, "موجودی کیف پول کافی نیست؛ هیچ مبلغی کسر نشد.")
             if (project.answers or {}).get("discipline") == "mechanical":
-                proposal = mechanical_workflow.create_proposal(project)
-                analysis = dict(project.analysis or {})
-                analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
-                project.analysis = analysis
+                scope = mechanical_workflow.build_scope(project)
+                if (
+                    not scope.get("all_levels")
+                    or scope.get("effective_level_source") != "architecture-level-profiles"
+                    or scope.get("scope_ambiguities")
+                    or not _mechanical_level_identity_is_authoritative(project, scope)
+                ):
+                    db.rollback()
+                    return JSONResponse({
+                        "error_code": "ENGINEERING_INPUT_REQUIRED",
+                        "error": "هویت طبقات معماری شناسایی‌شده نیاز به اصلاح یا تأیید دارد؛ هیچ پرداختی انجام نشد.",
+                        "required_inputs": ["TYPED_ARCHITECTURAL_LEVELS"],
+                    }, status_code=409)
+                try:
+                    proposal = mechanical_workflow.create_proposal(project)
+                    analysis = dict(project.analysis or {})
+                    analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
+                    project.analysis = analysis
+                except ValueError:
+                    # A freshly generated proposal failing its immutable
+                    # manifest contract is an internal defect, never a reason
+                    # to charge or to weaken the release gate.
+                    db.rollback()
+                    return JSONResponse({
+                        "error_code": "DRAWING_MANIFEST_CONTRACT_ERROR",
+                        "error": "قرارداد مجموعه نقشه‌های مکانیکی معتبر نشد؛ هیچ پرداختی انجام نشد و این مورد نیاز به بررسی سیستم دارد.",
+                    }, status_code=500)
             if not demo:
                 wallet.balance -= order.amount
             order.paid = 1
