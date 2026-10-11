@@ -65,12 +65,16 @@ Canonical-symbol freshness compares symbol-local geometry to placement-local
 geometry; translated or rotated display geometry is never compared across coordinate
 spaces. Invalid nested profiles are rejected before any Shapely traversal.
 
-Regulatory compliance begins as `NOT_EVALUATED`, not `PASS`. It becomes `PASS`
-only when an applicable mandatory profile is independently source/rule-qualified
-and its geometry is actually evaluated. Missing applicability, synthetic evidence,
-self-asserted authority, or an unavailable independent resolver remains fail-closed.
-Professional review remains a separate `NOT_REVIEWED` dimension. Successful geometry
-therefore remains `REVIEW_REQUIRED`; it never means professional approval.
+Regulatory compliance begins as `NOT_EVALUATED`, not `PASS`, and this bounded
+offline validator cannot promote it to `PASS`. Its resolver interface can only
+cross-check one profile's source/rule identity; it does not establish trusted
+project-scoped applicability or completeness of the mandatory-rule inventory.
+Referenced mandatory profiles therefore remain `AUTHORITY_REVIEW_REQUIRED` even
+when their individual geometry produces `CLEARANCE_GEOMETRY_CHECK_PASS`. Missing
+applicability, synthetic evidence, self-asserted authority, or an unavailable
+resolver remains fail-closed. Professional review remains a separate
+`NOT_REVIEWED` dimension. Successful geometry therefore remains `REVIEW_REQUIRED`;
+it never means regulatory or professional approval.
 
 ## Compatibility
 

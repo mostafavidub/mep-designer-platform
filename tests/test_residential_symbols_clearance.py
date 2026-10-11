@@ -239,14 +239,29 @@ class PlacementValidationTests(unittest.TestCase):
         self.assertIn("MANDATORY_APPLICABILITY_REQUIRED", {f["code"] for f in result["findings"]})
         self.assertNotEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
 
-    def test_independently_qualified_applicable_clearance_can_pass_regulatory_dimension(self):
+    def test_fake_resolver_can_pass_geometry_but_never_project_regulatory_compliance(self):
         qualified = profile("code", clearance_type="CODE_REQUIRED_CLEARANCE", mandatory=True,
                             qualified=True, synthetic=False)
         value = scene(profiles=[qualified])
         value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["code"])]
         result = validate(value, resolver=FakeAuthorityResolver())
-        self.assertEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
+        self.assertEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "AUTHORITY_REVIEW_REQUIRED")
         self.assertEqual(result["dimensions"]["PROFESSIONAL_REVIEW"], "NOT_REVIEWED")
+        self.assertEqual(result["clearance_geometry_checks"], [{
+            "placement_id": "P1", "clearance_id": "code",
+            "status": "CLEARANCE_GEOMETRY_CHECK_PASS", "regulatory_authority": False,
+        }])
+        self.assertIn("PROJECT_REGULATORY_AUTHORITY_UNAVAILABLE",
+                      {f["code"] for f in result["findings"]})
+
+    def test_one_valid_clearance_cannot_certify_unknown_mandatory_inventory(self):
+        qualified = profile("one-rule", clearance_type="CODE_REQUIRED_CLEARANCE", mandatory=True,
+                            qualified=True, synthetic=False)
+        value = scene(profiles=[qualified])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["one-rule"])]
+        result = validate(value, resolver=FakeAuthorityResolver())
+        self.assertNotEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
+        self.assertFalse(result["whole_building_compliance"])
 
     def test_explicit_obstacles_block_objects_and_door_operation_not_boundary_touch(self):
         value = scene(obstacles=[[[1.2, 1.1], [1.6, 1.1], [1.6, 1.5], [1.2, 1.5], [1.2, 1.1]]])

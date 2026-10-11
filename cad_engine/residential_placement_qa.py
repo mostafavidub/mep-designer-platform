@@ -32,7 +32,7 @@ HEX = frozenset("0123456789abcdef")
 
 
 class ClearanceAuthorityResolver(Protocol):
-    """Future independent trust boundary; no production provider is supplied here."""
+    """Evidence-consistency interface; it cannot establish project-wide compliance."""
 
     def resolve_source(self, source_id: str) -> Mapping[str, Any] | None: ...
     def resolve_rule(self, rule_reference: str) -> Mapping[str, Any] | None: ...
@@ -152,13 +152,14 @@ def validate_clearance_profile(profile: Any, *, authority_resolver: ClearanceAut
     else:
         status = "REVIEW_REQUIRED"
     regulatory_codes = {f["code"] for f in findings if f["dimension"] == "REGULATORY_COMPLIANCE"}
-    regulatory_authority = bool(
+    source_rule_evidence_resolved = bool(
         mandatory and applicability == "APPLICABLE" and not synthetic
         and profile["verification_status"] == "AUTHORITY_QUALIFIED"
         and authority_resolver is not None and not regulatory_codes
     )
     return {"status": status, "findings": findings, "profile_hash": expected,
-            "regulatory_authority": regulatory_authority, "professional_approval": False}
+            "source_rule_evidence_resolved": source_rule_evidence_resolved,
+            "regulatory_authority": False, "professional_approval": False}
 
 
 def placement_content(instance: Mapping[str, Any]) -> dict[str, Any]:
@@ -210,12 +211,14 @@ def _transform(poly: Polygon, matrix: list[float]) -> Polygon:
     return affine_transform(poly, matrix)
 
 
-def _dimension_states(findings: list[dict[str, str]], *, regulatory_evaluated: bool = False) -> dict[str, str]:
+def _dimension_states(findings: list[dict[str, str]]) -> dict[str, str]:
     dimensions = {name: "PASS" for name in (
         "STRUCTURAL_GEOMETRY_VALIDITY", "PLACEMENT_VALIDITY", "FUNCTIONAL_USABILITY",
         "REGULATORY_COMPLIANCE", "PROFESSIONAL_REVIEW")}
     dimensions["PROFESSIONAL_REVIEW"] = "NOT_REVIEWED"
-    dimensions["REGULATORY_COMPLIANCE"] = "PASS" if regulatory_evaluated else "NOT_EVALUATED"
+    # This bounded offline validator has neither project-scoped applicability nor
+    # a complete mandatory-rule inventory, so it cannot produce regulatory PASS.
+    dimensions["REGULATORY_COMPLIANCE"] = "NOT_EVALUATED"
     rank = {"PASS": 0, "NOT_EVALUATED": 1, "NOT_REVIEWED": 1,
             "AUTHORITY_REVIEW_REQUIRED": 2, "HUMAN_REVIEW_REQUIRED": 2,
             "INPUT_REQUIRED": 3, "FAIL": 4}
@@ -253,7 +256,6 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
         findings.append(_finding("DUPLICATE_CLEARANCE_PROFILE", "clearance_profiles", "Unique identities required"))
     profiles: dict[str, Mapping[str, Any]] = {}
     profile_polys: dict[str, list[Polygon]] = {}
-    profile_results: dict[str, Mapping[str, Any]] = {}
     for index, profile in enumerate(scene["clearance_profiles"]):
         if not isinstance(profile, Mapping) or not isinstance(profile.get("clearance_id"), str):
             findings.append(_finding("INVALID_CLEARANCE_PROFILE", f"clearance_profiles[{index}]", "Typed clearance profile required"))
@@ -263,7 +265,6 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
         if result["status"] in {"INPUT_REQUIRED", "STALE_BINDING"}:
             continue
         profiles[profile["clearance_id"]] = profile
-        profile_results[profile["clearance_id"]] = result
         profile_polys[profile["clearance_id"]] = [Polygon(points) for points in profile["local_geometry"]["polygons"]]
     hosts = {h["host_id"]: h for h in scene["hosts"]}
     if len(hosts) != len(scene["hosts"]):
@@ -285,6 +286,7 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
             findings.append(_finding("STALE_HOST_GEOMETRY", f"hosts[{index}].geometry_fingerprint", "Host geometry changed"))
         host_lines[host["host_id"]] = line
     placed: list[tuple[Mapping[str, Any], Polygon, Polygon | None, dict[str, list[Polygon]]]] = []
+    clearance_geometry_checks: dict[tuple[str, str], dict[str, Any]] = {}
     placement_ids: set[str] = set()
     for index, instance in enumerate(scene["placements"]):
         path = f"placements[{index}]"
@@ -365,8 +367,14 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
                                          "FUNCTIONAL_USABILITY"))
             world_regions = [_transform(poly, instance["transformation"]) for poly in profile_polys.get(ref, [])]
             regions[ref] = world_regions
+            check_key = (instance["placement_id"], ref)
+            clearance_geometry_checks[check_key] = {
+                "placement_id": instance["placement_id"], "clearance_id": ref,
+                "status": "CLEARANCE_GEOMETRY_CHECK_PASS", "regulatory_authority": False,
+            }
             for poly in world_regions:
                 if room_poly and not room_poly.covers(poly):
+                    clearance_geometry_checks[check_key]["status"] = "CLEARANCE_GEOMETRY_CHECK_FAIL"
                     dim = "REGULATORY_COMPLIANCE" if profile["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
                     findings.append(_finding("CLEARANCE_OUTSIDE_SPACE", path, f"{ref} is outside Physical Space", dim, "FAIL"))
         placed.append((instance, world, world_operating, regions))
@@ -387,8 +395,10 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
                     policy = profile["coexistence_policy"]
                     dim = "REGULATORY_COMPLIANCE" if profile["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
                     if policy == "PROHIBITED":
+                        clearance_geometry_checks[(owner["placement_id"], ref)]["status"] = "CLEARANCE_GEOMETRY_CHECK_FAIL"
                         findings.append(_finding("CLEARANCE_OBSTRUCTED", f"placements[{owner['placement_id']}]", f"{ref} is obstructed", dim, "FAIL"))
                     elif policy == "CONDITIONAL_REVIEW":
+                        clearance_geometry_checks[(owner["placement_id"], ref)]["status"] = "CLEARANCE_GEOMETRY_CHECK_REVIEW_REQUIRED"
                         findings.append(_finding("CLEARANCE_OVERLAP_REVIEW", f"placements[{owner['placement_id']}]",
                                                  f"{ref} overlap lacks a simultaneous-use decision", dim, "HUMAN_REVIEW_REQUIRED"))
     obstacles = []
@@ -435,11 +445,16 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
             dim = "REGULATORY_COMPLIANCE" if ref["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
             findings.append(_finding("ACCESS_PATH_BLOCKED", f"access_path_checks[{index}]", "No bounded clear path connects endpoints",
                                      dim, "FAIL"))
-    regulatory_evaluated = any(
-        profile_results.get(ref, {}).get("regulatory_authority") is True
-        for instance in scene["placements"] for ref in instance.get("clearance_profile_references", [])
-    )
-    dimensions = _dimension_states(findings, regulatory_evaluated=regulatory_evaluated)
+    referenced_mandatory = {
+        ref for instance in scene["placements"] for ref in instance.get("clearance_profile_references", [])
+        if ref in profiles and profiles[ref]["mandatory_or_heuristic"] == "MANDATORY"
+    }
+    if referenced_mandatory:
+        findings.append(_finding(
+            "PROJECT_REGULATORY_AUTHORITY_UNAVAILABLE", "clearance_profiles",
+            "Offline profile checks do not establish project applicability or complete mandatory-rule coverage",
+            "REGULATORY_COMPLIANCE", "AUTHORITY_REVIEW_REQUIRED"))
+    dimensions = _dimension_states(findings)
     if "FAIL" in dimensions.values():
         status = "FAIL"
     elif "INPUT_REQUIRED" in dimensions.values():
@@ -449,5 +464,7 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
     else:
         status = "REVIEW_REQUIRED"  # geometry success is never professional approval
     return {"status": status, "dimensions": dimensions, "findings": findings, "input_hash": original_hash,
+            "clearance_geometry_checks": [clearance_geometry_checks[key]
+                                          for key in sorted(clearance_geometry_checks)],
             "input_unchanged": stable_hash(scene) == original_hash, "whole_building_compliance": False,
             "professional_approval": False, "runtime_enabled": False}
