@@ -55,6 +55,13 @@ overlap follows the profile's `PROHIBITED`, `PERMITTED`, or
 `CONDITIONAL_REVIEW` policy. Unresolved simultaneous-use semantics produce human
 review, not an assumed pass/fail.
 
+Per-clearance geometry summaries are derived only after containment, object,
+operating-state, and explicit-obstacle checks finish. Their single finding set is
+reduced monotonically as `FAIL > REVIEW_REQUIRED > PASS`; a later review condition
+cannot mask an earlier failure. Physical-obstacle overlap follows the same typed
+coexistence policy, so permitted contact is not automatically prohibited. Missing
+or mismatched material/configuration evidence cannot produce a geometry pass.
+
 Bounded access checking erodes the supplied room by half the required width,
 expands explicit obstacles by the same amount, and verifies that both endpoints
 belong to one remaining connected component. It makes no whole-building egress or

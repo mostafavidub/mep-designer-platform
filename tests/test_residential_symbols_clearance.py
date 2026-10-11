@@ -249,7 +249,8 @@ class PlacementValidationTests(unittest.TestCase):
         self.assertEqual(result["dimensions"]["PROFESSIONAL_REVIEW"], "NOT_REVIEWED")
         self.assertEqual(result["clearance_geometry_checks"], [{
             "placement_id": "P1", "clearance_id": "code",
-            "status": "CLEARANCE_GEOMETRY_CHECK_PASS", "regulatory_authority": False,
+            "status": "CLEARANCE_GEOMETRY_CHECK_PASS", "finding_codes": [],
+            "regulatory_authority": False,
         }])
         self.assertIn("PROJECT_REGULATORY_AUTHORITY_UNAVAILABLE",
                       {f["code"] for f in result["findings"]})
@@ -262,6 +263,44 @@ class PlacementValidationTests(unittest.TestCase):
         result = validate(value, resolver=FakeAuthorityResolver())
         self.assertNotEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
         self.assertFalse(result["whole_building_compliance"])
+
+    def test_clearance_results_are_derived_with_monotonic_severity(self):
+        clearance = profile("usage", polygon=[[0, 0], [.8, 0], [.8, 1], [0, 1], [0, 0]])
+        column = [[1.2, 1.7], [1.6, 1.7], [1.6, 1.9], [1.2, 1.9], [1.2, 1.7]]
+        value = scene(profiles=[clearance], obstacles=[column])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["usage"])]
+        result = validate(value)
+        self.assertNotIn("OBJECT_OBSTACLE_COLLISION", {f["code"] for f in result["findings"]})
+        self.assertIn("CLEARANCE_OBSTACLE_COLLISION", {f["code"] for f in result["findings"]})
+        self.assertEqual(result["clearance_geometry_checks"][0]["status"],
+                         "CLEARANCE_GEOMETRY_CHECK_FAIL")
+
+        outside = profile("outside", policy="CONDITIONAL_REVIEW",
+                          polygon=[[0, 0], [6, 0], [6, 1], [0, 1], [0, 0]])
+        value = scene(profiles=[outside])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["outside"]),
+                               placement(symbol("AR-ARMCHAIR"), "P2", [1.2, 1.2], value)]
+        result = validate(value)
+        check = result["clearance_geometry_checks"][0]
+        self.assertEqual(check["status"], "CLEARANCE_GEOMETRY_CHECK_FAIL")
+        self.assertTrue({"CLEARANCE_OUTSIDE_SPACE", "CLEARANCE_OVERLAP_REVIEW"}
+                        <= set(check["finding_codes"]))
+
+    def test_clearance_coexistence_policies_remain_typed(self):
+        expected = {
+            "PERMITTED": "CLEARANCE_GEOMETRY_CHECK_PASS",
+            "PROHIBITED": "CLEARANCE_GEOMETRY_CHECK_FAIL",
+            "CONDITIONAL_REVIEW": "CLEARANCE_GEOMETRY_CHECK_REVIEW_REQUIRED",
+        }
+        for policy, status in expected.items():
+            with self.subTest(policy=policy):
+                clearance = profile("usage", policy=policy)
+                value = scene(profiles=[clearance])
+                value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["usage"]),
+                                       placement(symbol("AR-ARMCHAIR"), "P2", [1.2, 1.2], value)]
+                result = validate(value)
+                self.assertEqual(result["clearance_geometry_checks"][0]["status"], status)
+                self.assertNotEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
 
     def test_explicit_obstacles_block_objects_and_door_operation_not_boundary_touch(self):
         value = scene(obstacles=[[[1.2, 1.1], [1.6, 1.1], [1.6, 1.5], [1.2, 1.5], [1.2, 1.1]]])

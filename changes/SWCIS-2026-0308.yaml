@@ -7,7 +7,7 @@
   "impacted_modules": ["cad_designer", "deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
   "impact_notes": {
     "cad_designer": "changed: extend the existing canonical offline residential symbol geometry contract; no production entrypoint or CAD insertion is activated",
-    "qa": "added: independent placement, explicit-obstacle collision, typed-clearance, door-interaction and bounded access-path validation with adversarial synthetic tests; P1 review fixes enforce local-coordinate freshness, reject invalid nested profiles before geometry traversal and prohibit scene-wide regulatory PASS without a future trusted project-scoped applicability and complete mandatory-rule inventory gate",
+    "qa": "added: independent placement, explicit-obstacle collision, typed-clearance, door-interaction and bounded access-path validation with adversarial synthetic tests; P1 review fixes enforce local-coordinate freshness, reject invalid nested profiles before geometry traversal, derive per-clearance results monotonically after all checks, and prohibit scene-wide regulatory PASS without a future trusted project-scoped applicability and complete mandatory-rule inventory gate",
     "docs": "added: contract, authority boundaries, migration, remaining evidence gaps and rollback",
     "governance": "changed: register the additive offline contracts and their fail-closed dependency closure",
     "migration": "added: backward-compatible revalidation plan for existing symbol consumers",
@@ -23,7 +23,7 @@
     "version_bump": ["standards/swcis/version_manifest.yaml", "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"],
     "migration": ["standards/swcis/migrations/residential-symbol-clearance-contract.json"],
     "golden_regression": ["No Golden execution; all new numeric fixtures are synthetic NON_GOLDEN, NON_REGULATORY_TEST_DATA and NOT_PROFESSIONALLY_APPROVED"],
-    "semantic_diff": ["Adds offline typed clearance and placement validation while preserving all 41 symbol IDs, existing footprint behavior, regulatory separation and fail-closed unknown constraints; bounded per-clearance geometry may pass but regulatory compliance remains NOT_EVALUATED or AUTHORITY_REVIEW_REQUIRED"],
+    "semantic_diff": ["Adds offline typed clearance and placement validation while preserving all 41 symbol IDs, existing footprint behavior, regulatory separation and fail-closed unknown constraints; bounded per-clearance geometry is derived from one completed finding set with FAIL over REVIEW_REQUIRED over PASS, while regulatory compliance remains NOT_EVALUATED or AUTHORITY_REVIEW_REQUIRED"],
     "artifact_diff": ["Additive JSON schemas, one independent read-only validator, canonical symbol extension, synthetic fixtures, focused tests, documentation and governance records"],
     "numeric_diff": ["No Iranian code, manufacturer or ergonomic production default is introduced; synthetic test dimensions have no design authority"],
     "contract_diff": ["Additive clearance-profile and placement-instance contracts; existing symbol calls remain compatible and Owner Program, ProjectCodeBasis and production runtime contracts remain unchanged"],

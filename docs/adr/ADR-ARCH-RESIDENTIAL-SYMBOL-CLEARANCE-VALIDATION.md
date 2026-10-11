@@ -31,6 +31,9 @@ qualify authority.
 - Symbol freshness compares canonical and placed geometry in symbol-local space.
 - Invalid nested profiles cannot reach geometry construction.
 - Explicit obstacles participate in placement and door-operation collision checks.
+- Clearance-region outcomes are derived from one completed finding set with
+  monotonic `FAIL > REVIEW_REQUIRED > PASS` precedence; explicit-obstacle overlap
+  respects each profile's coexistence and operating-state semantics.
 - Regulatory status remains `NOT_EVALUATED` or `AUTHORITY_REVIEW_REQUIRED`; only
   explicitly non-authoritative per-clearance geometry checks can pass.
 - Runtime, Generator, CAD insertion and whole-plan QA remain disabled.

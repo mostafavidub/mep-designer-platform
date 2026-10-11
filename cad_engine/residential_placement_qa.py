@@ -286,7 +286,16 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
             findings.append(_finding("STALE_HOST_GEOMETRY", f"hosts[{index}].geometry_fingerprint", "Host geometry changed"))
         host_lines[host["host_id"]] = line
     placed: list[tuple[Mapping[str, Any], Polygon, Polygon | None, dict[str, list[Polygon]]]] = []
-    clearance_geometry_checks: dict[tuple[str, str], dict[str, Any]] = {}
+    clearance_check_keys: set[tuple[str, str]] = set()
+
+    def add_clearance_geometry_finding(*, instance: Mapping[str, Any], ref: str, code: str,
+                                       message: str, dimension: str, outcome: str,
+                                       severity: str) -> None:
+        finding: dict[str, Any] = _finding(code, f"placements[{instance['placement_id']}].{ref}",
+                                                   message, dimension, outcome)
+        finding.update({"placement_id": instance["placement_id"], "clearance_id": ref,
+                        "clearance_geometry_severity": severity})
+        findings.append(finding)
     placement_ids: set[str] = set()
     for index, instance in enumerate(scene["placements"]):
         path = f"placements[{index}]"
@@ -359,24 +368,30 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
                 findings.append(_finding("MISSING_CLEARANCE_PROFILE", path, f"Unknown clearance profile {ref}",
                                          "FUNCTIONAL_USABILITY"))
                 continue
+            check_key = (instance["placement_id"], ref)
+            clearance_check_keys.add(check_key)
             if profile["symbol_id"] != instance["symbol_id"] or profile["symbol_category"] != instance["symbol_category"]:
-                findings.append(_finding("CLEARANCE_SYMBOL_MISMATCH", path, "Clearance profile belongs to another symbol",
-                                         "FUNCTIONAL_USABILITY"))
+                add_clearance_geometry_finding(
+                    instance=instance, ref=ref, code="CLEARANCE_SYMBOL_MISMATCH",
+                    message="Clearance profile belongs to another symbol",
+                    dimension="FUNCTIONAL_USABILITY", outcome="INPUT_REQUIRED", severity="FAIL")
+                continue
             if profile["applicable_configuration"] not in {"ANY", instance["applicable_operating_state"]}:
-                findings.append(_finding("CLEARANCE_CONFIGURATION_MISMATCH", path, "Profile does not cover operating state",
-                                         "FUNCTIONAL_USABILITY"))
+                add_clearance_geometry_finding(
+                    instance=instance, ref=ref, code="CLEARANCE_CONFIGURATION_MISMATCH",
+                    message="Profile does not cover operating state",
+                    dimension="FUNCTIONAL_USABILITY", outcome="INPUT_REQUIRED",
+                    severity="REVIEW_REQUIRED")
+                continue
             world_regions = [_transform(poly, instance["transformation"]) for poly in profile_polys.get(ref, [])]
             regions[ref] = world_regions
-            check_key = (instance["placement_id"], ref)
-            clearance_geometry_checks[check_key] = {
-                "placement_id": instance["placement_id"], "clearance_id": ref,
-                "status": "CLEARANCE_GEOMETRY_CHECK_PASS", "regulatory_authority": False,
-            }
             for poly in world_regions:
                 if room_poly and not room_poly.covers(poly):
-                    clearance_geometry_checks[check_key]["status"] = "CLEARANCE_GEOMETRY_CHECK_FAIL"
                     dim = "REGULATORY_COMPLIANCE" if profile["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
-                    findings.append(_finding("CLEARANCE_OUTSIDE_SPACE", path, f"{ref} is outside Physical Space", dim, "FAIL"))
+                    add_clearance_geometry_finding(
+                        instance=instance, ref=ref, code="CLEARANCE_OUTSIDE_SPACE",
+                        message=f"{ref} is outside Physical Space", dimension=dim,
+                        outcome="FAIL", severity="FAIL")
         placed.append((instance, world, world_operating, regions))
     for i, (left, left_poly, left_operating, left_regions) in enumerate(placed):
         for right, right_poly, right_operating, right_regions in placed[i + 1:]:
@@ -395,18 +410,21 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
                     policy = profile["coexistence_policy"]
                     dim = "REGULATORY_COMPLIANCE" if profile["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
                     if policy == "PROHIBITED":
-                        clearance_geometry_checks[(owner["placement_id"], ref)]["status"] = "CLEARANCE_GEOMETRY_CHECK_FAIL"
-                        findings.append(_finding("CLEARANCE_OBSTRUCTED", f"placements[{owner['placement_id']}]", f"{ref} is obstructed", dim, "FAIL"))
+                        add_clearance_geometry_finding(
+                            instance=owner, ref=ref, code="CLEARANCE_OBSTRUCTED",
+                            message=f"{ref} is obstructed", dimension=dim,
+                            outcome="FAIL", severity="FAIL")
                     elif policy == "CONDITIONAL_REVIEW":
-                        clearance_geometry_checks[(owner["placement_id"], ref)]["status"] = "CLEARANCE_GEOMETRY_CHECK_REVIEW_REQUIRED"
-                        findings.append(_finding("CLEARANCE_OVERLAP_REVIEW", f"placements[{owner['placement_id']}]",
-                                                 f"{ref} overlap lacks a simultaneous-use decision", dim, "HUMAN_REVIEW_REQUIRED"))
+                        add_clearance_geometry_finding(
+                            instance=owner, ref=ref, code="CLEARANCE_OVERLAP_REVIEW",
+                            message=f"{ref} overlap lacks a simultaneous-use decision", dimension=dim,
+                            outcome="HUMAN_REVIEW_REQUIRED", severity="REVIEW_REQUIRED")
     obstacles = []
     for index, points in enumerate(scene["obstacles"]):
         obstacle = _polygon(points, f"obstacles[{index}]", findings)
         if obstacle is not None:
             obstacles.append(obstacle)
-    for instance, footprint, operating, _regions in placed:
+    for instance, footprint, operating, regions in placed:
         for index, obstacle in enumerate(obstacles):
             if footprint.intersection(obstacle).area > 1e-10:
                 findings.append(_finding("OBJECT_OBSTACLE_COLLISION",
@@ -418,6 +436,21 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
                                          f"placements[{instance['placement_id']}].obstacles[{index}]",
                                          "Operating envelope intersects a physical obstacle",
                                          "PLACEMENT_VALIDITY", "FAIL"))
+            for ref, polygons in regions.items():
+                if not any(poly.intersection(obstacle).area > 1e-10 for poly in polygons):
+                    continue
+                profile = profiles[ref]
+                dim = "REGULATORY_COMPLIANCE" if profile["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
+                if profile["coexistence_policy"] == "PROHIBITED":
+                    add_clearance_geometry_finding(
+                        instance=instance, ref=ref, code="CLEARANCE_OBSTACLE_COLLISION",
+                        message=f"{ref} intersects physical obstacle {index}", dimension=dim,
+                        outcome="FAIL", severity="FAIL")
+                elif profile["coexistence_policy"] == "CONDITIONAL_REVIEW":
+                    add_clearance_geometry_finding(
+                        instance=instance, ref=ref, code="CLEARANCE_OBSTACLE_REVIEW",
+                        message=f"{ref} obstacle overlap requires an applicability decision",
+                        dimension=dim, outcome="HUMAN_REVIEW_REQUIRED", severity="REVIEW_REQUIRED")
     obstacle_union = unary_union(obstacles + [item[1] for item in placed]) if obstacles or placed else None
     for index, check in enumerate(scene["access_path_checks"]):
         ref = profiles.get(check["clearance_profile_id"])
@@ -463,8 +496,20 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
         status = "HUMAN_REVIEW_REQUIRED"
     else:
         status = "REVIEW_REQUIRED"  # geometry success is never professional approval
+    severity_rank = {"PASS": 0, "REVIEW_REQUIRED": 1, "FAIL": 2}
+    clearance_geometry_checks = []
+    for placement_id, ref in sorted(clearance_check_keys):
+        relevant = [f for f in findings if f.get("placement_id") == placement_id
+                    and f.get("clearance_id") == ref and f.get("clearance_geometry_severity")]
+        severity = max((f["clearance_geometry_severity"] for f in relevant),
+                       key=severity_rank.__getitem__, default="PASS")
+        clearance_geometry_checks.append({
+            "placement_id": placement_id, "clearance_id": ref,
+            "status": f"CLEARANCE_GEOMETRY_CHECK_{severity}",
+            "finding_codes": sorted({f["code"] for f in relevant}),
+            "regulatory_authority": False,
+        })
     return {"status": status, "dimensions": dimensions, "findings": findings, "input_hash": original_hash,
-            "clearance_geometry_checks": [clearance_geometry_checks[key]
-                                          for key in sorted(clearance_geometry_checks)],
+            "clearance_geometry_checks": clearance_geometry_checks,
             "input_unchanged": stable_hash(scene) == original_hash, "whole_building_compliance": False,
             "professional_approval": False, "runtime_enabled": False}
