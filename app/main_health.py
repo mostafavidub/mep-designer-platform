@@ -169,7 +169,7 @@ for route in list(app.router.routes):
 
 @app.get('/sitemap.xml', include_in_schema=False)
 def canonical_sitemap():
-    paths = ['/', '/electrical', '/mechanical', '/blog'] + [
+    paths = ['/', '/electrical', '/mechanical', '/architect', '/blog'] + [
         f"/blog/{post['slug']}" for post in main_auto.legacy.BLOG
     ]
     rows = ''.join(

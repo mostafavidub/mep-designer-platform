@@ -10,7 +10,11 @@
 
 {% block og_description %}{{ post.excerpt }}{% endblock %}
 
-{% block twitter_card %}summary{% endblock %}
+{% block social_image %}{% if post.hero_image %}<meta property="og:image" content="https://planha.com{{ post.hero_image }}"><meta property="og:image:alt" content="{{ post.hero_alt }}">{% endif %}{% endblock %}
+
+{% block twitter_card %}summary_large_image{% endblock %}
+
+{% block head_extra %}<link rel="stylesheet" href="/static/seo-publication.css?v=20261011">{% endblock %}
 
 {% block structured_data %}
 <script type="application/ld+json">
@@ -20,7 +24,7 @@
   "headline": {{ post.title | tojson }},
   "description": {{ post.excerpt | tojson }},
   "datePublished": {{ post.created_date | tojson }},
-  "dateModified": {{ post.created_date | tojson }},
+  "dateModified": {{ (post.date_modified | default(post.created_date, true)) | tojson }},
   "author": {
     "@type": "Organization",
     "name": "Planha"
@@ -28,6 +32,7 @@
   "publisher": {
     "@id": "https://planha.com/#organization"
   },
+  {% if post.hero_image %}"image": {{ ("https://planha.com" ~ post.hero_image) | tojson }},{% endif %}
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": {{ ("https://planha.com/blog/" ~ post.slug) | tojson }}
@@ -133,6 +138,13 @@
       </div>
 
       <h1>{{ post.title }}</h1>
+
+      {% if post.hero_image %}
+      <figure class="generated-article-hero">
+        <img src="{{ post.hero_image }}" width="1600" height="900" decoding="async" fetchpriority="high" alt="{{ post.hero_alt }}">
+        <figcaption>تصویر مفهومی فرایند کنترل مدارک؛ نمونه پروژه واقعی یا نقشه اجرایی تأییدشده نیست.</figcaption>
+      </figure>
+      {% endif %}
 
       {% if post.excerpt %}
       <p class="generated-article-lead">

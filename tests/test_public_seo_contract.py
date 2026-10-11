@@ -11,6 +11,7 @@ INDEXABLE_PATHS = [
     "/",
     "/electrical",
     "/mechanical",
+    "/architect",
     "/blog",
     "/blog/electrical-building-plan",
     "/blog/mep-input-guide",
@@ -113,19 +114,57 @@ class PublicSEOContractTests(unittest.TestCase):
             {f"https://planha.com{path}" for path in INDEXABLE_PATHS},
         )
         self.assertEqual(len(urls), len(set(urls)))
-        self.assertNotIn("https://planha.com/architect", urls)
-
-    def test_architect_remains_noindex_until_service_is_live(self):
+    def test_architect_is_indexable_as_prelaunch_guide_without_ordering(self):
         response = self.client.get("/architect", headers={"host": "planha.com"})
         self.assertEqual(response.status_code, 200)
         self.assertIn(
-            '<meta name="robots" content="noindex,follow">',
+            '<meta name="robots" content="index,follow">',
             response.text,
         )
         self.assertIn(
             '<link rel="canonical" href="https://planha.com/architect">',
             response.text,
         )
+        self.assertIn("همراه معمار هنوز راه‌اندازی نشده", response.text)
+        self.assertNotIn("/architect#start", response.text)
+        self.assertNotIn('action="/start-project/architect"', response.text)
+
+    def test_published_pages_expose_approved_images_ctas_and_internal_links(self):
+        architecture = self.client.get("/architect", headers={"host": "planha.com"})
+        mechanical = self.client.get("/blog/sanitary-drainage-plan", headers={"host": "planha.com"})
+        electrical = self.client.get("/blog/electrical-execution-drawing-building", headers={"host": "planha.com"})
+
+        self.assertIn("/static/seo/architecture-project-brief.svg", architecture.text)
+        self.assertIn('/blog/mep-input-guide', architecture.text)
+
+        self.assertIn("/static/seo/sanitary-drainage-review.svg", mechanical.text)
+        self.assertEqual(mechanical.text.count('class="publication-cta '), 2)
+        self.assertIn('/mechanical#start', mechanical.text)
+        self.assertIn('/blog/mechanical-building-plan', mechanical.text)
+        self.assertIn('/blog/mechanical-plan-scope', mechanical.text)
+
+        self.assertIn("/static/seo/electrical-delivery-review.svg", electrical.text)
+        self.assertEqual(electrical.text.count("<blockquote>"), 2)
+        self.assertIn('/electrical#start', electrical.text)
+        self.assertIn('/blog/electrical-building-plan', electrical.text)
+        self.assertIn('/blog/electrical-plan-scope', electrical.text)
+
+        for response in (architecture, mechanical, electrical):
+            self.assertIn('/static/seo-publication.css', response.text)
+            self.assertIn('width="1600" height="900"', response.text)
+            self.assertIn('fetchpriority="high"', response.text)
+            self.assertIn('property="og:image"', response.text)
+
+    def test_publication_assets_are_available(self):
+        for path in (
+            "/static/seo/architecture-project-brief.svg",
+            "/static/seo/sanitary-drainage-review.svg",
+            "/static/seo/electrical-delivery-review.svg",
+            "/static/seo-publication.css",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
 
     def test_robots_points_to_canonical_sitemap(self):
         response = self.client.get("/robots.txt", headers={"host": "planha.com"})
