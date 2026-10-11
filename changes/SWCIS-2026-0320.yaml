@@ -1,0 +1,121 @@
+{
+  "change_id": "SWCIS-2026-0320",
+  "summary": "Reseal the cumulative post-#312 integration candidate after approved backend PR #337 (payment manifest P0) merge, preserving historical immutable governance records and fail-closed Mechanical authority.",
+  "requester": "project-owner",
+  "change_types": [
+    "deployment",
+    "documentation",
+    "drawing_output",
+    "governance",
+    "test",
+    "ui_api"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "deployment",
+    "docs",
+    "governance",
+    "manifest",
+    "migration",
+    "qa",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "deployment": "Governance-only reseal on integration; no main merge, Railway, Cloudflare, online Staging or Production deploy. PR #335 remains draft.",
+    "docs": "Preserve the source-qualified questionnaire and Local Staging contracts; update only this cumulative governance record.",
+    "governance": "Introduce one sealed cumulative SWCIS-2026-0320 manifest after PR #337. Keep historical 0303/0305/0306/0316/0317/0318/0319 blobs unmodified; do not weaken any control.",
+    "manifest": "Preserve drawing manifest hash/schema/count/unique-code checks, 100/100 coverage, primary Sanitary floor-plan gate, and correct distinction for special M-S-RAIN roof documentation.",
+    "migration": "No database, persisted project, customer artifact or manifest migration; no user data changes.",
+    "qa": "Carry forward previously qualified checks and require fresh exact-head PR #335 CI following the reseal; preserve unresolved MECH-CORE-01 and MECH-QA-04 blockers.",
+    "ui_api": "Retain fail-closed level identity check and safe structured pre-payment errors from PR #337. Site PR #5 remains separately governed and unmerged.",
+    "versioning": "SWCIS remains 5.2.0; no release/build schema version change or new Mechanical release authority."
+  },
+  "evidence": {
+    "traceability": [
+      "Cumulative base main SHA 84cbdd007f2c5dca0f61989f778c6759ec0a34bc.",
+      "Approved backend PR #337 merged into integration/main-post312-runtime-seal-20261010 as 24dc8075c6a2042773378d53061ee14cd8adce6a; verified immutable source tree 41ea09c6f28a5a6dda2f0f1b56f038c187fea19d.",
+      "Historical requests SWCIS-2026-0303/0305/0306/0316/0317/0318/0319 are bound to exact Git blob hashes under integration.historical_requests and are unchanged.",
+      "PR #335 was already an OPEN/DRAFT cumulative Integration PR and must remain so; no main or Production merge is granted."
+    ],
+    "tests": [
+      "Backend PR #337 exact source f4babea4d216b28be351a43784de4dbd34ceab6d: five official PR workflows passed before its authorized integration merge.",
+      "Earlier PR #337 local reports included 44 focused checks, 57 affected checks and isolated payment-integrity E2E. These are historical evidence, not newly rerun for this manifest.",
+      "Post-merge PR #335 SWCIS Governance failed in resolve-comparison-base-and-unique-change-request on unsealed head (expected cumulative integration drift); new record must pass scope, semantic validator and all applicable exact-head official CI checks.",
+      "No online Staging, Production, Railway or Cloudflare tests/deployments have been authorized by this reseal."
+    ],
+    "docs": [
+      "README.md",
+      "docs/LOCAL_STAGING.md",
+      "docs/PANEL_QUESTIONNAIRE_POLLING_RESUME.md",
+      "docs/PANEL_PROJECT_FINALIZATION_READY_REUSE.md",
+      "docs/QUESTIONNAIRE_FIXTURE_ANSWER_CONTRACT.md"
+    ],
+    "version_bump": [
+      "Not required: governed cumulative reseal, compatible corrective payment preflight, SWCIS 5.2.0 unchanged; build identity remains Git-derived."
+    ],
+    "golden_regression": [
+      "PR #337 corrected special sanitary roof documentation classification; primary Sanitary floor coverage remains fail-closed. No new geometry, fixture counts, routing, sizing or engineering release authority.",
+      "MECH-CORE-01 quantitative fixture authority and MECH-QA-04 independent 18-control qualification remain separate blockers."
+    ],
+    "semantic_diff": [
+      "Reconcile one-to-one architectural levels with canonical IDs or limited Unicode presentation normalization, no fabricated aliases/levels.",
+      "M-S-RAIN is not primary floor-level sanitary coverage; true roof_rainwater remains valid.",
+      "No additional release authority granted by this cumulative manifest."
+    ],
+    "artifact_diff": [
+      "Only this changes/SWCIS-2026-0320.yaml governance record is introduced by reseal; no CAD drawings, customer artifacts, stored projects or deployment artifacts are produced."
+    ],
+    "numeric_diff": [
+      "None: no wallet amount, pricing, water, HVAC, rainwater, fixture quantities or sizing calculation changed by this reseal."
+    ],
+    "contract_diff": [
+      "Backend rejects contradictory level identity pre-payment with HTTP 409 ENGINEERING_INPUT_REQUIRED; unexpected manifest contract defects return sanitized 500 and rollback.",
+      "Payment idempotency, user isolation, manifest validation and Mechanical release fail-closed posture remain unchanged. Site error-sanitization PR #5 is pending a separate safe merge assessment."
+    ],
+    "migration": [
+      "No migration or mutation of Production/project data or historical SWCIS blobs."
+    ],
+    "deployment_plan": [
+      "GOVERNANCE RESEAL ONLY. Keep PR #335 OPEN/DRAFT and main unchanged. Do not deploy to Railway/Cloudflare, online Staging or Production.",
+      "Site PR #5 merge to main must not proceed while automatic Cloudflare Production deployment remains unverified or unauthorized."
+    ],
+    "rollback_plan": [
+      "Revert only the new SWCIS-2026-0320 cumulative record commit to restore the previous Integration branch head; do not rewrite historical change requests or alter deployments."
+    ]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Governance record update is narrow but binds a cumulative integration PR targeted at main; exact SHA/tree/blob evidence and independent main/deployment authority prevent unintended release."
+  },
+  "waiver": null,
+  "verification_status": {
+    "qualification": "CUMULATIVE_RESEAL_PENDING_EXACT_HEAD_CI",
+    "exact_source_tree": "VERIFIED_AT_SOURCE_SHA",
+    "historical_blob_integrity": "VERIFIED_AT_SOURCE_SHA",
+    "owner_approval": "GOVERNANCE_RESEAL_ON_INTEGRATION_ONLY",
+    "official_pr_ci": "PENDING",
+    "architecture_release": "UNCHANGED_FAIL_CLOSED",
+    "mechanical_release": "UNCHANGED_FAIL_CLOSED",
+    "staging": "NOT_AUTHORIZED",
+    "production": "NOT_AUTHORIZED",
+    "merge": "PR335_NOT_AUTHORIZED"
+  },
+  "integration": {
+    "base_sha": "84cbdd007f2c5dca0f61989f778c6759ec0a34bc",
+    "source_sha": "24dc8075c6a2042773378d53061ee14cd8adce6a",
+    "source_tree": "41ea09c6f28a5a6dda2f0f1b56f038c187fea19d",
+    "historical_requests": {
+      "changes/SWCIS-2026-0303.yaml": "a927c847ddb4a563efe42bd3d2ba9321d86565a4",
+      "changes/SWCIS-2026-0305.yaml": "927a82e0ea33914b9b59269ebe5702d29f26fde8",
+      "changes/SWCIS-2026-0306.yaml": "cd24c4de68f1d128f7b3fbf3e245cbe61363139e",
+      "changes/SWCIS-2026-0316.yaml": "b305ff7bdb8b2617eede5d3d138aacc33e8f5322",
+      "changes/SWCIS-2026-0317.yaml": "76d66d83eef7968b6e1603bd3c4170d29212c421",
+      "changes/SWCIS-2026-0318.yaml": "de033b1ddc74202a53411d6a888b9070350097d0",
+      "changes/SWCIS-2026-0319.yaml": "12f35302978689fa29cb0613a191bbad221eb825"
+    }
+  }
+}
