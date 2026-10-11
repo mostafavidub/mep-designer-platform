@@ -568,6 +568,7 @@ async def analyze_questionnaire(file: UploadFile = File(...), discipline: str = 
         from .mechanical_workflow import _question_payload
         return {
             'version': QUESTIONNAIRE_VERSION,
+            'identity': f'{QUESTIONNAIRE_VERSION}:{discipline}',
             'discipline': discipline,
             'source': 'engi-design-engine',
             'questions': [_present_question(q) for q in legacy.qlist(unresolved)],
