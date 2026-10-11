@@ -55,6 +55,51 @@ def pay(browser, auth, pid, order, **extra):
                         json={'engineProjectId': pid, 'quoteToken': order['quoteToken'], 'method': 'wallet', **extra})
 
 
+def mechanical_scope(**overrides):
+    value = {
+        'all_levels': ['L1'], 'conditioned_levels': ['L1'], 'heated_levels': ['L1'],
+        'wet_fixture_levels': ['L1'], 'sanitary_fixture_levels': ['L1'],
+        'ventilation_required_levels': ['L1'], 'gas_consumer_levels': [],
+        'roof_exists': False, 'roof_level_name': 'Roof', 'vertical_systems': False,
+        'typical_groups': [], 'level_types': {'L1': 'occupied'},
+        'effective_level_source': 'architecture-level-profiles',
+        'scope_ambiguities': [], 'reference_inputs_used': False,
+        'scope_stage': 'pre_calculation', 'scope_contract_version': 'drawing-scope/1',
+        'exact_output_parity_required': True, 'exact_reopen_required': True,
+    }
+    value.update(overrides)
+    return value
+
+
+def prepare_mechanical_payment(flow, monkeypatch, scope):
+    browser, auth, uid, pid, token, _order = flow
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.required_basis_questions', lambda _project: [])
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.build_scope', lambda _project: scope)
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.answers = {'discipline': 'mechanical', 'location': 'گنبد'}
+        project.questions = []
+        project.analysis = {'architectural_auto': {}}
+        project.status = 'ready_to_design'
+        db.commit()
+    quote = browser.post('/internal/panel/customer/quote', headers=auth,
+                         json={'engineProjectId': pid, 'area': 100})
+    assert quote.status_code == 200, quote.text
+    return browser, auth, uid, pid, quote.json()['project']
+
+
+def assert_no_payment_side_effects(pid):
+    with legacy.Session() as db:
+        assert not db.get(app.state.panel_checkout.Checkout, pid).paid
+        assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+        assert db.query(app.state.panel_checkout.Activity).filter_by(kind='demo_payment').filter(
+            app.state.panel_checkout.Activity.id == f'DEMO-PAY-{pid}'
+        ).count() == 0
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 0
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+
+
 def test_phone_login_starts_with_zero_not_demo_credit(flow):
     browser, auth, uid, pid, token, order = flow
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
@@ -367,6 +412,67 @@ def test_demo_bank_queues_once_without_wallet_debit(flow, monkeypatch):
     with legacy.Session() as db:
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
         assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+
+
+def test_mechanical_payment_with_valid_scope_is_idempotent(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, mechanical_scope())
+    first = pay(browser, auth, pid, order, method='gateway')
+    second = pay(browser, auth, pid, order, method='gateway')
+    assert first.status_code == second.status_code == 200
+    with legacy.Session() as db:
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid
+        assert db.query(app.state.panel_checkout.Activity).filter_by(
+            id=f'DEMO-PAY-{pid}', kind='demo_payment'
+        ).count() == 1
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 1
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
+
+
+def test_mechanical_payment_without_typed_levels_returns_input_required(flow, monkeypatch):
+    empty = mechanical_scope(all_levels=[], conditioned_levels=[], heated_levels=[],
+                             wet_fixture_levels=[], sanitary_fixture_levels=[],
+                             ventilation_required_levels=[], level_types={})
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, empty)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert response.json()['required_inputs'] == ['TYPED_ARCHITECTURAL_LEVELS']
+    assert 'هیچ پرداختی انجام نشد' in response.json()['error']
+    assert_no_payment_side_effects(pid)
+
+
+def test_fallback_presentation_level_cannot_authorize_payment(flow, monkeypatch):
+    fallback = mechanical_scope(
+        all_levels=['پلان معماری'], conditioned_levels=['پلان معماری'],
+        heated_levels=['پلان معماری'], wet_fixture_levels=['پلان معماری'],
+        sanitary_fixture_levels=['پلان معماری'], ventilation_required_levels=['پلان معماری'],
+        level_types={'پلان معماری': 'occupied'},
+        effective_level_source='fallback-all-detected-levels',
+    )
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, fallback)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert_no_payment_side_effects(pid)
+
+
+def test_corrupt_fresh_manifest_is_internal_error_and_never_charges(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, mechanical_scope())
+    original = __import__('app.mechanical_workflow', fromlist=['create_proposal']).create_proposal
+
+    def corrupt(project):
+        proposal = original(project)
+        proposal['drawing_manifest']['sheets'][0]['label'] = 'tampered-after-hash'
+        return proposal
+
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.create_proposal', corrupt)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 500
+    assert response.json() == {
+        'error_code': 'DRAWING_MANIFEST_CONTRACT_ERROR',
+        'error': 'قرارداد مجموعه نقشه‌های مکانیکی معتبر نشد؛ هیچ پرداختی انجام نشد و این مورد نیاز به بررسی سیستم دارد.',
+    }
+    assert_no_payment_side_effects(pid)
 
 
 def test_handoff_preserves_answers_and_replay_same_account(flow):

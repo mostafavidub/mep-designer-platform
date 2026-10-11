@@ -561,10 +561,32 @@ def register_panel_checkout(app, legacy, Job, Link, status_payload, project_toke
             if not wallet or (not demo and wallet.balance < order.amount):
                 raise HTTPException(409, "موجودی کیف پول کافی نیست؛ هیچ مبلغی کسر نشد.")
             if (project.answers or {}).get("discipline") == "mechanical":
-                proposal = mechanical_workflow.create_proposal(project)
-                analysis = dict(project.analysis or {})
-                analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
-                project.analysis = analysis
+                scope = mechanical_workflow.build_scope(project)
+                if (
+                    not scope.get("all_levels")
+                    or scope.get("effective_level_source") != "architecture-level-profiles"
+                    or scope.get("scope_ambiguities")
+                ):
+                    db.rollback()
+                    return JSONResponse({
+                        "error_code": "ENGINEERING_INPUT_REQUIRED",
+                        "error": "اطلاعات معتبر طبقات معماری برای تأیید نقشه‌های مکانیکی کافی نیست؛ هیچ پرداختی انجام نشد.",
+                        "required_inputs": ["TYPED_ARCHITECTURAL_LEVELS"],
+                    }, status_code=409)
+                try:
+                    proposal = mechanical_workflow.create_proposal(project)
+                    analysis = dict(project.analysis or {})
+                    analysis["drawing_set"] = mechanical_workflow.approve_drawing_set(proposal)
+                    project.analysis = analysis
+                except ValueError:
+                    # A freshly generated proposal failing its immutable
+                    # manifest contract is an internal defect, never a reason
+                    # to charge or to weaken the release gate.
+                    db.rollback()
+                    return JSONResponse({
+                        "error_code": "DRAWING_MANIFEST_CONTRACT_ERROR",
+                        "error": "قرارداد مجموعه نقشه‌های مکانیکی معتبر نشد؛ هیچ پرداختی انجام نشد و این مورد نیاز به بررسی سیستم دارد.",
+                    }, status_code=500)
             if not demo:
                 wallet.balance -= order.amount
             order.paid = 1
