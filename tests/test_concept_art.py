@@ -36,9 +36,12 @@ class ConceptArtTests(unittest.TestCase):
         self.assertIn('.service-card-muted::after{background-image:var(--et-art-architect)}',css.text)
         self.assertIn('pointer-events:none',css.text)
 
-    def test_architect_scope_matches_planned_product(self):
+    def test_architect_scope_matches_indexable_prelaunch_guide(self):
         page=self.client.get('/architect'); self.assertEqual(page.status_code,200)
-        self.assertIn('نقشه زمین',page.text); self.assertIn('مجموعه پلان‌های معماری',page.text)
-        self.assertIn('/static/service-art-architect.svg',page.text)
+        self.assertIn('اطلاعات پایه زمین',page.text); self.assertIn('برنامه فیزیکی',page.text)
+        self.assertIn('/static/seo/architecture-project-brief.svg',page.text)
+        self.assertIn('<meta name="robots" content="index,follow">',page.text)
+        self.assertIn('همراه معمار هنوز راه‌اندازی نشده',page.text)
+        self.assertNotIn('/architect#start',page.text)
 
 if __name__=='__main__': unittest.main()
