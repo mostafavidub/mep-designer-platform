@@ -35,7 +35,8 @@ def profile(clearance_id="usage", symbol_id="AR-SOFA", clearance_type="USAGE_CLE
         "symbol_id": symbol_id, "symbol_category": symbol(symbol_id)["category"], "clearance_type": clearance_type,
         "local_geometry": {"polygons": [polygon or [[0, 0], [0.8, 0], [0.8, 1], [0, 1], [0, 0]]]},
         "coordinate_system": "SYMBOL_LOCAL_2D", "units": "m", "applicable_configuration": "ANY",
-        "operating_mode": "SYNTHETIC_TEST", "applicability_conditions": {},
+        "operating_mode": "SYNTHETIC_TEST",
+        "applicability_conditions": {"evaluation_status": "APPLICABLE"} if mandatory else {},
         "mandatory_or_heuristic": "MANDATORY" if mandatory else "HEURISTIC",
         "coexistence_policy": policy,
         "source_type": "NATIONAL_CODE" if mandatory else "ERGONOMIC_REFERENCE",
@@ -84,12 +85,13 @@ def scene(*, placements=None, profiles=None, access=None, obstacles=None):
     }
 
 
-def placement(sym, placement_id, position, scene_value, refs=None, host=False, program_hash=HASH_A):
+def placement(sym, placement_id, position, scene_value, refs=None, host=False, program_hash=HASH_A,
+              rotation=0):
     room = scene_value["physical_space"]
     return create_placement_instance(
         sym, placement_id=placement_id, project_id=scene_value["project_id"],
         physical_space_id=room["physical_space_id"], physical_space_fingerprint=room["geometry_fingerprint"],
-        coordinate_frame=room["coordinate_frame"], position=position, rotation_deg=0,
+        coordinate_frame=room["coordinate_frame"], position=position, rotation_deg=rotation,
         clearance_profile_references=refs or [], host_id="HOST-1" if host else None,
         host_fingerprint=scene_value["hosts"][0]["geometry_fingerprint"] if host else None, code_basis_hash=HASH_B,
         relevant_program_hash=program_hash,
@@ -180,6 +182,87 @@ class ClearanceContractTests(unittest.TestCase):
 
 
 class PlacementValidationTests(unittest.TestCase):
+    def test_real_canonical_symbol_uses_local_geometry_for_stale_binding(self):
+        value = scene()
+        current = create_symbol("AR-SOFA", width_m=.8, depth_m=.6, origin_m=[2, 3],
+                                rotation_deg=37, dimension_basis="VISUALIZATION_ONLY")
+        value["placements"] = [placement(current, "P1", [1, 1], value, rotation=19)]
+        result = validate(value, symbols={current["symbol_id"]: current})
+        self.assertNotIn("STALE_SYMBOL_BINDING", {f["code"] for f in result["findings"]})
+
+        changed = copy.deepcopy(current)
+        changed["local_footprint"][1][0] += .1
+        result = validate(value, symbols={current["symbol_id"]: changed})
+        self.assertIn("STALE_SYMBOL_BINDING", {f["code"] for f in result["findings"]})
+
+    def test_invalid_nested_profiles_fail_closed_without_geometry_traversal(self):
+        nonfinite = profile("nonfinite")
+        nonfinite["local_geometry"]["polygons"][0][1][0] = float("nan")
+        malformed = [
+            {"clearance_id": "missing"},
+            {**profile("null"), "local_geometry": None},
+            {**profile("collection"), "local_geometry": {"polygons": ["not-a-polygon"]}},
+            profile("self-intersecting", polygon=[[0, 0], [1, 1], [1, 0], [0, 1], [0, 0]]),
+            nonfinite,
+        ]
+        for item in malformed:
+            with self.subTest(clearance=item.get("clearance_id")):
+                value = scene(profiles=[item])
+                result = validate(value)
+                self.assertEqual(result["status"], "INPUT_REQUIRED")
+                self.assertTrue(result["findings"])
+
+    def test_regulatory_dimension_never_passes_without_evaluated_authority(self):
+        for profiles, resolver in [
+            ([], None),
+            ([profile("synthetic")], None),
+            ([profile("code", clearance_type="CODE_REQUIRED_CLEARANCE", mandatory=True,
+                      qualified=True, synthetic=True)], FakeAuthorityResolver()),
+            ([profile("code", clearance_type="CODE_REQUIRED_CLEARANCE", mandatory=True,
+                      qualified=True, synthetic=False)], None),
+        ]:
+            with self.subTest(profiles=len(profiles), resolver=resolver is not None):
+                value = scene(profiles=profiles)
+                if profiles:
+                    value["placements"] = [placement(symbol(), "P1", [1, 1], value,
+                                                       [profiles[0]["clearance_id"]])]
+                result = validate(value, resolver=resolver)
+                self.assertNotEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
+
+        missing_applicability = profile("code", clearance_type="CODE_REQUIRED_CLEARANCE",
+                                        mandatory=True, qualified=True, synthetic=False)
+        missing_applicability["applicability_conditions"] = {}
+        missing_applicability["dependency_fingerprint"] = stable_hash(profile_content(missing_applicability))
+        value = scene(profiles=[missing_applicability])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["code"])]
+        result = validate(value, resolver=FakeAuthorityResolver())
+        self.assertIn("MANDATORY_APPLICABILITY_REQUIRED", {f["code"] for f in result["findings"]})
+        self.assertNotEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
+
+    def test_independently_qualified_applicable_clearance_can_pass_regulatory_dimension(self):
+        qualified = profile("code", clearance_type="CODE_REQUIRED_CLEARANCE", mandatory=True,
+                            qualified=True, synthetic=False)
+        value = scene(profiles=[qualified])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value, ["code"])]
+        result = validate(value, resolver=FakeAuthorityResolver())
+        self.assertEqual(result["dimensions"]["REGULATORY_COMPLIANCE"], "PASS")
+        self.assertEqual(result["dimensions"]["PROFESSIONAL_REVIEW"], "NOT_REVIEWED")
+
+    def test_explicit_obstacles_block_objects_and_door_operation_not_boundary_touch(self):
+        value = scene(obstacles=[[[1.2, 1.1], [1.6, 1.1], [1.6, 1.5], [1.2, 1.5], [1.2, 1.1]]])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value)]
+        self.assertIn("OBJECT_OBSTACLE_COLLISION", {f["code"] for f in validate(value)["findings"]})
+
+        value = scene(obstacles=[[[1.8, 1], [2.2, 1], [2.2, 1.4], [1.8, 1.4], [1.8, 1]]])
+        value["placements"] = [placement(symbol(), "P1", [1, 1], value)]
+        self.assertNotIn("OBJECT_OBSTACLE_COLLISION", {f["code"] for f in validate(value)["findings"]})
+
+        value = scene(obstacles=[[[1.3, 1.3], [1.5, 1.3], [1.5, 1.5], [1.3, 1.5], [1.3, 1.3]]])
+        value["placements"] = [placement(symbol("AR-DOOR", width=.9, depth=.04), "D1", [1, 1], value,
+                                           host=True)]
+        codes = {f["code"] for f in validate(value)["findings"]}
+        self.assertIn("DOOR_SWING_OBSTACLE_COLLISION", codes)
+
     def test_valid_non_authoritative_placement_remains_review_required(self):
         value = scene()
         value["placements"] = [placement(symbol(), "P1", [1, 1], value)]

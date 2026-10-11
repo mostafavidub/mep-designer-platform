@@ -14,7 +14,12 @@
     "units": {"const": "m"},
     "applicable_configuration": {"type": "string", "minLength": 1},
     "operating_mode": {"type": "string", "minLength": 1},
-    "applicability_conditions": {"type": "object"},
+    "applicability_conditions": {
+      "type": "object",
+      "properties": {
+        "evaluation_status": {"enum": ["APPLICABLE", "NOT_APPLICABLE", "INPUT_REQUIRED"]}
+      }
+    },
     "mandatory_or_heuristic": {"enum": ["MANDATORY", "HEURISTIC"]},
     "coexistence_policy": {"enum": ["PROHIBITED", "PERMITTED", "CONDITIONAL_REVIEW"]},
     "source_type": {"enum": ["NATIONAL_CODE", "LOCAL_CODE", "MANUFACTURER_DATA", "ERGONOMIC_REFERENCE", "OWNER_REQUIREMENT", "HUMAN_DECISION"]},

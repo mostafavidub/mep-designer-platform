@@ -96,6 +96,11 @@ def validate_clearance_profile(profile: Any, *, authority_resolver: ClearanceAut
     if markers and not synthetic:
         findings.append(_finding("INVALID_SYNTHETIC_MARKERS", "markers", "All three fixture disclaimers are required"))
     mandatory = profile["mandatory_or_heuristic"] == "MANDATORY"
+    applicability = profile.get("applicability_conditions", {}).get("evaluation_status")
+    if mandatory and applicability not in {"APPLICABLE", "NOT_APPLICABLE"}:
+        findings.append(_finding("MANDATORY_APPLICABILITY_REQUIRED", "applicability_conditions.evaluation_status",
+                                 "Mandatory clearance applicability must be independently established",
+                                 "REGULATORY_COMPLIANCE"))
     if mandatory and profile["clearance_type"] not in {"ACCESS_CLEARANCE", "CODE_REQUIRED_CLEARANCE"}:
         findings.append(_finding("MANDATORY_TYPE_MISMATCH", "clearance_type", "Mandatory clearance must use an authority-bearing type",
                                  "REGULATORY_COMPLIANCE"))
@@ -126,7 +131,14 @@ def validate_clearance_profile(profile: Any, *, authority_resolver: ClearanceAut
                                          "Independently resolved applicable rule is required", "REGULATORY_COMPLIANCE"))
     for i, points in enumerate(profile["local_geometry"]["polygons"]):
         _polygon(points, f"local_geometry.polygons[{i}]", findings)
-    expected = stable_hash(profile_content(profile))
+    try:
+        expected = stable_hash(profile_content(profile))
+    except (TypeError, ValueError):
+        findings.append(_finding("NON_FINITE_OR_NON_JSON_PROFILE", "$",
+                                 "Clearance profile must contain finite JSON values"))
+        return {"status": "INPUT_REQUIRED", "findings": findings,
+                "profile_hash": None, "regulatory_authority": False,
+                "professional_approval": False}
     if profile["dependency_fingerprint"] != expected:
         findings.append(_finding("STALE_PROFILE", "dependency_fingerprint", "Clearance profile content changed"))
     if any(f["code"] in {"STALE_SOURCE", "STALE_PROFILE"} for f in findings):
@@ -139,8 +151,14 @@ def validate_clearance_profile(profile: Any, *, authority_resolver: ClearanceAut
         status = "AUTHORITY_REVIEW_REQUIRED"  # embedded data is not independent professional approval
     else:
         status = "REVIEW_REQUIRED"
+    regulatory_codes = {f["code"] for f in findings if f["dimension"] == "REGULATORY_COMPLIANCE"}
+    regulatory_authority = bool(
+        mandatory and applicability == "APPLICABLE" and not synthetic
+        and profile["verification_status"] == "AUTHORITY_QUALIFIED"
+        and authority_resolver is not None and not regulatory_codes
+    )
     return {"status": status, "findings": findings, "profile_hash": expected,
-            "regulatory_authority": False, "professional_approval": False}
+            "regulatory_authority": regulatory_authority, "professional_approval": False}
 
 
 def placement_content(instance: Mapping[str, Any]) -> dict[str, Any]:
@@ -192,12 +210,15 @@ def _transform(poly: Polygon, matrix: list[float]) -> Polygon:
     return affine_transform(poly, matrix)
 
 
-def _dimension_states(findings: list[dict[str, str]]) -> dict[str, str]:
+def _dimension_states(findings: list[dict[str, str]], *, regulatory_evaluated: bool = False) -> dict[str, str]:
     dimensions = {name: "PASS" for name in (
         "STRUCTURAL_GEOMETRY_VALIDITY", "PLACEMENT_VALIDITY", "FUNCTIONAL_USABILITY",
         "REGULATORY_COMPLIANCE", "PROFESSIONAL_REVIEW")}
     dimensions["PROFESSIONAL_REVIEW"] = "NOT_REVIEWED"
-    rank = {"PASS": 0, "NOT_REVIEWED": 1, "HUMAN_REVIEW_REQUIRED": 2, "INPUT_REQUIRED": 3, "FAIL": 4}
+    dimensions["REGULATORY_COMPLIANCE"] = "PASS" if regulatory_evaluated else "NOT_EVALUATED"
+    rank = {"PASS": 0, "NOT_EVALUATED": 1, "NOT_REVIEWED": 1,
+            "AUTHORITY_REVIEW_REQUIRED": 2, "HUMAN_REVIEW_REQUIRED": 2,
+            "INPUT_REQUIRED": 3, "FAIL": 4}
     for finding in findings:
         dim, outcome = finding["dimension"], finding["outcome"]
         if rank[outcome] > rank.get(dimensions.get(dim, "PASS"), 0):
@@ -226,18 +247,23 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
         findings.append(_finding("AUTHORITATIVE_SPACE_REQUIRED", "physical_space", "Verified material Physical Space is required"))
     if room["geometry_fingerprint"] != stable_hash({"polygon": room["polygon"], "coordinate_frame": room["coordinate_frame"]}):
         findings.append(_finding("STALE_SPACE_GEOMETRY", "physical_space.geometry_fingerprint", "Physical-space geometry changed"))
-    profiles = {p["clearance_id"]: p for p in scene["clearance_profiles"]
-                if isinstance(p, Mapping) and isinstance(p.get("clearance_id"), str)}
-    if len(profiles) != len(scene["clearance_profiles"]):
+    declared_profiles = {p["clearance_id"]: p for p in scene["clearance_profiles"]
+                         if isinstance(p, Mapping) and isinstance(p.get("clearance_id"), str)}
+    if len(declared_profiles) != len(scene["clearance_profiles"]):
         findings.append(_finding("DUPLICATE_CLEARANCE_PROFILE", "clearance_profiles", "Unique identities required"))
+    profiles: dict[str, Mapping[str, Any]] = {}
     profile_polys: dict[str, list[Polygon]] = {}
+    profile_results: dict[str, Mapping[str, Any]] = {}
     for index, profile in enumerate(scene["clearance_profiles"]):
         if not isinstance(profile, Mapping) or not isinstance(profile.get("clearance_id"), str):
             findings.append(_finding("INVALID_CLEARANCE_PROFILE", f"clearance_profiles[{index}]", "Typed clearance profile required"))
             continue
         result = validate_clearance_profile(profile, authority_resolver=authority_resolver)
+        findings.extend({**f, "path": f"clearance_profiles[{index}].{f['path']}"} for f in result["findings"])
         if result["status"] in {"INPUT_REQUIRED", "STALE_BINDING"}:
-            findings.extend({**f, "path": f"clearance_profiles[{index}].{f['path']}"} for f in result["findings"])
+            continue
+        profiles[profile["clearance_id"]] = profile
+        profile_results[profile["clearance_id"]] = result
         profile_polys[profile["clearance_id"]] = [Polygon(points) for points in profile["local_geometry"]["polygons"]]
     hosts = {h["host_id"]: h for h in scene["hosts"]}
     if len(hosts) != len(scene["hosts"]):
@@ -270,7 +296,7 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
             findings.append(_finding("CURRENT_SYMBOL_REQUIRED", f"{path}.symbol_id", "Independent current symbol record is required"))
         elif (current_symbol.get("parameter_hash") != instance["parameter_hash"]
               or current_symbol.get("geometry_fingerprint") != instance["symbol_geometry_fingerprint"]
-              or current_symbol.get("footprint") != instance["local_footprint"]):
+              or current_symbol.get("local_footprint", current_symbol.get("footprint")) != instance["local_footprint"]):
             findings.append(_finding("STALE_SYMBOL_BINDING", path, "Symbol parameters or geometry changed"))
         if instance["project_id"] != scene["project_id"] or instance["physical_space_id"] != room["physical_space_id"]:
             findings.append(_finding("CROSS_PROJECT_OR_SPACE_BINDING", path, "Placement identity does not match scene"))
@@ -370,6 +396,18 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
         obstacle = _polygon(points, f"obstacles[{index}]", findings)
         if obstacle is not None:
             obstacles.append(obstacle)
+    for instance, footprint, operating, _regions in placed:
+        for index, obstacle in enumerate(obstacles):
+            if footprint.intersection(obstacle).area > 1e-10:
+                findings.append(_finding("OBJECT_OBSTACLE_COLLISION",
+                                         f"placements[{instance['placement_id']}].obstacles[{index}]",
+                                         "Object footprint intersects a physical obstacle",
+                                         "PLACEMENT_VALIDITY", "FAIL"))
+            if operating is not None and operating.intersection(obstacle).area > 1e-10:
+                findings.append(_finding("DOOR_SWING_OBSTACLE_COLLISION",
+                                         f"placements[{instance['placement_id']}].obstacles[{index}]",
+                                         "Operating envelope intersects a physical obstacle",
+                                         "PLACEMENT_VALIDITY", "FAIL"))
     obstacle_union = unary_union(obstacles + [item[1] for item in placed]) if obstacles or placed else None
     for index, check in enumerate(scene["access_path_checks"]):
         ref = profiles.get(check["clearance_profile_id"])
@@ -397,7 +435,11 @@ def validate_placement_scene(scene: Any, *, authority_resolver: ClearanceAuthori
             dim = "REGULATORY_COMPLIANCE" if ref["mandatory_or_heuristic"] == "MANDATORY" else "FUNCTIONAL_USABILITY"
             findings.append(_finding("ACCESS_PATH_BLOCKED", f"access_path_checks[{index}]", "No bounded clear path connects endpoints",
                                      dim, "FAIL"))
-    dimensions = _dimension_states(findings)
+    regulatory_evaluated = any(
+        profile_results.get(ref, {}).get("regulatory_authority") is True
+        for instance in scene["placements"] for ref in instance.get("clearance_profile_references", [])
+    )
+    dimensions = _dimension_states(findings, regulatory_evaluated=regulatory_evaluated)
     if "FAIL" in dimensions.values():
         status = "FAIL"
     elif "INPUT_REQUIRED" in dimensions.values():

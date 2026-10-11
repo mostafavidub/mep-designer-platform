@@ -48,8 +48,9 @@ The result keeps these dimensions separate:
 5. professional review.
 
 Footprints must remain within a current verified material Physical Space. Positive
-area overlap between object footprints is a collision. Door operating envelopes
-require exact host evidence and cannot intersect another footprint. Clearance
+area overlap between object footprints or an explicitly supplied physical obstacle
+is a collision; boundary contact alone is permitted. Door operating envelopes
+require exact host evidence and cannot intersect another footprint or physical obstacle. Clearance
 overlap follows the profile's `PROHIBITED`, `PERMITTED`, or
 `CONDITIONAL_REVIEW` policy. Unresolved simultaneous-use semantics produce human
 review, not an assumed pass/fail.
@@ -60,8 +61,16 @@ belong to one remaining connected component. It makes no whole-building egress o
 Code 246 claim. A mandatory path without independent applicable authority remains
 `INPUT_REQUIRED`.
 
-Successful geometry remains `REVIEW_REQUIRED`; it never means professional or
-regulatory approval.
+Canonical-symbol freshness compares symbol-local geometry to placement-local
+geometry; translated or rotated display geometry is never compared across coordinate
+spaces. Invalid nested profiles are rejected before any Shapely traversal.
+
+Regulatory compliance begins as `NOT_EVALUATED`, not `PASS`. It becomes `PASS`
+only when an applicable mandatory profile is independently source/rule-qualified
+and its geometry is actually evaluated. Missing applicability, synthetic evidence,
+self-asserted authority, or an unavailable independent resolver remains fail-closed.
+Professional review remains a separate `NOT_REVIEWED` dimension. Successful geometry
+therefore remains `REVIEW_REQUIRED`; it never means professional approval.
 
 ## Compatibility
 

@@ -25,6 +25,11 @@ provider. Synthetic data cannot qualify authority.
 - Unknown mandatory evidence fails closed.
 - Clearance overlap is evaluated by an explicit coexistence policy.
 - Access checking is bounded to supplied room/obstacle geometry.
+- Symbol freshness compares canonical and placed geometry in symbol-local space.
+- Invalid nested profiles cannot reach geometry construction.
+- Explicit obstacles participate in placement and door-operation collision checks.
+- Regulatory status remains `NOT_EVALUATED` until applicable mandatory evidence is
+  independently qualified and checked.
 - Runtime, Generator, CAD insertion and whole-plan QA remain disabled.
 - Existing records can be retained and revalidated; no destructive migration is
   necessary.
