@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "migration_id": "residential-symbol-clearance-contract",
+  "from": "architecture-reference-geometry/1.0 legacy footprint and optional usage_clearance_m",
+  "to": "architecture-clearance-profile/1.0 plus architecture-symbol-placement/1.0 and architecture-placement-scene/1.0",
+  "compatibility": "Additive offline contracts. All 41 symbol IDs, existing parameters, footprint, usage envelope and SVG output remain supported.",
+  "forward": [
+    "Preserve every existing symbol ID and catalog record without mutation",
+    "Retain legacy usage clearance as UNVERIFIED HEURISTIC evidence",
+    "Create typed profiles only from attributable source evidence",
+    "Bind placement to current symbol, Physical Space, host and material dependencies",
+    "Revalidate after any material fingerprint changes",
+    "Keep missing mandatory evidence INPUT_REQUIRED"
+  ],
+  "validation": [
+    "tests/test_residential_symbols_clearance.py",
+    "tests/test_residential_foundation.py",
+    "tests/test_owner_program_v2.py",
+    "tests/test_local_code_basis.py",
+    "SWCIS-2026-0308"
+  ],
+  "consumers": ["offline residential architecture R&D and a future separately approved Architecture Generator adapter"],
+  "loss_policy": "No legacy field or geometry is deleted, rewritten or promoted to authority.",
+  "stale_policy": "Symbol parameters, geometry, Physical Space, host, profile source/revision, relevant code basis or relevant program changes invalidate dependent placement evidence.",
+  "deployment": "No runtime import, Generator activation, CAD insertion, Golden execution, staging or production action.",
+  "rollback": "Revert the isolated branch; no production or customer data requires reversal."
+}

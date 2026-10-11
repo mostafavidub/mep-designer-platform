@@ -1,6 +1,6 @@
 # System-Wide Change Impact Standard (SWCIS)
 
-**Canonical version:** 5.10.0
+**Canonical version:** 5.11.0
 
 **Status:** LOCKED
 
@@ -294,3 +294,15 @@ means `NOT_REVIEWED`; missing credentials remain `UNKNOWN` and cannot support a
 licensed-review completion claim. `APPROVED_WITH_CHANGE` and
 `NEEDS_MORE_EVIDENCE` retain their required rationale and source basis. Human
 review never activates runtime, Generator, Golden execution, merge or deployment.
+
+## Residential symbol clearance authority
+
+SWCIS 5.11.0 keeps the 41 residential reference symbols in one canonical
+implementation and separates footprint, usage, access, maintenance and code-required
+clearance geometry. A clearance must retain exact source/revision/applicability and a
+material dependency fingerprint. Owner, ergonomic, manufacturer and synthetic values
+cannot self-promote into regulatory authority. Independent placement validation is
+read-only, performs no geometry repair, and keeps structural geometry, placement,
+functional usability, regulatory compliance and professional review distinct.
+Unknown mandatory constraints fail closed. This offline contract does not activate a
+Generator, CAD insertion, runtime, Golden execution or whole-plan Architecture QA.

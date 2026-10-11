@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-placement-scene/1.0",
+  "type": "object",
+  "required": ["schema_version", "project_id", "physical_space", "hosts", "clearance_profiles", "placements", "obstacles", "access_path_checks", "runtime_enabled"],
+  "properties": {
+    "schema_version": {"const": "architecture-placement-scene/1.0"},
+    "project_id": {"type": "string", "minLength": 1},
+    "physical_space": {"$ref": "#/$defs/space"},
+    "hosts": {"type": "array", "items": {"$ref": "#/$defs/host"}},
+    "clearance_profiles": {"type": "array", "items": {"type": "object"}},
+    "placements": {"type": "array", "items": {"$ref": "#/$defs/placement"}},
+    "obstacles": {"type": "array", "items": {"$ref": "#/$defs/polygon"}},
+    "access_path_checks": {"type": "array", "items": {"$ref": "#/$defs/access"}},
+    "runtime_enabled": {"const": false},
+    "markers": {"type": "array", "uniqueItems": true, "items": {"enum": ["NON_GOLDEN", "NON_REGULATORY_TEST_DATA", "NOT_PROFESSIONALLY_APPROVED"]}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "point": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "items": false},
+    "polygon": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/point"}},
+    "space": {"type": "object", "required": ["physical_space_id", "project_id", "coordinate_frame", "polygon", "geometry_fingerprint", "authority_status", "material_geometry"], "properties": {"physical_space_id": {"type": "string", "minLength": 1}, "project_id": {"type": "string", "minLength": 1}, "coordinate_frame": {"type": "string", "minLength": 1}, "polygon": {"$ref": "#/$defs/polygon"}, "geometry_fingerprint": {"$ref": "#/$defs/hash"}, "authority_status": {"type": "string"}, "material_geometry": {"type": "boolean"}}, "additionalProperties": false},
+    "host": {"type": "object", "required": ["host_id", "project_id", "coordinate_frame", "geometry", "geometry_fingerprint"], "properties": {"host_id": {"type": "string", "minLength": 1}, "project_id": {"type": "string", "minLength": 1}, "coordinate_frame": {"type": "string", "minLength": 1}, "geometry": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/point"}}, "geometry_fingerprint": {"$ref": "#/$defs/hash"}}, "additionalProperties": false},
+    "placement": {"type": "object", "required": ["schema_version", "placement_id", "symbol_id", "symbol_category", "parameter_hash", "symbol_geometry_fingerprint", "project_id", "physical_space_id", "physical_space_fingerprint", "host_id", "host_fingerprint", "coordinate_frame", "position", "rotation_deg", "transformation", "clearance_profile_references", "applicable_operating_state", "source_bindings", "local_footprint", "local_operating_envelope", "dependency_fingerprint"], "properties": {"schema_version": {"const": "architecture-symbol-placement/1.0"}, "placement_id": {"type": "string", "minLength": 1}, "symbol_id": {"type": "string", "minLength": 1}, "symbol_category": {"type": "string", "minLength": 1}, "parameter_hash": {"$ref": "#/$defs/hash"}, "symbol_geometry_fingerprint": {"$ref": "#/$defs/hash"}, "project_id": {"type": "string", "minLength": 1}, "physical_space_id": {"type": "string", "minLength": 1}, "physical_space_fingerprint": {"$ref": "#/$defs/hash"}, "host_id": {"type": ["string", "null"]}, "host_fingerprint": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]}, "coordinate_frame": {"type": "string", "minLength": 1}, "position": {"$ref": "#/$defs/point"}, "rotation_deg": {"type": "number"}, "transformation": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"type": "number"}}, "clearance_profile_references": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}, "applicable_operating_state": {"type": "string", "minLength": 1}, "source_bindings": {"type": "object", "required": ["code_basis_hash", "relevant_program_hash"], "properties": {"code_basis_hash": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]}, "relevant_program_hash": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]}}, "additionalProperties": false}, "local_footprint": {"$ref": "#/$defs/polygon"}, "local_operating_envelope": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/polygon"}]}, "dependency_fingerprint": {"$ref": "#/$defs/hash"}}, "additionalProperties": false},
+    "access": {"type": "object", "required": ["check_id", "start", "goal", "required_width_m", "clearance_profile_id"], "properties": {"check_id": {"type": "string", "minLength": 1}, "start": {"$ref": "#/$defs/point"}, "goal": {"$ref": "#/$defs/point"}, "required_width_m": {"type": "number", "exclusiveMinimum": 0}, "clearance_profile_id": {"type": "string", "minLength": 1}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}
