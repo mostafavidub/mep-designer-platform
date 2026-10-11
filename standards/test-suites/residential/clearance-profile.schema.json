@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "architecture-clearance-profile/1.0",
+  "type": "object",
+  "required": ["schema_version", "clearance_id", "symbol_id", "symbol_category", "clearance_type", "local_geometry", "coordinate_system", "units", "applicable_configuration", "operating_mode", "applicability_conditions", "mandatory_or_heuristic", "coexistence_policy", "source_type", "source_id", "source_revision", "source_hash", "rule_or_clause_reference", "verification_status", "dependency_fingerprint"],
+  "properties": {
+    "schema_version": {"const": "architecture-clearance-profile/1.0"},
+    "clearance_id": {"type": "string", "minLength": 1},
+    "symbol_id": {"type": "string", "minLength": 1},
+    "symbol_category": {"type": "string", "minLength": 1},
+    "clearance_type": {"enum": ["OBJECT_FOOTPRINT", "USAGE_CLEARANCE", "ACCESS_CLEARANCE", "MAINTENANCE_CLEARANCE", "CODE_REQUIRED_CLEARANCE"]},
+    "local_geometry": {"type": "object", "required": ["polygons"], "properties": {"polygons": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/polygon"}}}, "additionalProperties": false},
+    "coordinate_system": {"const": "SYMBOL_LOCAL_2D"},
+    "units": {"const": "m"},
+    "applicable_configuration": {"type": "string", "minLength": 1},
+    "operating_mode": {"type": "string", "minLength": 1},
+    "applicability_conditions": {
+      "type": "object",
+      "properties": {
+        "evaluation_status": {"enum": ["APPLICABLE", "NOT_APPLICABLE", "INPUT_REQUIRED"]}
+      }
+    },
+    "mandatory_or_heuristic": {"enum": ["MANDATORY", "HEURISTIC"]},
+    "coexistence_policy": {"enum": ["PROHIBITED", "PERMITTED", "CONDITIONAL_REVIEW"]},
+    "source_type": {"enum": ["NATIONAL_CODE", "LOCAL_CODE", "MANUFACTURER_DATA", "ERGONOMIC_REFERENCE", "OWNER_REQUIREMENT", "HUMAN_DECISION"]},
+    "source_id": {"type": "string", "minLength": 1},
+    "source_revision": {"type": ["string", "null"]},
+    "source_hash": {"anyOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]},
+    "rule_or_clause_reference": {"type": ["string", "null"]},
+    "verification_status": {"enum": ["UNVERIFIED", "SOURCE_VERIFIED", "AUTHORITY_QUALIFIED", "STALE", "SYNTHETIC"]},
+    "dependency_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "markers": {"type": "array", "uniqueItems": true, "items": {"enum": ["NON_GOLDEN", "NON_REGULATORY_TEST_DATA", "NOT_PROFESSIONALLY_APPROVED"]}}
+  },
+  "$defs": {
+    "point": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}], "items": false},
+    "polygon": {"type": "array", "minItems": 4, "items": {"$ref": "#/$defs/point"}}
+  },
+  "additionalProperties": false
+}

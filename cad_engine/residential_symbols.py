@@ -7,13 +7,16 @@ from cad_engine.build_identity import build_identity
 
 
 def create_symbol(symbol_id, *, width_m, depth_m, origin_m, rotation_deg,
-                  dimension_basis, usage_clearance_m=None, clearance_source=None, steps=None):
+                  dimension_basis, usage_clearance_m=None, clearance_source=None, steps=None,
+                  height_m=None):
     catalog = load_catalog("symbols")
     row = next((s for s in catalog["symbols"] if s["symbol_id"] == symbol_id), None)
     if row is None:
         raise ValueError("Unknown symbol")
     if any(not finite_number(v) or v <= 0 for v in [width_m, depth_m]):
         raise ValueError("Positive finite metre dimensions required")
+    if height_m is not None and (not finite_number(height_m) or height_m <= 0):
+        raise ValueError("Height must be a positive finite metre dimension")
     if not isinstance(origin_m, (list, tuple)) or len(origin_m) != 2 or any(not finite_number(v) for v in origin_m) or not finite_number(rotation_deg):
         raise ValueError("Invalid placement")
     if dimension_basis not in {"MANUFACTURER", "OWNER_MEASURED", "VISUALIZATION_ONLY"}:
@@ -27,10 +30,12 @@ def create_symbol(symbol_id, *, width_m, depth_m, origin_m, rotation_deg,
                 round(origin_m[1] + x*math.sin(a)+y*math.cos(a), 12)]
     def polygon(points):
         return [point(x, y) for x, y in points]
-    footprint = polygon([(0, 0), (w, 0), (w, d), (0, d), (0, 0)])
+    local_footprint = [[0, 0], [w, 0], [w, d], [0, d], [0, 0]]
+    footprint = polygon(local_footprint)
     lines = [footprint]
     kind = row["representation"]["primitive"]
     operating = None
+    local_operating = None
     if kind == "BED":
         lines.append(polygon([(0, d*.75), (w, d*.75)]))
     elif kind == "SANITARY":
@@ -45,20 +50,42 @@ def create_symbol(symbol_id, *, width_m, depth_m, origin_m, rotation_deg,
         lines.append(polygon([(0, 0), (0, w)]))
         lines.append(polygon([(w*math.cos(math.pi*i/32), w*math.sin(math.pi*i/32)) for i in range(17)]))
         # Conservative full sweep bound; separate from closed-leaf footprint and user clearance.
-        operating = polygon([(0, 0), (w, 0), (w, w), (0, w), (0, 0)])
+        local_operating = [[0, 0], [w, 0], [w, w], [0, w], [0, 0]]
+        operating = polygon(local_operating)
     else:
         lines.append(polygon([(0, 0), (w, d)]))
-    usage = None if usage_clearance_m is None else polygon([(0, d), (w, d), (w, d+usage_clearance_m), (0, d+usage_clearance_m), (0, d)])
-    result = {"symbol_id": symbol_id, "units": "m", "footprint": footprint,
+    local_usage = None if usage_clearance_m is None else [[0, d], [w, d], [w, d+usage_clearance_m], [0, d+usage_clearance_m], [0, d]]
+    usage = None if local_usage is None else polygon(local_usage)
+    geometry_fingerprint = stable_hash({"symbol_id": symbol_id, "units": "m", "local_footprint": local_footprint,
+                                        "local_operating_envelope": local_operating, "height_m": height_m})
+    clearance_regions = []
+    if usage is not None:
+        # Compatibility input has insufficient authority for a mandatory profile.
+        # Preserve it as explicitly unverified ergonomic evidence only.
+        clearance_regions.append({
+            "clearance_id": "legacy-usage-" + stable_hash({"symbol": symbol_id, "geometry": usage,
+                                                             "source": clearance_source})[:16],
+            "clearance_type": "USAGE_CLEARANCE", "local_geometry": {"polygons": [local_usage]},
+            "operating_mode": "LEGACY_DEFAULT", "mandatory_or_heuristic": "HEURISTIC",
+            "source_type": "ERGONOMIC_REFERENCE", "source_id": clearance_source,
+            "verification_status": "UNVERIFIED",
+        })
+    result = {"symbol_id": symbol_id, "category": row["category"], "units": "m",
+              "anchor": row["anchor"], "height_m": height_m, "footprint": footprint,
+              "local_footprint": local_footprint,
               "operating_envelope": operating,
+              "local_operating_envelope": local_operating,
               "usage_envelope": usage, "usage_source": clearance_source, "lines": lines,
+              "clearance_regions": clearance_regions,
               "dimension_basis": dimension_basis, "catalog_hash": stable_hash(catalog),
+              "geometry_fingerprint": geometry_fingerprint,
               "fit_status": "REVIEW_REQUIRED" if usage is not None and dimension_basis != "VISUALIZATION_ONLY" else "INPUT_REQUIRED",
               "build_identity": build_identity(), "mep_ports": [],
               "note": "Generic reference only. Product outline, operating sweeps and ports require project evidence."}
     result["parameter_hash"] = stable_hash({"symbol":symbol_id,"width":w,"depth":d,"origin":origin_m,
                                             "rotation":rotation_deg%360,"basis":dimension_basis,
-                                            "clearance":usage_clearance_m,"source":clearance_source,"steps":steps})
+                                            "height":height_m,"clearance":usage_clearance_m,
+                                            "source":clearance_source,"steps":steps})
     return result
 
 

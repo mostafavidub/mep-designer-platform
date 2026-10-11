@@ -115,6 +115,15 @@ Architecture→MEP handoff must preserve room/use/level IDs, exact polygons, ope
 
 The ergonomic model distinguishes OBJECT_FOOTPRINT, USAGE_CLEARANCE, ACCESS_CLEARANCE, MAINTENANCE_CLEARANCE and CODE_REQUIRED_CLEARANCE for15 essential object groups. It records the evidence hierarchy but deliberately supplies no invented clearance values. A missing envelope returns FIT_INPUT_REQUIRED. The41 original symbols therefore remain a useful geometry foundation but are insufficient for V1 fit validation.
 
+The additive offline clearance contract now makes those five classes machine-readable
+without supplying production numbers. All41 symbol IDs remain canonical. A placement
+binds exact symbol, Physical Space, host, transform, relevant program/code basis and
+source fingerprints. An independent read-only validator checks containment, object
+collision, typed clearance interaction, door operating interference and bounded
+access continuity. Geometry success remains review-required; unknown code or source
+authority fails closed. No runtime, Generator, CAD insertion or whole-plan QA path is
+activated. See `RESIDENTIAL_SYMBOL_CLEARANCE_VALIDATION.md`.
+
 ## Golden, performance and delivery
 
 **HUMAN_ARCHITECTURE_GOLDEN_REQUIRED**: approved owner programs, authoritative site constraints, acceptable layouts, rejected layouts and reasoned architect decisions are absent. `golden-review-template.json` supplies an empty independent-review form and eight required case types; it is not Golden truth. Synthetic unit tests do not replace human cases. Production and staging deployment are not recommended. An offline architect review packet is useful now.

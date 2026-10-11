@@ -1818,6 +1818,32 @@
         "forward": "Create additive profiles/bases and revalidate draft 1.0 records and legacy embedded envelopes without rewriting prior inputs; self-asserted authority remains review-required.",
         "rollback": "Revert the additive branch; prior contracts and production behavior remain unchanged."
       }
+    },
+    {
+      "id": "GOV-2026-051",
+      "status": "APPROVED_FOR_OFFLINE_IMPLEMENTATION",
+      "summary": "Extend the single canonical residential symbol foundation with source-bound typed clearance profiles, exact placement/host/dependency identity and independent fail-closed containment, collision, door and bounded access validation.",
+      "affected_capabilities": [
+        "residential_foundation_fail_closed"
+      ],
+      "affected_projects": [
+        "offline architecture R&D only"
+      ],
+      "approval": {
+        "status": "APPROVED",
+        "basis": "Explicit project-owner authorization in ARCH-P0.3 for bounded offline implementation with no runtime, Generator, Golden, staging or production activation."
+      },
+      "verification": {
+        "positive_test": "must_pass",
+        "destructive_test": "must_pass",
+        "migration_test": "must_pass",
+        "existing_41_symbol_compatibility": "must_pass",
+        "required_ci": "must_pass before merge"
+      },
+      "migration": {
+        "forward": "Preserve all symbol IDs and legacy geometry; represent existing usage clearances as unverified heuristic evidence and require source-bound profiles for new authority-bearing checks.",
+        "rollback": "Revert the isolated branch; no runtime or persisted production data is affected."
+      }
     }
   ]
 }
