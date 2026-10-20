@@ -1,7 +1,10 @@
 """Semantic labels cannot supply physical boundary or void authority."""
-from shapely.geometry import box
+import pytest
+from shapely.affinity import rotate
+from shapely.geometry import box, Polygon
 from cad_engine.architectural_space_engine import (
     _space_record, _architectural_void_candidates, _label_bindings, _classify_text,
+    _filter_wall_solid_cells,
 )
 
 
@@ -42,6 +45,132 @@ def test_roof_containing_service_label_requires_local_host_extent():
     assert row['semantic_status']=='INPUT_REQUIRED'
     assert row['geometry_status']=='VERIFIED'
     assert 'duct' in row['semantic_candidates']
+
+
+def test_roof_lightwell_with_complete_local_canonical_enclosure_is_verified():
+    extracted=source('نورگیر'); extracted['primitives']=[]
+    proof={'status':'VERIFIED','coverage_ratio':1.0,'uncovered_boundary_segments':[],
+           'unresolved_internal_segment_ids':[],'negative_evidence':[],
+           'wall_ids':['W1','W2','W3','W4'],'source_handles':['A','B','C','D'],
+           'evidence':[],'tolerance':.001}
+    frame={'frame_id':'F','frame_type':'ROOF','bounds':[-10,-10,10,10]}
+    row=_space_record(box(0,0,4,4),frame,'source',extracted,1,
+                      geometry_evidence=proof)
+    assert row['category']=='lightwell'
+    assert row['semantic_status']=='VERIFIED'
+    assert row['geometry_evidence']['local_semantic_host_verified'] is True
+    assert row['geometry_evidence']['local_semantic_host_basis']==\
+        'COMPLETE_CANONICAL_ENCLOSURE_STRICTLY_INSIDE_PLAN_FRAME'
+
+
+def test_roof_lightwell_accepts_four_independent_confirmed_native_faces():
+    extracted=source('نورگیر'); extracted['primitives']=[]
+    witnesses=[{'segment_id':f'S{i}','evidence':[{'class':'RECURRING_PARALLEL_FACE_PAIR'}]}
+               for i in range(4)]
+    proof={'status':'VERIFIED','coverage_ratio':1.0,'uncovered_boundary_segments':[],
+           'unresolved_internal_segment_ids':[],'negative_evidence':[],
+           'wall_ids':[],'source_handles':['A','B','C','D'],'evidence':[],
+           'source_witness_records':witnesses,'tolerance':.001}
+    row=_space_record(box(1,1,3,3),
+                      {'frame_id':'F','frame_type':'ROOF','bounds':[0,0,10,10]},
+                      'source',extracted,1,geometry_evidence=proof)
+    assert row['category']=='lightwell'
+    assert row['semantic_status']=='VERIFIED'
+
+
+@pytest.mark.parametrize('scale',[.01,1,1000])
+@pytest.mark.parametrize('angle',[0,17,43])
+def test_roof_local_host_gate_is_scale_and_rotation_invariant(scale,angle):
+    extracted=source('نورگیر'); extracted['primitives']=[]
+    extracted['texts'][0]['point']=[4*scale,4*scale]
+    proof={'status':'VERIFIED','coverage_ratio':1.0,'uncovered_boundary_segments':[],
+           'unresolved_internal_segment_ids':[],'negative_evidence':[],
+           'wall_ids':['W1','W2','W3','W4'],'source_handles':['A','B','C','D'],
+           'evidence':[],'tolerance':.001*scale}
+    poly=rotate(box(3*scale,3*scale,5*scale,5*scale),angle,origin=(4*scale,4*scale))
+    row=_space_record(poly,{'frame_id':'F','frame_type':'ROOF',
+                           'bounds':[0,0,10*scale,10*scale]},
+                      'source',extracted,1,geometry_evidence=proof)
+    assert row['category']=='lightwell'
+    assert row['semantic_status']=='VERIFIED'
+
+
+def test_roof_local_host_requires_four_independent_boundary_witnesses():
+    extracted=source('نورگیر'); extracted['primitives']=[]
+    proof={'status':'VERIFIED','coverage_ratio':1.0,'uncovered_boundary_segments':[],
+           'unresolved_internal_segment_ids':[],'negative_evidence':[],
+           'wall_ids':['W1','W2','W3'],'source_handles':['A','B','C'],
+           'evidence':[],'tolerance':.001}
+    row=_space_record(box(3,3,5,5),{'frame_id':'F','frame_type':'ROOF','bounds':[0,0,10,10]},
+                      'source',extracted,1,geometry_evidence=proof)
+    assert row['category']=='unknown'
+    assert row['semantic_status']=='INPUT_REQUIRED'
+
+
+def test_roof_local_host_over_quarter_frame_remains_reviewable():
+    extracted=source('نورگیر'); extracted['primitives']=[]
+    proof={'status':'VERIFIED','coverage_ratio':1.0,'uncovered_boundary_segments':[],
+           'unresolved_internal_segment_ids':[],'negative_evidence':[],
+           'wall_ids':['W1','W2','W3','W4'],'source_handles':['A','B','C','D'],
+           'evidence':[],'tolerance':.001}
+    row=_space_record(box(1,1,7,7),{'frame_id':'F','frame_type':'ROOF','bounds':[0,0,10,10]},
+                      'source',extracted,1,geometry_evidence=proof)
+    assert row['category']=='unknown'
+    assert row['semantic_status']=='INPUT_REQUIRED'
+
+
+def test_roof_field_or_incomplete_cell_cannot_borrow_lightwell_label():
+    extracted=source('نورگیر'); extracted['primitives']=[]
+    frame={'frame_id':'F','frame_type':'ROOF','bounds':[0,0,10,10]}
+    complete={'status':'VERIFIED','coverage_ratio':1.0,'uncovered_boundary_segments':[],
+              'unresolved_internal_segment_ids':[],'negative_evidence':[],
+              'wall_ids':['W1','W2','W3','W4'],'source_handles':['A','B','C','D'],
+              'evidence':[],'tolerance':.001}
+    roof=_space_record(box(0,0,10,10),frame,'source',extracted,1,
+                       geometry_evidence=complete)
+    assert roof['category']=='unknown'
+    assert 'lightwell' in roof['semantic_candidates']
+    incomplete={**complete,'coverage_ratio':.99,'status':'INPUT_REQUIRED',
+                'negative_evidence':['PHYSICAL_BOUNDARY_UNSUPPORTED']}
+    cell=_space_record(box(1,1,3,3),frame,'source',extracted,1,
+                       geometry_evidence=incomplete)
+    assert cell['category']=='unknown'
+    assert 'lightwell' in cell['semantic_candidates']
+
+
+def test_sub_tolerance_wall_face_sliver_is_not_a_physical_space():
+    accepted,rejected=_filter_wall_solid_cells(
+        [box(0,0,.000025,8)],[],{'texts':[],'objects':[]},1,
+        canonical_walls=[],tolerance=.002)
+    assert accepted==[]
+    assert rejected[0]['reason']=='NO_RESOLVABLE_INTERIOR_AT_EVIDENCE_TOLERANCE'
+
+
+def test_small_but_resolvable_unlabelled_room_is_not_size_deleted():
+    room=box(0,0,.2,.2)
+    accepted,rejected=_filter_wall_solid_cells(
+        [room],[],{'texts':[],'objects':[]},1,
+        canonical_walls=[],tolerance=.002)
+    assert accepted==[room]
+    assert rejected==[]
+
+
+def test_concave_wall_band_without_resolvable_interior_is_rejected():
+    band=Polygon([(0,0),(1.7,0),(1.7,2),(1.1,2),(1.1,.6),(0,.6)])
+    evidence=[{'evidence':[{'class':'RECURRING_PARALLEL_FACE_PAIR','thicknesses':[.6]}]}]
+    accepted,rejected=_filter_wall_solid_cells(
+        [band],evidence,{'texts':[],'objects':[]},1,canonical_walls=[],tolerance=.008)
+    assert accepted==[]
+    assert rejected[0]['reason']=='WALL_BAND_NO_RESOLVABLE_INTERIOR'
+
+
+def test_concave_room_with_interior_core_survives_wall_band_guard():
+    room=Polygon([(0,0),(5,0),(5,5),(2,5),(2,2),(0,2)])
+    evidence=[{'evidence':[{'class':'RECURRING_PARALLEL_FACE_PAIR','thicknesses':[.2]}]}]
+    accepted,rejected=_filter_wall_solid_cells(
+        [room],evidence,{'texts':[],'objects':[]},1,canonical_walls=[],tolerance=.008)
+    assert accepted==[room]
+    assert rejected==[]
 
 
 def test_contained_duct_label_in_source_closed_host_retained():

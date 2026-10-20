@@ -58,6 +58,8 @@ from .architecture_text_evidence import (
     semantic_candidates as canonical_semantic_candidates,
     SPACE_ONTOLOGY as CANONICAL_SPACE_ONTOLOGY,
 )
+from .architecture_opening_evidence import detect_opening_evidence
+from .architecture_stair_evidence import detect_stair_evidence
 
 SCHEMA = "canonical-architectural-model/1.0"
 STATUSES = {"VERIFIED", "HIGH_CONFIDENCE", "AMBIGUOUS", "INPUT_REQUIRED", "CONFLICT", "REJECTED"}
@@ -984,10 +986,32 @@ def _filter_wall_solid_cells(polygons, segment_records, extracted, metres_per_un
         matched=next((value for value in thicknesses if abs(short-value)<=max(value*.25,.01)),None)
         material_overlap=(poly.intersection(material_mask).area/poly.area
                           if material_mask is not None and poly.area>0 else 0.0)
-        if material_overlap>=.65 and not labels and not objects:
+        resolvable_width=max(float(tolerance or 0)*2*scale,.002)
+        # A concave U/L-shaped polygon can be the *wall band itself*: its
+        # rotated bounding box is room-sized, so a short-side test misses it.
+        # Reject only when independently derived wall thickness consumes the
+        # whole polygon under an inward offset.  Genuine rooms retain a
+        # non-empty interior core and are therefore unaffected.
+        wall_band_thickness=next((value for value in reversed(thicknesses)
+                                  if poly.buffer(-(value/scale)/2,join_style=2).is_empty),None)
+        if short <= resolvable_width:
+            rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
+                             "reason":"NO_RESOLVABLE_INTERIOR_AT_EVIDENCE_TOLERANCE",
+                             "short_dimension_m":short,"resolution_threshold_m":resolvable_width,
+                             "status":"REJECTED"})
+        elif material_overlap>=.65 and not labels and not objects:
             rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
                              "reason":"WALL_MATERIAL_FOOTPRINT","wall_material_overlap_ratio":material_overlap,
                              "status":"REJECTED"})
+        elif (wall_band_thickness is not None and not labels and not objects and
+              poly.area < poly.minimum_rotated_rectangle.area * .8):
+            rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
+                             "reason":"WALL_BAND_NO_RESOLVABLE_INTERIOR",
+                             "derived_wall_thickness_m":wall_band_thickness,
+                             "status":"REJECTED"})
+        # A recurring pitch/short dimension alone is not wall-material proof.
+        # Keep the source enclosure and its role unresolved; never hard-delete
+        # an unlabelled small room merely because it matches that hypothesis.
         elif matched and long/max(short,1e-12)>=2.5 and not labels and not objects:
             rejected.append({"cell_id":_stable_id("CELL",[_round_points(list(poly.exterior.coords))]),
                              "reason":"WALL_SOLID_STRIP","derived_wall_thickness_m":matched,
@@ -1083,6 +1107,50 @@ def _associate_dimensions(poly, dimensions, metres_per_unit):
     return rows
 
 
+LOCAL_SERVICE_MIN_BOUNDARY_WITNESSES = 4
+LOCAL_SERVICE_MAX_FRAME_AREA_RATIO = .25
+
+
+def _bounded_local_service_host(poly, frame, proof):
+    """Accept a roof-local semantic host only from independent topology.
+
+    A label still supplies no geometry.  This path requires a completely
+    source-supported canonical enclosure, at least four wall identities, no
+    unresolved/unsupported boundary evidence, and a footprint that is local
+    to (and strictly inside) the containing plan frame.  It therefore admits a
+    bounded lightwell/shaft cell while continuing to reject a label placed on
+    the roof field itself.
+    """
+    if proof.get("status") not in {"VERIFIED", "SUPPORTED", "HIGH_CONFIDENCE"}:
+        return False
+    if proof.get("uncovered_boundary_segments") or proof.get("unresolved_internal_segment_ids"):
+        return False
+    if proof.get("negative_evidence") or float(proof.get("coverage_ratio") or 0) < 1.0-1e-6:
+        return False
+    witnesses = proof.get("source_witness_records") or []
+    confirmed_witnesses = {
+        row.get("segment_id") for row in witnesses
+        if row.get("segment_id") and any(
+            evidence.get("class") in {"RECURRING_PARALLEL_FACE_PAIR", "LOCAL_PARALLEL_FACE_PAIR"}
+            for evidence in row.get("evidence") or [])
+    }
+    if (len(set(proof.get("wall_ids") or [])) < LOCAL_SERVICE_MIN_BOUNDARY_WITNESSES and
+            len(confirmed_witnesses) < LOCAL_SERVICE_MIN_BOUNDARY_WITNESSES):
+        return False
+    bounds = frame.get("bounds")
+    if not bounds:
+        return False
+    frame_poly = box(*bounds)
+    # 25% is a conservative locality guard, not an engineering dimension: a
+    # service void occupying a larger share of an entire drawing frame remains
+    # reviewable rather than borrowing authority from its label.  The ratio is
+    # dimensionless and therefore invariant under drawing-unit scale.
+    if frame_poly.area <= 0 or poly.area > frame_poly.area * LOCAL_SERVICE_MAX_FRAME_AREA_RATIO:
+        return False
+    tolerance = max(float(proof.get("tolerance") or 0), 1e-8)
+    return frame_poly.buffer(-tolerance).contains(poly)
+
+
 def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded_label_handles=None,
                   geometry_evidence=None, label_bindings=None):
     ring = _round_points(list(poly.exterior.coords)); holes=sorted(_round_points(list(interior.coords)) for interior in poly.interiors)
@@ -1148,6 +1216,10 @@ def _space_record(poly, frame, source_hash, extracted, metres_per_unit, excluded
             if source_kind in local_service and candidate.is_valid and candidate.boundary.hausdorff_distance(poly.boundary)<=tol:
                 closed_host=True; break
     unsupported_semantic={}
+    bounded_host = _bounded_local_service_host(poly, frame, proof)
+    if bounded_host:
+        proof["local_semantic_host_verified"] = True
+        proof["local_semantic_host_basis"] = "COMPLETE_CANONICAL_ENCLOSURE_STRICTLY_INSIDE_PLAN_FRAME"
     if frame.get("frame_type")=="ROOF" and not (closed_host or proof.get("local_semantic_host_verified")):
         for kind in set(semantic)&local_service: unsupported_semantic[kind]=semantic.pop(kind)
     categories = sorted(semantic)
@@ -1502,6 +1574,46 @@ def recognition_svg(model):
     rows.append('</svg>'); return "".join(rows)
 
 
+def _reviewable_architectural_objects(opening_evidence, stair_evidence):
+    """Expose typed native-CAD recognition without granting design authority.
+
+    A visible window or stair must not disappear merely because its host wall,
+    access edge, physical stair identity, or code role is still unresolved.
+    These records are canonical *recognition* objects, but deliberately carry
+    no material, routing, access, safety, or compliance authority.
+    """
+    items=[]
+    for row in opening_evidence.get("items") or []:
+        if row.get("kind") != "window" or row.get("view_scope") != "PLAN_VIEW":
+            continue
+        items.append({
+            "architectural_object_id":"WINDOW-"+row["opening_evidence_id"].removeprefix("OPEN-"),
+            "object_type":"WINDOW","frame_id":row.get("frame_id"),
+            "status":"SUPPORTED" if row.get("status") == "CANDIDATE" else "INPUT_REQUIRED",
+            "geometry":row.get("geometry"),"source_refs":row.get("source_refs") or [],
+            "evidence_ids":[row["opening_evidence_id"]],
+            "recognition_basis":(row.get("evidence") or {}).get("detection_path"),
+            "authority":{"material_geometry":False,"portal":False,"access_edge":False,
+                         "routing":False,"engineering_approval":False},
+        })
+    flights={row["stair_flight_id"]:row for row in stair_evidence.get("flight_samples") or []}
+    for row in stair_evidence.get("items") or []:
+        members=[flights[value] for value in row.get("flight_ids") or [] if value in flights]
+        items.append({
+            "architectural_object_id":row["stair_assembly_id"],"object_type":"STAIR",
+            "frame_id":row.get("frame_id"),"status":"INPUT_REQUIRED",
+            "geometry":row.get("geometry"),
+            "source_refs":sorted({ref for member in members for ref in member.get("source_refs") or []}),
+            "evidence_ids":row.get("flight_ids") or [],
+            "recognition_basis":"NATIVE_STAIR_FLIGHT_ASSEMBLY",
+            "authority":{"physical_identity":False,"routing":False,"egress":False,
+                         "safety":False,"code_compliance":False,"engineering_approval":False},
+        })
+    return {"schema":"canonical-reviewable-architectural-object/1.0",
+            "items":sorted(items,key=lambda row:row["architectural_object_id"]),
+            "authority":"RECOGNITION_ONLY"}
+
+
 def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = None,
                              gap_review_manifest: dict | None = None):
     started = time.perf_counter(); stage_started=started; timings={}
@@ -1520,6 +1632,14 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
     subdivision_results=[]; subdivision_comparisons=[]; wall_admission_funnels=[]; continuity_results=[]
     pre_envelope_opening_evidence=[]; opening_source_inventories=[]; pre_envelope_geometric_candidates=[]
     internal_wall_gaps=[]
+    anonymous_opening_evidence=detect_opening_evidence(
+        extracted["primitives"],source_sha256=source["source_sha256"],frames=frames)
+    stair_evidence=detect_stair_evidence(
+        extracted["primitives"],source_sha256=source["source_sha256"],frames=frames,
+        texts=extracted.get("text_evidence") or [])
+    reviewable_architectural_objects=_reviewable_architectural_objects(
+        anonymous_opening_evidence,stair_evidence)
+    extracted['opening_role_candidates']=anonymous_opening_evidence['items']
     source_role_diagnostics=annotate_source_roles(extracted,frames,source["metres_per_unit"],tolerance)
     pre_topology_objects=standardize_source_records(extracted["primitives"])
     architectural_voids=_architectural_void_candidates(extracted,frames,source["source_sha256"],tolerance,metres_per_unit=source["metres_per_unit"])
@@ -1861,6 +1981,9 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
                                                 "items":pre_envelope_opening_evidence,
                                                 "source_inventories":opening_source_inventories,
                                                 "authority":"SUPPORTING_EVIDENCE_ONLY"},
+             "anonymous_opening_evidence":anonymous_opening_evidence,
+             "stair_evidence":stair_evidence,
+             "reviewable_architectural_objects":reviewable_architectural_objects,
              "internal_wall_gaps":{"schema":"canonical-internal-wall-gap/1.0",
                                     "items":internal_wall_gaps,
                                     "classification_precedes_closure":True},
@@ -1895,6 +2018,7 @@ def reconstruct_architecture(path, *, vision_adapter: VisionAdapter | None = Non
              "version": SCHEMA, "units": source["insunits"], "bounds": fallback["bounds"], "rooms": rooms,
              "walls": [{"start": list(line.coords)[0], "end": list(line.coords)[-1]} for line in extracted["boundary_lines"]],
              "doors": [o for o in openings if o["kind"]=="door"], "windows":[o for o in openings if o["kind"]=="window"], "columns": [],
+             "stairs":[row for row in reviewable_architectural_objects["items"] if row["object_type"]=="STAIR"],
              "shafts": [{"void_id":row["void_id"],"void_type":row["void_type"],"polygon":row["boundary"],
                          "centroid":list(Polygon(row["boundary"]).centroid.coords)[0],"area":row["area"],
                          "source_handles":row["source_handles"],"routing_authority":"NONE"}
