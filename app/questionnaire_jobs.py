@@ -54,6 +54,16 @@ def _write(path, payload):
     temporary.replace(path)
 
 
+def _contract_payload(payload, saved):
+    """Project the current canonical identity onto legacy durable results."""
+    result = payload.get("result")
+    if isinstance(result, dict) and not result.get("identity"):
+        payload = {**payload, "result": {**result, "identity": (
+            f"{result.get('version', 'questionnaire')}:{saved.get('discipline', 'mechanical')}"
+        )}}
+    return payload
+
+
 def _cleanup_expired_jobs(now=None):
     """Remove completed/stale job workspaces after the documented retention window."""
     now = int(now or time.time())
@@ -125,6 +135,7 @@ def _analyze(workspace, name, discipline, occupancy, main_auto, legacy):
     from .mechanical_workflow import _question_payload
     return {
         "version": main_auto.QUESTIONNAIRE_VERSION,
+        "identity": f"{main_auto.QUESTIONNAIRE_VERSION}:{discipline}",
         "discipline": discipline,
         "source": "engi-design-engine",
         "questions": [main_auto._present_question(q) for q in legacy.qlist(unresolved)],
@@ -202,7 +213,7 @@ def register_questionnaire_jobs(app, main_auto, legacy):
         if current.get("status") in {None, "processing"} and job_id not in _TASKS:
             _launch(job_id, workspace, saved, main_auto, legacy)
         if current.get("status") in {"ready", "failed"}:
-            return {**current, "job_id": job_id}
+            return {**_contract_payload(current, saved), "job_id": job_id}
         return JSONResponse({"status": "processing", "job_id": job_id}, status_code=202)
 
     @app.get("/internal/panel/questionnaire/{job_id}")
@@ -224,4 +235,5 @@ def register_questionnaire_jobs(app, main_auto, legacy):
         if payload.get("status") == "processing" and job_id not in _TASKS:
             _launch(job_id, workspace, saved, main_auto, legacy)
             payload = json.loads(state.read_text(encoding="utf-8"))
+        payload = _contract_payload(payload, saved)
         return JSONResponse(payload, status_code=202 if payload.get("status") == "processing" else 200)
