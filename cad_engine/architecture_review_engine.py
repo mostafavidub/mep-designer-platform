@@ -557,3 +557,152 @@ def execute_preflight(canonical_model, decisions=None, review_registry=None, *,
         replayed["preflight_plan"]["metrics"]["snapshot_created"] = True
     replayed["snapshot"] = snapshot
     return replayed
+
+# Current unresolved-inventory membership and historical reconciliation.
+AUDIT_STATES = {"RETIRED", "SUPERSEDED", "INVALIDATED", "STALE_REFERENCE",
+                "AMBIGUOUS_REBIND"}
+
+
+def _objects(model):
+    result = {}
+    for collection, key in (("physical_spaces", "physical_space_id"),
+                            ("walls", "wall_id"), ("voids", "void_id"),
+                            ("apertures", "aperture_id"), ("portals", "opening_id"),
+                            ("frames", "frame_id"), ("levels", "level_id")):
+        for row in model.get(collection) or []:
+            if row.get(key):
+                result[row[key]] = row
+    return result
+
+
+def _handles(row):
+    return tuple(sorted(set(row.get("source_handles") or
+                            (row.get("geometry_evidence") or {}).get("source_handles") or [])))
+
+
+def _current_item(project_id, model, plan, item):
+    source_sha = (model.get("source") or {}).get("source_sha256")
+    evidence = {row.get("evidence_id"): row for row in model.get("evidence_registry") or []}
+    issues = {row.get("issue_id") for row in plan.get("normalized_issues") or []}
+    frames = {row.get("frame_id") for row in model.get("frames") or []}
+    levels = {row.get("level_id") for row in model.get("levels") or []}
+    errors = []
+    if not item.get("review_item_id") or not item.get("review_fingerprint"):
+        errors.append("CURRENT_REVIEW_IDENTITY_MISSING")
+    if not source_sha or item.get("source_sha256") != source_sha or plan.get("source_sha256") != source_sha:
+        errors.append("CURRENT_SOURCE_SHA_MISMATCH")
+    host = evidence.get(item.get("object_or_region_id"))
+    if host is None:
+        errors.append("CURRENT_EVIDENCE_HOST_MISSING")
+    else:
+        payload = host.get("payload") or {}
+        if payload.get("source_sha256") != source_sha:
+            errors.append("EVIDENCE_SOURCE_SHA_MISMATCH")
+        if payload.get("evidence_fingerprint") != item.get("evidence_fingerprint"):
+            errors.append("EVIDENCE_FINGERPRINT_MISMATCH")
+        if payload.get("geometry_fingerprint") != item.get("geometry_fingerprint"):
+            errors.append("GEOMETRY_FINGERPRINT_MISMATCH")
+        summary = item.get("evidence_summary") or {}
+        if sorted(summary.get("source_handles") or []) != sorted(
+                [payload.get("source_handle")] if payload.get("source_handle") else []):
+            errors.append("SOURCE_HANDLE_SCOPE_MISMATCH")
+        if sorted(summary.get("segment_ids") or []) != sorted(
+                [payload.get("segment_id")] if payload.get("segment_id") else []):
+            errors.append("SOURCE_SEGMENT_SCOPE_MISMATCH")
+    frame = item.get("frame_or_level_id")
+    if frame not in frames and frame not in levels:
+        errors.append("CURRENT_FRAME_OR_LEVEL_MISSING")
+    covered = item.get("validator_issue_ids_covered") or []
+    if not covered or not set(covered).issubset(issues):
+        errors.append("CURRENT_UNRESOLVED_BINDING_MISSING")
+    if errors:
+        return {"state": "STALE_REFERENCE", "project_id": project_id,
+                "review_item_id": item.get("review_item_id"), "errors": errors,
+                "software_reconciliation_required": True,
+                "record": deepcopy(item)}
+    return {"state": "ACTIVE", "project_id": project_id,
+            "active_identity": item.get("review_fingerprint"),
+            "review_item_id": item.get("review_item_id"),
+            "object_or_region_id": item.get("object_or_region_id"),
+            "source_sha256": source_sha, "frame_or_level_id": frame,
+            "source_handles": deepcopy((item.get("evidence_summary") or {}).get("source_handles") or []),
+            "segment_ids": deepcopy((item.get("evidence_summary") or {}).get("segment_ids") or []),
+            "unresolved_reason": item.get("question_type"),
+            "human_review_required": True, "record": deepcopy(item)}
+
+
+def _historical(project_id, model, record):
+    """Reconcile an audit record without making it an active review item."""
+    source_sha = (model.get("source") or {}).get("source_sha256")
+    objects = _objects(model)
+    old_id = record.get("object_or_region_id")
+    if record.get("invalidated_by_current_evidence"):
+        return {"state": "INVALIDATED", "project_id": project_id,
+                "historical_id": old_id, "record": deepcopy(record)}
+    if old_id in objects and record.get("source_sha256") == source_sha:
+        return {"state": "SUPERSEDED", "project_id": project_id,
+                "historical_id": old_id, "current_id": old_id,
+                "reason": "CURRENT_OBJECT_EXISTS_BUT_HISTORY_IS_NOT_AN_ACTIVE_REVIEW_ITEM",
+                "record": deepcopy(record)}
+    wanted = tuple(sorted(set(record.get("source_handles") or [])))
+    matches = []
+    if source_sha and record.get("source_sha256") == source_sha and wanted:
+        for current_id, obj in objects.items():
+            if (obj.get("frame_id") == record.get("frame_id") and
+                    obj.get("level_id") == record.get("level_id") and _handles(obj) == wanted):
+                matches.append(current_id)
+    if len(matches) == 1:
+        return {"state": "SUPERSEDED", "project_id": project_id,
+                "historical_id": old_id, "current_id": matches[0],
+                "reason": "EXACT_SOURCE_IDENTITY_REBOUND", "record": deepcopy(record)}
+    if len(matches) > 1:
+        return {"state": "AMBIGUOUS_REBIND", "project_id": project_id,
+                "historical_id": old_id, "candidate_current_ids": sorted(matches),
+                "record": deepcopy(record)}
+    return {"state": "STALE_REFERENCE", "project_id": project_id,
+            "historical_id": old_id, "reason": "NO_CURRENT_PROVENANCE_MEMBERSHIP",
+            "record": deepcopy(record)}
+
+
+def build_unresolved_inventory(current_models, preflight_plans, historical_records=()):
+    """Build a deterministic active inventory plus preserved audit records."""
+    active_by_identity = {}
+    audit = []
+    for project_id in sorted(current_models):
+        model = current_models[project_id]
+        plan = preflight_plans.get(project_id) or {}
+        for item in plan.get("review_items") or []:
+            row = _current_item(project_id, model, plan, item)
+            if row["state"] != "ACTIVE":
+                audit.append(row)
+                continue
+            identity = row.get("active_identity")
+            if identity in active_by_identity:
+                audit.append({"state": "SUPERSEDED", "project_id": project_id,
+                              "review_item_id": row.get("review_item_id"),
+                              "reason": "DUPLICATE_CURRENT_UNRESOLVED_IDENTITY"})
+            else:
+                active_by_identity[identity] = row
+    for record in historical_records or []:
+        project_id = record.get("project_id")
+        model = current_models.get(project_id)
+        if model is None:
+            audit.append({"state": "STALE_REFERENCE", "project_id": project_id,
+                          "historical_id": record.get("object_or_region_id"),
+                          "reason": "CURRENT_PROJECT_MISSING", "record": deepcopy(record)})
+        else:
+            audit.append(_historical(project_id, model, record))
+    active = sorted(active_by_identity.values(), key=lambda row: (
+        row["project_id"], row["review_item_id"]))
+    audit.sort(key=lambda row: (str(row.get("project_id")), str(row.get("historical_id")),
+                                str(row.get("review_item_id"))))
+    software_reconciliation_count = sum(bool(row.get("software_reconciliation_required"))
+                                        for row in audit)
+    return {"schema": "planha-architecture-unresolved-inventory/1.0",
+            "status": "PASS" if software_reconciliation_count == 0 else "FAIL",
+            "active": active, "audit": audit,
+            "metrics": {"active_count": len(active),
+                        "unique_active_identity_count": len(active_by_identity),
+                        "human_review_count": sum(bool(row.get("human_review_required")) for row in active),
+                        "audit_count": len(audit),
+                        "software_reconciliation_count": software_reconciliation_count}}
