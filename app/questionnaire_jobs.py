@@ -2,7 +2,9 @@
 import asyncio
 import hashlib
 import json
+import logging
 import os
+import secrets
 import shutil
 import time
 from pathlib import Path
@@ -17,6 +19,16 @@ _TASKS = {}
 _RETENTION_SECONDS = 24 * 60 * 60
 _MAX_ATTEMPTS = 3
 _RETRY_DELAYS_SECONDS = (0.05, 0.2)
+_AUTHORITY_SCHEMA = "questionnaire-analysis-authority/1"
+logger = logging.getLogger(__name__)
+
+
+class AnalysisAuthorityError(RuntimeError):
+    """A durable questionnaire result cannot safely authorize finalization."""
+
+    def __init__(self, code, message):
+        super().__init__(message)
+        self.code = code
 
 
 def _safe_failure(*, retryable, attempts):
@@ -52,6 +64,16 @@ def _write(path, payload):
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     temporary.replace(path)
+
+
+def _contract_payload(payload, saved):
+    """Project the current canonical identity onto legacy durable results."""
+    result = payload.get("result")
+    if isinstance(result, dict) and not result.get("identity"):
+        payload = {**payload, "result": {**result, "identity": (
+            f"{result.get('version', 'questionnaire')}:{saved.get('discipline', 'mechanical')}"
+        )}}
+    return payload
 
 
 def _cleanup_expired_jobs(now=None):
@@ -123,8 +145,9 @@ def _analyze(workspace, name, discipline, occupancy, main_auto, legacy):
     finally:
         end_input_read_cache(token)
     from .mechanical_workflow import _question_payload
-    return {
+    result = {
         "version": main_auto.QUESTIONNAIRE_VERSION,
+        "identity": f"{main_auto.QUESTIONNAIRE_VERSION}:{discipline}",
         "discipline": discipline,
         "source": "engi-design-engine",
         "questions": [main_auto._present_question(q) for q in legacy.qlist(unresolved)],
@@ -134,6 +157,72 @@ def _analyze(workspace, name, discipline, occupancy, main_auto, legacy):
                              if isinstance(value, (str, int, float, bool))},
         "auto_summary": main_auto.auto_summary(auto, discipline),
         "panel_analysis": main_auto.panel_analysis_payload(auto),
+    }
+    source_sha256 = hashlib.sha256(source.read_bytes()).hexdigest()
+    analysis_hash = hashlib.sha256(
+        json.dumps(analysis, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    _write(workspace / "analysis-authority.json", {
+        "schema": _AUTHORITY_SCHEMA,
+        "source_sha256": source_sha256,
+        "analysis_hash": analysis_hash,
+        "questionnaire_version": result["version"],
+        "result_identity": result["identity"],
+        "discipline": discipline,
+        "occupancy": occupancy,
+        "analysis": analysis,
+    })
+    return result
+
+
+def resolve_ready_analysis(job_id, *, owner, discipline, occupancy):
+    """Resolve one owner-bound durable result without trusting browser analysis."""
+    if not (len(job_id or "") == 32 and all(char in "0123456789abcdef" for char in job_id)):
+        raise AnalysisAuthorityError("ANALYSIS_LOOKUP", "شناسه تحلیل فایل معتبر نیست.")
+    workspace = _root() / job_id
+    try:
+        saved = json.loads((workspace / "metadata.json").read_text(encoding="utf-8"))
+        state = json.loads((workspace / "state.json").read_text(encoding="utf-8"))
+        authority = json.loads((workspace / "analysis-authority.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        raise AnalysisAuthorityError(
+            "ANALYSIS_STALE",
+            "نتیجه کامل تحلیل ذخیره‌شده در دسترس نیست؛ تحلیل فایل باید دوباره انجام شود.",
+        )
+    if not secrets.compare_digest(str(saved.get("owner")), str(owner)):
+        raise AnalysisAuthorityError("ANALYSIS_LOOKUP", "نتیجه تحلیل فایل پیدا نشد.")
+    if state.get("status") != "ready":
+        raise AnalysisAuthorityError("ANALYSIS_LOOKUP", "تحلیل فایل هنوز آماده نیست.")
+    if saved.get("discipline") != discipline or str(saved.get("occupancy") or "") != str(occupancy or ""):
+        raise AnalysisAuthorityError("ANALYSIS_STALE", "مشخصات پروژه با نتیجه تحلیل ذخیره‌شده تطابق ندارد.")
+    source = workspace / str(saved.get("name") or "")
+    if not source.is_file():
+        raise AnalysisAuthorityError("FILE_IDENTITY", "فایل ذخیره‌شده تحلیل پیدا نشد.")
+    source_sha256 = hashlib.sha256(source.read_bytes()).hexdigest()
+    if authority.get("schema") != _AUTHORITY_SCHEMA or not secrets.compare_digest(
+        str(authority.get("source_sha256") or ""), source_sha256
+    ):
+        raise AnalysisAuthorityError("FILE_IDENTITY", "هویت فایل ذخیره‌شده با تحلیل آماده تطابق ندارد.")
+    result = state.get("result")
+    if not isinstance(result, dict) or authority.get("result_identity") != result.get("identity"):
+        raise AnalysisAuthorityError("ANALYSIS_STALE", "هویت نتیجه تحلیل ذخیره‌شده معتبر نیست.")
+    analysis = authority.get("analysis")
+    if not isinstance(analysis, dict):
+        raise AnalysisAuthorityError("ANALYSIS_STALE", "نتیجه مهندسی تحلیل ذخیره‌شده قابل خواندن نیست.")
+    analysis_hash = hashlib.sha256(
+        json.dumps(analysis, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    if not secrets.compare_digest(str(authority.get("analysis_hash") or ""), analysis_hash):
+        raise AnalysisAuthorityError("ANALYSIS_STALE", "اثر انگشت نتیجه تحلیل ذخیره‌شده تغییر کرده است.")
+    return {
+        "job_id": job_id,
+        "workspace": workspace,
+        "source_path": source,
+        "source_sha256": source_sha256,
+        "analysis_hash": analysis_hash,
+        "analysis": analysis,
+        "result": result,
+        "questionnaire_version": authority.get("questionnaire_version"),
     }
 
 
@@ -158,6 +247,11 @@ async def _run(job_id, workspace, name, discipline, occupancy, main_auto, legacy
                 return
             except Exception as exc:
                 retryable = _retryable(exc)
+                logger.exception(
+                    "questionnaire_analysis event=attempt_failed analysis_job_id=%s "
+                    "discipline=%s occupancy=%s attempt=%s retryable=%s exception_class=%s",
+                    job_id, discipline, occupancy, attempts, retryable, type(exc).__name__,
+                )
                 if not retryable or attempts >= _MAX_ATTEMPTS:
                     _write(
                         workspace / "state.json",
@@ -202,7 +296,7 @@ def register_questionnaire_jobs(app, main_auto, legacy):
         if current.get("status") in {None, "processing"} and job_id not in _TASKS:
             _launch(job_id, workspace, saved, main_auto, legacy)
         if current.get("status") in {"ready", "failed"}:
-            return {**current, "job_id": job_id}
+            return {**_contract_payload(current, saved), "job_id": job_id}
         return JSONResponse({"status": "processing", "job_id": job_id}, status_code=202)
 
     @app.get("/internal/panel/questionnaire/{job_id}")
@@ -224,4 +318,5 @@ def register_questionnaire_jobs(app, main_auto, legacy):
         if payload.get("status") == "processing" and job_id not in _TASKS:
             _launch(job_id, workspace, saved, main_auto, legacy)
             payload = json.loads(state.read_text(encoding="utf-8"))
+        payload = _contract_payload(payload, saved)
         return JSONResponse(payload, status_code=202 if payload.get("status") == "processing" else 200)

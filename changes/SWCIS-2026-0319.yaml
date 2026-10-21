@@ -1,0 +1,47 @@
+{
+  "change_id": "SWCIS-2026-0319",
+  "summary": "Correct drawing-scope coverage classification, reconcile authoritative architectural level identity before payment, and return transaction-safe public errors without weakening manifest or Mechanical release authority.",
+  "requester": "project-owner",
+  "change_types": ["bugfix", "drawing_output", "governance", "test", "ui_api"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["deployment", "docs", "governance", "manifest", "migration", "qa", "ui_api", "versioning"],
+  "impact_notes": {
+    "deployment": "Local-only qualification; no deployment configuration or online environment changes.",
+    "docs": "The governed change record documents the incident, structured response, transaction safety and remaining fixture-authority limitation.",
+    "governance": "Adds one new change request without modifying SWCIS policy, required gates or the cumulative SWCIS-2026-0318 record.",
+    "manifest": "A special sanitary/vent roof drawing remains in the manifest but no longer counts as floor-level system coverage; canonical manifest hashing, schema/count checks and the 100/100 drawing-scope gate remain unchanged.",
+    "migration": "No database or manifest migration; unpaid projects regenerate a fresh proposal at payment preflight.",
+    "qa": "Adds positive, destructive and transaction-integrity regressions for special roof sheets, missing, contradictory and canonical-ID architectural levels, corrupt manifests, duplicate payment and owner isolation.",
+    "ui_api": "Expected engineering input deficiencies, including contradictory level identity, return structured fail-closed payment responses; unexpected manifest contract defects remain hard failures and no payment side effect is committed.",
+    "versioning": "SWCIS remains 5.2.0; executable build identity remains Git-derived and no schema version changes."
+  },
+  "evidence": {
+    "traceability": [
+      "User-reproduced local POST /internal/panel/customer/pay returned HTTP 500 before payment persistence.",
+      "The exact synthetic proposal hash, schema, sheet count and codes reconciled; drawing-scope control unsupported_system_zero alone failed because M-S-RAIN was counted as sanitary floor coverage."
+    ],
+    "tests": [
+      "44 focused drawing-scope, manifest-contract, panel-checkout, level-identity, owner-isolation, idempotency and transaction rollback checks PASS under Python 3.12.",
+      "Positive local Site-to-Backend retry: HTTP 200, one checkout, one demo activity, one revision and one design job after duplicate submission.",
+      "Negative local Site-to-Backend preflight: HTTP 409 ENGINEERING_INPUT_REQUIRED with paid=0, revisions=0, design_jobs=0, ledger=0 and demo_activity=0. Official PR CI remains required."
+    ],
+    "docs": ["No new engineering authority; PR description and this governed record carry the incident and recovery contract."],
+    "version_bump": ["Not required: backward-compatible P0 correction under SWCIS 5.2.0; executable identity remains Git-derived."],
+    "migration": ["No database or persisted-manifest migration. Existing unpaid checkout remains unpaid and retryable after a fresh server proposal."],
+    "golden_regression": ["No geometry, routing, sizing, equipment or CAD-generation algorithm changes."],
+    "semantic_diff": ["Only true floor-plan coverage and the dedicated roof_rainwater roof plan contribute system-level coverage; special sanitary roof documentation remains a separate deliverable. Payment scope must reconcile one-to-one with authoritative level profiles, using stable level IDs when present and presentation-only Unicode/spacing normalization otherwise."],
+    "artifact_diff": ["No customer drawing or generated CAD artifact committed."],
+    "numeric_diff": ["No price, load, fixture, sizing or geometry numeric change."],
+    "contract_diff": ["Payment preflight now distinguishes missing or contradictory authoritative level identity from unexpected manifest-contract defects while preserving atomic rollback."],
+    "deployment_plan": ["Local-only qualification. No Railway, Cloudflare, Production, merge or deployment authorization."],
+    "rollback_plan": ["Revert the focused backend commit; unpaid checkout and original project evidence remain intact."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Payment integrity is critical, but the correction is bounded to manifest coverage classification and pre-payment error transport with explicit rollback tests."
+  },
+  "waiver": null
+}

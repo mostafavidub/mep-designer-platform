@@ -55,9 +55,90 @@ def pay(browser, auth, pid, order, **extra):
                         json={'engineProjectId': pid, 'quoteToken': order['quoteToken'], 'method': 'wallet', **extra})
 
 
+def mechanical_scope(**overrides):
+    value = {
+        'all_levels': ['L1'], 'conditioned_levels': ['L1'], 'heated_levels': ['L1'],
+        'wet_fixture_levels': ['L1'], 'sanitary_fixture_levels': ['L1'],
+        'ventilation_required_levels': ['L1'], 'gas_consumer_levels': [],
+        'roof_exists': False, 'roof_level_name': 'Roof', 'vertical_systems': False,
+        'typical_groups': [], 'level_types': {'L1': 'occupied'},
+        'effective_level_source': 'architecture-level-profiles',
+        'scope_ambiguities': [], 'reference_inputs_used': False,
+        'scope_stage': 'pre_calculation', 'scope_contract_version': 'drawing-scope/1',
+        'exact_output_parity_required': True, 'exact_reopen_required': True,
+    }
+    value.update(overrides)
+    return value
+
+
+def prepare_mechanical_payment(flow, monkeypatch, scope):
+    browser, auth, uid, pid, token, _order = flow
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.required_basis_questions', lambda _project: [])
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.build_scope', lambda _project: scope)
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.answers = {'discipline': 'mechanical', 'location': 'گنبد'}
+        project.questions = []
+        project.analysis = {'architectural_auto': {
+            'levels': [{'name': name} for name in scope.get('all_levels') or []],
+            'level_profiles': [
+                {'name': name, 'roof': scope.get('level_types', {}).get(name) == 'roof'}
+                for name in scope.get('all_levels') or []
+            ],
+            'roof_scope_reliable': True,
+        }}
+        project.status = 'ready_to_design'
+        db.commit()
+    quote = browser.post('/internal/panel/customer/quote', headers=auth,
+                         json={'engineProjectId': pid, 'area': 100})
+    assert quote.status_code == 200, quote.text
+    return browser, auth, uid, pid, quote.json()['project']
+
+
+def assert_no_payment_side_effects(pid):
+    with legacy.Session() as db:
+        assert not db.get(app.state.panel_checkout.Checkout, pid).paid
+        assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+        assert db.query(app.state.panel_checkout.Activity).filter_by(kind='demo_payment').filter(
+            app.state.panel_checkout.Activity.id == f'DEMO-PAY-{pid}'
+        ).count() == 0
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 0
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 0
+
+
+def prepare_actual_level_payment(flow, monkeypatch, architectural_auto):
+    browser, auth, uid, pid, token, _order = flow
+    monkeypatch.setenv('PANEL_DEMO_PAYMENTS', '1')
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.required_basis_questions', lambda _project: [])
+    with legacy.Session() as db:
+        project = db.get(legacy.Project, pid)
+        project.answers = {'discipline': 'mechanical', 'location': 'گنبد'}
+        project.questions = []
+        project.analysis = {'geometry_area_m2': 100, 'architectural_auto': architectural_auto}
+        project.status = 'ready_to_design'
+        db.commit()
+    quote = browser.post('/internal/panel/customer/quote', headers=auth,
+                         json={'engineProjectId': pid, 'area': 100})
+    assert quote.status_code == 200, quote.text
+    return browser, auth, uid, pid, quote.json()['project']
+
+
 def test_phone_login_starts_with_zero_not_demo_credit(flow):
     browser, auth, uid, pid, token, order = flow
     assert browser.post('/internal/panel/customer/state', headers=auth, json={}).json()['balance'] == 0
+
+
+def test_customer_identity_is_lightweight_and_owner_bound(flow):
+    browser, auth, uid, pid, token, order = flow
+    response = browser.post('/internal/panel/customer/identity', headers=auth, json={})
+    assert response.status_code == 200
+    assert response.json() == {'userId': f'CUST-{uid}'}
+    assert browser.post(
+        '/internal/panel/customer/identity',
+        headers={**auth, 'x-customer-session': '1.9999999999.fake'},
+        json={},
+    ).status_code == 401
 
 
 def test_account_snapshot_exposes_one_revisioned_authoritative_progress(flow):
@@ -181,6 +262,41 @@ def test_customer_projects_are_durable_across_sessions(monkeypatch):
     assert imported.json()['projects'][0]['owner'] == login['userId']
     second_login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
     assert [p['id'] for p in second_login['projects']] == ['PRJ-LEGACY-001']
+
+
+def test_questionnaire_job_identity_is_durable_and_owner_bound(monkeypatch):
+    monkeypatch.setenv("PANEL_BRIDGE_TOKEN", "checkout-test-only-secret")
+    browser = TestClient(app, raise_server_exceptions=False)
+    headers = {"x-panel-token": "checkout-test-only-secret"}
+    phone = "09" + str(int(uuid4().hex[:10], 16)).zfill(9)[-9:]
+    login = browser.post('/internal/panel/customer/session', headers=headers, json={"phone": phone}).json()
+    auth = {**headers, 'x-customer-session': login['session']}
+    project = {
+        "id": f"PRJ-POLL-{uuid4().hex[:12]}",
+        "title": "پیش‌نویس تحلیل معماری",
+        "service": "طراحی مکانیک",
+        "status": "در انتظار تکمیل",
+        "progress": 0,
+        "amount": 0,
+        "fileKey": f"projects/{login['userId']}/plan.dxf",
+        "fileName": "plan.dxf",
+        "analysisJobId": "a" * 32,
+        "checkoutState": "draft",
+        "resumeAction": "complete",
+        "currentStep": 1,
+    }
+
+    imported = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [project]})
+    assert imported.status_code == 200, imported.text
+    restored = next(row for row in imported.json()['projects'] if row['id'] == project['id'])
+    assert restored['analysisJobId'] == project['analysisJobId']
+    assert restored['fileKey'] == project['fileKey']
+    assert restored['currentStep'] == 1
+
+    tampered = {**project, "id": f"PRJ-POLL-{uuid4().hex[:12]}",
+                "fileKey": "projects/CUST-999999/other.dxf"}
+    rejected = browser.post('/internal/panel/customer/import', headers=auth, json={"projects": [tampered]})
+    assert rejected.status_code == 403
 
 
 def test_phone_login_reuses_established_profile_account(monkeypatch):
@@ -320,6 +436,142 @@ def test_demo_bank_queues_once_without_wallet_debit(flow, monkeypatch):
     with legacy.Session() as db:
         assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
         assert db.query(app.state.panel_checkout.Ledger).filter_by(project_id=pid).count() == 0
+
+
+def test_mechanical_payment_with_valid_scope_is_idempotent(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, mechanical_scope())
+    first = pay(browser, auth, pid, order, method='gateway')
+    second = pay(browser, auth, pid, order, method='gateway')
+    assert first.status_code == second.status_code == 200
+    with legacy.Session() as db:
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid
+        assert db.query(app.state.panel_checkout.Activity).filter_by(
+            id=f'DEMO-PAY-{pid}', kind='demo_payment'
+        ).count() == 1
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 1
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
+
+
+def test_mechanical_payment_without_typed_levels_returns_input_required(flow, monkeypatch):
+    empty = mechanical_scope(all_levels=[], conditioned_levels=[], heated_levels=[],
+                             wet_fixture_levels=[], sanitary_fixture_levels=[],
+                             ventilation_required_levels=[], level_types={})
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, empty)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert response.json()['required_inputs'] == ['TYPED_ARCHITECTURAL_LEVELS']
+    assert 'هیچ پرداختی انجام نشد' in response.json()['error']
+    assert_no_payment_side_effects(pid)
+
+
+def test_fallback_presentation_level_cannot_authorize_payment(flow, monkeypatch):
+    fallback = mechanical_scope(
+        all_levels=['پلان معماری'], conditioned_levels=['پلان معماری'],
+        heated_levels=['پلان معماری'], wet_fixture_levels=['پلان معماری'],
+        sanitary_fixture_levels=['پلان معماری'], ventilation_required_levels=['پلان معماری'],
+        level_types={'پلان معماری': 'occupied'},
+        effective_level_source='fallback-all-detected-levels',
+    )
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, fallback)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert_no_payment_side_effects(pid)
+
+
+def test_contradictory_real_level_collections_return_input_required(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, {
+        'levels': [{'name': 'Fallback Ghost'}],
+        'level_profiles': [{'name': 'Authoritative L1', 'roof': False}],
+        'roof_scope_reliable': True,
+    })
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert response.json()['required_inputs'] == ['TYPED_ARCHITECTURAL_LEVELS']
+    assert 'اصلاح یا تأیید' in response.json()['error']
+    assert_no_payment_side_effects(pid)
+
+
+def test_consistent_real_level_collections_preserve_payment(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, {
+        'levels': [{'name': ' طبقه  اول '}],
+        'level_profiles': [{'name': 'طبقه اول', 'roof': False}],
+        'roof_scope_reliable': True,
+    })
+    first = pay(browser, auth, pid, order, method='gateway')
+    second = pay(browser, auth, pid, order, method='gateway')
+    assert first.status_code == second.status_code == 200
+    with legacy.Session() as db:
+        assert db.get(app.state.panel_checkout.Checkout, pid).paid
+        assert db.query(app.state.panel_checkout.Activity).filter_by(id=f'DEMO-PAY-{pid}').count() == 1
+        assert db.query(legacy.Revision).filter_by(project_id=pid).count() == 1
+        assert db.query(DesignJob).filter_by(project_id=pid).count() == 1
+
+
+@pytest.mark.parametrize('architectural_auto', [
+    {'levels': [], 'level_profiles': []},
+    {'levels': [{'name': 'L1'}], 'level_profiles': [
+        {'name': 'L1', 'level_id': 'LEVEL-1', 'roof': False},
+        {'name': 'L1 copy', 'level_id': 'LEVEL-1', 'roof': False},
+    ]},
+    {'levels': [
+        {'name': 'L1', 'level_id': 'LEVEL-1'},
+        {'name': 'Roof', 'level_id': 'LEVEL-OTHER'},
+    ], 'level_profiles': [
+        {'name': 'L1', 'level_id': 'LEVEL-1', 'roof': False},
+        {'name': 'Roof', 'level_id': 'LEVEL-2', 'roof': False},
+    ], 'roof_scope_reliable': True},
+])
+def test_missing_duplicate_or_conflicting_level_identity_fails_closed(flow, monkeypatch, architectural_auto):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, architectural_auto)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 409
+    assert response.json()['error_code'] == 'ENGINEERING_INPUT_REQUIRED'
+    assert_no_payment_side_effects(pid)
+
+
+def test_canonical_level_ids_and_roof_scope_are_preserved(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_actual_level_payment(flow, monkeypatch, {
+        'levels': [
+            {'name': 'همکف', 'level_id': 'LEVEL-GROUND'},
+            {'name': 'بام', 'level_id': 'LEVEL-ROOF'},
+        ],
+        'level_profiles': [
+            {'name': 'همکف', 'level_id': 'LEVEL-GROUND', 'roof': False},
+            {'name': 'بام', 'level_id': 'LEVEL-ROOF', 'roof': True},
+        ],
+        'roof_scope_reliable': True,
+    })
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 200, response.text
+    with legacy.Session() as db:
+        drawing_set = (db.get(legacy.Project, pid).analysis or {})['drawing_set']
+        sheets = drawing_set['drawing_manifest']['sheets']
+        assert any(row['family'] == 'roof_rainwater' and row['drawing_type'] == 'roof_plan'
+                   and row['levels'] == ['بام'] for row in sheets)
+        assert all('بام' not in row['levels'] for row in sheets
+                   if row['family'] == 'sanitary_vent' and row['drawing_type'] == 'floor_plan')
+
+
+def test_corrupt_fresh_manifest_is_internal_error_and_never_charges(flow, monkeypatch):
+    browser, auth, uid, pid, order = prepare_mechanical_payment(flow, monkeypatch, mechanical_scope())
+    original = __import__('app.mechanical_workflow', fromlist=['create_proposal']).create_proposal
+
+    def corrupt(project):
+        proposal = original(project)
+        proposal['drawing_manifest']['sheets'][0]['label'] = 'tampered-after-hash'
+        return proposal
+
+    monkeypatch.setattr('app.panel_checkout.mechanical_workflow.create_proposal', corrupt)
+    response = pay(browser, auth, pid, order, method='gateway')
+    assert response.status_code == 500
+    assert response.json() == {
+        'error_code': 'DRAWING_MANIFEST_CONTRACT_ERROR',
+        'error': 'قرارداد مجموعه نقشه‌های مکانیکی معتبر نشد؛ هیچ پرداختی انجام نشد و این مورد نیاز به بررسی سیستم دارد.',
+    }
+    assert_no_payment_side_effects(pid)
 
 
 def test_handoff_preserves_answers_and_replay_same_account(flow):

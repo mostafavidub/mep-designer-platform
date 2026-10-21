@@ -1,0 +1,47 @@
+{
+  "change_id": "SWCIS-2026-0305",
+  "summary": "Reuse the durable owner-bound questionnaire READY authority during panel project finalization, reject failed replays, add phase observability, and coalesce duplicate customer draft imports.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "Finalization resolves analysisJobId against the durable server artifact and no longer runs synchronous duplicate architecture analysis; Site imports are single-flight and content-coalesced.",
+    "qa": "Add real DXF/ZIP authority reuse, wrong-owner/hash, idempotency, failed replay, lightweight status and request-storm tests.",
+    "manifest": "Persist analysis source hash, result hash, job identity and questionnaire identity as project provenance; engineering artifact formats are unchanged.",
+    "docs": "Document the analyze-once finalization state machine, compatibility boundary, incident findings and safe rollback.",
+    "versioning": "SWCIS 5.2.0 policy is unchanged; executable identity remains the Git/Site source commit.",
+    "migration": "No database migration. New questionnaire jobs add one private durable authority JSON artifact; legacy jobs without it fail closed and require reanalysis.",
+    "governance": "One focused P0 orchestration change; Architecture 3.1 and Mechanical algorithm authority are explicitly unaffected.",
+    "deployment": "No deployment is authorized by this CR. After owner approval, deploy the exact CI-green backend and coordinated Site source to Staging only."
+  },
+  "evidence": {
+    "traceability": ["questionnaire/start -> durable READY authority -> panel project finalization -> ready_to_design"],
+    "tests": [
+      "tests/test_panel_finalization_ready.py",
+      "tests/test_questionnaire_jobs.py",
+      "tests/test_panel_bridge_delivery.py",
+      "Site tests/customer-import-coordinator.test.ts",
+      "Site tests/project-delivery.test.ts",
+      "Site tests/questionnaire-polling-resume.test.ts"
+    ],
+    "docs": ["docs/PANEL_PROJECT_FINALIZATION_READY_REUSE.md"],
+    "version_bump": ["not required: backward-compatible P0 runtime orchestration correction under SWCIS 5.2.0"],
+    "migration": ["legacy READY jobs lacking questionnaire-analysis-authority/1 are not silently trusted and return reanalysis-required"],
+    "golden_regression": ["not affected: no architecture recognition, topology, Mechanical calculation or CAD output implementation changed"],
+    "semantic_diff": ["one source identity now has one durable analysis authority consumed by finalization; failed persisted projects return conflict instead of success"],
+    "artifact_diff": ["add private analysis-authority.json beside questionnaire state; no customer drawing or output artifact change"],
+    "numeric_diff": ["none"],
+    "contract_diff": ["project finalization requires analysis_job_id and validates owner, source hash, discipline, occupancy, questionnaire identity and analysis hash"],
+    "deployment_plan": ["owner-approved exact-SHA Staging backend plus coordinated unpublished Site candidate; verify one analysis, quick finalization and bounded import traffic"],
+    "rollback_plan": ["redeploy ab3a6c970e4083d62325d9d568d5ec0644327a51 and Site version 31; retained jobs remain private and expire under the existing policy"]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 1,
+    "score": 10,
+    "rationale": "Project creation is P0, but authority reuse is fail-closed and covered by positive, destructive, replay and source-identity tests."
+  },
+  "waiver": null
+}

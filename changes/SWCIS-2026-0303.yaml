@@ -1,0 +1,47 @@
+{
+  "change_id": "SWCIS-2026-0303",
+  "summary": "Make the staging customer panel automatically poll and durably resume the canonical questionnaire background job after HTTP 202 without re-upload or duplicate analysis.",
+  "requester": "project-owner",
+  "change_types": ["ui_api", "test", "documentation", "governance", "deployment"],
+  "changed_rule_ids": [],
+  "impacted_modules": ["ui_api", "qa", "manifest", "docs", "versioning", "migration", "governance", "deployment"],
+  "impact_notes": {
+    "ui_api": "Persist the owner-bound file key and questionnaire job identity; the external staging Site consumes the existing POST-start/GET-status contract and advances only on ready.",
+    "qa": "Add positive 202-to-ready, refresh/resume, deduplication and cross-owner destructive coverage; retain PR #313 route, DXF, ZIP and owner-isolation tests.",
+    "manifest": "No CAD or architecture manifest semantics change; automatic Git/Site source identities remain authoritative.",
+    "docs": "Document the distinct Sites customer-frontend and Railway backend topology plus the single polling lifecycle.",
+    "versioning": "SWCIS 5.2.0 policy is unchanged; executable identity is derived from the Git commit and Site source commit.",
+    "migration": "No database schema migration. Existing JSON payload rows accept new bounded fields; legacy rows resume through backend deduplication.",
+    "governance": "One P0 integration change request; no engineering algorithm, architecture authority or release gate changes.",
+    "deployment": "Publish the exact tested Site source, merge the focused backend PR into the integration branch, deploy that exact merge to Staging, then repeat the real customer flow. Production is untouched."
+  },
+  "evidence": {
+    "traceability": [
+      "staging.planha.com -> ChatGPT Sites Worker -> Site /api/project-file -> Railway web-app-staging -> canonical questionnaire start/status routes"
+    ],
+    "tests": [
+      "Site: 202 start -> retained job identity -> GET processing -> GET ready -> automatic next step",
+      "Site: refresh/reopen resumes persisted job without upload or duplicate start",
+      "tests/test_panel_checkout.py::test_questionnaire_job_identity_is_durable_and_owner_bound",
+      "tests/test_questionnaire_jobs.py real DXF/ZIP, deduplication, terminal-state and owner-isolation coverage"
+    ],
+    "docs": ["docs/PANEL_QUESTIONNAIRE_POLLING_RESUME.md"],
+    "version_bump": ["not required: patch correction under SWCIS 5.2.0 and automatic executable build identities"],
+    "migration": ["none: additive bounded fields in the existing panel_customer_projects JSON payload"],
+    "golden_regression": ["not affected: no CAD reconstruction, architecture authority or engineering output change"],
+    "semantic_diff": ["processing becomes informational and automatically continues; terminal failures remain errors"],
+    "artifact_diff": ["none: no engineering artifact format or drawing output change"],
+    "numeric_diff": ["none"],
+    "contract_diff": ["customer draft persistence retains fileKey, fileName, analysisJobId, analysis and closed resume-state fields"],
+    "deployment_plan": ["CI-green backend candidate to Railway Staging and tested Site source to staging.planha.com; verify POST 202, GET 202, GET 200 and UI transition before merge/final smoke"],
+    "rollback_plan": ["redeploy the prior approved Site version and revert the focused backend merge; retain uploaded files and job workspaces"]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 4,
+    "detectability": 1,
+    "score": 8,
+    "rationale": "The defect blocks project creation, but the change is bounded to draft persistence and consumption of an already-qualified idempotent job contract with direct integration tests."
+  },
+  "waiver": null
+}

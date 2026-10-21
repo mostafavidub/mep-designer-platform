@@ -118,11 +118,18 @@ def evaluate_drawing_scope(scope, sheets):
 
     expected = {family: set(_unique(scope.get(key))) for family, key in SYSTEM_LEVEL_KEYS.items()}
     expected["roof_rainwater"] = {str(scope.get("roof_level_name") or "Roof")} if scope.get("roof_exists") else set()
-    floor_types = {"floor_plan", "roof_plan"}
     actual = {family: set() for family in SUPPORTED_FAMILIES}
     for row in sheets:
         family = str(row.get("family") or "")
-        if family in actual and str(row.get("drawing_type") or "") in floor_types:
+        drawing_type = str(row.get("drawing_type") or "")
+        # Only primary family plans prove system-by-level coverage.  A special
+        # sanitary/vent roof sheet (for example M-S-RAIN) is documentation, not
+        # evidence that sanitary service is required on every level listed for
+        # its riser/detail context.
+        primary_coverage = drawing_type == "floor_plan" or (
+            drawing_type == "roof_plan" and family == "roof_rainwater"
+        )
+        if family in actual and primary_coverage:
             actual[family].update(_unique(row.get("levels")))
     evidence = scope.get("system_evidence") or {family: "scope-field" for family in SUPPORTED_FAMILIES}
     system_evidence_ok = all(bool(evidence.get(family)) for family, required in expected.items() if required)
