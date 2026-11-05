@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0360",
-  "summary": "Add offline NON_REGULATORY multi-city Architecture MVP input and two-tier output policy PoC with negative tests, ADR and no runtime activation.",
+  "summary": "Record offline NON_REGULATORY multi-city Architecture MVP contract and test-only two-tier policy, plus the owner-approved no-impact Architecture/Mechanical domain-isolation requirement; no runtime activation.",
   "requester": "project-owner",
   "change_types": [
     "documentation",
@@ -20,13 +20,13 @@
   ],
   "impact_notes": {
     "qa": "23 self-contained synthetic unittest test cases (15 original + 8 two-tier negative policy cases), including city isolation, stale rules, authority spoofing, concept/controlled separation and geometry guard; the status mapping is test-only and no actual legal rules are qualified.",
-    "docs": "Document an ADR proposal plus detailed blockers and migration strategy; no authoritative municipal code content is introduced.",
+    "docs": "ADR documents approved product-level Architecture Design independence from Mechanical (separate domain, eventual service/deploy, rules, queue and data), versioned optional interchange, and the current legacy DXF recognition coupling that must remain untouched.",
     "governance": "Record a single SWCIS change and test-only risk scope; repository rules are unchanged.",
     "versioning": "Verified not affected: no runtime, engineering rule, schema or other semantic version is changed; SWCIS canonical 5.4.0 remains unchanged.",
     "manifest": "Verified not affected: no generated artifact, build identity, source snapshot or delivery manifest is created or modified.",
     "migration": "Verified not affected: no current program, API, persistence, schema or customer data migration.",
     "ui_api": "Verified not affected: no served UI or API imports the test-only PoC, and no session or authentication behavior changes.",
-    "deployment": "Verified not affected: draft PR only. No merge, staging, production, service restart or paid provider is authorized."
+    "deployment": "Verified not affected for this PR: no service, image, CI triggers or runtime deployed. Independence of future Architecture deploy is an unimplemented acceptance criterion (ARCH-ISO-04), not a claim of current runtime isolation."
   },
   "evidence": {
     "traceability": [
@@ -37,7 +37,8 @@
       "No customer data, real municipal rules, paid providers or deployment operations used."
     ],
     "docs": [
-      "docs/adr/ADR-ARCH-MULTICITY-PRECONTRACT-POC.md records owner-approved two-tier product policy (2026-11-06), separate from PROPOSED core-architecture ADR; Google Docs PRD v0.9 and Technical Discovery are synchronized."
+      "docs/adr/ADR-ARCH-MULTICITY-PRECONTRACT-POC.md documents product-approved two tiers and Architecture/Mechanical separation (2026-11-06) as requirements; actual runtime separation and source qualification are not implemented.",
+      "PRD v0.10 and Technical Discovery Google Docs updated for independent module/service/data/release architecture."
     ],
     "version_bump": [
       "No SWCIS policy, graph, traceability, runtime or public schema modification. Version remains 5.4.0; this offline test and ADR are non-release research evidence."
@@ -49,7 +50,7 @@
       "Synthetic test cases only; zero independent architect Golden cases were executed or claimed."
     ],
     "semantic_diff": [
-      "Only offline test policy and ADR changed; no production behavior, engineering Rulebook, CAD geometry, API, persistence or authorization state altered."
+      "Three-file offline Draft PR only. Existing Mechanical outputs, calculations, Rulebook modules and runtime remain unchanged by these commits; no measured load-isolation or deployment-parity claim is made."
     ],
     "artifact_diff": [
       "No customer artifact, DXF, geometric area or production file is created."
@@ -58,7 +59,8 @@
       "Synthetic geometry tests only validate positive input dimensions and unit counts 1..4, not regulatory dimensional thresholds."
     ],
     "contract_diff": [
-      "Test-only two-tier release policy classifier exercising NOT_REQUESTED/INPUT_REQUIRED/COVERAGE_REQUIRED/CONFLICT while explicitly prohibiting a qualified output from synthetic fixtures; no public schema/API/database change."
+      "No published API, DB, runtime or inter-discipline interface changed. The ADR adds a future optional immutable export/import contract and explicit ARCH-ISO-01..08 acceptance checks.",
+      "Existing Mechanical DXF-recognition modules and shared data are unmodified, not migrated."
     ],
     "deployment_plan": [
       "None permitted or required; draft PR remains unmerged. No staging or production testing or provider calls."
