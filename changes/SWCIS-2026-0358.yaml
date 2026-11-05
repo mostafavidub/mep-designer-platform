@@ -1,0 +1,50 @@
+{
+  "change_id": "SWCIS-2026-0358",
+  "summary": "Reconcile the isolated Mechanical executable Rulebook workstream against the canonical schemas and source registries, publish a reproducible closure audit, and keep unverified statutory coverage explicitly open without changing engineering authority or runtime activation.",
+  "requester": "project-owner",
+  "change_types": ["calculation", "deployment", "documentation", "drawing_output", "governance", "rule", "schema", "test", "ui_api"],
+  "changed_rule_ids": ["IR-M16-1396-APP1-SFU-PROBABLE-DEMAND", "IR-M16-1396-16.3.3.4-FIXTURE-MIN-DN", "IR-M16-1396-16.3.3.5-FIXTURE-PRESSURE", "IR-M16-1396-APP1-GALVANIZED-EQUIVALENT-LENGTH", "IR-M16-1396-APP3-FIXTURE-DFU", "IR-M16-1396-APP3-MAIN-HORIZONTAL-CAPACITY", "IR-M16-1396-APP3-BRANCH-STACK-CAPACITY", "IR-M16-1396-APP5-VENT-STACK-CAPACITY", "IR-M16-1396-APP5-VENT-MIN-SIZE", "IR-M16-1396-16.4.2.6-CLEANOUT", "IR-M16-1396-16.5.2.5-TRAP-VENT-DISTANCE", "IR-M16-1396-16.5.2.4-VENT-TERMINATION", "IR-M14-1391-14.3.5.1-HEATING-SURFACE-GUARD", "IR-M14-1391-14.3.5.2-FLOOR-BASE-HEIGHT", "IR-M14-1391-14.7.8.1-HOT-WATER-EXPANSION-TANK", "IR-M14-1391-14.7.8.2-OPEN-TANK-ELEVATION", "IR-M14-1391-14.7.8.3-CLOSED-TANK-TEST-PRESSURE", "IR-M14-1391-T14.4.2-RESIDENTIAL-EXHAUST-RATES", "IR-M14-1391-14.4.2.1-OUTSIDE-AIR-INTAKE-SEPARATION", "IR-M14-1391-T14.4.2-PARKING-VENTILATION-RATES", "IR-M14-1391-14.4.4.6-ENCLOSED-PARKING-CO-CONTROL", "IR-M14-1391-T14.4.2-OUTSIDE-AIR-RATES"],
+  "impacted_modules": ["cad_designer", "deployment", "detail_riser", "docs", "equipment", "governance", "manifest", "manufacturer_selector", "migration", "planner", "pmm", "qa", "questionnaire", "routing", "rule_book", "sizing", "ui_api", "versioning"],
+  "impact_notes": {
+    "rule_book": "Verify every currently registered Mechanical module and rule through the canonical loader and strict Draft 2020-12 schema; do not add or alter engineering rules without verified source evidence.",
+    "qa": "Add a deterministic, offline closure audit covering module versions, rule counts, source-entry dispositions, schema validity and bounded-completeness declarations.",
+    "docs": "Record the current verified state, the distinction between registry closure and complete statutory coverage, exact remaining evidence blockers and the non-activation of checkout-only revisions.",
+    "governance": "Keep missing source/page/figure/table evidence fail-closed and separate verified checkout behavior from runtime activation and professional approval.",
+    "deployment": "Verified not affected; the audit is offline and no service, image, environment or deployed Rulebook is changed.",
+    "manifest": "Verified not affected; no artifact manifest, active-release record or build-identity field changes.",
+    "migration": "Verified not affected; no schema, database, cached evaluation, source file or historical artifact migration occurs.",
+    "ui_api": "Verified not affected; the audit has no served route, panel surface or API response.",
+    "sizing": "Adds canonical water-network sizing/remote-pressure plus sanitary main, branch/stack, vent-stack and cleanout consumers. All table selection is exact and unsupported combinations remain fail-closed.",
+    "detail_riser": "Verified not affected; the new calculation entrypoint does not alter plan, riser, schedule or detail materialization.",
+    "equipment": "Verified not affected; no equipment selection or capacity contract changes.",
+    "manufacturer_selector": "Verified not affected; no catalogue, product or manufacturer evidence changes.",
+    "cad_designer": "Adds an isolated calculation-bound synthetic vent plan/riser/schedule DXF materializer; canonical customer runtime activation remains unchanged.",
+    "planner": "Verified not affected; no system selection or drawing-scope planning changes.",
+    "pmm": "Verified not affected; no PMM schema or persisted entity changes.",
+    "questionnaire": "Adds conditional collection and persistence for exact-row gas_relative_density, max_duct_velocity_m_s and candidate_round_duct_diameters_mm. Historical answers are preserved and only missing project evidence is asked. Restores the four-choice questionnaire contract for unresolved roof evidence and the canonical unsupported-scope warning phrase.",
+    "routing": "Consumes caller-supplied vent plan and trap-to-vent polylines for measurement; it does not create or approve routes.",
+    "versioning": "No executable-rule or runtime version changes; this is a reconciliation and evidence change only."
+  },
+  "evidence": {
+    "traceability": ["The offline audit records module/version -> source registry -> strict Draft 2020-12 rule schema -> reciprocal executable-source link and a content dependency identity for all seven Mechanical modules."],
+    "tests": ["Main-lineage Rulebook, sizing, questionnaire, workflow, target-design, real-HTTP questionnaire and overlay run: 276 tests passed, including form-to-calculation transport and exact comma-separated duct-diameter normalization. The runtime requirements now declare the strict Draft 2020-12 jsonschema validator used by the canonical loader and CI. No live service or provider was contacted; the HTTP regression uses an isolated SQLite test database."],
+    "docs": ["docs/RULEBOOK_CLOSURE_AUDIT_2026-11-05.md records the verified module/rule/source counts, bounded coverage meaning and exact remaining evidence blockers."],
+    "version_bump": ["SWCIS 5.4.0 completes conditional questionnaire/persistence/overlay transport for typed M14 consumers and the exact-row M17 gas-density contract on the independently validated 5.3.0 foundation; no runtime release identity changes."],
+    "migration": ["Not affected: read-only reconciliation; no project, source, artifact or database mutation."],
+    "golden_regression": ["The 269-test focused closure regression covers positive, boundary, destructive, sizing, questionnaire, workflow, audit and exact-DXF behavior. No private source drawing or generated customer DXF is stored."],
+    "semantic_diff": ["All seven registered modules pass bounded data-integrity audit, but zero modules claim complete statutory coverage. Rainwater 2.85.1 has 103 strict-schema-valid rules and 534 dispositioned registry entries with zero unresolved registry controls; this is explicitly not a proof that the source inventory covers every original page, figure, table, symbol, map, exception or amendment."],
+    "artifact_diff": ["Adds an isolated synthetic vent plan/riser/schedule materializer and exact-DXF reopen regression. It draws calculation-bound plan polylines, riser lines and schedule labels on dedicated layers. No customer DXF is generated, stored or changed."],
+    "numeric_diff": ["Water and sanitary values remain unchanged. M14 keeps 27 visually verified single-basis per-person/per-area rows and now consumes typed ventilation_spaces with explicit occupant/area evidence and duct criteria; ambiguous multi-basis rows remain INPUT_REQUIRED. M17 Table 17-4-10 has 270 exact cells through DN100; official-table consumption now requires gas_relative_density and applies only the exact Table 17-4-11 printed factor. No interpolation, extrapolation or fabricated capacity is introduced."],
+    "contract_diff": ["Adds conditional questionnaire fields gas_relative_density, max_duct_velocity_m_s and candidate_round_duct_diameters_mm; normalizes and persists them in mechanical-design-basis-v18.5.4; transports them into preliminary_design_basis; derives typed ventilation_spaces only from source-bound residential kitchen/bath/toilet room types. Official M17 sizing accepts only printed density rows; incomplete data remains INPUT_REQUIRED and legacy explicit-CFM contracts remain supported."],
+    "deployment_plan": ["Prepared but not executed: freeze the reviewed Git revision; verify zero active analysis/design/deliverable jobs and no user test; rebuild a derivative local image; run the 311-test isolated suite plus SWCIS and health checks; activate only the local canonical entrypoint in a declared maintenance window; verify module dependency identities and one synthetic non-provider journey; retain the prior stopped image for rollback. No restart, provider call, staging or production deployment is authorized by this change."],
+    "rollback_plan": ["Remove the additive audit/report files and this change request; existing Rulebook modules and runtime remain unchanged."]
+  },
+  "risk": {
+    "likelihood": 2,
+    "severity": 5,
+    "detectability": 2,
+    "score": 20,
+    "rationale": "Incorrect demand mapping or minimum-DN enforcement could undersize a water segment; exact-row-only lookup, typed fixture derivation, explicit hydraulic criteria and positive/destructive tests reduce the risk."
+  },
+  "waiver": null
+}

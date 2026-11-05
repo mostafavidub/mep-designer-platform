@@ -1,0 +1,333 @@
+{
+  "schema": "planha-executable-rule-registry/1.0",
+  "module_id": "mechanical.gas.iran",
+  "version": "1.2.0",
+  "rules": [
+    {
+      "rule_id": "IR-M17-1403-17.4.10.3.6-GAS-METER-HEIGHT",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "gas_meter_placement",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "ارتفاع لوله جانشین کنتور گاز",
+      "sources": [
+        {
+          "code": "M17",
+          "edition": "1403",
+          "clause": "17-4-10-3-6",
+          "printed_page": 76,
+          "source_ids": [
+            "M17-G-001"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "complete_gas_meter_inventory_contains_meter",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "gas.meters[].location_class",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED"
+          ]
+        },
+        {
+          "field": "gas.meters[].replacement_pipe_height_cm",
+          "unit": "cm",
+          "authority": [
+            "GEOMETRY_VERIFIED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "place the meter replacement pipe 180 to 240 cm above ground in normal locations and exactly 220 cm above ground in parking or vehicle-traffic areas"
+      ],
+      "validator": "gas_meter_replacement_pipe_height",
+      "parameters": {
+        "normal_minimum_height_cm": 180,
+        "normal_maximum_height_cm": 240,
+        "parking_or_vehicle_traffic_height_cm": 220
+      },
+      "output_evidence": [
+        "complete meter inventory",
+        "source-bound ground datum",
+        "meter location classification",
+        "vertical placement dimension"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M17-1403-17.4.10.3.9-10-GAS-METER-CLEARANCES",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "gas_meter_placement",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "فواصل کنتور گاز از برق و دستگاه گازسوز",
+      "sources": [
+        {
+          "code": "M17",
+          "edition": "1403",
+          "clause": "17-4-10-3-9 and 17-4-10-3-10",
+          "printed_page": 76,
+          "source_ids": [
+            "M17-G-002"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "complete_gas_meter_inventory_contains_meter",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "gas.meters[].clearance_to_live_electric_wire_cm",
+          "unit": "cm",
+          "authority": [
+            "GEOMETRY_VERIFIED"
+          ]
+        },
+        {
+          "field": "gas.meters[].clearance_to_electric_meter_cm",
+          "unit": "cm",
+          "authority": [
+            "GEOMETRY_VERIFIED"
+          ]
+        },
+        {
+          "field": "gas.meters[].clearance_to_gas_appliance_m",
+          "unit": "m",
+          "authority": [
+            "GEOMETRY_VERIFIED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "keep each gas meter at least 10 cm from live electrical wiring, at least 50 cm from an electrical meter and at least 1 m from a gas-burning appliance body"
+      ],
+      "validator": "gas_meter_electrical_and_appliance_clearances",
+      "parameters": {
+        "minimum_live_electric_wire_clearance_cm": 10,
+        "minimum_electric_meter_clearance_cm": 50,
+        "minimum_gas_appliance_clearance_m": 1
+      },
+      "output_evidence": [
+        "source-bound gas meter geometry",
+        "electrical wire and meter geometry",
+        "gas appliance body geometry",
+        "clearance dimensions"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M17-1403-17.5.5.2.1-COMBUSTION-AIR-KNOWN-ACH",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "gas_combustion_air",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حجم فضای نصب برای هوای احتراق با نرخ نفوذ مشخص",
+      "sources": [
+        {
+          "code": "M17",
+          "edition": "1403",
+          "clause": "17-5-5-2-1 equations 1 and 2",
+          "printed_page": 95,
+          "source_ids": [
+            "M17-G-003"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "selected_combustion_air_method_is_known_ach_room_volume",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "another source-backed method in clauses 17-5-5-2 through 17-5-5-5 is selected",
+          "result": "NOT_APPLICABLE to this formula only; alternate-method evidence remains required"
+        }
+      ],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "gas.combustion_air_spaces[].room_volume_m3",
+          "unit": "m3",
+          "authority": [
+            "GEOMETRY_VERIFIED"
+          ]
+        },
+        {
+          "field": "gas.combustion_air_spaces[].ach",
+          "unit": "1/h",
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "gas.combustion_air_spaces[].nonfan_input_kcal_h",
+          "unit": "kcal/h",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        },
+        {
+          "field": "gas.combustion_air_spaces[].fan_input_kcal_h",
+          "unit": "kcal/h",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        }
+      ],
+      "design_actions": [
+        "recompute required room volume as (2.35/ACH)*(nonfan input/1000)+(1.68/ACH)*(fan input/1000) and use this method only when ACH is at least 0.6 per hour"
+      ],
+      "validator": "gas_combustion_air_known_ach_room_volume",
+      "parameters": {
+        "minimum_ach_per_hour": 0.6,
+        "nonfan_m3_per_1000_kcal_h": 2.35,
+        "fan_m3_per_1000_kcal_h": 1.68,
+        "mixed_appliance_rule": "sum both independently calculated required volumes"
+      },
+      "output_evidence": [
+        "source-bound room volume",
+        "approved ACH basis",
+        "official appliance input schedule by fan status",
+        "required-volume calculation"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M17-1403-17.4.16.1-FLUE-DESIGN-DOCUMENTATION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "gas_flue",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "درج مشخصات و محاسبات دودکش در پلان گاز",
+      "sources": [
+        {
+          "code": "M17",
+          "edition": "1403",
+          "clause": "17-4-16-1",
+          "printed_page": 89,
+          "source_ids": [
+            "M17-G-004"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "complete_inventory_contains_flue_required_gas_appliance",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "gas.flue_designs[].diameter_mm",
+          "unit": "mm",
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "gas.flue_designs[].material",
+          "unit": null,
+          "authority": [
+            "MATERIAL_SELECTION"
+          ]
+        },
+        {
+          "field": "gas.flue_designs[].route_polyline",
+          "unit": "m",
+          "authority": [
+            "GEOMETRY_VERIFIED"
+          ]
+        },
+        {
+          "field": "gas.flue_designs[].capacity_calculation_id",
+          "unit": null,
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "show each flue diameter, material and route on the gas plan and bind it to its appliance and approved combustion-air/flue capacity calculation"
+      ],
+      "validator": "gas_flue_design_documentation",
+      "parameters": {
+        "required_plan_fields": [
+          "appliance_id",
+          "diameter_mm",
+          "material",
+          "route_polyline",
+          "capacity_calculation_id"
+        ],
+        "calculation_status_required": "ENGINEER_APPROVED"
+      },
+      "output_evidence": [
+        "complete flued-appliance inventory",
+        "source-bound flue route",
+        "diameter and material schedule",
+        "approved capacity calculation identity"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M17-1403-17.5.6.1-COMBUSTION-AIR-OPENING-GEOMETRY",
+      "version": "1.0.0", "owner": "mechanical", "subsystem": "gas_combustion_air", "kind": "OPERATIVE", "authority": "STATUTORY_MANDATORY",
+      "title_fa": "سطح آزاد و هندسه دریچه هوای احتراق",
+      "sources": [{"code":"M17","edition":"1403","clause":"17-5-6-1-1 through 17-5-6-1-5","printed_page":98,"source_ids":["M17-G-005"],"status":"VERIFIED_SOURCE"}],
+      "applicability": {"predicate":"complete_inventory_contains_combustion_air_opening","unknown_result":"INPUT_REQUIRED"},
+      "exceptions": [], "cross_references": [],
+      "required_inputs": [
+        {"field":"gas.combustion_air_openings[].gross_area_mm2","unit":"mm2","authority":["GEOMETRY_VERIFIED"]},
+        {"field":"gas.combustion_air_openings[].declared_free_area_mm2","unit":"mm2","authority":["GEOMETRY_VERIFIED"]},
+        {"field":"gas.combustion_air_openings[].required_free_area_mm2","unit":"mm2","authority":["ENGINEER_APPROVED"]},
+        {"field":"gas.combustion_air_openings[].louver_min_dimension_mm","unit":"mm","authority":["PRODUCT_DATA"]},
+        {"field":"gas.combustion_air_openings[].outdoor_inlet_bottom_above_ground_mm","unit":"mm","authority":["GEOMETRY_VERIFIED"]}
+      ],
+      "design_actions": ["cap calculated free area at 75 percent of gross area for a metal grille and 25 percent for a wood grille unless manufacturer data states a smaller value; provide at least 7 mm louver clear dimension and place an outdoor direct-air inlet at least 300 mm above adjacent ground"],
+      "validator": "gas_combustion_air_opening_geometry",
+      "parameters": {"metal_max_free_area_fraction":0.75,"wood_max_free_area_fraction":0.25,"minimum_louver_dimension_mm":7,"minimum_outdoor_inlet_bottom_above_ground_mm":300},
+      "output_evidence": ["required free-area calculation","gross and declared free-area geometry","grille material and product evidence","outdoor inlet elevation"],
+      "unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false
+    },
+    {
+      "rule_id": "IR-M17-1403-17.5.6.2-COMBUSTION-AIR-DUCT-GEOMETRY",
+      "version": "1.0.0", "owner": "mechanical", "subsystem": "gas_combustion_air", "kind": "OPERATIVE", "authority": "STATUTORY_MANDATORY",
+      "title_fa": "هندسه و استقلال کانال هوای احتراق",
+      "sources": [{"code":"M17","edition":"1403","clause":"17-5-6-2-3 through 17-5-6-2-8","printed_page":99,"source_ids":["M17-G-006"],"status":"VERIFIED_SOURCE"}],
+      "applicability": {"predicate":"complete_inventory_contains_combustion_air_duct","unknown_result":"INPUT_REQUIRED"},
+      "exceptions": [], "cross_references": [],
+      "required_inputs": [
+        {"field":"gas.combustion_air_ducts[].free_area_mm2","unit":"mm2","authority":["GEOMETRY_VERIFIED"]},
+        {"field":"gas.combustion_air_ducts[].connected_opening_free_area_mm2","unit":"mm2","authority":["GEOMETRY_VERIFIED"]},
+        {"field":"gas.combustion_air_ducts[].minimum_side_mm","unit":"mm","authority":["GEOMETRY_VERIFIED"]},
+        {"field":"gas.combustion_air_ducts[].served_room_ids","unit":null,"authority":["SOURCE_VERIFIED"]},
+        {"field":"gas.combustion_air_ducts[].served_opening_roles","unit":null,"authority":["SOURCE_VERIFIED"]}
+      ],
+      "design_actions": ["use one dedicated duct per installation room and opening role; keep duct free area at least the connected opening free area and 10000 mm2, and keep a rectangular duct minimum side at least 80 mm"],
+      "validator": "gas_combustion_air_duct_geometry",
+      "parameters": {"minimum_free_area_mm2":10000,"rectangular_minimum_side_mm":80,"one_room_per_duct":true,"one_opening_role_per_duct":true},
+      "output_evidence": ["source-bound duct polygon or section","connected opening identity and free area","served room and high/low/single role","duct dimension schedule"],
+      "unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false
+    }
+  ]
+}

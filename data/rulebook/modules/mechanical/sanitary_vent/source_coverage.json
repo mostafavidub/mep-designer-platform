@@ -1,0 +1,15 @@
+{
+  "schema":"planha-rulebook-source-coverage/1.0","module_id":"mechanical.sanitary_vent.iran","source_entry_count":10,
+  "entries":[
+    {"source_id":"M16-SV-001","clause":"16-4-2-3(t-1), table","printed_page":86,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-16.4.2.3-TRAP-MIN-DN"],"automatic_pass":false},
+    {"source_id":"M16-SV-002","clause":"16-4-2-4(a,b), table 16-4-2-4(b-2)","printed_page":87,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-16.4.2.4-HORIZONTAL-SLOPE"],"automatic_pass":false},
+    {"source_id":"M16-SV-003","clause":"16-5-2-4(b), vent termination","printed_page":110,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-16.5.2.4-VENT-TERMINATION"],"automatic_pass":false},
+    {"source_id":"M16-SV-004","clause":"16-5-2-5(t-1), table","printed_page":112,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-16.5.2.5-TRAP-VENT-DISTANCE"],"automatic_pass":false},
+    {"source_id":"M16-SV-005","clause":"Appendix 3-2-2, fixture DFU table","printed_page":169,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-APP3-FIXTURE-DFU"],"automatic_pass":false},
+    {"source_id":"M16-SV-006","clause":"Appendix 3-3-1, horizontal branch and stack DFU capacity table","printed_page":171,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-APP3-BRANCH-STACK-CAPACITY"],"automatic_pass":false},
+    {"source_id":"M16-SV-007","clause":"16-4-2-6(a-c), cleanout locations, size, spacing and access","printed_page":90,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-16.4.2.6-CLEANOUT"],"automatic_pass":false},
+    {"source_id":"M16-SV-008","clause":"Appendix 5-3-2 and 5-4-2, minimum vent size and length size-up","printed_page":177,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-APP5-VENT-MIN-SIZE"],"automatic_pass":false},
+    {"source_id":"M16-SV-009","clause":"Appendix 3-3-2, main horizontal drain and branches DFU capacity table","printed_page":172,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-APP3-MAIN-HORIZONTAL-CAPACITY"],"automatic_pass":false},
+    {"source_id":"M16-SV-010","clause":"Appendix 5-3-1, stack vent and vent stack DFU/diameter/length table","printed_page":"177-178","disposition":"EXECUTABLE_RULE","rule_ids":["IR-M16-1396-APP5-VENT-STACK-CAPACITY"],"automatic_pass":false}
+  ]
+}

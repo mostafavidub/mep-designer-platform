@@ -118,9 +118,29 @@ def build_engineering_proposal(*, source_sha256, architecture, ambiguity_ids=(),
         if key not in basis and values:
             basis[key]={**values,"authority":"OWNER_DECLARED_PROJECT_FACT"}
     if "gas_design_basis" not in basis:
-        values={name:answers.get(name) for name in ("gas","gas_pressure")
+        values={name:answers.get(name) for name in ("gas","gas_pressure","gas_relative_density")
                 if answers.get(name) not in (None,"")}
         if values: basis["gas_design_basis"]={**values,"authority":"OWNER_DECLARED_PROJECT_FACT"}
+    ventilation_usage = {
+        "kitchen": "RESIDENTIAL_KITCHEN",
+        "bathroom": "RESIDENTIAL_BATHROOM_OR_TOILET",
+        "bath": "RESIDENTIAL_BATHROOM_OR_TOILET",
+        "toilet": "RESIDENTIAL_BATHROOM_OR_TOILET",
+        "wc": "RESIDENTIAL_BATHROOM_OR_TOILET",
+    }
+    ventilation_spaces = [
+        {"space_id": row["room_id"], "usage": ventilation_usage[row["room_type"]],
+         "source_sha256": source_sha256, "authority": "SOURCE_ARCHITECTURE_ROOM_TYPE"}
+        for row in rooms if row.get("room_type") in ventilation_usage
+    ]
+    preliminary = dict(basis.get("preliminary_design_basis") or {})
+    for key in ("gas_relative_density", "max_duct_velocity_m_s", "candidate_round_duct_diameters_mm"):
+        if answers.get(key) not in (None, "", []):
+            preliminary[key] = deepcopy(answers[key])
+    if ventilation_spaces:
+        preliminary["ventilation_spaces"] = ventilation_spaces
+    if preliminary:
+        basis["preliminary_design_basis"] = preliminary
     missing = []
     for key in ("water_design_basis", "sanitary_design_basis", "heating_design_basis",
                 "cooling_design_basis", "gas_design_basis", "ventilation_design_basis",

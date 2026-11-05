@@ -22,6 +22,11 @@ from .auto_inference_v2 import (
     auto_summary,
     classify_room,
 )
+from .mechanical_question_catalog import (
+    ACTIVE_QUESTION_KEYS,
+    CONDITIONAL_QUESTION_KEYS,
+    question_sort_key,
+)
 from .mechanical_rulebook import RULEBOOK_VERSION
 from .mechanical_rulebook import is_confirmation
 from cad_engine.architecture_text_evidence import extract_text_evidence, normalize_text
@@ -50,6 +55,8 @@ def build_unified_questionnaire(analysis, discipline, supplied_answers=None):
         answers.pop('cooling', None)
     proposed = dynamic_questions(analysis, discipline, auto)
     if discipline == 'mechanical':
+        proposed = [(key, prompt) for key, prompt in proposed if key in ACTIVE_QUESTION_KEYS]
+    if discipline == 'mechanical':
         from types import SimpleNamespace
         from . import mechanical_workflow
         basis_project = SimpleNamespace(answers={**answers, **(supplied_answers or {})}, analysis=analysis)
@@ -58,9 +65,12 @@ def build_unified_questionnaire(analysis, discipline, supplied_answers=None):
         for key in mechanical_workflow.required_basis_questions(basis_project):
             if key not in known and aliases.get(key) not in known:
                 proposed.append((key, mechanical_workflow._question_payload(key)['question']))
+        proposed.sort(key=lambda item: question_sort_key(item[0]))
     question_keys = {key for key, _prompt in proposed}
     for key, value in dict(supplied_answers or {}).items():
-        if key in question_keys and value is not None and str(value).strip():
+        if value is None or not str(value).strip():
+            continue
+        if key not in answers or key in question_keys or key in CONDITIONAL_QUESTION_KEYS or key in ACTIVE_QUESTION_KEYS:
             if not (is_confirmation(value) and str(answers.get(key) or '').strip()):
                 answers[key] = value
     unresolved = unanswered_questions(proposed, answers)
@@ -485,6 +495,19 @@ def panel_analysis_payload(auto):
         warnings.append('مساحت قابل اتکا از نقشه استخراج نشد؛ متراژ باید توسط کاربر تأیید شود.')
     if floors:
         evidence.append(f'{floors} طبقه قابل استفاده از عناوین و هندسه معماری تشخیص داده شد.')
+    unsupported_labels = {
+        'pool': 'استخر', 'sauna': 'سونا', 'jacuzzi': 'جکوزی', 'boiler_room': 'موتورخانه مرکزی',
+    }
+    unsupported = [
+        unsupported_labels[key]
+        for key in auto.get('unsupported_scope_evidence') or []
+        if key in unsupported_labels
+    ]
+    if unsupported:
+        warnings.append(
+            'در نقشه شواهد «' + '، '.join(unsupported)
+            + '» دیده شد. طراحی این حوزه‌ها فعلاً خارج از محدوده خدمات Planha است و باید پیش از سفارش بررسی شود.'
+        )
 
     return {
         'status': 'confirm' if area is not None else 'review',

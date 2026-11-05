@@ -1,0 +1,8 @@
+{
+  "schema":"planha-rulebook-module/1.0","module_id":"mechanical.sanitary_vent.iran","version":"1.2.0","owner":"mechanical",
+  "dependencies":["architecture.fixture_and_space_geometry","architecture.opening_and_property_geometry"],
+  "source_documents":[{"code":"M16","edition":"1396","sha256":"b74bedf75e3998179cc6decabe2c36d5c52fc7310026b0dcef3fc438e9f16b6b","entry_count":10}],
+  "coverage":{"source_entries":10,"review_scope":"three executable sanitary drainage and vent batches; not complete M16 chapters 16-4/16-5 or appendices 3/5","complete_statutory_coverage":false},
+  "rules_file":"rules.json","source_coverage_file":"source_coverage.json",
+  "fixed_policies":{"unknown_applicability":"INPUT_REQUIRED","llm_override_allowed":false,"source_record_presence_is_pass":false}
+}

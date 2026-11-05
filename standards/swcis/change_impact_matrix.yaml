@@ -8,6 +8,12 @@
         "cad_engine/executable_rulebook.py",
         "cad_engine/rainwater_rulebook.py",
         "cad_engine/independent_deliverables.py",
+        "cad_engine/water_rulebook.py",
+        "cad_engine/sanitary_vent_rulebook.py",
+        "cad_engine/heating_rulebook.py",
+        "cad_engine/cooling_rulebook.py",
+        "cad_engine/ventilation_rulebook.py",
+        "cad_engine/gas_rulebook.py",
         "standards/swcis/rule_traceability_matrix.yaml"
       ],
       "seed_modules": [
@@ -299,6 +305,8 @@
         "requirements.txt",
         "cad_engine/requirements.txt",
         "docker-compose*.yml",
+        "*.override.yml",
+        ".tmp-*-compose.override.yml",
         "start_services.sh",
         ".github/workflows/**"
       ],

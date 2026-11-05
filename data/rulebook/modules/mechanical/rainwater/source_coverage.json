@@ -1,10 +1,67 @@
 {
   "schema": "planha-rulebook-source-coverage/1.0",
   "module_id": "mechanical.rainwater.iran",
-  "module_version": "2.22.0",
+  "module_version": "2.85.1",
   "source_entry_count": 534,
   "source_entry_count_is_not_rule_count": true,
   "policy": "Every source entry has a disposition; unresolved controls never pass design gates.",
+  "disposition_changes": [
+    {"module_version":"2.49.0","source_ids":["M4-118","M4-119"],"from":"DEPENDENCY_CONTEXT","to":"EXECUTABLE_RULE"},
+    {"module_version":"2.50.0","source_ids":["M6-115","M6-119","M6-120"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"},
+    {"module_version":"2.51.0","source_ids":["M6-116","M6-126"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.52.0","source_ids":["M6-117","M6-118","M6-121"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.53.0","source_ids":["M6-129","M6-131"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.54.0","source_ids":["M6-147","M6-148"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.55.0","source_ids":["M6-153"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.55.0","source_ids":["M6-127","M6-130","M6-133","M6-145"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.56.0","source_ids":["M6-145"],"from":"DEPENDENCY_CONTEXT","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.57.0","source_ids":["M6-134"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.58.0","source_ids":["M6-150"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.59.0","source_ids":["M6-109","M6-110"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.60.0","source_ids":["M6-109","M6-110"],"from":"DEPENDENCY_CONTEXT","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.61.0","source_ids":["M6-151","M6-152"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.64.0","source_ids":["M6-086","M6-092","M6-093","M6-094","M6-095","M6-096","M6-097","M6-098"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.65.0","source_ids":["M6-026","M6-049","M6-050","M6-053","M6-054","M6-057"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.66.0","source_ids":["M6-058","M6-059","M6-060","M6-061","M6-062","M6-063"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.67.0","source_ids":["M6-028"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.68.0","source_ids":["M6-032","M6-033","M6-034","M6-035","M6-036","M6-037","M6-038","M6-039","M6-040"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.69.0","source_ids":["M6-042","M6-081"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.70.0","source_ids":["M6-064","M6-065","M6-066"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.71.0","source_ids":["M6-051","M6-052","M6-055","M6-056"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.72.0","source_ids":["M4-078","M4-079"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.73.0","source_ids":["M4-063","M4-064","M4-076"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.74.0","source_ids":["M6-018"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.75.0","source_ids":["M6-020","M6-025"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.76.0","source_ids":["M6-011"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.76.0","source_ids":["M6-005"],"from":"UNRESOLVED_CONTROL","to":"GUIDANCE"}
+    ,{"module_version":"2.76.0","source_ids":["M6-006","M6-012"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.77.0","source_ids":["M4-065","M4-046","M4-047"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.78.0","source_ids":["M4-044"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.78.0","source_ids":["M4-042"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.79.0","source_ids":["M4-062","M4-072","M4-073","M4-074","M4-075"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.80.0","source_ids":["M4-005","M4-054"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.80.0","source_ids":["M4-043","M4-045"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.80.0","source_ids":["M4-061"],"from":"UNRESOLVED_CONTROL","to":"GUIDANCE"}
+    ,{"module_version":"2.81.0","source_ids":["M4-107","M4-108","M4-111"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.81.0","source_ids":["M4-104","M4-110"],"from":"UNRESOLVED_CONTROL","to":"GUIDANCE"}
+    ,{"module_version":"2.81.0","source_ids":["M4-105","M4-106","M4-112"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT"}
+    ,{"module_version":"2.82.0","source_ids":["M4-002","M4-053","M4-056","M4-057","M4-059","M4-060"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE"}
+    ,{"module_version":"2.83.0","source_ids":["M4-001","M4-004","M4-048","M4-049","M4-050","M4-051","M4-052","M4-055","M4-058","M4-068","M4-069","M4-082","M4-138","M4-156","M6-071","M6-076","M6-115","M6-116","M6-119","M6-120","M6-126","M6-129","M6-131","M6-134","M6-145","M16-098"],"from":"EXECUTABLE_RULE","to":"UNRESOLVED_CONTROL","reason":"independent reciprocal semantic audit found missing source-specific rule/validator/consumer/test proof"}
+    ,{"module_version":"2.83.0","source_ids":["M4-065"],"from":"EXECUTABLE_RULE","to":"EXECUTABLE_RULE","reason":"replace stale entrance-threshold link with actual main-entrance runoff-elevation rule"}
+    ,{"module_version":"2.84.0","source_ids":["M6-116"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"restore only the source-specific reciprocal LRFD/ASD validator, DXF consumer and positive/destructive proof for separate wind and seismic effects; independent counterexamples keep the other eight reviewed sources unresolved"}
+    ,{"module_version":"2.85.0","source_ids":["M6-115","M6-119","M6-120"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"bind typed attachment footprint and projected profile geometry, roof interface identity, wind-basis provenance, zone intersection and same-interface structural response; reject interface replay and declared-area-only evidence"}
+    ,{"module_version":"2.85.0","source_ids":["M6-126","M6-129","M6-131"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"bind wind and seismic drift responses to the exact rainwater interface and preserve inelastic and P-delta evidence with destructive replay tests"}
+    ,{"module_version":"2.85.0","source_ids":["M6-134"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"derive metal solid volume from supported solid or hollow typed dimensions and reject arbitrary bounding volume"}
+    ,{"module_version":"2.85.0","source_ids":["M6-145"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"derive the vortex check for every applicable slender pipe and bind support/dynamic responses to the exact pipe identity"}
+    ,{"module_version":"2.85.0","source_ids":["M4-001","M4-049"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"consume the actual roof/joint/drain-penetration geometry through the existing waterproofing continuity validator and exact-DXF detail evidence"}
+    ,{"module_version":"2.85.0","source_ids":["M4-048"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"bind each actually exposed rainwater interface to product/standard exposure coverage, application detail and maintenance identity"}
+    ,{"module_version":"2.85.0","source_ids":["M4-050","M4-051","M4-052","M4-058"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"derive projection depth, underside clearance, edge separation and prohibited external-projection pipe placement from typed site geometry"}
+    ,{"module_version":"2.85.0","source_ids":["M4-055"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"activate only for a real basement projection/open-space/parking interface and consume geometry-bound urban, waterproofing, drainage and emergency-load owner evidence"}
+    ,{"module_version":"2.85.0","source_ids":["M4-138"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"require the actual discharge destination and the municipal/wastewater permission contract for any proposed city-sewer connection"}
+    ,{"module_version":"2.85.0","source_ids":["M6-071","M6-076"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"bind M16 hydraulic design, roof geometry, primary-blockage scenario and same-model structural ponding response for all susceptible bays including slopes at or above two percent"}
+    ,{"module_version":"2.85.0","source_ids":["M16-098"],"from":"UNRESOLVED_CONTROL","to":"EXECUTABLE_RULE","reason":"verify graph separation of rainwater from sanitary and vent networks; the chapter exclusion does not waive the explicit separation duty"}
+    ,{"module_version":"2.85.0","source_ids":["M4-004","M4-068","M4-069","M4-082","M4-156"],"from":"UNRESOLVED_CONTROL","to":"DEPENDENCY_CONTEXT","reason":"retain broad safety, architectural access/egress surface and cross-code coordination duties as owner interfaces; numeric rainwater obligations remain in their specific executable rules and these clauses do not create duplicate blanket gates"}
+  ],
   "entries": [
     {
       "source_id": "M4-001",
@@ -19,9 +76,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-4.9.10.1-WATERPROOFING-INTERFACE"
-      ],
+      "rule_ids": ["IR-M4-1396-4.9.10.1-WATERPROOFING-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -36,8 +91,8 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-POLLUTION-PREVENTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -52,8 +107,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-ACOUSTIC-INTERFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -68,10 +125,8 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-EXTERIOR-SPACE-DRAINAGE"
-      ],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [],
       "automatic_pass": false
     },
     {
@@ -86,8 +141,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"],
       "automatic_pass": false
     },
     {
@@ -102,7 +157,7 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -118,7 +173,7 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -134,7 +189,7 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -150,7 +205,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -166,7 +221,7 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -182,7 +237,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -198,7 +253,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -214,7 +269,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -232,7 +287,7 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -250,7 +305,7 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -266,7 +321,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -284,7 +339,7 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -302,7 +357,7 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -320,7 +375,7 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -339,8 +394,10 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -357,8 +414,10 @@
         "inference",
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -376,8 +435,10 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -392,8 +453,10 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -408,8 +471,10 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -424,8 +489,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -440,8 +507,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-STAGE-DOCUMENTS-MATERIALS-PROTECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -696,7 +765,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -712,7 +781,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -728,8 +797,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SERVICEABILITY-MOVEMENT-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -746,7 +815,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -762,8 +831,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-VISIBLE-RAINWATER-FACADE-COORDINATION"],
       "automatic_pass": false
     },
     {
@@ -778,8 +847,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-VISIBLE-RAINWATER-FACADE-COORDINATION"],
       "automatic_pass": false
     },
     {
@@ -795,9 +864,7 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-4.9.10.1-WATERPROOFING-INTERFACE"
-      ],
+      "rule_ids": ["IR-M4-1396-EXTERIOR-INTERMEDIARY-FINISH-DURABILITY"],
       "automatic_pass": false
     },
     {
@@ -813,9 +880,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-4.9.10.1-WATERPROOFING-INTERFACE"
-      ],
+      "rule_ids": ["IR-M4-1396-4.9.10.1-WATERPROOFING-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -833,9 +898,7 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-PITCHED-ROOF-PROPERTY-SAFETY"
-      ],
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -853,9 +916,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-PITCHED-ROOF-PROPERTY-SAFETY"
-      ],
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -873,9 +934,7 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-PITCHED-ROOF-PROPERTY-SAFETY"
-      ],
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -890,8 +949,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -906,8 +965,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-EXTERNAL-LIGHT-AIR-CONDUIT-EXCLUSIVE-USE"],
       "automatic_pass": false
     },
     {
@@ -926,9 +985,7 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-BASEMENT-ENTRY-RUNOFF-PROTECTION"
-      ],
+      "rule_ids": ["IR-M4-1396-UNDER-OPEN-SPACE-PARKING-DEPENDENCY"],
       "automatic_pass": false
     },
     {
@@ -943,8 +1000,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -961,8 +1018,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -978,9 +1035,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-PITCHED-ROOF-PROPERTY-SAFETY"
-      ],
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -995,8 +1050,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1011,8 +1066,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-SITE-PROJECTION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1027,7 +1082,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1043,8 +1098,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-PEDESTRIAN-RAMP-RUNOFF-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1059,8 +1114,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-EGRESS-WIDTH-OBSTRUCTION"],
       "automatic_pass": false
     },
     {
@@ -1075,8 +1130,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-EGRESS-WIDTH-OBSTRUCTION"],
       "automatic_pass": false
     },
     {
@@ -1093,8 +1148,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-MAIN-ENTRANCE-RUNOFF-ELEVATION-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1112,7 +1167,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY"],
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1152,10 +1209,8 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-EXTERIOR-SPACE-DRAINAGE"
-      ],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [],
       "automatic_pass": false
     },
     {
@@ -1170,10 +1225,8 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-EXTERIOR-SPACE-DRAINAGE"
-      ],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [],
       "automatic_pass": false
     },
     {
@@ -1228,8 +1281,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-PEDESTRIAN-RAMP-RUNOFF-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1246,8 +1299,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-PEDESTRIAN-RAMP-RUNOFF-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1264,8 +1317,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-PEDESTRIAN-RAMP-RUNOFF-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1280,8 +1333,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-PEDESTRIAN-RAMP-RUNOFF-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1296,8 +1349,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-EGRESS-WIDTH-OBSTRUCTION"],
       "automatic_pass": false
     },
     {
@@ -1334,8 +1387,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-OCCUPIED-SPACE-RAINWATER-CLEARANCE"],
       "automatic_pass": false
     },
     {
@@ -1352,8 +1405,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-OCCUPIED-SPACE-RAINWATER-CLEARANCE"],
       "automatic_pass": false
     },
     {
@@ -1404,10 +1457,8 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-EXTERIOR-SPACE-DRAINAGE"
-      ],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [],
       "automatic_pass": false
     },
     {
@@ -1440,8 +1491,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [
+        "IR-M4-1396-COVERED-PATIO-NATURAL-VENTILATION-DEPENDENCY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1457,7 +1510,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY"],
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1509,7 +1564,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY"],
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1524,8 +1581,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-EXTERIOR-INTERMEDIARY-FINISH-DURABILITY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1540,8 +1599,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-EXTERNAL-LIGHT-AIR-CONDUIT-EXCLUSIVE-USE"
+      ],
       "automatic_pass": false
     },
     {
@@ -1556,8 +1617,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [
+        "IR-M4-1396-LIGHT-AIR-CONDUIT-TRAFFIC-GUARD-DEPENDENCY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1572,8 +1635,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [
+        "IR-M4-1396-LIGHT-AIR-CONDUIT-SEMI-OPEN-FINISH-DEPENDENCY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1608,8 +1673,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-PARKING-SERVICE-CLEARANCE-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1627,7 +1694,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY"],
+      "rule_ids": [
+        "IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1645,7 +1714,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY"],
+      "rule_ids": [
+        "IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1663,7 +1734,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY"],
+      "rule_ids": [
+        "IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1678,7 +1751,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1694,8 +1767,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [
+        "IR-M4-1396-UNDER-OPEN-SPACE-PARKING-DEPENDENCY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1710,8 +1785,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [
+        "IR-M4-1396-BASEMENT-PARKING-LIGHT-VENTILATION-DEPENDENCY"
+      ],
       "automatic_pass": false
     },
     {
@@ -1726,8 +1803,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-PARKING-RAMP-NONSLIP-SURFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -1778,7 +1857,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1794,7 +1873,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1810,7 +1889,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1826,8 +1905,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-ACOUSTIC-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1842,8 +1921,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-EMERGENCY-ACCESS-RAINWATER-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1858,8 +1937,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-HEAVY-RAINWATER-EQUIPMENT-REMOVAL-ROUTE"
+      ],
       "automatic_pass": false
     },
     {
@@ -1874,7 +1955,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1890,8 +1971,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M4-1396-RAINWATER-ACOUSTIC-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -1906,7 +1987,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1924,8 +2005,10 @@
         "conditional",
         "inference"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-OUTDOOR-RAINWATER-EQUIPMENT-INSTALLATION"
+      ],
       "automatic_pass": false
     },
     {
@@ -1940,7 +2023,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1956,7 +2039,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1972,7 +2055,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -1988,7 +2071,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -2004,8 +2087,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M16-1396-DOCUMENTATION-STAGE-CLOSEOUT"],
       "automatic_pass": false
     },
     {
@@ -2020,8 +2103,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M16-1396-TRENCH-BURIAL"],
       "automatic_pass": false
     },
     {
@@ -2036,8 +2119,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2052,8 +2137,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2068,8 +2155,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2084,8 +2173,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2100,8 +2191,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2116,7 +2209,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -2375,9 +2468,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY"
-      ],
+      "rule_ids": ["IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY"],
       "automatic_pass": false
     },
     {
@@ -2470,8 +2561,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-TRANSPARENT-ROOF-CLEANING-SAFETY"
+      ],
       "automatic_pass": false
     },
     {
@@ -2596,8 +2689,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-EMERGENCY-ACCESS-RAINWATER-INTERFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -2612,8 +2707,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-EMERGENCY-ACCESS-RAINWATER-INTERFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -2628,8 +2725,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-EMERGENCY-ACCESS-RAINWATER-INTERFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -2644,8 +2743,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-EMERGENCY-ACCESS-RAINWATER-INTERFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -2660,8 +2761,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M4-1396-RAINWATER-ACOUSTIC-INTERFACE"
+      ],
       "automatic_pass": false
     },
     {
@@ -2676,8 +2779,10 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2696,10 +2801,8 @@
         "inference",
         "rule"
       ],
-      "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-4.9.5.2-RAIN-SANITARY-SEPARATION"
-      ],
+      "disposition": "DEPENDENCY_CONTEXT",
+      "rule_ids": [],
       "automatic_pass": false
     },
     {
@@ -2838,7 +2941,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -2854,7 +2957,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -2889,7 +2992,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
+      "rule_ids": [
+        "IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2905,7 +3010,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
+      "rule_ids": [
+        "IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -2921,7 +3028,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SERVICEABILITY-DEFLECTION"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SERVICEABILITY-DEFLECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -2936,8 +3045,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SERVICEABILITY-MOVEMENT-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -2952,7 +3061,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3060,8 +3169,8 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-LRFD-RAINWATER-LOAD-COMBINATIONS"],
       "automatic_pass": false
     },
     {
@@ -3077,7 +3186,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-FLUID-LOAD-COMBINATION-EXTENSIONS"],
+      "rule_ids": [
+        "IR-M6-1398-FLUID-LOAD-COMBINATION-EXTENSIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -3092,8 +3203,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-H-LOAD-COMBINATION-EXTENSIONS"],
       "automatic_pass": false
     },
     {
@@ -3129,7 +3240,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
+      "rule_ids": [
+        "IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -3145,7 +3258,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
+      "rule_ids": [
+        "IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -3161,7 +3276,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-FLUID-LOAD-COMBINATION-EXTENSIONS"],
+      "rule_ids": [
+        "IR-M6-1398-FLUID-LOAD-COMBINATION-EXTENSIONS"
+      ],
       "automatic_pass": false
     },
     {
@@ -3176,8 +3293,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-H-LOAD-COMBINATION-EXTENSIONS"],
       "automatic_pass": false
     },
     {
@@ -3192,7 +3309,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3209,7 +3326,9 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SERVICEABILITY-DEFLECTION"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SERVICEABILITY-DEFLECTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -3224,8 +3343,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-EQUIPMENT-VIBRATION-ISOLATION"],
       "automatic_pass": false
     },
     {
@@ -3298,8 +3417,8 @@
         "conditional",
         "guidance"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3314,8 +3433,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3330,8 +3449,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3346,8 +3465,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3362,8 +3481,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3378,8 +3497,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3394,8 +3513,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3410,8 +3529,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3426,8 +3545,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-BURIED-RAINWATER-GEOTECHNICAL-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3458,8 +3577,8 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-CONSTRUCTION-STAGE-LOAD"],
       "automatic_pass": false
     },
     {
@@ -3523,7 +3642,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-LIVE-LOAD-REDUCTION"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-LIVE-LOAD-REDUCTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -3539,7 +3660,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-LIVE-LOAD-REDUCTION"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-LIVE-LOAD-REDUCTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -3555,7 +3678,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
+      "rule_ids": [
+        "IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"
+      ],
       "automatic_pass": false
     },
     {
@@ -3570,7 +3695,7 @@
       "block_kinds": [
         "rule"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3586,7 +3711,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3602,8 +3727,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-FLOOD-ICE-LOAD-COMBINATION-EXTENSIONS"],
       "automatic_pass": false
     },
     {
@@ -3618,8 +3743,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-FLOOD-ICE-LOAD-COMBINATION-EXTENSIONS"],
       "automatic_pass": false
     },
     {
@@ -3634,7 +3759,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3650,7 +3775,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3666,8 +3791,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-FLOOD-ICE-LOAD-COMBINATION-EXTENSIONS"],
       "automatic_pass": false
     },
     {
@@ -3682,8 +3807,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-FLOOD-ICE-LOAD-COMBINATION-EXTENSIONS"],
       "automatic_pass": false
     },
     {
@@ -3698,7 +3823,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -3714,8 +3839,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
       "automatic_pass": false
     },
     {
@@ -3730,8 +3855,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
       "automatic_pass": false
     },
     {
@@ -3746,8 +3871,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
       "automatic_pass": false
     },
     {
@@ -3762,8 +3887,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
       "automatic_pass": false
     },
     {
@@ -3778,8 +3903,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
       "automatic_pass": false
     },
     {
@@ -3794,8 +3919,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION"],
       "automatic_pass": false
     },
     {
@@ -3810,8 +3935,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SERVICEABILITY-MOVEMENT-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3826,8 +3951,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SERVICEABILITY-MOVEMENT-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3842,8 +3967,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SERVICEABILITY-MOVEMENT-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -3949,9 +4074,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY"
-      ],
+      "rule_ids": ["IR-M6-1398-PRIMARY-BLOCKAGE-RAIN-LOAD-PONDING"],
       "automatic_pass": false
     },
     {
@@ -4053,9 +4176,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M6-1398-6.8.4-SECONDARY-SEPARATION"
-      ],
+      "rule_ids": ["IR-M6-1398-PRIMARY-BLOCKAGE-RAIN-LOAD-PONDING"],
       "automatic_pass": false
     },
     {
@@ -4149,8 +4270,8 @@
         "conditional",
         "guidance"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-MACHINERY-IMPACT-LOAD"],
       "automatic_pass": false
     },
     {
@@ -4244,7 +4365,7 @@
         "conditional",
         "guidance"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4348,7 +4469,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4364,7 +4485,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4383,7 +4504,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4399,7 +4520,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4415,7 +4536,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4431,7 +4552,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4447,7 +4568,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4466,7 +4587,9 @@
         "guidance"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SNOW-LOAD-BASIS"
+      ],
       "automatic_pass": false
     },
     {
@@ -4482,7 +4605,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SNOW-LOAD-BASIS"
+      ],
       "automatic_pass": false
     },
     {
@@ -4498,7 +4623,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SNOW-LOAD-BASIS"
+      ],
       "automatic_pass": false
     },
     {
@@ -4516,7 +4643,9 @@
         "guidance"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOFTOP-SNOW-DRIFT-GEOMETRY"],
+      "rule_ids": [
+        "IR-M6-1398-ROOFTOP-SNOW-DRIFT-GEOMETRY"
+      ],
       "automatic_pass": false
     },
     {
@@ -4533,8 +4662,8 @@
         "conditional",
         "guidance"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ATMOSPHERIC-ICE-ON-RAINWATER-COMPONENTS"],
       "automatic_pass": false
     },
     {
@@ -4552,8 +4681,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ATMOSPHERIC-ICE-ON-RAINWATER-COMPONENTS"],
       "automatic_pass": false
     },
     {
@@ -4568,8 +4697,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ATMOSPHERIC-ICE-ON-RAINWATER-COMPONENTS"],
       "automatic_pass": false
     },
     {
@@ -4584,8 +4713,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ATMOSPHERIC-ICE-ON-RAINWATER-COMPONENTS"],
       "automatic_pass": false
     },
     {
@@ -4603,8 +4732,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ATMOSPHERIC-ICE-ON-RAINWATER-COMPONENTS"],
       "automatic_pass": false
     },
     {
@@ -4619,8 +4748,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ATMOSPHERIC-ICE-ON-RAINWATER-COMPONENTS"],
       "automatic_pass": false
     },
     {
@@ -4635,8 +4764,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SITE-FLOOD-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -4651,8 +4780,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SITE-FLOOD-STRUCTURAL-INTERFACE"],
       "automatic_pass": false
     },
     {
@@ -4665,8 +4794,8 @@
         "T18"
       ],
       "block_kinds": [],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
       "automatic_pass": false
     },
     {
@@ -4682,7 +4811,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SNOW-LOAD-BASIS"
+      ],
       "automatic_pass": false
     },
     {
@@ -4698,7 +4829,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SNOW-LOAD-BASIS"
+      ],
       "automatic_pass": false
     },
     {
@@ -4714,7 +4847,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "rule_ids": [
+        "IR-M6-1398-ROOF-SNOW-LOAD-BASIS"
+      ],
       "automatic_pass": false
     },
     {
@@ -4731,8 +4866,8 @@
         "conditional",
         "guidance"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4747,8 +4882,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-LRFD-RAINWATER-LOAD-COMBINATIONS", "IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
       "automatic_pass": false
     },
     {
@@ -4763,8 +4898,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-ATTACHMENT-NET-WIND-PRESSURE"],
       "automatic_pass": false
     },
     {
@@ -4779,8 +4914,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-ATTACHMENT-NET-WIND-PRESSURE"],
       "automatic_pass": false
     },
     {
@@ -4795,8 +4930,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4811,8 +4946,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4829,8 +4964,8 @@
         "conditional",
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-ATTACHMENT-NET-WIND-PRESSURE"],
       "automatic_pass": false
     },
     {
@@ -4847,8 +4982,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4863,8 +4998,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4881,8 +5016,8 @@
         "conditional",
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4897,8 +5032,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-CLADDING-WIND-ZONES"],
       "automatic_pass": false
     },
     {
@@ -4913,8 +5048,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-VERTICAL-RAINWATER-DRIFT-COMPATIBILITY"],
       "automatic_pass": false
     },
     {
@@ -4931,7 +5066,7 @@
         "conditional",
         "guidance"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4948,7 +5083,9 @@
         "conditional"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-HEAVY-ROOFTOP-EQUIPMENT-PLACEMENT"],
+      "rule_ids": [
+        "IR-M6-1398-HEAVY-ROOFTOP-EQUIPMENT-PLACEMENT"
+      ],
       "automatic_pass": false
     },
     {
@@ -4963,8 +5100,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-VERTICAL-RAINWATER-DRIFT-COMPATIBILITY"],
       "automatic_pass": false
     },
     {
@@ -4979,7 +5116,7 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -4995,8 +5132,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-VERTICAL-RAINWATER-DRIFT-COMPATIBILITY"],
       "automatic_pass": false
     },
     {
@@ -5014,7 +5151,9 @@
         "guidance"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": ["IR-M6-1398-HEAVY-ROOFTOP-EQUIPMENT-PLACEMENT"],
+      "rule_ids": [
+        "IR-M6-1398-HEAVY-ROOFTOP-EQUIPMENT-PLACEMENT"
+      ],
       "automatic_pass": false
     },
     {
@@ -5029,7 +5168,7 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -5043,8 +5182,8 @@
         "T10"
       ],
       "block_kinds": [],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-MATERIAL-VOLUMETRIC-DEAD-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5057,8 +5196,8 @@
         "T10"
       ],
       "block_kinds": [],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-PERMANENT-RAINWATER-DEAD-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5073,8 +5212,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAIN-EXPOSED-WOOD-DENSITY-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5087,8 +5226,8 @@
         "T10"
       ],
       "block_kinds": [],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-MATERIAL-VOLUMETRIC-DEAD-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5101,8 +5240,8 @@
         "T10"
       ],
       "block_kinds": [],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-MATERIAL-VOLUMETRIC-DEAD-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5119,8 +5258,8 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-MATERIAL-VOLUMETRIC-DEAD-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5137,8 +5276,8 @@
         "conditional",
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-COVERING-SURFACE-DEAD-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5153,8 +5292,8 @@
       "block_kinds": [
         "context"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-PIPE-STORAGE-CONSTRUCTION-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5169,7 +5308,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "GUIDANCE",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -5185,7 +5324,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -5201,8 +5340,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-VERTICAL-RAINWATER-DRIFT-COMPATIBILITY"],
       "automatic_pass": false
     },
     {
@@ -5217,8 +5356,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-EXPOSED-RAINWATER-PIPE-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5233,7 +5372,7 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
+      "disposition": "DEPENDENCY_CONTEXT",
       "rule_ids": [],
       "automatic_pass": false
     },
@@ -5249,8 +5388,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-STORAGE-TANK-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5265,8 +5404,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-STORAGE-TANK-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5281,8 +5420,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-EXPOSED-RAINWATER-PIPE-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5297,8 +5436,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-SUPPORT-MEMBER-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5313,8 +5452,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-CANOPY-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5329,8 +5468,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-RAINWATER-CANOPY-WIND-LOAD"],
       "automatic_pass": false
     },
     {
@@ -5345,8 +5484,8 @@
       "block_kinds": [
         "conditional"
       ],
-      "disposition": "UNRESOLVED_CONTROL",
-      "rule_ids": [],
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
       "automatic_pass": false
     },
     {
@@ -6979,9 +7118,7 @@
         "rule"
       ],
       "disposition": "EXECUTABLE_RULE",
-      "rule_ids": [
-        "IR-M4-1396-4.9.5.2-RAIN-SANITARY-SEPARATION"
-      ],
+      "rule_ids": ["IR-M4-1396-4.9.5.2-RAIN-SANITARY-SEPARATION"],
       "automatic_pass": false
     },
     {

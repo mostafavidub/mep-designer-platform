@@ -1,0 +1,10 @@
+{
+  "schema":"planha-rulebook-source-coverage/1.0","module_id":"mechanical.heating.iran","source_entry_count":5,
+  "entries":[
+    {"source_id":"M14-H-001","clause":"14-3-5-1(p), exposed hot surfaces in occupied/work spaces","printed_page":31,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.3.5.1-HEATING-SURFACE-GUARD"],"automatic_pass":false},
+    {"source_id":"M14-H-002","clause":"14-3-5-2(b), floor-mounted equipment base height","printed_page":32,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.3.5.2-FLOOR-BASE-HEIGHT"],"automatic_pass":false},
+    {"source_id":"M14-H-003","clause":"14-7-8-1(a-d), expansion tank required and capacity selection basis","printed_page":80,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.7.8.1-HOT-WATER-EXPANSION-TANK"],"automatic_pass":false},
+    {"source_id":"M14-H-004","clause":"14-7-8-2(a), open-tank normal water level at least 1200 mm above highest system component","printed_page":81,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.7.8.2-OPEN-TANK-ELEVATION"],"automatic_pass":false},
+    {"source_id":"M14-H-005","clause":"14-7-8-3(b)(1), closed-tank certified test pressure at least 1.5 times maximum working pressure","printed_page":81,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.7.8.3-CLOSED-TANK-TEST-PRESSURE"],"automatic_pass":false}
+  ]
+}

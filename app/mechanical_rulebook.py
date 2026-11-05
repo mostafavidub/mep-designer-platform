@@ -8,6 +8,12 @@ import math
 import re
 
 from cad_engine.runtime_contract import MECHANICAL_RULEBOOK_REVISION
+from cad_engine.water_rulebook import water_design_profile
+from cad_engine.sanitary_vent_rulebook import sanitary_vent_design_profile
+from cad_engine.heating_rulebook import heating_design_profile
+from cad_engine.cooling_rulebook import cooling_design_profile
+from cad_engine.ventilation_rulebook import ventilation_design_profile
+from cad_engine.gas_rulebook import gas_design_profile
 
 # This is a semantic Rule Book revision, not an executable Mechanical engine version.
 RULEBOOK_VERSION = MECHANICAL_RULEBOOK_REVISION
@@ -40,19 +46,20 @@ DEFAULT_HEIGHTS = None
 DEFAULT_GAS_PROPOSAL = None
 DEFAULT_WATER_INLET_PRESSURE = None
 
-WATER = {
-    'material': 'PPR',
-    'hazen_williams_c': 150,
-    'target_velocity_mps': 1.5,
-    'maximum_friction_loss_kpa_per_100m': 20,
-}
-SANITARY = {
-    'material': 'uPVC', 'branch_slope_pct': 2.0, 'main_slope_pct': 1.0,
-    'wc_dn_mm': 110, 'basin_bath_dn_mm': 50, 'vent_dn_mm': 50,
-}
+WATER = water_design_profile()
+SANITARY_SOURCE = sanitary_vent_design_profile()
+HEATING_SOURCE = heating_design_profile()
+COOLING_SOURCE = cooling_design_profile()
+VENTILATION_SOURCE = ventilation_design_profile()
+GAS_SOURCE = gas_design_profile()
+SANITARY = {'material':'uPVC','branch_slope_pct':2.0,'main_slope_pct':1.0,
+            'wc_dn_mm':110,'basin_bath_dn_mm':50,'vent_dn_mm':50,
+            'source_rulebook':SANITARY_SOURCE}
 VENTILATION = {
-    'toilet_m3h_each': 90, 'bath_m3h_each': 90, 'kitchen_m3h_each': 120,
-    'parking_ach': 6, 'default_parking_m3h_when_geometry_missing': 500,
+    'toilet_m3h_each': VENTILATION_SOURCE['residential_exhaust_rates']['residential_bathroom_or_toilet_lps_per_room'] * 3.6,
+    'bath_m3h_each': VENTILATION_SOURCE['residential_exhaust_rates']['residential_bathroom_or_toilet_lps_per_room'] * 3.6,
+    'kitchen_m3h_each': VENTILATION_SOURCE['residential_exhaust_rates']['residential_kitchen_lps_per_room'] * 3.6,
+    'source_rulebook': VENTILATION_SOURCE,
 }
 
 # Governed office design basis used only after an architecture/owner-backed
@@ -66,30 +73,111 @@ NETWORK_DESIGN_BASIS = {
             'load_unit': 'WSFU', 'material': 'PPR',
             'endpoint_load_by_type': {'wc': 2.5, 'basin': 1.0, 'sink': 1.5, 'shower': 2.0},
             'size_table': [(1, 16), (3, 20), (6, 25), (12, 32), (999, 40)],
+            'minimum_fixture_branch_dn_mm': WATER['minimum_fixture_branch_dn_mm'],
+            'minimum_fixture_branch_dn_provenance': WATER['minimum_fixture_branch_dn_provenance'],
+            'probable_demand_method': WATER['probable_demand_method'],
+            'galvanized_fitting_equivalent_length_method': WATER['galvanized_fitting_equivalent_length_method'],
             'plan_offset_xy': [0, 0],
         },
         'hot_water': {
             'load_unit': 'WSFU', 'material': 'PPR',
             'endpoint_load_by_type': {'basin': 1.0, 'sink': 1.5, 'shower': 2.0},
             'size_table': [(1, 16), (3, 20), (6, 25), (12, 32), (999, 40)],
+            'minimum_fixture_branch_dn_mm': WATER['minimum_fixture_branch_dn_mm'],
+            'minimum_fixture_branch_dn_provenance': WATER['minimum_fixture_branch_dn_provenance'],
+            'probable_demand_method': WATER['probable_demand_method'],
+            'galvanized_fitting_equivalent_length_method': WATER['galvanized_fitting_equivalent_length_method'],
             'plan_offset_xy': [20, 0],
         },
         'sanitary': {
             'load_unit': 'DFU', 'material': 'uPVC',
             'endpoint_load_by_type': {'wc': 4.0, 'basin': 1.0, 'sink': 2.0, 'shower': 2.0, 'floor_drain': 2.0},
             'size_table': [(1, 50), (2, 63), (6, 75), (12, 90), (999, 110)],
-            'requires_slope': True, 'slope_percent': 2.0, 'plan_offset_xy': [0, 0],
+            'requires_slope': True, 'slope_percent': 2.0,
+            'source_slope_contract': SANITARY_SOURCE['horizontal_slope'],
+            'trap_minimum_dn_mm': SANITARY_SOURCE['trap_minimum_dn_mm'],
+            'source_fixture_dfu': SANITARY_SOURCE['fixture_dfu'],
+            'source_branch_stack_capacity': SANITARY_SOURCE['branch_stack_capacity'],
+            'source_main_horizontal_capacity': SANITARY_SOURCE['main_horizontal_capacity'],
+            'plan_offset_xy': [0, 0],
         },
         'vent': {
             'load_unit': 'DFU', 'material': 'uPVC',
             'endpoint_load_by_type': {'wc': 4.0, 'basin': 1.0, 'sink': 2.0, 'shower': 2.0, 'floor_drain': 2.0},
             'size_table': [(2, 50), (8, 63), (20, 75), (999, 90)],
+            'trap_vent_distance_rows': SANITARY_SOURCE['trap_vent_distance'],
+            'source_vent_minimum_size': SANITARY_SOURCE['vent_minimum_size'],
+            'source_vent_stack_capacity': SANITARY_SOURCE['vent_stack_capacity'],
             'plan_offset_xy': [20, 0],
+        },
+        'heating_supply': {
+            'load_unit': 'kW', 'material': 'project/manufacturer selection required',
+            'endpoint_load_by_type': {}, 'size_table': [],
+            'source_surface_guard': HEATING_SOURCE['surface_guard'],
+            'source_floor_mounted_equipment_base': HEATING_SOURCE['floor_mounted_equipment_base'],
+            'source_hot_water_expansion_tank': HEATING_SOURCE['hot_water_expansion_tank'],
+            'source_open_expansion_tank_elevation': HEATING_SOURCE['open_expansion_tank_elevation'],
+            'source_closed_expansion_tank_test_pressure': HEATING_SOURCE['closed_expansion_tank_test_pressure'],
+            'source_rulebook_authority': HEATING_SOURCE['authority'],
+            'source_rule_ids': HEATING_SOURCE['source_ids'],
+            'plan_offset_xy': [0, 0],
+        },
+        'heating_return': {
+            'load_unit': 'kW', 'material': 'project/manufacturer selection required',
+            'endpoint_load_by_type': {}, 'size_table': [],
+            'source_surface_guard': HEATING_SOURCE['surface_guard'],
+            'source_floor_mounted_equipment_base': HEATING_SOURCE['floor_mounted_equipment_base'],
+            'source_hot_water_expansion_tank': HEATING_SOURCE['hot_water_expansion_tank'],
+            'source_open_expansion_tank_elevation': HEATING_SOURCE['open_expansion_tank_elevation'],
+            'source_closed_expansion_tank_test_pressure': HEATING_SOURCE['closed_expansion_tank_test_pressure'],
+            'source_rulebook_authority': HEATING_SOURCE['authority'],
+            'source_rule_ids': HEATING_SOURCE['source_ids'],
+            'plan_offset_xy': [20, 0],
+        },
+        'cooling': {
+            'load_unit': 'kW', 'material': 'project/manufacturer selection required',
+            'endpoint_load_by_type': {}, 'size_table': [],
+            'source_manufacturer_installation_and_access':
+                COOLING_SOURCE['manufacturer_installation_and_access'],
+            'source_temperature_and_fan_controls':
+                COOLING_SOURCE['temperature_and_fan_controls'],
+            'source_rulebook_authority': COOLING_SOURCE['authority'],
+            'source_rule_ids': COOLING_SOURCE['source_ids'],
+            'plan_offset_xy': [0, 0],
+        },
+        'condensate': {
+            'load_unit': 'project equipment schedule required',
+            'material': 'project/manufacturer selection required',
+            'endpoint_load_by_type': {}, 'size_table': [],
+            'source_rulebook_authority': COOLING_SOURCE['authority'],
+            'source_rule_ids': COOLING_SOURCE['source_ids'],
+            'plan_offset_xy': [20, 0],
+        },
+        'exhaust_ventilation': {
+            'load_unit': 'L/s', 'material': 'project/manufacturer selection required',
+            'endpoint_load_by_type': {
+                'residential_kitchen': VENTILATION_SOURCE['residential_exhaust_rates']['residential_kitchen_lps_per_room'],
+                'residential_bathroom_or_toilet': VENTILATION_SOURCE['residential_exhaust_rates']['residential_bathroom_or_toilet_lps_per_room'],
+            },
+            'size_table': [],
+            'source_residential_exhaust_rates': VENTILATION_SOURCE['residential_exhaust_rates'],
+            'source_outside_air_intake_separation': VENTILATION_SOURCE['outside_air_intake_separation'],
+            'source_rulebook_authority': VENTILATION_SOURCE['authority'],
+            'source_rule_ids': VENTILATION_SOURCE['source_ids'],
+            'plan_offset_xy': [0, 0],
         },
         'gas': {
             'load_unit': 'kW', 'material': 'threaded carbon steel',
             'endpoint_load_by_type': {'stove': 12.0, 'water_heater': 24.0},
             'size_table': [(12, 20), (30, 25), (60, 32), (9999, 40)],
+            'source_meter_height': GAS_SOURCE['meter_height'],
+            'source_meter_clearances': GAS_SOURCE['meter_clearances'],
+            'source_combustion_air_known_ach': GAS_SOURCE['combustion_air_known_ach'],
+            'source_flue_design_documentation': GAS_SOURCE['flue_design_documentation'],
+            'source_combustion_air_openings': GAS_SOURCE['combustion_air_openings'],
+            'source_combustion_air_ducts': GAS_SOURCE['combustion_air_ducts'],
+            'source_rulebook_authority': GAS_SOURCE['authority'],
+            'source_rule_ids': GAS_SOURCE['source_ids'],
             'plan_offset_xy': [0, 0],
         },
     },

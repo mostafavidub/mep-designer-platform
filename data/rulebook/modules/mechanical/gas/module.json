@@ -1,0 +1,32 @@
+{
+  "schema": "planha-rulebook-module/1.0",
+  "module_id": "mechanical.gas.iran",
+  "version": "1.2.0",
+  "owner": "mechanical",
+  "dependencies": [
+    "architecture.gas_meter_location_geometry",
+    "architecture.gas_appliance_room_geometry",
+    "electrical.meter_and_live_wire_geometry",
+    "manufacturer.gas_appliance_input_data"
+  ],
+  "source_documents": [
+    {
+      "code": "M17",
+      "edition": "1403",
+      "sha256": "eb575703d82dfe524ea227c1115c487f0d8c65aebb96442859ff68795fa70cc8",
+      "entry_count": 6
+    }
+  ],
+  "coverage": {
+    "source_entries": 6,
+    "review_scope": "gas-meter placement, known-ACH room volume, flue documentation, and combustion-air opening/duct geometry; not complete M17 coverage",
+    "complete_statutory_coverage": false
+  },
+  "rules_file": "rules.json",
+  "source_coverage_file": "source_coverage.json",
+  "fixed_policies": {
+    "unknown_applicability": "INPUT_REQUIRED",
+    "llm_override_allowed": false,
+    "source_record_presence_is_pass": false
+  }
+}

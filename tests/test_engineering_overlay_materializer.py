@@ -41,6 +41,35 @@ def test_generic_builder_hosts_reversible_endpoints_and_runs_canonical_load_engi
     assert overlay["deterministic_calculation"]["totals"]["water_fu"]>0
 
 
+def test_owner_questionnaire_facts_are_transported_without_fabricating_authority():
+    proposal=build_engineering_proposal(source_sha256="a"*64,architecture={},answers={
+        "rainfall_intensity_mm_h":75,"heating_system":"radiator","heating_load_kw":12,
+        "cooling_system":"split","cooling_load_kw":9,"gas_pressure":"1/4 psi"})
+    assert proposal["rainfall_basis"]=={
+        "intensity_mm_h":75,"authority":"OWNER_DECLARED_PROJECT_FACT"}
+    assert proposal["heating_design_basis"]["heating_load_kw"]==12
+    assert proposal["cooling_design_basis"]["cooling_system"]=="split"
+    assert proposal["gas_design_basis"]["gas_pressure"]=="1/4 psi"
+    assert "official_capacity_table" not in proposal
+    assert "manufacturer_line_sizing" not in proposal
+
+
+def test_conditional_rulebook_inputs_flow_from_answers_to_typed_overlay():
+    sha="b"*64
+    architecture={"physical_spaces":[{"physical_space_id":"K1","type":"kitchen",
+        "polygon":[[0,0],[4,0],[4,3],[0,3]],"centroid":[2,1.5],"area_m2":12}]}
+    proposal=build_engineering_proposal(source_sha256=sha,architecture=architecture,answers={
+        "gas":"yes","gas_pressure":20,"gas_relative_density":0.65,
+        "max_duct_velocity_m_s":6,"candidate_round_duct_diameters_mm":[160,200,250]})
+    result=materialize_engineering_overlay(source_sha256=sha,architecture=architecture,proposal=proposal)
+    basis=result["overlay"]["deterministic_calculation"]["design_basis"]
+    assert basis["gas_relative_density"]==0.65
+    assert basis["max_duct_velocity_m_s"]==6
+    assert basis["candidate_round_duct_diameters_mm"]==[160,200,250]
+    assert basis["ventilation_spaces"]==[{"space_id":"K1","usage":"RESIDENTIAL_KITCHEN",
+        "source_sha256":sha,"authority":"SOURCE_ARCHITECTURE_ROOM_TYPE"}]
+
+
 def test_generic_builder_rejects_unknown_endpoint_type():
     sha="d"*64
     architecture={"physical_spaces":[{"physical_space_id":"S1",
@@ -68,3 +97,10 @@ def test_structured_model_proposal_controls_program_but_not_geometry():
     assert endpoint["point"]==[2.0,1.5]
     assert endpoint["proposal_origin"]=="LLM_STRUCTURED_RESPONSE"
     assert endpoint["source_fact"] is False
+    assert "host_id" not in endpoint and "system_termination" not in endpoint
+    materialized=materialize_engineering_overlay(
+        source_sha256=sha,architecture=architecture,proposal=proposal)
+    draft_endpoint=materialized["overlay"]["fixture_endpoints"][0]
+    assert draft_endpoint["authority"]=="MODEL_PROPOSED_DESIGN_ASSUMPTION"
+    assert draft_endpoint["release_allowed"] is False
+    assert "host_id" not in draft_endpoint and "system_termination" not in draft_endpoint

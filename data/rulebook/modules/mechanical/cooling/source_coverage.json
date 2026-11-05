@@ -1,0 +1,7 @@
+{
+  "schema":"planha-rulebook-source-coverage/1.0","module_id":"mechanical.cooling.iran","source_entry_count":2,
+  "entries":[
+    {"source_id":"M14-C-001","clause":"14-8-13-2, manufacturer installation and access for inspection/repair","printed_page":93,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.8.13.2-COOLING-INSTALLATION-ACCESS"],"automatic_pass":false},
+    {"source_id":"M14-C-002","clause":"14-8-13-5, temperature controller and blower speed selector","printed_page":93,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.8.13.5-COOLING-CONTROLS"],"automatic_pass":false}
+  ]
+}

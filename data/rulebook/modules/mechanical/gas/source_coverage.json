@@ -1,0 +1,63 @@
+{
+  "schema": "planha-rulebook-source-coverage/1.0",
+  "module_id": "mechanical.gas.iran",
+  "source_entry_count": 6,
+  "entries": [
+    {
+      "source_id": "M17-G-001",
+      "clause": "17-4-10-3-6 gas-meter replacement-pipe height",
+      "printed_page": 76,
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M17-1403-17.4.10.3.6-GAS-METER-HEIGHT"
+      ],
+      "automatic_pass": false
+    },
+    {
+      "source_id": "M17-G-002",
+      "clause": "17-4-10-3-9 and 17-4-10-3-10 electrical and gas-appliance clearances",
+      "printed_page": 76,
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M17-1403-17.4.10.3.9-10-GAS-METER-CLEARANCES"
+      ],
+      "automatic_pass": false
+    },
+    {
+      "source_id": "M17-G-003",
+      "clause": "17-5-5-2-1 known-ACH combustion-air room-volume equations",
+      "printed_page": 95,
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M17-1403-17.5.5.2.1-COMBUSTION-AIR-KNOWN-ACH"
+      ],
+      "automatic_pass": false
+    },
+    {
+      "source_id": "M17-G-004",
+      "clause": "17-4-16-1 gas-plan flue specifications and calculations",
+      "printed_page": 89,
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": [
+        "IR-M17-1403-17.4.16.1-FLUE-DESIGN-DOCUMENTATION"
+      ],
+      "automatic_pass": false
+    },
+    {
+      "source_id": "M17-G-005",
+      "clause": "17-5-6-1 combustion-air opening grille free-area and outdoor inlet geometry",
+      "printed_page": 98,
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M17-1403-17.5.6.1-COMBUSTION-AIR-OPENING-GEOMETRY"],
+      "automatic_pass": false
+    },
+    {
+      "source_id": "M17-G-006",
+      "clause": "17-5-6-2 combustion-air duct geometry and dedicated service",
+      "printed_page": 99,
+      "disposition": "EXECUTABLE_RULE",
+      "rule_ids": ["IR-M17-1403-17.5.6.2-COMBUSTION-AIR-DUCT-GEOMETRY"],
+      "automatic_pass": false
+    }
+  ]
+}

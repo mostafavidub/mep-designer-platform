@@ -25,13 +25,16 @@ QUESTION_CATALOG = {
     "cooling_system": ("heating_cooling", "سرمایش و گرمایش", ["cooling"], "mechanical_design_core.build_design_overrides"),
     "gas": ("gas", "گاز", ["gas"], "mechanical_workflow.build_scope"),
     "gas_pressure": ("gas", "گاز", ["gas"], "mechanical_design_core.build_design_overrides"),
+    "gas_relative_density": ("gas", "گاز", ["gas"], "engineering_overlay_materializer.build_engineering_proposal"),
     "parking_enclosure": ("ventilation", "تهویه", ["ventilation"], "mechanical_workflow.build_scope"),
+    "max_duct_velocity_m_s": ("ventilation", "تهویه", ["ventilation"], "engineering_overlay_materializer.build_engineering_proposal"),
+    "candidate_round_duct_diameters_mm": ("ventilation", "تهویه", ["ventilation"], "engineering_overlay_materializer.build_engineering_proposal"),
     "roof": ("rainwater", "آب باران", ["rainwater"], "mechanical_workflow.build_scope"),
     "rainfall_intensity": ("rainwater", "آب باران", ["rainwater"], "mechanical_design_core.build_design_overrides"),
 }
 
 ACTIVE_QUESTION_KEYS = frozenset(QUESTION_CATALOG)
-CONDITIONAL_QUESTION_KEYS = frozenset({"gas_pressure"})
+CONDITIONAL_QUESTION_KEYS = frozenset({"gas_pressure", "gas_relative_density", "max_duct_velocity_m_s", "candidate_round_duct_diameters_mm"})
 UNSUPPORTED_AMENITY_KEYS = frozenset({"has_boiler_room", "has_pool", "has_sauna", "has_jacuzzi"})
 
 
