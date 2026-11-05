@@ -1,6 +1,6 @@
 {
   "change_id": "SWCIS-2026-0360",
-  "summary": "Add an offline NON_REGULATORY multi-city Architecture MVP contract and isolation PoC under tests only, documenting compatibility decisions without activating a Rulebook, generator, public API, or runtime.",
+  "summary": "Add offline NON_REGULATORY multi-city Architecture MVP input and two-tier output policy PoC with negative tests, ADR and no runtime activation.",
   "requester": "project-owner",
   "change_types": [
     "documentation",
@@ -19,7 +19,7 @@
     "versioning"
   ],
   "impact_notes": {
-    "qa": "Add 15 self-contained synthetic negative and positive contract checks for city isolation, input bounds, stale profiles, source spoofing, conflict isolation, date invalidation and non-legal outcomes. No architect Golden truth is claimed.",
+    "qa": "23 self-contained synthetic unittest test cases (15 original + 8 two-tier negative policy cases), including city isolation, stale rules, authority spoofing, concept/controlled separation and geometry guard; the status mapping is test-only and no actual legal rules are qualified.",
     "docs": "Document an ADR proposal plus detailed blockers and migration strategy; no authoritative municipal code content is introduced.",
     "governance": "Record a single SWCIS change and test-only risk scope; repository rules are unchanged.",
     "versioning": "Verified not affected: no runtime, engineering rule, schema or other semantic version is changed; SWCIS canonical 5.4.0 remains unchanged.",
@@ -33,10 +33,11 @@
       "The test fixture permits TEST: synthetic Rule IDs only and has no operative rule or licensed source; there is no statutory rule traceability claim."
     ],
     "tests": [
-      "15 deterministic isolated unittest cases PASS in local sandbox before repository submission; repository-level SWCIS and GitHub CI remain required and are not assumed PASS."
+      "23 synthetic unittest cases defined. The earlier 15 passed in local isolated run; the eight two-tier additions require exact-head GitHub CI and targeted test verification before any test PASS is claimed for them.",
+      "No customer data, real municipal rules, paid providers or deployment operations used."
     ],
     "docs": [
-      "docs/adr/ADR-ARCH-MULTICITY-PRECONTRACT-POC.md documents national and city profile boundaries, PRD v0.8 compatibility, city qualification and non-claims."
+      "docs/adr/ADR-ARCH-MULTICITY-PRECONTRACT-POC.md records owner-approved two-tier product policy (2026-11-06), separate from PROPOSED core-architecture ADR; Google Docs PRD v0.9 and Technical Discovery are synchronized."
     ],
     "version_bump": [
       "No SWCIS policy, graph, traceability, runtime or public schema modification. Version remains 5.4.0; this offline test and ADR are non-release research evidence."
@@ -45,10 +46,10 @@
       "Not applicable to this candidate; any later generated-origin or ProjectCodeBasis API/schema migration requires its own high-impact approval and versioned migration."
     ],
     "golden_regression": [
-      "No Golden truth generated or reviewed. The test fixtures carry NON_REGULATORY_TEST_DATA and must never support a PASS engineering or legal claim."
+      "Synthetic test cases only; zero independent architect Golden cases were executed or claimed."
     ],
     "semantic_diff": [
-      "No production behavior, existing Rulebook data, geometry algorithm or public inputs are modified."
+      "Only offline test policy and ADR changed; no production behavior, engineering Rulebook, CAD geometry, API, persistence or authorization state altered."
     ],
     "artifact_diff": [
       "No customer artifact, DXF, geometric area or production file is created."
@@ -57,7 +58,7 @@
       "Synthetic geometry tests only validate positive input dimensions and unit counts 1..4, not regulatory dimensional thresholds."
     ],
     "contract_diff": [
-      "Standalone test-local PublicUserBrief contract exercise; no current schema, OwnerProgramDraft, LocalRuleProfile, or existing consumer is changed."
+      "Test-only two-tier release policy classifier exercising NOT_REQUESTED/INPUT_REQUIRED/COVERAGE_REQUIRED/CONFLICT while explicitly prohibiting a qualified output from synthetic fixtures; no public schema/API/database change."
     ],
     "deployment_plan": [
       "None permitted or required; draft PR remains unmerged. No staging or production testing or provider calls."
@@ -71,7 +72,7 @@
     "severity": 2,
     "detectability": 1,
     "score": 2,
-    "rationale": "Only synthetic tests and ADR are added; there is no product activation or regulatory outcome. Risk is confusion of a test PoC with a production or legal Rulebook, explicitly mitigated by naming and fail-closed tests."
+    "rationale": "Offline research-only tests and ADR; the additional fake-authority negative cases explicitly prevent this prototype from presenting statutory compliance. No generated customer artifacts or runtime are touched."
   },
   "waiver": null
 }
