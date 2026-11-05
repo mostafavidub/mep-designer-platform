@@ -74,3 +74,19 @@ The current offline PoC in `tests/test_architecture_multicity_poc.py` exercises 
 Local isolated Python `unittest`: **15 tests PASS**; `python -m py_compile`: **PASS**. The file was executed outside a project checkout; its tests are self-contained and run solely against synthetic fixtures. This is **not** evidence of repository-wide regression, SWCIS, or official CI PASS. Official tests and SWCIS must be separately checked for the exact PR SHA. No Golden tests were run.
 
 **Rollback:** revert or close the test-only Draft PR. No runtime rollback, data restoration or change to deployment is necessary because no merge or activation is authorized.
+
+## Product decision approved on 2026-11-06: two distinct output tiers
+
+The owner approved **both** (A) *Conceptual Floor Plan* based on the minimal public brief and (B) *Controlled-Compliance Floor Plan* only when each materially necessary rule and parcel/source dependency is supported by qualified evidence. This approval is a **product requirement**; it is not approval to change the core engineering algorithm, merge PRs, migrate database schemas, or deploy a release.
+
+**A. CONCEPTUAL_PLAN:** minimal user fields, generated bedroom/program geometry where verifiable, independent hard geometry validation, and a permanent visible disclaimer on preview and DXF: no parcel-specific permit, setback, daylight rights, or full building compliance claim. Missing parcel authority evidence does not itself forbid a conceptual layout, but missing essential geometry data does.
+
+**B. CONTROLLED_COMPLIANCE:** source-qualified national/local rules scoped by project city/jurisdiction, permit/design effective date, and verified parcel evidence where needed. Each applicable rule must return rule ID, source edition and clause, scope, bound inputs, checker version, PASS/FAIL/NOT_APPLICABLE/INPUT_REQUIRED/CONFLICT and evidence hash. An unavailable mandatory rule or source keeps the check unresolved, rather than becoming PASS; it does not retroactively invalidate a separately valid conceptual outcome.
+
+**Independent dimensions:** `geometry_status`, `compliance_status`, and `design_quality_score` are not interchangeable. A high quality score cannot override a hard validation failure. `CHECKED_IN_SCOPE` requires that all mandatory in-scope rules actually passed, with no unresolved applicability; it is never equivalent to a permit or professional stamp.
+
+**Persistence:** retain the tier label, checked scope, raw findings, rulebook snapshot/version, geometry provenance, artifact version/identity, warnings and authorized re-download. A later Rulebook update cannot silently promote an old conceptual artifact.
+
+**Test-only extension:** `classify_two_tier_policy` is intentionally embedded in `tests/test_architecture_multicity_poc.py` and accepts only synthetic fixtures. The controlled branch **cannot** return a verified compliance result, even for forged `QUALIFIED_IN_SCOPE` inputs. This is a negative safety proof for policy status mapping, not an implementation of the actual Rulebook resolver or independent geometry checker. Eight additional test cases cover no-parcel concept, required parcel evidence, synthetic/forged authority, invalid geometry, conflict/coverage, and invalid public inputs.
+
+**Remaining high-impact checkpoint:** approve the future production-grade `GeneratedPlanInput` / `RuleSetSnapshot` schema, provenance/migration strategy, and source qualification before editing runtime. The release scope for four or five initial cities remains conditional on legal source review and expert QA.
