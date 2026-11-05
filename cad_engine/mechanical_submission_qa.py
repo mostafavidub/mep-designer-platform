@@ -118,7 +118,10 @@ def validate_target_design_packages(packages: dict | None) -> dict:
     for manufacturer,model in selected:
         if manufacturer and model and (manufacturer,model) not in registered:
             errors.append(f"manufacturer_database:UNREGISTERED_SELECTION:{manufacturer}:{model}")
-    explicit_failure=any((packages.get(system) or {}).get("status")=="FAIL" for system in TARGET_DESIGN_SHEETS)
+    explicit_failure=(
+        any((packages.get(system) or {}).get("status")=="FAIL" for system in TARGET_DESIGN_SHEETS)
+        or any("UNREGISTERED_SELECTION" in value for value in errors)
+    )
     status="PASS" if not errors else ("FAIL" if explicit_failure else ("INPUT_REQUIRED" if any(
         token in value for value in errors for token in ("MISSING","INCOMPLETE","STATUS_INPUT_REQUIRED")
     ) else "FAIL"))

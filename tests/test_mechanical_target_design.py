@@ -93,9 +93,15 @@ def payload():
     }
 
 
-def test_all_target_design_packages_pass_with_complete_traceable_evidence():
+def test_final_target_is_fail_closed_when_owner_module_evidence_is_missing():
     result=build_target_design_packages(payload())
-    assert result["status"]=="PASS",result
+    assert result["status"]=="INPUT_REQUIRED",result
+    assert result["release_allowed"] is False
+    assert result["packages"]["rainwater"]["blocked_at"]=="rainwater_rulebook"
+    evaluation=result["packages"]["rainwater"]["rainwater_design"]["rule_evaluation"]
+    assert evaluation["unresolved_source_controls"]==179
+    assert any("interdisciplinary_compliance.architecture" in missing
+               for row in evaluation["evaluations"] for missing in row["missing_inputs"])
     packages=result["packages"]
     assert packages["heating"]["radiator_selection"]["radiators"][0]["selection_type"]=="MANUFACTURER_MODEL"
     gas=packages["gas"]["gas_network"]
