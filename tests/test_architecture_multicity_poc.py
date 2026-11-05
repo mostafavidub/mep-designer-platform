@@ -160,6 +160,45 @@ def resolve_synthetic_multicity(brief, *, national, city_profiles, design_date):
     return result
 
 
+def classify_two_tier_policy(brief, requested_tier, *, geometry_gate,
+                             rule_resolution=None, parcel_evidence=None):
+    """Exercise UI policy only. This test helper NEVER grants compliance.
+
+    In particular no self-attested source/validator status can qualify a real
+    Rulebook or turn synthetic TEST: rules into construction permission.
+    """
+    validated = validate_brief(brief)
+    if validated["status"] == "INPUT_REQUIRED":
+        return {"status": "INPUT_REQUIRED", "compliance_status": "NOT_REQUESTED",
+                "legally_approved": False}
+    if requested_tier not in {"CONCEPTUAL", "CONTROLLED"}:
+        return {"status": "INVALID_TIER", "compliance_status": "NOT_REQUESTED",
+                "legally_approved": False}
+    if not isinstance(geometry_gate, dict) or geometry_gate.get("status") != "PASS":
+        return {"status": "GEOMETRY_NOT_VALIDATED",
+                "compliance_status": "NOT_REQUESTED", "legally_approved": False}
+    if requested_tier == "CONCEPTUAL":
+        return {"status": "CONCEPTUAL_POLICY_ELIGIBLE_TEST_ONLY",
+                "compliance_status": "NOT_REQUESTED", "label_fa": "پلان مفهومی",
+                "limitations": ["PARCEL_AND_PERMIT_REQUIREMENTS_NOT_VERIFIED"],
+                "legally_approved": False}
+    if not isinstance(parcel_evidence, dict) or not parcel_evidence:
+        return {"status": "INPUT_REQUIRED", "compliance_status": "INPUT_REQUIRED",
+                "missing": ["PARCEL_AUTHORITY_EVIDENCE"],
+                "legally_approved": False}
+    if not isinstance(rule_resolution, dict) or rule_resolution.get("status") in {
+            "RULE_COVERAGE_REQUIRED", "SOURCE_COVERAGE_REQUIRED"}:
+        return {"status": "RULE_COVERAGE_REQUIRED",
+                "compliance_status": "SOURCE_COVERAGE_REQUIRED",
+                "legally_approved": False}
+    if rule_resolution.get("status") == "CONFLICT_REVIEW_REQUIRED":
+        return {"status": "CONFLICT_REVIEW_REQUIRED",
+                "compliance_status": "CONFLICT", "legally_approved": False}
+    return {"status": "AUTHORITY_REVIEW_REQUIRED",
+            "compliance_status": "SOURCE_COVERAGE_REQUIRED",
+            "legally_approved": False}
+
+
 class MultiCityContractPoCTests(unittest.TestCase):
     def setUp(self):
         self.brief = {"project_id": "P-1", "city_id": "IR-X1",
@@ -275,6 +314,77 @@ class MultiCityContractPoCTests(unittest.TestCase):
         self.assertEqual(self.brief, original)
         self.assertEqual(r1["status"], "SYNTHETIC_CONTRACT_ONLY")
         self.assertFalse(r1["legal_compliance"])
+
+
+    def test_conceptual_policy_has_permanent_nonlegal_label(self):
+        status = classify_two_tier_policy(
+            self.brief, "CONCEPTUAL", geometry_gate={"status": "PASS"})
+        self.assertEqual(status["status"], "CONCEPTUAL_POLICY_ELIGIBLE_TEST_ONLY")
+        self.assertEqual(status["label_fa"], "پلان مفهومی")
+        self.assertEqual(status["compliance_status"], "NOT_REQUESTED")
+        self.assertFalse(status["legally_approved"])
+
+    def test_conceptual_not_blocked_by_missing_parcel_authority(self):
+        status = classify_two_tier_policy(
+            self.brief, "CONCEPTUAL", geometry_gate={"status": "PASS"},
+            parcel_evidence=None, rule_resolution=None)
+        self.assertEqual(status["status"], "CONCEPTUAL_POLICY_ELIGIBLE_TEST_ONLY")
+        self.assertIn("PARCEL_AND_PERMIT_REQUIREMENTS_NOT_VERIFIED",
+                      status["limitations"])
+
+    def test_controlled_requires_specific_parcel_evidence(self):
+        status = classify_two_tier_policy(
+            self.brief, "CONTROLLED", geometry_gate={"status": "PASS"},
+            rule_resolution=self.resolve())
+        self.assertEqual(status["status"], "INPUT_REQUIRED")
+        self.assertIn("PARCEL_AUTHORITY_EVIDENCE", status["missing"])
+        self.assertFalse(status["legally_approved"])
+
+    def test_controlled_rejects_synthetic_profile_even_with_parcel(self):
+        status = classify_two_tier_policy(
+            self.brief, "CONTROLLED", geometry_gate={"status": "PASS"},
+            parcel_evidence={"sample": "synthetic"},
+            rule_resolution=self.resolve())
+        self.assertEqual(status["status"], "AUTHORITY_REVIEW_REQUIRED")
+        self.assertFalse(status["legally_approved"])
+
+    def test_self_attested_qualified_rule_cannot_issue_compliance(self):
+        status = classify_two_tier_policy(
+            self.brief, "CONTROLLED", geometry_gate={"status": "PASS"},
+            parcel_evidence={"sample": "synthetic"},
+            rule_resolution={"status": "QUALIFIED_IN_SCOPE"})
+        self.assertNotEqual(status["compliance_status"], "CHECKED_IN_SCOPE")
+        self.assertFalse(status["legally_approved"])
+
+    def test_invalid_geometry_blocks_both_tiers(self):
+        for tier in ("CONCEPTUAL", "CONTROLLED"):
+            with self.subTest(tier=tier):
+                status = classify_two_tier_policy(
+                    self.brief, tier, geometry_gate={"status": "FAIL"},
+                    parcel_evidence={"sample": "synthetic"}, rule_resolution=self.resolve())
+                self.assertEqual(status["status"], "GEOMETRY_NOT_VALIDATED")
+                self.assertFalse(status["legally_approved"])
+
+    def test_controlled_reports_coverage_and_conflict_without_pass(self):
+        for resolution, expected in (
+            ({"status": "RULE_COVERAGE_REQUIRED"}, "SOURCE_COVERAGE_REQUIRED"),
+            ({"status": "CONFLICT_REVIEW_REQUIRED"}, "CONFLICT"),
+        ):
+            with self.subTest(expected=expected):
+                status = classify_two_tier_policy(
+                    self.brief, "CONTROLLED", geometry_gate={"status": "PASS"},
+                    parcel_evidence={"sample": "synthetic"}, rule_resolution=resolution)
+                self.assertEqual(status["compliance_status"], expected)
+                self.assertFalse(status["legally_approved"])
+
+    def test_invalid_tier_or_public_brief_fails_closed(self):
+        unknown = classify_two_tier_policy(
+            self.brief, "AUTO_COMPLIANT", geometry_gate={"status": "PASS"})
+        self.assertEqual(unknown["status"], "INVALID_TIER")
+        extra = classify_two_tier_policy(
+            {**self.brief, "bedrooms": 3}, "CONCEPTUAL",
+            geometry_gate={"status": "PASS"})
+        self.assertEqual(extra["status"], "INPUT_REQUIRED")
 
 
 if __name__ == "__main__":
