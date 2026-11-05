@@ -90,3 +90,30 @@ The owner approved **both** (A) *Conceptual Floor Plan* based on the minimal pub
 **Test-only extension:** `classify_two_tier_policy` is intentionally embedded in `tests/test_architecture_multicity_poc.py` and accepts only synthetic fixtures. The controlled branch **cannot** return a verified compliance result, even for forged `QUALIFIED_IN_SCOPE` inputs. This is a negative safety proof for policy status mapping, not an implementation of the actual Rulebook resolver or independent geometry checker. Eight additional test cases cover no-parcel concept, required parcel evidence, synthetic/forged authority, invalid geometry, conflict/coverage, and invalid public inputs.
 
 **Remaining high-impact checkpoint:** approve the future production-grade `GeneratedPlanInput` / `RuleSetSnapshot` schema, provenance/migration strategy, and source qualification before editing runtime. The release scope for four or five initial cities remains conditional on legal source review and expert QA.
+
+## Owner decision 2026-11-06 — Architecture Design must have NO Mechanical runtime or change coupling
+
+**Approved product architecture requirement.** The new Planha *Architecture Design Generator* and all its new Rulebook, persistence, queues, API, algorithm, validation and delivery work must be operationally independent of Mechanical. Changes to Architecture Design MUST NOT alter Mechanical code, project data, calculations, Rulebook qualification, outputs, API responses, deployment, or service availability. Architecture can fail, restart, reprocess or scale without affecting Mechanical.
+
+**Existing verified coupling, NOT a solution to extend:** current `cad_engine/engineering_pipeline.py` imports `cad_engine/architectural_space_engine.py` for recognition of an *uploaded* DXF. `cad_engine.main:app` is the canonical Mechanical CAD runtime; `app/main.py` currently contains existing project and artifact data access; `cad_engine/executable_rulebook.py` loads Mechanical Rulebook modules. Do not add Architecture Generation to or edit these production entrypoints, consumers or tables. Protect the legacy DXF-recognition contract as Mechanical-owned compatibility behavior until a separately authorized migration.
+
+**Proposed bounded-context target (not implemented by this Draft PR):**
+
+1. Dedicated Architecture Design service and runtime entrypoint, independently deployable/restartable/rollbackable, with its own compute budget and rate limits. It MUST NOT import or call Mechanical runtime modules.
+2. Architecture-owned database/tables and credentials, object storage, job queue and background workers; no read/write privileges to Mechanical-owned data or queue. A neutral identity provider / gateway may provide stable read-only user identity via a versioned API, not direct cross-domain table access.
+3. Architecture-only nationwide Rulebook with independently qualified national/city/parcel profiles and versioned immutable snapshots; never use mutable Mechanical Rulebook state or Mechanical-specific validators.
+4. Architecture-specific geometry generation, AutoProgram and independent hard-rule validators; no in-place refactor of `architectural_space_engine` or its imports. Generic external numerical libraries are permitted; moving existing shared code requires its own reviewed change with Mechanical regression proof.
+5. For optional future integration, a stable **exported artifact contract** (DXF and immutable geometry snapshot) that Mechanical MAY import explicitly as a consumer-selected version; no live invocation, dependency in the Architecture generation path, automatic Mechanical project rewrite, or forced lockstep release.
+6. Deployment/source isolation: **preferred for strict no-impact assurance** is a separately governed Architecture repo, CI/CD pipeline and runtime; a monorepo could be accepted only if independent build/deploy triggers and equivalent fault/data isolation are proved. A folder split alone is insufficient, because commits to the current main can trigger Mechanical deployment.
+
+**Must-prove isolation acceptance checks before calling it independent:**
+- ARCH-ISO-01: import/call graph from Architecture generator to Mechanical is empty, including dynamic import and runtime connectivity.
+- ARCH-ISO-02: Architecture DB identity cannot write/read Mechanical project tables or blobs; queues, storage and secrets are segregated.
+- ARCH-ISO-03: architecture failures, load spikes and Rulebook source invalidation do not change Mechanical API latency/health under bounded isolated tests.
+- ARCH-ISO-04: Architecture-only commit and deployment do not build/deploy/restart Mechanical; independent rollback demonstrable.
+- ARCH-ISO-05: unchanged Mechanical recognition/engineering behavior under negative and Golden regression before/after Architecture design changes.
+- ARCH-ISO-06: no hidden coupling through model version, rule source registries, build identity, or migrations.
+- ARCH-ISO-07: any optional future file import is immutable, versioned, backwards-compatible and user-authorized.
+- ARCH-ISO-08: output labels/geometry status/code-checks derive from Architecture-owned QA; passing a Mechanical test does not approve an Architecture plan.
+
+**High-impact boundary:** The owner approved **the independence requirement**, not migration of existing Mechanical code, authorization changes, creation of an independent production deployment, merging this PR, or activation of statutory rules. Final repo/service topology, SWCIS separation plan, migration, cost and measured regression evidence require a distinct reviewed implementation ADR. This PR remains purely offline research.
