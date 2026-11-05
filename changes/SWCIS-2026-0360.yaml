@@ -1,0 +1,77 @@
+{
+  "change_id": "SWCIS-2026-0360",
+  "summary": "Add an offline NON_REGULATORY multi-city Architecture MVP contract and isolation PoC under tests only, documenting compatibility decisions without activating a Rulebook, generator, public API, or runtime.",
+  "requester": "project-owner",
+  "change_types": [
+    "documentation",
+    "governance",
+    "test"
+  ],
+  "changed_rule_ids": [],
+  "impacted_modules": [
+    "deployment",
+    "docs",
+    "governance",
+    "manifest",
+    "migration",
+    "qa",
+    "ui_api",
+    "versioning"
+  ],
+  "impact_notes": {
+    "qa": "Add 15 self-contained synthetic negative and positive contract checks for city isolation, input bounds, stale profiles, source spoofing, conflict isolation, date invalidation and non-legal outcomes. No architect Golden truth is claimed.",
+    "docs": "Document an ADR proposal plus detailed blockers and migration strategy; no authoritative municipal code content is introduced.",
+    "governance": "Record a single SWCIS change and test-only risk scope; repository rules are unchanged.",
+    "versioning": "Verified not affected: no runtime, engineering rule, schema or other semantic version is changed; SWCIS canonical 5.4.0 remains unchanged.",
+    "manifest": "Verified not affected: no generated artifact, build identity, source snapshot or delivery manifest is created or modified.",
+    "migration": "Verified not affected: no current program, API, persistence, schema or customer data migration.",
+    "ui_api": "Verified not affected: no served UI or API imports the test-only PoC, and no session or authentication behavior changes.",
+    "deployment": "Verified not affected: draft PR only. No merge, staging, production, service restart or paid provider is authorized."
+  },
+  "evidence": {
+    "traceability": [
+      "The test fixture permits TEST: synthetic Rule IDs only and has no operative rule or licensed source; there is no statutory rule traceability claim."
+    ],
+    "tests": [
+      "15 deterministic isolated unittest cases PASS in local sandbox before repository submission; repository-level SWCIS and GitHub CI remain required and are not assumed PASS."
+    ],
+    "docs": [
+      "docs/adr/ADR-ARCH-MULTICITY-PRECONTRACT-POC.md documents national and city profile boundaries, PRD v0.8 compatibility, city qualification and non-claims."
+    ],
+    "version_bump": [
+      "No SWCIS policy, graph, traceability, runtime or public schema modification. Version remains 5.4.0; this offline test and ADR are non-release research evidence."
+    ],
+    "migration": [
+      "Not applicable to this candidate; any later generated-origin or ProjectCodeBasis API/schema migration requires its own high-impact approval and versioned migration."
+    ],
+    "golden_regression": [
+      "No Golden truth generated or reviewed. The test fixtures carry NON_REGULATORY_TEST_DATA and must never support a PASS engineering or legal claim."
+    ],
+    "semantic_diff": [
+      "No production behavior, existing Rulebook data, geometry algorithm or public inputs are modified."
+    ],
+    "artifact_diff": [
+      "No customer artifact, DXF, geometric area or production file is created."
+    ],
+    "numeric_diff": [
+      "Synthetic geometry tests only validate positive input dimensions and unit counts 1..4, not regulatory dimensional thresholds."
+    ],
+    "contract_diff": [
+      "Standalone test-local PublicUserBrief contract exercise; no current schema, OwnerProgramDraft, LocalRuleProfile, or existing consumer is changed."
+    ],
+    "deployment_plan": [
+      "None permitted or required; draft PR remains unmerged. No staging or production testing or provider calls."
+    ],
+    "rollback_plan": [
+      "Delete the offline test and ADR and revert this change request in a separate approved PR; current production runtime is unchanged."
+    ]
+  },
+  "risk": {
+    "likelihood": 1,
+    "severity": 2,
+    "detectability": 1,
+    "score": 2,
+    "rationale": "Only synthetic tests and ADR are added; there is no product activation or regulatory outcome. Risk is confusion of a test PoC with a production or legal Rulebook, explicitly mitigated by naming and fail-closed tests."
+  },
+  "waiver": null
+}
