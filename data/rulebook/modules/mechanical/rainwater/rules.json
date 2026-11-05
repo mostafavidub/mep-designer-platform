@@ -1,0 +1,3363 @@
+{
+  "schema": "planha-executable-rule-registry/1.0",
+  "module_id": "mechanical.rainwater.iran",
+  "version": "2.22.0",
+  "rules": [
+    {
+      "rule_id": "IR-M4-1396-4.9.5.2-FLAT-ROOF-SLOPE",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "roof_geometry",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "شیب سطح بام مسطح",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-5-2",
+          "printed_page": 102,
+          "source_ids": [
+            "M4-134"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof_type == FLAT",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "roof.roof_type",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "catchments[].roof_surface_slope_percent",
+          "unit": "percent",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "grade flat roof surfaces at not less than 2 percent toward roof drains"
+      ],
+      "validator": "flat_roof_surface_slope",
+      "parameters": {
+        "minimum_percent": 2.0
+      },
+      "output_evidence": [
+        "roof slope arrows",
+        "roof_surface_slope_percent annotation",
+        "rule evaluation row"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-M16-MAIN-ROOF-MIN-TWO-DRAINS-STACKS",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حداقل دو کفشوی و دو قائم بام اصلی",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-5-3; 4-9-6-4",
+          "printed_page": "102-103",
+          "source_ids": [
+            "M4-135",
+            "M4-142"
+          ],
+          "status": "VERIFIED_SOURCE"
+        },
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-3 پ",
+          "printed_page": "123-124",
+          "source_ids": [
+            "M16-110"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof_role == MAIN_ROOF",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "roof_role in [PENTHOUSE_ROOF,BALCONY]",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "roof.roof_role",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "roof.catchments[].drain.id",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "roof.stacks[].id",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "provide at least two distinct roof drains and two distinct rainwater stacks on the main roof"
+      ],
+      "validator": "main_roof_min_two_drains_stacks",
+      "parameters": {
+        "minimum_drains": 2,
+        "minimum_stacks": 2
+      },
+      "output_evidence": [
+        "distinct drain entities",
+        "distinct stack entities",
+        "drain-to-stack identities"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-4.9.5.2-RAIN-SANITARY-SEPARATION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "استقلال شبکه آب باران از فاضلاب",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-5-2",
+          "printed_page": 102,
+          "source_ids": [
+            "M4-134"
+          ],
+          "status": "VERIFIED_SOURCE"
+        },
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-5 ب(2)",
+          "printed_page": 125,
+          "source_ids": [
+            "M16-112"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_system_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "network.system_separation_verified",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "keep rainwater nodes and edges separate from sanitary and vent networks"
+      ],
+      "validator": "rainwater_sanitary_separation",
+      "parameters": {},
+      "output_evidence": [
+        "typed rainwater edges",
+        "no shared sanitary or vent node identity"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-4.9.14.4-EMERGENCY-SHAFT",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "service_shafts",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "پیش‌بینی شفت مناسب مسیر ثانویه یا اضطراری",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-14-4",
+          "printed_page": 113,
+          "source_ids": [
+            "M4-159"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "building_in_m4_scope == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M6-1398-6.8.4-SECONDARY-SEPARATION"
+      ],
+      "required_inputs": [
+        {
+          "field": "project.building_in_m4_scope",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "roof.emergency_rainwater_shaft",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "reserve a suitable services shaft or explicitly coordinated equivalent path for secondary or emergency rainwater discharge"
+      ],
+      "validator": "emergency_shaft_provision",
+      "parameters": {},
+      "output_evidence": [
+        "shaft identity",
+        "secondary route-to-shaft coordination"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-6.8.4-SECONDARY-SEPARATION",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "roof_secondary_drainage",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "جدایی مسیر و نقطه تخلیه شبکه فرعی",
+      "sources": [
+        {
+          "code": "M6",
+          "edition": "1398",
+          "clause": "6-8-4 second paragraph",
+          "printed_page": 66,
+          "source_ids": [
+            "M6-073"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof_drainage_required == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M16-1396-16.6.2.1-T-EMERGENCY-PATH"
+      ],
+      "required_inputs": [
+        {
+          "field": "secondary.routes",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "secondary.discharge_points",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "secondary.elevation_m",
+          "unit": "m",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "provide secondary routes and discharge points distinct from the primary network and above its elevation"
+      ],
+      "validator": "secondary_route_discharge_separation",
+      "parameters": {},
+      "output_evidence": [
+        "secondary route entities",
+        "secondary discharge entity",
+        "primary-secondary disjointness",
+        "elevation annotation"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.1-A-RAINFALL-BASIS",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "مبنای رسمی حداکثر بارندگی یک‌ساعته",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-1 الف(3)-(4)",
+          "printed_page": 122,
+          "source_ids": [
+            "M16-107"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_sizing_required == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "design_basis.rainfall_intensity_mm_h",
+          "unit": "mm/h",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        },
+        {
+          "field": "design_basis.rainfall_duration_h",
+          "unit": "h",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        },
+        {
+          "field": "design_basis.rainfall_return_period_years",
+          "unit": "year",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        }
+      ],
+      "design_actions": [
+        "size rainwater pipes from official maximum one-hour rainfall with return period at least 30 years"
+      ],
+      "validator": "official_rainfall_basis",
+      "parameters": {
+        "duration_h": 1.0,
+        "minimum_return_period_years": 30
+      },
+      "output_evidence": [
+        "rainfall source identity",
+        "duration and return-period calculation basis"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.1-T-EMERGENCY-PATH",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "مسیر اضطراری در انسداد کامل مسیر اصلی",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-1 ت",
+          "printed_page": 123,
+          "source_ids": [
+            "M16-108"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof_drainage_required == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY"
+      ],
+      "required_inputs": [
+        {
+          "field": "secondary.unobstructed",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "secondary.outlet_visible",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "structural.rain_load_R_review",
+          "unit": null,
+          "authority": [
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "provide an unobstructed emergency path to an appropriate discharge location",
+        "make emergency discharge visible to users or maintenance staff",
+        "request structural verification of maximum ponded-water load under complete primary blockage"
+      ],
+      "validator": "emergency_path_blockage_case",
+      "parameters": {},
+      "output_evidence": [
+        "visible emergency outlet annotation",
+        "blocked-primary design case",
+        "structural dependency status"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.3-DRAIN-STRAINER-WATERTIGHT",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "صافی، دوام و اتصال آب‌بند کفشوی",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-3 الف-ب",
+          "printed_page": "123-124",
+          "source_ids": [
+            "M16-110"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof_drains_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "drains[].strainer_height_mm",
+          "unit": "mm",
+          "authority": [
+            "PRODUCT_APPROVAL",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "drains[].strainer_open_area_ratio",
+          "unit": "ratio",
+          "authority": [
+            "PRODUCT_APPROVAL",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "drains[].watertight_connection",
+          "unit": null,
+          "authority": [
+            "PRODUCT_APPROVAL",
+            "ENGINEER_APPROVED",
+            "PHYSICAL_TEST"
+          ]
+        }
+      ],
+      "design_actions": [
+        "specify corrosion, sunlight and temperature resistant roof drain",
+        "provide fixed strainer at least 100 mm above roof",
+        "provide strainer open area at least 1.5 times stack opening",
+        "detail watertight roof membrane connection"
+      ],
+      "validator": "drain_strainer_watertight",
+      "parameters": {
+        "minimum_strainer_height_mm": 100,
+        "minimum_open_area_ratio": 1.5
+      },
+      "output_evidence": [
+        "roof drain detail",
+        "product approval dependency",
+        "watertight detail",
+        "physical test remains external"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.5-HORIZONTAL-SLOPE",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "شیب لوله افقی آب باران",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-5 الف",
+          "printed_page": 125,
+          "source_ids": [
+            "M16-112"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "horizontal_rainwater_pipe_inside_building == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "segments[].horizontal_pipe_slope_percent",
+          "unit": "percent",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "route horizontal rainwater pipes with uniform fall away from stacks and no reverse slope"
+      ],
+      "validator": "horizontal_pipe_slope",
+      "parameters": {
+        "minimum_percent": 1.0,
+        "reverse_slope_forbidden": true
+      },
+      "output_evidence": [
+        "horizontal pipe slope annotations",
+        "profile direction evidence"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.5-STACK-DN-SEPARATION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حداقل قطر قائم و منع مصرف مشترک",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-5 ب",
+          "printed_page": 125,
+          "source_ids": [
+            "M16-112"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_stack_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "stacks[].dn_mm",
+          "unit": "mm",
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "stacks[].systems",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "use rainwater stacks of at least DN80",
+        "do not use rainwater stacks as sanitary or vent stacks"
+      ],
+      "validator": "stack_dn_and_use",
+      "parameters": {
+        "minimum_dn_mm": 80
+      },
+      "output_evidence": [
+        "stack DN annotations",
+        "typed stack systems"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.1-NO-DIAMETER-REDUCTION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "منع کاهش قطر در جهت جریان",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-1 پ(3)",
+          "printed_page": 122,
+          "source_ids": [
+            "M16-107"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_segments_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "segments[].size_mm",
+          "unit": "mm",
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "network.flow_direction",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "maintain or increase nominal diameter in the direction of flow"
+      ],
+      "validator": "no_downstream_diameter_reduction",
+      "parameters": {},
+      "output_evidence": [
+        "ordered segment sizes",
+        "flow arrows"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-APP7-CAPACITY-TABLES",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "GUIDANCE",
+      "authority": "STATUTORY_GUIDANCE",
+      "title_fa": "جداول راهنمای ظرفیت قائم و افقی پیوست ۷",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "Appendix 7 tables 7-2-1 and 7-3-2",
+          "printed_page": "182-183",
+          "source_ids": [
+            "M16-155",
+            "M16-157"
+          ],
+          "status": "PRINT_ANOMALY_PRESERVED"
+        }
+      ],
+      "applicability": {
+        "predicate": "approved_engineering_method == M16_APPENDIX_7",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "capacity table anomaly row DN250 at 4 percent",
+          "result": "preserve printed value and require engineer review"
+        }
+      ],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "design_basis.approved_engineering_method",
+          "unit": null,
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "design_basis.rainfall_intensity_mm_h",
+          "unit": "mm/h",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        }
+      ],
+      "design_actions": [
+        "apply one-hour rainfall correction to printed Appendix 7 capacities without silently correcting print anomalies"
+      ],
+      "validator": "appendix7_capacity_method",
+      "parameters": {},
+      "output_evidence": [
+        "table identity",
+        "rainfall correction",
+        "printed anomaly warning"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "rain_load_and_ponding",
+      "kind": "DEPENDENCY",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "وابستگی بار باران سازه‌ای و آب‌ماندگی",
+      "sources": [
+        {
+          "code": "M6",
+          "edition": "1398",
+          "clause": "6-8-3; 6-8-4",
+          "printed_page": "65-66",
+          "source_ids": [
+            "M6-067",
+            "M6-068",
+            "M6-069",
+            "M6-070",
+            "M6-072",
+            "M6-074",
+            "M6-075",
+            "M6-078"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "primary_blockage_can_pond_water == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "structural.rain_load_R",
+          "unit": "kN/m2",
+          "authority": [
+            "STRUCTURAL_APPROVAL"
+          ]
+        },
+        {
+          "field": "structural.ponding_stability_review",
+          "unit": null,
+          "authority": [
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "request structural rain-load R and ponding-stability verification; never substitute rainfall intensity"
+      ],
+      "validator": "external_structural_dependency",
+      "parameters": {},
+      "output_evidence": [
+        "structural dependency reference",
+        "no software certification claim"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "PLANHA-RW-INTERNAL-TRACE-001",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater",
+      "kind": "OPERATIVE",
+      "authority": "INTERNAL_ENGINEERING",
+      "title_fa": "ردیابی یکسان محاسبه، پلان، رایزر و جدول",
+      "sources": [
+        {
+          "code": "PLANHA_INTERNAL",
+          "edition": "SWCIS-5.16.0",
+          "clause": "PMM traceability contract",
+          "printed_page": "N/A",
+          "source_ids": [
+            "PLANHA-RW-TRACE"
+          ],
+          "status": "INTERNAL_GOVERNED"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_artifact_generated == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "segments[].calc_id",
+          "unit": null,
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "retain identical Calc, Plan, Riser and Schedule identity for every rainwater segment"
+      ],
+      "validator": "plan_calc_riser_schedule_identity",
+      "parameters": {},
+      "output_evidence": [
+        "segment identity fields",
+        "exact reopened DXF rule evidence"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-FULL-COLUMN-STATIC-PRESSURE",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_materials",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تحمل فشار استاتیک کل ارتفاع",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-3-2؛ 16-6-3-3؛ 16-6-3-4",
+          "printed_page": "126,129",
+          "source_ids": [
+            "M16-114",
+            "M16-115",
+            "M16-121"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_stack_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "stacks[].water_column_height_m",
+          "unit": "m",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "stacks[].component_pressure_rating_kpa",
+          "unit": "kPa",
+          "authority": [
+            "PRODUCT_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "select every pipe fitting and joint for the full blocked-column static head"
+      ],
+      "validator": "full_column_pressure",
+      "parameters": {
+        "water_kpa_per_m": 9.80665
+      },
+      "output_evidence": [
+        "required pressure",
+        "product pressure rating",
+        "stack schedule"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-FORBIDDEN-JOINTS",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_materials",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "اتصال‌های ممنوع و سازگاری جنس",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-3-4 چ",
+          "printed_page": 131,
+          "source_ids": [
+            "M16-127"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_joints_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "joints[].method",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "joints[].materials",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "PRODUCT_APPROVAL"
+          ]
+        },
+        {
+          "field": "joints[].diameters_mm",
+          "unit": "mm",
+          "authority": [
+            "SOURCE_VERIFIED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "reject cement concrete bituminous-paste unlike-plastic adhesive and unequal-diameter rubber-ring joints"
+      ],
+      "validator": "forbidden_joints",
+      "parameters": {},
+      "output_evidence": [
+        "joint schedule",
+        "material compatibility"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-16.6.2.4-CLEANOUTS",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_access",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "محل، فاصله، اندازه و دسترسی دریچه بازدید",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-2-4 الف و ب",
+          "printed_page": 124,
+          "source_ids": [
+            "M16-111"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_network_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "cleanouts[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "segments[].length_m",
+          "unit": "m",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "place cleanouts at stack bases, direction changes over 45 degrees, main-line intervals, and immediately outside the building"
+      ],
+      "validator": "cleanout_locations_spacing_size",
+      "parameters": {
+        "max_spacing_below_dn100_m": 15,
+        "max_spacing_dn100_or_more_m": 30,
+        "minimum_large_pipe_cleanout_dn_mm": 100
+      },
+      "output_evidence": [
+        "cleanout symbols",
+        "size and spacing schedule"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-ENVIRONMENTAL-FIRE-PROTECTION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_protection",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حفاظت فرابنفش، یخبندان، ضربه، خوردگی و حریق",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-8؛ 16-1-9؛ 16-6-2؛ 16-6-4",
+          "printed_page": "6-7,122-125,133-134",
+          "source_ids": [
+            "M16-013",
+            "M16-020",
+            "M16-021",
+            "M16-022",
+            "M16-023",
+            "M16-027",
+            "M16-107",
+            "M16-112",
+            "M16-114",
+            "M16-131"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "exposure_or_penetration_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "components[].exposures",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED"
+          ]
+        },
+        {
+          "field": "components[].protections",
+          "unit": null,
+          "authority": [
+            "PRODUCT_APPROVAL",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "protect components against each applicable sunlight frost corrosion impact and fire-rated penetration condition"
+      ],
+      "validator": "environmental_fire_protection",
+      "parameters": {
+        "plastic_reaction_to_fire": [
+          "B-s1-d0",
+          "B1"
+        ]
+      },
+      "output_evidence": [
+        "protection schedule",
+        "firestop detail",
+        "external evidence references"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-PIPE-SUPPORTS",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_supports",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "بار، جنس، مهار و فاصله بست‌ها",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-7-1 تا 16-7-5",
+          "printed_page": "135-142",
+          "source_ids": [
+            "M16-048",
+            "M16-133",
+            "M16-134",
+            "M16-135",
+            "M16-138",
+            "M16-142",
+            "M16-143"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "supported_rainwater_pipe_present == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "supports[]",
+          "unit": null,
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "support_spacing_table",
+          "unit": "m",
+          "authority": [
+            "OFFICIAL_DATA",
+            "PRODUCT_APPROVAL"
+          ]
+        },
+        {
+          "field": "support_load_cases",
+          "unit": null,
+          "authority": [
+            "ENGINEER_APPROVED",
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "design supports for water-full pipe and applicable insulation thermal wind seismic snow and ice actions",
+        "use the smallest permitted spacing for shared supports and manufacturer-approved spacing where the table has no row"
+      ],
+      "validator": "pipe_supports",
+      "parameters": {},
+      "output_evidence": [
+        "support symbols",
+        "spacing dimensions",
+        "load and anchorage schedule"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-UPPER-ROOF-DISCHARGE-PROTECTION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_discharge",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تخلیه بام بالاتر و حفاظت محل برخورد",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-4-3 ب",
+          "printed_page": "133-134",
+          "source_ids": [
+            "M16-131"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "upper_roof_discharges_to_lower_roof == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "upper_roof_discharges_to_lower_roof == false",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "upper_roof_discharges[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "turn vertical flow horizontal with one 90-degree or two 45-degree elbows and protect the lower-roof impact point with stone or concrete"
+      ],
+      "validator": "upper_roof_discharge",
+      "parameters": {},
+      "output_evidence": [
+        "elbow geometry",
+        "lower-roof impact protection detail"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-FULL-HEAD-LEAK-TEST",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_testing",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "آزمون نشت با هد کامل پیش از پوشش",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-10؛ 16-6-5",
+          "printed_page": "8,134",
+          "source_ids": [
+            "M16-030",
+            "M16-031",
+            "M16-132"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "installation_stage_requires_test == true",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "tests[].full_head_height_m",
+          "unit": "m",
+          "authority": [
+            "PHYSICAL_TEST"
+          ]
+        },
+        {
+          "field": "tests[].duration_minutes",
+          "unit": "min",
+          "authority": [
+            "PHYSICAL_TEST"
+          ]
+        },
+        {
+          "field": "tests[].performed_before_covering",
+          "unit": null,
+          "authority": [
+            "PHYSICAL_TEST",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "keep work exposed and fill highest stacks and lowest horizontal network for at least 15 minutes at full static head; repair and repeat after leakage"
+      ],
+      "validator": "full_head_leak_test",
+      "parameters": {
+        "minimum_duration_minutes": 15
+      },
+      "output_evidence": [
+        "test record",
+        "full-head height",
+        "inspection and retest record"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-MATERIAL-CERTIFICATE-MARKING",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_materials",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "گواهی کیفیت، انطباق و مارک دائمی اجزای باران",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-5-1 تا 16-1-5-9؛ 16-6-3-1",
+          "printed_page": "3-4,125",
+          "source_ids": [
+            "M16-010",
+            "M16-011",
+            "M16-012",
+            "M16-014",
+            "M16-015",
+            "M16-016",
+            "M16-017",
+            "M16-113"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_components exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M16-1396-FULL-COLUMN-STATIC-PRESSURE"
+      ],
+      "required_inputs": [
+        {
+          "field": "rainwater_components[].manufacturer_mark_permanent",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED"
+          ]
+        },
+        {
+          "field": "rainwater_components[].standard_mark_permanent",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED"
+          ]
+        },
+        {
+          "field": "rainwater_components[].certificate",
+          "unit": null,
+          "authority": [
+            "PRODUCT_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "schedule each pipe fitting and roof drain with permanent manufacturer and approved-standard marks and separately require a competent-body test and conformity certificate"
+      ],
+      "validator": "material_certificate_marking",
+      "parameters": {},
+      "output_evidence": [
+        "material approval schedule",
+        "permanent marking inspection",
+        "certificate identity and issuer competence"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-APP7-EFFECTIVE-AREA-MULTILEVEL",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_sizing",
+      "kind": "GUIDANCE",
+      "authority": "STATUTORY_GUIDANCE",
+      "title_fa": "سطح مؤثر دیوار مجاور و انتقال چندتراز بدون دوباره‌شماری",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "Appendix 7-2-1, 7-2-3, 7-3-3",
+          "printed_page": "181-184",
+          "source_ids": [
+            "M16-148",
+            "M16-150",
+            "M16-153",
+            "M16-155"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "approved_engineering_method == M16_APPENDIX_7",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M16-1396-APP7-CAPACITY-TABLES"
+      ],
+      "required_inputs": [
+        {
+          "field": "catchments[].contributing_wall_areas_m2",
+          "unit": "m2",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "catchments[].upstream_transfer_ids",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "use horizontal roof projection plus one half only of each proven contributing wall and add each upstream transfer exactly once"
+      ],
+      "validator": "appendix7_effective_area_multilevel",
+      "parameters": {
+        "contributing_wall_factor": 0.5
+      },
+      "output_evidence": [
+        "plan area",
+        "qualified contributing wall area",
+        "upstream transfer identity",
+        "double-count audit"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-APP7-COMPLETE-SIZING",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_sizing",
+      "kind": "GUIDANCE",
+      "authority": "STATUTORY_GUIDANCE",
+      "title_fa": "انتخاب قائم و افقی از جداول کامل پیوست ۷",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "Appendix 7 tables 7-2-1 and 7-3-2",
+          "printed_page": "182-183",
+          "source_ids": [
+            "M16-155",
+            "M16-157"
+          ],
+          "status": "PRINT_ANOMALY_PRESERVED"
+        }
+      ],
+      "applicability": {
+        "predicate": "approved_engineering_method == M16_APPENDIX_7",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "horizontal DN250 at 4 percent",
+          "result": "preserve printed 15984 m2 and 112.52 L/s; require anomaly acknowledgement"
+        }
+      ],
+      "cross_references": [
+        "IR-M16-1396-APP7-CAPACITY-TABLES",
+        "IR-M16-1396-APP7-EFFECTIVE-AREA-MULTILEVEL"
+      ],
+      "required_inputs": [
+        {
+          "field": "design_basis.rainfall_intensity_mm_h",
+          "unit": "mm/h",
+          "authority": [
+            "OFFICIAL_DATA"
+          ]
+        },
+        {
+          "field": "catchments[].effective_area_m2",
+          "unit": "m2",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "catchments[].horizontal_pipe_slope_percent",
+          "unit": "percent",
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "correct printed table area by 25.4 divided by official one-hour intensity and size vertical and horizontal components independently without interpolating unprinted slopes"
+      ],
+      "validator": "appendix7_complete_sizing",
+      "parameters": {
+        "base_rainfall_mm_h": 25.4,
+        "supported_horizontal_slopes_percent": [
+          1,
+          2,
+          4
+        ],
+        "printed_anomaly": "DN250@4%=15984m2/112.52Lps"
+      },
+      "output_evidence": [
+        "complete printed table row",
+        "rainfall correction",
+        "selected vertical DN",
+        "selected horizontal DN",
+        "printed anomaly acknowledgement"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-TRENCH-BURIAL",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "rainwater_installation",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "ترنچ، بستر، دفن و خاکریزی شبکه ثقلی",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-4-2 الف تا ج",
+          "printed_page": 132,
+          "source_ids": [
+            "M16-129"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "buried_gravity_rainwater_segments exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "no buried gravity rainwater segment is present",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M16-1396-ENVIRONMENTAL-FIRE-PROTECTION"
+      ],
+      "required_inputs": [
+        {
+          "field": "buried_segments[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "provide continuous shaped soft sand/gravel support, 150 mm compacted lifts, at least 75 mm rock overcut and two-diameter weak-soil overexcavation where applicable"
+      ],
+      "validator": "trench_burial",
+      "parameters": {
+        "lift_mm": 150,
+        "rock_overcut_mm": 75,
+        "weak_soil_overexcavation_diameters": 2
+      },
+      "output_evidence": [
+        "buried segment schedule",
+        "trench section detail",
+        "bedding and lift dimensions",
+        "inspection-before-covering note"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "site_and_property_boundary",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "هدایت آب بام، منع مزاحمت و مقصد مجاز تخلیه",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-5-4، 4-9-5-5، 4-9-6-4",
+          "printed_page": "102-103",
+          "source_ids": [
+            "M4-136",
+            "M4-137",
+            "M4-142"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater discharge point exists",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M6-1398-6.8.4-SECONDARY-SEPARATION"
+      ],
+      "required_inputs": [
+        {
+          "field": "discharge_destinations[].destination_type",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "USER_CONFIRMED"
+          ]
+        },
+        {
+          "field": "discharge_destinations[].inside_property",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED"
+          ]
+        },
+        {
+          "field": "discharge_destinations[].permit",
+          "unit": null,
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "route roof water without nuisance, facade runoff, adjacent-property discharge or public-way discharge; surface discharge inside the property remains permit-dependent"
+      ],
+      "validator": "discharge_boundary_destination",
+      "parameters": {},
+      "output_evidence": [
+        "destination schedule",
+        "property boundary relation",
+        "permit identity where required"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-4.9.10.1-WATERPROOFING-INTERFACE",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "waterproofing",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تداوم عایق رطوبتی در رابط‌های آب باران",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-10-1",
+          "printed_page": 107,
+          "source_ids": [
+            "M4-146"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "waterproofing_interfaces[].surface_type in FLAT_ROOF, TERRACE, SEMI_OPEN_EXCEPT_LOW_EXPOSURE_BALCONY",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "surface_type == LOW_EXPOSURE_BALCONY and exposure classification is source-verified",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-4.9.5.2-FLAT-ROOF-SLOPE"
+      ],
+      "required_inputs": [
+        {
+          "field": "waterproofing_interfaces[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "materialize a source-entity waterproofing upstand and sealed drain penetration detail for every applicable surface"
+      ],
+      "validator": "architectural_waterproofing_interface",
+      "parameters": {},
+      "output_evidence": [
+        "entity waterproofing schedule",
+        "sealed drain penetration detail",
+        "verified low-exposure exception"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-BASEMENT-ENTRY-RUNOFF-PROTECTION",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "basement_enclosure",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حفاظت بازشوهای زیرزمین در برابر باران و رواناب",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-10-3، 4-9-12-4",
+          "printed_page": "107,109",
+          "source_ids": [
+            "M4-148",
+            "M4-149"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "basement_openings[] exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "verified geometry has no basement opening or below-grade enclosure",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY"
+      ],
+      "required_inputs": [
+        {
+          "field": "basement_openings[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "materialize per-opening runoff interception and protected sill/areaway geometry and preserve below-grade waterproofing continuity"
+      ],
+      "validator": "basement_entry_runoff_protection",
+      "parameters": {},
+      "output_evidence": [
+        "opening protection schedule",
+        "interceptor geometry",
+        "below-grade waterproofing detail"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-SHAFT-ACCESS-PRIVATE-ROUTE",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "shaft_and_unit_privacy",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "دسترسی مسیر و شفت و منع عبور از بخش خصوصی واحد دیگر",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-14-2، 4-9-14-3",
+          "printed_page": 113,
+          "source_ids": [
+            "M4-157",
+            "M4-158"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_route_entities exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M16-1396-16.6.2.4-CLEANOUTS"
+      ],
+      "required_inputs": [
+        {
+          "field": "rainwater_route_entities[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "compute route intersections with private-unit polygons; reroute eligible conflicts through common/service zones; materialize accessible shaft and smooth-finish detail"
+      ],
+      "validator": "shaft_access_private_route",
+      "parameters": {},
+      "output_evidence": [
+        "route-zone intersection audit",
+        "reroute identity",
+        "shaft access schedule",
+        "smooth shaft finish detail"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-SUSPENDED-CEILING-CLEARANCE-SEPARATION",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "suspended_ceiling_coordination",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "ارتفاع آزاد و جداسازی نگهدارنده تأسیسات از سقف کاذب",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-4-1 تا 4-9-4-4، 4-9-4-7، 4-9-4-9",
+          "printed_page": "100-102",
+          "source_ids": [
+            "M4-126",
+            "M4-127",
+            "M4-128",
+            "M4-129",
+            "M4-130",
+            "M4-132"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater routes adjacent to or above suspended ceiling exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "verified geometry has no suspended ceiling adjacent to a rainwater route",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M16-1396-PIPE-SUPPORTS"
+      ],
+      "required_inputs": [
+        {
+          "field": "suspended_ceiling_route_interfaces[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "compute finished clear height after pipe and ceiling depth; reject shared contact/support; preserve partitions and fire protection and materialize independent support detail"
+      ],
+      "validator": "suspended_ceiling_clearance_separation",
+      "parameters": {},
+      "output_evidence": [
+        "per-interface clear-height calculation",
+        "independent support detail",
+        "partition and fire-protection continuity"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-PITCHED-ROOF-PROPERTY-SAFETY",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "pitched_roof_property_boundary",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "ایمنی و عقب‌نشینی لبه بام شیبدار از مرز ملک",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-9-6-1 تا 4-9-6-3",
+          "printed_page": 103,
+          "source_ids": [
+            "M4-139",
+            "M4-140",
+            "M4-141"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof_type == PITCHED",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "roof_type is source-verified not pitched",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY"
+      ],
+      "required_inputs": [
+        {
+          "field": "pitched_roof_edges[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "compute downslope edge distance to property/public-way boundary by building group and floor count; materialize gutter/snow-retention and worker-safety anchor details without applying the flat-roof two-percent rule"
+      ],
+      "validator": "pitched_roof_property_safety",
+      "parameters": {
+        "groups_1_5_minimum_m": 0.2,
+        "groups_6_7_increment_per_floor_above_4_m": 0.1
+      },
+      "output_evidence": [
+        "downslope edge/property geometry",
+        "computed setback",
+        "snow/ice retention detail",
+        "worker safety anchor detail",
+        "group-8 special approval"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-EXTERIOR-SPACE-DRAINAGE",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "exterior_space_drainage",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "زهکشی مسیر بیرونی، فضای نیمه‌باز، باز و گودال‌باغچه",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-5-1-14؛ 4-5-7-1-2/3؛ 4-5-8-1-2؛ 4-5-8-4-3/4",
+          "printed_page": "52,62,64,66",
+          "source_ids": [
+            "M4-077",
+            "M4-080",
+            "M4-081",
+            "M4-083",
+            "M4-086",
+            "M4-087"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "exterior_drainage_spaces[] exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "verified geometry has no applicable exterior space",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY"
+      ],
+      "required_inputs": [
+        {
+          "field": "exterior_drainage_spaces[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "compute surface fall to drain/gutter, reject ponding and public-way discharge, keep sunken courtyards uncovered and provide cleaning access"
+      ],
+      "validator": "exterior_space_drainage",
+      "parameters": {},
+      "output_evidence": [
+        "space polygon and slope vector",
+        "drain route and destination",
+        "non-slip/no-ponding detail",
+        "sunken-courtyard access"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-PARKING-SURFACE-RUNOFF",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "parking_drainage",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "زهکشی توقفگاه و جلوگیری از ورود رواناب به توقفگاه همکف",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-5-10-7-3/4",
+          "printed_page": 73,
+          "source_ids": [
+            "M4-093",
+            "M4-102",
+            "M4-103"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "parking_drainage_areas[] exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "verified geometry has no parking",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-RAINWATER-DISCHARGE-BOUNDARY"
+      ],
+      "required_inputs": [
+        {
+          "field": "parking_drainage_areas[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "compute parking fall to surface drain and verify ground-floor entrance crest or approved alternative prevents exterior runoff entry"
+      ],
+      "validator": "parking_surface_runoff",
+      "parameters": {},
+      "output_evidence": [
+        "parking slope/drain geometry",
+        "entrance crest and runoff-flow check",
+        "authority approval for alternative"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "installation_protection",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حفاظت نصب، نفوذ سازه‌ای و مسیرهای در معرض آسیب",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-8-1 تا 16-1-9-7",
+          "printed_page": "5-7",
+          "source_ids": [
+            "M16-019",
+            "M16-020",
+            "M16-021",
+            "M16-022",
+            "M16-023",
+            "M16-024",
+            "M16-025",
+            "M16-026",
+            "M16-027",
+            "M16-028",
+            "M16-029"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater_installation_interfaces[] exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M16-1396-TRENCH-BURIAL",
+        "IR-M16-1396-FULL-COLUMN-STATIC-PRESSURE"
+      ],
+      "required_inputs": [
+        {
+          "field": "rainwater_installation_interfaces[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED",
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "materialize sleeves/protection, corrosion and impact guards, approved structural openings, foundation-clear trench geometry, restored assemblies and outlet grates; prohibit rainwater piping in elevator shafts"
+      ],
+      "validator": "installation_protection_penetrations",
+      "parameters": {
+        "foundation_influence_angle_deg": 45
+      },
+      "output_evidence": [
+        "per-interface protection schedule",
+        "penetration/sleeve detail",
+        "structural approval provenance",
+        "foundation clearance geometry",
+        "outlet grate detail"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-NONPOTABLE-SEPARATION-BACKFLOW",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "nonpotable_reuse_backflow",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "جداسازی آب غیرآشامیدنی و حفاظت برگشت جریان",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-3-2-2 تا 16-3-7-7؛ 16-4-2-7/8",
+          "printed_page": "38-55,84-85",
+          "source_ids": [
+            "M16-085",
+            "M16-086",
+            "M16-087",
+            "M16-088",
+            "M16-089",
+            "M16-093",
+            "M16-094",
+            "M16-095",
+            "M16-096",
+            "M16-097",
+            "M16-099",
+            "M16-100"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "nonpotable_reuse_connections[] exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "verified project has no nonpotable/reuse or indirect-discharge connection",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-4.9.5.2-RAIN-SANITARY-SEPARATION"
+      ],
+      "required_inputs": [
+        {
+          "field": "nonpotable_reuse_connections[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "PRODUCT_APPROVAL",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "keep potable and nonpotable networks physically identified and separated; materialize approved accessible backflow device or required air gap and indirect receptor detail"
+      ],
+      "validator": "nonpotable_separation_backflow",
+      "parameters": {
+        "minimum_open_drain_air_gap_mm": 150
+      },
+      "output_evidence": [
+        "network separation schedule",
+        "pipe identification",
+        "backflow product/provenance",
+        "air-gap dimension",
+        "accessible service clearance"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-DOCUMENTATION-STAGE-CLOSEOUT",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "documentation_closeout",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "مدارک اجرایی، تصویب ناظر و تحویل نهایی مرحله‌ای",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-6-1؛ 16-1-10-3؛ 16-6-2-2",
+          "printed_page": "4,8,123",
+          "source_ids": [
+            "M16-018",
+            "M16-032",
+            "M16-109"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "all design stages; approval and closeout evidence only at their applicable stages",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "rainwater_documentation",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED",
+            "SUPERVISOR_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "generate plans, riser, schedules, flow arrows, slopes, materials, details, outlet elevation and installation/protection/maintenance notes; request verified approval only at construction and verified closeout evidence only at final inspection"
+      ],
+      "validator": "documentation_and_stage_closeout",
+      "parameters": {},
+      "output_evidence": [
+        "drawing/document completeness schedule",
+        "stage-specific approval provenance",
+        "final inspection and O&M provenance"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-ROOF-EQUIPMENT-OVERFLOW",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "roof_equipment_overflow",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "هدایت سرریز تجهیزات بام به دریافت‌کننده مجاز",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-4-2-8(الف)(4)",
+          "printed_page": "93",
+          "source_ids": [
+            "M16-101"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof equipment or storage overflow exists",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "evaporative cooler may use roof rainwater drain as receptor",
+          "result": "CONTINUE"
+        }
+      ],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "roof_equipment_overflows[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "draw a connected overflow route to an eligible receptor and prohibit loose roof discharge"
+      ],
+      "validator": "roof_equipment_overflow",
+      "parameters": {},
+      "output_evidence": [
+        "equipment-to-receptor route geometry",
+        "receptor type schedule"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-MATERIAL-ROUTE-SUPPORT-COMPLETION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "materials_routes_supports",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تکمیل کنترل مصالح، مسیر ثقلی، اتصال و تکیه‌گاه",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-5-4؛ 16-4-3-3؛ 16-6-1؛ 16-6-3/4؛ 16-7-2/3",
+          "printed_page": "3,96,121-139",
+          "source_ids": [
+            "M16-013",
+            "M16-102",
+            "M16-106",
+            "M16-115",
+            "M16-121",
+            "M16-128",
+            "M16-130",
+            "M16-131",
+            "M16-135",
+            "M16-138"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater piping exists",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "smooth expansion piece is not required at a basement expansion-joint crossing",
+          "result": "CONTINUE"
+        }
+      ],
+      "cross_references": [
+        "IR-M16-1396-INSTALLATION-PROTECTION-PENETRATIONS",
+        "IR-M16-1396-PIPE-SUPPORTS"
+      ],
+      "required_inputs": [
+        {
+          "field": "rainwater_route_installation_records[]",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "PRODUCT_APPROVAL",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "materialize gravity routes, standard fittings, accessible concrete exceptions, expansion/fire seals and plastic vertical supports"
+      ],
+      "validator": "remaining_material_route_support",
+      "parameters": {},
+      "output_evidence": [
+        "per-route installation schedule",
+        "route geometry",
+        "product standard and support detail"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-ADJACENT-SYSTEM-CONDITIONAL-PROTECTION",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "adjacent_systems",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "حفاظت شرطی تخریب، آب آشامیدنی و مخزن مجاور شبکه باران",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-1-4؛ 16-1-5-8؛ 16-3-6-1(پ)(1)",
+          "printed_page": "2,4,62",
+          "source_ids": [
+            "M16-103",
+            "M16-104",
+            "M16-105"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "demolition, potable makeup, or potable storage adjacency exists",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "each condition is explicitly verified absent",
+          "result": "NOT_APPLICABLE"
+        }
+      ],
+      "cross_references": [
+        "IR-M16-1396-NONPOTABLE-SEPARATION-BACKFLOW"
+      ],
+      "required_inputs": [
+        {
+          "field": "adjacent-system applicability and verified evidence",
+          "unit": null,
+          "authority": [
+            "UTILITY_AUTHORITY",
+            "PRODUCT_APPROVAL",
+            "SOURCE_VERIFIED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "require verified utility disconnection at demolition stage, certified potable-side components, and keep potable tanks away from flood/groundwater and overhead nonpotable routes"
+      ],
+      "validator": "adjacent_system_conditional_protection",
+      "parameters": {},
+      "output_evidence": [
+        "conditional applicability schedule",
+        "verified certificate provenance",
+        "tank/route spatial check"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-PERMANENT-RAINWATER-DEAD-LOAD",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "permanent_load_coordination",
+      "kind": "OPERATIVE",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "بار مرده اجزای دائم و لوله پرآب آب باران",
+      "sources": [
+        {
+          "code": "M6",
+          "edition": "1398",
+          "clause": "6-3-1، 6-3-2، 6-3-4",
+          "printed_page": "17-18",
+          "source_ids": [
+            "M6-029",
+            "M6-030",
+            "M6-031"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "permanent rainwater components exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M16-1396-PIPE-SUPPORTS",
+        "IR-M16-1396-FULL-COLUMN-STATIC-PRESSURE"
+      ],
+      "required_inputs": [
+        {
+          "field": "structural_rainwater_loads[].empty_component_mass_kg",
+          "unit": "kg",
+          "authority": [
+            "PRODUCT_APPROVAL"
+          ]
+        },
+        {
+          "field": "structural_rainwater_loads[].water_full_mass_kg",
+          "unit": "kg",
+          "authority": [
+            "ENGINEER_APPROVED"
+          ]
+        },
+        {
+          "field": "structural_rainwater_loads[].structural_review",
+          "unit": null,
+          "authority": [
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "schedule actual permanent component mass and water-full operating mass and transmit support reactions plus foreseeable fixed additions for structural approval"
+      ],
+      "validator": "permanent_rainwater_dead_load",
+      "parameters": {
+        "water_density_kg_m3": 1000
+      },
+      "output_evidence": [
+        "structural load schedule",
+        "water-full mass",
+        "support reaction identity",
+        "structural approval reference"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-OWNER-MODULE-COMPLIANCE-DEPENDENCY",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "interdisciplinary_compliance",
+      "kind": "DEPENDENCY",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تأیید انطباق ماژول مالک architecture",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "owner-module clauses listed by source id",
+          "printed_page": "multiple",
+          "source_ids": [
+            "M4-002",
+            "M4-003",
+            "M4-005",
+            "M4-006",
+            "M4-007",
+            "M4-008",
+            "M4-009",
+            "M4-010",
+            "M4-011",
+            "M4-012",
+            "M4-013",
+            "M4-014",
+            "M4-015",
+            "M4-016",
+            "M4-017",
+            "M4-018",
+            "M4-019",
+            "M4-020",
+            "M4-021",
+            "M4-022",
+            "M4-023",
+            "M4-024",
+            "M4-025",
+            "M4-026",
+            "M4-042",
+            "M4-043",
+            "M4-044",
+            "M4-045",
+            "M4-046",
+            "M4-047",
+            "M4-053",
+            "M4-054",
+            "M4-056",
+            "M4-057",
+            "M4-059",
+            "M4-060",
+            "M4-061",
+            "M4-062",
+            "M4-063",
+            "M4-064",
+            "M4-065",
+            "M4-066",
+            "M4-067",
+            "M4-070",
+            "M4-071",
+            "M4-072",
+            "M4-073",
+            "M4-074",
+            "M4-075",
+            "M4-076",
+            "M4-078",
+            "M4-079",
+            "M4-084",
+            "M4-085",
+            "M4-088",
+            "M4-089",
+            "M4-090",
+            "M4-091",
+            "M4-092",
+            "M4-093",
+            "M4-094",
+            "M4-095",
+            "M4-096",
+            "M4-097",
+            "M4-098",
+            "M4-099",
+            "M4-100",
+            "M4-101",
+            "M4-104",
+            "M4-105",
+            "M4-106",
+            "M4-107",
+            "M4-108",
+            "M4-109",
+            "M4-110",
+            "M4-111",
+            "M4-112",
+            "M4-113",
+            "M4-114",
+            "M4-115",
+            "M4-116",
+            "M4-117",
+            "M4-118",
+            "M4-119",
+            "M4-120",
+            "M4-121",
+            "M4-122",
+            "M4-123",
+            "M4-124",
+            "M4-125",
+            "M4-133",
+            "M4-143",
+            "M4-144",
+            "M4-145",
+            "M4-147",
+            "M4-150",
+            "M4-151",
+            "M4-152",
+            "M4-153",
+            "M4-154",
+            "M4-155"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater design relies on owner-module architecture/structural requirements",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "interdisciplinary_compliance.architecture",
+          "unit": null,
+          "authority": [
+            "ARCHITECT_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "consume the canonical architecture compliance manifest; never duplicate or infer owner-module PASS"
+      ],
+      "validator": "owner_module_compliance_dependency",
+      "parameters": {
+        "owner_module": "architecture"
+      },
+      "output_evidence": [
+        "verified architecture compliance manifest identity and status"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-OWNER-MODULE-COMPLIANCE-DEPENDENCY",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "interdisciplinary_compliance",
+      "kind": "DEPENDENCY",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تأیید انطباق ماژول مالک structural",
+      "sources": [
+        {
+          "code": "M6",
+          "edition": "1398",
+          "clause": "owner-module clauses listed by source id",
+          "printed_page": "multiple",
+          "source_ids": [
+            "M6-001",
+            "M6-005",
+            "M6-006",
+            "M6-007",
+            "M6-008",
+            "M6-009",
+            "M6-010",
+            "M6-011",
+            "M6-012",
+            "M6-013",
+            "M6-014",
+            "M6-016",
+            "M6-017",
+            "M6-018",
+            "M6-019",
+            "M6-020",
+            "M6-021",
+            "M6-022",
+            "M6-023",
+            "M6-024",
+            "M6-025",
+            "M6-026",
+            "M6-027",
+            "M6-028",
+            "M6-032",
+            "M6-033",
+            "M6-034",
+            "M6-035",
+            "M6-036",
+            "M6-037",
+            "M6-038",
+            "M6-039",
+            "M6-040",
+            "M6-042",
+            "M6-046",
+            "M6-047",
+            "M6-048",
+            "M6-049",
+            "M6-050",
+            "M6-051",
+            "M6-052",
+            "M6-053",
+            "M6-054",
+            "M6-055",
+            "M6-056",
+            "M6-057",
+            "M6-058",
+            "M6-059",
+            "M6-060",
+            "M6-061",
+            "M6-062",
+            "M6-063",
+            "M6-064",
+            "M6-065",
+            "M6-066",
+            "M6-077",
+            "M6-079",
+            "M6-080",
+            "M6-081",
+            "M6-083",
+            "M6-084",
+            "M6-085",
+            "M6-086",
+            "M6-087",
+            "M6-088",
+            "M6-089",
+            "M6-090",
+            "M6-091",
+            "M6-092",
+            "M6-093",
+            "M6-094",
+            "M6-095",
+            "M6-096",
+            "M6-097",
+            "M6-098",
+            "M6-099",
+            "M6-100",
+            "M6-101",
+            "M6-102",
+            "M6-103",
+            "M6-104",
+            "M6-105",
+            "M6-106",
+            "M6-107",
+            "M6-108",
+            "M6-109",
+            "M6-110",
+            "M6-112",
+            "M6-113",
+            "M6-114",
+            "M6-115",
+            "M6-116",
+            "M6-117",
+            "M6-118",
+            "M6-119",
+            "M6-120",
+            "M6-121",
+            "M6-122",
+            "M6-123",
+            "M6-124",
+            "M6-125",
+            "M6-126",
+            "M6-127",
+            "M6-128",
+            "M6-129",
+            "M6-130",
+            "M6-131",
+            "M6-132",
+            "M6-133",
+            "M6-136",
+            "M6-139",
+            "M6-140",
+            "M6-141",
+            "M6-142",
+            "M6-143",
+            "M6-144",
+            "M6-145",
+            "M6-146",
+            "M6-147",
+            "M6-148",
+            "M6-149",
+            "M6-150",
+            "M6-151",
+            "M6-152",
+            "M6-153"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater design relies on owner-module architecture/structural requirements",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [],
+      "required_inputs": [
+        {
+          "field": "interdisciplinary_compliance.structural",
+          "unit": null,
+          "authority": [
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "consume the canonical structural compliance manifest; never duplicate or infer owner-module PASS"
+      ],
+      "validator": "owner_module_compliance_dependency",
+      "parameters": {
+        "owner_module": "structural"
+      },
+      "output_evidence": [
+        "verified structural compliance manifest identity and status"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-ROOF-ACCESS-PARAPET-GEOMETRY",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "roof_access_safety",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "دسترسی بام، خرپشته و هندسه جان‌پناه",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-5-1-7-7/8؛ 4-9-5-1؛ 4-9-9-1-1",
+          "printed_page": "multiple",
+          "source_ids": [
+            "M4-070",
+            "M4-071",
+            "M4-133",
+            "M4-145"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof access geometry exists",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "for fewer than four storeys, roof slope over 33 percent, or verified no-use roof, public stair is not mandated",
+          "result": "CONTINUE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-PITCHED-ROOF-PROPERTY-SAFETY"
+      ],
+      "required_inputs": [
+        {
+          "field": "roof_access_safety",
+          "unit": null,
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ARCHITECT_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "select compliant roof access; draw headhouse within stair enclosure footprint and a continuous minimum 1.10 m parapet around accessible roof"
+      ],
+      "validator": "roof_access_parapet_geometry",
+      "parameters": {
+        "minimum_parapet_height_m": 1.1,
+        "public_stair_min_storeys": 4,
+        "steep_roof_threshold_percent": 33
+      },
+      "output_evidence": [
+        "roof/access polygons",
+        "headhouse and stair areas",
+        "parapet height and enclosure geometry"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M4-1396-ENTRANCE-LANDING-THRESHOLD",
+      "version": "1.0.0",
+      "owner": "architecture",
+      "subsystem": "entrance_access",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "تراز پاگرد و محدودیت آستانه ورودی",
+      "sources": [
+        {
+          "code": "M4",
+          "edition": "1396",
+          "clause": "4-5-1-5-3؛ 4-9-8-2",
+          "printed_page": "multiple",
+          "source_ids": [
+            "M4-067",
+            "M4-144"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "entrance landing interfaces exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "non-accessible, non-egress exterior door may use at most one approved step height",
+          "result": "CONTINUE"
+        }
+      ],
+      "cross_references": [
+        "IR-M4-1396-BASEMENT-ENTRY-RUNOFF-PROTECTION"
+      ],
+      "required_inputs": [
+        {
+          "field": "entrance_landing_interfaces[]",
+          "unit": "mm",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "ARCHITECT_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "coordinate equal landing elevations; limit threshold drop to 20 mm on accessible/egress routes, 38 mm otherwise, or one approved step at an eligible exterior door; omit thresholds in listed public occupancies"
+      ],
+      "validator": "entrance_landing_threshold",
+      "parameters": {
+        "accessible_or_egress_max_drop_mm": 20,
+        "other_max_drop_mm": 38
+      },
+      "output_evidence": [
+        "per-entrance landing and threshold elevation schedule",
+        "occupancy and route classification"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-RAIN-ON-SNOW-LOAD-CASE",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "rain_on_snow",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "سربار باران بر برف و ناسازگاری حالت‌های همزمان",
+      "sources": [
+        {
+          "code": "M6",
+          "edition": "1398",
+          "clause": "6-7-12؛ 6-7-11 جمله پایانی",
+          "printed_page": "multiple",
+          "source_ids": [
+            "M6-077",
+            "M6-079"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "snow region and roof slope/run are known",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "only snow regions 2 and 3 with roof slope below W/15 degrees receive the surcharge",
+          "result": "CONTINUE"
+        }
+      ],
+      "cross_references": [
+        "IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY"
+      ],
+      "required_inputs": [
+        {
+          "field": "rain_on_snow_load_case",
+          "unit": "kN/m2",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "compute the W/15-degree applicability boundary; add exactly 0.25 kN/m2 to balanced snow only and keep it out of drift, sliding, unbalanced and partial-snow cases"
+      ],
+      "validator": "rain_on_snow_load_case",
+      "parameters": {
+        "surcharge_kn_m2": 0.25,
+        "regions": [
+          2,
+          3
+        ],
+        "slope_threshold": "W/15 degrees"
+      },
+      "output_evidence": [
+        "calculated slope threshold and applicability",
+        "balanced and combined load schedule",
+        "simultaneous-effect exclusions"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-ROOF-SERVICE-LIVE-LOADS",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "roof_service_live_loads",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "بار زنده بام، مسیر سرویس، تجهیزات و نردبان",
+      "sources": [
+        {
+          "code": "M6",
+          "edition": "1398",
+          "clause": "6-5-7-4؛ جدول 6-5-1 و یادداشت‌های 1 و 9",
+          "printed_page": "multiple",
+          "source_ids": [
+            "M6-080",
+            "M6-082",
+            "M6-083",
+            "M6-084",
+            "M6-085"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "roof/service/load areas exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": [
+        "IR-M6-1398-PERMANENT-RAINWATER-DEAD-LOAD"
+      ],
+      "required_inputs": [
+        {
+          "field": "roof_service_live_loads[]",
+          "unit": "kN/m2 or kN",
+          "authority": [
+            "SOURCE_VERIFIED",
+            "PRODUCT_APPROVAL",
+            "STRUCTURAL_APPROVAL"
+          ]
+        }
+      ],
+      "design_actions": [
+        "assign minimum uniform and concentrated loads by roof/service type; apply fixed-ladder loads and preserve adverse pattern checks for reduced integrity-member roof loads"
+      ],
+      "validator": "roof_service_live_loads",
+      "parameters": {
+        "normal_roof_kn_m2": 1.5,
+        "light_roof_kn_m2": 0.5,
+        "roof_garden_kn_m2": 5,
+        "fabric_roof_kn_m2": 0.25,
+        "service_walkway_kn_m2": 2,
+        "ahu_room_kn_m2": 5,
+        "ladder_point_kn": 1.35
+      },
+      "output_evidence": [
+        "per-area live-load schedule",
+        "manufacturer load comparison",
+        "ladder point-load schedule",
+        "adverse pattern check identity"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-MATERIAL-STANDARD-JOINT-DETAIL",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "material_joint_detail",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "استاندارد جنس، علامت دفن و جزئیات اتصال",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-6-3-3 پ تا چ؛ 16-6-3-4 ب تا ج",
+          "printed_page": "126-131",
+          "source_ids": [
+            "M16-116",
+            "M16-117",
+            "M16-118",
+            "M16-119",
+            "M16-120",
+            "M16-122",
+            "M16-123",
+            "M16-124",
+            "M16-125",
+            "M16-126"
+          ],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "selected rainwater material installations exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [
+        {
+          "predicate": "equivalent material standard requires explicit approval",
+          "result": "CONTINUE"
+        }
+      ],
+      "cross_references": [
+        "IR-M16-1396-MATERIAL-CERTIFICATE-MARKING",
+        "IR-M16-1396-FORBIDDEN-JOINTS"
+      ],
+      "required_inputs": [
+        {
+          "field": "rainwater_material_installations[]",
+          "unit": null,
+          "authority": [
+            "PRODUCT_APPROVAL",
+            "SOURCE_VERIFIED",
+            "ENGINEER_APPROVED"
+          ]
+        }
+      ],
+      "design_actions": [
+        "select an allowed or explicitly approved material standard, compatible fittings, burial marking and material-specific joint; preserve temperature, water-column and pre-test exposure limits"
+      ],
+      "validator": "material_standard_joint_detail",
+      "parameters": {
+        "pp_max_water_column_m": 6,
+        "upvc_min_adhesive_temperature_c": 5,
+        "hubbed_cast_iron_min_lead_depth_mm": 25,
+        "hubbed_cast_iron_max_lead_recess_mm": 3
+      },
+      "output_evidence": [
+        "material/standard/joint schedule",
+        "burial marking",
+        "manufacturer instruction",
+        "joint dimensions and installation conditions"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-MATERIAL-SUPPORT-INSTALLATION-DETAIL",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "material_support_installation",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "جزئیات بست و تکیه‌گاه لوله بر حسب جنس و جهت",
+      "sources": [
+        {
+          "code": "M16",
+          "edition": "1396",
+          "clause": "16-7-3-1، 16-7-3-2، 16-7-4-1، 16-7-4-2، 16-7-4-4",
+          "printed_page": "137-141",
+          "source_ids": ["M16-136", "M16-137", "M16-139", "M16-140", "M16-141"],
+          "status": "VERIFIED_SOURCE"
+        }
+      ],
+      "applicability": {
+        "predicate": "rainwater material support installations exist",
+        "unknown_result": "INPUT_REQUIRED"
+      },
+      "exceptions": [],
+      "cross_references": ["IR-M16-1396-PIPE-SUPPORTS", "IR-M16-1396-TRENCH-BURIAL"],
+      "required_inputs": [
+        {
+          "field": "rainwater_material_support_installations[]",
+          "unit": null,
+          "authority": ["SOURCE_VERIFIED", "PRODUCT_APPROVAL", "ENGINEER_APPROVED"]
+        }
+      ],
+      "design_actions": [
+        "select material/orientation-specific clamp and support, connect it to the building, preserve thermal movement, and detail cast-iron bearing/bedding and insulated galvanized-steel liners"
+      ],
+      "validator": "material_support_installation_detail",
+      "parameters": {
+        "insulation_liner_min_thickness_mm": 1.5,
+        "insulation_liner_min_length_mm": 300
+      },
+      "output_evidence": [
+        "material support installation schedule",
+        "clamp and support type/material",
+        "building connection and movement detail",
+        "base bearing, sand bedding and insulation liner detail"
+      ],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M16-1396-POTABLE-OUTLET-AIR-GAP-TABLE",
+      "version": "1.0.0",
+      "owner": "mechanical",
+      "subsystem": "potable_outlet_air_gap",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "فاصله هوایی خروجی آب آشامیدنی از دهانه آب باران",
+      "sources": [{"code":"M16","edition":"1396","clause":"16-3-7-4(ب) و جدول","printed_page":69,"source_ids":["M16-092"],"status":"VERIFIED_SOURCE"}],
+      "applicability": {"predicate":"potable outlet discharges over an open rainwater receptor","unknown_result":"INPUT_REQUIRED"},
+      "exceptions": [{"predicate":"verified absence of applicable potable outlets","result":"NOT_APPLICABLE"}],
+      "cross_references": ["IR-M16-1396-NONPOTABLE-SEPARATION-BACKFLOW"],
+      "required_inputs": [{"field":"potable_outlets_over_rainwater_receptors[]","unit":"mm","authority":["SOURCE_VERIFIED","ENGINEER_APPROVED"]}],
+      "design_actions": ["dimension the vertical air gap from outlet underside to receptor overflow rim using outlet class, effective diameter and near-wall condition"],
+      "validator": "potable_outlet_air_gap",
+      "parameters": {"fixed_table_mm":{"LAVATORY_SIMILAR":{"far":25,"near":40},"GOOSENECK_SINK_LAUNDRY":{"far":40,"near":65},"TUB_FILLER_SIMILAR":{"far":50,"near":80},"DRINKING_OTHER":{"far":25,"near":40}},"over_25_mm_multiplier":{"far":2,"near":3},"potable_storage_tank_min_mm":100},
+      "output_evidence": ["potable outlet air-gap schedule","effective diameter","near-wall classification","vertical air-gap dimension"],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-LRFD-RAINWATER-LOAD-COMBINATIONS",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "rainwater_load_combinations",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "بازمحاسبه ترکیب‌بارهای LRFD شامل بار باران",
+      "sources": [{"code":"M6","edition":"1398","clause":"6-1-3-1-1؛ 6-1-5-1؛ 6-2-1؛ 6-2-3-1؛ 6-2-3-2 و بند خ","printed_page":"3-11","source_ids":["M6-007","M6-013","M6-014","M6-016","M6-017","M6-021"],"status":"VERIFIED_SOURCE"}],
+      "applicability": {"predicate":"LRFD structural design includes roof rain load R","unknown_result":"INPUT_REQUIRED"},
+      "exceptions": [],
+      "cross_references": ["IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY","IR-M6-1398-RAIN-ON-SNOW-LOAD-CASE"],
+      "required_inputs": [{"field":"structural_rainwater_load_combinations","unit":"one declared compatible effect unit","authority":["SOURCE_VERIFIED","STRUCTURAL_APPROVAL"]}],
+      "design_actions": ["evaluate every printed LRFD base combination using signed, dimensionally compatible load effects; expand each Lr/S/R alternative and both signs of W/E, identify the governing absolute effect only for a declared symmetric capacity envelope"],
+      "validator": "lrfd_rainwater_load_combinations",
+      "parameters": {"method":"LRFD","base_combination_count":7,"expanded_case_count":25,"supported_effects":{"FORCE":["kN"],"MOMENT":["kN_m"],"STRESS":["kPa","MPa"],"PRESSURE":["kPa","MPa"]}},
+      "output_evidence": ["expanded LRFD case schedule","independently recomputed effects","governing case identity","structural analysis identity and capacity comparison"],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "rainwater_load_combinations",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "بازمحاسبه ترکیب‌بارهای تنش مجاز شامل بار باران",
+      "sources": [{"code":"M6","edition":"1398","clause":"6-1-3-1-1؛ 6-1-5-1؛ 6-2-4 و تبصره افزایش تنش","printed_page":"3-13","source_ids":["M6-008","M6-009","M6-022","M6-023"],"status":"VERIFIED_SOURCE"}],
+      "applicability": {"predicate":"ASD structural design includes roof rain load R","unknown_result":"INPUT_REQUIRED"},
+      "exceptions": [],
+      "cross_references": ["IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY","IR-M6-1398-RAIN-ON-SNOW-LOAD-CASE"],
+      "required_inputs": [{"field":"structural_rainwater_asd_combinations","unit":"one declared compatible effect unit","authority":["SOURCE_VERIFIED","STRUCTURAL_APPROVAL"]}],
+      "design_actions": ["evaluate all ten printed ASD combinations with Lr/S/R alternatives and both signed W/E directions; prohibit allowable-stress increase for these combinations"],
+      "validator": "asd_rainwater_load_combinations",
+      "parameters": {"method":"ASD","base_combination_count":10,"expanded_case_count":24,"allowable_stress_increase":false,"supported_effects":{"FORCE":["kN"],"MOMENT":["kN_m"],"STRESS":["kPa","MPa"],"PRESSURE":["kPa","MPa"]}},
+      "output_evidence": ["expanded ASD case schedule","independently recomputed signed effects","governing case identity","structural analysis identity and allowable-capacity comparison"],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id": "IR-M6-1398-PRIMARY-BLOCKAGE-RAIN-LOAD-PONDING",
+      "version": "1.0.0",
+      "owner": "structural",
+      "subsystem": "rain_load_and_ponding",
+      "kind": "CONDITIONAL",
+      "authority": "STATUTORY_MANDATORY",
+      "title_fa": "بار باران در گرفتگی تخلیه اصلی و پایداری برکه‌ای شدن",
+      "sources": [{"code":"M6","edition":"1398","clause":"6-8-1 تا 6-8-2 و کنترل برف/برکه‌ای شدن","printed_page":"62, 65-67","source_ids":["M6-067","M6-068","M6-069","M6-070","M6-072","M6-074","M6-075","M6-078"],"status":"VERIFIED_SOURCE"}],
+      "applicability": {"predicate":"roof can retain water when its primary rainwater drainage is blocked","unknown_result":"INPUT_REQUIRED"},
+      "exceptions": [],
+      "cross_references": ["IR-STRUCTURAL-RAIN-LOAD-R-DEPENDENCY","IR-M6-1398-LRFD-RAINWATER-LOAD-COMBINATIONS","IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
+      "required_inputs": [{"field":"roof_primary_blockage_rain_loads[]","unit":"mm and kN/m2","authority":["SOURCE_VERIFIED","HYDRAULIC_CALCULATION","STRUCTURAL_APPROVAL"]},{"field":"roof_primary_blockage_rain_loads[].ponding_analysis.iterations[]","unit":"mm","authority":["STRUCTURAL_ANALYSIS_RESPONSE"]}],
+      "design_actions": ["derive ds from undeformed roof and secondary-inlet elevations, take dh from the design-flow hydraulic calculation, compute R=0.01(ds+dh), and perform iterative deformed-geometry ponding analysis for susceptible bays using the larger applicable rain or snow load"],
+      "validator": "primary_blockage_rain_load_and_ponding",
+      "parameters": {"rain_load_coefficient_kn_m2_per_mm":0.01,"primary_blockage_required":true,"ponding_analysis_method":"ITERATIVE_DEFORMED_GEOMETRY","minimum_iterations":2,"approval_model_hash_must_match":true},
+      "output_evidence": ["roof-area blockage rain-load schedule","ds/dh elevations and heads","calculated R","structural and ponding analysis identities"],
+      "unknown_policy": "INPUT_REQUIRED",
+      "llm_override_allowed": false
+    },
+    {
+      "rule_id":"IR-M6-1398-ROOF-SNOW-LOAD-BASIS",
+      "version":"1.0.0",
+      "owner":"structural",
+      "subsystem":"snow_and_rain_load_interaction",
+      "kind":"CONDITIONAL",
+      "authority":"STATUTORY_MANDATORY",
+      "title_fa":"مبنای بار برف بام و هندسه برف‌گیری",
+      "sources":[{"code":"M6","edition":"1398","clause":"6-7-1، 6-7-2، 6-7-4، 6-7-6 و 6-7-6-4","printed_page":"45-51","source_ids":["M6-099","M6-100","M6-101","M6-112","M6-113","M6-114"],"status":"VERIFIED_SOURCE"}],
+      "applicability":{"predicate":"roof is subject to snow load","unknown_result":"INPUT_REQUIRED"},
+      "exceptions":[],
+      "cross_references":["IR-M6-1398-RAIN-ON-SNOW-LOAD-CASE","IR-M6-1398-PRIMARY-BLOCKAGE-RAIN-LOAD-PONDING"],
+      "required_inputs":[{"field":"roof_snow_load_basis[]","unit":"kN/m2, kN/m3, m","authority":["SOURCE_VERIFIED","STRUCTURAL_APPROVAL","GEOMETRY_VERIFIED"]}],
+      "design_actions":["derive Cs from actual roof angle, thermal factor and verified sliding/fall geometry; recompute Pr, snow unit weight and balanced depth; reject contradicted exposed-roof classifications; double Pr over the eligible eave-overhang zone limited to 1.5 m"],
+      "validator":"roof_snow_load_basis",
+      "parameters":{"pr_formula":"Is*Cn*Ch*Cs*Ps","snow_unit_weight_formula":"0.43*Ps+2.2","balanced_height_formula":"Pr/gamma"},
+      "output_evidence":["snow-load basis schedule","Pr, gamma and hb","roof obstruction geometry analysis identity"],
+      "unknown_policy":"INPUT_REQUIRED",
+      "llm_override_allowed":false
+    },
+    {
+      "rule_id":"IR-M6-1398-ROOFTOP-SNOW-DRIFT-GEOMETRY",
+      "version":"1.0.0","owner":"structural","subsystem":"snow_and_rain_load_interaction",
+      "kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY",
+      "title_fa":"انباشت برف کنار خرپشته، تجهیزات و جان‌پناه",
+      "sources":[{"code":"M6","edition":"1398","clause":"6-7-10","printed_page":61,"source_ids":["M6-102"],"status":"VERIFIED_SOURCE"}],
+      "applicability":{"predicate":"snow region 4, 5 or 6 and parapet or eligible rooftop raised feature exists","unknown_result":"INPUT_REQUIRED"},
+      "exceptions":[{"predicate":"raised-feature face width < 4.5 m","result":"NOT_APPLICABLE"}],
+      "cross_references":["IR-M6-1398-ROOF-SNOW-LOAD-BASIS"],
+      "required_inputs":[{"field":"rooftop_snow_drift_features[]","unit":"m","authority":["GEOMETRY_VERIFIED","STRUCTURAL_CALCULATION"]}],
+      "design_actions":["select lu from actual geometry; independently compute relation 6-7-5 as drift width w=hd^2/hc; preserve the printed clause anomaly that describes 0.75 of that width relation as a maximum height and require an explicit structural interpretation instead of silently treating width as height"],
+      "validator":"rooftop_snow_drift_geometry",
+      "parameters":{"regions":[4,5,6],"raised_feature_min_face_width_m":4.5,"relation_6_7_5":"w=hd^2/hc","printed_maximum_height_reference_factor":0.75,"printed_reference_anomaly_requires_structural_interpretation":true},
+      "output_evidence":["snow-drift feature schedule","lu geometry","6-7-5 base calculation identity","maximum drift height"],
+      "unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false
+    },
+    {
+      "rule_id":"IR-M6-1398-FLUID-LOAD-COMBINATION-EXTENSIONS","version":"1.0.0","owner":"structural",
+      "subsystem":"rainwater_load_combinations","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY",
+      "title_fa":"الحاق اثر بار سیال به ترکیب‌بارها",
+      "sources":[{"code":"M6","edition":"1398","clause":"6-2-3-2(پ) و 6-2-3-3(پ)","printed_page":"11-12","source_ids":["M6-019","M6-024"],"status":"VERIFIED_SOURCE"}],
+      "applicability":{"predicate":"fluid load F acts on the structure","unknown_result":"INPUT_REQUIRED"},"exceptions":[],
+      "cross_references":["IR-M6-1398-LRFD-RAINWATER-LOAD-COMBINATIONS","IR-M6-1398-ASD-RAINWATER-LOAD-COMBINATIONS"],
+      "required_inputs":[{"field":"fluid_load_combination_extensions[]","unit":"one compatible structural effect unit","authority":["STRUCTURAL_CALCULATION"]}],
+      "design_actions":["apply F using the dead-load coefficient in every source-listed LRFD and ASD base case without collapsing signed or dimensionally different effects"],
+      "validator":"fluid_load_combination_extensions","parameters":{"lrfd_cases":{"1":1.4,"2":1.2,"3":1.2,"4":1.2,"5":1.2,"7":0.9},"asd_cases":{"1":1,"2":1,"3":1,"4":1,"5":1,"6":1,"7":1,"8":1,"10":0.6}},
+      "output_evidence":["fluid-load combination extension schedule","effect type/unit","analysis identity"],
+      "unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false
+    },
+    {
+      "rule_id":"IR-M6-1398-HEAVY-ROOFTOP-EQUIPMENT-PLACEMENT","version":"1.0.0","owner":"structural",
+      "subsystem":"rooftop_equipment_structural_coordination","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY",
+      "title_fa":"استقرار سازه‌ای و لرزه‌ای تجهیزات سنگین بام",
+      "sources":[{"code":"M6","edition":"1398","clause":"6-11-3-2-4 و 6-11-13","printed_page":"113-115","source_ids":["M6-128","M6-132"],"status":"VERIFIED_SOURCE"}],
+      "applicability":{"predicate":"heavy equipment is placed on roof structure","unknown_result":"INPUT_REQUIRED"},"exceptions":[],
+      "cross_references":["IR-M6-1398-PERMANENT-RAINWATER-DEAD-LOAD"],
+      "required_inputs":[{"field":"heavy_rooftop_equipment_placements[]","unit":"kg","authority":["GEOMETRY_VERIFIED","STRUCTURAL_APPROVAL"]}],
+      "design_actions":["avoid cantilever, slender-member and long-span placement unless a model-bound structural analysis approves it; require Standard 2800 nonstructural seismic analysis for high/very-high importance buildings and medium-importance buildings of five or more storeys"],
+      "validator":"heavy_rooftop_equipment_structural_placement","parameters":{"seismic_required":{"importance":["HIGH","VERY_HIGH"],"medium_min_storeys":5}},
+      "output_evidence":["equipment placement schedule","operating mass","support member classification","structural and seismic analysis identities"],
+      "unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false
+    },
+    {
+      "rule_id":"IR-M6-1398-ROOF-LIVE-LOAD-REDUCTION","version":"1.0.0","owner":"structural",
+      "subsystem":"roof_service_live_loads","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY",
+      "title_fa":"کاهش بار زنده بام معمولی و سایبان",
+      "sources":[{"code":"M6","edition":"1398","clause":"6-5-6 و 6-5-6-1","printed_page":"25-26","source_ids":["M6-046","M6-047"],"status":"VERIFIED_SOURCE"}],
+      "applicability":{"predicate":"ordinary flat, pitched or curved roof or canopy","unknown_result":"INPUT_REQUIRED"},"exceptions":[],
+      "cross_references":["IR-M6-1398-ROOF-SERVICE-LIVE-LOADS"],
+      "required_inputs":[{"field":"roof_live_load_reductions[]","unit":"m2, percent, kN/m2","authority":["GEOMETRY_VERIFIED","STRUCTURAL_CALCULATION"]}],
+      "design_actions":["derive R1 from member tributary area; derive S as slope percent for pitched roofs or 267 times rise/span for curved and domed roofs, never from degree angle; compute R2 and Lr=L0*R1*R2 only for ordinary roofs/canopies and enforce the printed limits"],
+      "validator":"roof_live_load_reduction","parameters":{"s_definition":{"pitched":"roof slope percent","curved_or_domed":"267*rise/span"},"r1":{"At_le_18":1,"between":"1.2-0.0111At","At_gt_54":0.6},"r2":{"S_le_33":1,"between":"1.2-0.006S","S_ge_100":0.6},"lr_min_kn_m2":0.6,"lr_max_kn_m2":1.5},
+      "output_evidence":["roof live-load reduction schedule","At/S/R1/R2/L0/Lr"],
+      "unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false
+    },
+    {"rule_id":"IR-M6-1398-SPECIAL-USE-ROOF-LIVE-LOAD-REDUCTION","version":"1.0.0","owner":"structural","subsystem":"roof_service_live_loads","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY","title_fa":"کاهش بار زنده بام با کاربری خاص","sources":[{"code":"M6","edition":"1398","clause":"6-5-6-2","printed_page":26,"source_ids":["M6-048"],"status":"VERIFIED_SOURCE"}],"applicability":{"predicate":"roof has special use such as roof garden and is not an assembly roof","unknown_result":"INPUT_REQUIRED"},"exceptions":[],"cross_references":["IR-M6-1398-ROOF-LIVE-LOAD-REDUCTION"],"required_inputs":[{"field":"special_use_roof_live_load_reductions[]","unit":"m2 and kN/m2","authority":["STRUCTURAL_CALCULATION"]}],"design_actions":["use a separate approved section 6-5-5 calculation bound to the same model; never apply the ordinary-roof R1/R2 formula or reduce below its approved result"],"validator":"special_use_roof_live_load_reduction","parameters":{"method_clause":"6-5-5"},"output_evidence":["special-use roof load schedule","6-5-5 calculation and model identities"],"unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false},
+    {"rule_id":"IR-M6-1398-ROOF-SERVICEABILITY-DEFLECTION","version":"1.0.0","owner":"structural","subsystem":"roof_serviceability","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY","title_fa":"کنترل افتادگی بهره‌برداری اعضای بام","sources":[{"code":"M6","edition":"1398","clause":"6-1-3-2 و 6-2-5-1","printed_page":"4,15","source_ids":["M6-010","M6-027"],"status":"VERIFIED_SOURCE"}],"applicability":{"predicate":"roof structural member has a serviceability deflection limit","unknown_result":"INPUT_REQUIRED"},"exceptions":[],"cross_references":["IR-M6-1398-FLUID-LOAD-COMBINATION-EXTENSIONS"],"required_inputs":[{"field":"roof_serviceability_deflection_checks[]","unit":"mm","authority":["STRUCTURAL_ANALYSIS_RESPONSE"]}],"design_actions":["compare model-computed vertical deflection for the declared serviceability combination with span divided by the governing design-code ratio; verify response and approval against the same model hash"],"validator":"roof_serviceability_deflection","parameters":{"system_does_not_perform_structural_analysis":true},"output_evidence":["member deflection schedule","combination/analysis/model identities","allowable and calculated deflection"],"unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false},
+    {"rule_id":"IR-M4-1396-RAINWATER-MAINTENANCE-ACCESS-GEOMETRY","version":"1.0.0","owner":"architecture","subsystem":"rainwater_maintenance_access","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY","title_fa":"مسیر هندسی دسترسی نگهداری و نظافت آب باران","sources":[{"code":"M4","edition":"1396","clause":"4-5-1-4-3، 4-5-8-3-3 و 4-5-9-1-2","printed_page":"45,69-72","source_ids":["M4-066","M4-085","M4-088"],"status":"VERIFIED_SOURCE"}],"applicability":{"predicate":"rainwater equipment-only corridor, patio/lightwell or exterior element requires maintenance access","unknown_result":"INPUT_REQUIRED"},"exceptions":[],"cross_references":["IR-M4-1396-SHAFT-ACCESS-PRIVATE-ROUTE"],"required_inputs":[{"field":"rainwater_maintenance_access_paths[]","unit":"m","authority":["GEOMETRY_VERIFIED"]}],"design_actions":["materialize a continuous unobstructed access polyline to each cleaning/maintenance target and keep MEP-only corridor clear width at least 0.60 m"],"validator":"m4_rainwater_maintenance_access_geometry","parameters":{"mep_only_corridor_min_width_m":0.6},"output_evidence":["maintenance access polylines","target access points","minimum clear-width schedule"],"unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false},
+    {"rule_id":"IR-M4-1396-PARKING-RAMP-RUNOFF-INTERFACE-GEOMETRY","version":"1.0.0","owner":"architecture","subsystem":"parking_surface_runoff","kind":"CONDITIONAL","authority":"STATUTORY_MANDATORY","title_fa":"هندسه شیبراه در رابط ورود رواناب توقفگاه","sources":[{"code":"M4","edition":"1396","clause":"4-5-10-2-6 تا 4-5-10-2-8","printed_page":"78-79","source_ids":["M4-095","M4-096","M4-097"],"status":"VERIFIED_SOURCE"}],"applicability":{"predicate":"a parking ramp participates in the project exterior-runoff or parking-entry drainage interface","unknown_result":"INPUT_REQUIRED"},"exceptions":[{"predicate":"verified absence of applicable parking ramp","result":"NOT_APPLICABLE"}],"cross_references":["IR-M4-1396-PARKING-SURFACE-RUNOFF"],"required_inputs":[{"field":"parking_ramp_profiles[]","unit":"m and percent","authority":["GEOMETRY_VERIFIED"]}],"design_actions":["derive every ramp slope from station/elevation geometry, keep first and last one-metre zones at or below 10 percent, apply the source-specific body limit, and coordinate the resulting entry profile with interceptor/drain placement"],"validator":"m4_parking_ramp_slope_geometry","parameters":{"end_zone_max_percent":10,"public_covered_over_20m_max_percent":16,"public_covered_at_most_20m_max_percent":17,"private_open_medium_large_max_percent":15,"private_covered_small_max_percent":17},"output_evidence":["parking ramp station/elevation profile","computed segment slopes","runoff-interface profile layer"],"unknown_policy":"INPUT_REQUIRED","llm_override_allowed":false}
+  ]
+}

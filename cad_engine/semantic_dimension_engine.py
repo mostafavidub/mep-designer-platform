@@ -149,6 +149,49 @@ def _display_precision_tolerance(text):
     return 0.5 * (10.0 ** (-decimals))
 
 
+SOURCE_TEXT_RELATIVE_TOLERANCE = 0.10
+
+
+def source_numeric_dimension_policy(measured, displayed_text):
+    """Select source numeric text only inside the strict ten-percent envelope."""
+    text = str(displayed_text or "").strip()
+    if not text or text == "<>" or "<>" in text:
+        return {"status": "EXACT", "accepted": True,
+                "design_value_native": abs(float(measured or 0.0)),
+                "relative_difference": 0.0,
+                "denominator": "ABS_GEOMETRIC_MEASUREMENT"}
+    numeric = _simple_numeric_override(text)
+    if numeric is None:
+        return {"status": "NON_NUMERIC_OVERRIDE", "accepted": False,
+                "design_value_native": None, "relative_difference": None,
+                "denominator": "ABS_GEOMETRIC_MEASUREMENT"}
+    try:
+        geometry = abs(float(measured))
+        numeric = float(numeric)
+    except (TypeError, ValueError):
+        geometry = 0.0
+    if (not math.isfinite(geometry) or not math.isfinite(numeric)
+            or geometry <= 1e-12 or numeric <= 0):
+        return {"status": "NUMERIC_OVERRIDE_INVALID", "accepted": False,
+                "design_value_native": None, "relative_difference": None,
+                "denominator": "ABS_GEOMETRIC_MEASUREMENT"}
+    relative = abs(numeric - geometry) / geometry
+    precision = _display_precision_tolerance(text)
+    if precision is not None and abs(numeric - geometry) <= precision + 1e-12:
+        status = "FORMAT_EQUIVALENT"
+    elif relative < SOURCE_TEXT_RELATIVE_TOLERANCE:
+        status = "SOURCE_TEXT_AUTHORITY_WITHIN_10_PERCENT"
+    else:
+        status = "NUMERIC_OVERRIDE"
+    accepted = status in {"FORMAT_EQUIVALENT", "SOURCE_TEXT_AUTHORITY_WITHIN_10_PERCENT"}
+    return {"status": status, "accepted": accepted,
+            "design_value_native": numeric if accepted else None,
+            "relative_difference": relative,
+            "denominator": "ABS_GEOMETRIC_MEASUREMENT",
+            "threshold": SOURCE_TEXT_RELATIVE_TOLERANCE,
+            "threshold_comparison": "STRICTLY_LESS_THAN"}
+
+
 def _override_status(measured, displayed_text):
     """Classify explicit source text without inventing an engineering tolerance.
 

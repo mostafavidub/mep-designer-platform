@@ -3,11 +3,29 @@ from __future__ import annotations
 
 from hashlib import sha256
 import json
+import math
 
 
 def _id(prefix, payload):
     seed=json.dumps(payload,sort_keys=True,separators=(',',':'))
     return prefix+sha256(seed.encode()).hexdigest()[:12].upper()
+
+
+def size_round_duct(airflow_lps, max_velocity_m_s, candidate_diameters_mm):
+    """Select the smallest explicit round-duct candidate below the velocity limit."""
+    flow_m3_s = float(airflow_lps) / 1000.0
+    candidates = []
+    for diameter in sorted(float(value) for value in candidate_diameters_mm or []):
+        area = math.pi * (diameter / 1000.0) ** 2 / 4.0
+        velocity = flow_m3_s / area
+        candidates.append({"diameter_mm": diameter, "velocity_m_s": round(velocity, 3),
+                           "pass": velocity <= float(max_velocity_m_s)})
+    selected = next((row for row in candidates if row["pass"]), None)
+    payload = {"airflow_lps": float(airflow_lps), "max_velocity_m_s": float(max_velocity_m_s),
+               "candidate_diameters_mm": list(candidate_diameters_mm or [])}
+    return {"status": "PASS" if selected else "FAIL", "calc_id": _id("CALC-DUCT-", payload),
+            "airflow_lps": float(airflow_lps), "selected": selected,
+            "candidates": candidates, "formula": "v=Q/A"}
 
 
 def calculate_heating_design(rooms, design_basis):

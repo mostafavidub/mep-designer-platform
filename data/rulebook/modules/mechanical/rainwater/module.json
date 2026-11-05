@@ -1,0 +1,43 @@
+{
+  "schema": "planha-rulebook-module/1.0",
+  "module_id": "mechanical.rainwater.iran",
+  "version": "2.22.0",
+  "owner": "mechanical",
+  "dependencies": [
+    "architecture.roof_geometry",
+    "architecture.access_and_property_boundary",
+    "structural.rain_load_and_ponding",
+    "fire.penetrations"
+  ],
+  "source_documents": [
+    {
+      "code": "M4",
+      "edition": "1396",
+      "sha256": "ff5b351c7c1dd9b25d589cdc74cf7d9d91f539df79ee3222385ba1ab82a5a2b6"
+    },
+    {
+      "code": "M6",
+      "edition": "1398",
+      "sha256": "9702369223d5c04072d5e8e01871045c80ff494ffe8ae1357ebd90e78ff18201"
+    },
+    {
+      "code": "M16",
+      "edition": "1396",
+      "print": "1402",
+      "sha256": "b74bedf75e3998179cc6decabe2c36d5c52fc7310026b0dcef3fc438e9f16b6b"
+    }
+  ],
+  "coverage": {
+    "source_entries": 534,
+    "substantive_blocks": 192,
+    "tables": 26,
+    "entry_count_is_not_rule_count": true
+  },
+  "rules_file": "rules.json",
+  "source_coverage_file": "source_coverage.json",
+  "fixed_policies": {
+    "unknown_applicability": "INPUT_REQUIRED",
+    "llm_override_allowed": false,
+    "source_record_presence_is_pass": false
+  }
+}

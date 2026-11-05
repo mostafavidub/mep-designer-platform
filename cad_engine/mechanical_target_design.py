@@ -59,8 +59,21 @@ def build_exhaust_package(payload):
 
 
 def build_rainwater_package(payload):
-    design=design_roof_rainwater(payload.get("roof") or {},payload.get("design_basis") or {})
+    design=design_roof_rainwater(
+        payload.get("roof") or {},payload.get("design_basis") or {},
+        rule_context=payload.get("rule_context") or {},
+        draft_assumption_basis=payload.get("draft_assumption_basis") or {})
     if design["status"]!="PASS":return _blocked("roof_rainwater",design)
+    if (design.get("rule_evaluation") or {}).get("status") != "PASS":
+        evaluation_status=(design.get("rule_evaluation") or {}).get("status", "INPUT_REQUIRED")
+        return {
+            "status": evaluation_status, "basis_status": "INPUT_REQUIRED",
+            "sheets": ["M-R-01"], "rainwater_design": design,
+            "blocked_at": "rainwater_rulebook", "rulebook_blocker": {
+            "status": evaluation_status,
+            "missing_inputs": sorted({item for row in (design.get("rule_evaluation") or {}).get("evaluations") or []
+                                      for item in row.get("missing_inputs") or []}),
+            "rule_evaluation": design.get("rule_evaluation")}}
     return {"status":"PASS","basis_status":"FINAL","sheets":["M-R-01"],"rainwater_design":design}
 
 

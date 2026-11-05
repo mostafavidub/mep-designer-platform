@@ -9,6 +9,9 @@
       ],
       "paths": [
         "data/rulebook/**",
+        "cad_engine/executable_rulebook.py",
+        "cad_engine/rainwater_rulebook.py",
+        "cad_engine/independent_deliverables.py",
         "standards/swcis/rule_traceability_matrix.yaml"
       ],
       "depends_on": []
