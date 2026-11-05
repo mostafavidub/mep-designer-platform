@@ -143,7 +143,8 @@ QUESTION_OPTIONS = {
 }
 
 TEXT_QUESTION_KEYS = {'location'}
-NUMBER_QUESTION_KEYS = {'water_inlet_pressure', 'rainfall_intensity', 'gas_pressure'}
+NUMBER_QUESTION_KEYS = {'water_inlet_pressure', 'rainfall_intensity', 'gas_pressure',
+                        'gas_relative_density', 'max_duct_velocity_m_s'}
 
 def present_question(item):
     question = dict(item or {})

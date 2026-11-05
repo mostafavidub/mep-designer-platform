@@ -42,9 +42,10 @@ WATER_HYDRAULIC_BASIS_FIELDS={
 def _stable_water_calc_id(segment_id):
  return 'CALC-WATER-'+sha256(str(segment_id).encode()).hexdigest()[:12].upper()
 
-def _probable_flow(fu,curve):
+def _probable_flow(fu,curve,exact=False):
  for row in sorted(curve,key=lambda x:float(x['max_fixture_units'])):
-  if fu<=float(row['max_fixture_units']): return float(row['flow_lps'])
+  boundary=float(row['max_fixture_units'])
+  if (abs(fu-boundary)<=1e-9) if exact else (fu<=boundary): return float(row['flow_lps'])
  return None
 
 def design_water_network(segments,fixtures,design_basis):
@@ -70,12 +71,23 @@ def design_water_network(segments,fixtures,design_basis):
   if unknown:
    errors.append(f"{segment['id']}:unknown_fixtures:{','.join(unknown)}")
    continue
-  fu=sum(float(fixture_fu[value]) for value in segment['downstream_fixture_ids'])
-  flow=_probable_flow(fu,design_basis['probable_flow_curve'])
+  values=[]
+  for value in segment['downstream_fixture_ids']:
+   fixture_value=fixture_fu[value]
+   if isinstance(fixture_value,dict): fixture_value=fixture_value.get(segment['system'])
+   if fixture_value is None:
+    input_required.append(f"{segment['id']}:fixture_units:{value}:{segment['system']}")
+    values=[];break
+   values.append(float(fixture_value))
+  if not values: continue
+  fu=sum(values)
+  flow=_probable_flow(fu,design_basis['probable_flow_curve'],bool(design_basis.get('probable_flow_exact_rows')))
   if flow is None:
    input_required.append(f"{segment['id']}:probable_flow_curve_range")
    continue
   selected=None; candidates=[]
+  minimum_by_fixture=design_basis.get('minimum_fixture_branch_dn_mm_by_fixture_id') or {}
+  minimum_dn=max((float(minimum_by_fixture.get(value) or 0) for value in segment['downstream_fixture_ids']),default=0)
   for diameter in sorted(float(x) for x in design_basis['candidate_diameters_mm']):
    area=math.pi*(diameter/1000.0)**2/4.0
    velocity=(flow/1000.0)/area
@@ -83,7 +95,8 @@ def design_water_network(segments,fixtures,design_basis):
    pressure_drop_pa_m=gradient*float(design_basis.get('water_density_kg_m3',998.2))*9.80665
    candidate={'diameter_mm':diameter,'velocity_m_s':round(velocity,3),
               'pressure_drop_pa_m':round(pressure_drop_pa_m,1)}
-   candidate['pass']=velocity<=float(design_basis['max_velocity_m_s']) and pressure_drop_pa_m<=float(design_basis['max_pressure_drop_pa_m'])
+   candidate['pass']=(diameter>=minimum_dn and velocity<=float(design_basis['max_velocity_m_s'])
+                      and pressure_drop_pa_m<=float(design_basis['max_pressure_drop_pa_m']))
    candidates.append(candidate)
    if candidate['pass'] and selected is None: selected=candidate
   calc_id=_stable_water_calc_id(segment['id'])
@@ -113,6 +126,352 @@ def design_water_network(segments,fixtures,design_basis):
  return {'status':status,'missing_inputs':sorted(input_required),'errors':sorted(errors),'segments':rows,'reducers':reducers,
          'basis_hash':sha256(json.dumps(design_basis,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
          'identity_policy':'drawing DN = calculation DN; size_source = calculation_id'}
+
+def design_water_network_from_rulebook(segments,fixtures,project_hydraulic_basis):
+ """Size water segments using exact verified M16 demand rows.
+
+ Fixture SFU values, exact probable demand and minimum branch DN come from the
+ canonical water Rulebook. Candidate diameters and hydraulic criteria remain
+ explicit project/internal design-basis inputs; no graphical sizing curve is
+ digitized or inferred here.
+ """
+ from .water_rulebook import water_design_profile
+ profile=water_design_profile(); method=profile['probable_demand_method']
+ required={'system_mode','candidate_diameters_mm','max_velocity_m_s',
+           'max_pressure_drop_pa_m','hazen_williams_c'}
+ missing=sorted(required-set(project_hydraulic_basis or {}))
+ if missing:
+  return {'status':'INPUT_REQUIRED','missing_inputs':missing,'segments':[],'reducers':[],
+          'rulebook_module_version':profile['minimum_fixture_branch_dn_provenance']['module_version']}
+ mode=str(project_hydraulic_basis['system_mode'])
+ demand=method['probable_flow_l_s']
+ if mode not in demand:
+  return {'status':'INPUT_REQUIRED','missing_inputs':['system_mode'],'segments':[],'reducers':[],
+          'rulebook_module_version':profile['minimum_fixture_branch_dn_provenance']['module_version']}
+ fixture_sfu=method['fixture_sfu']; prepared=[]; minimum_by_id={}; preparation_missing=[]
+ for index,fixture in enumerate(fixtures or []):
+  fixture_id=fixture.get('id'); kind=str(fixture.get('fixture_sfu_type') or '')
+  count=fixture.get('count',1)
+  if not fixture_id: preparation_missing.append(f'fixtures[{index}].id');continue
+  if kind not in fixture_sfu: preparation_missing.append(f'fixtures[{index}].supported_fixture_sfu_type');continue
+  try: numeric_count=float(count)
+  except (TypeError,ValueError): numeric_count=0
+  if numeric_count<=0 or not numeric_count.is_integer():
+   preparation_missing.append(f'fixtures[{index}].count');continue
+  units={}
+  for system,scope in (('cold_water','cold'),('hot_water','hot')):
+   value=fixture_sfu[kind].get(scope)
+   if value is not None: units[system]=float(value)*int(numeric_count)
+  prepared.append({'id':fixture_id,'fixture_units':units})
+  fixture_class=str(fixture.get('fixture_type') or '')
+  minimum=profile['minimum_fixture_branch_dn_mm'].get(fixture_class)
+  if minimum is not None: minimum_by_id[fixture_id]=float(minimum)
+ if preparation_missing or not prepared:
+  return {'status':'INPUT_REQUIRED','missing_inputs':sorted(preparation_missing or ['fixtures']),
+          'segments':[],'reducers':[],
+          'rulebook_module_version':profile['minimum_fixture_branch_dn_provenance']['module_version']}
+ exact_curve=[{'max_fixture_units':float(sfu),'flow_lps':float(flow)}
+              for sfu,flow in demand[mode].items()]
+ basis={key:project_hydraulic_basis[key] for key in required if key!='system_mode'}
+ basis.update({'probable_flow_curve':exact_curve,'probable_flow_exact_rows':True,
+               'minimum_fixture_branch_dn_mm_by_fixture_id':minimum_by_id,
+               'probable_demand_rule_id':method['rule_id'],
+               'minimum_dn_rule_id':profile['minimum_fixture_branch_dn_provenance']['rule_id']})
+ result=design_water_network(segments,prepared,basis)
+ equivalent_method=profile['galvanized_fitting_equivalent_length_method']
+ segment_inputs={row.get('id'):row for row in segments or []}
+ integration_missing=[]; integration_errors=[]
+ for row in result.get('segments') or []:
+  source=segment_inputs.get(row['segment_id']) or {}
+  if source.get('pipe_material')!='GALVANIZED_STEEL':
+   row['fitting_equivalent_length_source']='EXPLICIT_PROJECT_INPUT'
+   continue
+  dn=f"{float(row['selected_dn_mm']):g}" if row.get('selected_dn_mm') is not None else ''
+  table=equivalent_method['equivalent_length_m'].get(dn)
+  fittings=source.get('fittings')
+  if table is None:
+   integration_missing.append(f"{row['segment_id']}:galvanized_equivalent_length_dn:{dn}")
+   continue
+  if not isinstance(fittings,list):
+   integration_missing.append(f"{row['segment_id']}:fittings")
+   continue
+  total=0.0; valid=True
+  for index,fitting in enumerate(fittings):
+   kind=str(fitting.get('type') or ''); quantity=fitting.get('quantity')
+   if kind not in table:
+    integration_missing.append(f"{row['segment_id']}:fittings[{index}].supported_type");valid=False
+   try: numeric_quantity=float(quantity)
+   except (TypeError,ValueError): numeric_quantity=-1
+   if numeric_quantity<0 or not numeric_quantity.is_integer():
+    integration_missing.append(f"{row['segment_id']}:fittings[{index}].quantity");valid=False
+   if valid: total+=float(table[kind])*int(numeric_quantity)
+  if not valid: continue
+  declared=source.get('fittings_equivalent_length_m')
+  if declared is not None and (not isinstance(declared,(int,float)) or abs(float(declared)-total)>1e-9):
+   integration_errors.append(f"{row['segment_id']}:declared_fitting_equivalent_length_m_mismatch")
+  effective_length=float(source['length_m'])+total
+  density=float(basis.get('water_density_kg_m3',998.2)); gradient=float(row['pressure_drop_pa_m'])
+  row.update({'fittings_equivalent_length_m':round(total,6),
+              'total_effective_length_m':round(effective_length,6),
+              'friction_head_m':round((gradient*effective_length)/(density*9.80665),3),
+              'fitting_equivalent_length_source':equivalent_method['rule_id'],
+              'fitting_equivalent_length_method':equivalent_method['method']})
+ if integration_errors:
+  result['errors']=sorted(set((result.get('errors') or [])+integration_errors));result['status']='FAIL'
+ elif integration_missing and result.get('status')!='FAIL':
+  result['missing_inputs']=sorted(set((result.get('missing_inputs') or [])+integration_missing));result['status']='INPUT_REQUIRED'
+ result.update({'rulebook_module_version':profile['minimum_fixture_branch_dn_provenance']['module_version'],
+                'probable_demand_rule_id':method['rule_id'],
+                'minimum_dn_rule_id':profile['minimum_fixture_branch_dn_provenance']['rule_id'],
+                'galvanized_equivalent_length_rule_id':equivalent_method['rule_id'],
+                'probable_demand_method':method['method'],
+                'coverage_limit':'EXACT_VERIFIED_ROWS_ONLY_NO_INTERPOLATION'})
+ return result
+
+def evaluate_remote_water_pressure_from_rulebook(sized_segments,outlets,service_basis):
+ """Reconcile source pressure, elevation and calculated friction at each outlet."""
+ from .executable_rulebook import WATER_ROOT,load_rulebook_module,rule_rows
+ module=load_rulebook_module(WATER_ROOT)
+ rule=next(row for row in rule_rows(module) if row['validator']=='fixture_pressure')
+ required={'source_static_pressure_bar','source_flowing_pressure_bar','source_elevation_m',
+           'meter_loss_m','valve_loss_m'}
+ missing=sorted(required-set(service_basis or {}))
+ if missing:
+  return {'status':'INPUT_REQUIRED','missing_inputs':missing,'errors':[],'outlets':[],
+          'rule_id':rule['rule_id'],'rulebook_module_version':module['manifest']['version']}
+ numeric={key:service_basis[key] for key in required}
+ try: numeric={key:float(value) for key,value in numeric.items()}
+ except (TypeError,ValueError):
+  return {'status':'INPUT_REQUIRED','missing_inputs':['finite_service_basis'],'errors':[],'outlets':[],
+          'rule_id':rule['rule_id'],'rulebook_module_version':module['manifest']['version']}
+ if any(not math.isfinite(value) for value in numeric.values()) or any(numeric[key]<0 for key in ('source_static_pressure_bar','source_flowing_pressure_bar','meter_loss_m','valve_loss_m')):
+  return {'status':'INPUT_REQUIRED','missing_inputs':['finite_nonnegative_service_basis'],'errors':[],'outlets':[],
+          'rule_id':rule['rule_id'],'rulebook_module_version':module['manifest']['version']}
+ by_id={row.get('segment_id'):row for row in sized_segments or []}
+ pressure_table=rule['parameters']['minimum_flowing_pressure_mwc']
+ maximum_static=float(rule['parameters']['maximum_static_pressure_bar'])
+ rows=[];missing=[];errors=[];bar_to_m=100000.0/(998.2*9.80665)
+ for index,outlet in enumerate(outlets or []):
+  outlet_id=str(outlet.get('outlet_id') or f'OUTLET-{index}')
+  fixture_type=str(outlet.get('fixture_type') or '')
+  elevation=outlet.get('elevation_m');path=outlet.get('segment_ids')
+  if fixture_type not in pressure_table: missing.append(f'{outlet_id}:supported_fixture_type');continue
+  try: elevation=float(elevation)
+  except (TypeError,ValueError): missing.append(f'{outlet_id}:elevation_m');continue
+  if not math.isfinite(elevation): missing.append(f'{outlet_id}:elevation_m');continue
+  if not isinstance(path,list) or not path: missing.append(f'{outlet_id}:segment_ids');continue
+  unknown=sorted(set(path)-set(by_id))
+  if unknown: missing.append(f"{outlet_id}:unknown_segments:{','.join(unknown)}");continue
+  if any(by_id[value].get('friction_head_m') is None for value in path):
+   missing.append(f'{outlet_id}:segment_friction_head_m');continue
+  friction=sum(float(by_id[value]['friction_head_m']) for value in path)
+  static_head=numeric['source_static_pressure_bar']*bar_to_m-(elevation-numeric['source_elevation_m'])
+  flowing_head=(numeric['source_flowing_pressure_bar']*bar_to_m-(elevation-numeric['source_elevation_m'])
+                -friction-numeric['meter_loss_m']-numeric['valve_loss_m'])
+  static_bar=static_head/bar_to_m;minimum=float(pressure_table[fixture_type])
+  calc_id='CALC-WATER-PRESSURE-'+sha256(outlet_id.encode()).hexdigest()[:12].upper()
+  row={'outlet_id':outlet_id,'fixture_type':fixture_type,'segment_ids':list(path),
+       'source_static_pressure_bar':numeric['source_static_pressure_bar'],
+       'source_flowing_pressure_bar':numeric['source_flowing_pressure_bar'],
+       'elevation_difference_m':round(elevation-numeric['source_elevation_m'],3),
+       'friction_head_m':round(friction,3),'meter_loss_m':numeric['meter_loss_m'],
+       'valve_loss_m':numeric['valve_loss_m'],'calculated_static_pressure_bar':round(static_bar,3),
+       'calculated_flowing_pressure_mwc':round(flowing_head,3),
+       'maximum_static_pressure_bar':maximum_static,'minimum_flowing_pressure_mwc':minimum,
+       'calc_id':calc_id,'rule_id':rule['rule_id']}
+  row_errors=[]
+  if static_bar>maximum_static+1e-9: row_errors.append('STATIC_PRESSURE_ABOVE_MAXIMUM')
+  if flowing_head+1e-9<minimum: row_errors.append('FLOWING_PRESSURE_BELOW_MINIMUM')
+  row['status']='FAIL' if row_errors else 'PASS';row['errors']=row_errors;rows.append(row)
+  errors.extend(f'{outlet_id}:{value}' for value in row_errors)
+ status='FAIL' if errors else ('INPUT_REQUIRED' if missing or not rows else 'PASS')
+ return {'status':status,'missing_inputs':sorted(set(missing)),'errors':sorted(errors),'outlets':rows,
+         'rule_id':rule['rule_id'],'rulebook_module_version':module['manifest']['version'],
+         'identity_policy':'source pressure + elevation + exact sized-path friction + explicit local losses'}
+
+def design_sanitary_main_from_rulebook(segments,fixtures):
+ """Select main-horizontal sanitary DN from exact M16 DFU/slope table rows."""
+ from .sanitary_vent_rulebook import sanitary_vent_design_profile,load_sanitary_vent_rulebook
+ from .executable_rulebook import rule_rows
+ profile=sanitary_vent_design_profile();module=load_sanitary_vent_rulebook()
+ rules={row['validator']:row for row in rule_rows(module)}
+ fixture_rule_id=rules['fixture_dfu']['rule_id'];capacity_rule_id=rules['main_horizontal_dfu_capacity']['rule_id']
+ fixture_table=profile['fixture_dfu'];capacity=profile['main_horizontal_capacity']
+ fixture_loads={};missing=[]
+ for index,fixture in enumerate(fixtures or []):
+  fixture_id=fixture.get('id');kind=str(fixture.get('fixture_dfu_type') or '');count=fixture.get('count',1)
+  if not fixture_id: missing.append(f'fixtures[{index}].id');continue
+  if kind not in fixture_table: missing.append(f'fixtures[{index}].supported_fixture_dfu_type');continue
+  try: numeric_count=float(count)
+  except (TypeError,ValueError): numeric_count=0
+  if numeric_count<=0 or not numeric_count.is_integer(): missing.append(f'fixtures[{index}].count');continue
+  fixture_loads[fixture_id]=float(fixture_table[kind])*int(numeric_count)
+ if missing or not fixture_loads:
+  return {'status':'INPUT_REQUIRED','missing_inputs':sorted(missing or ['fixtures']),'errors':[],
+          'segments':[],'rulebook_module_version':profile['module_version']}
+ rows=[];errors=[];input_required=[]
+ for segment in segments or []:
+  segment_id=str(segment.get('id') or 'UNKNOWN');downstream=segment.get('downstream_fixture_ids');slope=segment.get('slope_percent')
+  if not isinstance(downstream,list) or not downstream:
+   input_required.append(f'{segment_id}:downstream_fixture_ids');continue
+  unknown=sorted(set(downstream)-set(fixture_loads))
+  if unknown: input_required.append(f"{segment_id}:unknown_fixtures:{','.join(unknown)}");continue
+  try: slope_key=f"{float(slope):g}"
+  except (TypeError,ValueError): input_required.append(f'{segment_id}:slope_percent');continue
+  candidates=[];load=sum(fixture_loads[value] for value in downstream)
+  for dn_text,by_slope in sorted(capacity.items(),key=lambda item:float(item[0])):
+   maximum=by_slope.get(slope_key)
+   if maximum is not None:
+    candidates.append({'dn_mm':float(dn_text),'maximum_dfu':float(maximum),
+                       'pass':load<=float(maximum)})
+  if not candidates:
+   input_required.append(f'{segment_id}:exact_supported_slope_row:{slope_key}');continue
+  selected=next((candidate for candidate in candidates if candidate['pass']),None)
+  calc_id='CALC-SANITARY-'+sha256(segment_id.encode()).hexdigest()[:12].upper()
+  drawing_dn=segment.get('drawing_dn_mm',selected['dn_mm'] if selected else None)
+  if selected is None: errors.append(f'{segment_id}:capacity_exceeded')
+  elif float(drawing_dn)!=selected['dn_mm']: errors.append(f'{segment_id}:drawing_dn_mismatch')
+  rows.append({'segment_id':segment_id,'downstream_fixture_ids':sorted(downstream),
+               'calculated_dfu':load,'slope_percent':float(slope),'selected_dn_mm':selected['dn_mm'] if selected else None,
+               'drawing_dn_mm':drawing_dn,'calc_id':calc_id,'size_source':calc_id,'candidates':candidates,
+               'capacity_rule_id':capacity_rule_id,'fixture_dfu_rule_id':fixture_rule_id})
+ status='FAIL' if errors else ('INPUT_REQUIRED' if input_required else 'PASS')
+ return {'status':status,'missing_inputs':sorted(input_required),'errors':sorted(errors),'segments':rows,
+         'rulebook_module_version':profile['module_version'],
+         'coverage_limit':'EXACT_M16_MAIN_HORIZONTAL_DN_SLOPE_ROWS_NO_INTERPOLATION'}
+
+def design_sanitary_branch_stack_from_rulebook(segments,fixtures):
+ from .sanitary_vent_rulebook import sanitary_vent_design_profile,load_sanitary_vent_rulebook
+ from .executable_rulebook import rule_rows
+ profile=sanitary_vent_design_profile();module=load_sanitary_vent_rulebook();rules={r['validator']:r for r in rule_rows(module)}
+ loads={};missing=[]
+ for i,f in enumerate(fixtures or []):
+  fid=f.get('id');kind=str(f.get('fixture_dfu_type') or '');count=f.get('count',1)
+  if not fid or kind not in profile['fixture_dfu']: missing.append(f'fixtures[{i}].identity_or_supported_type');continue
+  try: count=float(count)
+  except (TypeError,ValueError): count=0
+  if count<=0 or not count.is_integer(): missing.append(f'fixtures[{i}].count');continue
+  loads[fid]=float(profile['fixture_dfu'][kind])*int(count)
+ if missing or not loads:return {'status':'INPUT_REQUIRED','missing_inputs':sorted(missing or ['fixtures']),'errors':[],'segments':[]}
+ key_by_kind={'HORIZONTAL_BRANCH':'horizontal_branch','STACK_PER_FLOOR':'stack_per_floor','STACK_UP_TO_3_FLOORS':'stack_up_to_3_floors','STACK_OVER_3_FLOORS':'stack_over_3_floors'}
+ rows=[];needed=[];errors=[]
+ for segment in segments or []:
+  sid=str(segment.get('id') or 'UNKNOWN');kind=str(segment.get('segment_kind') or '');down=segment.get('downstream_fixture_ids')
+  if kind not in key_by_kind:needed.append(f'{sid}:supported_segment_kind');continue
+  if not isinstance(down,list) or not down:needed.append(f'{sid}:downstream_fixture_ids');continue
+  unknown=sorted(set(down)-set(loads))
+  if unknown:needed.append(f"{sid}:unknown_fixtures:{','.join(unknown)}");continue
+  load=sum(loads[x] for x in down);candidates=[]
+  for dn,limits in sorted(profile['branch_stack_capacity'].items(),key=lambda x:float(x[0])):
+   limit=limits.get(key_by_kind[kind])
+   if limit is not None:candidates.append({'dn_mm':float(dn),'maximum_dfu':float(limit),'pass':load<=float(limit)})
+  selected=next((x for x in candidates if x['pass']),None);calc='CALC-SANITARY-'+sha256(sid.encode()).hexdigest()[:12].upper()
+  if selected is None:errors.append(f'{sid}:capacity_exceeded')
+  drawing=segment.get('drawing_dn_mm',selected['dn_mm'] if selected else None)
+  if selected and float(drawing)!=selected['dn_mm']:errors.append(f'{sid}:drawing_dn_mismatch')
+  rows.append({'segment_id':sid,'segment_kind':kind,'calculated_dfu':load,'selected_dn_mm':selected['dn_mm'] if selected else None,'drawing_dn_mm':drawing,'calc_id':calc,'size_source':calc,'candidates':candidates,'rule_id':rules['branch_stack_dfu_capacity']['rule_id']})
+ return {'status':'FAIL' if errors else ('INPUT_REQUIRED' if needed else 'PASS'),'missing_inputs':sorted(needed),'errors':sorted(errors),'segments':rows,'rulebook_module_version':profile['module_version']}
+
+def design_vent_stack_from_rulebook(rows):
+ from .sanitary_vent_rulebook import sanitary_vent_design_profile,load_sanitary_vent_rulebook
+ from .executable_rulebook import rule_rows
+ profile=sanitary_vent_design_profile();module=load_sanitary_vent_rulebook();rules={r['validator']:r for r in rule_rows(module)}
+ table=profile['vent_stack_capacity'];out=[];missing=[];errors=[]
+ for i,row in enumerate(rows or []):
+  sid=str(row.get('id') or f'VENT-{i}')
+  try:waste=float(row['waste_diameter_in']);load=float(row['connected_dfu']);length=float(row['developed_length_ft'])
+  except (KeyError,TypeError,ValueError):missing.append(f'{sid}:positive_numeric_source_units');continue
+  key=f'{waste:g}@{load:g}';options=table.get(key)
+  if not options:missing.append(f'{sid}:exact_supported_waste_dfu_row');continue
+  candidates=[{'vent_diameter_in':float(d),'maximum_length_ft':float(maxlen),'pass':length<=float(maxlen)} for d,maxlen in sorted(options.items(),key=lambda x:float(x[0]))]
+  selected=next((x for x in candidates if x['pass']),None)
+  if selected is None:errors.append(f'{sid}:developed_length_exceeds_table')
+  drawing=row.get('drawing_vent_diameter_in',selected['vent_diameter_in'] if selected else None)
+  if selected and float(drawing)!=selected['vent_diameter_in']:errors.append(f'{sid}:drawing_diameter_mismatch')
+  calc='CALC-VENT-'+sha256(sid.encode()).hexdigest()[:12].upper()
+  out.append({'segment_id':sid,'waste_diameter_in':waste,'connected_dfu':load,'developed_length_ft':length,'selected_vent_diameter_in':selected['vent_diameter_in'] if selected else None,'drawing_vent_diameter_in':drawing,'calc_id':calc,'size_source':calc,'candidates':candidates,'rule_id':rules['vent_stack_dfu_length_capacity']['rule_id']})
+ return {'status':'FAIL' if errors else ('INPUT_REQUIRED' if missing or not out else 'PASS'),'missing_inputs':sorted(missing),'errors':sorted(errors),'segments':out,'rulebook_module_version':profile['module_version'],'coverage_limit':'EXACT_WASTE_DFU_VENT_DIAMETER_ROWS_IN_ORIGINAL_INCH_FOOT_UNITS'}
+
+def validate_sanitary_cleanouts_from_rulebook(cleanouts,inventory_complete):
+ from .sanitary_vent_rulebook import load_sanitary_vent_rulebook,VALIDATORS
+ from .executable_rulebook import rule_rows
+ module=load_sanitary_vent_rulebook();rule=next(r for r in rule_rows(module) if r['validator']=='cleanout_inventory')
+ result=VALIDATORS['cleanout_inventory'](rule,{'sanitary':{'cleanouts':cleanouts,'cleanout_inventory_complete':inventory_complete}})
+ result['calc_id']='CALC-CLEANOUT-'+sha256(json.dumps(cleanouts or [],sort_keys=True,separators=(',',':')).encode()).hexdigest()[:12].upper()
+ result['rulebook_module_version']=module['manifest']['version'];return result
+
+def design_vent_routes_from_rulebook(routes):
+ from .sanitary_vent_rulebook import sanitary_vent_design_profile,load_sanitary_vent_rulebook
+ from .executable_rulebook import rule_rows
+ profile=sanitary_vent_design_profile();module=load_sanitary_vent_rulebook();rules={r['validator']:r for r in rule_rows(module)}
+ p=profile['vent_minimum_size'];series=[float(x) for x in p['nominal_dn_series_mm']]
+ out=[];missing=[];errors=[]
+ for i,route in enumerate(routes or []):
+  rid=str(route.get('id') or f'VENT-ROUTE-{i}')
+  try:waste=float(route['waste_dn_mm']);length=float(route['length_m'])
+  except (KeyError,TypeError,ValueError):missing.append(f'{rid}:waste_dn_mm_and_length_m');continue
+  base=max(float(p['minimum_dn_mm']),waste/2.0);required=next((x for x in series if x>=base),None)
+  if required is None:missing.append(f'{rid}:supported_nominal_dn');continue
+  if length>float(p['length_size_up_trigger_m']):
+   index=series.index(required)
+   if index+1>=len(series):missing.append(f'{rid}:next_nominal_dn');continue
+   required=series[index+1]
+  drawing=route.get('drawing_dn_mm',required)
+  if float(drawing)!=required:errors.append(f'{rid}:drawing_dn_mismatch')
+  calc='CALC-VENT-ROUTE-'+sha256(rid.encode()).hexdigest()[:12].upper()
+  out.append({'route_id':rid,'waste_dn_mm':waste,'length_m':length,'selected_vent_dn_mm':required,'drawing_dn_mm':drawing,'plan_path':route.get('plan_path'),'riser_levels':route.get('riser_levels') or [],'calc_id':calc,'size_source':calc,'rule_id':rules['vent_minimum_size']['rule_id']})
+ return {'status':'FAIL' if errors else ('INPUT_REQUIRED' if missing or not out else 'PASS'),'missing_inputs':sorted(missing),'errors':sorted(errors),'routes':out,'rulebook_module_version':profile['module_version']}
+
+def evaluate_vent_geometry_from_rulebook(fixture_connections,terminations):
+ from .sanitary_vent_rulebook import load_sanitary_vent_rulebook,VALIDATORS
+ from .executable_rulebook import rule_rows
+ module=load_sanitary_vent_rulebook();rules={r['validator']:r for r in rule_rows(module)};missing=[]
+ connections=[]
+ for i,row in enumerate(fixture_connections or []):
+  points=row.get('trap_to_vent_path')
+  if not isinstance(points,list) or len(points)<2 or any(not isinstance(p,(list,tuple)) or len(p)<2 for p in points):missing.append(f'fixture_connections[{i}].trap_to_vent_path');continue
+  distance=sum(math.dist(tuple(a[:2]),tuple(b[:2])) for a,b in zip(points,points[1:]))
+  connections.append({'waste_dn_mm':row.get('waste_dn_mm'),'waste_slope_percent':row.get('waste_slope_percent'),'trap_weir_to_vent_m':distance})
+ termination_rows=[]
+ for i,row in enumerate(terminations or []):
+  point=row.get('point_xyz');openings=row.get('opening_points_xyz')
+  if not isinstance(point,(list,tuple)) or len(point)!=3 or not isinstance(openings,list) or not openings:missing.append(f'terminations[{i}].point_and_openings');continue
+  nearest=min(openings,key=lambda p:math.dist(tuple(point),tuple(p)))
+  horizontal=math.dist(tuple(point[:2]),tuple(nearest[:2]));vertical=float(point[2])-float(nearest[2])
+  built={'horizontal_to_opening_m':horizontal,'vertical_above_opening_m':vertical,'directly_below_opening':horizontal<=1e-9 and vertical<0,'wall_exit':row.get('wall_exit')}
+  if row.get('wall_exit') is True:
+   prop=row.get('nearest_property_point_xy');ground=row.get('ground_elevation_m')
+   if not isinstance(prop,(list,tuple)) or len(prop)!=2 or ground is None:missing.append(f'terminations[{i}].wall_exit_geometry');continue
+   built.update({'horizontal_to_property_m':math.dist(tuple(point[:2]),tuple(prop)),'height_above_ground_m':float(point[2])-float(ground),'under_balcony_or_canopy':row.get('under_balcony_or_canopy')})
+  termination_rows.append(built)
+ trap=VALIDATORS['trap_vent_distance'](rules['trap_vent_distance'],{'vent':{'fixture_connections':connections}})
+ term=VALIDATORS['vent_termination_clearance'](rules['vent_termination_clearance'],{'vent':{'terminations':termination_rows}})
+ all_missing=sorted(set(missing+trap['missing_inputs']+term['missing_inputs']));all_errors=sorted(set(trap['errors']+term['errors']))
+ return {'status':'FAIL' if all_errors else ('INPUT_REQUIRED' if all_missing else 'PASS'),'missing_inputs':all_missing,'errors':all_errors,'trap_vent':trap,'termination':term,'rulebook_module_version':module['manifest']['version']}
+
+def design_heating_installation_from_rulebook(heating_inventory):
+ """Consume source-backed M14 safety/installation rules into design schedules."""
+ from .heating_rulebook import evaluate_heating_rulebook
+ evaluated=evaluate_heating_rulebook({'heating':heating_inventory or {}})
+ systems=(heating_inventory or {}).get('hot_water_heating_systems') or []
+ tanks=[]
+ for index,system in enumerate(systems):
+  tank=system.get('expansion_tank')
+  if not isinstance(tank,dict):continue
+  system_id=str(system.get('system_id') or f'HEATING-{index}')
+  calc='CALC-HEATING-TANK-'+sha256(system_id.encode()).hexdigest()[:12].upper()
+  tanks.append({'system_id':system_id,'tank_type':tank.get('type'),'selected_capacity_l':tank.get('selected_capacity_l'),
+                'capacity_basis':{key:tank.get(key) for key in ('system_water_volume_l','minimum_operating_temperature_c','maximum_operating_temperature_c','maximum_working_pressure_kpa')},
+                'normal_water_level_above_highest_component_mm':tank.get('normal_water_level_above_highest_component_mm'),
+                'certified_test_pressure_kpa':tank.get('certified_test_pressure_kpa'),'accredited_test_report':tank.get('accredited_test_report'),
+                'calc_id':calc,'selection_authority':'EXPLICIT_PROJECT_OR_ENGINEER_SELECTION','release_allowed':False})
+ surfaces=[]
+ for index,row in enumerate((heating_inventory or {}).get('exposed_surfaces') or []):
+  surfaces.append({'surface_id':str(row.get('surface_id') or f'SURFACE-{index}'),'maximum_accessible_surface_temperature_c':row.get('maximum_accessible_surface_temperature_c'),'direct_contact_guard':row.get('direct_contact_guard'),'rule_id':'IR-M14-1391-14.3.5.1-HEATING-SURFACE-GUARD'})
+ equipment=[]
+ for index,row in enumerate((heating_inventory or {}).get('floor_mounted_equipment') or []):
+  equipment.append({'equipment_id':str(row.get('equipment_id') or f'EQUIPMENT-{index}'),'base_height_mm':row.get('base_height_mm'),'rule_id':'IR-M14-1391-14.3.5.2-FLOOR-BASE-HEIGHT'})
+ return {'status':evaluated['status'],'module_id':evaluated['module_id'],'rulebook_module_version':evaluated['module_version'],'rule_results':evaluated['results'],'expansion_tank_schedule':tanks,'surface_guard_schedule':surfaces,'equipment_base_schedule':equipment,'release_allowed':False,'coverage_limit':'M14_BOUNDED_HEATING_INSTALLATION_RULES_NO_CAPACITY_FORMULA'}
 
 def validate_water_drawing_sizes(calculated_segments,drawing_entities):
  expected={row['segment_id']:row for row in calculated_segments or []}

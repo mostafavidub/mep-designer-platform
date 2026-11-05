@@ -2,6 +2,122 @@
   "schema_version": "1.0.0",
   "rules": [
     {
+      "paths": ["cad_engine/sanitary_vent_rulebook.py", "cad_engine/mechanical_execution_sizing.py", "data/rulebook/modules/mechanical/sanitary_vent/**", "tests/test_sanitary_vent_executable_rulebook.py", "tests/test_sanitary_rulebook_sizing_integration.py"],
+      "capabilities": ["mechanical_sanitary_vent_design", "rulebook_governance", "calculation_derived_sanitary_segment_dn"],
+      "requires": ["positive_test", "destructive_test", "exact_table_boundary_test", "golden_regression", "drawing_calculation_identity_test"]
+    },
+    {
+      "paths": [
+        "cad_engine/water_rulebook.py",
+        "cad_engine/mechanical_execution_sizing.py",
+        "data/rulebook/modules/mechanical/water/**",
+        "tests/test_water_executable_rulebook.py",
+        "tests/test_water_rulebook_sizing_integration.py",
+        "tests/test_sizing_v14.py"
+      ],
+      "capabilities": [
+        "mechanical_water_design",
+        "rulebook_governance",
+        "calculation_derived_water_segment_dn"
+      ],
+      "requires": [
+        "positive_test",
+        "destructive_test",
+        "exact_table_boundary_test",
+        "golden_regression",
+        "drawing_calculation_identity_test"
+      ]
+    },
+    {
+      "paths": [
+        "cad_engine/gas_rulebook.py",
+        "data/rulebook/modules/mechanical/gas/**",
+        "tests/test_gas_executable_rulebook.py"
+      ],
+      "capabilities": ["mechanical_gas_design", "rulebook_governance"],
+      "requires": ["positive_test", "destructive_test", "unknown_and_exception_test", "golden_regression"]
+    },
+    {
+      "paths": [
+        "cad_engine/ventilation_rulebook.py",
+        "cad_engine/hvac_calculations.py",
+        "data/rulebook/modules/mechanical/ventilation/**",
+        "tests/test_ventilation_executable_rulebook.py",
+        "tests/test_ventilation_rulebook_design_integration.py"
+      ],
+      "capabilities": [
+        "mechanical_ventilation_design",
+        "rulebook_governance"
+      ],
+      "requires": [
+        "positive_test",
+        "destructive_test",
+        "unknown_and_exception_test",
+        "golden_regression",
+        "design_consumer_traceability_test"
+      ]
+    },
+    {
+      "paths": [
+        "cad_engine/cooling_rulebook.py",
+        "data/rulebook/modules/mechanical/cooling/**",
+        "tests/test_cooling_executable_rulebook.py"
+      ],
+      "capabilities": [
+        "mechanical_cooling_design",
+        "rulebook_governance"
+      ],
+      "requires": [
+        "positive_test",
+        "destructive_test",
+        "unknown_and_exception_test",
+        "golden_regression"
+      ]
+    },
+    {
+      "paths": [
+        "cad_engine/heating_rulebook.py",
+        "cad_engine/mechanical_execution_sizing.py",
+        "data/rulebook/modules/mechanical/heating/**",
+        "tests/test_heating_executable_rulebook.py",
+        "tests/test_heating_rulebook_design_integration.py"
+      ],
+      "capabilities": [
+        "mechanical_heating_design",
+        "rulebook_governance"
+      ],
+      "requires": [
+        "positive_test",
+        "destructive_test",
+        "unknown_and_exception_test",
+        "golden_regression",
+        "design_consumer_traceability_test"
+      ]
+    },
+    {
+      "paths": [
+        "cad_engine/rainwater_rulebook.py",
+        "cad_engine/independent_deliverables.py",
+        "data/rulebook/modules/mechanical/rainwater/**",
+        "tests/test_rainwater_executable_rulebook.py"
+      ],
+      "capabilities": [
+        "mechanical_rainwater_design",
+        "rulebook_governance",
+        "mechanical_release_qa",
+        "architecture_preservation",
+        "visual_release"
+      ],
+      "requires": [
+        "positive_test",
+        "destructive_test",
+        "unknown_and_exception_test",
+        "golden_regression",
+        "exact_reopen",
+        "artifact_tamper_test"
+      ]
+    },
+    {
       "paths": [
         "app/mechanical_basis_contract.py",
         "app/mechanical_workflow.py",

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import re
 
 
-CONTRACT_VERSION = "mechanical-design-basis-v18.5.3"
+CONTRACT_VERSION = "mechanical-design-basis-v18.5.4"
 
 
 def _text(value):
@@ -101,6 +101,22 @@ def normalize_answers(answers, *, answer_key=None, raw_answer=None):
     rainfall = numeric(out.get("rainfall_intensity_mm_h") or out.get("rainfall_intensity"))
     if rainfall is not None:
         out["rainfall_intensity_mm_h"] = rainfall
+    for key in ("gas_relative_density", "max_duct_velocity_m_s"):
+        value = numeric(out.get(key))
+        if value is not None:
+            out[key] = value
+    diameters = out.get("candidate_round_duct_diameters_mm")
+    if diameters not in (None, "", []):
+        # Questionnaire choices use comma as a diameter separator.  Treating
+        # it as a decimal mark would silently turn "160,200,250" into 160.2.
+        # Decimal diameters remain representable with a dot or Persian decimal
+        # mark; Arabic/Persian commas are list separators as well.
+        values = diameters if isinstance(diameters, list) else re.findall(
+            r"\d+(?:[.٫]\d+)?", _text(diameters).replace("،", ",")
+        )
+        parsed = sorted({float(str(value).replace("٫", ".").replace(",", ".")) for value in values if numeric(value) is not None})
+        if parsed:
+            out["candidate_round_duct_diameters_mm"] = parsed
     strategy = canonical_shaft_strategy(out.get("mechanical_shaft_route"))
     if strategy:
         out["mechanical_shaft_route"] = strategy
@@ -150,4 +166,9 @@ def persisted_answer_is_valid(answers, key):
         return bool(canonical_cooling_system(answers))
     if key == "heating_system":
         return bool(canonical_heating_system(answers))
+    if key in ("gas_relative_density", "max_duct_velocity_m_s"):
+        return numeric((answers or {}).get(key)) is not None
+    if key == "candidate_round_duct_diameters_mm":
+        value = (answers or {}).get(key)
+        return isinstance(value, list) and bool(value) and all(numeric(item) is not None for item in value)
     return bool(_text((answers or {}).get(key)))

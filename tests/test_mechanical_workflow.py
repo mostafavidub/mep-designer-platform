@@ -5,12 +5,15 @@ from app.mechanical_workflow import (
     build_scope, create_proposal, is_approved, required_basis_questions,
     ensure_required_basis_questions, REQUIRED_BASIS_QUESTION_SPECS,
 )
+from app.mechanical_basis_contract import normalize_answers
 
 
 class MechanicalWorkflowTests(unittest.TestCase):
     def project(self, answers=None, analysis=None):
         return SimpleNamespace(
-            answers={'discipline': 'mechanical', 'cooling':'اسپلیت دیواری', 'heating':'پکیج دیواری و رادیاتور', **(answers or {})},
+            answers={'discipline': 'mechanical', 'cooling':'اسپلیت دیواری', 'heating':'پکیج دیواری و رادیاتور',
+                     'max_duct_velocity_m_s':6,
+                     'candidate_round_duct_diameters_mm':[160,200,250,315], **(answers or {})},
             analysis=analysis or {
                 'discipline': 'mechanical',
                 'architectural_auto': {
@@ -53,7 +56,7 @@ class MechanicalWorkflowTests(unittest.TestCase):
 
     def test_preflight_requires_project_water_rain_and_gas_values(self):
         p = self.project({'gas':'تأیید'}); missing = required_basis_questions(p)
-        self.assertEqual(missing, ['city','water_inlet_pressure','rainfall_intensity','gas_pressure']); self.assertTrue(ensure_required_basis_questions(p)); self.assertEqual(p.status, 'asking')
+        self.assertEqual(missing, ['city','water_inlet_pressure','rainfall_intensity','gas_pressure','gas_relative_density']); self.assertTrue(ensure_required_basis_questions(p)); self.assertEqual(p.status, 'asking')
         self.assertEqual([q['key'] for q in p.questions], missing)
         numeric = {q['key']: q for q in p.questions if q['key'] != 'city'}
         self.assertTrue(all(q['input_type'] == 'number' and not q['options'] for q in numeric.values()))
@@ -64,7 +67,7 @@ class MechanicalWorkflowTests(unittest.TestCase):
         p = self.project({'city':'مشهد','gas':'خیر','water_inlet_pressure':'نامشخص','rainfall_intensity':'unknown','mechanical_shaft_route':'پیشنهاد نزدیک هسته فضاهای تر'}); self.assertEqual(required_basis_questions(p), ['water_inlet_pressure','rainfall_intensity'])
 
     def test_preflight_passes_only_after_explicit_numeric_values(self):
-        p = self.project({'city':'مشهد','gas':'تأیید','water_inlet_pressure':'2.8 bar','rainfall_intensity':'95 mm/h','gas_pressure':'21 mbar','mechanical_shaft_route':'پیشنهاد نزدیک هسته فضاهای تر'})
+        p = self.project({'city':'مشهد','gas':'تأیید','water_inlet_pressure':'2.8 bar','rainfall_intensity':'95 mm/h','gas_pressure':'21 mbar','gas_relative_density':0.65,'mechanical_shaft_route':'پیشنهاد نزدیک هسته فضاهای تر'})
         self.assertEqual(required_basis_questions(p), []); self.assertFalse(ensure_required_basis_questions(p))
 
     def test_basis_question_options_are_suggestions_not_defaults(self):

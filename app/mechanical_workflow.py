@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 
 from .mechanical_drawing_set import approve_drawing_set, is_current_manifest, predict_drawing_set
 from .mechanical_basis_contract import canonical_city, canonical_cooling_system, canonical_heating_system, normalize_answers, numeric, persisted_answer_is_valid, shaft_approval
+from .mechanical_question_catalog import decorate_question
 
 SYSTEM_LABELS = {
     'cooling': 'سرمایش', 'heating': 'گرمایش', 'water_supply': 'آب سرد و گرم',
@@ -43,6 +44,25 @@ REQUIRED_BASIS_QUESTION_SPECS = {
         'question': 'فشار سرویس گاز مورد تأیید پروژه چند mbar است؟ این مقدار باید از مشخصات انشعاب/شرکت گاز یا مدرک معتبر پروژه باشد.',
         'options': ['17.4 mbar', '20 mbar', '21 mbar', '22 mbar'],
         'unit': 'mbar',
+    },
+    'gas_relative_density': {
+        'question': 'چگالی نسبی گاز طبیعی پروژه طبق مشخصات شرکت گاز/مرجع معتبر چند است؟ فقط مقدار مستند پروژه را وارد کنید.',
+        'options': ['0.50', '0.60', '0.65', '0.70'],
+        'unit': None,
+        'input_type': 'number',
+        'min': 0.5,
+        'max': 1.0,
+        'step': 0.05,
+    },
+    'max_duct_velocity_m_s': {
+        'question': 'حداکثر سرعت طراحی کانال گرد تهویه برای این پروژه چند m/s است؟ مقدار باید در مبنای طراحی تأیید شده باشد.',
+        'options': ['3', '4', '5', '6'],
+        'unit': 'm/s',
+    },
+    'candidate_round_duct_diameters_mm': {
+        'question': 'مجموعه قطرهای گرد مجاز پروژه را طبق مبنای طراحی تأیید کنید؛ فقط قطرهای مجاز پروژه را انتخاب کنید.',
+        'options': ['100,125,160,200', '125,160,200,250', '160,200,250,315', '200,250,315,400'],
+        'unit': None,
     },
     'mechanical_shaft_route': {
         'question': 'مسیر عمودی تأسیسات مکانیکی را تأیید کنید. در صورت نبود شفت معماری، موتور فقط با اجازه صریح شما محل پیشنهادی ایجاد می‌کند.',
@@ -222,6 +242,13 @@ def required_basis_questions(p):
     gas_enabled = bool(answers.get('gas')) and not _negative(answers.get('gas'))
     if gas_enabled and _numeric(answers.get('gas_pressure')) is None:
         required.append('gas_pressure')
+    if gas_enabled and _numeric(answers.get('gas_relative_density')) is None:
+        required.append('gas_relative_density')
+    if scope.get('ventilation_required_levels'):
+        if _numeric(answers.get('max_duct_velocity_m_s')) is None:
+            required.append('max_duct_velocity_m_s')
+        if not answers.get('candidate_round_duct_diameters_mm'):
+            required.append('candidate_round_duct_diameters_mm')
     if scope.get('vertical_systems') and not shaft_approval(answers):
         required.append('mechanical_shaft_route')
     return required
@@ -229,18 +256,19 @@ def required_basis_questions(p):
 
 def _question_payload(key):
     spec = REQUIRED_BASIS_QUESTION_SPECS[key]
-    numeric_input = bool(spec.get('unit'))
-    return {
+    numeric_input = bool(spec.get('unit')) or spec.get('input_type') == 'number'
+    return decorate_question({
         'key': key,
         'question': spec['question'],
         'input_type': 'number' if numeric_input else 'radio',
         'options': [] if numeric_input else list(spec['options']),
         'unit': spec.get('unit'),
-        'min': 0.1 if numeric_input else None,
-        'step': 0.1 if numeric_input else None,
+        'min': spec.get('min', 0.1) if numeric_input else None,
+        'max': spec.get('max') if numeric_input else None,
+        'step': spec.get('step', 0.1) if numeric_input else None,
         'required': True,
         'source': 'mechanical_basis_preflight',
-    }
+    })
 
 
 def ensure_required_basis_questions(p):
@@ -315,9 +343,14 @@ def _basis_answer_error(key, answer):
         return None if canonical_heating_system({'heating_system': answer}) else 'این موتور فعلاً فقط پکیج دیواری و رادیاتور را به‌صورت کامل پشتیبانی می‌کند.'
     if key == 'mechanical_shaft_route':
         return None if shaft_approval(normalize_answers({}, answer_key=key, raw_answer=answer)) else 'یکی از مسیرهای شفت را به‌صورت صریح تأیید کنید.'
+    if key == 'candidate_round_duct_diameters_mm':
+        values = [float(value) for value in re.findall(r'\d+(?:\.\d+)?', str(answer))]
+        return None if values and all(value > 0 for value in values) else 'حداقل یک قطر مثبت بر حسب mm وارد کنید.'
     value = _numeric(answer)
     if value is None or value <= 0:
         return f"برای {key} باید مقدار عددی معتبر و تأییدشده وارد شود؛ Default خودکار اعمال نمی‌شود."
+    if key == 'gas_relative_density' and value not in {0.50,0.55,0.60,0.65,0.70,0.75,0.80,0.85,0.90,1.00}:
+        return 'چگالی نسبی باید دقیقاً یکی از ردیف‌های چاپ‌شده جدول 17-4-11 باشد؛ interpolation مجاز نیست.'
     return None
 
 

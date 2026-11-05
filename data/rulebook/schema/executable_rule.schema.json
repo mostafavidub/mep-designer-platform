@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "planha://rulebook/executable-rule/1.0",
+  "$id": "planha://rulebook/executable-rule/1.1",
   "title": "Planha executable engineering rule",
   "type": "object",
   "additionalProperties": false,
@@ -8,7 +8,13 @@
   "properties": {
     "rule_id": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9._-]+$"},
     "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
-    "owner": {"enum": ["architecture", "structural", "mechanical", "electrical", "fire", "shared"]},
+    "owner": {"enum": [
+      "architecture", "architecture_accessibility", "architecture_urban",
+      "structural", "structural_flood", "mechanical",
+      "mechanical_structural_interface", "acoustics",
+      "environmental_health", "geotechnical_structural",
+      "construction_structural", "project_governance"
+    ]},
     "subsystem": {"type": "string", "minLength": 1},
     "kind": {"enum": ["OPERATIVE", "CONDITIONAL", "DEFINITION", "GUIDANCE", "DEPENDENCY", "UNRESOLVED_CONTROL", "DOCUMENTED_NOT_APPLICABLE"]},
     "authority": {"enum": ["STATUTORY_MANDATORY", "STATUTORY_GUIDANCE", "INTERNAL_ENGINEERING", "PROJECT_INPUT", "UNRESOLVED"]},
@@ -30,7 +36,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["code", "edition", "clause", "printed_page", "source_ids"],
       "properties": {
-        "code": {"enum": ["M4", "M6", "M16", "PLANHA_INTERNAL"]},
+        "code": {"enum": ["M4", "M6", "M14", "M16", "M17", "PLANHA_INTERNAL"]},
         "edition": {"type": "string"}, "clause": {"type": "string"},
         "printed_page": {"type": ["integer", "string"]},
         "source_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
@@ -47,7 +53,28 @@
       "required": ["field", "unit", "authority"],
       "properties": {
         "field": {"type": "string"}, "unit": {"type": ["string", "null"]},
-        "authority": {"type": "array", "minItems": 1, "items": {"enum": ["SOURCE_VERIFIED", "USER_CONFIRMED", "OFFICIAL_DATA", "ENGINEER_APPROVED", "STRUCTURAL_APPROVAL", "PRODUCT_APPROVAL", "PHYSICAL_TEST"]}}
+        "authority": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": [
+          "SOURCE_VERIFIED", "USER_CONFIRMED", "OFFICIAL_DATA", "ENGINEER_APPROVED",
+          "GEOMETRY_VERIFIED", "SURVEY_VERIFIED", "ROUTE_INVENTORY",
+          "PROJECT_CONTRACT", "PERMIT_AUTHORITY", "LOCAL_AUTHORITY_APPROVAL_IF_SPECIAL",
+          "UTILITY_AUTHORITY", "SUPERVISOR_APPROVAL",
+          "ARCHITECT_APPROVAL", "ARCHITECTURE_REVIEW", "ARCHITECTURE_ANALYSIS_RESPONSE",
+          "ARCHITECTURE_OWNER_RESPONSE", "ARCHITECTURE_ACCESSIBILITY_REVIEW",
+          "ARCHITECTURE_ACCESSIBILITY_RESPONSE", "ARCHITECTURE_EGRESS_BASIS",
+          "URBAN_PLANNING_REVIEW", "URBAN_STRUCTURAL_AUTHORITY_RESPONSE",
+          "ENVIRONMENTAL_HEALTH_RESPONSE", "FIRE_REVIEW", "FIRE_EMERGENCY_ACCESS_REVIEW",
+          "MECHANICAL_VENTILATION_REVIEW", "ACOUSTIC_OWNER_RESPONSE",
+          "STRUCTURAL_APPROVAL", "STRUCTURAL_CALCULATION", "STRUCTURAL_ANALYSIS_RESPONSE",
+          "GEOTECHNICAL_RESPONSE", "VIBRATION_ANALYSIS_RESPONSE", "FLOOD_HAZARD_OWNER_RESPONSE",
+          "HYDRAULIC_CALCULATION", "ATMOSPHERIC_ICE_CALCULATION",
+          "WIND_DESIGN_BASIS", "WIND_FIGURE_COEFFICIENTS", "FLOOD_INTERFACE",
+          "OFFICIAL_CLIMATE_DATA", "OFFICIAL_CLIMATE_MAP", "OFFICIAL_UNIT_INTERPRETATION",
+          "OFFICIAL_PRODUCT_APPROVAL", "ACCREDITED_TEST_REPORT",
+          "PRODUCT_APPROVAL", "PRODUCT_DATA", "PRODUCT_LIMIT", "PRODUCT_DIRECTIONAL_CAPACITY",
+          "MANUFACTURER_DATA", "MATERIAL_DATA", "MATERIAL_SELECTION",
+          "CONSTRUCTION_PLAN", "CONSTRUCTION_QA", "PHYSICAL_TEST"
+        ]}},
+        "duty_stage": {"enum": ["DESIGN_AND_LATER", "CONSTRUCTION_AND_FINAL_INSPECTION"]}
       }
     }
   }

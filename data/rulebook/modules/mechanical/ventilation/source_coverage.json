@@ -1,0 +1,7 @@
+{"schema":"planha-rulebook-source-coverage/1.0","module_id":"mechanical.ventilation.iran","source_entry_count":5,"entries":[
+{"source_id":"M14-V-001","clause":"Table 14-4-2 residential kitchen and bathroom/toilet mechanical exhaust rows","printed_page":42,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-T14.4.2-RESIDENTIAL-EXHAUST-RATES"],"automatic_pass":false},
+{"source_id":"M14-V-002","clause":"14-4-2-1 outside-air intake separation and residential exhaust exception","printed_page":39,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.4.2.1-OUTSIDE-AIR-INTAKE-SEPARATION"],"automatic_pass":false},
+{"source_id":"M14-V-003","clause":"Table 14-4-2 private and common parking ventilation rows","printed_page":42,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-T14.4.2-PARKING-VENTILATION-RATES"],"automatic_pass":false},
+{"source_id":"M14-V-004","clause":"14-4-4-6 enclosed parking and garage carbon-monoxide control and ventilation capacities","printed_page":41,"disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-14.4.4.6-ENCLOSED-PARKING-CO-CONTROL"],"automatic_pass":false},
+{"source_id":"M14-V-005","clause":"Table 14-4-2 unambiguous single-basis outside-air rows","printed_page":"42-43","disposition":"EXECUTABLE_RULE","rule_ids":["IR-M14-1391-T14.4.2-OUTSIDE-AIR-RATES"],"automatic_pass":false}
+]}

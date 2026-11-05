@@ -10,6 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RULEBOOK_ROOT = ROOT / "data" / "rulebook"
 RAINWATER_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "rainwater"
+WATER_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "water"
+SANITARY_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "sanitary_vent"
+HEATING_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "heating"
+COOLING_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "cooling"
+VENTILATION_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "ventilation"
+GAS_ROOT = RULEBOOK_ROOT / "modules" / "mechanical" / "gas"
 REQUIRED_RULE_FIELDS = {
     "rule_id", "version", "owner", "subsystem", "kind", "authority", "sources",
     "applicability", "required_inputs", "design_actions", "validator", "output_evidence",
@@ -79,7 +85,8 @@ def validate_rulebook_module(module=None):
                 errors.append(f"{row.get('rule_id','UNKNOWN')}:CROSS_REFERENCE_UNKNOWN:{ref}")
     entries = coverage.get("entries") or []
     entry_ids = [row.get("source_id") for row in entries]
-    if coverage.get("source_entry_count") != 534 or len(entries) != 534:
+    expected_entries = int((manifest.get("coverage") or {}).get("source_entries") or 0)
+    if not expected_entries or coverage.get("source_entry_count") != expected_entries or len(entries) != expected_entries:
         errors.append("SOURCE_COVERAGE_COUNT_INVALID")
     if len(entry_ids) != len(set(entry_ids)):
         errors.append("SOURCE_COVERAGE_DUPLICATE")
@@ -91,7 +98,7 @@ def validate_rulebook_module(module=None):
     declared_sources = sum(int(row.get("entry_count") or 0)
                            for row in manifest.get("source_documents") or [])
     # The handoff manifest is the source of the count; module source rows retain hashes only.
-    if manifest.get("coverage", {}).get("source_entries") != 534:
+    if manifest.get("coverage", {}).get("source_entries") != expected_entries:
         errors.append("MANIFEST_SOURCE_COUNT_INVALID")
     return {"status": "PASS" if not errors else "FAIL", "errors": sorted(set(errors)),
             "module_id": manifest.get("module_id"), "module_version": manifest.get("version"),
@@ -99,7 +106,7 @@ def validate_rulebook_module(module=None):
             "mapped_executable_source_count": sum(bool(row.get("rule_ids")) for row in entries),
             "unresolved_control_count": sum(row.get("disposition") == "UNRESOLVED_CONTROL" for row in entries),
             "dependency_identity": module_dependency_identity(),
-            "declared_source_entry_count": declared_sources or 534}
+            "declared_source_entry_count": declared_sources or expected_entries}
 
 
 def rule_rows(module=None):

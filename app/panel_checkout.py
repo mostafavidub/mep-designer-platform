@@ -22,7 +22,624 @@ from sqlalchemy import Integer, String, ForeignKey, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import mechanical_workflow
-from .design_progress import set_project_progress
+from .design_progress import set_project_progress, stage_payload
+
+
+def _draft_domain_contract(deliverable_type, overlay, answers):
+    """Derive one project-bound aggregate edge through canonical calculators.
+
+    The edge is a DRAFT calculation transport, not a final routed network. Its
+    source IDs are the exact reversible endpoints in the overlay.
+    """
+    from cad_engine.mechanical_execution_sizing import (
+        design_water_network, design_heating_network, design_gas_network,
+    )
+    from cad_engine.hvac_calculations import size_round_duct
+    calculation = dict(overlay.get("deterministic_calculation") or {})
+    totals = dict(calculation.get("totals") or {})
+    endpoints = list(overlay.get("fixture_endpoints") or [])
+    source_ids = [str(row.get("id")) for row in endpoints if row.get("id")]
+    if not source_ids or not totals:
+        return None
+    edge_id = "DRAFT-" + deliverable_type.replace("MECH_", "").replace("_PACKAGE", "") + "-E1"
+    if deliverable_type == "MECH_WATER_SUPPLY_PACKAGE":
+        fu=float(totals.get("water_fu") or 0); flow=float(totals.get("preliminary_water_lps") or 0)
+        segment_inputs=[]
+        for system in ("cold_water","hot_water"):
+            segment_inputs.append({"id":edge_id+"-"+system.upper(),"system":system,
+                "downstream_fixture_ids":source_ids,"length_m":20,
+                "fittings_equivalent_length_m":5})
+        result=design_water_network(
+            segment_inputs,
+            [{"id":source_id,"fixture_units":fu/len(source_ids)} for source_id in source_ids],
+            {"probable_flow_curve":[{"max_fixture_units":fu,"flow_lps":flow}],
+             "candidate_diameters_mm":[20,25,32,40,50],"max_velocity_m_s":2,
+             "max_pressure_drop_pa_m":5000,"hazen_williams_c":150})
+        if result.get("status")!="PASS": return None
+        endpoint=next(row for row in endpoints if row.get("id") in source_ids)
+        point=[float(value) for value in endpoint["point"]]
+        design_room=next((row for row in overlay.get("design_rooms") or []
+                          if str(row.get("room_id"))==str(endpoint.get("room_id"))),{})
+        level_id=str(design_room.get("level_id") or "DRAFT-L1")
+        nodes=[{"id":"DRAFT-WATER-SOURCE-COLD","kind":"water_source","point":[point[0]-1,point[1]],
+                "level":level_id,"ports":["cold_water"],"authority":"MODEL_PROPOSED_DESIGN_ASSUMPTION","release_allowed":False},
+               {"id":"DRAFT-WATER-SOURCE-HOT","kind":"water_heater","point":[point[0]-1,point[1]+.5],
+                "level":level_id,"ports":["hot_water"],"authority":"MODEL_PROPOSED_DESIGN_ASSUMPTION","release_allowed":False},
+               {"id":"DRAFT-WATER-ENDPOINT","kind":"fixture","point":point,
+                "level":level_id,"ports":["cold_water","hot_water"],"source_detection_ids":source_ids,
+                "authority":"MODEL_PROPOSED_DESIGN_ASSUMPTION","release_allowed":False}]
+        edges=[];rows=[]
+        for sized in result["segments"]:
+            system=sized["system"];source_node=("DRAFT-WATER-SOURCE-COLD" if system=="cold_water"
+                                                 else "DRAFT-WATER-SOURCE-HOT")
+            start=next(row["point"] for row in nodes if row["id"]==source_node)
+            edge={"id":sized["segment_id"],"system":system,"from":source_node,
+                  "to":"DRAFT-WATER-ENDPOINT","material":"PPR","calc_id":sized["calc_id"],
+                  "flow_lps":sized["probable_flow_lps"],
+                  "pressure_drop_pa":round(sized["pressure_drop_pa_m"]*25,2),
+                  "size":sized["selected_dn_mm"],"plan_path":[start,[point[0],start[1]],point],
+                  "draw_on_plan":True,"levels":[level_id],
+                  "release_allowed":False}
+            edges.append(edge);rows.append({**edge,"calculation_engine":"design_water_network",
+                "source_input_ids":source_ids,"formula_inputs":{"fixture_units":fu,"length_m":25,
+                "basis_status":"PROVISIONAL_DRAFT"}})
+        graph_id="DRAFT-WATER-"+hashlib.sha256(json.dumps({"nodes":nodes,"edges":edges},
+            sort_keys=True,separators=(",",":")).encode()).hexdigest()[:16].upper()
+        return {"network_graph_canonical":{"schema":"mechanical-network-graph/1","graph_id":graph_id,
+                    "design_mode":"provisional-interpretation-draft","release_allowed":False,
+                    "levels":[{"id":level_id,"name":level_id,"type":"GROUND"}],
+                    "nodes":nodes,"edges":edges},"calculation_rows_canonical":rows}
+    elif deliverable_type == "MECH_SANITARY_VENT_PACKAGE":
+        from cad_engine.mechanical_execution_sizing import size_networks
+        plumbing = [row for row in endpoints if str(row.get("type") or "").lower() in {
+            "wc", "toilet", "basin", "sink", "shower", "floor_drain", "bath"}]
+        shafts = list(overlay.get("shafts") or [])
+        if not plumbing or not shafts: return None
+        endpoint = plumbing[0]; point = [float(value) for value in endpoint["point"]]
+        shaft = min((row for row in shafts if len(row.get("centroid") or []) == 2),
+                    key=lambda row: math.dist(point, row["centroid"]), default=None)
+        if shaft is None: return None
+        start = [float(value) for value in shaft["centroid"]]
+        design_room = next((row for row in overlay.get("design_rooms") or []
+                            if str(row.get("room_id")) == str(endpoint.get("room_id"))), {})
+        level_id = str(design_room.get("level_id") or "DRAFT-L1")
+        detections = [{"id": str(row["id"]), "category": "fixture",
+                       "type": "wc" if row.get("type") == "toilet" else row.get("type"),
+                       "room_id": row.get("room_id")} for row in plumbing]
+        topology = {"edges": [{"id": edge_id + "-" + system.upper(),
+                     "from": "DRAFT-SANITARY-SHAFT", "endpoint_ids": [row["id"] for row in plumbing]}
+                    for system in ("sanitary", "vent")]}
+        routing = {"routes": [{"id": "ROUTE-" + row["id"], "edge_id": row["id"],
+                    "system": row["id"].rsplit("-", 1)[-1].lower(),
+                    "endpoint_ids": row["endpoint_ids"]} for row in topology["edges"]]}
+        sized = size_networks(topology, routing, {"detections": detections},
+                              calculation, design_basis={"sanitary_slope_percent": 2.0})
+        if sized.get("quality", {}).get("unsized_routes"): return None
+        nodes = [{"id": "DRAFT-SANITARY-SHAFT", "kind": "shaft", "point": start,
+                  "level": level_id, "source": "ARCHITECTURAL_SHAFT_GEOMETRY",
+                  "release_allowed": False},
+                 {"id": "DRAFT-SANITARY-FIXTURES", "kind": "fixture_group", "point": point,
+                  "level": level_id, "source_detection_ids": [row["id"] for row in plumbing],
+                  "release_allowed": False}]
+        edges=[]; rows=[]
+        for segment in sized["segments"]:
+            system=segment["system"]
+            calc_id="CALC-DRAFT-%s-" % system.upper() + hashlib.sha256(json.dumps(
+                {"load":segment["downstream_load"],"sources":source_ids,"system":system},
+                sort_keys=True).encode()).hexdigest()[:12].upper()
+            edge={"id":segment["edge_id"],"system":system,"material":"UPVC","calc_id":calc_id,
+                  "fixture_units":segment["downstream_load"],"slope_percent":2.0,
+                  "size":segment["size_mm"],"from":"DRAFT-SANITARY-FIXTURES",
+                  "to":"DRAFT-SANITARY-SHAFT","plan_path":[point,[start[0],point[1]],start],
+                  "draw_on_plan":True,"levels":[level_id],"release_allowed":False}
+            edges.append(edge); rows.append({**edge,"calculation_engine":"size_networks",
+                "source_input_ids":source_ids,"formula_inputs":{"fixture_units":segment["downstream_load"],
+                    "sanitary_slope_percent":2.0,"basis_status":"PROVISIONAL_DRAFT"}})
+        graph_id="DRAFT-SANITARY-"+hashlib.sha256(json.dumps({"nodes":nodes,"edges":edges},
+            sort_keys=True,separators=(",",":")).encode()).hexdigest()[:16].upper()
+        return {"network_graph_canonical":{"schema":"mechanical-network-graph/1","graph_id":graph_id,
+                    "design_mode":"provisional-interpretation-draft","release_allowed":False,
+                    "levels":[{"id":level_id,"name":level_id,"type":"GROUND"}],
+                    "nodes":nodes,"edges":edges},"calculation_rows_canonical":rows}
+    elif deliverable_type == "MECH_HEATING_PACKAGE":
+        load_kw=float(totals.get("heating_w") or 0)/1000
+        result=design_heating_network(
+            [{"id":edge_id,"system":"heating_supply","downstream_radiator_ids":["DRAFT-RADIATOR-AGG"]}],
+            [{"radiator_id":"DRAFT-RADIATOR-AGG","selected_output_w":load_kw*1000}],
+            {"design_delta_t_k":20,"fluid_density_kg_m3":998,"fluid_specific_heat_j_kgk":4180,
+             "candidate_diameters_mm":[16,20,25,32,40],"max_velocity_m_s":1.5})
+        if result.get("status")!="PASS": return None
+        sized=result["segments"][0]; calc_id=sized["calc_id"]
+        edge={"id":edge_id,"system":"heating_supply","material":"PEX","calc_id":calc_id,
+              "load_kw":load_kw,"delta_t_c":20,"size":sized["selected_dn_mm"]}
+        row={**edge,"calculation_engine":"design_heating_network","source_input_ids":source_ids,
+             "formula_inputs":{"heat_loss_w":totals["heating_w"],"delta_t_k":20,
+                               "basis_status":"PROVISIONAL_DRAFT"}}
+    elif deliverable_type == "MECH_COOLING_PACKAGE":
+        load_btu=round(float(totals.get("cooling_w") or 0)*3.412142); calc_id="CALC-DRAFT-COOL-"+hashlib.sha256(
+            json.dumps({"load_btu_h":load_btu,"sources":source_ids},sort_keys=True).encode()).hexdigest()[:12].upper()
+        edge={"id":edge_id,"system":"cooling","material":"COPPER","calc_id":calc_id,
+              "load_btu_h":load_btu,"line_type":"DESIGN_LOAD_ONLY_UNSIZED",
+              "size":None,"manufacturer_selection":"INPUT_REQUIRED_FOR_RELEASE"}
+        row={**edge,"calculation_engine":"calculate_cooling_design","source_input_ids":source_ids,
+             "formula_inputs":{"calculated_load_w":totals["cooling_w"],
+                               "refrigerant_size_status":"UNSIZED_NO_MANUFACTURER",
+                               "basis_status":"PROVISIONAL_DRAFT"}}
+    elif deliverable_type == "MECH_GAS_PACKAGE":
+        load_kw=float(totals.get("gas_kw") or 0); flow=round(load_kw/10.5,3)
+        appliances=[{"id":"DRAFT-GAS-AGG","pmm_id":"DRAFT-GAS-AGG","manufacturer":"UNSELECTED",
+          "model":"DRAFT","thermal_input_kw":load_kw,"gas_consumption_m3h":flow,
+          "datasheet":{"official_url":"INPUT_REQUIRED","revision":"DRAFT","sha256":"0"*64},
+          "appliance_valve":"required","flue":"required","combustion_air":"required"}]
+        result=design_gas_network(
+            [{"id":edge_id,"downstream_appliance_ids":["DRAFT-GAS-AGG"],"equivalent_length_m":25}],appliances,
+            {"capacity_table":[{"max_equivalent_length_m":30,"max_flow_m3h":8,"dn_mm":32}],
+             "service_pressure_mbar":float(mechanical_workflow._numeric(
+                 answers.get("gas_pressure")) or 20),"allowable_pressure_drop_mbar":1,
+             "meter":"DRAFT_UNSELECTED","regulator":"DRAFT_UNSELECTED","service_shutoff":"required",
+             "riser":"DRAFT","fittings":"DRAFT","sleeves":"required"})
+        if result.get("status")!="PASS": return None
+        sized=result["segments"][0]; calc_id=sized["calc_id"]
+        edge={"id":edge_id,"system":"gas","material":"BLACK_STEEL","calc_id":calc_id,
+              "flow_m3_h":sized["flow_m3h"],"inlet_pressure_mbar":sized["service_pressure_mbar"],
+              "size":sized["selected_dn_mm"]}
+        row={**edge,"calculation_engine":"design_gas_network","source_input_ids":source_ids,
+             "formula_inputs":{"thermal_input_kw":load_kw,"gas_consumption_m3h":flow,
+                               "equivalent_length_m":25,"basis_status":"PROVISIONAL_DRAFT"}}
+    else:
+        airflow=round(float(totals.get("exhaust_cfm") or 0)*0.47194745,3)
+        sized=size_round_duct(airflow,6,[200,250,315,355,400])
+        if sized.get("status")!="PASS": return None
+        calc_id=sized["calc_id"]
+        edge={"id":edge_id,"system":"exhaust_ventilation","material":"GI","calc_id":calc_id,
+              "airflow_lps":airflow,"velocity_m_s":sized["selected"]["velocity_m_s"],
+              "size":sized["selected"]["diameter_mm"]}
+        row={**edge,"calculation_engine":"duct_velocity_sizing","source_input_ids":source_ids,
+             "formula_inputs":{"required_cfm":totals["exhaust_cfm"],"max_velocity_m_s":6,
+                               "basis_status":"PROVISIONAL_DRAFT"}}
+    return {"network_graph_canonical":{"nodes":[],"edges":[edge]},
+            "calculation_rows_canonical":[row]}
+
+
+def _system_deliverable_definitions(legacy, project, revision):
+    """Materialize source-bound per-system DRAFT snapshots without inventing inputs."""
+    from cad_engine.independent_deliverables import SYSTEM_PACKAGES
+    analysis = dict(project.analysis or {})
+    draft = dict(analysis.get("independent_draft_scope") or {})
+    drawing_set = dict(draft.get("drawing_set_proposal") or analysis.get("drawing_set") or {})
+    manifest = dict(drawing_set.get("approved_manifest") or drawing_set.get("drawing_manifest") or {})
+    architecture = dict((analysis.get("architectural_auto") or {}).get("architecture_model") or {})
+    derived = dict(architecture.get("llm_derived_canonical") or {})
+    provisional = dict(derived.get("provisional_completeness") or {})
+    source_sha = str(draft.get("source_sha256") or
+                     (architecture.get("source_identity") or {}).get("sha256") or "")
+    if provisional.get("status") != "PROVISIONAL_READY" or not source_sha:
+        return []
+    project_dir = Path(legacy.DATA_DIR) / "projects" / str(project.id)
+    archive_path, dxf_path = project_dir / "architecture.zip", project_dir / "architecture.dxf"
+    if archive_path.exists():
+        archive_bytes = archive_path.read_bytes()
+    elif dxf_path.exists():
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(dxf_path.name, dxf_path.read_bytes())
+        archive_bytes = stream.getvalue()
+    else:
+        return []
+    answers = dict(project.answers or {})
+    from app.project_mechanical_model import build_project_mechanical_model
+    scope = mechanical_workflow.build_scope(project)
+    draft_pmm = build_project_mechanical_model(analysis, answers, scope, drawing_set)
+    # This authority increase is confined to reversible DRAFT tasks.  The
+    # canonical project PMM and every execution/release gate remain unchanged.
+    draft_pmm["mode"] = "provisional-interpretation-draft"
+    draft_pmm["architecture_completeness"] = {
+        "status":"PROVISIONAL_READY", "downstream_engineering_allowed":True,
+        "release_allowed":False, "authority":"MODEL_PROPOSED_REVERSIBLE",
+        "source_sha256":source_sha,
+    }
+    draft_pmm["canonical_architecture_authority"] = {
+        **dict(draft_pmm.get("canonical_architecture_authority") or {}),
+        "downstream_engineering_allowed":True, "release_allowed":False,
+        "policy":"PROVISIONAL_DRAFT_ONLY_NO_RELEASE_AUTHORITY",
+    }
+    draft_pmm["diagnostics"] = [row for row in draft_pmm.get("diagnostics") or []
+                                if row not in {"architecture_completeness_input_required",
+                                               "canonical_architecture_authority_input_required"}]
+    draft_pmm["valid"] = not any(row in {"planner_total_does_not_match_manifest_count",
+        "no_architecture_levels_in_pmm","duplicate_pmm_entity_id"} for row in draft_pmm["diagnostics"])
+    fixture_text = str(answers.get("fixture_schedule") or "")
+    number = lambda value: mechanical_workflow._numeric(value) is not None
+    fixture_rows = list(((analysis.get("architectural_auto") or {})
+                         .get("fixture_detections") or []))
+    design_overlay = dict(analysis.get("draft_design_overlay") or {})
+    overlay_fixtures = [row for row in design_overlay.get("fixture_endpoints") or []
+                        if isinstance(row, dict)]
+    plumbing_kinds = {"wc", "toilet", "basin", "sink", "shower", "floor_drain", "bath"}
+    wet_room_types = {"bathroom", "toilet", "wc", "kitchen", "laundry", "wet_room"}
+    has_located_plumbing = any(
+        str(row.get("type") or row.get("kind") or "").lower() in plumbing_kinds
+        and (row.get("point") or (row.get("x") is not None and row.get("y") is not None))
+        and (row.get("wet_core_id") or str(row.get("room_type") or "").lower() in wet_room_types)
+        and str(row.get("source_sha256") or "") == source_sha
+        for row in fixture_rows if isinstance(row,dict))
+    has_located_plumbing = has_located_plumbing or any(
+        str(row.get("type") or "").lower() in plumbing_kinds
+        and row.get("point") and row.get("authority") == "MODEL_PROPOSED_DESIGN_ASSUMPTION"
+        and row.get("source_sha256") == source_sha and row.get("release_allowed") is False
+        for row in overlay_fixtures)
+    has_real_shaft = bool(architecture.get("shafts") or architecture.get("vertical_cores")
+                          or design_overlay.get("shafts"))
+    # Readiness is evidence, not intent.  In particular a selected system is
+    # not proof that its engineering loads exist.  Keep these checks tied to
+    # values already recorded on this project so an independent package cannot
+    # enter the queue on a synthetic True flag.
+    ventilation_basis = answers.get("ventilation_design_basis")
+    ventilation_loads = (answers.get("ventilation_airflow_lps") or
+                         answers.get("ventilation_airflow_m3_h") or
+                         answers.get("airflow_schedule"))
+    load_provenance = dict(answers.get("_engineering_input_provenance") or {})
+    overlay_basis = dict(design_overlay.get("engineering_basis") or {})
+    calculation_basis = dict((design_overlay.get("deterministic_calculation") or {}).get("design_basis") or {})
+    typed_ventilation_spaces = list(calculation_basis.get("ventilation_spaces") or [])
+    def traceable_load(key):
+        record = dict(load_provenance.get(key) or {})
+        basis_name = {"heating_load_kw": "heating_design_basis",
+                      "cooling_load_kw": "cooling_design_basis"}.get(key)
+        basis = dict(overlay_basis.get(basis_name) or {}) if basis_name else {}
+        if (not record and basis.get("authority") == "OWNER_DECLARED_PROJECT_FACT"
+                and basis.get(key) == answers.get(key)):
+            record = {"authority": "OWNER_DECLARED_PROJECT_FACT",
+                      "source_sha256": source_sha}
+        return (number(answers.get(key)) and record.get("authority") in {
+            "USER_CONFIRMED", "ENGINEERING_CALCULATION", "SOURCE_DOCUMENT",
+            "MODEL_PROPOSED_DRAFT_CALCULATION", "OWNER_DECLARED_PROJECT_FACT",
+        } and (not record.get("source_sha256") or record.get("source_sha256") == source_sha))
+    evidence_by_type = {
+        "MECH_WATER_SUPPLY_PACKAGE":{"water_pressure_basis":number(answers.get("water_inlet_pressure") or answers.get("water_pressure")),"fixture_schedule":bool(re.search(r"\d", fixture_text)) and has_located_plumbing},
+        "MECH_SANITARY_VENT_PACKAGE":{"fixture_schedule":bool(re.search(r"\d", fixture_text)) and has_located_plumbing,"shaft_coordination":bool(mechanical_workflow.shaft_approval(answers)) and has_real_shaft},
+        "MECH_HEATING_PACKAGE":{"heating_basis":bool(mechanical_workflow.canonical_heating_system(answers)),"heating_loads":traceable_load("heating_load_kw")},
+        "MECH_COOLING_PACKAGE":{"cooling_basis":bool(mechanical_workflow.canonical_cooling_system(answers)),"cooling_loads":traceable_load("cooling_load_kw")},
+        "MECH_GAS_PACKAGE":{"gas_pressure_basis":number(answers.get("gas_pressure")) and number(answers.get("gas_relative_density")),"gas_appliance_loads":number(answers.get("gas_appliance_load_kw")) or number(answers.get("gas_appliance_load_m3_h"))},
+        "MECH_VENTILATION_PACKAGE":{"ventilation_basis":bool(str(ventilation_basis or "").strip()) or bool(typed_ventilation_spaces),"airflow_loads":number(ventilation_loads) or bool(typed_ventilation_spaces)},
+    }
+    definitions=[]
+    for deliverable_type, system in SYSTEM_PACKAGES.items():
+        sheets=[dict(row) for row in manifest.get("sheets") or [] if row.get("family")==system["family"]]
+        if not sheets: continue
+        filtered={k:v for k,v in manifest.items() if k not in {"sheets","total_sheets","manifest_id"}}
+        filtered.update({"sheets":sheets,"total_sheets":len(sheets)})
+        pmm_for_system = deepcopy(draft_pmm)
+        task_analysis={**analysis,"project_mechanical_model":pmm_for_system}
+        domain_contract=_draft_domain_contract(deliverable_type,design_overlay,answers)
+        if domain_contract: task_analysis.update(domain_contract)
+        if deliverable_type in {"MECH_HEATING_PACKAGE", "MECH_COOLING_PACKAGE",
+                                "MECH_GAS_PACKAGE", "MECH_VENTILATION_PACKAGE"}:
+            from cad_engine.independent_deliverables import _draft_domain_routed_graph
+            routed = _draft_domain_routed_graph(
+                deliverable_type, pmm_for_system, architecture, design_overlay, answers)
+            if routed and routed.get("status") == "PASS":
+                task_analysis["network_graph_canonical"] = routed["network_graph"]
+                task_analysis["calculation_rows_canonical"] = routed["calculation_rows"]
+        enabled = set(system["runtime_systems"])
+        pmm_systems = dict(pmm_for_system.get("systems") or {})
+        family_keys = {
+            "conditioned_levels":{"cooling","condensate"}, "heated_levels":{"heating_supply","heating_return"},
+            "wet_fixture_levels":{"cold_water","hot_water"}, "sanitary_fixture_levels":{"sanitary","vent"},
+            "ventilation_required_levels":{"exhaust_ventilation"}, "gas_consumer_levels":{"gas"},
+        }
+        for key, owners in family_keys.items():
+            if not (enabled & owners): pmm_systems[key]=[]
+        pmm_systems["roof_exists"]=False
+        pmm_for_system["systems"]=pmm_systems
+        snapshot={"source_sha256":source_sha,"architecture_archive_b64":base64.b64encode(archive_bytes).decode(),
+            "provisional_architecture":{"status":"PROVISIONAL_READY","draft_engineering_allowed":True,
+                "release_allowed":False,"source_sha256":source_sha,"lineage":derived.get("counts") or {}},
+            "draft_design_overlay":design_overlay,
+            "approved_draft_manifest":filtered,"answers":answers,"plan_analysis":task_analysis,
+            "revision":revision.revision_no}
+        evidence={"source_geometry":True,"draft_architecture_interpretation":True,"system_scope":True,
+                  "cross_system_coordination":False,**evidence_by_type[deliverable_type]}
+        definitions.append({"deliverable_type":deliverable_type,"scope_key":system["family"].upper(),
+                            "evidence":evidence,"input_snapshot":snapshot})
+    return definitions
+
+
+def _select_independent_definitions(persisted, fresh_system, *, refresh_system_definitions=False):
+    persisted = list(persisted or [])
+    if not refresh_system_definitions:
+        return persisted or list(fresh_system or [])
+    from cad_engine.independent_deliverables import SYSTEM_PACKAGES
+    # Retain separately produced/custom deliverables, but a stale system
+    # snapshot must never hide evidence materialized later in the same paid
+    # workflow.  Fresh rows remain source/revision bound by their builder.
+    retained = [row for row in persisted if isinstance(row, dict)
+                and row.get("deliverable_type") not in SYSTEM_PACKAGES]
+    return retained + list(fresh_system or [])
+
+
+def _schedule_paid_independent_deliverables(
+        db, legacy, project, revision, order, *, refresh_system_definitions=False):
+    """Atomically bridge a paid order to source-qualified independent outputs.
+
+    The architecture/analysis producer owns these snapshots. Checkout neither
+    invents missing evidence nor promotes blocked definitions.
+    """
+    if os.environ.get("INDEPENDENT_DELIVERABLES_ENABLED", "0") != "1":
+        return []
+    if not all(hasattr(legacy, name) for name in (
+        "EngineeringDeliverable", "DeliverableTask",
+    )):
+        return []
+    persisted = (project.analysis or {}).get("independent_deliverables")
+    fresh_system = (_system_deliverable_definitions(legacy, project, revision)
+                    if refresh_system_definitions or not persisted else [])
+    definitions = _select_independent_definitions(
+        persisted, fresh_system,
+        refresh_system_definitions=refresh_system_definitions,
+    )
+    diagnostic_preview = _source_bound_rainwater_preview_definition(legacy, project)
+    if diagnostic_preview and not any(
+            isinstance(row, dict) and row.get("deliverable_type") ==
+            "MECH_ROOF_RAINWATER_SOURCE_PREVIEW" for row in definitions):
+        definitions.append(diagnostic_preview)
+    diagnostic_types = {
+        "MECH_HEATING_PACKAGE": "MECH_HEATING_SOURCE_DIAGNOSTIC_PREVIEW",
+        "MECH_COOLING_PACKAGE": "MECH_COOLING_SOURCE_DIAGNOSTIC_PREVIEW",
+    }
+    for definition in list(definitions):
+        if not isinstance(definition, dict):
+            continue
+        diagnostic_type = diagnostic_types.get(definition.get("deliverable_type"))
+        if not diagnostic_type or any(
+                isinstance(row, dict) and row.get("deliverable_type") == diagnostic_type
+                for row in definitions):
+            continue
+        evidence = dict(definition.get("evidence") or {})
+        required = ({"source_geometry", "draft_architecture_interpretation", "system_scope",
+                     "heating_basis", "heating_loads"}
+                    if definition.get("deliverable_type") == "MECH_HEATING_PACKAGE" else
+                    {"source_geometry", "draft_architecture_interpretation", "system_scope",
+                     "cooling_basis", "cooling_loads"})
+        # A diagnostic may display only a graph the normal typed producer can
+        # actually derive.  Missing system evidence stays fail-closed and does
+        # not gain a preview merely from payment or a source file.
+        definitions.append({
+            "deliverable_type": diagnostic_type,
+            "scope_key": (str(definition.get("scope_key") or "PROJECT") +
+                          "-SOURCE-DIAGNOSTIC")[:150],
+            "evidence": {"source_geometry": bool(evidence.get("source_geometry")),
+                         "draft_network_evidence": all(bool(evidence.get(key)) for key in required)},
+            "input_snapshot": definition.get("input_snapshot"),
+        })
+    rainwater_snapshot = (project.analysis or {}).get("roof_rainwater_draft_snapshot")
+    if not isinstance(rainwater_snapshot, dict):
+        rainwater_snapshot = _source_bound_rainwater_snapshot(
+            project.analysis or {}, project.answers or {})
+    if isinstance(rainwater_snapshot, dict):
+        from cad_engine.independent_deliverables import derive_rainwater_readiness_evidence
+        evidence = derive_rainwater_readiness_evidence(rainwater_snapshot)
+        for deliverable_type in ("MECH_ROOF_RAINWATER_CALC", "MECH_ROOF_RAINWATER_PLAN"):
+            definitions.append({
+                "deliverable_type": deliverable_type,
+                "scope_key": "PLAN06-ROOF",
+                "evidence": evidence,
+                "input_snapshot": rainwater_snapshot,
+            })
+    if not isinstance(definitions, list):
+        raise RuntimeError("INDEPENDENT_DELIVERABLE_DEFINITIONS_INVALID")
+    from cad_engine.independent_deliverables import REGISTRY
+    from .independent_deliverable_worker import schedule_deliverable
+    scheduled = []
+    for definition in definitions:
+        if not isinstance(definition, dict):
+            raise RuntimeError("INDEPENDENT_DELIVERABLE_DEFINITION_INVALID")
+        deliverable_type = str(definition.get("deliverable_type") or "")
+        if deliverable_type not in REGISTRY:
+            raise RuntimeError("INDEPENDENT_DELIVERABLE_TYPE_NOT_REGISTERED")
+        evidence = definition.get("evidence")
+        snapshot = definition.get("input_snapshot")
+        if not isinstance(evidence, dict) or not isinstance(snapshot, dict):
+            raise RuntimeError("INDEPENDENT_DELIVERABLE_EVIDENCE_INVALID")
+        # This bridge runs only inside the transaction that has just marked the
+        # server-owned checkout as paid.  Entitlement is therefore authoritative
+        # here and must not depend on a stale producer snapshot.
+        evidence = {**evidence, "paid_order": True}
+        deliverable, task, created = schedule_deliverable(
+            db, legacy.EngineeringDeliverable, legacy.DeliverableTask,
+            project_id=project.id, revision_id=revision.id,
+            order_identity=order.external_id,
+            deliverable_type=deliverable_type,
+            scope_key=str(definition.get("scope_key") or "PROJECT")[:150],
+            evidence=evidence, input_snapshot=snapshot, commit=False,
+        )
+        scheduled.append({"deliverable_id": deliverable.id,
+                          "task_id": task.id if task else None,
+                          "created": created,
+                          "status": deliverable.processing_state})
+    from .architecture_autopilot import record_generation_phase
+    rows=db.query(legacy.EngineeringDeliverable).filter(
+        legacy.EngineeringDeliverable.project_id==project.id).all()
+    record_generation_phase(project,rows)
+    return scheduled
+
+
+def schedule_independent_deliverables_after_analysis(db, legacy, project, revision, order):
+    """Re-evaluate independent families after their real producers have run.
+
+    Payment-time scheduling is intentionally retained for evidence already
+    available then.  Architecture interpretation, the project-bound resolver
+    and typed engineering overlays finish later, however.  This second,
+    idempotent pass uses the same order identity and snapshot hash, allowing a
+    ready family (for example Heating) to proceed without weakening blockers
+    on Plumbing, Gas, Cooling, Ventilation or Rainwater.
+    """
+    if not order or not getattr(order, "paid", False):
+        return []
+    if not revision or revision.project_id != project.id:
+        raise RuntimeError("INDEPENDENT_DELIVERABLE_REVISION_MISMATCH")
+    scheduled = _schedule_paid_independent_deliverables(
+        db, legacy, project, revision, order,
+        refresh_system_definitions=True,
+    )
+    analysis = deepcopy(project.analysis or {})
+    architecture_fingerprint = str(
+        (analysis.get("architecture_autopilot") or {}).get("checkpoint_fingerprint") or "")
+    status_rows = sorted(
+        ({"deliverable_id": int(row.get("deliverable_id") or 0),
+          "status": str(row.get("status") or "UNKNOWN"),
+          "task_id": int(row["task_id"]) if row.get("task_id") is not None else None,
+          "created": bool(row.get("created"))} for row in scheduled),
+        key=lambda row: (row["deliverable_id"], row["status"]),
+    )
+    identity_basis = {
+        "project_id": project.id,
+        "revision_id": revision.id,
+        "revision_no": revision.revision_no,
+        "architecture_checkpoint_fingerprint": architecture_fingerprint,
+        "systems": status_rows,
+    }
+    fingerprint = hashlib.sha256(json.dumps(
+        identity_basis, sort_keys=True, separators=(",", ":")
+    ).encode()).hexdigest()
+    prior = dict(analysis.get("post_analysis_system_reevaluation") or {})
+    checkpoint = {
+        "schema": "planha-post-analysis-system-reevaluation/1.0",
+        **identity_basis,
+        "fingerprint": fingerprint,
+        "ready_or_queued": sum(row["status"] in {"READY", "QUEUED", "RUNNING", "AVAILABLE"}
+                               for row in status_rows),
+        "blocked": sum(row["status"] in {"BLOCKED_INPUT", "INPUT_REQUIRED"}
+                       for row in status_rows),
+        "evaluated_at": (prior.get("evaluated_at") if prior.get("fingerprint") == fingerprint
+                         else datetime.utcnow().isoformat()+"Z"),
+        "fresh_current_revision": True,
+        "independent_failures_do_not_block_siblings": True,
+    }
+    analysis["post_analysis_system_reevaluation"] = checkpoint
+    project.analysis = analysis
+    return scheduled
+
+
+def _source_bound_rainwater_snapshot(analysis, answers):
+    """Build a DRAFT roof contract only from one qualified source assembly.
+
+    Boundary/drain/capacity values must all be authored in the uploaded DXF.
+    Stack, catchment partition, route and overflow remain reversible proposals;
+    rainfall is an explicit user input and is never promoted to official data.
+    """
+    auto=dict((analysis or {}).get("architectural_auto") or {})
+    candidates=[row for row in auto.get("roof_rainwater_evidence_candidates") or []
+                if row.get("source_plan_type")=="ROOF_PLAN"
+                and row.get("source_plan_role")=="ROOF_SUPPORT"
+                and row.get("source_symbol_semantic_role")=="ROOF_FLOOR_DRAIN"
+                and len(row.get("source_plan_bounds") or [])==4
+                and row.get("source_plan_boundary_handle")
+                and row.get("symbol_handle") and row.get("source_capacity_lps")]
+    if len(candidates)!=1: return None
+    candidate=candidates[0]
+    rainfall=mechanical_workflow._numeric(
+        answers.get("rainfall_intensity_mm_h") or answers.get("rainfall_intensity"))
+    if rainfall is None or float(rainfall)<=0: return None
+    bounds=list(map(float,candidate["source_plan_bounds"])); x1,y1,x2,y2=bounds
+    boundary=[[x1,y1],[x2,y1],[x2,y2],[x1,y2]]
+    drain=list(map(float,candidate["point"])); stack=[drain[0],y1]
+    slopes=[]
+    for value in candidate.get("slope_annotations") or []:
+        number=mechanical_workflow._numeric(value)
+        if number is not None: slopes.append(float(number))
+    if not slopes or min(slopes)<=0: return None
+    capacity=float(candidate["source_capacity_lps"]); dn=float(candidate["nominal_diameter_mm"])
+    source_sha=str(candidate.get("source_sha256") or "")
+    if len(source_sha)!=64: return None
+    catchment_id="CATCHMENT-"+hashlib.sha256((source_sha+str(candidate["candidate_id"])).encode()).hexdigest()[:12].upper()
+    return {"roof":{"roof_id":"ROOF-"+source_sha[:12].upper(),"boundary":boundary,
+        "stacks":[{"id":"RW-STACK-1","point":stack,"authority":"NEW_PROPOSED_DRAFT",
+                   "release_allowed":False}],
+        "catchments":[{"id":catchment_id,"polygon":boundary,"low_point":drain,
+            "drain":{"id":"RW-DRAIN-1","point":drain,
+                     "source_handle":candidate["symbol_handle"],
+                     "semantic_role":"ROOF_FLOOR_DRAIN",
+                     "semantic_role_authority":candidate.get("semantic_role_authority"),
+                     "connection_authority":"SOURCE_BOUND_DRAFT"},
+            "stack_id":"RW-STACK-1","slope_percent":min(slopes),
+            "route":([drain,stack] if drain[0]==stack[0] or drain[1]==stack[1]
+                     else [drain,[stack[0],drain[1]],stack]),
+            "emergency_overflow":{"type":"scupper","point":[x2,drain[1]],
+                                  "authority":"NEW_PROPOSED_DRAFT"}}]},
+        "design_basis":{"rainfall_intensity_mm_h":float(rainfall),"runoff_coefficient":1.0,
+            "minimum_slope_percent":min(slopes),
+            "drain_capacity_table":[{"dn_mm":dn,"max_flow_lps":capacity}],
+            "downpipe_capacity_table":[{"dn_mm":dn,"max_flow_lps":capacity}]},
+        "geometry_provenance":{"source_sha256":source_sha,
+            "roof_boundary_source_handles":[candidate["source_plan_boundary_handle"]],
+            "drain_source_handles":[candidate["symbol_handle"]],
+            "capacity_source_handles":[candidate["pipe_note_handle"]]},
+        "draft_assumption_basis":{"assumption_origin":"SOURCE_BOUND_DETERMINISTIC_DRAFT",
+            "rainfall_authority":"USER_CONFIRMED_UNVERIFIED","capacity_authority":"SOURCE_DOCUMENT_UNVERIFIED",
+            "release_allowed":False}}
+
+
+def _source_bound_rainwater_preview_definition(legacy, project):
+    """Build a publishable diagnostic-only source overlay contract.
+
+    This never supplies hydraulic readiness. It only packages exact current
+    source entities plus unresolved source-bound markers for customer review.
+    """
+    analysis = dict(project.analysis or {})
+    candidates = [row for row in ((analysis.get("architectural_auto") or {})
+                                  .get("roof_rainwater_evidence_candidates") or [])
+                  if row.get("source_plan_type") in {"SLOPE_PLAN", "ROOF_PLAN"}
+                  and row.get("source_plan_id") and row.get("symbol_handle")
+                  and len(row.get("source_plan_bounds") or []) == 4
+                  and len(row.get("point") or []) == 2
+                  and len(str(row.get("source_sha256") or "")) == 64]
+    if not candidates:
+        return None
+    source_shas = {str(row["source_sha256"]) for row in candidates}
+    if len(source_shas) != 1:
+        return None
+    project_dir = Path(legacy.DATA_DIR) / "projects" / str(project.id)
+    archive_path = project_dir / "architecture.zip"
+    dxf_paths = list(project_dir.glob("*.dxf"))
+    if archive_path.exists():
+        archive_bytes = archive_path.read_bytes()
+    elif len(dxf_paths) == 1:
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(dxf_paths[0].name, dxf_paths[0].read_bytes())
+        archive_bytes = stream.getvalue()
+    else:
+        return None
+    plans = {}
+    evidence = []
+    for index, row in enumerate(candidates, 1):
+        plan_id = str(row["source_plan_id"])
+        plan = {"plan_id": plan_id, "drawing_type": row["source_plan_type"],
+                "bounds": list(row["source_plan_bounds"])}
+        if plan_id in plans and plans[plan_id] != plan:
+            return None
+        plans[plan_id] = plan
+        evidence.append({"label":"RW-DIAG-%02d" % index,
+            "symbol_handle":str(row["symbol_handle"]), "point":list(row["point"]),
+            "source_plan_id":plan_id, "source_sha256":str(row["source_sha256"]),
+            "nominal_diameter_mm":row.get("nominal_diameter_mm"),
+            "source_symbol_semantic_role":row.get("source_symbol_semantic_role"),
+            "semantic_role_authority":row.get("semantic_role_authority"),
+            "connection_authority":row.get("connection_authority") or "UNRESOLVED",
+            "evidence_status":"UNRESOLVED", "owner_attestation":"UNRESOLVED",
+            "roof_tier":row.get("roof_tier") or "UNRESOLVED",
+            "source_elevation_text":row.get("source_elevation_text") or "UNRESOLVED"})
+    snapshot = {"source_sha256":next(iter(source_shas)),
+        "architecture_archive_b64":base64.b64encode(archive_bytes).decode(),
+        "source_plans":[plans[key] for key in sorted(plans)],
+        "source_evidence":evidence,
+        "diagnostic_contract":{"engineering_release_allowed":False,
+            "review_required":True, "hydraulic_authority":False}}
+    return {"deliverable_type":"MECH_ROOF_RAINWATER_SOURCE_PREVIEW",
+            "scope_key":"PLAN05-ROOF-DIAGNOSTIC", "input_snapshot":snapshot,
+            "evidence":{"paid_order":True,"source_geometry":True,
+                        "source_diagnostic_points":True}}
 
 
 def digest(value):

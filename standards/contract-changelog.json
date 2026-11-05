@@ -2,6 +2,16 @@
   "schema_version": "1.0.0",
   "changes": [
     {
+      "id": "GOV-2026-068",
+      "status": "APPROVED_LOCAL_DEVELOPMENT",
+      "summary": "Carry conditional M14 duct criteria and exact-row M17 gas density from questionnaire persistence through the engineering overlay into the independent design consumers.",
+      "affected_capabilities": ["mechanical_questionnaire", "mechanical_ventilation_design", "mechanical_gas_design", "rulebook_governance"],
+      "affected_projects": ["future-local-uploads", "existing-projects-with-incomplete-rulebook-basis"],
+      "approval": {"status": "APPROVED", "basis": "explicit owner instruction to complete backend, persistence and UI transport"},
+      "verification": {"positive_test": "pass", "destructive_test": "pass", "persistence_test": "pass", "synthetic_end_to_end_test": "pass", "required_ci": "must_pass before merge", "runtime_activation": "not_authorized"},
+      "migration": {"forward": "Preserve historical answers and ask only missing conditional fields.", "rollback": "Revert the protected merge commit; additive answer keys may remain inert."}
+    },
+    {
       "id": "GOV-2026-053",
       "status": "IMPLEMENTED_QUALIFIED",
       "summary": "Add Canonical Architecture 3.1 exact text occurrence, title-block, semantic host and stale-safe review authority while prohibiting all text-derived engineering geometry.",

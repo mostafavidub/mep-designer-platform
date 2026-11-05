@@ -166,6 +166,10 @@ IRAN_MABHAS17_1403_GAS_TABLE = {
     "allowable_pressure_drop_mmh2o": 12.7,
     "allowable_pressure_drop_mbar": 1.245,
     "relative_density": 0.65,
+    "relative_density_correction_factors": {
+        0.50: 1.15, 0.55: 1.08, 0.60: 1.04, 0.65: 1.00, 0.70: 0.96,
+        0.75: 0.93, 0.80: 0.90, 0.85: 0.87, 0.90: 0.85, 1.00: 0.80,
+    },
     "material": "WELDED_STEEL",
     "applicability_limitations": (
         "Applies only to the table conditions: welded steel natural-gas pipe, "
@@ -175,42 +179,50 @@ IRAN_MABHAS17_1403_GAS_TABLE = {
         "data, meter/regulator, combustion air, flues and local authority requirements."
     ),
     "rows": {
-        2:  {15:5.9,20:12.3,25:23.3,32:47.9,40:72.0,50:138.3},
-        4:  {15:4.0,20:8.5,25:16.0,32:32.9,40:49.4,50:95.1},
-        6:  {15:3.2,20:6.8,25:12.9,32:26.4,40:39.7,50:76.4},
-        8:  {15:2.8,20:5.8,25:11.0,32:22.6,40:34.0,50:65.4},
-        10: {15:2.4,20:5.0,25:9.6,32:19.7,40:29.6,50:56.9},
-        12: {15:2.2,20:4.7,25:8.8,32:18.1,40:27.3,50:52.5},
-        14: {15:2.0,20:4.3,25:8.1,32:16.7,40:25.0,50:48.2},
-        16: {15:1.9,20:4.0,25:7.5,32:15.5,40:23.3,50:44.8},
-        18: {15:1.8,20:3.7,25:7.1,32:14.6,40:21.9,50:42.2},
-        20: {15:1.7,20:3.5,25:6.7,32:13.8,40:20.7,50:39.8},
-        22: {15:1.6,20:3.3,25:6.3,32:13.1,40:19.6,50:37.8},
-        24: {15:1.5,20:3.2,25:6.1,32:12.5,40:18.7,50:36.1},
-        26: {15:1.4,20:3.1,25:5.8,32:12.0,40:18.0,50:34.6},
-        28: {15:1.4,20:2.9,25:5.5,32:11.4,40:17.2,50:33.1},
-        30: {15:1.3,20:2.8,25:5.3,32:11.0,40:16.6,50:31.9},
-        35: {15:1.2,20:2.6,25:4.9,32:10.2,40:15.3,50:29.4},
-        40: {15:1.1,20:2.4,25:4.6,32:9.4,40:14.1,50:27.1},
-        45: {15:1.1,20:2.2,25:4.3,32:8.8,40:13.3,50:25.5},
-        50: {15:1.0,20:2.1,25:4.1,32:8.4,40:12.6,50:24.3},
-        55: {15:.99,20:2.0,25:3.9,32:8.0,40:12.0,50:23.1},
-        60: {15:.94,20:1.9,25:3.7,32:7.6,40:11.5,50:22.1},
-        70: {15:.85,20:1.8,25:3.3,32:6.9,40:10.4,50:20.0},
-        80: {15:.80,20:1.6,25:3.1,32:6.5,40:9.7,50:18.8},
-        90: {15:.75,20:1.5,25:2.9,32:6.1,40:9.1,50:17.6},
-        100:{15:.71,20:1.4,25:2.8,32:5.7,40:8.6,50:16.6},
-        120:{15:.64,20:1.3,25:2.5,32:5.2,40:7.8,50:15.0},
-        150:{15:.57,20:1.2,25:2.2,32:4.6,40:6.9,50:13.3},
-        200:{15:.49,20:1.0,25:1.9,32:3.9,40:5.9,50:11.4},
-        250:{15:.43,20:.91,25:1.7,32:3.5,40:5.2,50:10.1},
-        300:{15:.39,20:.82,25:1.5,32:3.1,40:4.7,50:9.2},
+        2:  {15:5.9,20:12.3,25:23.3,32:47.9,40:72.0,50:138.3,65:220.0,80:390.7,100:801.6},
+        4:  {15:4.0,20:8.5,25:16.0,32:32.9,40:49.4,50:95.1,65:151.2,80:268.5,100:551.1},
+        6:  {15:3.2,20:6.8,25:12.9,32:26.4,40:39.7,50:76.4,65:121.5,80:215.7,100:442.8},
+        8:  {15:2.8,20:5.8,25:11.0,32:22.6,40:34.0,50:65.4,65:104.0,80:184.7,100:379.1},
+        10: {15:2.4,20:5.0,25:9.6,32:19.7,40:29.6,50:56.9,65:90.4,80:160.6,100:329.7},
+        12: {15:2.2,20:4.7,25:8.8,32:18.1,40:27.3,50:52.5,65:83.4,80:148.2,100:304.3},
+        14: {15:2.0,20:4.3,25:8.1,32:16.7,40:25.0,50:48.2,65:76.6,80:136.1,100:279.4},
+        16: {15:1.9,20:4.0,25:7.5,32:15.5,40:23.3,50:44.8,65:71.3,80:126.2,100:260.0},
+        18: {15:1.8,20:3.7,25:7.1,32:14.6,40:21.9,50:42.2,65:67.1,80:119.3,100:244.8},
+        20: {15:1.7,20:3.5,25:6.7,32:13.8,40:20.7,50:39.8,65:63.3,80:112.5,100:231.0},
+        22: {15:1.6,20:3.3,25:6.3,32:13.1,40:19.6,50:37.8,65:60.1,80:106.8,100:219.4},
+        24: {15:1.5,20:3.2,25:6.1,32:12.5,40:18.7,50:36.1,65:57.4,80:101.9,100:209.2},
+        26: {15:1.4,20:3.1,25:5.8,32:12.0,40:18.0,50:34.6,65:55.1,80:97.9,100:200.9},
+        28: {15:1.4,20:2.9,25:5.5,32:11.4,40:17.2,50:33.1,65:52.6,80:93.6,100:191.0},
+        30: {15:1.3,20:2.8,25:5.3,32:11.0,40:16.6,50:31.9,65:50.8,80:90.3,100:185.1},
+        35: {15:1.2,20:2.6,25:4.9,32:10.2,40:15.3,50:29.4,65:46.8,80:83.1,100:170.6},
+        40: {15:1.1,20:2.4,25:4.6,32:9.4,40:14.1,50:27.1,65:43.3,80:76.9,100:157.9},
+        45: {15:1.1,20:2.2,25:4.3,32:8.8,40:13.3,50:25.5,65:40.6,80:72.2,100:148.1},
+        50: {15:1.0,20:2.1,25:4.1,32:8.4,40:12.6,50:24.3,65:38.6,80:68.7,100:141.0},
+        55: {15:.99,20:2.0,25:3.9,32:8.0,40:12.0,50:23.1,65:36.7,80:65.2,100:133.9},
+        60: {15:.94,20:1.9,25:3.7,32:7.6,40:11.5,50:22.1,65:35.1,80:62.4,100:127.1},
+        70: {15:.85,20:1.8,25:3.3,32:6.9,40:10.4,50:20.0,65:31.8,80:56.5,100:116.1},
+        80: {15:.80,20:1.6,25:3.1,32:6.5,40:9.7,50:18.8,65:29.8,80:53.1,100:108.9},
+        90: {15:.75,20:1.5,25:2.9,32:6.1,40:9.1,50:17.6,65:28.0,80:49.7,100:102.0},
+        100:{15:.71,20:1.4,25:2.8,32:5.7,40:8.6,50:16.6,65:26.4,80:47.0,100:96.5},
+        120:{15:.64,20:1.3,25:2.5,32:5.2,40:7.8,50:15.0,65:23.9,80:42.5,100:87.3},
+        150:{15:.57,20:1.2,25:2.2,32:4.6,40:6.9,50:13.3,65:21.2,80:37.7,100:77.5},
+        200:{15:.49,20:1.0,25:1.9,32:3.9,40:5.9,50:11.4,65:18.1,80:32.2,100:66.2},
+        250:{15:.43,20:.91,25:1.7,32:3.5,40:5.2,50:10.1,65:16.1,80:28.6,100:58.8},
+        300:{15:.39,20:.82,25:1.5,32:3.1,40:4.7,50:9.2,65:14.6,80:25.9,100:53.2},
     },
 }
 
 
-def _official_iran_gas_capacity_rows():
-    return [{"max_equivalent_length_m": length, "dn_mm": dn, "max_flow_m3h": flow}
+def _official_iran_gas_capacity_rows(relative_density=0.65):
+    factors=IRAN_MABHAS17_1403_GAS_TABLE["relative_density_correction_factors"]
+    try: density=float(relative_density)
+    except (TypeError,ValueError): raise ValueError("unsupported M17 Table 17-4-11 relative density")
+    if density not in factors:
+        raise ValueError("unsupported M17 Table 17-4-11 relative density")
+    factor=factors[density]
+    return [{"max_equivalent_length_m": length, "dn_mm": dn,
+             "max_flow_m3h": round(flow*factor,4),
+             "relative_density":density,"density_correction_factor":factor}
             for length, capacities in IRAN_MABHAS17_1403_GAS_TABLE["rows"].items()
             for dn, flow in capacities.items()]
 
@@ -710,10 +722,21 @@ def _draft_domain_routed_graph_single(deliverable_type, pmm, architecture, overl
         gas_basis = dict(complete_basis.get("gas_kw") or {})
         capacity_table = complete_basis.get("gas_capacity_table")
         capacity_authority = complete_basis.get("gas_capacity_table_authority")
+        relative_density = complete_basis.get("gas_relative_density")
+        density_factor = None
         service_pressure = (answers or {}).get("gas_pressure")
         allowable_drop = complete_basis.get("gas_allowable_pressure_drop_mbar")
         if capacity_table is None and capacity_authority is None:
-            capacity_table = _official_iran_gas_capacity_rows()
+            if relative_density in (None, ""):
+                return {"status": "INPUT_REQUIRED", "missing_inputs": [
+                    "GAS_RELATIVE_DENSITY_PROJECT_CONTRACT"]}
+            try:
+                capacity_table = _official_iran_gas_capacity_rows(relative_density)
+            except ValueError:
+                return {"status": "INPUT_REQUIRED", "missing_inputs": [
+                    "GAS_RELATIVE_DENSITY_EXACT_M17_TABLE_17_4_11_ROW"]}
+            relative_density = float(relative_density)
+            density_factor = IRAN_MABHAS17_1403_GAS_TABLE["relative_density_correction_factors"][relative_density]
             capacity_authority = IRAN_MABHAS17_1403_GAS_TABLE["authority"]
             allowable_drop = IRAN_MABHAS17_1403_GAS_TABLE["allowable_pressure_drop_mbar"]
         if (not isinstance(capacity_table, list) or not capacity_table
@@ -765,22 +788,49 @@ def _draft_domain_routed_graph_single(deliverable_type, pmm, architecture, overl
                                  "capacity_standard_printed_page": IRAN_MABHAS17_1403_GAS_TABLE["printed_page"],
                                  "capacity_standard_url": IRAN_MABHAS17_1403_GAS_TABLE["official_url"],
                                  "capacity_standard_sha256": IRAN_MABHAS17_1403_GAS_TABLE["pdf_sha256"],
+                                 "gas_relative_density": relative_density,
+                                 "density_correction_table_id": "17-4-11",
+                                 "density_correction_factor": density_factor,
                                  "allowable_pressure_drop_mbar": sized["allowable_pressure_drop_mbar"],
                                  "capacity_applicability_limitations": IRAN_MABHAS17_1403_GAS_TABLE["applicability_limitations"],
                                  "project_reported_service_pressure_mbar": service_pressure_value})
     else:
         from .hvac_calculations import size_round_duct
+        from .ventilation_rulebook import design_ventilation_from_rulebook
+        complete_basis = dict((overlay.get("deterministic_calculation") or {}).get("design_basis") or {})
+        typed_spaces = complete_basis.get("ventilation_spaces")
+        typed_by_id = None
+        if typed_spaces is not None:
+            duct_basis = {key: complete_basis.get(key) for key in
+                          ("max_duct_velocity_m_s", "candidate_round_duct_diameters_mm")
+                          if complete_basis.get(key) is not None}
+            designed = design_ventilation_from_rulebook(typed_spaces, [], duct_basis)
+            if designed.get("status") != "PASS":
+                return {"status": designed.get("status", "INPUT_REQUIRED"),
+                        "missing_inputs": designed.get("missing_inputs") or [],
+                        "errors": designed.get("errors") or []}
+            typed_by_id = {str(row["space_id"]): row for row in designed["spaces"]}
         for index, route in enumerate(route_rows, 1):
             edge_id = "DRAFT-VENT-BRANCH-%02d" % index
-            airflow = round(float(route["room"]["exhaust_cfm"]) * 0.47194745, 3)
-            sized = size_round_duct(airflow, 6, [200, 250, 315, 355, 400])
+            room_id = str(route["room"].get("room_id"))
+            if typed_by_id is not None:
+                source_row = typed_by_id.get(room_id)
+                if source_row is None:
+                    return {"status":"INPUT_REQUIRED","missing_inputs":[
+                        "VENTILATION_TYPED_SPACE_FOR_ROOM:" + room_id]}
+                airflow = round(float(source_row["required_exhaust_lps"]),3)
+                sized = source_row["duct_sizing"]
+            else:
+                airflow = round(float(route["room"]["exhaust_cfm"]) * 0.47194745, 3)
+                sized = size_round_duct(airflow, 6, [200, 250, 315, 355, 400])
             if sized.get("status") != "PASS":
                 return {"status": "INPUT_REQUIRED", "missing_inputs": sized.get("errors") or ["VENT_BRANCH_SIZING"]}
             calculations.append({"calc_id": sized["calc_id"] + "-" + str(index), "network_edge_id": edge_id,
                                  "system": "exhaust_ventilation",
                                  "size": sized["selected"]["diameter_mm"], "material": "GI",
                                  "airflow_lps": airflow, "velocity_m_s": sized["selected"]["velocity_m_s"],
-                                 "calculation_engine": "duct_velocity_sizing"})
+                                 "calculation_engine": "duct_velocity_sizing",
+                                 "rulebook_input_mode": "M14_TYPED_SPACE" if typed_by_id is not None else "LEGACY_EXPLICIT_CFM"})
 
     route_by_edge = {}
     for index, route in enumerate(route_rows, 1):

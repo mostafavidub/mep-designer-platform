@@ -71,8 +71,33 @@ class MechanicalFlowE2ETests(unittest.TestCase):
         self.assertEqual(water.status_code, 200); self.assertEqual(water.json()['status'], 'asking')
         rain = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '95 mm/h'})
         self.assertEqual(rain.status_code, 200); self.assertEqual(rain.json()['status'], 'asking')
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.questions[project.current_question]['key'], 'max_duct_velocity_m_s')
+        finally: db.close()
+
+        velocity = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '4 m/s'})
+        self.assertEqual(velocity.status_code, 200); self.assertEqual(velocity.json()['status'], 'asking')
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.questions[project.current_question]['key'], 'candidate_round_duct_diameters_mm')
+        finally: db.close()
+
+        diameters = self.client.post(f'/projects/{pid}/answer-json', data={'answer': '125,160,200,250'})
+        self.assertEqual(diameters.status_code, 200); self.assertEqual(diameters.json()['status'], 'asking')
+
+        db = legacy.Session()
+        try:
+            project = db.get(legacy.Project, pid)
+            self.assertEqual(project.questions[project.current_question]['key'], 'mechanical_shaft_route')
+        finally: db.close()
+
         shaft = self.client.post(f'/projects/{pid}/answer-json', data={'answer': 'پیشنهاد نزدیک هسته فضاهای تر'})
-        self.assertEqual(shaft.status_code, 200); final_data = shaft.json(); self.assertEqual(final_data['status'], 'drawing_set_review')
+        self.assertEqual(shaft.status_code, 200); final_data = shaft.json(); self.assertEqual(final_data['status'], 'drawing_set_review', final_data)
         self.assertIn('drawing_set', final_data); self.assertTrue(final_data['drawing_set']); self.assertGreater(final_data['drawing_set']['total_plans'], 0); self.assertIn('systems', final_data['drawing_set'])
 
         db = legacy.Session()
@@ -80,6 +105,8 @@ class MechanicalFlowE2ETests(unittest.TestCase):
             project = db.get(legacy.Project, pid)
             self.assertEqual(project.answers['water_inlet_pressure'], '2.8 bar')
             self.assertEqual(project.answers['rainfall_intensity'], '95 mm/h')
+            self.assertEqual(project.answers['max_duct_velocity_m_s'], 4.0)
+            self.assertEqual(project.answers['candidate_round_duct_diameters_mm'], [125.0, 160.0, 200.0, 250.0])
             self.assertEqual((project.analysis or {})['basis_preflight']['status'], 'PASS')
         finally: db.close()
 

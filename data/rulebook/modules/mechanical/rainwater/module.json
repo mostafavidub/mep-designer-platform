@@ -1,7 +1,7 @@
 {
   "schema": "planha-rulebook-module/1.0",
   "module_id": "mechanical.rainwater.iran",
-  "version": "2.22.0",
+  "version": "2.85.1",
   "owner": "mechanical",
   "dependencies": [
     "architecture.roof_geometry",

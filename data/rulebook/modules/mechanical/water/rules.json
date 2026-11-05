@@ -1,0 +1,955 @@
+{
+    "schema": "planha-executable-rule-registry/1.0",
+    "module_id": "mechanical.water.iran",
+    "version": "1.2.0",
+    "rules": [
+        {
+            "rule_id": "IR-M16-1396-16.3.3.1-HOT-COLD-BACKFLOW",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062c\u0644\u0648\u06af\u06cc\u0631\u06cc \u0627\u0632 \u062c\u0631\u06cc\u0627\u0646 \u0622\u0628 \u06af\u0631\u0645 \u0628\u0647 \u0634\u0628\u06a9\u0647 \u0622\u0628 \u0633\u0631\u062f",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-3-1(b)",
+                    "printed_page": 41,
+                    "source_ids": [
+                        "M16-WATER-001"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "hot_and_cold_water_interconnection_exists",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.interconnections[].backflow_prevention",
+                    "unit": null,
+                    "authority": [
+                        "GEOMETRY_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.interconnections[].device_id",
+                    "unit": null,
+                    "authority": [
+                        "PRODUCT_DATA"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "provide a source-bound backflow-prevention device at each hot/cold interconnection"
+            ],
+            "validator": "hot_cold_backflow_prevention",
+            "parameters": {},
+            "output_evidence": [
+                "backflow device schedule",
+                "device tag on water plan"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.3.1-MANIFOLD-VELOCITY",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "CONDITIONAL",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062d\u062f\u0627\u06a9\u062b\u0631 \u0633\u0631\u0639\u062a \u0622\u0628 \u062f\u0631 \u06a9\u0644\u06a9\u062a\u0648\u0631",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-3-1(t)",
+                    "printed_page": 41,
+                    "source_ids": [
+                        "M16-WATER-002"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "fixture_branches_are_individually_supplied_from_manifold",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.manifolds[].velocity_m_s",
+                    "unit": "m/s",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                },
+                {
+                    "field": "water.manifolds[].hydraulic_calculation_id",
+                    "unit": null,
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "size each applicable manifold for water velocity not exceeding 2 m/s"
+            ],
+            "validator": "manifold_velocity",
+            "parameters": {
+                "maximum_velocity_m_s": 2.0
+            },
+            "output_evidence": [
+                "manifold hydraulic schedule",
+                "calculated velocity"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.3.4-FIXTURE-MIN-DN",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062d\u062f\u0627\u0642\u0644 \u0642\u0637\u0631 \u0646\u0627\u0645\u06cc \u0627\u0646\u0634\u0639\u0627\u0628 \u0622\u0628 \u0648\u0633\u0627\u06cc\u0644 \u0628\u0647\u062f\u0627\u0634\u062a\u06cc",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-3-4(a), table 16-3-3-4(a)",
+                    "printed_page": 43,
+                    "source_ids": [
+                        "M16-WATER-007"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "water_fixture_branch_exists",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.fixture_branches[].fixture_type",
+                    "unit": null,
+                    "authority": [
+                        "SOURCE_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.fixture_branches[].dn_mm",
+                    "unit": "mm",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "select each final fixture branch at or above the printed minimum nominal diameter"
+            ],
+            "validator": "fixture_minimum_dn",
+            "parameters": {
+                "minimum_dn_mm": {
+                    "bath": 15,
+                    "bidet": 10,
+                    "sink": 15,
+                    "domestic_dishwasher": 15,
+                    "drinking_fountain": 10,
+                    "hose_bib": 15,
+                    "industrial_kitchen_sink": 20,
+                    "domestic_kitchen_sink": 15,
+                    "laundry_tray": 15,
+                    "basin": 10,
+                    "shower": 15,
+                    "service_sink": 20,
+                    "public_wash_sink": 15,
+                    "urinal_flush_tank": 15,
+                    "urinal_flush_valve": 20,
+                    "water_cooler": 15,
+                    "ablution_faucet": 15,
+                    "toilet_flush_tank": 15,
+                    "toilet_flush_valve": 25
+                }
+            },
+            "output_evidence": [
+                "fixture branch DN schedule",
+                "branch size annotation"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.3.5-FIXTURE-PRESSURE",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062d\u062f\u0627\u0642\u0644 \u0641\u0634\u0627\u0631 \u062c\u0631\u06cc\u0627\u0646 \u0648 \u062d\u062f\u0627\u06a9\u062b\u0631 \u0641\u0634\u0627\u0631 \u0633\u0627\u06a9\u0646 \u067e\u0634\u062a \u0634\u06cc\u0631 \u0648\u0633\u06cc\u0644\u0647",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-3-5(a,b), table 16-3-3-5(b)",
+                    "printed_page": 44,
+                    "source_ids": [
+                        "M16-WATER-008"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "water_fixture_outlet_exists",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.fixture_outlets[].fixture_type",
+                    "unit": null,
+                    "authority": [
+                        "SOURCE_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.fixture_outlets[].static_pressure_bar",
+                    "unit": "bar",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                },
+                {
+                    "field": "water.fixture_outlets[].flowing_pressure_mwc",
+                    "unit": "mH2O",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "limit no-flow pressure to 4 bar and maintain at least the printed flowing pressure for the exact fixture class"
+            ],
+            "validator": "fixture_pressure",
+            "parameters": {
+                "maximum_static_pressure_bar": 4.0,
+                "minimum_flowing_pressure_mwc": {
+                    "bath": 5.5,
+                    "thermostatic_bath": 14,
+                    "bidet": 2.7,
+                    "thermostatic_bidet": 14,
+                    "mixing_valve": 5.5,
+                    "domestic_dishwasher": 5.5,
+                    "drinking_fountain": 5.5,
+                    "laundry_tray": 5.5,
+                    "basin": 5.5,
+                    "shower": 5.5,
+                    "thermostatic_shower": 14,
+                    "hose_bib": 5.5,
+                    "ablution_faucet": 5.5,
+                    "sink": 5.5,
+                    "domestic_kitchen_sink": 5.5,
+                    "public_wash_sink": 5.5,
+                    "urinal_flush_valve": 17,
+                    "toilet_flush_valve": 17,
+                    "toilet_flush_tank": 5.5
+                }
+            },
+            "output_evidence": [
+                "critical outlet pressure schedule",
+                "pressure-zone or reducer annotation"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.3.5-FIXTURE-FLOW",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062d\u062f\u0627\u06a9\u062b\u0631 \u0645\u0635\u0631\u0641 \u0622\u0628 \u0648\u0633\u0627\u06cc\u0644 \u0628\u0647\u062f\u0627\u0634\u062a\u06cc",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-3-5(t), table 16-3-3-5(t)",
+                    "printed_page": 46,
+                    "source_ids": [
+                        "M16-WATER-009"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "listed_water_fixture_exists",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [
+                {
+                    "when": "assembly_occupancy_exception_for_toilet_or_urinal == true",
+                    "result": "INPUT_REQUIRED",
+                    "reason": "separate printed exception values require explicit occupancy classification"
+                }
+            ],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.fixture_outlets[].fixture_type",
+                    "unit": null,
+                    "authority": [
+                        "SOURCE_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.fixture_outlets[].rated_consumption",
+                    "unit": "L/min_or_L/flush",
+                    "authority": [
+                        "PRODUCT_DATA"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "select flow-control products not exceeding the printed consumption value for the exact fixture class and unit basis"
+            ],
+            "validator": "fixture_maximum_consumption",
+            "parameters": {
+                "maximum_consumption": {
+                    "private_basin": {
+                        "value": 6,
+                        "unit": "L/min"
+                    },
+                    "public_basin": {
+                        "value": 2,
+                        "unit": "L/min"
+                    },
+                    "electronic_faucet_basin": {
+                        "value": 6,
+                        "unit": "L/min"
+                    },
+                    "shower": {
+                        "value": 8,
+                        "unit": "L/min"
+                    },
+                    "sink": {
+                        "value": 8,
+                        "unit": "L/min"
+                    },
+                    "urinal": {
+                        "value": 2,
+                        "unit": "L/flush"
+                    },
+                    "dual_flush_toilet": {
+                        "value": 6,
+                        "unit": "L/flush",
+                        "secondary_value": 3
+                    },
+                    "ablution_faucet": {
+                        "value": 6,
+                        "unit": "L/min"
+                    }
+                }
+            },
+            "output_evidence": [
+                "fixture flow-control schedule",
+                "product evidence identity"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.3.6-WATER-HAMMER",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "CONDITIONAL",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u0636\u0631\u0628\u0647\u200c\u06af\u06cc\u0631 \u062f\u0631 \u0634\u06cc\u0631\u0647\u0627\u06cc \u0642\u0637\u0639 \u0633\u0631\u06cc\u0639",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-3-6(b)",
+                    "printed_page": 46,
+                    "source_ids": [
+                        "M16-WATER-010"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "quick_closing_valve_exists",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.quick_closing_valves[].point",
+                    "unit": "drawing_unit",
+                    "authority": [
+                        "GEOMETRY_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.quick_closing_valves[].arrestor_product_id",
+                    "unit": null,
+                    "authority": [
+                        "PRODUCT_DATA"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "place an approved water-hammer arrestor at an effective accessible location for each quick-closing valve"
+            ],
+            "validator": "water_hammer_arrestor",
+            "parameters": {
+                "required_standard": "ASSE 1010 or approved equivalent"
+            },
+            "output_evidence": [
+                "water-hammer arrestor tag",
+                "product and location schedule"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.4.2-COMPONENT-RATING",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u0641\u0634\u0627\u0631 \u0648 \u062f\u0645\u0627\u06cc \u0645\u062c\u0627\u0632 \u0627\u062c\u0632\u0627\u06cc \u0622\u0628 \u0633\u0631\u062f \u0648 \u06af\u0631\u0645",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-4-2(a,b)",
+                    "printed_page": 47,
+                    "source_ids": [
+                        "M16-WATER-003"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "domestic_water_component_selected",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.components[].system",
+                    "unit": null,
+                    "authority": [
+                        "PROJECT_CONTRACT"
+                    ]
+                },
+                {
+                    "field": "water.components[].rated_pressure_bar",
+                    "unit": "bar",
+                    "authority": [
+                        "MANUFACTURER_DATA"
+                    ]
+                },
+                {
+                    "field": "water.components[].rated_temperature_c",
+                    "unit": "degC",
+                    "authority": [
+                        "MANUFACTURER_DATA"
+                    ]
+                },
+                {
+                    "field": "water.components[].maximum_operating_pressure_bar",
+                    "unit": "bar",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "select cold-water components rated at least 10 bar at 25 C and hot-water components rated at least 10 bar at 80 C, or above actual operating pressure when it exceeds 10 bar"
+            ],
+            "validator": "component_pressure_temperature_rating",
+            "parameters": {
+                "minimum_pressure_bar": 10.0,
+                "cold_temperature_c": 25.0,
+                "hot_temperature_c": 80.0
+            },
+            "output_evidence": [
+                "component pressure-temperature schedule",
+                "manufacturer evidence identity"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.8.2-OUTLET-TEMPERATURE",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_hot_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062d\u062f\u0627\u06a9\u062b\u0631 \u062f\u0645\u0627\u06cc \u062e\u0631\u0648\u062c\u06cc \u0622\u0628 \u06af\u0631\u0645 \u0645\u0635\u0631\u0641\u06cc",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-8-2(b)",
+                    "printed_page": 73,
+                    "source_ids": [
+                        "M16-WATER-004"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "hot_water_outlet_exists AND special_building_temperature_basis == false",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [
+                {
+                    "when": "special_building_temperature_basis == true",
+                    "result": "INPUT_REQUIRED",
+                    "reason": "lower authority-approved temperature is project-specific"
+                }
+            ],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.hot_outlets[].fixture_type",
+                    "unit": null,
+                    "authority": [
+                        "SOURCE_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.hot_outlets[].design_temperature_c",
+                    "unit": "degC",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION",
+                        "USER_CONFIRMED"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "limit bath outlets to 49 C, shower and washbasin outlets to 43 C, and kitchen sinks to 60 C unless a lower special-building basis is approved"
+            ],
+            "validator": "hot_water_outlet_temperature",
+            "parameters": {
+                "maximum_c": {
+                    "bath": 49.0,
+                    "shower": 43.0,
+                    "basin": 43.0,
+                    "kitchen_sink": 60.0
+                }
+            },
+            "output_evidence": [
+                "hot-water outlet temperature schedule",
+                "mixing control annotation"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.8.3-HOT-WATER-RETURN",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_hot_water",
+            "kind": "CONDITIONAL",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u062d\u0641\u0638 \u062f\u0645\u0627\u06cc \u0622\u0628 \u06af\u0631\u0645 \u062f\u0631 \u0645\u0633\u06cc\u0631\u0647\u0627\u06cc \u0628\u06cc\u0634 \u0627\u0632 \u062f\u0647 \u0645\u062a\u0631",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-8-3(a-2)",
+                    "printed_page": 74,
+                    "source_ids": [
+                        "M16-WATER-005"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "heater_to_farthest_outlet_length_m > 10",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.hot_water.heater_to_farthest_outlet_length_m",
+                    "unit": "m",
+                    "authority": [
+                        "GEOMETRY_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.hot_water.temperature_maintenance_method",
+                    "unit": null,
+                    "authority": [
+                        "PROJECT_CONTRACT"
+                    ]
+                },
+                {
+                    "field": "water.hot_water.temperature_maintenance_evidence_id",
+                    "unit": null,
+                    "authority": [
+                        "MANUFACTURER_DATA",
+                        "GEOMETRY_VERIFIED"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "provide a return loop or another automatic temperature-maintenance method so the maintained network extends to within 10 m of the farthest outlet"
+            ],
+            "validator": "hot_water_return_length",
+            "parameters": {
+                "trigger_length_m": 10.0
+            },
+            "output_evidence": [
+                "hot-water return route",
+                "temperature-maintenance method schedule"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-16.3.9.2-PRESSURE-TEST",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "DEPENDENCY",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u0622\u0632\u0645\u0627\u06cc\u0634 \u0641\u0634\u0627\u0631 \u0648 \u0646\u0634\u062a \u0634\u0628\u06a9\u0647 \u0622\u0628 \u0645\u0635\u0631\u0641\u06cc",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "16-3-9-2",
+                    "printed_page": 78,
+                    "source_ids": [
+                        "M16-WATER-006"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "duty_stage == CONSTRUCTION_AND_FINAL_INSPECTION",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.construction_pressure_test",
+                    "unit": null,
+                    "authority": [
+                        "PHYSICAL_TEST",
+                        "SUPERVISOR_APPROVAL"
+                    ],
+                    "duty_stage": "CONSTRUCTION_AND_FINAL_INSPECTION"
+                }
+            ],
+            "design_actions": [
+                "carry the pressure-test requirement into construction documents; never fabricate test completion at design stage"
+            ],
+            "validator": "construction_pressure_test_dependency",
+            "parameters": {
+                "minimum_duration_h": 1.0
+            },
+            "output_evidence": [
+                "construction note",
+                "external pressure-test record at construction stage"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-APP1-SFU-PROBABLE-DEMAND",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "OPERATIVE",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "\u0645\u062d\u0627\u0633\u0628\u0647 \u062a\u0642\u0627\u0636\u0627\u06cc \u0644\u062d\u0638\u0647\u200c\u0627\u06cc \u0645\u062d\u062a\u0645\u0644 \u0627\u0632 \u0648\u0627\u062d\u062f \u0645\u0635\u0631\u0641 \u0648\u0633\u0627\u06cc\u0644",
+            "sources": [
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "Appendix 1-2-2, table P1-2-2",
+                    "printed_page": 145,
+                    "source_ids": [
+                        "M16-WATER-011"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                },
+                {
+                    "code": "M16",
+                    "edition": "1396",
+                    "clause": "Appendix 1-3-1 to 1-3-2, table P1-3-2",
+                    "printed_page": 146,
+                    "source_ids": [
+                        "M16-WATER-012"
+                    ],
+                    "status": "VERIFIED_SOURCE"
+                }
+            ],
+            "applicability": {
+                "predicate": "domestic_water_sizing_segment_exists",
+                "unknown_result": "INPUT_REQUIRED"
+            },
+            "exceptions": [
+                {
+                    "when": "total_sfu_is_not_an_exact_visually_verified_table_row",
+                    "result": "INPUT_REQUIRED",
+                    "reason": "this batch neither interpolates nor extrapolates the printed discrete table"
+                }
+            ],
+            "cross_references": [],
+            "required_inputs": [
+                {
+                    "field": "water.sizing_segments[].fixtures",
+                    "unit": "fixture_count",
+                    "authority": [
+                        "SOURCE_VERIFIED"
+                    ]
+                },
+                {
+                    "field": "water.sizing_segments[].supply_scope",
+                    "unit": null,
+                    "authority": [
+                        "PROJECT_CONTRACT"
+                    ]
+                },
+                {
+                    "field": "water.sizing_segments[].system_mode",
+                    "unit": null,
+                    "authority": [
+                        "PROJECT_CONTRACT"
+                    ]
+                },
+                {
+                    "field": "water.sizing_segments[].probable_flow_l_s",
+                    "unit": "L/s",
+                    "authority": [
+                        "HYDRAULIC_CALCULATION"
+                    ]
+                }
+            ],
+            "design_actions": [
+                "sum the source-table cold, hot or total SFU for the exact fixture classes and use only the corresponding exact verified flush-tank or flush-valve probable-demand row"
+            ],
+            "validator": "probable_demand_from_sfu",
+            "parameters": {
+                "fixture_sfu": {
+                    "private_basin": {
+                        "cold": 0.5,
+                        "hot": 0.5,
+                        "total": 0.7
+                    },
+                    "private_bath": {
+                        "cold": 1.0,
+                        "hot": 1.0,
+                        "total": 1.4
+                    },
+                    "private_shower": {
+                        "cold": 1.0,
+                        "hot": 1.0,
+                        "total": 1.4
+                    },
+                    "private_ablution_faucet": {
+                        "cold": 0.5,
+                        "hot": 0.5,
+                        "total": 0.7
+                    },
+                    "private_kitchen_sink": {
+                        "cold": 1.0,
+                        "hot": 1.0,
+                        "total": 1.4
+                    },
+                    "private_laundry_sink": {
+                        "cold": 1.0,
+                        "hot": 1.0,
+                        "total": 1.4
+                    },
+                    "private_toilet_flush_tank": {
+                        "cold": 2.2,
+                        "hot": 0.0,
+                        "total": 2.2
+                    },
+                    "private_toilet_flush_valve": {
+                        "cold": 6.0,
+                        "hot": 0.0,
+                        "total": 6.0
+                    },
+                    "public_basin": {
+                        "cold": 1.5,
+                        "hot": 1.5,
+                        "total": 2.0
+                    },
+                    "public_shower": {
+                        "cold": 3.0,
+                        "hot": 3.0,
+                        "total": 4.0
+                    },
+                    "public_urinal_flush_tank": {
+                        "cold": 3.0,
+                        "hot": 0.0,
+                        "total": 3.0
+                    },
+                    "public_urinal_flush_valve": {
+                        "cold": 5.0,
+                        "hot": 0.0,
+                        "total": 5.0
+                    },
+                    "public_toilet_flush_tank": {
+                        "cold": 5.0,
+                        "hot": 0.0,
+                        "total": 5.0
+                    },
+                    "public_toilet_flush_valve": {
+                        "cold": 10.0,
+                        "hot": 0.0,
+                        "total": 10.0
+                    }
+                },
+                "probable_flow_l_s": {
+                    "FLUSH_TANK": {
+                        "1": 0.19,
+                        "2": 0.31,
+                        "3": 0.4,
+                        "4": 0.5,
+                        "5": 0.59,
+                        "6": 0.67,
+                        "7": 0.74,
+                        "8": 0.8,
+                        "9": 0.86,
+                        "10": 0.92,
+                        "12": 1.0,
+                        "15": 1.1,
+                        "20": 1.23,
+                        "25": 1.35,
+                        "30": 1.46,
+                        "40": 1.65,
+                        "50": 1.83,
+                        "60": 2.01,
+                        "80": 2.4,
+                        "100": 2.74,
+                        "120": 3.0,
+                        "140": 3.3,
+                        "160": 3.6,
+                        "180": 3.84,
+                        "200": 4.09,
+                        "225": 4.41,
+                        "250": 4.72,
+                        "275": 5.04,
+                        "300": 5.35,
+                        "400": 6.61,
+                        "500": 6.61,
+                        "750": 10.7,
+                        "1000": 13.1,
+                        "1250": 15.05,
+                        "1500": 17.0,
+                        "1750": 18.7,
+                        "2000": 20.47,
+                        "2500": 24.0,
+                        "3000": 27.27,
+                        "4000": 33.0,
+                        "5000": 37.35
+                    },
+                    "FLUSH_VALVE": {
+                        "5": 0.95,
+                        "6": 1.1,
+                        "7": 1.24,
+                        "8": 1.4,
+                        "9": 1.5,
+                        "10": 1.7,
+                        "12": 1.8,
+                        "15": 1.95,
+                        "20": 2.2,
+                        "25": 2.4,
+                        "30": 2.64,
+                        "40": 2.9,
+                        "50": 3.15,
+                        "60": 3.4,
+                        "80": 3.85,
+                        "100": 4.25,
+                        "120": 4.6,
+                        "140": 4.85,
+                        "160": 5.1,
+                        "180": 5.4,
+                        "200": 5.67,
+                        "225": 6.01,
+                        "250": 6.35,
+                        "275": 6.6,
+                        "300": 6.8,
+                        "400": 8.0,
+                        "500": 9.0,
+                        "750": 11.15,
+                        "1000": 13.1,
+                        "1250": 15.05,
+                        "1500": 17.0,
+                        "1750": 18.7,
+                        "2000": 20.47,
+                        "2500": 24.0,
+                        "3000": 27.27,
+                        "4000": 33.0,
+                        "5000": 37.35
+                    }
+                }
+            },
+            "output_evidence": [
+                "per-segment fixture/SFU schedule",
+                "probable-flow schedule with mode and exact source row",
+                "hydraulic network design basis"
+            ],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        },
+        {
+            "rule_id": "IR-M16-1396-APP1-GALVANIZED-EQUIVALENT-LENGTH",
+            "version": "1.0.0",
+            "owner": "mechanical",
+            "subsystem": "domestic_water",
+            "kind": "CONDITIONAL",
+            "authority": "STATUTORY_MANDATORY",
+            "title_fa": "طول هم‌ارز فیتینگ‌ها و شیرهای لوله فولادی گالوانیزه",
+            "sources": [{"code":"M16","edition":"1396","clause":"Appendix 1-4-5-3, table P1-4-5-3","printed_page":150,"source_ids":["M16-WATER-013"],"status":"VERIFIED_SOURCE"}],
+            "applicability": {"predicate":"galvanized_steel_water_sizing_segment_exists","unknown_result":"INPUT_REQUIRED"},
+            "exceptions": [{"when":"material_or_dn_or_fitting_type_is_outside_the_verified_table","result":"INPUT_REQUIRED","reason":"do not reuse galvanized-steel values for copper or plastic and do not interpolate DN"}],
+            "cross_references": [],
+            "required_inputs": [{"field":"water.sizing_segments[].pipe_material","unit":null,"authority":["PROJECT_CONTRACT"]},{"field":"water.sizing_segments[].dn_mm","unit":"mm","authority":["HYDRAULIC_CALCULATION"]},{"field":"water.sizing_segments[].fittings","unit":"count","authority":["GEOMETRY_VERIFIED"]},{"field":"water.sizing_segments[].declared_fitting_equivalent_length_m","unit":"m","authority":["HYDRAULIC_CALCULATION"]}],
+            "design_actions": ["sum exact table P1-4-5-3 equivalent lengths for every supported fitting and valve on a galvanized-steel segment and add the result to measured route length"],
+            "validator": "galvanized_fitting_equivalent_length",
+            "parameters": {"equivalent_length_m": {
+                "15":{"elbow_45":0.36,"elbow_90":0.60,"tee_run":0.18,"tee_branch":0.91,"gate_valve":0.12,"regulating_valve":0.24,"drain_cock":0.24,"check_valve":1.70,"foot_valve":4.57,"angle_valve":2.43},
+                "20":{"elbow_45":0.45,"elbow_90":0.76,"tee_run":0.24,"tee_branch":1.21,"gate_valve":0.15,"regulating_valve":0.33,"drain_cock":0.33,"check_valve":2.56,"foot_valve":6.09,"angle_valve":3.65},
+                "25":{"elbow_45":0.54,"elbow_90":0.91,"tee_run":0.27,"tee_branch":1.51,"gate_valve":0.18,"regulating_valve":0.45,"drain_cock":0.45,"check_valve":3.41,"foot_valve":7.62,"angle_valve":4.57},
+                "32":{"elbow_45":0.73,"elbow_90":1.21,"tee_run":0.36,"tee_branch":1.82,"gate_valve":0.24,"regulating_valve":0.57,"drain_cock":0.57,"check_valve":4.26,"foot_valve":10.66,"angle_valve":5.48},
+                "40":{"elbow_45":0.91,"elbow_90":1.52,"tee_run":0.45,"tee_branch":2.13,"gate_valve":0.30,"regulating_valve":0.67,"drain_cock":0.67,"check_valve":5.12,"foot_valve":13.71,"angle_valve":6.70},
+                "50":{"elbow_45":1.21,"elbow_90":2.13,"tee_run":0.60,"tee_branch":3.04,"gate_valve":0.39,"regulating_valve":0.91,"drain_cock":0.91,"check_valve":6.82,"foot_valve":16.76,"angle_valve":8.53},
+                "65":{"elbow_45":1.52,"elbow_90":2.43,"tee_run":0.76,"tee_branch":3.65,"gate_valve":0.48,"regulating_valve":1.12,"drain_cock":1.12,"check_valve":8.53,"foot_valve":19.81,"angle_valve":10.36},
+                "80":{"elbow_45":1.82,"elbow_90":3.04,"tee_run":0.91,"tee_branch":4.57,"gate_valve":0.60,"regulating_valve":1.37,"drain_cock":1.37,"check_valve":10.24,"foot_valve":24.38,"angle_valve":12.19}
+            }},
+            "output_evidence": ["segment fitting inventory","calculated equivalent-length schedule","critical path total effective length"],
+            "unknown_policy": "INPUT_REQUIRED",
+            "llm_override_allowed": false
+        }
+    ]
+}

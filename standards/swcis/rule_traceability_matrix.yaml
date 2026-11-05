@@ -1262,6 +1262,96 @@
         "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md",
         "docs/SEMANTIC_DIMENSION_REFERENCE_BENCHMARK.md"
       ]
+    },
+    {
+      "rule_id": "MEP-RAIN-RULEBOOK-001",
+      "title": "Source-mapped executable rainwater rules are deterministic, versioned and fail closed",
+      "status": "LOCKED",
+      "pmm_fields": [
+        "rainwater_design.rulebook_dependency_identity",
+        "rainwater_design.roof_surface_slope_percent",
+        "rainwater_design.horizontal_pipe_slope_percent",
+        "rainwater_design.rainfall_intensity_mm_h",
+        "rainwater_design.structural_rain_load_R",
+        "rainwater_design.secondary_routes",
+        "rainwater_design.secondary_discharge_points",
+        "rainwater_design.contributing_wall_areas_m2",
+        "rainwater_design.upstream_transfer_ids",
+        "rainwater_design.material_certificates",
+        "rainwater_design.buried_gravity_segments"
+        ,"rainwater_design.discharge_destinations"
+        ,"rainwater_design.structural_dead_loads"
+      ],
+      "engines": [
+        "cad_engine/executable_rulebook.py",
+        "cad_engine/rainwater_rulebook.py",
+        "cad_engine/rainwater_calculations.py",
+        "cad_engine/independent_deliverables.py",
+        "cad_engine/mechanical_target_design.py"
+      ],
+      "drawing_outputs": [
+        "roof catchment plan",
+        "primary rainwater routes",
+        "secondary rainwater routes and distinct discharge points",
+        "rule identity and compliance annotations",
+        "calculation and design-basis evidence",
+        "Appendix 7 hydraulic schedule",
+        "material approval schedule",
+        "conditional trench section detail"
+        ,"discharge destination and property-boundary schedule"
+        ,"structural water-full dead-load schedule"
+      ],
+      "qa_rules": [
+        "all_source_entries_classified",
+        "unknown_applicability_is_input_required",
+        "llm_cannot_override_fixed_rule",
+        "roof_and_pipe_slopes_remain_distinct",
+        "rainfall_intensity_not_structural_rain_load",
+        "primary_secondary_route_and_discharge_separation",
+        "rule_dependency_version_invalidation",
+        "reopened_dxf_rule_geometry_and_identity",
+        "multilevel_transfer_without_double_counting",
+        "appendix7_printed_anomaly_preserved",
+        "certificate_product_identity_reconciled",
+        "trench_dimensions_and_inspection_fail_closed",
+        "public_way_and_adjacent_property_discharge_rejected",
+        "surface_discharge_requires_permit_identity",
+        "water_full_mass_and_structural_approval_required",
+        "external_approval_not_software_certified"
+      ],
+      "regression_tests": [
+        "tests/test_rainwater_executable_rulebook.py",
+        "tests/test_rainwater_calculations.py",
+        "tests/test_independent_deliverables.py",
+        "tests/test_normal_upload_draft_e2e.py"
+      ],
+      "docs": [
+        "docs/EXECUTABLE_RULEBOOK_STANDARD.md",
+        "docs/RAINWATER_RISER_DESIGN_STANDARD.md",
+        "docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"
+      ]
+    },
+    {
+      "rule_id": "MEP-WATER-RULEBOOK-001",
+      "title": "Source-mapped domestic cold/hot water rules are deterministic, versioned and fail closed",
+      "status": "LOCKED",
+      "pmm_fields": ["water.interconnections","water.manifolds","water.fixture_branches","water.fixture_outlets","water.sizing_segments","water.components","water.hot_outlets","water.hot_water","water.construction_pressure_test"],
+      "engines": ["cad_engine/executable_rulebook.py","cad_engine/water_rulebook.py","app/mechanical_rulebook.py"],
+      "drawing_outputs": ["water design basis","backflow device schedule","manifold hydraulic schedule","fixture branch and outlet schedule","SFU and probable-flow schedule","component pressure-temperature schedule","hot-water return route and control schedule"],
+      "qa_rules": ["unknown_applicability_is_input_required","manufacturer_rating_evidence_required","manifold_velocity_maximum_2_m_s","probable_demand_exact_source_row_only","unsupported_sfu_row_is_input_required","galvanized_equivalent_length_exact_material_dn_and_fitting_only","hot_water_return_trigger_strictly_over_10_m","construction_test_is_stage_aware","internal_sizing_profile_not_statutory"],
+      "regression_tests": ["tests/test_water_executable_rulebook.py","tests/test_mechanical_questionnaire_persistence.py","tests/test_rainwater_executable_rulebook.py"],
+      "docs": ["docs/EXECUTABLE_RULEBOOK_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]
+    },
+    {
+      "rule_id": "MEP-SANITARY-VENT-RULEBOOK-001",
+      "title": "Source-mapped sanitary drainage and vent controls are deterministic and fail closed",
+      "status": "LOCKED",
+      "pmm_fields": ["sanitary.traps","sanitary.horizontal_segments","sanitary.fixtures","sanitary.sizing_segments","sanitary.cleanouts","sanitary.cleanout_inventory_complete","vent.terminations","vent.fixture_connections","vent.sizing_segments"],
+      "engines": ["cad_engine/executable_rulebook.py","cad_engine/sanitary_vent_rulebook.py","app/mechanical_rulebook.py"],
+      "drawing_outputs": ["trap DN schedule","horizontal sanitary slope/velocity schedule","fixture and segment DFU schedule","branch/stack capacity schedule","cleanout inventory and access schedule","vent termination clearance schedule","trap-to-vent distance schedule","vent minimum-size schedule"],
+      "qa_rules": ["unknown_fixture_or_dn_band_is_input_required","reverse_slope_fails","minimum_velocity_0_7_m_s","maximum_slope_4_percent","fixture_dfu_is_recomputed","branch_stack_capacity_is_exact_table_row","cleanout_inventory_must_be_complete","cleanout_spacing_maximum_30_m","vent_clearance_alternative_is_exact","trap_vent_table_requires_exact_dn_and_slope","vent_longer_than_12_m_sizes_up_one_nominal_size"],
+      "regression_tests": ["tests/test_sanitary_vent_executable_rulebook.py","tests/test_rainwater_executable_rulebook.py"],
+      "docs": ["docs/EXECUTABLE_RULEBOOK_STANDARD.md","docs/SYSTEM_WIDE_CHANGE_IMPACT_STANDARD.md"]
     }
   ]
 }
